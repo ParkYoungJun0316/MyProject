@@ -215,22 +215,15 @@ public class Player : MonoBehaviour
 
     void Turn()
     {
-        Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = followCamera.ScreenPointToRay(mousePos);
+        if (followCamera == null) return;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 200f, aimMask))
-        {
-            Vector3 dir = hit.point - transform.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-            {
-                transform.LookAt(transform.position + dir);
-                return;
-            }
-        }
+        // 카메라가 보고 있는 방향을 기준으로 플레이어가 회전하게 함.
+        // 카메라 회전(마우스 감도, 상하 회전 등)은 전부 Cinemachine 설정에서 제어.
+        Vector3 dir = followCamera.transform.forward;
+        dir.y = 0f; // 캐릭터는 수평 회전만, 상하각은 Cinemachine 카메라가 담당
 
-        if (moveVec.sqrMagnitude > 0.0001f)
-            transform.LookAt(transform.position + moveVec);
+        if (dir.sqrMagnitude > 0.0001f)
+            transform.forward = dir.normalized;
     }
 
     void FreezeRotation()
@@ -417,8 +410,6 @@ public class Player : MonoBehaviour
 
         if (equipWeapon != null)
         {
-            var oldVis = equipWeapon.GetComponent<GunRangeVisualizer>();
-            if (oldVis != null) oldVis.isEquipped = false;
             equipWeapon.gameObject.SetActive(false);
         }
 
@@ -426,9 +417,6 @@ public class Player : MonoBehaviour
         if (equipWeapon == null) return;
 
         equipWeapon.gameObject.SetActive(true);
-
-        var newVis = equipWeapon.GetComponent<GunRangeVisualizer>();
-        if (newVis != null) newVis.isEquipped = true;
     }
 
     void OnTriggerEnter(Collider other)
@@ -576,7 +564,24 @@ public class Player : MonoBehaviour
             for (int i = 0; i < cols.Length; i++)
                 if (cols[i] != null) cols[i].enabled = true;
 
-        if (anim != null) { anim.Rebind(); anim.Update(0f); }
+        if (anim != null)
+        {
+            // Animator 파라미터 리셋 (doDie 트리거 등이 남아있을 수 있음)
+            anim.ResetTrigger("doDie");
+            anim.ResetTrigger("doDodge");
+            anim.ResetTrigger("doReload");
+            anim.ResetTrigger("doSwap");
+            anim.ResetTrigger("doSwing");
+            anim.ResetTrigger("doShot");
+            
+            // Bool 파라미터 초기화
+            anim.SetBool("isWalk", false);
+            anim.SetBool("isRun", false);
+            
+            // Animator를 Idle 상태로 강제 전환
+            anim.Play("Idle", 0, 0f);
+            anim.Update(0f);
+        }
 
         events?.RaiseRespawned();
         events?.RaiseBlackWhiteChanged(isBlack);

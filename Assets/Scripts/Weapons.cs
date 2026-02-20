@@ -37,8 +37,6 @@ public class Weapon : MonoBehaviour
 
     IEnumerator Swing()
     {
-        var viz = GetComponentInChildren<HammerRangeVisualizer>();
-        if (viz != null) viz.SetAttacking(true);
         //1
         yield return new WaitForSeconds(0.1f); // 0.1초 대기
         meleeArea.enabled = true;
@@ -49,7 +47,6 @@ public class Weapon : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
         trailEffect.enabled = false;
-        if (viz != null) viz.SetAttacking(false);
 
         //yield return null; // 1프레임 대기
         //yield return new WaitForSeconds(0.1); // 0.1초 대기

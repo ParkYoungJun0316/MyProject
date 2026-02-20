@@ -36,6 +36,11 @@ public class PlayerStealth : MonoBehaviour
         layerPlayerStealth = LayerMask.NameToLayer("PlayerStealth");
         layerPlayerDead    = LayerMask.NameToLayer("PlayerDead");
 
+        // 인스펙터에서 따로 지정하지 않았다면,
+        // 플레이어 아래 모든 Renderer를 자동으로 수집해서 전체에 적용
+        if (localRenderers == null || localRenderers.Length == 0)
+            localRenderers = GetComponentsInChildren<Renderer>(true);
+
         if (groundMask.value == 0)
             groundMask = LayerMask.GetMask("Ground");
     }
@@ -122,9 +127,8 @@ public class PlayerStealth : MonoBehaviour
             if (r == null) continue;
 
             r.GetPropertyBlock(mpb);
-            Color c = mpb.GetColor(BaseColorId);
-            if (c.a == 0 && c.r == 0 && c.g == 0 && c.b == 0)
-                c = player.isBlack ? Color.black : Color.white;
+            // 항상 흑/백 컬러를 덮어써서, 일부 파츠만 색이 바뀌는 문제 방지
+            Color c = player.isBlack ? Color.black : Color.white;
             c.a = a;
             mpb.SetColor(BaseColorId, c);
             mpb.SetColor(ColorId, c);
