@@ -23,6 +23,8 @@ public class PlayerStealth : MonoBehaviour
     int layerPlayerDead;
 
     bool isDead_prev = false;
+    bool prevStealth = false;
+    bool visualsDirty = true; // 초기 1회 강제 적용
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId     = Shader.PropertyToID("_Color");
@@ -62,6 +64,7 @@ public class PlayerStealth : MonoBehaviour
             if (!player.IsDead)
             {
                 isStealth = false;
+                visualsDirty = true; // 리스폰 시 강제 갱신
                 SetLayerRecursively(gameObject, layerPlayer);
             }
         }
@@ -114,6 +117,14 @@ public class PlayerStealth : MonoBehaviour
 
     void UpdateVisuals(float t)
     {
+        // 스텔스 상태 변화가 없으면 MPB 재적용 생략
+        // → PlayerVisualController의 피격 플래시(MPB)를 덮어쓰지 않음
+        bool stateChanged = isStealth != prevStealth || visualsDirty;
+        if (!stateChanged) return;
+
+        prevStealth = isStealth;
+        visualsDirty = false;
+
         ApplyAlpha(localRenderers, Mathf.Lerp(1f, localMinAlpha, t));
         ApplyAlpha(worldRenderers, Mathf.Lerp(1f, worldMinAlpha, t));
     }

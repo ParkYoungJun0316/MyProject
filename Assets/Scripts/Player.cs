@@ -5,8 +5,8 @@ using UnityEngine.InputSystem;
 public class Player : MonoBehaviour
 {
     [Header("Move")]
-    public float speed = 5f;
-    public float runMultiplier = 0.6f;
+    public float speed = 0f;
+    public float runMultiplier = 0f;
 
     [Header("Combat")]
     public GameObject[] weapons;
@@ -24,27 +24,27 @@ public class Player : MonoBehaviour
     public int coin;
     public int heart;
 
-    public int maxAmmo = 200;
-    public int maxCoin = 999;
-    public int maxHeart = 100;
-    public int maxHasGrenades = 5;
+    public int maxAmmo = 0;
+    public int maxCoin = 0;
+    public int maxHeart = 0;
+    public int maxHasGrenades = 0;
 
     [Header("Jump / Dodge")]
-    public float dodgeForce = 8f;
+    public float dodgeForce = 0f;
 
     [Header("Black/White Switch")]
     public bool isBlack;
-    public float bwCooldown;
+    public float bwCooldown = 0f;
 
     [Header("Action Cooldown")]
-    public float actionCooldown;
+    public float actionCooldown = 0f;
 
     [Header("Dodge i-frame")]
-    public float dodgeInvincibleDuration;
+    public float dodgeInvincibleDuration = 0f;
     float dodgeInvincibleUntil = 0f;
 
     [Header("Respawn")]
-    public float respawnDelay;
+    public float respawnDelay = 0f;
 
     public bool IsDead { get; private set; }
 
@@ -74,9 +74,9 @@ public class Player : MonoBehaviour
     Weapon equipWeapon;
 
     [Header("Grenade Throw")]
-    public float grenadeForce = 15f;
-    public float grenadeUpForce = 0.35f;
-    public Vector3 grenadeSpawnOffset = new Vector3(0f, 1.2f, 0.7f);
+    public float grenadeForce = 0f;
+    public float grenadeUpForce = 0f;
+    public Vector3 grenadeSpawnOffset = Vector3.zero;
     public Collider[] ownerColliders;
 
     Vector3 spawnPos;
@@ -89,6 +89,7 @@ public class Player : MonoBehaviour
 
     PlayerEvents events;
     PlayerStealth playerStealth;
+
 
     public void OnMove(InputValue value)
     {
@@ -194,12 +195,16 @@ public class Player : MonoBehaviour
     {
         if (isKnockback) return;
 
-        moveVec = new Vector3(moveInput.x, 0, moveInput.y).normalized;
+        // 마우스 방향 = 캐릭터 정면 → W = 정면, S = 뒤, A = 왼쪽, D = 오른쪽 (맵 기준 아님)
+        if (followCamera != null)
+            moveVec = (transform.forward * moveInput.y + transform.right * moveInput.x).normalized;
+        else
+            moveVec = new Vector3(moveInput.x, 0, moveInput.y).normalized;
 
         bool hasMove = moveVec.sqrMagnitude > 0.0001f;
         bool walkKey = Keyboard.current.leftShiftKey.isPressed;
 
-        float finalSpeed = speed * (walkKey ? runMultiplier : 1f);
+        float finalSpeed = speed * (walkKey ? 1f : runMultiplier);
 
         Vector3 v = rigid.linearVelocity;
         v.x = moveVec.x * finalSpeed;
@@ -217,13 +222,19 @@ public class Player : MonoBehaviour
     {
         if (followCamera == null) return;
 
-        // 카메라가 보고 있는 방향을 기준으로 플레이어가 회전하게 함.
-        // 카메라 회전(마우스 감도, 상하 회전 등)은 전부 Cinemachine 설정에서 제어.
-        Vector3 dir = followCamera.transform.forward;
-        dir.y = 0f; // 캐릭터는 수평 회전만, 상하각은 Cinemachine 카메라가 담당
+        // 마우스 방향 = 캐릭터 정면 (레이로 지면 찍어서 그 방향으로 회전)
+        Vector2 mousePos = Mouse.current.position.ReadValue();
+        Ray ray = followCamera.ScreenPointToRay(mousePos);
+        var floorPlane = new Plane(Vector3.up, transform.position);
 
-        if (dir.sqrMagnitude > 0.0001f)
-            transform.forward = dir.normalized;
+        if (floorPlane.Raycast(ray, out float enter))
+        {
+            Vector3 hit = ray.GetPoint(enter);
+            Vector3 dir = hit - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+                transform.forward = dir.normalized;
+        }
     }
 
     void FreezeRotation()
@@ -419,6 +430,20 @@ public class Player : MonoBehaviour
         equipWeapon.gameObject.SetActive(true);
     }
 
+    /// <summary> 외부(적 근거리/원거리 등)에서 호출하는 데미지 처리. 근거리·원거리 공격 모두 이 경로로 적용. </summary>
+    public void TakeDamage(int amount, bool knockback = false)
+    {
+        if (IsDead) return;
+        if (Time.time < dodgeInvincibleUntil) return;
+        if (isDamage) return;
+
+        heart -= amount;
+        events?.RaiseDamaged(knockback);
+
+        if (heart <= 0) { Die(); return; }
+        StartCoroutine(OnDamage(knockback));
+    }
+
     void OnTriggerEnter(Collider other)
     {
         if (IsDead) return;
@@ -449,21 +474,9 @@ public class Player : MonoBehaviour
         }
         else if (other.CompareTag("EnemyBullet"))
         {
-            if (Time.time < dodgeInvincibleUntil) return;
-
-            if (!isDamage)
-            {
-                Bullet enemyBullet = other.GetComponent<Bullet>();
-                if (enemyBullet == null) return;
-
-                heart -= enemyBullet.damage;
-                events?.RaiseDamaged(other.name == "Boss Melee Area");
-
-                if (heart <= 0) { Die(); return; }
-
-                bool isBossAtk = other.name == "Boss Melee Area";
-                StartCoroutine(OnDamage(isBossAtk));
-            }
+            Bullet enemyBullet = other.GetComponent<Bullet>();
+            if (enemyBullet != null)
+                TakeDamage(enemyBullet.damage, false);
 
             if (other.GetComponent<Rigidbody>() != null)
                 Destroy(other.gameObject);
@@ -473,6 +486,7 @@ public class Player : MonoBehaviour
     IEnumerator OnDamage(bool isBossAtk)
     {
         isDamage = true;
+        // 색상 플래시는 PlayerVisualController가 events.OnDamaged 통해 MPB로 처리
 
         if (isBossAtk)
         {

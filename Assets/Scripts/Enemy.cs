@@ -15,6 +15,15 @@ public class Enemy : MonoBehaviour
     public BoxCollider meleeArea;
     public GameObject bullet;
 
+    [Header("Missile")]
+    [Tooltip("비어 있으면 transform.position에서 발사")]
+    public Transform missileSpawnPoint;
+
+
+    [Header("Attack Damage (Inspector에서 설정)")]
+    public int meleeDamage = 0;
+    public int rangedDamage = 0;
+
     [Header("State")]
     public bool isChase;
     public bool isAttack;
@@ -57,10 +66,29 @@ public class Enemy : MonoBehaviour
         boxCollider = GetComponent<BoxCollider>();
         meshs = GetComponentsInChildren<MeshRenderer>();
         nav = GetComponent<NavMeshAgent>();
-        anim = GetComponentInChildren<Animator>();
+        if (anim == null)
+            anim = GetComponentInChildren<Animator>();
+
+        // 프리팹에 Is Attack/Is Chase 체크돼 있어도 런타임에 초기화 (Enemy C 멈춤 방지)
+        isAttack = false;
+        isChase = false;
+
+
+        if (rigid != null)
+            rigid.isKinematic = true;
+
+        if (nav != null && enemyType != Type.D)
+            nav.enabled = true;
 
         playerMask = LayerMask.GetMask("Player");
         playerStealthMask = LayerMask.GetMask("PlayerStealth");
+
+        if (meleeArea != null)
+        {
+            var hitbox = meleeArea.GetComponent<EnemyHitbox>();
+            if (hitbox != null)
+                hitbox.damage = meleeDamage;
+        }
 
         if (enemyType != Type.D)
             Invoke(nameof(ChaseStart), 0.2f);
@@ -71,12 +99,13 @@ public class Enemy : MonoBehaviour
     void ChaseStart()
     {
         isChase = true;
-        anim.SetBool("isWalk", true);
+        if (anim != null)
+            anim.SetBool("isWalk", true);
     }
 
     void Update()
     {
-        if (!nav.enabled || enemyType == Type.D || isDead) return;
+        if (nav == null || !nav.enabled || enemyType == Type.D || isDead) return;
 
         // 1) 은신 중이면 패트롤
         if (IsStealthPlayerDetected())
@@ -121,30 +150,29 @@ public class Enemy : MonoBehaviour
     // ✅ 애니메이션을 실제 속도에 맞춰 조절하는 함수 추가
     void UpdateAnimation()
     {
-        // nav.velocity.magnitude가 일정 수준 이상일 때만 걷는 애니메이션 재생
-        // remainingDistance가 stopDistance보다 클 때만 걷도록 설정
+        if (anim == null || nav == null) return;
         bool walking = nav.enabled && !nav.isStopped && nav.remainingDistance > nav.stoppingDistance;
         anim.SetBool("isWalk", walking);
     }
 
     void StartPatrol()
     {
-
         if (!usePatrol) { ClearTargetAndStop(); return; }
-        if (isAttack) return;               // 공격 중이면 배회 시작 안 함
+        if (isAttack) return;
         if (isPatrolling) return;
 
-        // 추격/공격 상태 정리 (정지만 하지 말고 목적지로 이동)
         if (attackRoutine != null)
         {
             StopCoroutine(attackRoutine);
             attackRoutine = null;
         }
         isAttack = false;
-        anim.SetBool("isAttack", false);
+        if (anim != null)
+            anim.SetBool("isAttack", false);
 
         isChase = false;
-        anim.SetBool("isWalk", true);
+        if (anim != null)
+            anim.SetBool("isWalk", true);
 
         isPatrolling = true;
         patrolRoutine = StartCoroutine(PatrolRoutine());
@@ -253,36 +281,42 @@ public class Enemy : MonoBehaviour
     void StartChase(Vector3 pos)
     {
         isChase = true;
-        nav.isStopped = false;
-        anim.SetBool("isWalk", true);
-
-        nav.SetDestination(pos);
+        if (nav != null)
+        {
+            nav.isStopped = false;
+            nav.SetDestination(pos);
+        }
+        if (anim != null)
+            anim.SetBool("isWalk", true);
     }
 
     void ClearTargetAndStop()
     {
         currentTarget = null;
-
         isChase = false;
-        anim.SetBool("isWalk", false);
+        if (anim != null)
+            anim.SetBool("isWalk", false);
 
-        // ✅ 공격 중이면 공격도 즉시 끊기 (Attack 코루틴이 isChase 다시 켜는 버그 방지)
         if (attackRoutine != null)
         {
             StopCoroutine(attackRoutine);
             attackRoutine = null;
         }
         isAttack = false;
-        anim.SetBool("isAttack", false);
+        if (anim != null)
+            anim.SetBool("isAttack", false);
 
-        nav.isStopped = true;
-        nav.ResetPath();
-        nav.velocity = Vector3.zero;
+        if (nav != null)
+        {
+            nav.isStopped = true;
+            nav.ResetPath();
+            nav.velocity = Vector3.zero;
+        }
     }
 
     void FixedUpdate()
     {
-        if (!nav.enabled || enemyType == Type.D || isDead) return;
+        if (nav == null || !nav.enabled || enemyType == Type.D || isDead) return;
 
         FreezeVelocity();
         TryAttack();
@@ -290,11 +324,11 @@ public class Enemy : MonoBehaviour
 
     void FreezeVelocity()
     {
-        if (isChase)
-        {
-            rigid.linearVelocity = Vector3.zero;
-            rigid.angularVelocity = Vector3.zero;
-        }
+        if (!isChase || rigid == null) return;
+        if (rigid.isKinematic) return;
+
+        rigid.linearVelocity = Vector3.zero;
+        rigid.angularVelocity = Vector3.zero;
     }
 
     void TryAttack()
@@ -338,9 +372,9 @@ public class Enemy : MonoBehaviour
     {
         isChase = false;
         isAttack = true;
-        anim.SetBool("isAttack", true);
+        if (anim != null)
+            anim.SetBool("isAttack", true);
 
-        // ✅ 공격 도중 은신되면 바로 끊기
         if (IsStealthPlayerDetected())
         {
             ClearTargetAndStop();
@@ -364,11 +398,23 @@ public class Enemy : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
                 if (IsStealthPlayerDetected()) { ClearTargetAndStop(); yield break; }
 
-                rigid.AddForce(transform.forward * 20, ForceMode.Impulse);
+                if (rigid != null && !rigid.isKinematic)
+                    rigid.AddForce(transform.forward * 20, ForceMode.Impulse);
+                else
+                {
+                    float chargeDuration = 0.5f;
+                    float chargeSpeed = 8f;
+                    for (float t = 0f; t < chargeDuration; t += Time.deltaTime)
+                    {
+                        transform.position += transform.forward * (chargeSpeed * Time.deltaTime);
+                        yield return null;
+                    }
+                }
                 meleeArea.enabled = true;
 
                 yield return new WaitForSeconds(0.5f);
-                rigid.linearVelocity = Vector3.zero;
+                if (rigid != null && !rigid.isKinematic)
+                    rigid.linearVelocity = Vector3.zero;
                 meleeArea.enabled = false;
 
                 yield return new WaitForSeconds(2f);
@@ -377,10 +423,21 @@ public class Enemy : MonoBehaviour
             case Type.C:
                 yield return new WaitForSeconds(0.5f);
                 if (IsStealthPlayerDetected()) { ClearTargetAndStop(); yield break; }
+                if (bullet == null) { isAttack = false; if (anim != null) anim.SetBool("isAttack", false); yield break; }
 
-                GameObject instantBullet = Instantiate(bullet, transform.position, transform.rotation);
+                Transform spawn = missileSpawnPoint != null ? missileSpawnPoint : transform;
+                Vector3 spawnPosC = spawn.position;
+                Quaternion spawnRot = spawn.rotation;
+
+                GameObject instantBullet = Instantiate(bullet, spawnPosC, spawnRot);
+                instantBullet.tag = "EnemyBullet";
+                Bullet bulletComp = instantBullet.GetComponent<Bullet>();
+                if (bulletComp != null)
+                    bulletComp.damage = rangedDamage;
+
                 Rigidbody rigidbullet = instantBullet.GetComponent<Rigidbody>();
-                rigidbullet.linearVelocity = transform.forward * bulletspeed;
+                if (rigidbullet != null)
+                    rigidbullet.linearVelocity = spawn.forward * bulletspeed;
 
                 yield return new WaitForSeconds(1f);
                 break;
@@ -394,9 +451,9 @@ public class Enemy : MonoBehaviour
         }
 
         isAttack = false;
-        anim.SetBool("isAttack", false);
+        if (anim != null)
+            anim.SetBool("isAttack", false);
 
-        // ✅ 추격은 Update가 타겟 감지했을 때만 켠다 (여기서 isChase 켜지 않음!)
         attackRoutine = null;
     }
 
@@ -452,22 +509,27 @@ public class Enemy : MonoBehaviour
             ClearTargetAndStop(); // ✅ 죽으면 추격/공격 싹 정리
 
             nav.enabled = false;
-            anim.SetTrigger("doDie");
+            if (anim != null)
+                anim.SetTrigger("doDie");
 
-            if (isGrenade)
+            if (rigid != null)
             {
-                reactVec = reactVec.normalized;
-                reactVec += Vector3.up * 2f;
+                rigid.isKinematic = false;
 
-                rigid.freezeRotation = false;
-                rigid.AddForce(reactVec * 5, ForceMode.Impulse);
-                rigid.AddTorque(reactVec * 15f, ForceMode.Impulse);
-            }
-            else
-            {
-                reactVec = reactVec.normalized;
-                reactVec += Vector3.up;
-                rigid.AddForce(reactVec * 5, ForceMode.Impulse);
+                if (isGrenade)
+                {
+                    reactVec = reactVec.normalized;
+                    reactVec += Vector3.up * 2f;
+                    rigid.freezeRotation = false;
+                    rigid.AddForce(reactVec * 5, ForceMode.Impulse);
+                    rigid.AddTorque(reactVec * 15f, ForceMode.Impulse);
+                }
+                else
+                {
+                    reactVec = reactVec.normalized;
+                    reactVec += Vector3.up;
+                    rigid.AddForce(reactVec * 5, ForceMode.Impulse);
+                }
             }
 
             if (enemyType != Type.D)
