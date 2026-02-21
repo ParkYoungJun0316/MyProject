@@ -42,14 +42,13 @@ public class Enemy : MonoBehaviour
     public float detectRange = 50f;     // 맵 전체 감지라면 크게(예: 999)
     public float stopDistance = 0.3f;   // 추격 멈춤 임계값
 
-    // ✅ 레이어 마스크 캐싱
-    int playerMask;          // Player 레이어만
-    int playerStealthMask;   // PlayerStealth 레이어만
+    // 레이어 마스크 — Boss에서도 접근
+    protected int playerMask;
+    protected int playerStealthMask;
 
-    // ✅ 감지 결과 캐싱
-    Transform currentTarget;
-
-    Coroutine attackRoutine;
+    // 상태 — Boss에서도 접근
+    protected Transform currentTarget;
+    protected Coroutine attackRoutine;
 
     [Header("Patrol")]
     public bool usePatrol = true;
@@ -60,7 +59,7 @@ public class Enemy : MonoBehaviour
     Coroutine patrolRoutine;
     Vector3 spawnPos;
 
-    void Awake()
+    protected virtual void Awake()
     {
         rigid = GetComponent<Rigidbody>();
         boxCollider = GetComponent<BoxCollider>();
@@ -77,7 +76,7 @@ public class Enemy : MonoBehaviour
         if (rigid != null)
             rigid.isKinematic = true;
 
-        if (nav != null && enemyType != Type.D)
+        if (nav != null)
             nav.enabled = true;
 
         playerMask = LayerMask.GetMask("Player");
@@ -90,22 +89,21 @@ public class Enemy : MonoBehaviour
                 hitbox.damage = meleeDamage;
         }
 
-        if (enemyType != Type.D)
-            Invoke(nameof(ChaseStart), 0.2f);
+        Invoke(nameof(ChaseStart), 0.2f);
 
         spawnPos = transform.position;
     }
 
-    void ChaseStart()
+    protected virtual void ChaseStart()
     {
         isChase = true;
         if (anim != null)
             anim.SetBool("isWalk", true);
     }
 
-    void Update()
+    protected virtual void Update()
     {
-        if (nav == null || !nav.enabled || enemyType == Type.D || isDead) return;
+        if (nav == null || !nav.enabled || isDead) return;
 
         // 1) 은신 중이면 패트롤
         if (IsStealthPlayerDetected())
@@ -190,7 +188,7 @@ public class Enemy : MonoBehaviour
         isPatrolling = false;
     }
 
-    bool IsPlayerDead(Transform t)
+    protected bool IsPlayerDead(Transform t)
     {
         if (t == null) return true;
 
@@ -246,7 +244,7 @@ public class Enemy : MonoBehaviour
     }
 
     // ✅ 은신 레이어 감지 여부 (한 프레임이라도 걸리면 즉시 끊기)
-    bool IsStealthPlayerDetected()
+    protected bool IsStealthPlayerDetected()
     {
         // Physics 설정에서 Enemy vs PlayerStealth 충돌 OFF 했어도
         // OverlapSphere는 "충돌 매트릭스"와 별개로 작동할 수 있어서
@@ -255,8 +253,8 @@ public class Enemy : MonoBehaviour
         return stealthHits != null && stealthHits.Length > 0;
     }
 
-    // ✅ Player 레이어만 감지
-    Transform FindVisiblePlayer()
+    // Player 레이어만 감지
+    protected Transform FindVisiblePlayer()
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, detectRange, playerMask);
         if (hits == null || hits.Length == 0) return null;
@@ -278,7 +276,7 @@ public class Enemy : MonoBehaviour
         return bestT;
     }
 
-    void StartChase(Vector3 pos)
+    protected virtual void StartChase(Vector3 pos)
     {
         isChase = true;
         if (nav != null)
@@ -290,7 +288,7 @@ public class Enemy : MonoBehaviour
             anim.SetBool("isWalk", true);
     }
 
-    void ClearTargetAndStop()
+    protected virtual void ClearTargetAndStop()
     {
         currentTarget = null;
         isChase = false;
@@ -314,9 +312,9 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
-        if (nav == null || !nav.enabled || enemyType == Type.D || isDead) return;
+        if (nav == null || !nav.enabled || isDead) return;
 
         FreezeVelocity();
         TryAttack();
@@ -457,7 +455,7 @@ public class Enemy : MonoBehaviour
         attackRoutine = null;
     }
 
-    // --- 피격 처리(기존 유지) ---
+    // --- 피격 처리 ---
     void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Melee")
