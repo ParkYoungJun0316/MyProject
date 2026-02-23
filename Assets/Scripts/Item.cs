@@ -2,17 +2,17 @@ using UnityEngine;
 
 public class Item : MonoBehaviour
 {
-    public enum Type { Ammo, Coin, Grenade, Heart, Weapon };
+    public enum Type { Coin, Grenade, HealthPotion, Shield }
     public Type type;
     public int value;
 
     Rigidbody rigid;
-    SphereCollider sphereCollider;
+    Collider itemCollider;
 
     void Awake()
     {
         rigid = GetComponent<Rigidbody>();
-        sphereCollider = GetComponent<SphereCollider>();
+        itemCollider = GetComponent<Collider>();
     }
 
     void Update()
@@ -22,10 +22,11 @@ public class Item : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag == "Floor")
+        if (collision.gameObject.CompareTag("Floor"))
         {
             rigid.isKinematic = true;
-            sphereCollider.enabled = false;
+            if (itemCollider != null)
+                itemCollider.isTrigger = true;
         }
     }
 }

@@ -33,6 +33,8 @@ public class Boss : Enemy
     public int   bossMissileDamage    = 0;
 
     [Header("Boss - Rock")]
+    [Tooltip("비어 있으면 보스 transform.position에서 생성")]
+    public Transform bossRockSpawnPoint;
     public GameObject bossRockPrefab;
     public float bossRockWindup       = 0;
     public float bossRockInitialSpeed = 0;
@@ -49,9 +51,11 @@ public class Boss : Enemy
     public float bossTauntWindup   = 0;
     public float bossJumpHeight    = 0;
     public float bossJumpDuration  = 0;
-    public float bossSlamRadius    = 0;
     public float bossTauntCooldown = 0;
     public int   bossSlamDamage    = 0;
+
+    [Tooltip("착지 시 데미지 범위. BoxCollider / SphereCollider / CapsuleCollider 중 하나 연결 (Is Trigger 권장)")]
+    public Collider bossSlamArea;
 
     [Header("Boss Attack Weights (합계 100 권장)")]
     public float bossWeightBodySlam = 0;
@@ -215,25 +219,34 @@ public class Boss : Enemy
     // 2) 유도탄 — 두 발사 지점에서 동시 발사 (Homing 컴포넌트 사용)
     void FireMissileFrom(Transform spawnPoint)
     {
-        if (spawnPoint == null || bossMissilePrefab == null || currentTarget == null) return;
+        if (bossMissilePrefab == null || currentTarget == null) return;
 
-        GameObject go = Instantiate(bossMissilePrefab, spawnPoint.position, spawnPoint.rotation);
+        Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
+        Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
+
+        GameObject go = Instantiate(bossMissilePrefab, pos, rot);
         go.tag = "EnemyBullet";
 
-        Homing hm = go.GetComponentInChildren<Homing>();
+        // Homing: target 주입 (필수). speed/turnSpeed > 0이면 Boss 값으로 override, 0이면 프리팹 기본값 유지
+        Homing hm = go.GetComponentInChildren<Homing>(true);
         if (hm != null)
         {
-            hm.target    = currentTarget;
-            hm.speed     = bossMissileSpeed;
-            hm.turnSpeed = bossMissileTurnSpeed;
-            hm.damage    = bossMissileDamage;
-            hm.lifetime  = bossMissileLifetime;
+            hm.target = currentTarget;
+            if (bossMissileSpeed     > 0f) hm.speed     = bossMissileSpeed;
+            if (bossMissileTurnSpeed > 0f) hm.turnSpeed = bossMissileTurnSpeed;
         }
+
+        // Bullet: 데미지 주입 (0이면 프리팹 기본값 유지)
+        Bullet b = go.GetComponentInChildren<Bullet>(true);
+        if (b != null && bossMissileDamage > 0) b.damage = bossMissileDamage;
+
+        // 수명
+        if (bossMissileLifetime > 0f) Destroy(go, bossMissileLifetime);
     }
 
     IEnumerator BossFireMissiles()
     {
-        if (anim != null) anim.SetTrigger("Shot");
+        if (anim != null) anim.SetTrigger("doShot");
         yield return new WaitForSeconds(bossMissileWindup);
         FireMissileFrom(bossMissileSpawnPoint1);
         FireMissileFrom(bossMissileSpawnPoint2);
@@ -244,17 +257,20 @@ public class Boss : Enemy
     IEnumerator BossThrowRock()
     {
         if (currentTarget == null) yield break;
-        if (anim != null) anim.SetTrigger("BigShot");
+        if (anim != null) anim.SetTrigger("doBigShot");
         yield return new WaitForSeconds(bossRockWindup);
+
+        if (currentTarget == null) yield break;
 
         if (bossRockPrefab != null)
         {
-            Vector3 throwDir = currentTarget.position - transform.position;
+            Vector3 spawnPos = bossRockSpawnPoint != null ? bossRockSpawnPoint.position : transform.position;
+            Vector3 throwDir = currentTarget.position - spawnPos;
             throwDir.y = 0f;
             if (throwDir.sqrMagnitude > 0.001f) throwDir.Normalize();
             else throwDir = transform.forward;
 
-            GameObject rock = Instantiate(bossRockPrefab, transform.position, Quaternion.LookRotation(throwDir));
+            GameObject rock = Instantiate(bossRockPrefab, spawnPos, Quaternion.LookRotation(throwDir));
             rock.tag = "EnemyBullet";
 
             SpinRoller sr = rock.GetComponentInChildren<SpinRoller>();
@@ -267,6 +283,12 @@ public class Boss : Enemy
                 sr.damage       = bossRockDamage;
                 sr.lifetime     = bossRockLifetime;
             }
+            else
+            {
+                var rb = rock.GetComponentInChildren<Rigidbody>();
+                if (rb != null && bossRockInitialSpeed > 0f)
+                    rb.linearVelocity = throwDir * bossRockInitialSpeed;
+            }
         }
 
         yield return new WaitForSeconds(bossRockCooldown);
@@ -277,7 +299,7 @@ public class Boss : Enemy
     {
         if (currentTarget == null) yield break;
 
-        if (anim != null) anim.SetTrigger("Taunt");
+        if (anim != null) anim.SetTrigger("doTaunt");
 
         Vector3 slamTarget = currentTarget.position;
         if (nav != null) nav.enabled = false;
@@ -302,12 +324,18 @@ public class Boss : Enemy
         }
         transform.position = slamTarget;
 
-        // 착지 충격 — Player 레이어 범위 피해
-        Collider[] hits = Physics.OverlapSphere(transform.position, bossSlamRadius, playerMask);
-        foreach (var hit in hits)
+        // 착지 충격 — Collider 형태에 따라 범위 피해 (Box / Sphere / Capsule)
+        if (bossSlamArea != null)
         {
-            Player p = hit.GetComponent<Player>();
-            if (p != null) p.TakeDamage(bossSlamDamage, true);
+            Collider[] hits = GetOverlapInSlamArea(bossSlamArea, playerMask);
+            if (hits != null)
+            {
+                foreach (var hit in hits)
+                {
+                    Player p = hit.GetComponent<Player>();
+                    if (p != null) p.TakeDamage(bossSlamDamage, true);
+                }
+            }
         }
 
         if (nav != null)
@@ -317,5 +345,43 @@ public class Boss : Enemy
         }
 
         yield return new WaitForSeconds(bossTauntCooldown);
+    }
+
+    /// <summary> bossSlamArea가 Box/Sphere/Capsule일 때 해당 형태로 Overlap 검사. 지원 타입이 아니면 null 반환. </summary>
+    Collider[] GetOverlapInSlamArea(Collider area, LayerMask mask)
+    {
+        Transform t = area.transform;
+        Vector3 scale = t.lossyScale;
+
+        if (area is BoxCollider box)
+        {
+            Vector3 center = t.TransformPoint(box.center);
+            Vector3 halfExtents = Vector3.Scale(box.size * 0.5f, scale);
+            return Physics.OverlapBox(center, halfExtents, t.rotation, mask);
+        }
+
+        if (area is SphereCollider sphere)
+        {
+            Vector3 center = t.TransformPoint(sphere.center);
+            float radius = sphere.radius * Mathf.Max(scale.x, scale.y, scale.z);
+            return Physics.OverlapSphere(center, radius, mask);
+        }
+
+        if (area is CapsuleCollider capsule)
+        {
+            float radiusScale = Mathf.Max(scale.x, scale.z);
+            if (capsule.direction == 0) radiusScale = Mathf.Max(scale.y, scale.z);
+            else if (capsule.direction == 2) radiusScale = Mathf.Max(scale.x, scale.y);
+            float r = capsule.radius * radiusScale;
+            float halfHeight = Mathf.Max(0f, (capsule.height * 0.5f) - capsule.radius);
+            Vector3 center = t.TransformPoint(capsule.center);
+            Vector3 axis = capsule.direction == 0 ? t.right : (capsule.direction == 1 ? t.up : t.forward);
+            float axisScale = capsule.direction == 0 ? scale.x : (capsule.direction == 1 ? scale.y : scale.z);
+            Vector3 point0 = center + axis * (halfHeight * axisScale);
+            Vector3 point1 = center - axis * (halfHeight * axisScale);
+            return Physics.OverlapCapsule(point0, point1, r, mask);
+        }
+
+        return null;
     }
 }
