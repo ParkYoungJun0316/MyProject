@@ -14,6 +14,10 @@ public class PushableBox : MonoBehaviour
     [Tooltip("Fixed: 고정(이동 불가) / Movable: 이동 가능")]
     public BoxType boxType = BoxType.Movable;
 
+    [Header("색상 소유권")]
+    [Tooltip("Common: 모든 플레이어 이동 가능 / 나머지: 해당 색 플레이어만 이동 가능")]
+    public PlayerColorType ownerColor = PlayerColorType.Common;
+
     [Header("Movable 전용 설정")]
     [Tooltip("무게. 높을수록 플레이어 Strength가 많이 필요하고 이동 속도가 느려짐")]
     public float weight = 0f;

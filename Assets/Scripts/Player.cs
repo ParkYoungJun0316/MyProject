@@ -89,6 +89,14 @@ public class Player : MonoBehaviour
     [Tooltip("이 플레이어의 고유색. 캐릭터 선택 화면에서 1인당 1색을 배정. (테스트: 파란색)")]
     public Color uniqueColor = Color.blue;
     public bool isUniqueColor;
+    [Tooltip("오브젝트 색상 소유권(상자·바닥 등) 판별에 사용되는 고유색 타입")]
+    public PlayerColorType playerColorType = PlayerColorType.Blue;
+
+    [Header("추락 사망")]
+    [Tooltip("체크 시 Y 좌표가 fallDeathY 이하로 내려가면 즉시 사망")]
+    public bool enableFallDeath = false;
+    [Tooltip("사망 기준 Y 좌표. enableFallDeath가 켜진 경우에만 적용")]
+    public float fallDeathY = 0f;
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
@@ -179,6 +187,9 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        if (!IsDead && enableFallDeath && transform.position.y < fallDeathY)
+            Die();
+
         if (IsDead)
         {
             Vector3 p = transform.position;
@@ -756,6 +767,13 @@ public class Player : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         Respawn();
+    }
+
+    /// <summary>세이브 포인트 등에서 리스폰 위치를 갱신할 때 호출</summary>
+    public void SetSpawnPoint(Vector3 pos, Quaternion rot)
+    {
+        spawnPos = pos;
+        spawnRot = rot;
     }
 
     void Respawn()
