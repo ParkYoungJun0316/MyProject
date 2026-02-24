@@ -25,6 +25,8 @@ public class PlayerVisualController : MonoBehaviour
     bool flashing;
     float flashUntil;
 
+    public bool IsFlashing => flashing;
+
     void Awake()
     {
         if (player == null) player = GetComponent<Player>();
@@ -37,18 +39,23 @@ public class PlayerVisualController : MonoBehaviour
     void OnEnable()
     {
         if (events == null) return;
-        events.OnBlackWhiteChanged += ApplyBlackWhite;
-        events.OnDamaged += FlashDamage;
-        events.OnRespawned += OnRespawned;
+        events.OnBlackWhiteChanged  += OnBlackWhiteChangedHandler;
+        events.OnUniqueColorChanged += OnUniqueColorChangedHandler;
+        events.OnDamaged            += FlashDamage;
+        events.OnRespawned          += OnRespawned;
     }
 
     void OnDisable()
     {
         if (events == null) return;
-        events.OnBlackWhiteChanged -= ApplyBlackWhite;
-        events.OnDamaged -= FlashDamage;
-        events.OnRespawned -= OnRespawned;
+        events.OnBlackWhiteChanged  -= OnBlackWhiteChangedHandler;
+        events.OnUniqueColorChanged -= OnUniqueColorChangedHandler;
+        events.OnDamaged            -= FlashDamage;
+        events.OnRespawned          -= OnRespawned;
     }
+
+    void OnBlackWhiteChangedHandler(bool _)  => RefreshColor();
+    void OnUniqueColorChangedHandler(int _)  => RefreshColor();
 
     void Update()
     {
@@ -57,7 +64,7 @@ public class PlayerVisualController : MonoBehaviour
         if (Time.time >= flashUntil)
         {
             flashing = false;
-            ApplyBlackWhite(player != null && player.isBlack);
+            RefreshColor();
         }
     }
 
@@ -82,9 +89,16 @@ public class PlayerVisualController : MonoBehaviour
         bodyRenderers = list.ToArray();
     }
 
+    /// <summary> 흑/백 또는 고유색 중 현재 상태에 맞는 색을 적용. </summary>
     public void ApplyBlackWhite(bool isBlack)
     {
-        SetColor(isBlack ? Color.black : Color.white);
+        RefreshColor();
+    }
+
+    void RefreshColor()
+    {
+        if (player == null) return;
+        SetColor(player.GetCurrentBaseColor());
     }
 
     void FlashDamage(bool isBossAtk)
@@ -98,7 +112,7 @@ public class PlayerVisualController : MonoBehaviour
 
     void OnRespawned()
     {
-        ApplyBlackWhite(player != null && player.isBlack);
+        RefreshColor();
     }
 
     void SetColor(Color c)

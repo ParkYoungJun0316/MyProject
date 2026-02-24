@@ -7,9 +7,11 @@ public class PlayerEvents : MonoBehaviour
     public event Action<bool> OnDamaged;           // bool isBossAtk
     public event Action OnDied;
     public event Action OnRespawned;
+    public event Action<int> OnUniqueColorChanged; // -1=고유색 해제, 0~3=고유색 인덱스
 
     public void RaiseBlackWhiteChanged(bool isBlack) => OnBlackWhiteChanged?.Invoke(isBlack);
     public void RaiseDamaged(bool isBossAtk) => OnDamaged?.Invoke(isBossAtk);
     public void RaiseDied() => OnDied?.Invoke();
     public void RaiseRespawned() => OnRespawned?.Invoke();
+    public void RaiseUniqueColorChanged(int colorIndex) => OnUniqueColorChanged?.Invoke(colorIndex);
 }

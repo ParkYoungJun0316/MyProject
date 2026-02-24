@@ -81,6 +81,24 @@ public class Player : MonoBehaviour
     [Header("Respawn")]
     public float respawnDelay = 0f;
 
+    [Header("힘 (캐릭터별 설정)")]
+    [Tooltip("캐릭터 힘. 높을수록 무거운 상자도 빠르게 밀고 당김. (마른이 < 보통이 < 뚱뚱이 권장)")]
+    public float strength = 0f;
+
+    [Header("고유색 (캐릭터 선택 시 결정)")]
+    [Tooltip("이 플레이어의 고유색. 캐릭터 선택 화면에서 1인당 1색을 배정. (테스트: 파란색)")]
+    public Color uniqueColor = Color.blue;
+    public bool isUniqueColor;
+
+    [HideInInspector] public float moveSpeedMultiplier = 1f;
+
+    [Header("좌클릭 우선순위")]
+    [Tooltip(
+        "아이템 사용의 좌클릭 우선순위 (기본: 10).\n" +
+        "BoxInteraction.interactionPriority(기본 0)보다 높으면 박스 우선.\n" +
+        "새 상호작용 추가 시 이 값과 비교하는 interactionPriority 필드를 해당 컴포넌트에 추가.")]
+    public int itemUsePriority = 10;
+
     public bool IsDead { get; private set; }
 
     public Vector2 moveInput;
@@ -93,12 +111,13 @@ public class Player : MonoBehaviour
     bool isKnockback;
 
     bool sDown1, sDown2, sDown3, sDown4, sDown5;
-    bool bwDown, dDown;
+    bool bwDown, dDown, altDown;
 
     bool  grenadeHeld       = false;
     float grenadeChargeTime = 0f;
     float potionDrinkTimer  = 0f;
     int   prevSelectedSlot  = -1;
+    bool  requiresInputRelease = false;
 
     float nextActionTime = 0f;
     float nextBWTime = 0f;
@@ -118,6 +137,7 @@ public class Player : MonoBehaviour
     PlayerStealth playerStealth;
     PlayerItemInventory playerItemInventory;
     PlayerBuffSystem playerBuffSystem;
+    BoxInteraction boxInteraction;
 
 
     public void OnMove(InputValue value)
@@ -150,6 +170,8 @@ public class Player : MonoBehaviour
         playerBuffSystem = GetComponent<PlayerBuffSystem>();
         if (playerBuffSystem == null) playerBuffSystem = gameObject.AddComponent<PlayerBuffSystem>();
 
+        boxInteraction = GetComponent<BoxInteraction>();
+
         events.RaiseBlackWhiteChanged(isBlack);
 
         currentStamina = maxStamina;
@@ -174,8 +196,21 @@ public class Player : MonoBehaviour
         if (bwDown && Time.time >= nextBWTime)
         {
             nextBWTime = Time.time + bwCooldown;
+            // 고유색 모드일 때 Ctrl → 고유색 해제 후 흑/백 전환
+            if (isUniqueColor)
+            {
+                isUniqueColor = false;
+                events?.RaiseUniqueColorChanged(-1);
+            }
             isBlack = !isBlack;
             events?.RaiseBlackWhiteChanged(isBlack);
+        }
+
+        // Alt: 고유색 모드 토글
+        if (altDown)
+        {
+            isUniqueColor = !isUniqueColor;
+            events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
         }
     }
 
@@ -201,8 +236,9 @@ public class Player : MonoBehaviour
         sDown4 = Keyboard.current.digit4Key.wasPressedThisFrame;
         sDown5 = Keyboard.current.digit5Key.wasPressedThisFrame;
 
-        dDown  = Keyboard.current.spaceKey.wasPressedThisFrame;
-        bwDown = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
+        dDown   = Keyboard.current.spaceKey.wasPressedThisFrame;
+        bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
+        altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
     }
 
     void Move()
@@ -238,7 +274,7 @@ public class Player : MonoBehaviour
         float speedBonus = playerBuffSystem != null
             ? playerBuffSystem.GetValue(PlayerBuffSystem.BuffType.SpeedUp)
             : 0f;
-        float finalSpeed = baseSpeed + speedBonus;
+        float finalSpeed = (baseSpeed + speedBonus) * moveSpeedMultiplier;
 
         Vector3 v = rigid.linearVelocity;
         v.x = moveVec.x * finalSpeed;
@@ -341,13 +377,23 @@ public class Player : MonoBehaviour
 
         int curSlot = playerItemInventory.SelectedSlot;
 
-        // 슬롯이 바뀌면 진행 중인 차징/마시기 초기화
+        // 슬롯 전환 시 진행 중인 차징/마시기 초기화
         if (curSlot != prevSelectedSlot)
         {
-            grenadeHeld       = false;
-            grenadeChargeTime = 0f;
-            potionDrinkTimer  = 0f;
-            prevSelectedSlot  = curSlot;
+            grenadeHeld          = false;
+            grenadeChargeTime    = 0f;
+            potionDrinkTimer     = 0f;
+            prevSelectedSlot     = curSlot;
+            // 버튼 누른 채로 슬롯을 바꿨다면 뗐다가 다시 눌러야 함
+            // (예: 포션 마시는 중 수류탄 슬롯으로 바꿔도 즉시 던지지 않음)
+            requiresInputRelease = Mouse.current.leftButton.isPressed;
+        }
+
+        // 버튼 해제 대기: 아직 누르고 있으면 아이템 사용 차단
+        if (requiresInputRelease)
+        {
+            if (!Mouse.current.leftButton.isPressed) requiresInputRelease = false;
+            else return;
         }
 
         // 차징 중이면 release 이벤트 감지를 위해 SelectedSlotHasItem 체크 전에 처리
@@ -359,6 +405,13 @@ public class Player : MonoBehaviour
 
         if (!playerItemInventory.SelectedSlotHasItem()) return;
         if (isDodging || isJumping) return;
+
+        // 우선순위 체크: 박스 상호작용이 이번 프레임 좌클릭을 소비했으면 아이템 사용 건너뜀
+        // 새 상호작용 추가 시: 해당 컴포넌트의 interactionPriority와 itemUsePriority 비교
+        if (boxInteraction != null
+            && boxInteraction.BlockingMouseInput
+            && boxInteraction.interactionPriority <= itemUsePriority)
+            return;
 
         switch (playerItemInventory.GetSelectedType())
         {
@@ -514,6 +567,18 @@ public class Player : MonoBehaviour
         return true;
     }
 
+    // ── 색상 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 현재 캐릭터 기본 색 반환.
+    /// 고유색 모드면 uniqueColors[uniqueColorIndex], 아니면 흑/백.
+    /// </summary>
+    public Color GetCurrentBaseColor()
+    {
+        if (isUniqueColor) return uniqueColor;
+        return isBlack ? Color.black : Color.white;
+    }
+
     // ── 데미지 ───────────────────────────────────────────────
 
     /// <summary> 외부(적 근거리/원거리 등)에서 호출하는 데미지 처리 </summary>
@@ -533,6 +598,9 @@ public class Player : MonoBehaviour
 
         heart -= amount;
         events?.RaiseDamaged(knockback);
+
+        // 스텔스 여부와 관계없이 피격 시 고유색 노출 처리
+        playerStealth?.RevealTemporarily();
 
         if (heart <= 0) { Die(); return; }
         StartCoroutine(OnDamage(knockback));
@@ -653,6 +721,8 @@ public class Player : MonoBehaviour
         isDodging = false;
         isKnockback = false; isDamage = false;
         dodgeInvincibleUntil = 0f;
+        moveSpeedMultiplier  = 1f;
+        requiresInputRelease = false;
 
         if (playerStealth != null)
             playerStealth.ForceLayer(deadLayer);
@@ -696,7 +766,9 @@ public class Player : MonoBehaviour
         IsDead = false;
         isDamage = false; isKnockback = false; isDodging = false;
         dodgeInvincibleUntil = 0f;
-        nextActionTime = 0f;
+        nextActionTime       = 0f;
+        moveSpeedMultiplier  = 1f;
+        requiresInputRelease = false;
 
         if (playerStealth == null)
             SetLayerRecursively(gameObject, normalLayer);
@@ -715,6 +787,8 @@ public class Player : MonoBehaviour
             anim.Update(0f);
         }
 
+        isUniqueColor = false;
+        events?.RaiseUniqueColorChanged(-1);
         events?.RaiseRespawned();
         events?.RaiseBlackWhiteChanged(isBlack);
     }
