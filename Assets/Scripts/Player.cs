@@ -135,6 +135,7 @@ public class Player : MonoBehaviour
 
     Vector3 spawnPos;
     Quaternion spawnRot;
+    int _currentSaveOrder = int.MinValue; // 현재 활성화된 세이브 포인트의 순서
 
     int normalLayer;
     int deadLayer;
@@ -769,11 +770,20 @@ public class Player : MonoBehaviour
         Respawn();
     }
 
-    /// <summary>세이브 포인트 등에서 리스폰 위치를 갱신할 때 호출</summary>
-    public void SetSpawnPoint(Vector3 pos, Quaternion rot)
+    /// <summary>현재 활성화된 세이브 포인트 순서 (SavePoint.saveOrder)</summary>
+    public int CurrentSaveOrder => _currentSaveOrder;
+
+    /// <summary>
+    /// 세이브 포인트에서 리스폰 위치 갱신.
+    /// order가 현재 저장된 순서보다 낮으면 무시 → 앞 세이브 포인트가 뒤를 덮어쓰지 못함.
+    /// </summary>
+    public bool SetSpawnPoint(Vector3 pos, Quaternion rot, int order)
     {
+        if (order < _currentSaveOrder) return false;
+        _currentSaveOrder = order;
         spawnPos = pos;
         spawnRot = rot;
+        return true;
     }
 
     void Respawn()
