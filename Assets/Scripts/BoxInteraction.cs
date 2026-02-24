@@ -46,15 +46,19 @@ public class BoxInteraction : MonoBehaviour
     /// </summary>
     public bool BlockingMouseInput => blockingInput;
 
-    Player    player;
-    Rigidbody playerRb;
-    Vector3   grabOffset;
-    bool      blockingInput;
+    Player     player;
+    Rigidbody  playerRb;
+    Vector3    grabOffset;
+    bool       blockingInput;
+
+    Collider[] _playerCols;   // 충돌 무시용 플레이어 콜라이더 캐시
+    Collider[] _grabbedCols;  // 충돌 무시용 잡힌 박스 콜라이더 캐시
 
     void Awake()
     {
-        player   = GetComponent<Player>();
-        playerRb = GetComponent<Rigidbody>();
+        player      = GetComponent<Player>();
+        playerRb    = GetComponent<Rigidbody>();
+        _playerCols = GetComponentsInChildren<Collider>(true);
     }
 
     void Update()
@@ -150,13 +154,34 @@ public class BoxInteraction : MonoBehaviour
         isGrabbing                 = true;
         grabOffset                 = nearest.transform.position - transform.position;
         player.moveSpeedMultiplier = grabSpeedMultiplier;
+
+        // 잡는 순간 플레이어↔박스 물리 충돌 무시
+        // → 플레이어가 박스에 막히지 않아 밀기/당기기 속도가 대칭적으로 동작
+        _grabbedCols = nearest.GetComponentsInChildren<Collider>(true);
+        SetIgnoreCollision(_grabbedCols, true);
         return true;
     }
 
     void ReleaseBox()
     {
+        // 충돌 무시 해제
+        if (_grabbedCols != null)
+        {
+            SetIgnoreCollision(_grabbedCols, false);
+            _grabbedCols = null;
+        }
+
         grabbedBox = null;
         isGrabbing = false;
         if (player != null) player.moveSpeedMultiplier = 1f;
+    }
+
+    void SetIgnoreCollision(Collider[] boxCols, bool ignore)
+    {
+        if (_playerCols == null || boxCols == null) return;
+        for (int p = 0; p < _playerCols.Length; p++)
+            for (int b = 0; b < boxCols.Length; b++)
+                if (_playerCols[p] != null && boxCols[b] != null)
+                    Physics.IgnoreCollision(_playerCols[p], boxCols[b], ignore);
     }
 }
