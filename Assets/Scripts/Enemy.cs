@@ -24,6 +24,16 @@ public class Enemy : MonoBehaviour
     public int meleeDamage = 0;
     public int rangedDamage = 0;
 
+    [Header("Contact Damage")]
+    [Tooltip("적 몸체에 닿았을 때 주는 데미지. 0이면 접촉 데미지 없음")]
+    public int contactDamage = 0;
+    [Tooltip("접촉 데미지 쿨다운(초). 이 시간 이내에는 재피격 없음")]
+    public float contactDamageCooldown = 1f;
+
+    [Header("Stealth Reveal Reaction")]
+    [Tooltip("은신 중 피격으로 플레이어 감지 시 surprised 재생 후 공격 시작까지 대기 시간(초). 0이면 surprised 애니만 재생 후 즉시 공격")]
+    public float surprisedDelay = 0f;
+
     [Header("State")]
     public bool isChase;
     public bool isAttack;
@@ -58,6 +68,12 @@ public class Enemy : MonoBehaviour
     bool isPatrolling;
     Coroutine patrolRoutine;
     Vector3 spawnPos;
+
+    float contactDamageTimer;
+
+    bool isSurprised;
+    bool prevStealthDetected;
+    Coroutine surprisedRoutine;
 
     protected virtual void Awake()
     {
@@ -105,11 +121,34 @@ public class Enemy : MonoBehaviour
     {
         if (nav == null || !nav.enabled || isDead) return;
 
+        bool stealthNow = IsStealthPlayerDetected();
+
+        // 은신 중 피격으로 노출 전환 감지 (PlayerStealth → Player 레이어)
+        if (prevStealthDetected && !stealthNow && !isSurprised)
+        {
+            Transform revealed = FindVisiblePlayer();
+            if (revealed != null)
+            {
+                currentTarget = revealed;
+                TriggerSurprised();
+                prevStealthDetected = stealthNow;
+                return;
+            }
+        }
+        prevStealthDetected = stealthNow;
+
         // 1) 은신 중이면 패트롤
-        if (IsStealthPlayerDetected())
+        if (stealthNow)
         {
             StartPatrol();
-            UpdateAnimation(); // 애니메이션 상태 업데이트 추가
+            UpdateAnimation();
+            return;
+        }
+
+        // 2) surprised 상태면 추격/공격 대기
+        if (isSurprised)
+        {
+            UpdateAnimation();
             return;
         }
 
@@ -304,6 +343,13 @@ public class Enemy : MonoBehaviour
         if (anim != null)
             anim.SetBool("isAttack", false);
 
+        if (surprisedRoutine != null)
+        {
+            StopCoroutine(surprisedRoutine);
+            surprisedRoutine = null;
+        }
+        isSurprised = false;
+
         if (nav != null)
         {
             nav.isStopped = true;
@@ -338,9 +384,9 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        // ✅ 은신이면 공격 시도 자체를 막음
-        if (IsStealthPlayerDetected())
-            return;
+        // 은신이거나 surprised 상태면 공격 시도 자체를 막음
+        if (IsStealthPlayerDetected()) return;
+        if (isSurprised) return;
 
         if (currentTarget == null) return;
         if (isAttack) return;
@@ -453,6 +499,65 @@ public class Enemy : MonoBehaviour
             anim.SetBool("isAttack", false);
 
         attackRoutine = null;
+    }
+
+    // --- Stealth Reveal : Surprised ---
+
+    void TriggerSurprised()
+    {
+        if (surprisedRoutine != null) StopCoroutine(surprisedRoutine);
+        surprisedRoutine = StartCoroutine(SurprisedRoutine());
+    }
+
+    IEnumerator SurprisedRoutine()
+    {
+        isSurprised = true;
+        StopPatrol();
+        isChase = false;
+
+        if (nav != null)
+        {
+            nav.isStopped = true;
+            nav.ResetPath();
+        }
+
+        if (anim != null)
+        {
+            anim.SetBool("isWalk", false);
+            anim.SetTrigger("doSurprised");
+        }
+
+        // 플레이어 방향으로 즉시 회전
+        if (currentTarget != null)
+        {
+            Vector3 dir = currentTarget.position - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(dir);
+        }
+
+        yield return new WaitForSeconds(surprisedDelay);
+
+        isSurprised = false;
+        surprisedRoutine = null;
+
+        // surprised 종료 후 자연스럽게 추격 재개 (Update에서 처리)
+        isChase = true;
+    }
+
+    // --- 접촉 데미지 ---
+    void OnCollisionStay(Collision collision)
+    {
+        if (isDead) return;
+        if (contactDamage <= 0) return;
+        if (Time.time < contactDamageTimer) return;
+        if (!collision.gameObject.CompareTag("Player")) return;
+
+        Player player = collision.gameObject.GetComponent<Player>();
+        if (player == null) return;
+
+        player.TakeDamage(contactDamage, false);
+        contactDamageTimer = Time.time + contactDamageCooldown;
     }
 
     // --- 피격 처리 ---

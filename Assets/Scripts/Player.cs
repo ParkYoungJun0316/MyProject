@@ -364,11 +364,19 @@ public class Player : MonoBehaviour
     void HandleItemSlotInput()
     {
         if (playerItemInventory == null) return;
+
+        int prev = playerItemInventory.SelectedSlot;
+
         if (sDown1)      playerItemInventory.SelectSlot(0);
         else if (sDown2) playerItemInventory.SelectSlot(1);
         else if (sDown3) playerItemInventory.SelectSlot(2);
         else if (sDown4) playerItemInventory.SelectSlot(3);
         else if (sDown5) playerItemInventory.SelectSlot(4);
+        else return;
+
+        int current = playerItemInventory.SelectedSlot;
+        if (current >= 0 && current != prev && anim != null)
+            anim.SetTrigger("doSwap");
     }
 
     void UseItem()
