@@ -25,6 +25,9 @@ public class MemoryPath : MonoBehaviour
     public enum PathState { Idle, Previewing, Challenge, Complete, Failed }
 
     [Header("경로 설정")]
+    [Tooltip("게임 시작(Start) 시 자동으로 미리보기를 시작할지 여부")]
+    public bool startOnAwake = true;
+
     [Tooltip("경로를 보여주는 시간(초). 이 시간이 지나면 발판이 전부 같은 색으로 변함")]
     public float previewDuration = 3f;
 
@@ -53,6 +56,11 @@ public class MemoryPath : MonoBehaviour
     void Awake()
     {
         CollectTiles();
+    }
+
+    void Start()
+    {
+        if (startOnAwake) StartPreview();
     }
 
     void CollectTiles()

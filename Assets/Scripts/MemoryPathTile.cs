@@ -27,13 +27,14 @@ public class MemoryPathTile : MonoBehaviour
     public float trapDisableDelay = 0f;
     [Tooltip("사라진 발판이 자동 복구되기까지 대기 시간(초). 0 = 복구 안 함")]
     public float trapRespawnDelay = 0f;
+    [Tooltip("발판이 사라질 때 플레이어에게 가할 하방 임펄스. 0 = 자연낙하만")]
+    public float downwardImpulse = 8f;
 
     // MemoryPath.Awake()에서 주입
     [HideInInspector] public MemoryPath memoryPath;
 
     Collider   _col;
-    Renderer   _rend;
-    Material   _mat;
+    Material[] _mats;
     bool       _isDisabled;
 
     // 복구 시 IgnoreCollision 원상복구용
@@ -45,15 +46,22 @@ public class MemoryPathTile : MonoBehaviour
 
     void Awake()
     {
-        _col  = GetComponent<Collider>();
-        _rend = GetComponent<Renderer>();
-        if (_rend != null) _mat = _rend.material;
+        _col = GetComponent<Collider>();
+
+        // 루트·자식 MeshRenderer 모두 인스턴스 머티리얼로 캐시 (SRP Batcher 우회)
+        var renderers = GetComponentsInChildren<MeshRenderer>(true);
+        _mats = new Material[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null)
+                _mats[i] = renderers[i].material;
+
         ApplyColor(normalColor);
     }
 
     void OnDestroy()
     {
-        if (_mat != null) Destroy(_mat);
+        for (int i = 0; i < _mats.Length; i++)
+            if (_mats[i] != null) Destroy(_mats[i]);
     }
 
     void OnCollisionEnter(Collision col)
@@ -90,8 +98,12 @@ public class MemoryPathTile : MonoBehaviour
         _lastPlayerCols = null;
         _isDisabled     = false;
 
-        if (_col  != null) _col.enabled  = true;
-        if (_rend != null) _rend.enabled = true;
+        if (_col != null) _col.enabled = true;
+
+        var renderers = GetComponentsInChildren<MeshRenderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null) renderers[i].enabled = true;
+
         ApplyColor(normalColor);
     }
 
@@ -106,7 +118,7 @@ public class MemoryPathTile : MonoBehaviour
         if (trapDisableDelay > 0f)
             yield return new WaitForSeconds(trapDisableDelay);
 
-        // 플레이어 충돌 즉시 해제 → 자연 낙사
+        // 플레이어 충돌 즉시 해제 → 낙사
         if (player != null && _col != null)
         {
             _lastPlayer     = player;
@@ -115,8 +127,19 @@ public class MemoryPathTile : MonoBehaviour
                 Physics.IgnoreCollision(_lastPlayerCols[i], _col, true);
         }
 
-        if (_col  != null) _col.enabled  = false;
-        if (_rend != null) _rend.enabled = false;
+        if (_col != null) _col.enabled = false;
+
+        var renderers = GetComponentsInChildren<MeshRenderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null) renderers[i].enabled = false;
+
+        // 하방 임펄스: 자연낙하 대기 없이 즉각 추락
+        if (downwardImpulse > 0f && player != null && !player.IsDead)
+        {
+            Rigidbody rb = player.GetComponent<Rigidbody>();
+            if (rb != null && !rb.isKinematic)
+                rb.AddForce(Vector3.down * downwardImpulse, ForceMode.Impulse);
+        }
 
         memoryPath?.OnTrapStepped(this);
 
@@ -129,9 +152,14 @@ public class MemoryPathTile : MonoBehaviour
 
     void ApplyColor(Color color)
     {
-        if (_mat == null) return;
-        if (_mat.HasProperty(BaseColorId)) _mat.SetColor(BaseColorId, color);
-        else if (_mat.HasProperty(ColorId)) _mat.SetColor(ColorId, color);
+        if (_mats == null) return;
+        for (int i = 0; i < _mats.Length; i++)
+        {
+            var mat = _mats[i];
+            if (mat == null) continue;
+            if (mat.HasProperty(BaseColorId)) mat.SetColor(BaseColorId, color);
+            else if (mat.HasProperty(ColorId)) mat.SetColor(ColorId, color);
+        }
     }
 
     void OnDrawGizmos()
