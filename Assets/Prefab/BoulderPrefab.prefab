@@ -60,7 +60,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 2
 --- !u!114 &5757310703181256622
@@ -79,7 +79,7 @@ MonoBehaviour:
   damage: 10
   speed: 0
   lifetime: 0
-  moveDirection: {x: 0, y: 0, z: 1}
+  moveDirection: {x: 0, y: -1, z: 0}
   destroyOnPlayer: 0
   destroyOnWall: 1
   destroyOnFloor: 0
@@ -117,11 +117,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
   moveDir: {x: 0, y: 0, z: 1}
-  initialSpeed: 1
-  acceleration: 1
-  spinSpeed: 1
+  initialSpeed: 0.8
+  acceleration: 0.8
+  spinSpeed: 0.5
   damage: 10
-  lifetime: 100
+  lifetime: 3
+  lockYVelocity: 1
 --- !u!1 &4443814304357749082
 GameObject:
   m_ObjectHideFlags: 0

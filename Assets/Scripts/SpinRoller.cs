@@ -21,6 +21,11 @@ public class SpinRoller : MonoBehaviour
     [Tooltip("0 = 무제한")]
     public float lifetime = 0;
 
+    [Tooltip(
+        "true  = Y 속도를 0으로 고정 (바닥 함정용 권장 — 공중 부유·충돌 후 튕김 방지)\n" +
+        "false = Y 속도를 물리 엔진(중력)에 맡김")]
+    public bool lockYVelocity = true;
+
     Rigidbody rb;
     Vector3 origin;
 
@@ -45,7 +50,13 @@ public class SpinRoller : MonoBehaviour
 
         if (rb != null)
         {
-            rb.linearVelocity  = moveDir * currentSpeed;
+            Vector3 v = rb.linearVelocity;
+            v.x = moveDir.x * currentSpeed;
+            v.z = moveDir.z * currentSpeed;
+            // lockYVelocity=true: Y를 0으로 고정 → 바닥 굴림, 충돌 튕김 방지
+            // lockYVelocity=false: Y는 gravity 등 물리 엔진에 맡김
+            if (lockYVelocity) v.y = 0f;
+            rb.linearVelocity  = v;
             rb.angularVelocity = spinAxis * spinSpeed * currentSpeed;
         }
         else
@@ -56,11 +67,23 @@ public class SpinRoller : MonoBehaviour
         }
     }
 
+    // non-trigger Collider(물리 충돌)에서도 데미지 처리
+    void OnCollisionEnter(Collision collision)
+    {
+        if (damage <= 0) return;
+        if (!collision.gameObject.CompareTag("Player")) return;
+        Player p = collision.gameObject.GetComponent<Player>()
+                   ?? collision.gameObject.GetComponentInParent<Player>();
+        if (p != null) p.TakeDamage(damage, false);
+    }
+
+    // Trigger Collider에서도 데미지 처리 (기존 호환 유지)
     void OnTriggerEnter(Collider other)
     {
+        if (damage <= 0) return;
         if (!other.CompareTag("Player")) return;
-        Player p = other.GetComponent<Player>();
+        Player p = other.GetComponent<Player>()
+                   ?? other.GetComponentInParent<Player>();
         if (p != null) p.TakeDamage(damage, false);
-        // 계속 굴러감 (파괴 없음)
     }
 }
