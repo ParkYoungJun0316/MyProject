@@ -100,33 +100,50 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Player
   speed: 30
   runMultiplier: 10
-  weapons: []
-  hasWeapons: 
-  grenades: []
-  hasGrenades: 0
   grenadeObj: {fileID: 0}
+  grenadeMinForce: 0
+  grenadeMaxForce: 0
+  grenadeMaxChargeTime: 0
+  grenadeThrowAngle: 0
+  grenadeSpawnOffset: {x: 0, y: 1.2, z: 0.7}
+  ownerColliders: []
+  grenadeFuseTime: 0
+  grenadeExplosionRadius: 0
+  grenadeExplosionDamage: 0
+  grenadeExplosionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  grenadeExplosionEffect: {fileID: 0}
+  potionDrinkDuration: 0
   followCamera: {fileID: 0}
   aimMask:
     serializedVersion: 2
     m_Bits: 33554432
-  ammo: 0
   coin: 0
   heart: 0
-  maxAmmo: 200
   maxCoin: 999
   maxHeart: 100
-  maxHasGrenades: 5
+  maxStamina: 0
+  staminaDrainRate: 0
+  staminaRechargeRate: 0
+  staminaRechargeDelay: 0
+  dodgeStaminaCost: 0
+  currentStamina: 0
   dodgeForce: 8
   isBlack: 0
   bwCooldown: 0
   actionCooldown: 0
   dodgeInvincibleDuration: 0
   respawnDelay: 0
+  strength: 0
+  uniqueColor: {r: 0, g: 0, b: 1, a: 1}
+  isUniqueColor: 0
+  playerColorType: 1
+  enableFallDeath: 0
+  fallDeathY: 0
+  moveSpeedMultiplier: 1
+  itemUsePriority: 10
   moveInput: {x: 0, y: 0}
-  grenadeForce: 15
-  grenadeUpForce: 0.35
-  grenadeSpawnOffset: {x: 0, y: 1.2, z: 0.7}
-  ownerColliders: []
 --- !u!114 &4948813131534084564
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,6 +165,10 @@ MonoBehaviour:
   rayOriginUp: 0.5
   localMinAlpha: 0.45
   worldMinAlpha: 0
+  stealthRevealDuration: 0
+  revealPulseColor: {r: 1, g: 0, b: 0, a: 1}
+  revealPulseFrequency: 0
+  revealPulseIntensity: 0
   isStealth: 0
   groundType: 0
 --- !u!114 &48744087386766825
