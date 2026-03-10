@@ -81,6 +81,10 @@ public class Player : MonoBehaviour
     [Header("Respawn")]
     public float respawnDelay = 0f;
 
+    [Header("즉사 판정")]
+    [Tooltip("이 수치 이상의 데미지를 받으면 Jammed 애니메이션 재생. 0이면 비활성")]
+    public int instantKillThreshold = 0;
+
     [Header("힘 (캐릭터별 설정)")]
     [Tooltip("캐릭터 힘. 높을수록 무거운 상자도 빠르게 밀고 당김. (마른이 < 보통이 < 뚱뚱이 권장)")]
     public float strength = 0f;
@@ -97,6 +101,8 @@ public class Player : MonoBehaviour
     public bool enableFallDeath = false;
     [Tooltip("사망 기준 Y 좌표. enableFallDeath가 켜진 경우에만 적용")]
     public float fallDeathY = 0f;
+    [Tooltip("Fall 애니메이션 시작 Y 좌표. fallDeathY보다 높게 설정 (예: fallDeathY=-10 이면 -5 정도). enableFallDeath가 켜진 경우에만 적용")]
+    public float fallAnimY = 0f;
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
@@ -120,6 +126,11 @@ public class Player : MonoBehaviour
 
     bool sDown1, sDown2, sDown3, sDown4, sDown5;
     bool bwDown, dDown, altDown;
+
+    // 낙사 Fall 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
+    bool fallAnimTriggered = false;
+    // 즉사 판정 시 Die()에서 doJammed 재생 여부 결정
+    bool isInstantKill = false;
 
     bool  grenadeHeld       = false;
     float grenadeChargeTime = 0f;
@@ -188,8 +199,18 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        if (!IsDead && enableFallDeath && transform.position.y < fallDeathY)
-            Die();
+        if (!IsDead && enableFallDeath)
+        {
+            float y = transform.position.y;
+            // fallAnimY 통과 시 Fall 애니메이션 1회 재생 (fallDeathY보다 높은 지점에서 미리 트리거)
+            if (!fallAnimTriggered && y < fallAnimY)
+            {
+                fallAnimTriggered = true;
+                anim?.SetTrigger("doFall");
+            }
+            if (y < fallDeathY)
+                Die();
+        }
 
         if (IsDead)
         {
@@ -216,6 +237,7 @@ public class Player : MonoBehaviour
             }
             isBlack = !isBlack;
             events?.RaiseBlackWhiteChanged(isBlack);
+            anim?.SetTrigger("doChangeColor");
         }
 
         // Alt: 고유색 모드 토글
@@ -223,6 +245,7 @@ public class Player : MonoBehaviour
         {
             isUniqueColor = !isUniqueColor;
             events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
+            anim?.SetTrigger("doChangeColor");
         }
     }
 
@@ -480,7 +503,10 @@ public class Player : MonoBehaviour
             }
 
             if (ThrowGrenadeWithForce(force))
+            {
                 playerItemInventory.ConsumeSelected();
+                anim?.SetTrigger("doThrow");
+            }
         }
 
         grenadeHeld       = false;
@@ -502,7 +528,10 @@ public class Player : MonoBehaviour
         if (potionDrinkTimer >= potionDrinkDuration)
         {
             if (HealFromPotion(playerItemInventory.healAmount))
+            {
                 playerItemInventory.ConsumeSelected();
+                anim?.SetTrigger("doHeal");
+            }
 
             potionDrinkTimer = 0f;
         }
@@ -616,6 +645,9 @@ public class Player : MonoBehaviour
         if (playerItemInventory != null && playerItemInventory.TryConsumeShield())
             return;
 
+        // 즉사 판정: threshold 초과 데미지면 isInstantKill 플래그 설정 → Die()에서 doJammed 재생
+        isInstantKill = instantKillThreshold > 0 && amount >= instantKillThreshold;
+
         heart -= amount;
         events?.RaiseDamaged(knockback);
 
@@ -623,6 +655,7 @@ public class Player : MonoBehaviour
         playerStealth?.RevealTemporarily();
 
         if (heart <= 0) { Die(); return; }
+        anim?.SetTrigger("doHit");
         StartCoroutine(OnDamage(knockback));
     }
 
@@ -759,7 +792,9 @@ public class Player : MonoBehaviour
         fixedY = transform.position.y;
         rigid.isKinematic = true;
 
-        if (anim != null) anim.SetTrigger("doDie");
+        // 즉사 판정이면 Jammed, 일반 사망이면 Die 애니메이션
+        if (anim != null) anim.SetTrigger(isInstantKill ? "doJammed" : "doDie");
+        isInstantKill = false;
         events?.RaiseDied();
         StartCoroutine(RespawnAfter(respawnDelay));
     }
@@ -805,6 +840,8 @@ public class Player : MonoBehaviour
         nextActionTime       = 0f;
         moveSpeedMultiplier  = 1f;
         requiresInputRelease = false;
+        fallAnimTriggered    = false;
+        isInstantKill        = false;
 
         if (playerStealth == null)
             SetLayerRecursively(gameObject, normalLayer);
@@ -817,6 +854,8 @@ public class Player : MonoBehaviour
         {
             anim.ResetTrigger("doDie");
             anim.ResetTrigger("doDodge");
+            anim.ResetTrigger("doFall");
+            anim.ResetTrigger("doJammed");
             anim.SetBool("isWalk", false);
             anim.SetBool("isRun", false);
             anim.Play("Idle", 0, 0f);
