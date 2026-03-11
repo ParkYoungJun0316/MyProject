@@ -18,7 +18,7 @@ public class BoxCountZone : MonoBehaviour
 {
     [Header("카운트 조건")]
     [Tooltip("감지할 박스 색. Common = 색 무관 모든 박스")]
-    public PlayerColorType requiredColor = PlayerColorType.Common;
+    public PushableBox.BoxOwnerColor requiredColor = PushableBox.BoxOwnerColor.Common;
 
     [Tooltip("충족으로 판정할 박스 최소 개수")]
     public int requiredCount = 10;
@@ -119,7 +119,7 @@ public class BoxCountZone : MonoBehaviour
         {
             var box = hits[i].GetComponent<PushableBox>();
             if (box == null) continue;
-            if (requiredColor == PlayerColorType.Common || box.ownerColor == requiredColor)
+            if (requiredColor == PushableBox.BoxOwnerColor.Common || box.ownerColor == requiredColor)
                 count++;
         }
         return count;

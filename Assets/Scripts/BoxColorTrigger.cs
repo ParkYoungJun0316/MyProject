@@ -11,7 +11,7 @@ public class BoxColorTrigger : MonoBehaviour
 {
     [Header("색상 조건")]
     [Tooltip("감지할 박스 색. PushableBox.ownerColor와 일치해야 활성화")]
-    public PlayerColorType requiredColor = PlayerColorType.Red;
+    public PushableBox.BoxOwnerColor requiredColor = PushableBox.BoxOwnerColor.Red;
 
     [Header("시각 피드백 (MeshRenderer가 있을 때)")]
     public Color inactiveColor = Color.gray;

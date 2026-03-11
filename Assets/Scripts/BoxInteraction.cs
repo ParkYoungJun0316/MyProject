@@ -129,8 +129,10 @@ public class BoxInteraction : MonoBehaviour
             var box = hits[i].GetComponent<PushableBox>();
             if (box == null || box.boxType != PushableBox.BoxType.Movable) continue;
 
-            // 색상 소유권 체크: Common이 아닌 경우 플레이어 고유색과 일치해야 잡을 수 있음
-            if (box.ownerColor != PlayerColorType.Common && box.ownerColor != player.playerColorType) continue;
+            // 색상 소유권 체크: Common이 아닌 경우 플레이어가 고유색 모드(isUniqueColor=true)이고
+            // 고유색이 박스 ownerColor와 일치해야 잡을 수 있음 (흑/백 모드에서는 불가)
+            if (box.ownerColor != PushableBox.BoxOwnerColor.Common &&
+                (!player.isUniqueColor || (int)box.ownerColor != (int)player.playerColorType)) continue;
 
             // 상자 방향 내적 체크: facingThreshold 미만이면 등 뒤 → 스킵
             Vector3 dirToBox = hits[i].transform.position - transform.position;

@@ -53,7 +53,7 @@ public class ColoredFloor : MonoBehaviour
     void ApplyColor(Color color)
     {
         if (_rend == null) return;
-        _rend.GetPropertyBlock(_mpb);
+        _rend.GetPropertyBlock(_mpb); 
         _mpb.SetColor("_BaseColor", color);
         _mpb.SetColor("_Color",     color);
         _rend.SetPropertyBlock(_mpb);
