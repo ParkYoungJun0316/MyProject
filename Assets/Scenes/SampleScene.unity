@@ -725,6 +725,38 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: requiredColor
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: Spawn
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: BoxSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 2414497621989129499, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
+      propertyPath: OnActivated.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 4169517338253696419, guid: 0e6361826661c1d4a82a2798ad0ad9c9, type: 3}
       propertyPath: m_Name
       value: BoxColorTrigger
@@ -1235,7 +1267,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6ae1c7be9961974dad7b2ca62527d8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Follow
-  target: {fileID: 5903297865762513525}
+  target: {fileID: 519210636}
   offset: {x: 40, y: 50, z: -40}
 --- !u!114 &330585549
 MonoBehaviour:
@@ -3357,11 +3389,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 354919587566757827, guid: b3947e4b8dd89774490c9958f4640d9c, type: 3}
       propertyPath: ownerColor
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3446509337588805664, guid: b3947e4b8dd89774490c9958f4640d9c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.7473207
+      value: -4.74732
       objectReference: {fileID: 0}
     - target: {fileID: 3446509337588805664, guid: b3947e4b8dd89774490c9958f4640d9c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3369,7 +3401,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3446509337588805664, guid: b3947e4b8dd89774490c9958f4640d9c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 30.461445
+      value: 12.461445
       objectReference: {fileID: 0}
     - target: {fileID: 3446509337588805664, guid: b3947e4b8dd89774490c9958f4640d9c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7129,7 +7161,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 5903297865762513525}
+    TrackingTarget: {fileID: 519210636}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -7838,6 +7870,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FloorTile
       objectReference: {fileID: 0}
+    - target: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7846,11 +7882,6 @@ PrefabInstance:
 --- !u!1 &5461052780447320514 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4084904503572584008, guid: 658f9f1b31ab6f24f8f6bd88f2374fef, type: 3}
-  m_PrefabInstance: {fileID: 7851369861593018573}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &5903297865762513525 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1565027687357362625, guid: 658f9f1b31ab6f24f8f6bd88f2374fef, type: 3}
   m_PrefabInstance: {fileID: 7851369861593018573}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &5903297865762513526
