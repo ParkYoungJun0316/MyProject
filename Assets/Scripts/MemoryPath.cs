@@ -31,6 +31,9 @@ public class MemoryPath : MonoBehaviour
     [Tooltip("경로를 보여주는 시간(초). 이 시간이 지나면 발판이 전부 같은 색으로 변함")]
     public float previewDuration = 3f;
 
+    [Tooltip("실패 후 자동으로 초기화·재시작까지 대기 시간(초). 플레이어 respawnDelay보다 크게 설정 권장. 0 = 자동 재시작 없음")]
+    public float autoResetDelay = 3f;
+
     [Tooltip("Safe 발판을 전부 밟지 않아도 됨. true면 Trap만 안 밟으면 Complete")]
     public bool completeOnNoTrap = false;
 
@@ -122,6 +125,17 @@ public class MemoryPath : MonoBehaviour
 
         _state = PathState.Failed;
         OnFailed?.Invoke();
+
+        // autoResetDelay 후 자동 초기화·재시작 (0이면 수동 ResetPath() 호출 필요)
+        if (autoResetDelay > 0f)
+            StartCoroutine(AutoResetRoutine());
+    }
+
+    IEnumerator AutoResetRoutine()
+    {
+        yield return new WaitForSeconds(autoResetDelay);
+        ResetPath();
+        StartPreview();
     }
 
     // ── 내부 ────────────────────────────────────────────────────

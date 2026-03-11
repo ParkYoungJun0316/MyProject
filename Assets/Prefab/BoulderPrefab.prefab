@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1902800491297994821}
+  - component: {fileID: 7022863661638223030}
   - component: {fileID: 3587045940702766130}
   - component: {fileID: 5757310703181256622}
-  - component: {fileID: 7022863661638223030}
-  - component: {fileID: -3595043209831350342}
+  - component: {fileID: 3550257497000016299}
   m_Layer: 16
   m_Name: BoulderPrefab
   m_TagString: EnemyBullet
@@ -29,13 +29,34 @@ Transform:
   m_GameObject: {fileID: 1918874962677261150}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.6380005, y: 4.5, z: 15.944971}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.2, y: 1.2, z: 1.2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4327607520098115860}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &7022863661638223030
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1918874962677261150}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &3587045940702766130
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -58,11 +79,11 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 2
+  m_CollisionDetection: 0
 --- !u!114 &5757310703181256622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77,34 +98,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
   type: 1
   damage: 10
-  speed: 0
-  lifetime: 0
-  moveDirection: {x: 0, y: -1, z: 0}
+  speed: 1
+  lifetime: 3
+  moveDirection: {x: 0, y: 0, z: 0}
   destroyOnPlayer: 0
   destroyOnWall: 1
   destroyOnFloor: 0
---- !u!135 &7022863661638223030
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1918874962677261150}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 10
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &-3595043209831350342
+--- !u!114 &3550257497000016299
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -117,9 +117,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
   moveDir: {x: 0, y: 0, z: 1}
-  initialSpeed: 0.8
-  acceleration: 0.8
-  spinSpeed: 0.5
+  initialSpeed: 5
+  acceleration: 2
+  spinSpeed: 3
   damage: 10
   lifetime: 3
   lockYVelocity: 1

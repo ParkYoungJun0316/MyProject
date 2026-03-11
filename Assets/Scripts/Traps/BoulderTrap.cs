@@ -25,16 +25,24 @@ public class BoulderTrap : TrapBase
 
         Transform spawn = spawnPoint != null ? spawnPoint : transform;
 
-        GameObject boulder = Instantiate(boulderPrefab, spawn.position, spawn.rotation);
+        // Boss Rock처럼 수평 방향으로 1자 직진 (Y 성분 제거 → firepoint 높이 기준 직선 이동)
+        Vector3 flatForward = spawn.forward;
+        flatForward.y = 0f;
+        if (flatForward.sqrMagnitude < 0.001f) flatForward = Vector3.forward; // 위/아래 전용일 때 기본 전방
+        flatForward.Normalize();
+
+        Quaternion flatRot = Quaternion.LookRotation(flatForward);
+
+        GameObject boulder = Instantiate(boulderPrefab, spawn.position, flatRot);
 
         // TrapProjectile: 벽 충돌 파괴 담당 (speed/damage/lifetime은 0 권장)
         TrapProjectile proj = boulder.GetComponent<TrapProjectile>();
         if (proj != null)
-            proj.moveDirection = spawn.forward;
+            proj.moveDirection = flatForward;
 
         // SpinRoller: 이동/회전/데미지/수명 담당. moveDir을 발사 방향으로 덮어씀
         SpinRoller roller = boulder.GetComponent<SpinRoller>();
         if (roller != null)
-            roller.moveDir = spawn.forward;
+            roller.moveDir = flatForward;
     }
 }

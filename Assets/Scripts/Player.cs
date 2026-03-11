@@ -40,6 +40,9 @@ public class Player : MonoBehaviour
     public Camera followCamera;
     public LayerMask aimMask;
 
+    [Tooltip("마우스가 캐릭터로부터 이 거리 이내이면 회전 갱신 안 함 (탑다운 카메라 떨림 방지). 캐릭터 크기에 맞게 조정")]
+    public float turnDeadZone = 1.5f;
+
     [Header("Stat")]
     public int coin;
     public int heart;
@@ -339,7 +342,8 @@ public class Player : MonoBehaviour
             Vector3 hit = ray.GetPoint(enter);
             Vector3 dir = hit - transform.position;
             dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
+            // turnDeadZone 이내에 커서가 있으면 회전 갱신 생략 → 방향 유지
+            if (dir.sqrMagnitude > turnDeadZone * turnDeadZone)
                 transform.forward = dir.normalized;
         }
     }
@@ -617,6 +621,18 @@ public class Player : MonoBehaviour
     }
 
     // ── 색상 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 무적·쿨다운·버프를 모두 무시하고 즉시 사망 처리.
+    /// 함정·낙사 등 반드시 죽어야 하는 상황에서 사용.
+    /// isInstantKill = true → Die()에서 doJammed 애니메이션 재생.
+    /// </summary>
+    public void KillInstantly()
+    {
+        if (IsDead) return;
+        isInstantKill = true;
+        Die();
+    }
 
     /// <summary>
     /// 현재 캐릭터 기본 색 반환.

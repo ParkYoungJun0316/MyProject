@@ -3,8 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// 기억 경로 발판 하나.
-/// Safe  : 미리보기 때 잠깐 빛났다가 꺼짐 → 밟아도 통과
-/// Trap  : 미리보기에 표시 안 됨 → 밟으면 바닥이 사라져 낙사
+/// Safe : 미리보기 때 잠깐 빛났다가 꺼짐 → 밟아도 통과
+/// Trap : 미리보기에 표시 안 됨 → 조금이라도 닿으면 즉사
 ///
 /// MemoryPath 자식으로 배치. MemoryPath.Awake()가 자동으로 참조·역할을 주입.
 /// </summary>
@@ -13,7 +13,7 @@ public class MemoryPathTile : MonoBehaviour
     public enum TileRole { Safe, Trap }
 
     [Header("발판 역할")]
-    [Tooltip("Safe: 미리보기에 표시되는 안전 경로 / Trap: 밟으면 사라지는 함정")]
+    [Tooltip("Safe: 미리보기에 표시되는 안전 경로 / Trap: 닿으면 즉사")]
     public TileRole role = TileRole.Trap;
 
     [Header("시각 피드백")]
@@ -22,24 +22,13 @@ public class MemoryPathTile : MonoBehaviour
     [Tooltip("미리보기 때 Safe 발판에 표시되는 색")]
     public Color previewColor = new Color(1f, 0.85f, 0f);
 
-    [Header("Trap 전용 설정")]
-    [Tooltip("플레이어가 밟은 후 발판이 사라지기까지 딜레이(초). 0 = 즉시")]
-    public float trapDisableDelay = 0f;
-    [Tooltip("사라진 발판이 자동 복구되기까지 대기 시간(초). 0 = 복구 안 함")]
-    public float trapRespawnDelay = 0f;
-    [Tooltip("발판이 사라질 때 플레이어에게 가할 하방 임펄스. 0 = 자연낙하만")]
-    public float downwardImpulse = 8f;
-
     // MemoryPath.Awake()에서 주입
     [HideInInspector] public MemoryPath memoryPath;
 
     Collider   _col;
     Material[] _mats;
     bool       _isDisabled;
-
-    // 복구 시 IgnoreCollision 원상복구용
-    Player     _lastPlayer;
-    Collider[] _lastPlayerCols;
+    bool       _isSafeTriggered;
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId     = Shader.PropertyToID("_Color");
@@ -48,7 +37,6 @@ public class MemoryPathTile : MonoBehaviour
     {
         _col = GetComponent<Collider>();
 
-        // 루트·자식 MeshRenderer 모두 인스턴스 머티리얼로 캐시 (SRP Batcher 우회)
         var renderers = GetComponentsInChildren<MeshRenderer>(true);
         _mats = new Material[renderers.Length];
         for (int i = 0; i < renderers.Length; i++)
@@ -67,14 +55,30 @@ public class MemoryPathTile : MonoBehaviour
     void OnCollisionEnter(Collision col)
     {
         if (_isDisabled) return;
+        if (memoryPath == null || memoryPath.State != MemoryPath.PathState.Challenge) return;
 
         Player player = col.transform.GetComponentInParent<Player>();
         if (player == null || player.IsDead) return;
 
         if (role == TileRole.Trap)
-            StartCoroutine(TrapRoutine(player));
-        else
-            memoryPath?.OnSafeTileStepped(this);
+        {
+            _isDisabled = true;
+            player.KillInstantly();          // 무적/쿨다운 무시하고 즉사
+            memoryPath.OnTrapStepped(this);  // 스테이지 실패 처리
+        }
+        else if (!_isSafeTriggered)
+        {
+            StartCoroutine(SafeRoutine());
+        }
+    }
+
+    IEnumerator SafeRoutine()
+    {
+        _isSafeTriggered = true;
+        // 1프레임 대기: 같은 프레임에 Trap이 발동됐으면 State가 Failed로 바뀐 상태
+        yield return null;
+        if (memoryPath != null && memoryPath.State == MemoryPath.PathState.Challenge)
+            memoryPath.OnSafeTileStepped(this);
     }
 
     // ── 상태 전환 (MemoryPath에서 호출) ─────────────────────────
@@ -89,14 +93,8 @@ public class MemoryPathTile : MonoBehaviour
     public void Restore()
     {
         StopAllCoroutines();
-
-        if (_lastPlayerCols != null && _col != null)
-            for (int i = 0; i < _lastPlayerCols.Length; i++)
-                Physics.IgnoreCollision(_lastPlayerCols[i], _col, false);
-
-        _lastPlayer     = null;
-        _lastPlayerCols = null;
-        _isDisabled     = false;
+        _isDisabled      = false;
+        _isSafeTriggered = false;
 
         if (_col != null) _col.enabled = true;
 
@@ -105,49 +103,6 @@ public class MemoryPathTile : MonoBehaviour
             if (renderers[i] != null) renderers[i].enabled = true;
 
         ApplyColor(normalColor);
-    }
-
-    // ── 내부 ────────────────────────────────────────────────────
-
-    IEnumerator TrapRoutine(Player player)
-    {
-        _isDisabled = true;
-
-        // 딜레이 동안 잠깐 빨간색으로 피드백
-        ApplyColor(Color.red);
-        if (trapDisableDelay > 0f)
-            yield return new WaitForSeconds(trapDisableDelay);
-
-        // 플레이어 충돌 즉시 해제 → 낙사
-        if (player != null && _col != null)
-        {
-            _lastPlayer     = player;
-            _lastPlayerCols = player.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < _lastPlayerCols.Length; i++)
-                Physics.IgnoreCollision(_lastPlayerCols[i], _col, true);
-        }
-
-        if (_col != null) _col.enabled = false;
-
-        var renderers = GetComponentsInChildren<MeshRenderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
-            if (renderers[i] != null) renderers[i].enabled = false;
-
-        // 하방 임펄스: 자연낙하 대기 없이 즉각 추락
-        if (downwardImpulse > 0f && player != null && !player.IsDead)
-        {
-            Rigidbody rb = player.GetComponent<Rigidbody>();
-            if (rb != null && !rb.isKinematic)
-                rb.AddForce(Vector3.down * downwardImpulse, ForceMode.Impulse);
-        }
-
-        memoryPath?.OnTrapStepped(this);
-
-        if (trapRespawnDelay > 0f)
-        {
-            yield return new WaitForSeconds(trapRespawnDelay);
-            Restore();
-        }
     }
 
     void ApplyColor(Color color)
