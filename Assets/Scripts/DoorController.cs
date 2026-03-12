@@ -31,9 +31,13 @@ public class DoorController : MonoBehaviour
     [Tooltip("열리고 닫히는 데 걸리는 시간(초)")]
     public float duration = 0.5f;
 
-    [Header("트리거 연결")]
+    [Header("트리거 연결 (BoxColorTrigger)")]
     [Tooltip("등록된 트리거가 전부 활성화돼야 문이 열림. 비어 있으면 Open()/Close() 직접 호출 방식으로만 동작")]
     public BoxColorTrigger[] requiredTriggers;
+
+    [Header("카운트존 연결 (BoxCountZone)")]
+    [Tooltip("등록된 BoxCountZone이 전부 충족되면 문이 열림")]
+    public BoxCountZone[] requiredCountZones;
 
     [Header("이벤트")]
     public UnityEvent OnOpened;
@@ -56,8 +60,14 @@ public class DoorController : MonoBehaviour
         for (int i = 0; i < requiredTriggers.Length; i++)
         {
             if (requiredTriggers[i] == null) continue;
-            requiredTriggers[i].OnActivated.AddListener(CheckState);
-            requiredTriggers[i].OnDeactivated.AddListener(CheckState);
+            requiredTriggers[i].OnActivated.AddListener(CheckTriggerState);
+            requiredTriggers[i].OnDeactivated.AddListener(CheckTriggerState);
+        }
+        for (int i = 0; i < requiredCountZones.Length; i++)
+        {
+            if (requiredCountZones[i] == null) continue;
+            requiredCountZones[i].OnFulfilled.AddListener(CheckZoneState);
+            requiredCountZones[i].OnUnfulfilled.AddListener(CheckZoneState);
         }
     }
 
@@ -66,14 +76,20 @@ public class DoorController : MonoBehaviour
         for (int i = 0; i < requiredTriggers.Length; i++)
         {
             if (requiredTriggers[i] == null) continue;
-            requiredTriggers[i].OnActivated.RemoveListener(CheckState);
-            requiredTriggers[i].OnDeactivated.RemoveListener(CheckState);
+            requiredTriggers[i].OnActivated.RemoveListener(CheckTriggerState);
+            requiredTriggers[i].OnDeactivated.RemoveListener(CheckTriggerState);
+        }
+        for (int i = 0; i < requiredCountZones.Length; i++)
+        {
+            if (requiredCountZones[i] == null) continue;
+            requiredCountZones[i].OnFulfilled.RemoveListener(CheckZoneState);
+            requiredCountZones[i].OnUnfulfilled.RemoveListener(CheckZoneState);
         }
     }
 
     // ── 트리거 상태 재검사 ────────────────────────────────────
 
-    void CheckState()
+    void CheckTriggerState()
     {
         if (requiredTriggers == null || requiredTriggers.Length == 0) return;
 
@@ -86,6 +102,17 @@ public class DoorController : MonoBehaviour
             Open();
         else
             Close();
+    }
+
+    void CheckZoneState()
+    {
+        if (requiredCountZones == null || requiredCountZones.Length == 0) return;
+
+        for (int i = 0; i < requiredCountZones.Length; i++)
+            if (requiredCountZones[i] == null || !requiredCountZones[i].IsFulfilled)
+            { Close(); return; }
+
+        Open();
     }
 
     // ── 공개 메서드 ──────────────────────────────────────────

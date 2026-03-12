@@ -29,7 +29,10 @@ public class BoxSpawner : MonoBehaviour
     public float bulgeFallTime = 0.6f;
 
     [Header("박스 스폰")]
-    [Tooltip("스폰할 박스 프리팹")]
+    [Tooltip("스폰할 박스 색. boxPrefab이 비어있으면 이 값으로 프리팹 로드")]
+    public PushableBox.BoxOwnerColor spawnColor = PushableBox.BoxOwnerColor.Blue;
+
+    [Tooltip("스폰할 박스 프리팹. 비우면 spawnColor 기반으로 자동 로드")]
     public GameObject boxPrefab;
 
     [Tooltip("박스 스폰 기준 위치. 비우면 이 오브젝트 위치 사용")]
@@ -120,14 +123,36 @@ public class BoxSpawner : MonoBehaviour
 
     void SpawnBox()
     {
-        if (boxPrefab == null) return;
+        var prefab = ResolveBoxPrefab();
+        if (prefab == null) return;
 
         Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
-        GameObject instance = Instantiate(boxPrefab, pos, Quaternion.identity);
+        GameObject instance = Instantiate(prefab, pos, Quaternion.identity);
 
         Rigidbody rb = instance.GetComponent<Rigidbody>();
         if (rb != null)
             rb.AddForce(Vector3.up * launchImpulse, ForceMode.Impulse);
+    }
+
+    GameObject ResolveBoxPrefab()
+    {
+        if (boxPrefab != null) return boxPrefab;
+
+        var name = spawnColor switch
+        {
+            PushableBox.BoxOwnerColor.Common => "PushableBox.C",
+            PushableBox.BoxOwnerColor.Blue   => "PushableBox.B",
+            PushableBox.BoxOwnerColor.Red   => "PushableBox.R",
+            PushableBox.BoxOwnerColor.Green => "PushableBox.G",
+            PushableBox.BoxOwnerColor.Yellow => "PushableBox.Y",
+            _ => "PushableBox.C"
+        };
+
+#if UNITY_EDITOR
+        return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefab/{name}.prefab");
+#else
+        return Resources.Load<GameObject>(name);
+#endif
     }
 
     void PushNearbyPlayers()

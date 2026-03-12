@@ -225,30 +225,35 @@ public class Player : MonoBehaviour
 
         GetInput();
         UpdateStamina();
-        Dodge();
-        HandleItemSlotInput();
-        UseItem();
 
-        if (bwDown && Time.time >= nextBWTime)
+        // 박스 잡는 중에는 Dodge / Swap / ChangeColor / Throw / Heal 전부 차단
+        // 피격·사망은 이 블록 밖에서 처리되므로 영향 없음
+        bool isGrabbingBox = boxInteraction != null && boxInteraction.isGrabbing;
+        if (!isGrabbingBox)
         {
-            nextBWTime = Time.time + bwCooldown;
-            // 고유색 모드일 때 Ctrl → 고유색 해제 후 흑/백 전환
-            if (isUniqueColor)
+            Dodge();
+            HandleItemSlotInput();
+            UseItem();
+
+            if (bwDown && Time.time >= nextBWTime)
             {
-                isUniqueColor = false;
-                events?.RaiseUniqueColorChanged(-1);
+                nextBWTime = Time.time + bwCooldown;
+                if (isUniqueColor)
+                {
+                    isUniqueColor = false;
+                    events?.RaiseUniqueColorChanged(-1);
+                }
+                isBlack = !isBlack;
+                events?.RaiseBlackWhiteChanged(isBlack);
+                anim?.SetTrigger("doChangeColor");
             }
-            isBlack = !isBlack;
-            events?.RaiseBlackWhiteChanged(isBlack);
-            anim?.SetTrigger("doChangeColor");
-        }
 
-        // Alt: 고유색 모드 토글
-        if (altDown)
-        {
-            isUniqueColor = !isUniqueColor;
-            events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
-            anim?.SetTrigger("doChangeColor");
+            if (altDown)
+            {
+                isUniqueColor = !isUniqueColor;
+                events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
+                anim?.SetTrigger("doChangeColor");
+            }
         }
     }
 

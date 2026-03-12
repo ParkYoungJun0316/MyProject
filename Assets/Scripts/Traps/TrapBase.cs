@@ -46,7 +46,7 @@ public abstract class TrapBase : MonoBehaviour
         OnDeactivated();
     }
 
-    IEnumerator TrapLoop()
+    protected virtual IEnumerator TrapLoop()
     {
         if (initialDelay > 0f)
             yield return new WaitForSeconds(initialDelay);
