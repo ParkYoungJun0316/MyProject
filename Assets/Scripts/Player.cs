@@ -813,8 +813,16 @@ public class Player : MonoBehaviour
         fixedY = transform.position.y;
         rigid.isKinematic = true;
 
-        // 즉사 판정이면 Jammed, 일반 사망이면 Die 애니메이션
-        if (anim != null) anim.SetTrigger(isInstantKill ? "doJammed" : "doDie");
+        // 이전 이동·상태 애니메이션 초기화 후 사망 애니메이션 재생
+        if (anim != null)
+        {
+            anim.SetBool("isWalk", false);
+            anim.SetBool("isRun",  false);
+            anim.ResetTrigger("doDie");
+            anim.ResetTrigger("doJammed");
+            anim.ResetTrigger("doFall");
+            anim.SetTrigger(isInstantKill ? "doJammed" : "doDie");
+        }
         isInstantKill = false;
         events?.RaiseDied();
         StartCoroutine(RespawnAfter(respawnDelay));

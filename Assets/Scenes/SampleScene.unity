@@ -6979,6 +6979,7 @@ GameObject:
   - component: {fileID: 2020371521}
   - component: {fileID: 2020371520}
   - component: {fileID: 2020371519}
+  - component: {fileID: 2020371524}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -7008,8 +7009,13 @@ MonoBehaviour:
   warnPrefab: {fileID: 0}
   warnDuration: 0
   spawnHeight: 30
-  dropSpeed: 10
   damage: 10
+  fireAtSeconds:
+  - 0
+  loopSchedule: 1
+  schedulePeriod: 3
+  baseDropSpeed: 5
+  speedPhases: []
 --- !u!65 &2020371520
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7103,6 +7109,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2020371524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020371518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ca129a43ae54ba499884f94846a5414, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrapStealthSensor
+  detectionRadius: 0
+  playerVisibleLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  deactivateDelay: 0
 --- !u!4 &2021188054 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}

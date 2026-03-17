@@ -98,8 +98,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51f69dca472ebb0479dbb1310ec56cbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
-  speed: 30
-  runMultiplier: 10
+  speed: 15
+  runMultiplier: 1
   grenadeObj: {fileID: 0}
   grenadeMinForce: 0
   grenadeMaxForce: 0
@@ -119,6 +119,7 @@ MonoBehaviour:
   aimMask:
     serializedVersion: 2
     m_Bits: 33554432
+  turnDeadZone: 1.5
   coin: 0
   heart: 0
   maxCoin: 999
@@ -135,12 +136,14 @@ MonoBehaviour:
   actionCooldown: 0
   dodgeInvincibleDuration: 0
   respawnDelay: 0
+  instantKillThreshold: 0
   strength: 0
   uniqueColor: {r: 0, g: 0, b: 1, a: 1}
   isUniqueColor: 0
   playerColorType: 1
   enableFallDeath: 0
   fallDeathY: 0
+  fallAnimY: 0
   moveSpeedMultiplier: 1
   itemUsePriority: 10
   moveInput: {x: 0, y: 0}

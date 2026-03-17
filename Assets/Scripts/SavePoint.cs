@@ -37,6 +37,15 @@ public class SavePoint : MonoBehaviour
     [Tooltip("활성화 연출 시간(초). 0이면 즉시 색 전환")]
     public float activateDuration = 0f;
 
+    [Tooltip("활성화 후 렌더러·콜라이더를 숨길지 여부.\n" +
+             "true: 활성화 연출이 끝나면 보이지 않음 (콜라이더는 유지 — 리스폰은 정상 작동)\n" +
+             "false: 활성화 색으로 계속 표시")]
+    public bool hideAfterActivation = false;
+
+    [Tooltip("활성화 연출 후 숨기기까지 대기 시간(초). hideAfterActivation=true일 때만 사용.\n" +
+             "0이면 연출 종료 즉시 숨김.")]
+    public float hideDelay = 0f;
+
     [Header("레퍼런스 (선택)")]
     [Tooltip("활성화 시 재생할 파티클 (없으면 생략)")]
     public ParticleSystem activateParticle;
@@ -109,6 +118,19 @@ public class SavePoint : MonoBehaviour
             StartCoroutine(AnimateColor(inactiveColor, activeColor, activateDuration));
         else
             ApplyColor(activeColor);
+
+        if (hideAfterActivation)
+            StartCoroutine(HideAfterDelay(activateDuration + hideDelay));
+    }
+
+    IEnumerator HideAfterDelay(float delay)
+    {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        // 렌더러만 끄고 콜라이더는 유지 (리스폰 위치는 계속 유효)
+        foreach (MeshRenderer mr in _renderers)
+            if (mr != null) mr.enabled = false;
     }
 
     IEnumerator AnimateColor(Color from, Color to, float duration)

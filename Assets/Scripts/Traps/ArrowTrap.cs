@@ -1,21 +1,15 @@
 using System.Collections;
 using UnityEngine;
 
-[System.Serializable]
-public class SpeedPhase
-{
-    [Tooltip("스테이지 시작 후 이 초가 지나면 이 배율 적용 (오름차순으로 입력)")]
-    public float afterSeconds = 0f;
-
-    [Tooltip("baseSpeed 대비 배율. 예: 1.5 = 50% 빠르게")]
-    public float speedMultiplier = 1f;
-}
-
 /// <summary>
-/// 벽에 부착하는 화살 함정.
-/// fireAtSeconds에 지정한 초(스케줄 시작 기준)에 화살을 발사.
+/// 발사형 함정 범용 컴포넌트 (화살, 돌굴림 등).
+/// fireAtSeconds에 지정한 초(스케줄 시작 기준)에 프리팹을 발사.
 /// loopSchedule=true이면 schedulePeriod마다 패턴을 반복.
 /// speedPhases로 시간 경과에 따른 속도 단계 상승을 지원.
+///
+/// [Boulder(돌굴림) 사용 시]
+/// arrowPrefab에 SpinRoller 컴포넌트가 있으면 speed를 SpinRoller.initialSpeed에도 자동 적용.
+/// TrapProjectile.type=Boulder, SpinRoller 부착 프리팹을 연결하면 BoulderTrap과 동일하게 동작.
 /// </summary>
 public class ArrowTrap : TrapBase
 {
@@ -45,6 +39,14 @@ public class ArrowTrap : TrapBase
     [SerializeField] private SpeedPhase[] speedPhases = new SpeedPhase[0];
 
     float scheduleStartTime;
+    float _phaseSpeedMultiplier = 1f;
+
+    /// <summary>
+    /// PhaseManager가 Phase 전환 시 호출.
+    /// 이 배율이 baseSpeed × timeSpeedMultiplier 에 추가로 곱해짐.
+    /// 1.0 = 기본 속도, 2.0 = 2배 빠르게
+    /// </summary>
+    public void SetPhaseSpeedMultiplier(float mult) => _phaseSpeedMultiplier = mult;
 
     protected override IEnumerator TrapLoop()
     {
@@ -101,23 +103,44 @@ public class ArrowTrap : TrapBase
                 mult = phase.speedMultiplier;
         }
 
-        return baseSpeed * mult;
+        return baseSpeed * mult * _phaseSpeedMultiplier;
     }
 
     protected override void OnTrapTrigger()
     {
         if (arrowPrefab == null) return;
 
-        Transform spawn = firePoint != null ? firePoint : transform;
-        GameObject arrow = Instantiate(arrowPrefab, spawn.position, spawn.rotation);
+        Transform spawn   = firePoint != null ? firePoint : transform;
+        Vector3   flatFwd = spawn.forward;
 
-        TrapProjectile proj = arrow.GetComponent<TrapProjectile>();
+        // Boulder 타입은 Y를 제거해 수평 직진
+        TrapProjectile sampleProj = arrowPrefab.GetComponent<TrapProjectile>();
+        bool isBoulder = sampleProj != null &&
+                         sampleProj.type == TrapProjectile.ProjectileType.Boulder;
+        if (isBoulder)
+        {
+            flatFwd.y = 0f;
+            if (flatFwd.sqrMagnitude < 0.001f) flatFwd = Vector3.forward;
+            flatFwd.Normalize();
+        }
+
+        Quaternion spawnRot = isBoulder ? Quaternion.LookRotation(flatFwd) : spawn.rotation;
+        GameObject fired    = Instantiate(arrowPrefab, spawn.position, spawnRot);
+
+        TrapProjectile proj = fired.GetComponent<TrapProjectile>();
         if (proj == null) return;
 
-        proj.moveDirection = spawn.forward;
+        proj.moveDirection = flatFwd;
 
         float speed = GetCurrentSpeed();
         if (speed > 0f)
+        {
             proj.speed = speed;
+
+            // SpinRoller가 있으면 initialSpeed도 함께 설정 (Boulder 굴림 속도 제어)
+            SpinRoller roller = fired.GetComponent<SpinRoller>();
+            if (roller != null)
+                roller.initialSpeed = speed;
+        }
     }
 }
