@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 6224304454804154816}
   - component: {fileID: 8880192421599755423}
   m_Layer: 17
-  m_Name: Drop_4
+  m_Name: Drop_5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -119,7 +119,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6306230750047240287}
@@ -187,9 +187,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
   type: 1
   damage: 40
-  speed: 5
+  speed: 10
   lifetime: 10
   moveDirection: {x: 0, y: 0, z: 1}
-  destroyOnPlayer: 0
-  destroyOnWall: 0
+  destroyOnPlayer: 1
+  destroyOnWall: 1
   destroyOnFloor: 1
