@@ -9,5 +9,5 @@ public enum PlayerColorType
     Red,
     Green,
     Yellow,
-    Danger, // 모두 즉사 (ColoredFloor 전용)
+    Danger, // 모두 즉사
 }

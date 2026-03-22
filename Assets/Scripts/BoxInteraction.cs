@@ -54,8 +54,7 @@ public class BoxInteraction : MonoBehaviour
     Collider[] _playerCols;   // 충돌 무시용 플레이어 콜라이더 캐시
     Collider[] _grabbedCols;  // 충돌 무시용 잡힌 박스 콜라이더 캐시
 
-    Rigidbody  _grabbedRb;        // 잡힌 박스 Rigidbody 캐시
-    bool       _wasKinematic;     // 잡기 전 isKinematic 원래 값
+    Rigidbody  _grabbedRb;        // 잡힌 박스 Rigidbody 캐시 (null 체크용)
 
     void Awake()
     {
@@ -106,15 +105,13 @@ public class BoxInteraction : MonoBehaviour
         float   playerSpd = new Vector3(playerVel.x, 0f, playerVel.z).magnitude;
         float   boxSpeed  = playerSpd * strengthFactor;
 
-        // MovePosition 대신 linearVelocity 사용
-        // → 물리 엔진이 충돌을 정상 처리 (다른 박스·벽·오브젝트에 막힘)
         float dist = toTarget.magnitude;
         Vector3 desiredVel = dist > 0.001f
             ? toTarget.normalized * Mathf.Min(dist / Time.fixedDeltaTime, boxSpeed)
             : Vector3.zero;
-        desiredVel.y = _grabbedRb.linearVelocity.y;  // 중력 Y 유지
 
-        _grabbedRb.linearVelocity = desiredVel;
+        // PushableBox에 속도 제출 → FixedUpdate에서 모든 잡는 자의 평균을 적용
+        grabbedBox.SubmitVelocity(this, desiredVel);
     }
 
     // ── 내부 헬퍼 ────────────────────────────────────────────
@@ -168,10 +165,11 @@ public class BoxInteraction : MonoBehaviour
         grabOffset                 = nearest.transform.position - transform.position;
         player.moveSpeedMultiplier = grabSpeedMultiplier;
 
-        // Rigidbody 캐시 + kinematic 해제 (non-kinematic이어야 velocity 기반 충돌이 작동)
-        _grabbedRb       = nearest.GetComponent<Rigidbody>();
-        _wasKinematic    = _grabbedRb != null && _grabbedRb.isKinematic;
-        if (_grabbedRb != null) _grabbedRb.isKinematic = false;
+        // Rigidbody 캐시 (null 체크용 — kinematic 관리는 PushableBox.RegisterGrab에서 처리)
+        _grabbedRb = nearest.GetComponent<Rigidbody>();
+
+        // 잡기 등록: PushableBox가 isKinematic 해제 및 협력 인원 추적을 담당
+        nearest.RegisterGrab(this);
 
         // 플레이어↔박스 사이만 충돌 무시 (다른 오브젝트와는 충돌 유지)
         _grabbedCols = nearest.GetComponentsInChildren<Collider>(true);
@@ -188,15 +186,11 @@ public class BoxInteraction : MonoBehaviour
             _grabbedCols = null;
         }
 
-        // Rigidbody 원상복구: 속도 제거 + kinematic 원래 값으로 복원
-        if (_grabbedRb != null)
-        {
-            _grabbedRb.linearVelocity  = Vector3.zero;
-            _grabbedRb.angularVelocity = Vector3.zero;
-            _grabbedRb.isKinematic     = _wasKinematic;
-            _grabbedRb = null;
-        }
+        // 잡기 해제: PushableBox가 velocity 정리 및 kinematic 복원을 담당
+        if (grabbedBox != null)
+            grabbedBox.UnregisterGrab(this);
 
+        _grabbedRb = null;
         grabbedBox = null;
         isGrabbing = false;
         if (player != null) player.moveSpeedMultiplier = 1f;
