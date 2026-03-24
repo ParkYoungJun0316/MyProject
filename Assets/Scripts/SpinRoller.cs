@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// 범용 회전·가속 컴포넌트 — 이동 거리에 따라 속도가 증가하며 회전
+// 범용 회전·가속 컴포넌트 — 시간에 따라 속도 단계가 올라가며 회전
 // 어떤 투사체/오브젝트에도 부착 가능
 public class SpinRoller : MonoBehaviour
 {
@@ -10,8 +10,9 @@ public class SpinRoller : MonoBehaviour
     [Tooltip("초기 속도 (m/s)")]
     public float initialSpeed = 0;
 
-    [Tooltip("이동 거리 1m당 추가 속도 (m/s)")]
-    public float acceleration = 0;
+    [Tooltip("시간 경과에 따른 속도 배율 단계. afterSeconds 오름차순으로 입력\n" +
+             "예: afterSeconds=3, speedMultiplier=2 → 생성 3초 후 initialSpeed×2 로 증가")]
+    public SpeedPhase[] speedPhases = new SpeedPhase[0];
 
     [Tooltip("회전 배율 — 속도 1일 때 rad/s")]
     public float spinSpeed = 0;
@@ -27,12 +28,12 @@ public class SpinRoller : MonoBehaviour
     public bool lockYVelocity = true;
 
     Rigidbody rb;
-    Vector3 origin;
+    float _spawnTime;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        origin = transform.position;
+        _spawnTime = Time.time;
     }
 
     void Start()
@@ -40,10 +41,23 @@ public class SpinRoller : MonoBehaviour
         if (lifetime > 0f) Destroy(gameObject, lifetime);
     }
 
+    float GetCurrentSpeed()
+    {
+        if (initialSpeed <= 0f) return 0f;
+
+        float elapsed = Time.time - _spawnTime;
+        float mult = 1f;
+
+        for (int i = 0; i < speedPhases.Length; i++)
+            if (elapsed >= speedPhases[i].afterSeconds)
+                mult = speedPhases[i].speedMultiplier;
+
+        return initialSpeed * mult;
+    }
+
     void FixedUpdate()
     {
-        float dist         = Vector3.Distance(transform.position, origin);
-        float currentSpeed = initialSpeed + acceleration * dist;
+        float currentSpeed = GetCurrentSpeed();
 
         // moveDir × up = 굴러가는 회전축
         Vector3 spinAxis = Vector3.Cross(moveDir, Vector3.up).normalized;

@@ -38,8 +38,6 @@ public class Boss : Enemy
     public GameObject bossRockPrefab;
     public float bossRockWindup       = 0;
     public float bossRockInitialSpeed = 0;
-    [Tooltip("이동 거리 1m당 추가 속도")]
-    public float bossRockAcceleration = 0;
     [Tooltip("회전 배율 (속도 1일 때 rad/s)")]
     public float bossRockSpinSpeed    = 0;
     [Tooltip("0 = 무제한")]
@@ -278,7 +276,6 @@ public class Boss : Enemy
             {
                 sr.moveDir      = throwDir;
                 sr.initialSpeed = bossRockInitialSpeed;
-                sr.acceleration = bossRockAcceleration;
                 sr.spinSpeed    = bossRockSpinSpeed;
                 sr.damage       = bossRockDamage;
                 sr.lifetime     = bossRockLifetime;
