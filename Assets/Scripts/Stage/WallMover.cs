@@ -16,6 +16,10 @@ using UnityEngine.Events;
 ///  returnDelay          : 끝에 도달 후 복귀 전 대기(초)
 ///  loopDelay            : 복귀 완료 후 다음 사이클 시작 전 대기(초)
 ///
+/// [시간 경과 난이도]
+///  speedPhases    : 시간이 지날수록 이동 속도 배율 상승 (moveDuration 단축)
+///  distancePhases : 시간이 지날수록 이동 거리 배율 상승 (moveOffset 크기 증가)
+///
 /// [필수 컴포넌트]
 ///  Rigidbody: Is Kinematic = true, Interpolate = Interpolate
 ///  Collider:  Is Trigger = false
@@ -50,6 +54,20 @@ public class WallMover : MonoBehaviour
     [Tooltip("복귀 완료 후 다음 사이클 시작까지 대기(초)")]
     public float loopDelay = 0f;
 
+    [Header("발동 스케줄 (ArrowTrap 방식)")]
+    [Tooltip("스케줄 시작 기준으로 이 초에 이동 발동. 예: [5, 13, 20]\n" +
+             "비워두면 스케줄 없이 Activate()를 직접 호출해야 함")]
+    [SerializeField] float[] moveAtSeconds = new float[0];
+
+    [Tooltip("스케줄 반복 여부")]
+    [SerializeField] bool loopSchedule = false;
+
+    [Tooltip("반복 시 한 사이클 길이(초). loopSchedule=true일 때만 사용")]
+    [SerializeField] float schedulePeriod = 10f;
+
+    [Tooltip("true: 씬 시작 시 자동으로 스케줄 시작\nfalse: StartSchedule()을 외부에서 직접 호출")]
+    [SerializeField] bool scheduleOnStart = true;
+
     [Header("이벤트")]
     public UnityEvent OnMoveStarted;
     public UnityEvent OnMoveCompleted;
@@ -64,6 +82,8 @@ public class WallMover : MonoBehaviour
     Vector3   _startPos;
     Vector3   _endPos;
     Coroutine _moveCoroutine;
+    Coroutine _scheduleCoroutine;
+    float     _scheduleStartTime;
 
     void Awake()
     {
@@ -73,6 +93,12 @@ public class WallMover : MonoBehaviour
         _endPos         = _startPos + transform.TransformDirection(moveOffset);
     }
 
+    void Start()
+    {
+        if (scheduleOnStart && moveAtSeconds != null && moveAtSeconds.Length > 0)
+            StartSchedule();
+    }
+
     // ── 외부 호출 ────────────────────────────────────────────────
 
     /// <summary>벽 이동 시작. 이미 이동 중이면 무시.</summary>
@@ -80,6 +106,24 @@ public class WallMover : MonoBehaviour
     {
         if (_isMoving || _isReturning) return;
         _moveCoroutine = StartCoroutine(MoveRoutine());
+    }
+
+    /// <summary>스케줄 시작. scheduleOnStart=false일 때 외부(PlayerTriggerZone 등)에서 호출.</summary>
+    public void StartSchedule()
+    {
+        if (_scheduleCoroutine != null) StopCoroutine(_scheduleCoroutine);
+        _scheduleStartTime  = Time.time;
+        _scheduleCoroutine  = StartCoroutine(ScheduleRoutine());
+    }
+
+    /// <summary>스케줄 중단.</summary>
+    public void StopSchedule()
+    {
+        if (_scheduleCoroutine != null)
+        {
+            StopCoroutine(_scheduleCoroutine);
+            _scheduleCoroutine = null;
+        }
     }
 
     /// <summary>벽을 시작 위치로 즉시 복귀 + 루프 중단.</summary>
@@ -96,6 +140,30 @@ public class WallMover : MonoBehaviour
     }
 
     // ── 내부 ────────────────────────────────────────────────────
+
+    IEnumerator ScheduleRoutine()
+    {
+        if (moveAtSeconds == null || moveAtSeconds.Length == 0) yield break;
+
+        float cycleOffset = 0f;
+
+        do
+        {
+            foreach (float t in moveAtSeconds)
+            {
+                float targetTime = _scheduleStartTime + cycleOffset + t;
+                float waitTime   = targetTime - Time.time;
+
+                if (waitTime > 0f)
+                    yield return new WaitForSeconds(waitTime);
+
+                Activate();
+            }
+
+            cycleOffset += schedulePeriod;
+
+        } while (loopSchedule);
+    }
 
     IEnumerator MoveRoutine()
     {
@@ -155,6 +223,9 @@ public class WallMover : MonoBehaviour
 
     [ContextMenu("테스트: 이동 시작")]
     void Debug_Activate() => Activate();
+
+    [ContextMenu("테스트: 스케줄 시작")]
+    void Debug_StartSchedule() => StartSchedule();
 
     [ContextMenu("테스트: 시작 위치로 리셋")]
     void Debug_Reset() => ResetToStart();
