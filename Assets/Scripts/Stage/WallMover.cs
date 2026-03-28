@@ -54,6 +54,11 @@ public class WallMover : MonoBehaviour
     [Tooltip("복귀 완료 후 다음 사이클 시작까지 대기(초)")]
     public float loopDelay = 0f;
 
+    [Header("자동 시작")]
+    [Tooltip("true: 씬 시작 시 즉시 Activate() 호출\n" +
+             "loop=true와 함께 사용하면 씬 시작부터 계속 왕복 이동")]
+    [SerializeField] bool activateOnStart = false;
+
     [Header("발동 스케줄 (ArrowTrap 방식)")]
     [Tooltip("스케줄 시작 기준으로 이 초에 이동 발동. 예: [5, 13, 20]\n" +
              "비워두면 스케줄 없이 Activate()를 직접 호출해야 함")]
@@ -95,7 +100,9 @@ public class WallMover : MonoBehaviour
 
     void Start()
     {
-        if (scheduleOnStart && moveAtSeconds != null && moveAtSeconds.Length > 0)
+        if (activateOnStart)
+            Activate();
+        else if (scheduleOnStart && moveAtSeconds != null && moveAtSeconds.Length > 0)
             StartSchedule();
     }
 

@@ -5,7 +5,8 @@ using UnityEngine.Events;
 /// 색상 타일 — ColorTileChallenge에서 생성/관리됨.
 ///
 /// [동작]
-///  requiredColorType에 맞는 고유색 플레이어가 올라서면 IsCompleted = true.
+///  requiredColorType에 맞는 플레이어가 올라서면 IsCompleted = true.
+///  현재 흑/백/고유색 모드와 무관하게 playerColorType으로만 판별.
 ///  틀린 색 플레이어가 올라서도 완료되지 않음.
 ///
 /// [설정]
@@ -48,17 +49,27 @@ public class ColorTile : MonoBehaviour
         GetComponent<Collider>().isTrigger = true;
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (_isCompleted) return;
+    void OnTriggerEnter(Collider other) => CheckPlayer(other);
+    void OnTriggerStay(Collider other)  => CheckPlayer(other);
 
+    void CheckPlayer(Collider other)
+    {
         Player p = other.GetComponentInParent<Player>();
         if (p == null || p.IsDead) return;
-        if (!p.isUniqueColor) return;
         if (p.playerColorType != requiredColorType) return;
 
-        _isCompleted = true;
-        OnCompleted?.Invoke();
+        // 고유색 모드로 전환된 순간 완료
+        if (p.isUniqueColor && !_isCompleted)
+        {
+            _isCompleted = true;
+            OnCompleted?.Invoke();
+        }
+        // 고유색 → 흑/백으로 전환된 순간 취소
+        else if (!p.isUniqueColor && _isCompleted)
+        {
+            _isCompleted = false;
+            OnUncompleted?.Invoke();
+        }
     }
 
     void OnTriggerExit(Collider other)
@@ -67,7 +78,6 @@ public class ColorTile : MonoBehaviour
 
         Player p = other.GetComponentInParent<Player>();
         if (p == null) return;
-        if (!p.isUniqueColor) return;
         if (p.playerColorType != requiredColorType) return;
 
         _isCompleted = false;
