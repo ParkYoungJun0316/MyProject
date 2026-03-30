@@ -66,6 +66,9 @@ public class ColorWall : MonoBehaviour
     [SerializeField] float damageInterval = 0.5f;
 
     [Header("연결 컴포넌트 (비워두면 같은 오브젝트에서 자동 탐색)")]
+    [Tooltip("점진적 전진 벽 컴포넌트 (AdvancingWall 사용 시 등록)")]
+    [SerializeField] AdvancingWall advancingWall;
+
     [Tooltip("개별 벽 이동 컴포넌트")]
     [SerializeField] WallMover wallMover;
 
@@ -95,6 +98,8 @@ public class ColorWall : MonoBehaviour
 
     void Awake()
     {
+        if (advancingWall == null)
+            advancingWall = GetComponent<AdvancingWall>();
         if (wallMover == null)
             wallMover = GetComponent<WallMover>();
         if (waveController == null)
@@ -196,6 +201,10 @@ public class ColorWall : MonoBehaviour
     {
         _isPaused = true;
 
+        // AdvancingWall: 현재 누적 원점으로 복귀 후 pauseDuration 동안 정지, 이후 스케줄 자동 재개
+        advancingWall?.PauseTemporarily(pauseDuration);
+
+        // WallMover / WaveController: 기존 방식
         wallMover?.ResetToStart();
         waveController?.Stop();
 

@@ -4,17 +4,17 @@ using UnityEngine.Events;
 
 /// <summary>
 /// 점진적 전진 벽 컴포넌트.
-/// 매 사이클마다 전진 후 일부 후퇴하며 원점을 갱신 → 결과적으로 벽이 서서히 전진.
+/// 스케줄 항목마다 전진 거리·후퇴 거리를 개별 설정 가능.
 ///
 /// [동작 원리]
-///  사이클 1: origin(0) → origin+advance(10) → origin+advance-retreat(3)  ← 새 원점
-///  사이클 2: origin(3) → origin+advance( 9) → origin+advance-retreat(5)  ← 새 원점
-///  순 전진 = advanceDistance - retreatDistance
+///  retreatDistance = advanceDistance → 제자리 복귀 (순 전진 0)
+///  retreatDistance &lt; advanceDistance → 순 전진 (원점이 앞으로 이동)
+///  retreatDistance = 0               → 전진만, 후퇴 없음
 ///
-/// [스케줄]
-///  activateAtSeconds[] 에 원하는 시간(초)을 입력하면 해당 시각에만 전진 시작.
-///  cyclesPerActivation: 한 번 발동 시 실행할 사이클 수 (0 = 무한 반복)
-///  loopSchedule: true 면 schedulePeriod 주기로 스케줄 전체 반복.
+/// [스케줄 예시]
+///  Entry 0: atSeconds=10, advance=8, retreat=8  → 10초에 8 전진 후 제자리 복귀
+///  Entry 1: atSeconds=12, advance=5, retreat=3  → 12초에 5 전진, 3 후퇴 (순 +2)
+///  Entry 2: atSeconds=15, advance=2, retreat=2  → 15초에 2 전진 후 제자리 복귀
 ///
 /// [필수 컴포넌트]
 ///  Rigidbody: Is Kinematic = true, Interpolate = Interpolate
@@ -23,82 +23,111 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Rigidbody))]
 public class AdvancingWall : MonoBehaviour
 {
+    // ─── 스케줄 항목 ─────────────────────────────────────────────
+
+    [System.Serializable]
+    public class AdvanceEntry
+    {
+        [Tooltip("씬 시작 기준 발동 시각(초)")]
+        public float atSeconds = 0f;
+
+        [Tooltip("전진 거리(m)")]
+        public float advanceDistance = 5f;
+
+        [Tooltip("후퇴 거리(m).\n" +
+                 "= advanceDistance → 제자리 복귀\n" +
+                 "< advanceDistance → 순전진 (원점 이동)\n" +
+                 "= 0               → 전진만 (후퇴 없음)")]
+        public float retreatDistance = 5f;
+
+        [Tooltip("이 항목에서 반복할 사이클 수 (0 = 1회)")]
+        public int cycles = 0;
+
+        [Tooltip("전진 소요 시간(초). 0이면 기본값(moveDuration) 사용")]
+        public float overrideMoveDuration = 0f;
+
+        [Tooltip("후퇴 소요 시간(초). 0이면 기본값(returnDuration) 사용")]
+        public float overrideReturnDuration = 0f;
+    }
+
     [Header("이동 방향")]
-    [Tooltip("전진 방향 (로컬 좌표). 예: (1,0,0) = 로컬 오른쪽\n" +
-             "Gizmo의 주황선이 전진, 파란 구가 새 원점 위치")]
+    [Tooltip("전진 방향 (로컬 좌표). 예: (1,0,0) = 로컬 오른쪽")]
     [SerializeField] Vector3 moveDirection = Vector3.right;
 
-    [Header("거리 설정")]
-    [Tooltip("매 사이클 전진 거리(m)")]
-    [SerializeField] float advanceDistance = 5f;
-
-    [Tooltip("매 사이클 후퇴 거리(m). advanceDistance보다 작아야 순전진")]
-    [SerializeField] float retreatDistance = 3f;
-
-    [Header("속도 설정")]
+    [Header("기본 속도 (항목별 override가 0이면 이 값 사용)")]
     [Tooltip("전진 소요 시간(초)")]
     [SerializeField] float moveDuration = 1f;
 
     [Tooltip("후퇴 소요 시간(초)")]
     [SerializeField] float returnDuration = 0.8f;
 
-    [Header("대기 시간")]
+    [Header("기본 대기 시간")]
     [Tooltip("전진 완료 후 후퇴 시작까지 대기(초)")]
     [SerializeField] float returnDelay = 0.5f;
 
-    [Tooltip("후퇴 완료 후 다음 사이클 시작까지 대기(초).\n" +
-             "스케줄 모드에서는 다음 스케줄까지 정지하므로 큰 의미 없음")]
+    [Tooltip("한 사이클 완료 후 다음 사이클 시작까지 대기(초)")]
     [SerializeField] float loopDelay = 0.3f;
 
-    [Header("한계")]
-    [Tooltip("최대 순전진 거리(m). 이 거리에 도달하면 정지. 0이면 무제한")]
-    [SerializeField] float maxTotalAdvance = 0f;
-
-    // ─── 타임라인 스케줄 ──────────────────────────────────────────
-
     [Header("타임라인 스케줄")]
-    [Tooltip("씬 시작 기준 몇 초에 전진을 시작할지 입력.\n" +
-             "ex) [5, 20, 40] → 5초, 20초, 40초에 각각 발동.\n" +
-             "비워두면 activateOnStart 로 제어.")]
-    [SerializeField] float[] activateAtSeconds = new float[0];
-
-    [Tooltip("한 번 스케줄이 발동될 때 실행할 사이클 수.\n" +
-             "0 = 무한 반복 (Deactivate() 또는 maxTotalAdvance 도달까지)")]
-    [SerializeField] int cyclesPerActivation = 1;
+    [Tooltip("발동 시각과 이동 거리를 항목마다 개별 설정.\n" +
+             "atSeconds 오름차순으로 입력 권장.")]
+    [SerializeField] AdvanceEntry[] schedule = new AdvanceEntry[0];
 
     [Tooltip("스케줄 전체를 주기적으로 반복")]
     [SerializeField] bool loopSchedule = false;
 
     [Tooltip("loopSchedule = true 일 때 반복 주기(초).\n" +
-             "마지막 activateAtSeconds 값보다 크게 설정할 것")]
+             "마지막 항목의 atSeconds 보다 크게 설정할 것")]
     [SerializeField] float schedulePeriod = 60f;
 
-    [Tooltip("스케줄을 씬 시작 시 자동 시작")]
+    [Tooltip("씬 시작 시 자동으로 스케줄 시작")]
     [SerializeField] bool scheduleOnStart = true;
 
-    // ─── 단순 즉시 시작 (스케줄 미사용 시) ──────────────────────
-
     [Header("즉시 시작 (스케줄 미사용 시)")]
-    [Tooltip("activateAtSeconds 가 비어있을 때만 적용.\n" +
-             "true면 씬 시작 즉시 무한 반복")]
+    [Tooltip("schedule 이 비어있을 때만 적용. 아래 기본 거리로 즉시 무한 반복.")]
     [SerializeField] bool activateOnStart = false;
+
+    [Tooltip("activateOnStart 전용 전진 거리(m)")]
+    [SerializeField] float defaultAdvanceDistance = 5f;
+
+    [Tooltip("activateOnStart 전용 후퇴 거리(m)")]
+    [SerializeField] float defaultRetreatDistance = 3f;
+
+    [Header("한계 / 게임 실패")]
+    [Tooltip("최대 순전진 허용 거리(m). 이 거리를 초과하면 OnMaxReached 이벤트 발생 → 게임 실패 연결.\n" +
+             "0이면 무제한.\n" +
+             "예) 100×100 방, 상하 벽 쌍이면 각 35 설정 시 최소 공간 10m 확보")]
+    [SerializeField] float maxTotalAdvance = 0f;
+
+    [Header("패널티 전진")]
+    [Tooltip("PermanentAdvance() 호출 시 이동 소요 시간(초). 스케줄 이동과 별개로 움직임")]
+    [SerializeField] float penaltyMoveDuration = 0.6f;
+
+    [Header("ColorWall 연동 — 일시정지")]
+    [Tooltip("색상 일치로 일시정지 시, 누적 원점(_currentOrigin)으로 복귀하는 소요 시간(초).\n" +
+             "예) 30 전진 → 20 후퇴 → 원점이 +10. 정지 시 +10 위치로 복귀.")]
+    [SerializeField] float pauseReturnDuration = 0.5f;
 
     [Header("이벤트")]
     public UnityEvent OnAdvanceStarted;
     public UnityEvent OnAdvanceCompleted;
     public UnityEvent OnRetreatStarted;
     public UnityEvent OnRetreatCompleted;
+    /// <summary>maxTotalAdvance 초과 시 발생. GameManager.GameFail() 등을 연결.</summary>
     public UnityEvent OnMaxReached;
+    /// <summary>PermanentAdvance() 완료 시 발생.</summary>
+    public UnityEvent OnPermanentAdvance;
 
     [Header("Runtime (확인용)")]
     [SerializeField] bool    _isActive;
-    [SerializeField] int     _cyclesRemaining;
+    [SerializeField] bool    _isPausedByColor;
     [SerializeField] float   _totalAdvanced;
     [SerializeField] Vector3 _currentOrigin;
 
     Rigidbody _rb;
     Coroutine _advanceCoroutine;
     Coroutine _scheduleCoroutine;
+    Coroutine _pauseCoroutine;
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
@@ -111,12 +140,18 @@ public class AdvancingWall : MonoBehaviour
 
     void Start()
     {
-        bool hasSchedule = activateAtSeconds != null && activateAtSeconds.Length > 0;
+        bool hasSchedule = schedule != null && schedule.Length > 0;
 
         if (hasSchedule && scheduleOnStart)
             StartSchedule();
         else if (!hasSchedule && activateOnStart)
-            Activate(0); // 0 = 무한
+            StartCoroutine(RunEntry(
+                new AdvanceEntry
+                {
+                    advanceDistance = defaultAdvanceDistance,
+                    retreatDistance = defaultRetreatDistance,
+                    cycles          = 0
+                }));
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
@@ -138,25 +173,7 @@ public class AdvancingWall : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 전진 즉시 시작.
-    /// cycles: 실행할 사이클 수 (0 = 무한).
-    /// </summary>
-    public void Activate(int cycles = -1)
-    {
-        if (_isActive) return;
-
-        // cycles < 0 이면 Inspector cyclesPerActivation 사용
-        int count = cycles < 0 ? cyclesPerActivation : cycles;
-
-        _isActive        = true;
-        _cyclesRemaining = count; // 0 = 무한
-
-        if (_advanceCoroutine != null) StopCoroutine(_advanceCoroutine);
-        _advanceCoroutine = StartCoroutine(AdvanceRoutine());
-    }
-
-    /// <summary>전진 중단 (현 위치에서 정지).</summary>
+    /// <summary>현 위치에서 정지.</summary>
     public void Deactivate()
     {
         _isActive = false;
@@ -171,10 +188,38 @@ public class AdvancingWall : MonoBehaviour
     public void ResetToStart()
     {
         Deactivate();
-        _totalAdvanced   = 0f;
-        _cyclesRemaining = 0;
-        _currentOrigin   = transform.position;
+        _totalAdvanced = 0f;
+        _currentOrigin = transform.position;
         _rb.MovePosition(_currentOrigin);
+    }
+
+    /// <summary>
+    /// 패널티 전진 — 스케줄과 완전히 별개로 distance 만큼 영구 접근.
+    /// 현재 스케줄 이동이 진행 중이면 완료 후 실행.
+    /// 이후 스케줄 이동은 새 원점 기준으로 적용됨.
+    /// ex) 스케줄 10 전진 예정 + 패널티 5 → 패널티 먼저 이동 후 스케줄 10 추가 = 총 15
+    /// </summary>
+    public void PermanentAdvance(float distance)
+    {
+        if (distance <= 0f) return;
+        StartCoroutine(PenaltyRoutine(distance));
+    }
+
+    /// <summary>현재까지 순전진한 총 거리 (패널티 포함).</summary>
+    public float TotalAdvanced => _totalAdvanced;
+
+    /// <summary>
+    /// ColorWall 색상 일치 시 호출.
+    /// 현재 전진을 중단하고 누적 원점(_currentOrigin)으로 부드럽게 복귀 후
+    /// duration 만큼 멈춘 뒤 스케줄 재개.
+    ///
+    /// "자기 자리"란 마지막으로 확정된 후퇴 완료 위치 (_currentOrigin).
+    /// 예) 30 전진 → 20 후퇴 → _currentOrigin = +10. 멈추면 +10 위치로 복귀.
+    /// </summary>
+    public void PauseTemporarily(float duration)
+    {
+        if (_pauseCoroutine != null) StopCoroutine(_pauseCoroutine);
+        _pauseCoroutine = StartCoroutine(PauseByColorRoutine(duration));
     }
 
     // ── 내부 ────────────────────────────────────────────────────
@@ -185,19 +230,19 @@ public class AdvancingWall : MonoBehaviour
         {
             float startTime = Time.time;
 
-            foreach (float sec in activateAtSeconds)
+            foreach (AdvanceEntry entry in schedule)
             {
-                float remaining = (startTime + sec) - Time.time;
+                float remaining = (startTime + entry.atSeconds) - Time.time;
                 if (remaining > 0f)
                     yield return new WaitForSeconds(remaining);
 
-                // 이미 이동 중이면 완료 후 발동 (겹침 방지)
-                while (_isActive) yield return null;
+                // 이전 이동 완료 + ColorWall 일시정지 해제까지 대기
+                while (_isActive || _isPausedByColor) yield return null;
 
-                Activate(); // Inspector의 cyclesPerActivation 사용
+                _advanceCoroutine = StartCoroutine(RunEntry(entry));
 
-                // 이동이 끝날 때까지 대기 (다음 스케줄 항목으로 넘어가기 위해)
-                while (_isActive) yield return null;
+                // 이동 완료 + ColorWall 일시정지 해제까지 대기
+                while (_isActive || _isPausedByColor) yield return null;
             }
 
             if (!loopSchedule) yield break;
@@ -209,11 +254,20 @@ public class AdvancingWall : MonoBehaviour
         }
     }
 
-    IEnumerator AdvanceRoutine()
+    /// <summary>단일 AdvanceEntry 실행 (지정 사이클 수만큼 전진·후퇴 반복).</summary>
+    IEnumerator RunEntry(AdvanceEntry entry)
     {
+        _isActive = true;
+
+        float advDist = entry.advanceDistance;
+        float retDist = entry.retreatDistance;
+        float advDur  = entry.overrideMoveDuration   > 0f ? entry.overrideMoveDuration   : moveDuration;
+        float retDur  = entry.overrideReturnDuration > 0f ? entry.overrideReturnDuration : returnDuration;
+        int   total   = Mathf.Max(entry.cycles, 1); // 0도 최소 1회 실행
+
         int cyclesDone = 0;
 
-        while (_isActive)
+        while (_isActive && cyclesDone < total)
         {
             // 최대 거리 도달 확인
             if (maxTotalAdvance > 0f && _totalAdvanced >= maxTotalAdvance)
@@ -223,43 +277,90 @@ public class AdvancingWall : MonoBehaviour
                 yield break;
             }
 
-            // 사이클 수 제한 확인 (0 = 무한)
-            if (_cyclesRemaining > 0 && cyclesDone >= _cyclesRemaining)
-            {
-                _isActive = false;
-                yield break;
-            }
-
             Vector3 worldDir      = transform.TransformDirection(moveDirection.normalized);
-            Vector3 advanceTarget = _currentOrigin + worldDir * advanceDistance;
-            float   netAdvance    = advanceDistance - retreatDistance;
-            Vector3 newOrigin     = _currentOrigin + worldDir * netAdvance;
+            Vector3 advanceTarget = _currentOrigin + worldDir * advDist;
+            float   net           = advDist - retDist;
+            Vector3 newOrigin     = _currentOrigin + worldDir * net;
 
             // 전진
             OnAdvanceStarted?.Invoke();
-            yield return LerpTo(_currentOrigin, advanceTarget, moveDuration);
+            yield return LerpTo(_currentOrigin, advanceTarget, advDur);
             _rb.MovePosition(advanceTarget);
             OnAdvanceCompleted?.Invoke();
 
             if (returnDelay > 0f)
                 yield return new WaitForSeconds(returnDelay);
 
-            // 후퇴
-            OnRetreatStarted?.Invoke();
-            yield return LerpTo(advanceTarget, newOrigin, returnDuration);
-            _rb.MovePosition(newOrigin);
-            OnRetreatCompleted?.Invoke();
+            // 후퇴 (retreatDistance = 0이면 후퇴 생략)
+            if (retDist > 0f)
+            {
+                OnRetreatStarted?.Invoke();
+                yield return LerpTo(advanceTarget, newOrigin, retDur);
+                _rb.MovePosition(newOrigin);
+                OnRetreatCompleted?.Invoke();
 
-            // 원점 갱신
-            _currentOrigin  = newOrigin;
-            _totalAdvanced += netAdvance;
+                _currentOrigin  = newOrigin;
+                _totalAdvanced += Mathf.Max(net, 0f);
+            }
+            else
+            {
+                _currentOrigin  = advanceTarget;
+                _totalAdvanced += advDist;
+            }
+
             cyclesDone++;
 
-            if (loopDelay > 0f && (_cyclesRemaining == 0 || cyclesDone < _cyclesRemaining))
+            if (loopDelay > 0f && cyclesDone < total)
                 yield return new WaitForSeconds(loopDelay);
         }
 
         _isActive = false;
+    }
+
+    IEnumerator PenaltyRoutine(float distance)
+    {
+        // 현재 스케줄 이동이 실행 중이면 완료 대기
+        while (_isActive) yield return null;
+
+        Vector3 worldDir = transform.TransformDirection(moveDirection.normalized);
+        Vector3 from     = _rb.position;
+        Vector3 target   = _currentOrigin + worldDir * distance;
+
+        yield return LerpTo(from, target, Mathf.Max(penaltyMoveDuration, 0.05f));
+        _rb.MovePosition(target);
+
+        _currentOrigin  = target;
+        _totalAdvanced += distance;
+
+        OnPermanentAdvance?.Invoke();
+
+        // 패널티로 인해 최대 거리 초과 확인
+        if (maxTotalAdvance > 0f && _totalAdvanced >= maxTotalAdvance)
+            OnMaxReached?.Invoke();
+    }
+
+    IEnumerator PauseByColorRoutine(float duration)
+    {
+        // 현재 전진 중지
+        if (_advanceCoroutine != null)
+        {
+            StopCoroutine(_advanceCoroutine);
+            _advanceCoroutine = null;
+        }
+        _isActive        = false;
+        _isPausedByColor = true;
+
+        // _currentOrigin 으로 부드럽게 복귀 (= 마지막 확정 후퇴 위치)
+        Vector3 from = _rb.position;
+        if (Vector3.Distance(from, _currentOrigin) > 0.01f)
+            yield return LerpTo(from, _currentOrigin, Mathf.Max(pauseReturnDuration, 0.05f));
+        _rb.MovePosition(_currentOrigin);
+
+        // 일시정지 유지
+        yield return new WaitForSeconds(Mathf.Max(duration, 0f));
+
+        _isPausedByColor = false;
+        // ScheduleRoutine이 _isPausedByColor == false 를 확인 후 다음 항목 자동 실행
     }
 
     IEnumerator LerpTo(Vector3 from, Vector3 to, float duration)
@@ -276,12 +377,6 @@ public class AdvancingWall : MonoBehaviour
 
     // ── 에디터 ──────────────────────────────────────────────────
 
-    [ContextMenu("테스트: 즉시 시작 (1 사이클)")]
-    void Debug_Activate1() => Activate(1);
-
-    [ContextMenu("테스트: 즉시 시작 (무한)")]
-    void Debug_ActivateInf() => Activate(0);
-
     [ContextMenu("테스트: 스케줄 시작")]
     void Debug_StartSchedule() => StartSchedule();
 
@@ -296,15 +391,42 @@ public class AdvancingWall : MonoBehaviour
         Vector3 origin   = Application.isPlaying ? _currentOrigin : transform.position;
         Vector3 worldDir = transform.TransformDirection(moveDirection.normalized);
 
-        // 전진 목표 (주황)
-        Gizmos.color = new Color(1f, 0.4f, 0f, 0.9f);
-        Gizmos.DrawLine(origin, origin + worldDir * advanceDistance);
-        Gizmos.DrawWireSphere(origin + worldDir * advanceDistance, 0.18f);
+        if (schedule != null && schedule.Length > 0)
+        {
+            // 모든 스케줄 항목의 전진/후퇴 위치를 시뮬레이션해서 표시
+            Vector3 simOrigin = origin;
+            for (int i = 0; i < schedule.Length; i++)
+            {
+                AdvanceEntry e = schedule[i];
+                float alpha = 1f - (float)i / schedule.Length * 0.5f;
 
-        // 새 원점 (파랑)
-        float net = advanceDistance - retreatDistance;
-        Gizmos.color = new Color(0.2f, 0.7f, 1f, 0.9f);
-        Gizmos.DrawWireSphere(origin + worldDir * net, 0.13f);
+                Vector3 advTarget  = simOrigin + worldDir * e.advanceDistance;
+                float   net        = e.advanceDistance - e.retreatDistance;
+                Vector3 newOrigin  = simOrigin + worldDir * net;
+
+                // 전진선 (주황)
+                Gizmos.color = new Color(1f, 0.4f, 0f, alpha);
+                Gizmos.DrawLine(simOrigin, advTarget);
+                Gizmos.DrawWireSphere(advTarget, 0.18f);
+
+                // 후퇴 후 원점 (파랑)
+                Gizmos.color = new Color(0.2f, 0.7f, 1f, alpha);
+                Gizmos.DrawWireSphere(newOrigin, 0.13f);
+
+                simOrigin = newOrigin;
+            }
+        }
+        else
+        {
+            // 기본 거리 표시
+            Gizmos.color = new Color(1f, 0.4f, 0f, 0.9f);
+            Gizmos.DrawLine(origin, origin + worldDir * defaultAdvanceDistance);
+            Gizmos.DrawWireSphere(origin + worldDir * defaultAdvanceDistance, 0.18f);
+
+            float net = defaultAdvanceDistance - defaultRetreatDistance;
+            Gizmos.color = new Color(0.2f, 0.7f, 1f, 0.9f);
+            Gizmos.DrawWireSphere(origin + worldDir * net, 0.13f);
+        }
 
         // 현재 원점 (흰색)
         Gizmos.color = Color.white;

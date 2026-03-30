@@ -59,6 +59,16 @@ public class ColorTileChallenge : MonoBehaviour
     [Tooltip("반복 시 한 사이클 길이(초). loopSchedule=true일 때만 사용")]
     [SerializeField] float schedulePeriod = 90f;
 
+    [Header("실패 패널티 — 벽 영구 접근")]
+    [Tooltip("찰린지 실패 시 영구적으로 접근할 AdvancingWall 목록.\n" +
+             "North / South / West / East 벽 4개 등록 권장.")]
+    [SerializeField] AdvancingWall[] penaltyWalls = new AdvancingWall[0];
+
+    [Tooltip("실패 1회당 각 벽이 영구 접근하는 거리(m).\n" +
+             "스케줄 이동과 별개로 적용됨.\n" +
+             "ex) 스케줄 10 전진 + 패널티 5 → 총 15 전진")]
+    [SerializeField] float penaltyAdvanceDistance = 5f;
+
     [Header("이벤트")]
     [Tooltip("찰린지 시작 시 호출")]
     public UnityEvent OnChallengeStarted;
@@ -66,12 +76,13 @@ public class ColorTileChallenge : MonoBehaviour
     [Tooltip("시간 안에 모두 성공 시 호출")]
     public UnityEvent OnSuccess;
 
-    [Tooltip("시간 초과 시 호출 (벽 압축 등 연결)")]
+    [Tooltip("시간 초과 시 호출 (추가 연출 등 연결 가능)")]
     public UnityEvent OnFail;
 
     [Header("Runtime (확인용)")]
     [SerializeField] float _remainingTime;
     [SerializeField] bool  _isRunning;
+    [SerializeField] int   _failCount;
 
     readonly List<ColorTile> _activeTiles = new List<ColorTile>();
     Coroutine _challengeCoroutine;
@@ -192,7 +203,16 @@ public class ColorTileChallenge : MonoBehaviour
             _activeTiles.Add(tile);
         }
 
+        // 타일이 하나도 생성되지 않으면 챌린지 진행 불가
+        if (_activeTiles.Count == 0)
+        {
+            Debug.LogWarning("[ColorTileChallenge] 타일이 생성되지 않았습니다. tilePrefabs 등록을 확인하세요.");
+            _isRunning = false;
+            yield break;
+        }
+
         OnChallengeStarted?.Invoke();
+
 
         // 4. 타이머 루프
         _remainingTime = timeLimit;
@@ -200,7 +220,8 @@ public class ColorTileChallenge : MonoBehaviour
         {
             _remainingTime -= Time.deltaTime;
 
-            bool allDone = true;
+            // 모든 타일이 완료됐는지 확인 (타일이 있을 때만 성공 가능)
+            bool allDone = _activeTiles.Count > 0;
             foreach (ColorTile t in _activeTiles)
             {
                 if (t == null || !t.IsCompleted) { allDone = false; break; }
@@ -218,16 +239,49 @@ public class ColorTileChallenge : MonoBehaviour
             yield return null;
         }
 
-        // 5. 시간 초과
+        // 5. 시간 초과 → 타일 즉시 제거 후 패널티
         ClearTiles();
         _isRunning = false;
+        _failCount++;
+        ApplyPenalty();
         OnFail?.Invoke();
     }
+
+    void OnDisable()
+    {
+        // 오브젝트 비활성화 시 남아있는 타일 강제 정리
+        ClearTiles();
+    }
+
+    /// <summary>
+    /// 실패 패널티: penaltyWalls 에 등록된 모든 벽을 penaltyAdvanceDistance 만큼 영구 전진.
+    /// 스케줄 이동과 별개로 동작하며, 벽이 현재 이동 중이면 완료 후 실행됨.
+    /// </summary>
+    void ApplyPenalty()
+    {
+        if (penaltyWalls == null || penaltyWalls.Length == 0) return;
+        if (penaltyAdvanceDistance <= 0f) return;
+
+        foreach (AdvancingWall wall in penaltyWalls)
+        {
+            if (wall != null)
+                wall.PermanentAdvance(penaltyAdvanceDistance);
+        }
+
+        Debug.Log($"[ColorTileChallenge] 실패 #{_failCount} — 패널티 적용: {penaltyWalls.Length}개 벽 {penaltyAdvanceDistance}m 영구 전진");
+    }
+
+    /// <summary>실패 누적 횟수.</summary>
+    public int FailCount => _failCount;
 
     void ClearTiles()
     {
         foreach (ColorTile t in _activeTiles)
-            if (t != null) Destroy(t.gameObject);
+        {
+            if (t == null) continue;
+            t.gameObject.SetActive(false); // 즉시 시각적으로 숨김
+            Destroy(t.gameObject);         // 프레임 끝에 메모리 해제
+        }
         _activeTiles.Clear();
     }
 
