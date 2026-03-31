@@ -33,21 +33,19 @@ public class Player : MonoBehaviour
     [Tooltip("폭발 이펙트 프리팹 (선택)")]
     public GameObject grenadeExplosionEffect;
 
-    [Header("Potion Drink")]
-    [Tooltip("포션을 마시는 데 걸리는 시간(초). 0이면 즉시")]
-    public float potionDrinkDuration = 0f;
-
     public Camera followCamera;
-    public LayerMask aimMask;
 
-    [Tooltip("마우스가 캐릭터로부터 이 거리 이내이면 회전 갱신 안 함 (탑다운 카메라 떨림 방지). 캐릭터 크기에 맞게 조정")]
-    public float turnDeadZone = 1.5f;
+    [Header("Turn")]
+    [Tooltip("이동 방향으로 캐릭터가 회전하는 속도 (0 = 즉시). 폴가이즈 느낌: 10~15")]
+    public float turnSpeed = 0f;
+
+    [Header("Grenade (Runtime)")]
+    [Tooltip("현재 수류탄 보유 여부 (런타임 확인용)")]
+    public bool hasGrenade;
 
     [Header("Stat")]
-    public int coin;
     public int heart;
 
-    public int maxCoin = 0;
     public int maxHeart = 0;
 
     [Header("Stamina")]
@@ -67,7 +65,7 @@ public class Player : MonoBehaviour
     float staminaRechargeTimer;
     bool isStaminaDraining;
 
-    [Header("Jump / Dodge")]
+    [Header("Dodge")]
     public float dodgeForce = 0f;
 
     [Header("Black/White Switch")]
@@ -109,13 +107,6 @@ public class Player : MonoBehaviour
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
-    [Header("좌클릭 우선순위")]
-    [Tooltip(
-        "아이템 사용의 좌클릭 우선순위 (기본: 10).\n" +
-        "BoxInteraction.interactionPriority(기본 0)보다 높으면 박스 우선.\n" +
-        "새 상호작용 추가 시 이 값과 비교하는 interactionPriority 필드를 해당 컴포넌트에 추가.")]
-    public int itemUsePriority = 10;
-
     public bool IsDead { get; private set; }
 
     public Vector2 moveInput;
@@ -127,7 +118,6 @@ public class Player : MonoBehaviour
     bool isDamage;
     bool isKnockback;
 
-    bool sDown1, sDown2, sDown3, sDown4, sDown5;
     bool bwDown, dDown, altDown;
 
     // 낙사 Fall 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
@@ -137,9 +127,6 @@ public class Player : MonoBehaviour
 
     bool  grenadeHeld       = false;
     float grenadeChargeTime = 0f;
-    float potionDrinkTimer  = 0f;
-    int   prevSelectedSlot  = -1;
-    bool  requiresInputRelease = false;
 
     float nextActionTime = 0f;
     float nextBWTime = 0f;
@@ -158,7 +145,6 @@ public class Player : MonoBehaviour
 
     PlayerEvents events;
     PlayerStealth playerStealth;
-    PlayerItemInventory playerItemInventory;
     PlayerBuffSystem playerBuffSystem;
     BoxInteraction boxInteraction;
 
@@ -186,9 +172,6 @@ public class Player : MonoBehaviour
         if (events == null) events = gameObject.AddComponent<PlayerEvents>();
 
         playerStealth = GetComponent<PlayerStealth>();
-
-        playerItemInventory = GetComponent<PlayerItemInventory>();
-        if (playerItemInventory == null) playerItemInventory = gameObject.AddComponent<PlayerItemInventory>();
 
         playerBuffSystem = GetComponent<PlayerBuffSystem>();
         if (playerBuffSystem == null) playerBuffSystem = gameObject.AddComponent<PlayerBuffSystem>();
@@ -232,8 +215,7 @@ public class Player : MonoBehaviour
         if (!isGrabbingBox)
         {
             Dodge();
-            HandleItemSlotInput();
-            UseItem();
+            UseGrenade();
 
             if (bwDown && Time.time >= nextBWTime)
             {
@@ -273,12 +255,6 @@ public class Player : MonoBehaviour
 
     void GetInput()
     {
-        sDown1 = Keyboard.current.digit1Key.wasPressedThisFrame;
-        sDown2 = Keyboard.current.digit2Key.wasPressedThisFrame;
-        sDown3 = Keyboard.current.digit3Key.wasPressedThisFrame;
-        sDown4 = Keyboard.current.digit4Key.wasPressedThisFrame;
-        sDown5 = Keyboard.current.digit5Key.wasPressedThisFrame;
-
         dDown   = Keyboard.current.spaceKey.wasPressedThisFrame;
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
@@ -288,10 +264,15 @@ public class Player : MonoBehaviour
     {
         if (isKnockback) return;
 
-        if (followCamera != null)
-            moveVec = (transform.forward * moveInput.y + transform.right * moveInput.x).normalized;
-        else
-            moveVec = new Vector3(moveInput.x, 0, moveInput.y).normalized;
+        // 카메라의 수평 forward/right 기준으로 이동 방향 계산 (폴가이즈 스타일)
+        Vector3 camForward = (followCamera != null)
+            ? Vector3.ProjectOnPlane(followCamera.transform.forward, Vector3.up).normalized
+            : Vector3.forward;
+        Vector3 camRight = (followCamera != null)
+            ? Vector3.ProjectOnPlane(followCamera.transform.right, Vector3.up).normalized
+            : Vector3.right;
+
+        moveVec = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
         bool hasMove = moveVec.sqrMagnitude > 0.0001f;
         bool walkKey = Keyboard.current.leftShiftKey.isPressed;
@@ -336,21 +317,14 @@ public class Player : MonoBehaviour
 
     void Turn()
     {
-        if (followCamera == null) return;
+        // 이동 입력이 없으면 마지막 방향 유지 (폴가이즈 스타일)
+        if (moveVec.sqrMagnitude < 0.001f) return;
 
-        Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = followCamera.ScreenPointToRay(mousePos);
-        var floorPlane = new Plane(Vector3.up, transform.position);
-
-        if (floorPlane.Raycast(ray, out float enter))
-        {
-            Vector3 hit = ray.GetPoint(enter);
-            Vector3 dir = hit - transform.position;
-            dir.y = 0f;
-            // turnDeadZone 이내에 커서가 있으면 회전 갱신 생략 → 방향 유지
-            if (dir.sqrMagnitude > turnDeadZone * turnDeadZone)
-                transform.forward = dir.normalized;
-        }
+        Quaternion targetRot = Quaternion.LookRotation(moveVec);
+        if (turnSpeed > 0f)
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.fixedDeltaTime);
+        else
+            transform.forward = moveVec;
     }
 
     void FreezeRotation()
@@ -405,75 +379,22 @@ public class Player : MonoBehaviour
 
     // ── 아이템 슬롯 ─────────────────────────────────────────
 
-    void HandleItemSlotInput()
+    void UseGrenade()
     {
-        if (playerItemInventory == null) return;
-
-        int prev = playerItemInventory.SelectedSlot;
-
-        if (sDown1)      playerItemInventory.SelectSlot(0);
-        else if (sDown2) playerItemInventory.SelectSlot(1);
-        else if (sDown3) playerItemInventory.SelectSlot(2);
-        else if (sDown4) playerItemInventory.SelectSlot(3);
-        else if (sDown5) playerItemInventory.SelectSlot(4);
-        else return;
-
-        int current = playerItemInventory.SelectedSlot;
-        if (current >= 0 && current != prev && anim != null)
-            anim.SetTrigger("doSwap");
-    }
-
-    void UseItem()
-    {
-        if (playerItemInventory == null) return;
-
-        int curSlot = playerItemInventory.SelectedSlot;
-
-        // 슬롯 전환 시 진행 중인 차징/마시기 초기화
-        if (curSlot != prevSelectedSlot)
-        {
-            grenadeHeld          = false;
-            grenadeChargeTime    = 0f;
-            potionDrinkTimer     = 0f;
-            prevSelectedSlot     = curSlot;
-            // 버튼 누른 채로 슬롯을 바꿨다면 뗐다가 다시 눌러야 함
-            // (예: 포션 마시는 중 수류탄 슬롯으로 바꿔도 즉시 던지지 않음)
-            requiresInputRelease = Mouse.current.leftButton.isPressed;
-        }
-
-        // 버튼 해제 대기: 아직 누르고 있으면 아이템 사용 차단
-        if (requiresInputRelease)
-        {
-            if (!Mouse.current.leftButton.isPressed) requiresInputRelease = false;
-            else return;
-        }
-
-        // 차징 중이면 release 이벤트 감지를 위해 SelectedSlotHasItem 체크 전에 처리
+        // 차징 중이면 release 감지 우선
         if (grenadeHeld)
         {
             HandleGrenadeRelease();
             return;
         }
 
-        if (!playerItemInventory.SelectedSlotHasItem()) return;
+        if (!hasGrenade) return;
         if (isDodging || isJumping) return;
 
-        // 우선순위 체크: 박스 상호작용이 이번 프레임 좌클릭을 소비했으면 아이템 사용 건너뜀
-        // 새 상호작용 추가 시: 해당 컴포넌트의 interactionPriority와 itemUsePriority 비교
-        if (boxInteraction != null
-            && boxInteraction.BlockingMouseInput
-            && boxInteraction.interactionPriority <= itemUsePriority)
-            return;
+        // 박스 잡는 중 좌클릭이면 수류탄 사용 차단
+        if (boxInteraction != null && boxInteraction.BlockingMouseInput) return;
 
-        switch (playerItemInventory.GetSelectedType())
-        {
-            case PlayerItemInventory.ConsumableType.Grenade:
-                HandleGrenadeInput();
-                break;
-            case PlayerItemInventory.ConsumableType.HealthPotion:
-                HandlePotionInput();
-                break;
-        }
+        HandleGrenadeInput();
     }
 
     void HandleGrenadeInput()
@@ -513,7 +434,7 @@ public class Player : MonoBehaviour
 
             if (ThrowGrenadeWithForce(force))
             {
-                playerItemInventory.ConsumeSelected();
+                hasGrenade = false;
                 anim?.SetTrigger("doThrow");
             }
         }
@@ -522,40 +443,7 @@ public class Player : MonoBehaviour
         grenadeChargeTime = 0f;
     }
 
-    void HandlePotionInput()
-    {
-        bool holding = Mouse.current.leftButton.isPressed;
-
-        if (!holding)
-        {
-            potionDrinkTimer = 0f;
-            return;
-        }
-
-        potionDrinkTimer += Time.deltaTime;
-
-        if (potionDrinkTimer >= potionDrinkDuration)
-        {
-            if (HealFromPotion(playerItemInventory.healAmount))
-            {
-                playerItemInventory.ConsumeSelected();
-                anim?.SetTrigger("doHeal");
-            }
-
-            potionDrinkTimer = 0f;
-        }
-    }
-
     // ── 공개 메서드 ──────────────────────────────────────────
-
-    /// <summary> 체력 포션 사용 </summary>
-    public bool HealFromPotion(int amount)
-    {
-        if (IsDead) return false;
-        if (heart >= maxHeart) return false;
-        heart = Mathf.Min(maxHeart, heart + amount);
-        return true;
-    }
 
     /// <summary>
     /// 차징 힘으로 수류탄 투척.
@@ -566,20 +454,8 @@ public class Player : MonoBehaviour
     {
         if (grenadeObj == null) return false;
 
-        // 수평 방향: 마우스 → 바닥 or 전방 fallback
+        // 수평 방향: 캐릭터가 바라보는 방향으로 투척 (폴가이즈 스타일)
         Vector3 flatDir = transform.forward;
-        if (followCamera != null)
-        {
-            Vector2 mousePos = Mouse.current.position.ReadValue();
-            Ray ray = followCamera.ScreenPointToRay(mousePos);
-            if (Physics.Raycast(ray, out RaycastHit hit, 200f, aimMask))
-            {
-                Vector3 toTarget = hit.point - transform.position;
-                toTarget.y = 0f;
-                if (toTarget.sqrMagnitude > 0.01f)
-                    flatDir = toTarget.normalized;
-            }
-        }
 
         // 투척 각도 적용 (grenadeThrowAngle 도 → 정규화된 방향)
         float rad = grenadeThrowAngle * Mathf.Deg2Rad;
@@ -662,10 +538,6 @@ public class Player : MonoBehaviour
         if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
             return;
 
-        // 쉴드 패시브: 보유 시 1회 자동 방어
-        if (playerItemInventory != null && playerItemInventory.TryConsumeShield())
-            return;
-
         // 즉사 판정: threshold 초과 데미지면 isInstantKill 플래그 설정 → Die()에서 doJammed 재생
         isInstantKill = instantKillThreshold > 0 && amount >= instantKillThreshold;
 
@@ -690,21 +562,10 @@ public class Player : MonoBehaviour
             if (item == null) return;
 
             bool picked = false;
-            switch (item.type)
+            if (item.type == Item.Type.Grenade && !hasGrenade)
             {
-                case Item.Type.Coin:
-                    coin = Mathf.Min(maxCoin, coin + item.value);
-                    picked = true;
-                    break;
-                case Item.Type.Grenade:
-                    picked = playerItemInventory.TryPickup(PlayerItemInventory.ConsumableType.Grenade);
-                    break;
-                case Item.Type.HealthPotion:
-                    picked = playerItemInventory.TryPickup(PlayerItemInventory.ConsumableType.HealthPotion);
-                    break;
-                case Item.Type.Shield:
-                    picked = playerItemInventory.TryPickup(PlayerItemInventory.ConsumableType.Shield);
-                    break;
+                hasGrenade = true;
+                picked = true;
             }
             // 인벤토리 가득 찼으면 아이템을 파괴하지 않음
             if (picked) Destroy(other.gameObject);

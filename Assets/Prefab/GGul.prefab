@@ -167,9 +167,6 @@ PrefabInstance:
       addedObject: {fileID: 3435187116512074180}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1fb7cc553df1d124aa9fd8308fbed762, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 999039802042254452}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1fb7cc553df1d124aa9fd8308fbed762, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7725128348115542678}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1fb7cc553df1d124aa9fd8308fbed762, type: 3}
       insertIndex: -1
@@ -322,6 +319,8 @@ MonoBehaviour:
   aimMask:
     serializedVersion: 2
     m_Bits: 33554432
+  turnDeadZone: 1.5
+  turnSpeed: 0
   coin: 0
   heart: 100
   maxCoin: 0
@@ -375,34 +374,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b0a725868e1c124f8db16451feb5158, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerEvents
---- !u!114 &999039802042254452
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4458083270716849098}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d91163d5c684ec4ab27b771b203139c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerItemInventory
-  slots:
-  - type: 0
-    count: 0
-  - type: 0
-    count: 0
-  - type: 0
-    count: 0
-  - type: 0
-    count: 0
-  - type: 0
-    count: 0
-  healAmount: 0
-  handPoint: {fileID: 0}
-  grenadeHeldVisual: {fileID: 0}
-  potionHeldVisual: {fileID: 0}
-  shieldHeldVisual: {fileID: 0}
 --- !u!114 &7725128348115542678
 MonoBehaviour:
   m_ObjectHideFlags: 0

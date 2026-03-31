@@ -2,9 +2,8 @@ using UnityEngine;
 
 public class Item : MonoBehaviour
 {
-    public enum Type { Coin, Grenade, HealthPotion, Shield }
+    public enum Type { Grenade }
     public Type type;
-    public int value;
 
     Rigidbody rigid;
     Collider itemCollider;
