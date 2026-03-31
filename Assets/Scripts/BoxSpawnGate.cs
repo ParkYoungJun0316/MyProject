@@ -28,9 +28,8 @@ public class BoxSpawnGate : MonoBehaviour
     public UnityEvent OnGateOpen;   // 스폰 발동 시
     public UnityEvent OnGateReset;  // 트리거 하나라도 해제됐을 때
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] float _nextAllowedTime;
-    [SerializeField] bool  _isOpen;
+    float _nextAllowedTime;
+    bool  _isOpen;
 
     public bool IsOpen => _isOpen;
 

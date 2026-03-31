@@ -36,7 +36,6 @@ public class BoxInteraction : MonoBehaviour
         "새 상호작용 추가 시 이 값과 비교하는 우선순위 필드를 각 컴포넌트에 추가.")]
     public int interactionPriority = 0;
 
-    [Header("Runtime (확인용)")]
     public bool isGrabbing;
     public PushableBox grabbedBox;
 

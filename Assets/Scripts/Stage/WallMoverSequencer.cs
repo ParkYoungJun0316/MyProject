@@ -53,9 +53,8 @@ public class WallMoverSequencer : MonoBehaviour
     [Tooltip("모든 벽 이동이 완료됐을 때 호출")]
     public UnityEvent OnSequenceCompleted;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool _isRunning;
-    [SerializeField] bool _hasActivated;
+    bool _isRunning;
+    bool _hasActivated;
 
     // ── 외부 호출 ────────────────────────────────────────────────
 

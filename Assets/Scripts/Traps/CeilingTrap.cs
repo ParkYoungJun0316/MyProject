@@ -34,8 +34,7 @@ public class CeilingTrap : MonoBehaviour
              "WallMover의 moveDuration + returnDelay + returnDuration 합산보다 크게 설정")]
     [SerializeField] float cooldown = 5f;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] float _cooldownRemaining;
+    float _cooldownRemaining;
 
     Player[] _cachedPlayers;
     int      _playerLayerId;

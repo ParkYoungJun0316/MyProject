@@ -118,11 +118,10 @@ public class AdvancingWall : MonoBehaviour
     /// <summary>PermanentAdvance() 완료 시 발생.</summary>
     public UnityEvent OnPermanentAdvance;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool    _isActive;
-    [SerializeField] bool    _isPausedByColor;
-    [SerializeField] float   _totalAdvanced;
-    [SerializeField] Vector3 _currentOrigin;
+    bool    _isActive;
+    bool    _isPausedByColor;
+    float   _totalAdvanced;
+    Vector3 _currentOrigin;
 
     Rigidbody _rb;
     Coroutine _advanceCoroutine;

@@ -39,9 +39,7 @@ public class Player : MonoBehaviour
     [Tooltip("이동 방향으로 캐릭터가 회전하는 속도 (0 = 즉시). 폴가이즈 느낌: 10~15")]
     public float turnSpeed = 0f;
 
-    [Header("Grenade (Runtime)")]
-    [Tooltip("현재 수류탄 보유 여부 (런타임 확인용)")]
-    public bool hasGrenade;
+    bool hasGrenade;
 
     [Header("Stat")]
     public int heart;
@@ -59,9 +57,7 @@ public class Player : MonoBehaviour
     [Tooltip("닷지 1회 스테미나 소모량")]
     public float dodgeStaminaCost = 0f;
 
-    [Header("Stamina (Runtime)")]
-    [Tooltip("현재 스테미나 (런타임 확인용)")]
-    public float currentStamina;
+    float currentStamina;
     float staminaRechargeTimer;
     bool isStaminaDraining;
 
@@ -657,7 +653,6 @@ public class Player : MonoBehaviour
         isKnockback = false; isDamage = false;
         dodgeInvincibleUntil = 0f;
         moveSpeedMultiplier  = 1f;
-        requiresInputRelease = false;
 
         if (playerStealth != null)
             playerStealth.ForceLayer(deadLayer);
@@ -729,7 +724,6 @@ public class Player : MonoBehaviour
         dodgeInvincibleUntil = 0f;
         nextActionTime       = 0f;
         moveSpeedMultiplier  = 1f;
-        requiresInputRelease = false;
         fallAnimTriggered    = false;
         isInstantKill        = false;
 

@@ -21,10 +21,9 @@ public class StageManager : MonoBehaviour
     public UnityEvent OnStageClear;
     public UnityEvent OnStageFailed;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool _isCleared;
-    [SerializeField] bool _isFailed;
-    [SerializeField] int  _completedCount;
+    bool _isCleared;
+    bool _isFailed;
+    int  _completedCount;
 
     public bool IsCleared => _isCleared;
     public bool IsFailed  => _isFailed;

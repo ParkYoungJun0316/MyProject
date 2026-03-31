@@ -66,11 +66,10 @@ public class ColoredMemoryPath : MonoBehaviour
     [Tooltip("잘못된 타일을 밟아 즉사했을 때")]
     public UnityEvent OnFailed;
 
-    [Header("Runtime (확인용 — 수정 불가)")]
-    [SerializeField] PathState _state;
-    [SerializeField] int _safeStepped;
-    [SerializeField] int _safeTotalCount;
-    [SerializeField] PlayerColorType _currentPreviewColor;
+    PathState _state;
+    int _safeStepped;
+    int _safeTotalCount;
+    PlayerColorType _currentPreviewColor;
 
     public PathState State => _state;
 

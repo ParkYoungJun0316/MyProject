@@ -34,8 +34,7 @@ public class PushableBox : MonoBehaviour
     [Tooltip("몇 명이 동시에 잡아야 박스가 움직이는지.\n1 = 단독 이동 (기본) / 2~4 = 협력 필요")]
     public int requiredGrabbers = 1;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] int _grabberCount;
+    int _grabberCount;
 
     /// <summary>현재 잡고 있는 인원이 requiredGrabbers 이상이면 true</summary>
     public bool CanMove => _grabbers.Count >= requiredGrabbers;

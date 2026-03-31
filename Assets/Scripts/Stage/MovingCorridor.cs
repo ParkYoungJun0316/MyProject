@@ -62,11 +62,10 @@ public class MovingCorridor : MonoBehaviour
     [Tooltip("복도 비활성화 시 호출")]
     public UnityEvent OnDeactivated;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool  _isActive;
-    [SerializeField] float _currentSpeed;
-    [SerializeField] float _elapsed;
-    [SerializeField] bool  _hasTriggered;
+    bool  _isActive;
+    float _currentSpeed;
+    float _elapsed;
+    bool  _hasTriggered;
 
     float    _activatedTime;
 

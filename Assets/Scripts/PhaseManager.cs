@@ -84,10 +84,9 @@ public class PhaseManager : MonoBehaviour
     [Tooltip("모든 Phase가 완료되었을 때 호출. StageManager.OnStageClear 등에 연결.")]
     public UnityEvent onAllPhasesComplete;
 
-    [Header("Runtime (확인용 — 수정 불가)")]
-    [SerializeField] private int   _currentPhaseIndex = -1;
-    [SerializeField] private float _phaseElapsed      = 0f;
-    [SerializeField] private bool  _allPhasesComplete = false;
+    private int   _currentPhaseIndex = -1;
+    private float _phaseElapsed      = 0f;
+    private bool  _allPhasesComplete = false;
 
     public int   CurrentPhaseIndex  => _currentPhaseIndex;
     public float PhaseElapsed       => _phaseElapsed;

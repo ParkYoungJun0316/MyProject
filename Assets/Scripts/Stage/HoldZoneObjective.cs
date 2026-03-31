@@ -24,9 +24,8 @@ public class HoldZoneObjective : StageObjective
     [Tooltip("인원 부족 시 존 색")]
     public Color waitingColor = Color.yellow;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] float _elapsed;
-    [SerializeField] bool  _isHolding;
+    float _elapsed;
+    bool  _isHolding;
 
     public float Elapsed     => _elapsed;
     public float Remaining   => Mathf.Max(0f, holdDuration - _elapsed);

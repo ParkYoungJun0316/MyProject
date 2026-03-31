@@ -47,9 +47,8 @@ public class MemoryPath : MonoBehaviour
     [Tooltip("Trap 발판을 밟아 낙사했을 때")]
     public UnityEvent OnFailed;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] PathState _state;
-    [SerializeField] int _safeStepped;
+    PathState _state;
+    int _safeStepped;
 
     public PathState State => _state;
 

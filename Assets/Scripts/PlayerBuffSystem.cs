@@ -42,8 +42,7 @@ public class PlayerBuffSystem : MonoBehaviour
         public float value;
     }
 
-    [Header("활성 버프 (Runtime 확인용)")]
-    public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
+    List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
 
     // ── Update ───────────────────────────────────────────────
 

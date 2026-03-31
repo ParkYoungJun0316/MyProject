@@ -82,10 +82,8 @@ public class OXQuizManager : MonoBehaviour
     [Tooltip("비워두면 씬에서 Player를 자동으로 찾음")]
     public Player player;
 
-    // ── Runtime ──────────────────────────────────────────────────
-    [Header("Runtime (확인용)")]
-    [SerializeField] int  _currentRow;
-    [SerializeField] bool _quizActive;
+    int  _currentRow;
+    bool _quizActive;
 
     PlayerEvents _playerEvents;
 

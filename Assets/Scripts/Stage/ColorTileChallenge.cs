@@ -79,10 +79,9 @@ public class ColorTileChallenge : MonoBehaviour
     [Tooltip("시간 초과 시 호출 (추가 연출 등 연결 가능)")]
     public UnityEvent OnFail;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] float _remainingTime;
-    [SerializeField] bool  _isRunning;
-    [SerializeField] int   _failCount;
+    float _remainingTime;
+    bool  _isRunning;
+    int   _failCount;
 
     readonly List<ColorTile> _activeTiles = new List<ColorTile>();
     Coroutine _challengeCoroutine;

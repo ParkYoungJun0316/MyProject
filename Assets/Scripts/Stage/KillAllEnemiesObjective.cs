@@ -12,9 +12,8 @@ public class KillAllEnemiesObjective : StageObjective
     [Tooltip("처치해야 할 적 목록. 비우면 씬 전체 Enemy 자동 수집")]
     public Enemy[] enemies;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] int _totalCount;
-    [SerializeField] int _killedCount;
+    int _totalCount;
+    int _killedCount;
 
     public int TotalCount  => _totalCount;
     public int KilledCount => _killedCount;

@@ -43,9 +43,8 @@ public class ColorSavePoint : MonoBehaviour
     [Tooltip("세이브 포인트 활성화 시 호출 (연출, 사운드 등 연결)")]
     public UnityEvent OnActivated;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool _isActivated;
-    [SerializeField] int  _occupiedCount;
+    bool _isActivated;
+    int  _occupiedCount;
 
     ColorSaveZone[] _zones;
 

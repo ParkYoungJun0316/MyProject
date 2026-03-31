@@ -85,8 +85,7 @@ public class ColorWall : MonoBehaviour
     [Tooltip("색상이 바뀔 때 호출 (머티리얼 변경 등 시각 피드백)")]
     public UnityEvent OnColorChanged;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] WallColorType _currentColor;
+    WallColorType _currentColor;
 
     WallColorType _wallColor;   // 실제 적용 중인 색 (wallColor 대신 사용)
     float     _nextDamageTime;

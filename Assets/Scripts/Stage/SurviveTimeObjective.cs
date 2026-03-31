@@ -18,8 +18,7 @@ public class SurviveTimeObjective : StageObjective
     [Tooltip("추적할 플레이어 목록. 비우면 Start 시 씬에서 자동 수집")]
     public Player[] players;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] float _elapsed;
+    float _elapsed;
 
     public float Elapsed   => _elapsed;
     public float Remaining => Mathf.Max(0f, targetTime - _elapsed);

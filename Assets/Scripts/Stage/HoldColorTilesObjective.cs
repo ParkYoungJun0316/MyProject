@@ -41,9 +41,8 @@ public class HoldColorTilesObjective : StageObjective
     [Tooltip("전원이 동시에 자기 존에 있어야 하는 시간(초)")]
     public float holdDuration = 10f;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] float _elapsed;
-    [SerializeField] bool  _isHolding;
+    float _elapsed;
+    bool  _isHolding;
 
     public float Elapsed   => _elapsed;
     public float Remaining => Mathf.Max(0f, holdDuration - _elapsed);

@@ -61,9 +61,8 @@ public class WallWaveController : MonoBehaviour
     public UnityEvent OnPlay;
     public UnityEvent OnStop;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool _isPlaying;
-    [SerializeField] bool _hasActivated;
+    bool _isPlaying;
+    bool _hasActivated;
 
     Vector3[] _startPositions;
     Rigidbody[] _rbs;

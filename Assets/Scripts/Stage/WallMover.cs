@@ -79,9 +79,8 @@ public class WallMover : MonoBehaviour
     public UnityEvent OnReturnStarted;
     public UnityEvent OnReturnCompleted;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool _isMoving;
-    [SerializeField] bool _isReturning;
+    bool _isMoving;
+    bool _isReturning;
 
     Rigidbody _rb;
     Vector3   _startPos;

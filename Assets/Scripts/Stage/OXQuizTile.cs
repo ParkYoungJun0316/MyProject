@@ -31,8 +31,7 @@ public class OXQuizTile : MonoBehaviour
     [Tooltip("Danger 상태 — 오답, 밟으면 즉사")]
     public Color dangerColor  = new Color(0.80f, 0.10f, 0.10f);
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] TileState _state;
+    TileState _state;
 
     // OXQuizManager.Start()에서 자동 주입
     [HideInInspector] public OXQuizManager quizManager;

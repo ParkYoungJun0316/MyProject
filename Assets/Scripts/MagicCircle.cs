@@ -30,9 +30,8 @@ public class MagicCircle : MonoBehaviour
     [Tooltip("초기화(리셋)됐을 때 발동")]
     public UnityEvent OnReset;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] int  _currentStep;
-    [SerializeField] bool _isComplete;
+    int  _currentStep;
+    bool _isComplete;
 
     public int  CurrentStep => _currentStep;
     public bool IsComplete  => _isComplete;

@@ -25,6 +25,9 @@ public class TopDownCamera : MonoBehaviour
     [Tooltip("카메라가 타겟으로부터 떨어진 거리")]
     [SerializeField] float distance = 0f;
 
+    [Tooltip("천장(위) 방향을 볼 때 줄어드는 최소 거리. 0이면 distance 그대로 유지")]
+    [SerializeField] float minDistanceWhenLookingUp = 0f;
+
     [Tooltip("타겟 기준 추가 오프셋 (월드 좌표). Y값으로 카메라 기준점 높이 조정 가능")]
     [SerializeField] Vector3 targetOffset = Vector3.zero;
 
@@ -90,8 +93,16 @@ public class TopDownCamera : MonoBehaviour
         else
             _currentRot = targetRot;
 
+        // Pitch가 음수(천장 방향)일수록 distance를 minDistanceWhenLookingUp까지 선형 축소
+        float currentDistance = distance;
+        if (minDistanceWhenLookingUp > 0f && _pitch < 0f)
+        {
+            float t = Mathf.Clamp01(-_pitch / Mathf.Abs(minPitch < 0f ? minPitch : -1f));
+            currentDistance = Mathf.Lerp(distance, minDistanceWhenLookingUp, t);
+        }
+
         Vector3 pivot = target.position + targetOffset;
-        Vector3 desiredPos = pivot + _currentRot * (Vector3.back * distance);
+        Vector3 desiredPos = pivot + _currentRot * (Vector3.back * currentDistance);
 
         if (positionDamping > 0f)
             transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref _posVelocity, positionDamping);

@@ -29,8 +29,7 @@ public class ColorSaveZone : MonoBehaviour
     [Tooltip("플레이어가 들어왔을 때 색")]
     public Color occupiedColor = Color.cyan;
 
-    [Header("Runtime (확인용)")]
-    [SerializeField] bool _isOccupied;
+    bool _isOccupied;
 
     public bool      IsOccupied    => _isOccupied;
     public Player    CurrentPlayer => _currentPlayer;
