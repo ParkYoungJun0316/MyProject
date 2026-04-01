@@ -97,6 +97,9 @@ public class StageTransition : MonoBehaviour
             return;
         }
 
+        Debug.Log($"[StageTransition] Round {_currentRound} 시작: " +
+                  $"활성화 {rounds[_currentRound].trapsToActivate.Length}개, " +
+                  $"비활성화 {rounds[_currentRound].trapsToDeactivate.Length}개");
 
         StartCoroutine(TransitionRoutine(rounds[_currentRound]));
         _currentRound++;
