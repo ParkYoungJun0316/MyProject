@@ -4782,6 +4782,11 @@ MonoBehaviour:
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
+--- !u!4 &738238864 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3933221038258659696, guid: b60b544418f8f9b40bb6ae8793baef8d, type: 3}
+  m_PrefabInstance: {fileID: 472229421}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &751764277
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5427,37 +5432,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
---- !u!1 &851254486
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 851254487}
-  m_Layer: 0
-  m_Name: Camera Target
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &851254487
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 851254486}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &851516016
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5610,13 +5584,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ffa4b59a1665624abf5b6409764aaba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCamera
-  target: {fileID: 851254487}
-  strictTopDown: 0
-  pitchAngle: 55
-  yawAngle: 0
-  distance: 30
-  targetOffset: {x: 0, y: 0, z: 0}
+  target: {fileID: 738238864}
+  distance: 12
+  minDistanceWhenLookingUp: 1
+  targetOffset: {x: 0, y: 5, z: 0}
+  initialPitch: 55
+  minPitch: -85
+  maxPitch: 50
+  sensitivityX: 0.1
+  sensitivityY: 0.08
   positionDamping: 0
+  rotationDamping: 0
+  lockCursor: 1
 --- !u!114 &878859385
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8318,7 +8297,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1350862601
 Transform:
   m_ObjectHideFlags: 0
@@ -12830,9 +12809,6 @@ MonoBehaviour:
   onAllPhasesComplete:
     m_PersistentCalls:
       m_Calls: []
-  _currentPhaseIndex: -1
-  _phaseElapsed: 0
-  _allPhasesComplete: 0
 --- !u!1 &1873290055
 GameObject:
   m_ObjectHideFlags: 0
@@ -13512,18 +13488,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6d484ce0afd46748b8f567cb49c6816, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SavePoint
-  activationMode: 0
-  saveOrder: 0
-  healOnActivate: 1
-  spawnOffset: {x: 0, y: 0, z: 0}
-  inactiveColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  activeColor: {r: 0, g: 1, b: 1, a: 1}
-  activateDuration: 0
-  hideAfterActivation: 1
-  hideDelay: 0
-  activateParticle: {fileID: 0}
-  activateSound: {fileID: 0}
-  colorPropertyName: 
 --- !u!65 &1943941723
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15054,7 +15018,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 878859388}
-  - {fileID: 851254487}
   - {fileID: 1468563475}
   - {fileID: 472229421}
   - {fileID: 1793367356}

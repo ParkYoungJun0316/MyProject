@@ -5,45 +5,44 @@ public class FloorTile : MonoBehaviour
     public enum ColorType { Black, White, Reveal }
     public ColorType type;
 
-    [Header("Tile Colors (Inspector)")]
-    public Color blackColor = Color.black;
-    public Color whiteColor = Color.white;
-    public Color revealTileColor = new Color(0.12f, 0.25f, 0.18f);
+    [Header("Tile Materials (Inspector에서 머티리얼 3개 연결)")]
+    public Material materialBlack;
+    public Material materialWhite;
+    public Material materialReveal;
 
-    static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-    static readonly int ColorId = Shader.PropertyToID("_Color");
-
-    MaterialPropertyBlock mpb;
     Renderer rend;
 
     void Awake()
     {
         rend = GetComponent<Renderer>();
-        mpb = new MaterialPropertyBlock();
-        ApplyColor();
+        ApplyMaterial();
+    }
+
+    void OnValidate()
+    {
+        rend = GetComponent<Renderer>();
+        ApplyMaterial();
     }
 
     public void SetType(ColorType t)
     {
         type = t;
-        ApplyColor();
+        ApplyMaterial();
     }
 
-    void ApplyColor()
+    void ApplyMaterial()
     {
         if (rend == null) return;
 
-        Color c = type switch
+        Material m = type switch
         {
-            ColorType.Black => blackColor,
-            ColorType.White => whiteColor,
-            ColorType.Reveal => revealTileColor, 
-            _ => whiteColor
+            ColorType.Black  => materialBlack,
+            ColorType.White  => materialWhite,
+            ColorType.Reveal => materialReveal,
+            _                => materialWhite
         };
 
-        rend.GetPropertyBlock(mpb);
-        mpb.SetColor(BaseColorId, c);
-        mpb.SetColor(ColorId, c);
-        rend.SetPropertyBlock(mpb);
+        if (m != null)
+            rend.sharedMaterial = m;
     }
 }
