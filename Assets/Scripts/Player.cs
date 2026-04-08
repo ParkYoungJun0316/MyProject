@@ -127,6 +127,9 @@ public class Player : MonoBehaviour
     float nextActionTime = 0f;
     float nextBWTime = 0f;
 
+    /// <summary>UI에서 dodge 쿨타임 계산용. (nextActionTime - Time.time) / actionCooldown</summary>
+    public float NextActionTime => nextActionTime;
+
     Rigidbody rigid;
     Animator anim;
 

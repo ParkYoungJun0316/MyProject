@@ -104,6 +104,17 @@ public class PlayerBuffSystem : MonoBehaviour
         return 0f;
     }
 
+    /// <summary> 활성 버프의 남은 시간 반환. 없으면 0 (UI 쿨타임 게이지용) </summary>
+    public float GetRemainingTime(BuffType type)
+    {
+        for (int i = 0; i < activeBuffs.Count; i++)
+            if (activeBuffs[i].type == type) return activeBuffs[i].remainingTime;
+        return 0f;
+    }
+
+    /// <summary> 현재 활성 버프 타입 목록 반환 (UI 동적 슬롯 생성용) </summary>
+    public List<ActiveBuff> GetActiveBuffs() => activeBuffs;
+
     /// <summary> 특정 버프 즉시 제거 </summary>
     public void RemoveBuff(BuffType type)
     {
