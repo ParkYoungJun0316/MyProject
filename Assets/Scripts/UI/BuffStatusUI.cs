@@ -24,6 +24,14 @@ public class BuffStatusUI : MonoBehaviour
     [Header("버프 아이콘 등록 (타입별 스프라이트 연결)")]
     [SerializeField] BuffIconEntry[] buffIcons;
 
+    [Header("슬롯 크기/텍스트")]
+    [Tooltip("버프 슬롯 한 칸의 크기 (픽셀)")]
+    [SerializeField] float slotSize      = 56f;
+    [Tooltip("남은 시간 숫자 폰트 크기")]
+    [SerializeField] float textFontSize  = 24f;
+    [Tooltip("슬롯 간 간격")]
+    [SerializeField] float slotSpacing   = 6f;
+
     [Header("슬롯 색상")]
     [SerializeField] Color activeColor   = Color.white;
     [SerializeField] Color inactiveColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
@@ -59,7 +67,7 @@ public class BuffStatusUI : MonoBehaviour
         // HorizontalLayoutGroup 자동 추가
         HorizontalLayoutGroup hlg = GetComponent<HorizontalLayoutGroup>();
         if (hlg == null) hlg = gameObject.AddComponent<HorizontalLayoutGroup>();
-        hlg.spacing                = 6f;
+        hlg.spacing                = slotSpacing;
         hlg.childControlWidth      = false;
         hlg.childControlHeight     = false;
         hlg.childForceExpandWidth  = false;
@@ -73,11 +81,10 @@ public class BuffStatusUI : MonoBehaviour
             BuffSlot slot = new BuffSlot();
             slot.type = buffIcons[i].type;
 
-            // 슬롯 루트 (64x64)
             slot.root = new GameObject($"BuffSlot_{buffIcons[i].type}");
             slot.root.transform.SetParent(transform, false);
             RectTransform rootRt = slot.root.AddComponent<RectTransform>();
-            rootRt.sizeDelta = new Vector2(56f, 56f);
+            rootRt.sizeDelta = new Vector2(slotSize, slotSize);
 
             // 배경 (어두운 원형 또는 사각형)
             GameObject bg = new GameObject("BG");
@@ -118,8 +125,9 @@ public class BuffStatusUI : MonoBehaviour
             GameObject textObj = new GameObject("DurationText");
             textObj.transform.SetParent(slot.root.transform, false);
             slot.durationText           = textObj.AddComponent<TextMeshProUGUI>();
-            slot.durationText.fontSize  = 14f;
-            slot.durationText.alignment = TextAlignmentOptions.Bottom;
+            slot.durationText.fontSize  = textFontSize;
+            slot.durationText.fontStyle = FontStyles.Bold;
+            slot.durationText.alignment = TextAlignmentOptions.Center;
             slot.durationText.color     = Color.white;
             RectTransform textRt = textObj.GetComponent<RectTransform>();
             textRt.anchorMin = Vector2.zero;
@@ -154,7 +162,10 @@ public class BuffStatusUI : MonoBehaviour
 
             slot.fillImage.fillAmount  = fill;
             slot.iconImage.color       = activeColor;
-            slot.durationText.text     = remaining > 0f ? $"{remaining:F0}s" : string.Empty;
+            // 올림 정수로 표시 (2.9초 → "3")
+            slot.durationText.text     = remaining > 0f
+                ? Mathf.CeilToInt(remaining).ToString()
+                : string.Empty;
         }
     }
 }

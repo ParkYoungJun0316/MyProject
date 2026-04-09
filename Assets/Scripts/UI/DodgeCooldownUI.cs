@@ -26,32 +26,39 @@ public class DodgeCooldownUI : MonoBehaviour
 
     void Update()
     {
-        if (player == null || fillImage == null) return;
+        if (player == null) return;
 
         float remaining = player.NextActionTime - Time.time;
 
         if (remaining <= 0f)
         {
             // 사용 가능 상태
-            fillImage.fillAmount = 1f;
-            SetColor(readyColor);
+            if (fillImage != null)
+            {
+                fillImage.fillAmount = 1f;
+                SetColor(readyColor);
+            }
             if (cooldownText != null) cooldownText.text = string.Empty;
         }
         else
         {
-            // 쿨타임 중
-            float ratio = player.actionCooldown > 0f
-                ? 1f - Mathf.Clamp01(remaining / player.actionCooldown)
-                : 1f;
-            fillImage.fillAmount = ratio;
-            SetColor(cooldownColor);
-            if (cooldownText != null) cooldownText.text = $"{remaining:F1}";
+            // 쿨타임 중 - 올림 정수로 표시 (2.9초 → "3")
+            if (fillImage != null)
+            {
+                float ratio = player.actionCooldown > 0f
+                    ? 1f - Mathf.Clamp01(remaining / player.actionCooldown)
+                    : 1f;
+                fillImage.fillAmount = ratio;
+                SetColor(cooldownColor);
+            }
+            if (cooldownText != null)
+                cooldownText.text = Mathf.CeilToInt(remaining).ToString();
         }
     }
 
     void SetColor(Color c)
     {
-        fillImage.color = c;
+        if (fillImage != null) fillImage.color = c;
         if (iconImage != null) iconImage.color = c;
     }
 }
