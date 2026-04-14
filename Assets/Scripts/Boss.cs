@@ -1,11 +1,24 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+using UnityEngine.Events;
 
 // Enemy를 상속 — Boss 오브젝트에는 Enemy 대신 이 컴포넌트를 붙입니다
 public class Boss : Enemy
 {
     enum BossAttackId { BodySlam, Missile, Rock, Taunt }
+
+    [Header("Boss - Phase 이벤트")]
+    [Tooltip("보스 HP가 0이 됐을 때 호출. PhaseManager.AdvancePhase() 등에 연결.")]
+    public UnityEvent onBossDead;
+
+    [Header("Boss - HP 임계값 이벤트")]
+    [Tooltip("보스 HP가 이 값 이하로 내려갈 때 onBossPhaseThreshold 호출. 0이면 비활성.")]
+    public int bossPhaseThresholdHP = 0;
+    [Tooltip("bossPhaseThresholdHP 이하가 됐을 때 1회 호출. PhaseManager.AdvancePhase() 등에 연결.")]
+    public UnityEvent onBossPhaseThreshold;
+
+    bool _thresholdFired = false;
 
     [Header("Boss - Common")]
     public float bossAttackRange = 0;
@@ -98,6 +111,24 @@ public class Boss : Enemy
             nav.ResetPath();
             nav.velocity = Vector3.zero;
         }
+    }
+
+    // ── HP 임계값 / 사망 이벤트 ────────────────────────────────
+
+    protected override void OnDamageAlive(Vector3 reactVec, bool isGrenade)
+    {
+        if (_thresholdFired) return;
+        if (bossPhaseThresholdHP <= 0) return;
+        if (curHealth <= bossPhaseThresholdHP)
+        {
+            _thresholdFired = true;
+            onBossPhaseThreshold?.Invoke();
+        }
+    }
+
+    protected override void OnDeathEvent()
+    {
+        onBossDead?.Invoke();
     }
 
     // ── Update/FixedUpdate 오버라이드 ───────────────────────

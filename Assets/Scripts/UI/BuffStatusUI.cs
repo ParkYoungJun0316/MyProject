@@ -52,6 +52,10 @@ public class BuffStatusUI : MonoBehaviour
 
     void Start()
     {
+        if (player == null)
+            player = FindFirstObjectByType<Player>();
+        if (player == null) return;
+
         buffSystem = player.GetComponent<PlayerBuffSystem>();
         if (buffSystem == null || buffIcons == null || buffIcons.Length == 0) return;
 

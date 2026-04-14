@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IDamageReceiver
 {
     public enum Type { A, B, C, D };
     public Type enemyType;
@@ -51,6 +51,33 @@ public class Enemy : MonoBehaviour
     [Header("Detect")]
     public float detectRange = 50f;     // 맵 전체 감지라면 크게(예: 999)
     public float stopDistance = 0.3f;   // 추격 멈춤 임계값
+
+    [Header("Attack Range")]
+    [SerializeField] private float typeAAttackRange = 0f;
+    [SerializeField] private float typeBAttackRange = 0f;
+    [SerializeField] private float typeCAttackRange = 0f;
+
+    [Header("Attack Timing")]
+    [SerializeField] private float typeAWindup = 0f;
+    [SerializeField] private float typeAActiveTime = 0f;
+    [SerializeField] private float typeARecover = 0f;
+    [SerializeField] private float typeBWindup = 0f;
+    [SerializeField] private float typeBChargeDuration = 0f;
+    [SerializeField] private float typeBChargeSpeed = 0f;
+    [SerializeField] private float typeBActiveTime = 0f;
+    [SerializeField] private float typeBRecover = 0f;
+    [SerializeField] private float typeCWindup = 0f;
+    [SerializeField] private float typeCRecover = 0f;
+
+    [Header("Attack Force")]
+    [SerializeField] private float typeBChargeImpulse = 0f;
+    [SerializeField] private int grenadeDamage = 0;
+    [SerializeField] private float nonGrenadeDeathImpulse = 0f;
+    [SerializeField] private float grenadeDeathImpulse = 0f;
+    [SerializeField] private float grenadeDeathTorque = 0f;
+    [SerializeField] private float grenadeDeathUpBias = 0f;
+    [SerializeField] private float nonGrenadeDeathUpBias = 0f;
+    [SerializeField] private float destroyDelay = 0f;
 
     // 레이어 마스크 — Boss에서도 접근
     protected int playerMask;
@@ -395,9 +422,9 @@ public class Enemy : MonoBehaviour
 
         switch (enemyType)
         {
-            case Type.A: targetRange = 10f; break;
-            case Type.B: targetRange = 12f; break;
-            case Type.C: targetRange = 25f; break;
+            case Type.A: targetRange = typeAAttackRange; break;
+            case Type.B: targetRange = typeBAttackRange; break;
+            case Type.C: targetRange = typeCAttackRange; break;
         }
 
         float dist = Vector3.Distance(transform.position, currentTarget.position);
@@ -428,26 +455,26 @@ public class Enemy : MonoBehaviour
         switch (enemyType)
         {
             case Type.A:
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(typeAWindup);
                 if (IsStealthPlayerDetected()) { ClearTargetAndStop(); yield break; }
 
                 meleeArea.enabled = true;
-                yield return new WaitForSeconds(0.3f);
+                yield return new WaitForSeconds(typeAActiveTime);
                 meleeArea.enabled = false;
 
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(typeARecover);
                 break;
 
             case Type.B:
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(typeBWindup);
                 if (IsStealthPlayerDetected()) { ClearTargetAndStop(); yield break; }
 
                 if (rigid != null && !rigid.isKinematic)
-                    rigid.AddForce(transform.forward * 20, ForceMode.Impulse);
+                    rigid.AddForce(transform.forward * typeBChargeImpulse, ForceMode.Impulse);
                 else
                 {
-                    float chargeDuration = 0.5f;
-                    float chargeSpeed = 8f;
+                    float chargeDuration = typeBChargeDuration;
+                    float chargeSpeed = typeBChargeSpeed;
                     for (float t = 0f; t < chargeDuration; t += Time.deltaTime)
                     {
                         transform.position += transform.forward * (chargeSpeed * Time.deltaTime);
@@ -456,16 +483,16 @@ public class Enemy : MonoBehaviour
                 }
                 meleeArea.enabled = true;
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(typeBActiveTime);
                 if (rigid != null && !rigid.isKinematic)
                     rigid.linearVelocity = Vector3.zero;
                 meleeArea.enabled = false;
 
-                yield return new WaitForSeconds(2f);
+                yield return new WaitForSeconds(typeBRecover);
                 break;
 
             case Type.C:
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(typeCWindup);
                 if (IsStealthPlayerDetected()) { ClearTargetAndStop(); yield break; }
                 if (bullet == null) { isAttack = false; if (anim != null) anim.SetBool("isAttack", false); yield break; }
 
@@ -483,7 +510,7 @@ public class Enemy : MonoBehaviour
                 if (rigidbullet != null)
                     rigidbullet.linearVelocity = spawn.forward * bulletspeed;
 
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(typeCRecover);
                 break;
         }
 
@@ -588,9 +615,18 @@ public class Enemy : MonoBehaviour
 
     public void HitByGrenade(Vector3 explosionPos)
     {
-        curHealth -= 100;
+        curHealth -= grenadeDamage;
         Vector3 reactVec = transform.position - explosionPos;
         StartCoroutine(OnDamage(reactVec, true));
+    }
+
+    public void ReceiveDamage(int amount, object source)
+    {
+        curHealth -= amount;
+        Vector3 reactVec = source is Vector3 sourcePos
+            ? transform.position - sourcePos
+            : transform.forward * -1f;
+        StartCoroutine(OnDamage(reactVec, false));
     }
 
     IEnumerator OnDamage(Vector3 reactVec, bool isGrenade)
@@ -601,15 +637,16 @@ public class Enemy : MonoBehaviour
         if (curHealth > 0)
         {
             foreach (MeshRenderer mesh in meshs) mesh.material.color = Color.white;
+            OnDamageAlive(reactVec, isGrenade);
         }
         else
         {
             foreach (MeshRenderer mesh in meshs) mesh.material.color = Color.gray;
 
-            gameObject.layer = LayerMask.GetMask("Player"); ;
+            gameObject.layer = LayerMask.GetMask("Player");
             isDead = true;
 
-            ClearTargetAndStop(); // ✅ 죽으면 추격/공격 싹 정리
+            ClearTargetAndStop();
 
             nav.enabled = false;
             if (anim != null)
@@ -622,21 +659,29 @@ public class Enemy : MonoBehaviour
                 if (isGrenade)
                 {
                     reactVec = reactVec.normalized;
-                    reactVec += Vector3.up * 2f;
+                    reactVec += Vector3.up * grenadeDeathUpBias;
                     rigid.freezeRotation = false;
-                    rigid.AddForce(reactVec * 5, ForceMode.Impulse);
-                    rigid.AddTorque(reactVec * 15f, ForceMode.Impulse);
+                    rigid.AddForce(reactVec * grenadeDeathImpulse, ForceMode.Impulse);
+                    rigid.AddTorque(reactVec * grenadeDeathTorque, ForceMode.Impulse);
                 }
                 else
                 {
                     reactVec = reactVec.normalized;
-                    reactVec += Vector3.up;
-                    rigid.AddForce(reactVec * 5, ForceMode.Impulse);
+                    reactVec += Vector3.up * nonGrenadeDeathUpBias;
+                    rigid.AddForce(reactVec * nonGrenadeDeathImpulse, ForceMode.Impulse);
                 }
             }
 
+            OnDeathEvent();
+
             if (enemyType != Type.D)
-                Destroy(gameObject, 4);
+                Destroy(gameObject, destroyDelay);
         }
     }
+
+    /// <summary>피격 후 생존 시 호출. Boss에서 HP 임계값 처리 등에 재정의.</summary>
+    protected virtual void OnDamageAlive(Vector3 reactVec, bool isGrenade) { }
+
+    /// <summary>사망 확정 시 호출. Boss에서 onBossDead 이벤트 발행 등에 재정의.</summary>
+    protected virtual void OnDeathEvent() { }
 }

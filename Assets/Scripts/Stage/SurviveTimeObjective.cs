@@ -12,7 +12,8 @@ public class SurviveTimeObjective : StageObjective
     [Tooltip("버텨야 하는 시간(초). 예) 300 = 5분")]
     public float targetTime = 300f;
 
-    [Tooltip("플레이어가 사망하면 즉시 실패로 처리할지 여부")]
+    [Tooltip("플레이어가 사망하면 즉시 실패로 처리할지 여부.\n" +
+             "StageResetOnPlayerDeath를 사용할 경우 false 권장 — 사망 리셋은 PhaseManager가 처리.")]
     public bool failOnDeath = false;
 
     [Tooltip("추적할 플레이어 목록. 비우면 Start 시 씬에서 자동 수집")]

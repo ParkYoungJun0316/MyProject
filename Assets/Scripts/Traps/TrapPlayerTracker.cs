@@ -72,6 +72,7 @@ public class TrapPlayerTracker : MonoBehaviour
     DropTrap _dropTrap;
     Player[] _players;
     bool     _activated;
+    bool     _hasStarted;
 
     void Awake()
     {
@@ -80,6 +81,25 @@ public class TrapPlayerTracker : MonoBehaviour
     }
 
     void Start()
+    {
+        _hasStarted = true;
+        InitTracking();
+    }
+
+    // Stage SetActive(false → true) 사이클 시 자동 재시작
+    void OnEnable()
+    {
+        if (!_hasStarted) return;
+        InitTracking();
+    }
+
+    void OnDisable()
+    {
+        _activated = false;
+        StopAllCoroutines();
+    }
+
+    void InitTracking()
     {
         RefreshPlayerCache();
 

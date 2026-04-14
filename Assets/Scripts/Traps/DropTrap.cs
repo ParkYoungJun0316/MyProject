@@ -90,14 +90,12 @@ public class DropTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = _scheduleStartTime + cycleOffset + t;
-                float waitTime   = targetTime - Time.time;
-
-                if (waitTime > 0f)
-                    yield return new WaitForSeconds(waitTime);
+                float waitTime   = Mathf.Max(0f, targetTime - Time.time - preFireChargeTime);
+                yield return new WaitForSeconds(waitTime);
 
                 if (!isRunning) yield break;
 
-                OnTrapTrigger();
+                yield return StartCoroutine(FireWithCharge());
             }
 
             if (!loopSchedule) break;

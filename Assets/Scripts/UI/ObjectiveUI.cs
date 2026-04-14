@@ -45,11 +45,29 @@ public class ObjectiveUI : MonoBehaviour
 
     void Start()
     {
+        if (stageManager == null)
+            stageManager = FindFirstObjectByType<StageManager>();
         BuildSlots();
     }
 
+    /// <summary>
+    /// 스테이지 전환 시 UI 갱신.
+    /// PhaseManager의 onPhaseEnter 이벤트에 연결해서 사용.
+    /// 현재 활성화된 StageManager를 자동으로 찾아 슬롯을 재구성.
+    /// </summary>
+    public void Refresh()
+    {
+        stageManager  = FindFirstObjectByType<StageManager>();
+        boxCountZone  = FindFirstObjectByType<BoxCountZone>();
+        BuildSlots();
+    }
+
+
     void BuildSlots()
     {
+        // 이전 슬롯의 이벤트 리스너를 먼저 제거 (중복 누적 방지)
+        DisconnectPreviousSlots();
+
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
 
@@ -154,6 +172,44 @@ public class ObjectiveUI : MonoBehaviour
     }
 
     // ── 이벤트 연결 ──────────────────────────────────────────────
+
+    /// <summary>이전 BuildSlots()에서 등록한 리스너를 전부 제거. Refresh() 시 중복 방지.</summary>
+    void DisconnectPreviousSlots()
+    {
+        if (slots == null) return;
+        foreach (ObjSlot slot in slots)
+        {
+            if (slot == null) continue;
+
+            if (slot.boxZone != null)
+            {
+                slot.boxZone.OnCountChanged.RemoveAllListeners();
+                continue;
+            }
+
+            StageObjective obj = slot.objective;
+            if (obj == null) continue;
+
+            obj.OnCompleted.RemoveAllListeners();
+            obj.OnFailed.RemoveAllListeners();
+
+            if (obj is SurviveTimeObjective survive)
+                survive.OnTimeChanged.RemoveAllListeners();
+            else if (obj is KillAllEnemiesObjective kill)
+                kill.OnKillCountChanged.RemoveAllListeners();
+            else if (obj is HoldZoneObjective hold)
+            {
+                hold.OnHoldTimeChanged.RemoveAllListeners();
+                hold.OnHoldBroken.RemoveAllListeners();
+            }
+            else if (obj is HoldColorTilesObjective holdColor)
+            {
+                holdColor.OnHoldTimeChanged.RemoveAllListeners();
+                holdColor.OnHoldBroken.RemoveAllListeners();
+            }
+        }
+        slots = null;
+    }
 
     void ConnectEvents()
     {
@@ -271,7 +327,7 @@ public class ObjectiveUI : MonoBehaviour
 
     void OnObjectiveFailed(ObjSlot slot)
     {
-        if (slot.barFill != null) slot.barFill.color = Color.red;
-        if (slot.statusText != null) slot.statusText.text = "실패";
+        // 실패도 리셋과 동일하게 처리 — 죽거나 실패나 결과가 같으므로 구분 없음
+        UpdateSlot(slot);
     }
 }

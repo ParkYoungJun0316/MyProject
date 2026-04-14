@@ -54,6 +54,12 @@ public class PhaseData
              "비어 있으면 세이브포인트 제어 없음.")]
     public GameObject savePointObject;
 
+    [Header("진행 방식")]
+    [Tooltip("체크 시: surviveDuration 무시. AdvancePhase() 외부 호출이 있어야만 다음 Phase로 넘어감.\n" +
+             "StageManager.OnStageClear / Boss 사망 이벤트 등과 연결해서 사용.\n" +
+             "미체크 시: surviveDuration 초 후 자동 진행 (연출·생존 구간에 사용).")]
+    public bool manualAdvanceOnly = false;
+
     [Header("이벤트")]
     [Tooltip("이 Phase가 시작될 때 호출")]
     public UnityEvent onPhaseEnter;
@@ -117,6 +123,9 @@ public class PhaseManager : MonoBehaviour
 
         PhaseData phase = phases[_currentPhaseIndex];
 
+        // 수동 진행 모드는 Update에서 자동 처리 안 함
+        if (phase.manualAdvanceOnly) return;
+
         if (phase.surviveDuration <= 0f) return;
 
         _phaseElapsed += Time.deltaTime;
@@ -161,6 +170,9 @@ public class PhaseManager : MonoBehaviour
 
         phase.onPhaseEnter?.Invoke();
 
+        // manualAdvanceOnly = true 면 AdvancePhase() 호출 대기, 자동 진행 없음
+        if (phase.manualAdvanceOnly) return;
+
         // surviveDuration = 0 이면 즉시 다음 Phase
         if (phase.surviveDuration <= 0f)
             PhaseComplete();
@@ -203,6 +215,59 @@ public class PhaseManager : MonoBehaviour
             else if (entry.trap is DropTrap dropTrap)
                 dropTrap.SetPhaseSpeedMultiplier(entry.speedMultiplier);
         }
+    }
+
+    // ── 외부 호출 ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 다음 Phase로 수동 진행.
+    /// StageManager.OnStageClear 또는 기타 조건 완료 이벤트와 연결해 사용.
+    /// surviveDuration 기반 자동 진행과 동시에 써도 안전 (이미 완료된 Phase는 무시).
+    /// </summary>
+    public void AdvancePhase()
+    {
+        if (_allPhasesComplete) return;
+        if (phases == null || _currentPhaseIndex < 0) return;
+        PhaseComplete();
+    }
+
+    /// <summary>
+    /// 현재 Phase를 완전히 재시작.
+    /// - StageResetter: 날아다니는 투사체 제거 + 부서진 바닥 등 초기 상태 복원
+    /// - SetActive(false → true) 사이클: 모든 컴포넌트 OnDisable/OnEnable → 트랩 0초부터 재발사
+    /// - StageManager.ResetStage(): 타이머/클리어 상태 초기화
+    /// </summary>
+    public void RestartCurrentPhase()
+    {
+        if (phases == null || _currentPhaseIndex < 0) return;
+
+        _allPhasesComplete = false;
+        _phaseElapsed      = 0f;
+
+        PhaseData current = phases[_currentPhaseIndex];
+
+        if (current.objectsToEnable != null)
+        {
+            foreach (GameObject obj in current.objectsToEnable)
+            {
+                if (obj == null) continue;
+
+                // 1. 투사체 제거 + 하위 오브젝트 초기 상태 복원 (부서진 바닥 등)
+                StageResetter resetter = obj.GetComponent<StageResetter>();
+                if (resetter != null) resetter.RestoreChildStates();
+
+                // 2. SetActive 사이클 → 모든 TrapBase OnDisable/OnEnable 발동 → 0초부터 재발사
+                obj.SetActive(false);
+                obj.SetActive(true);
+            }
+        }
+
+        // 3. StageManager 타이머/클리어 상태 초기화
+        StageManager[] managers = FindObjectsByType<StageManager>(FindObjectsSortMode.None);
+        foreach (StageManager sm in managers)
+            if (sm != null) sm.ResetStage();
+
+        EnterPhase(_currentPhaseIndex);
     }
 
     // ── 에디터 지원 ───────────────────────────────────────────────────

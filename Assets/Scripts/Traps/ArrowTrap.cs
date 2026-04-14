@@ -70,14 +70,13 @@ public class ArrowTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = scheduleStartTime + cycleOffset + t;
-                float waitTime = targetTime - Time.time;
-
-                if (waitTime > 0f)
-                    yield return new WaitForSeconds(waitTime);
+                // preFireChargeTime 만큼 앞당겨 대기 → 충전 시작 → 정확한 targetTime에 발사
+                float waitTime = Mathf.Max(0f, targetTime - Time.time - preFireChargeTime);
+                yield return new WaitForSeconds(waitTime);
 
                 if (!isRunning) yield break;
 
-                OnTrapTrigger();
+                yield return StartCoroutine(FireWithCharge());
             }
 
             if (!loopSchedule) break;

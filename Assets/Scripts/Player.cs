@@ -2,8 +2,10 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 {
+    [Header("Identity")]
+    [SerializeField] private int playerId = 0;
     [Header("Move")]
     public float speed = 0f;
     public float runMultiplier = 0f;
@@ -104,6 +106,7 @@ public class Player : MonoBehaviour
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
     public bool IsDead { get; private set; }
+    public int PlayerId => playerId;
 
     public Vector2 moveInput;
     Vector3 moveVec;
@@ -549,6 +552,11 @@ public class Player : MonoBehaviour
         if (heart <= 0) { Die(); return; }
         anim?.SetTrigger("doHit");
         StartCoroutine(OnDamage(knockback));
+    }
+
+    public void ReceiveDamage(int amount, object source)
+    {
+        TakeDamage(amount, false);
     }
 
     void OnTriggerEnter(Collider other)

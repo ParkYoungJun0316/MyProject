@@ -69,6 +69,22 @@ public class StageManager : MonoBehaviour
         }
     }
 
+    // ── 외부 호출 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 스테이지 상태 초기화 후 모든 Objective 재시작.
+    /// PhaseManager.RestartCurrentPhase()에서 자동 호출됨.
+    /// </summary>
+    public void ResetStage()
+    {
+        _isCleared      = false;
+        _isFailed       = false;
+        _completedCount = 0;
+
+        foreach (var obj in objectives)
+            if (obj != null) obj.ResetObjective();
+    }
+
     // ── 에디터 지원 ──────────────────────────────────────────────
     [ContextMenu("테스트: 스테이지 클리어")]
     void Debug_Clear()

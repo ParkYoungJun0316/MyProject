@@ -24,6 +24,12 @@ public class DodgeCooldownUI : MonoBehaviour
     [SerializeField] Color readyColor    = Color.white;
     [SerializeField] Color cooldownColor = new Color(0.3f, 0.3f, 0.3f, 1f);
 
+    void Start()
+    {
+        if (player == null)
+            player = FindFirstObjectByType<Player>();
+    }
+
     void Update()
     {
         if (player == null) return;

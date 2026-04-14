@@ -21,9 +21,37 @@ public abstract class TrapBase : MonoBehaviour
     protected bool isRunning;
     Coroutine trapCoroutine;
 
+    /// <summary>발사 chargeTime 전에 호출됨. 구체 애니메이션 컴포넌트(MouthTrapAnimator 등)가 구독.</summary>
+    public event System.Action OnPreFireCharge;
+
+    /// <summary>발사 직전(프로젝타일 생성 직전)에 호출됨.</summary>
+    public event System.Action OnFiring;
+
+    /// <summary>MouthTrapAnimator 등이 Awake에서 설정. 이 시간만큼 앞당겨 OnPreFireCharge를 발행하고 발사를 지연.</summary>
+    protected float preFireChargeTime = 0f;
+
+    public void SetPreFireChargeTime(float t) => preFireChargeTime = Mathf.Max(0f, t);
+
     protected virtual void Start()
     {
+        // OnEnable이 먼저 호출되므로 Start에서는 중복 활성화 방지
+        if (startActive && !isRunning) Activate();
+    }
+
+    // Stage SetActive(false → true) 사이클 시 자동 리셋
+    protected virtual void OnEnable()
+    {
         if (startActive) Activate();
+    }
+
+    protected virtual void OnDisable()
+    {
+        isRunning = false;
+        if (trapCoroutine != null)
+        {
+            StopCoroutine(trapCoroutine);
+            trapCoroutine = null;
+        }
     }
 
     /// <summary>함정 활성화. 이미 실행 중이면 무시.</summary>
@@ -53,7 +81,7 @@ public abstract class TrapBase : MonoBehaviour
 
         while (isRunning)
         {
-            OnTrapTrigger();
+            yield return StartCoroutine(FireWithCharge());
 
             if (activateInterval > 0f)
                 yield return new WaitForSeconds(activateInterval);
@@ -63,6 +91,21 @@ public abstract class TrapBase : MonoBehaviour
                 yield break;
             }
         }
+    }
+
+    /// <summary>
+    /// preFireChargeTime 이 0보다 크면 OnPreFireCharge → 대기 → OnFiring → OnTrapTrigger 순서로 실행.
+    /// 0이면 즉시 OnFiring → OnTrapTrigger.
+    /// </summary>
+    protected IEnumerator FireWithCharge()
+    {
+        if (preFireChargeTime > 0f)
+        {
+            OnPreFireCharge?.Invoke();
+            yield return new WaitForSeconds(preFireChargeTime);
+        }
+        OnFiring?.Invoke();
+        OnTrapTrigger();
     }
 
     /// <summary>함정이 발동될 때 호출. 하위 클래스에서 구현.</summary>

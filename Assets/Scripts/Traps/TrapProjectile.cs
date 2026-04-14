@@ -42,8 +42,15 @@ public class TrapProjectile : MonoBehaviour
     [Tooltip("Floor 태그 오브젝트와 충돌 시 파괴 (돌굴림은 false 권장)")]
     [SerializeField] private bool destroyOnFloor = true;
 
+    [Header("충돌 이펙트")]
+    [Tooltip("충돌 파괴 시 스폰할 파티클 프리팹. 충돌 지점 + 법선 방향으로 생성됨.\n" +
+             "프리팹의 Particle System > Stop Action을 Destroy로 설정할 것.")]
+    [SerializeField] private GameObject hitEffectPrefab = null;
+
     Rigidbody rb;
-    bool isDestroyed;
+    bool      isDestroyed;
+    Vector3   _lastHitPoint  = Vector3.zero;
+    Vector3   _lastHitNormal = Vector3.up;
 
     void Awake()
     {
@@ -75,13 +82,23 @@ public class TrapProjectile : MonoBehaviour
     // 물리 충돌 (Floor 등 non-trigger 지형)
     void OnCollisionEnter(Collision collision)
     {
-        if (!isDestroyed) HandleContact(collision.gameObject);
+        if (isDestroyed) return;
+        if (collision.contactCount > 0)
+        {
+            ContactPoint cp = collision.GetContact(0);
+            _lastHitPoint  = cp.point;
+            _lastHitNormal = cp.normal;
+        }
+        HandleContact(collision.gameObject);
     }
 
     // 트리거 충돌 (Wall 등 trigger 지형, 또는 Player trigger 영역)
     void OnTriggerEnter(Collider other)
     {
-        if (!isDestroyed) HandleContact(other.gameObject);
+        if (isDestroyed) return;
+        _lastHitPoint  = transform.position;
+        _lastHitNormal = -transform.forward; // 날아오던 방향 반대 = 벽면 법선
+        HandleContact(other.gameObject);
     }
 
     void HandleContact(GameObject other)
@@ -116,6 +133,18 @@ public class TrapProjectile : MonoBehaviour
     {
         if (isDestroyed) return;
         isDestroyed = true;
+
+        SpawnHitEffect();
         Destroy(gameObject);
+    }
+
+    void SpawnHitEffect()
+    {
+        if (hitEffectPrefab == null) return;
+        // 충돌 법선 방향으로 파티클이 튀도록 회전 설정
+        Quaternion rot = _lastHitNormal != Vector3.zero
+            ? Quaternion.LookRotation(_lastHitNormal)
+            : Quaternion.identity;
+        Instantiate(hitEffectPrefab, _lastHitPoint, rot);
     }
 }

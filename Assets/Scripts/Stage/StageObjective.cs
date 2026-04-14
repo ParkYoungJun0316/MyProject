@@ -43,4 +43,15 @@ public abstract class StageObjective : MonoBehaviour
         IsFailed = true;
         OnFailed?.Invoke();
     }
+
+    /// <summary>
+    /// 목표 상태 초기화 후 Begin() 재호출.
+    /// StageManager.ResetStage()에서 호출됨.
+    /// </summary>
+    public void ResetObjective()
+    {
+        IsCompleted = false;
+        IsFailed    = false;
+        Begin();
+    }
 }
