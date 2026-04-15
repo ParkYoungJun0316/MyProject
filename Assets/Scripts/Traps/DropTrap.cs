@@ -25,12 +25,17 @@ public class DropTrap : TrapBase
     [Tooltip("타겟 랜덤 선택 여부. false이면 targetPoints 순서대로 순환")]
     [SerializeField] private bool randomTarget = true;
 
-    [Header("경고")]
+    [Header("경고 — 바닥 마커")]
     [Tooltip("경고 마커 프리팹. 낙하 위치 바닥에 warnDuration만큼 표시. 없으면 생략")]
     [SerializeField] private GameObject warnPrefab = null;
 
     [Tooltip("경고 표시 시간 (초). 플레이어가 피할 여유 시간")]
     [SerializeField] private float warnDuration = 0f;
+
+    [Header("경고 — 천장 물방울 형성")]
+    [Tooltip("낙하 전 천장(spawnHeight 위치)에 표시할 형성 프리팹.\n" +
+             "DropletForming 컴포넌트를 붙여 크기가 서서히 자라게 할 것.")]
+    [SerializeField] private GameObject ceilingFormPrefab = null;
 
     [Header("낙하")]
     [Tooltip("낙하체가 생성될 높이 (타겟 위치 기준 Y 오프셋, m)")]
@@ -150,6 +155,20 @@ public class DropTrap : TrapBase
 
     IEnumerator DropCycle(Vector3 targetPos)
     {
+        Vector3 spawnPos = targetPos + Vector3.up * spawnHeight;
+
+        // 천장에 물방울 형성 프리팹 스폰 (아래를 향하도록 회전)
+        // warnDuration을 DropletForming에 전달 → 자동으로 성장/흔들림 타이밍 분배
+        GameObject ceilingForm = null;
+        if (ceilingFormPrefab != null)
+        {
+            ceilingForm = Instantiate(ceilingFormPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
+            DropletForming forming = ceilingForm.GetComponent<DropletForming>();
+            if (forming != null)
+                forming.Initialize(warnDuration);
+        }
+
+        // 바닥 경고 마커
         GameObject warn = null;
         if (warnPrefab != null)
             warn = Instantiate(warnPrefab, targetPos, Quaternion.identity);
@@ -157,11 +176,10 @@ public class DropTrap : TrapBase
         if (warnDuration > 0f)
             yield return new WaitForSeconds(warnDuration);
 
-        if (warn != null)
-            Destroy(warn);
+        if (warn != null)        Destroy(warn);
+        if (ceilingForm != null) Destroy(ceilingForm);
 
-        Vector3    spawnPos = targetPos + Vector3.up * spawnHeight;
-        GameObject drop     = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
+        GameObject drop = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
 
         TrapProjectile proj = drop.GetComponent<TrapProjectile>();
         if (proj == null) yield break;

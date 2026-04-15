@@ -2,31 +2,30 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 입 배경 연출 컨트롤러 — 상단 턱을 회전시켜 입을 닫았다 여는 시각 효과.
+/// 입 배경 연출 컨트롤러 — BlendShape(Shape Key)로 입을 닫았다 여는 시각 효과.
 /// 데미지/충돌 없이 순수 연출 전용.
 ///
 /// [타이밍 모드]
 /// FixedInterval  : fixedInterval 초마다 자동 닫힘
 /// RandomInterval : randomMin~randomMax 사이 랜덤 간격으로 자동 닫힘
-/// Manual         : 외부에서 TriggerClose() 직접 호출
 ///
 /// [설정 방법]
 /// 1. 이 스크립트를 루트 GameObject에 부착
-/// 2. upperJaw에 Mouth_Upper Transform 연결
-/// 3. closeRotationOffset으로 닫히는 각도 설정
-///    → Unity 에디터에서 Mouth_Upper를 직접 돌려보고 열림/닫힘 차이값 입력
+/// 2. mouthRenderer : 입 메시의 SkinnedMeshRenderer 연결 (비워두면 자식에서 자동 탐색)
+/// 3. closeShapeIndex : Inspector > SkinnedMeshRenderer > BlendShapes 에서 "입 닫기" Shape Key 인덱스 확인 후 입력
+///    (Blender 순서 그대로 : Basis 제외하고 0번부터 카운트)
 /// </summary>
 public class MouthController : MonoBehaviour
 {
     [Header("참조")]
-    [Tooltip("상단 턱 Transform (Mouth_Upper 오브젝트)")]
-    [SerializeField] private Transform upperJaw = null;
+    [Tooltip("입 메시의 SkinnedMeshRenderer. 비워두면 자식에서 자동 탐색")]
+    [SerializeField] private SkinnedMeshRenderer mouthRenderer = null;
 
-    [Header("회전 설정")]
-    [Tooltip("닫힐 때 upperJaw에 더해지는 로컬 오일러 오프셋\n" +
-             "예: (70,0,0) → 로컬 X축으로 70도 아래 회전")]
-    [SerializeField] private Vector3 closeRotationOffset = new Vector3(70f, 0f, 0f);
+    [Tooltip("'입 닫기' Shape Key 인덱스\n" +
+             "Inspector > SkinnedMeshRenderer > BlendShapes 목록에서 확인")]
+    [SerializeField] private int closeShapeIndex = 2;
 
+    [Header("속도 설정")]
     [Tooltip("닫히는 데 걸리는 시간(초)")]
     [SerializeField] private float closeSpeed = 0.3f;
 
@@ -36,12 +35,15 @@ public class MouthController : MonoBehaviour
     [Tooltip("다시 열리는 데 걸리는 시간(초)")]
     [SerializeField] private float openSpeed = 0.5f;
 
-    [Tooltip("닫힘/열림 움직임 감속 커브 (기본: EaseInOut)")]
-    [SerializeField] private AnimationCurve easeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("닫힐 때 커브")]
+    [SerializeField] private AnimationCurve closeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Tooltip("열릴 때 커브")]
+    [SerializeField] private AnimationCurve openCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("타이밍 설정")]
-    [Tooltip("FixedInterval: 고정 간격 반복\nRandomInterval: 랜덤 간격 반복\nManual: 외부 호출만 반응")]
-    [SerializeField] private TimingMode timingMode = TimingMode.FixedInterval;
+    [Tooltip("FixedInterval: 고정 간격 반복\nRandomInterval: 랜덤 간격 반복")]
+    [SerializeField] private TimingMode timingMode = TimingMode.RandomInterval;
 
     [Tooltip("FixedInterval 모드 전용 — 닫힘 발동 간격(초)")]
     [SerializeField] private float fixedInterval = 10f;
@@ -58,27 +60,32 @@ public class MouthController : MonoBehaviour
     [Tooltip("Start 시 자동으로 사이클 시작 여부")]
     [SerializeField] private bool startOnAwake = true;
 
-    public enum TimingMode { FixedInterval, RandomInterval, Manual }
+    public enum TimingMode { FixedInterval, RandomInterval }
 
-    Quaternion _openRotation;
-    Quaternion _closedRotation;
     bool _isClosing;
     Coroutine _cycleCoroutine;
 
+    void Awake()
+    {
+        if (mouthRenderer == null)
+            mouthRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
+    }
+
     void Start()
     {
-        if (upperJaw == null) return;
+        if (!IsValid())
+        {
+            Debug.LogWarning($"[MouthController] {name}: mouthRenderer 또는 closeShapeIndex 설정을 확인하세요.", this);
+            return;
+        }
 
-        _openRotation   = upperJaw.localRotation;
-        _closedRotation = Quaternion.Euler(upperJaw.localEulerAngles + closeRotationOffset);
-
-        if (startOnAwake && timingMode != TimingMode.Manual)
+        if (startOnAwake)
             StartCycle();
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>자동 사이클 시작 (FixedInterval / RandomInterval 모드)</summary>
+    /// <summary>자동 사이클 시작</summary>
     public void StartCycle()
     {
         if (_cycleCoroutine != null) StopCoroutine(_cycleCoroutine);
@@ -93,13 +100,6 @@ public class MouthController : MonoBehaviour
             StopCoroutine(_cycleCoroutine);
             _cycleCoroutine = null;
         }
-    }
-
-    /// <summary>Manual 모드에서 즉시 닫기 트리거. 이미 닫히는 중이면 무시.</summary>
-    public void TriggerClose()
-    {
-        if (_isClosing) return;
-        StartCoroutine(CloseCycle());
     }
 
     // ── 내부 ────────────────────────────────────────────────────
@@ -124,25 +124,23 @@ public class MouthController : MonoBehaviour
 
     IEnumerator CloseCycle()
     {
-        if (upperJaw == null) yield break;
-
         _isClosing = true;
 
-        yield return RotateJaw(_openRotation, _closedRotation, closeSpeed);
+        yield return LerpShape(GetWeight(), 100f, closeSpeed, closeCurve);
 
         if (holdDuration > 0f)
             yield return new WaitForSeconds(holdDuration);
 
-        yield return RotateJaw(_closedRotation, _openRotation, openSpeed);
+        yield return LerpShape(GetWeight(), 0f, openSpeed, openCurve);
 
         _isClosing = false;
     }
 
-    IEnumerator RotateJaw(Quaternion from, Quaternion to, float duration)
+    IEnumerator LerpShape(float from, float to, float duration, AnimationCurve curve)
     {
-        if (duration <= 0f)
+        if (!IsValid() || duration <= 0f)
         {
-            upperJaw.localRotation = to;
+            SetWeight(to);
             yield break;
         }
 
@@ -150,11 +148,46 @@ public class MouthController : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float curved = easeCurve.Evaluate(Mathf.Clamp01(elapsed / duration));
-            upperJaw.localRotation = Quaternion.Lerp(from, to, curved);
+            float t = curve.Evaluate(Mathf.Clamp01(elapsed / duration));
+            SetWeight(Mathf.Lerp(from, to, t));
             yield return null;
         }
+        SetWeight(to);
+    }
 
-        upperJaw.localRotation = to;
+    // ── 헬퍼 ────────────────────────────────────────────────────
+
+    bool IsValid() =>
+        mouthRenderer != null &&
+        mouthRenderer.sharedMesh != null &&
+        closeShapeIndex >= 0 &&
+        closeShapeIndex < mouthRenderer.sharedMesh.blendShapeCount;
+
+    float GetWeight() => IsValid() ? mouthRenderer.GetBlendShapeWeight(closeShapeIndex) : 0f;
+
+    void SetWeight(float w)
+    {
+        if (IsValid()) mouthRenderer.SetBlendShapeWeight(closeShapeIndex, w);
+    }
+
+    // ── 에디터 테스트 (플레이 중 컴포넌트 우클릭) ─────────────────────────
+
+    [ContextMenu("테스트: 즉시 닫기")]
+    void TestClose()
+    {
+        if (_isClosing) return;
+        StartCoroutine(CloseCycle());
+    }
+
+    [ContextMenu("테스트: 즉시 열기")]
+    void TestOpen() => SetWeight(0f);
+
+    [ContextMenu("테스트: BlendShape 목록 출력")]
+    void PrintBlendShapes()
+    {
+        if (mouthRenderer == null) { Debug.LogError("[MouthController] mouthRenderer가 null입니다."); return; }
+        int count = mouthRenderer.sharedMesh.blendShapeCount;
+        for (int i = 0; i < count; i++)
+            Debug.Log($"  [{i}] {mouthRenderer.sharedMesh.GetBlendShapeName(i)}");
     }
 }

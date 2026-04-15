@@ -59,7 +59,24 @@ public class WindTrap : TrapBase
     bool _windActive;
     Collider _zone;
 
+    float _windChargeTime = 0f;
+
     readonly List<Rigidbody> _targetsInZone = new List<Rigidbody>();
+
+    /// <summary>현재 바람 모드 (MouthWindAnimator가 Push/Pull 구분에 사용)</summary>
+    public WindMode CurrentWindMode => windMode;
+
+    /// <summary>
+    /// MouthWindAnimator가 Awake에서 설정.
+    /// 이 시간만큼 바람 발동을 지연시켜 입 오므림 애니메이션과 동기화.
+    /// </summary>
+    public void SetWindChargeTime(float t) => _windChargeTime = Mathf.Max(0f, t);
+
+    /// <summary>바람 발동 _windChargeTime 전에 호출. MouthWindAnimator가 구독.</summary>
+    public event System.Action OnWindCharge;
+
+    /// <summary>바람 효과 종료 시 호출. MouthWindAnimator가 구독.</summary>
+    public event System.Action OnWindEnd;
 
     /// <summary>
     /// PhaseManager가 Phase 전환 시 호출.
@@ -124,6 +141,12 @@ public class WindTrap : TrapBase
     IEnumerator WindCycle()
     {
         _windActive = true;
+
+        // 사전 충전: MouthWindAnimator가 SetWindChargeTime을 설정했을 때 입 오므림과 동기화
+        OnWindCharge?.Invoke();
+        if (_windChargeTime > 0f)
+            yield return new WaitForSeconds(_windChargeTime);
+
         if (windParticle != null) windParticle.Play();
 
         if (windDuration <= 0f)
@@ -131,6 +154,7 @@ public class WindTrap : TrapBase
             ApplyForceToAll(ForceMode.Impulse);
             _windActive = false;
             if (windParticle != null) windParticle.Stop();
+            OnWindEnd?.Invoke();
             yield break;
         }
 
@@ -144,6 +168,7 @@ public class WindTrap : TrapBase
 
         _windActive = false;
         if (windParticle != null) windParticle.Stop();
+        OnWindEnd?.Invoke();
     }
 
     void ApplyForceToAll(ForceMode mode)
