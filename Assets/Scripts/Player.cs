@@ -105,7 +105,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
-    public bool IsDead { get; private set; }
+    public bool IsDead   { get; private set; }
+    public bool IsLocked { get; private set; }
     public int PlayerId => playerId;
 
     public Vector2 moveInput;
@@ -153,7 +154,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     public void OnMove(InputValue value)
     {
-        if (IsDead) return;
+        if (IsDead || IsLocked) return;
         moveInput = value.Get<Vector2>();
     }
 
@@ -257,6 +258,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
+        if (IsLocked)
+        {
+            dDown = bwDown = altDown = false;
+            return;
+        }
         dDown   = Keyboard.current.spaceKey.wasPressedThisFrame;
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
@@ -265,6 +271,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     void Move()
     {
         if (isKnockback) return;
+
+        if (IsLocked)
+        {
+            Vector3 lv = rigid.linearVelocity;
+            lv.x = 0f; lv.z = 0f;
+            rigid.linearVelocity = lv;
+            if (anim != null) { anim.SetBool("isWalk", false); anim.SetBool("isRun", false); }
+            return;
+        }
 
         // 카메라의 수평 forward/right 기준으로 이동 방향 계산 (폴가이즈 스타일)
         Vector3 camForward = (followCamera != null)
@@ -383,6 +398,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void UseGrenade()
     {
+        if (IsLocked) return;
+
         // 차징 중이면 release 감지 우선
         if (grenadeHeld)
         {
@@ -446,6 +463,34 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     }
 
     // ── 공개 메서드 ──────────────────────────────────────────
+
+    /// <summary>
+    /// 이동·입력 잠금.
+    /// 컷씬/스테이지 전환 등 플레이어 제어가 불필요한 상황에서 사용.
+    /// SetLocked(true)  → 이동·닷지·색상전환·투척 등 모든 입력 차단.
+    /// SetLocked(false) → 잠금 해제.
+    /// </summary>
+    public void SetLocked(bool locked)
+    {
+        IsLocked = locked;
+        if (!locked) return;
+
+        moveInput = Vector2.zero;
+        moveVec   = Vector3.zero;
+
+        if (rigid != null)
+        {
+            Vector3 v = rigid.linearVelocity;
+            v.x = 0f; v.z = 0f;
+            rigid.linearVelocity = v;
+        }
+
+        if (anim != null)
+        {
+            anim.SetBool("isWalk", false);
+            anim.SetBool("isRun",  false);
+        }
+    }
 
     /// <summary>
     /// 차징 힘으로 수류탄 투척.

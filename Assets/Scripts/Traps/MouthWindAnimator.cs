@@ -29,6 +29,10 @@ public class MouthWindAnimator : MonoBehaviour
     [Tooltip("입 메시의 SkinnedMeshRenderer. 비워두면 자식에서 자동 탐색")]
     [SerializeField] SkinnedMeshRenderer mouthRenderer = null;
 
+    [Tooltip("MouthController 참조. 설정 시 MouthController 애니메이션이 완전히 끝난 후에만 바람 발동.\n" +
+             "비워두면 동기화 없이 즉시 발동.")]
+    [SerializeField] MouthController mouthController = null;
+
     [Tooltip("Push(내뱉기) 모드의 BlendShape 인덱스")]
     [SerializeField] int blowShapeIndex = 0;
 
@@ -62,6 +66,23 @@ public class MouthWindAnimator : MonoBehaviour
 
         // chargeTime만큼 WindTrap 발동을 지연시켜 입 오므림과 자동 동기화
         _wind.SetWindChargeTime(chargeTime);
+
+        // MouthController가 연결된 경우: 바람 발동 전 입 애니메이션 완료 대기 훅 등록
+        if (mouthController != null)
+            _wind.PreChargeHook = WaitForMouthIdle;
+    }
+
+    /// <summary>MouthController가 닫힘/열림 애니메이션 중이면 완료될 때까지 대기. 안전 타임아웃 5초.</summary>
+    IEnumerator WaitForMouthIdle()
+    {
+        if (mouthController == null) yield break;
+
+        float elapsed = 0f;
+        while (mouthController.IsBusy && elapsed < 5f)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
     }
 
     void OnEnable()

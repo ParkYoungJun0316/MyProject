@@ -25,6 +25,10 @@ public class MouthController : MonoBehaviour
              "Inspector > SkinnedMeshRenderer > BlendShapes 목록에서 확인")]
     [SerializeField] private int closeShapeIndex = 2;
 
+    [Tooltip("WindTrap이 활성화 중일 때 입닫기 사이클을 건너뜀.\n" +
+             "Push/Pull 각각 등록 가능. 하나라도 활성화 중이면 건너뜀. 없으면 비워두면 됨.")]
+    [SerializeField] private WindTrap[] windTraps = new WindTrap[0];
+
     [Header("속도 설정")]
     [Tooltip("닫히는 데 걸리는 시간(초)")]
     [SerializeField] private float closeSpeed = 0.3f;
@@ -63,7 +67,14 @@ public class MouthController : MonoBehaviour
     public enum TimingMode { FixedInterval, RandomInterval }
 
     bool _isClosing;
+    bool _isTransitioning;
     Coroutine _cycleCoroutine;
+
+    /// <summary>현재 입이 닫히는 중 또는 열리는 중이면 true. MouthWindAnimator가 대기 여부 판단에 사용.</summary>
+    public bool IsBusy => _isClosing;
+
+    /// <summary>전환 연출 중이면 true. 이 동안 AutoCycle이 중단됨.</summary>
+    public bool IsTransitioning => _isTransitioning;
 
     void Awake()
     {
@@ -102,6 +113,39 @@ public class MouthController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 스테이지/Phase 전환용 일회성 강제 닫기.
+    /// AutoCycle을 일시 중단하고 입을 닫은 뒤 onClosed를 호출하여 오브젝트·머티리얼 교체를 수행하고,
+    /// 입이 열리면 onOpened를 호출한 후 AutoCycle을 재개한다.
+    /// 이미 전환 중이면 무시.
+    /// </summary>
+    public void CloseForTransition(System.Action onClosed, System.Action onOpened)
+    {
+        if (_isTransitioning) return;
+        StartCoroutine(TransitionCoroutine(onClosed, onOpened));
+    }
+
+    IEnumerator TransitionCoroutine(System.Action onClosed, System.Action onOpened)
+    {
+        _isTransitioning = true;
+        bool wasRunning = _cycleCoroutine != null;
+        StopCycle();
+
+        _isClosing = true;
+        yield return LerpShape(GetWeight(), 100f, closeSpeed, closeCurve);
+
+        onClosed?.Invoke();
+        yield return null; // 1프레임 대기 — 콜백의 오브젝트 활성화 처리 완료 보장
+
+        yield return LerpShape(GetWeight(), 0f, openSpeed, openCurve);
+
+        _isClosing       = false;
+        _isTransitioning = false;
+        onOpened?.Invoke();
+
+        if (wasRunning) StartCycle();
+    }
+
     // ── 내부 ────────────────────────────────────────────────────
 
     IEnumerator AutoCycle()
@@ -124,6 +168,14 @@ public class MouthController : MonoBehaviour
 
     IEnumerator CloseCycle()
     {
+        // 전환 연출 중이거나 등록된 WindTrap 중 하나라도 활성화 중이면 이번 사이클 건너뜀
+        if (_isTransitioning) yield break;
+        foreach (WindTrap wt in windTraps)
+        {
+            if (wt != null && wt.IsWindActive)
+                yield break;
+        }
+
         _isClosing = true;
 
         yield return LerpShape(GetWeight(), 100f, closeSpeed, closeCurve);

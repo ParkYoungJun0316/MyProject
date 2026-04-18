@@ -18,10 +18,10 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class WindTrap : TrapBase
 {
-    public enum WindMode { Push, Pull }
+    public enum WindMode { Push, Pull, Random }
 
     [Header("Wind Trap")]
-    [Tooltip("Push = 밀어냄 (바람 방출) / Pull = 당김 (바람 흡입)")]
+    [Tooltip("Push = 밀어냄 / Pull = 당김 / Random = 발동마다 랜덤 결정")]
     [SerializeField] private WindMode windMode = WindMode.Push;
 
     [Tooltip("기본 힘 세기 (N). 클수록 강하게 밀림/당겨짐")]
@@ -61,10 +61,19 @@ public class WindTrap : TrapBase
 
     float _windChargeTime = 0f;
 
+    // Random 모드일 때 이번 사이클에서 확정된 모드. MouthWindAnimator가 이 값을 읽음
+    WindMode _activeWindMode = WindMode.Push;
+
     readonly List<Rigidbody> _targetsInZone = new List<Rigidbody>();
 
-    /// <summary>현재 바람 모드 (MouthWindAnimator가 Push/Pull 구분에 사용)</summary>
-    public WindMode CurrentWindMode => windMode;
+    /// <summary>
+    /// 현재 사이클에서 실제로 적용 중인 모드 (Random이면 발동 시 확정된 Push/Pull 반환).
+    /// MouthWindAnimator가 올바른 Shape Key를 선택하는 데 사용.
+    /// </summary>
+    public WindMode CurrentWindMode => _activeWindMode;
+
+    /// <summary>현재 바람이 활성화 중인지 여부 (MouthController 충돌 방지용)</summary>
+    public bool IsWindActive => _windActive;
 
     /// <summary>
     /// MouthWindAnimator가 Awake에서 설정.
@@ -77,6 +86,13 @@ public class WindTrap : TrapBase
 
     /// <summary>바람 효과 종료 시 호출. MouthWindAnimator가 구독.</summary>
     public event System.Action OnWindEnd;
+
+    /// <summary>
+    /// WindCycle 시작 직전에 실행할 선택적 대기 훅.
+    /// MouthWindAnimator가 MouthController 상태를 기다리는 코루틴을 등록.
+    /// null이면 즉시 발동.
+    /// </summary>
+    public System.Func<IEnumerator> PreChargeHook = null;
 
     /// <summary>
     /// PhaseManager가 Phase 전환 시 호출.
@@ -142,6 +158,15 @@ public class WindTrap : TrapBase
     {
         _windActive = true;
 
+        // Random 모드: 이번 사이클의 Push/Pull을 먼저 확정 → MouthWindAnimator가 읽기 전에 설정
+        _activeWindMode = windMode == WindMode.Random
+            ? (UnityEngine.Random.value < 0.5f ? WindMode.Push : WindMode.Pull)
+            : windMode;
+
+        // 선택적 선행 대기: MouthController 애니메이션이 끝날 때까지 대기 (MouthWindAnimator가 등록)
+        if (PreChargeHook != null)
+            yield return StartCoroutine(PreChargeHook());
+
         // 사전 충전: MouthWindAnimator가 SetWindChargeTime을 설정했을 때 입 오므림과 동기화
         OnWindCharge?.Invoke();
         if (_windChargeTime > 0f)
@@ -193,18 +218,10 @@ public class WindTrap : TrapBase
 
     Vector3 GetWindDirection(Vector3 targetPos)
     {
-        Vector3 dir;
-
-        if (windMode == WindMode.Push)
-        {
-            dir = transform.forward;
-        }
-        else
-        {
-            dir = transform.position - targetPos;
-            if (!applyVerticalForce) dir.y = 0f;
-            if (dir.sqrMagnitude < 0.001f) dir = -transform.forward;
-        }
+        // Push: +Z(forward) 방향으로 밀어냄
+        // Pull: -Z(forward 반대) 방향으로 당김
+        // Random은 WindCycle 시작 시 _activeWindMode로 이미 확정됨
+        Vector3 dir = _activeWindMode == WindMode.Push ? transform.forward : -transform.forward;
 
         if (!applyVerticalForce) dir.y = 0f;
         if (dir.sqrMagnitude < 0.001f) return Vector3.zero;
