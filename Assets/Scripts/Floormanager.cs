@@ -24,16 +24,50 @@ public class FloorManager : MonoBehaviour
 
     FloorTile[] tiles;
     float nextTime;
-    int currentPhaseIndex;
+    int   currentPhaseIndex;
+
+    bool  _isRunning;
+    float _elapsedTime;
+    bool  _hasStageManager;
 
     void Awake()
     {
         tiles = GetComponentsInChildren<FloorTile>(true);
+
+        StageManager sm = GetComponentInParent<StageManager>();
+        if (sm != null)
+        {
+            _hasStageManager = true;
+            sm.RegisterFloor(this);
+        }
+    }
+
+    void OnEnable()
+    {
+        // StageManager 자식이 아닐 때만 활성화 즉시 자동 시작
+        if (!_hasStageManager)
+            StartFloor();
+    }
+
+    void OnDisable()
+    {
+        _isRunning = false;
+    }
+
+    /// <summary>StageManager.StartStage()에서 호출. 타이머를 0부터 시작.</summary>
+    public void StartFloor()
+    {
+        _isRunning        = true;
+        _elapsedTime      = 0f;
+        nextTime          = 0f;
         currentPhaseIndex = 0;
     }
 
     void Update()
     {
+        if (!_isRunning) return;
+
+        _elapsedTime += Time.deltaTime;
         CheckPhase();
 
         if (Time.time < nextTime) return;
@@ -46,11 +80,12 @@ public class FloorManager : MonoBehaviour
     {
         if (phases == null || currentPhaseIndex >= phases.Length) return;
 
+        // Time.timeSinceLevelLoad 대신 트리거 시점 기준 경과 시간 사용
         while (currentPhaseIndex < phases.Length &&
-               Time.timeSinceLevelLoad >= phases[currentPhaseIndex].triggerTime)
+               _elapsedTime >= phases[currentPhaseIndex].triggerTime)
         {
             changeInterval = phases[currentPhaseIndex].changeInterval;
-            keepBWRatio = phases[currentPhaseIndex].keepBWRatio;
+            keepBWRatio    = phases[currentPhaseIndex].keepBWRatio;
             currentPhaseIndex++;
         }
     }

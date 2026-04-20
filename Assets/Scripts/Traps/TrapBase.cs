@@ -20,6 +20,10 @@ public abstract class TrapBase : MonoBehaviour
 
     protected bool isRunning;
     Coroutine trapCoroutine;
+    Coroutine fireCoroutine;
+
+    // 부모 계층에 StageManager가 있으면 startActive를 무시하고 StageManager.StartStage()로만 시작
+    bool _hasStageManager;
 
     /// <summary>발사 chargeTime 전에 호출됨. 구체 애니메이션 컴포넌트(MouthTrapAnimator 등)가 구독.</summary>
     public event System.Action OnPreFireCharge;
@@ -32,26 +36,35 @@ public abstract class TrapBase : MonoBehaviour
 
     public void SetPreFireChargeTime(float t) => preFireChargeTime = Mathf.Max(0f, t);
 
+    protected virtual void Awake()
+    {
+        StageManager sm = GetComponentInParent<StageManager>();
+        if (sm != null)
+        {
+            _hasStageManager = true;
+            sm.RegisterTrap(this);
+        }
+    }
+
     protected virtual void Start()
     {
         // OnEnable이 먼저 호출되므로 Start에서는 중복 활성화 방지
-        if (startActive && !isRunning) Activate();
+        if (startActive && !_hasStageManager && !isRunning) Activate();
     }
 
     // Stage SetActive(false → true) 사이클 시 자동 리셋
+    // StageManager 자식이면 startActive 무시 — StartStage()로만 시작
     protected virtual void OnEnable()
     {
-        if (startActive) Activate();
+        if (startActive && !_hasStageManager) Activate();
     }
 
     protected virtual void OnDisable()
     {
         isRunning = false;
-        if (trapCoroutine != null)
-        {
-            StopCoroutine(trapCoroutine);
-            trapCoroutine = null;
-        }
+        StopAllCoroutines();
+        trapCoroutine = null;
+        fireCoroutine = null;
     }
 
     /// <summary>함정 활성화. 이미 실행 중이면 무시.</summary>
@@ -62,15 +75,13 @@ public abstract class TrapBase : MonoBehaviour
         trapCoroutine = StartCoroutine(TrapLoop());
     }
 
-    /// <summary>함정 비활성화. 진행 중인 루프를 중단.</summary>
+    /// <summary>함정 비활성화. 이 인스턴스의 모든 코루틴(TrapLoop, FireWithCharge, DropCycle 등)을 즉시 중단.</summary>
     public void Deactivate()
     {
         isRunning = false;
-        if (trapCoroutine != null)
-        {
-            StopCoroutine(trapCoroutine);
-            trapCoroutine = null;
-        }
+        StopAllCoroutines();
+        trapCoroutine = null;
+        fireCoroutine = null;
         OnDeactivated();
     }
 
@@ -81,7 +92,9 @@ public abstract class TrapBase : MonoBehaviour
 
         while (isRunning)
         {
-            yield return StartCoroutine(FireWithCharge());
+            fireCoroutine = StartCoroutine(FireWithCharge());
+            yield return fireCoroutine;
+            fireCoroutine = null;
 
             if (activateInterval > 0f)
                 yield return new WaitForSeconds(activateInterval);
@@ -104,6 +117,7 @@ public abstract class TrapBase : MonoBehaviour
             OnPreFireCharge?.Invoke();
             yield return new WaitForSeconds(preFireChargeTime);
         }
+        if (!isRunning) yield break;
         OnFiring?.Invoke();
         OnTrapTrigger();
     }

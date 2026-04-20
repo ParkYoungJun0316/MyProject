@@ -115,17 +115,19 @@ public class MouthController : MonoBehaviour
 
     /// <summary>
     /// 스테이지/Phase 전환용 일회성 강제 닫기.
-    /// AutoCycle을 일시 중단하고 입을 닫은 뒤 onClosed를 호출하여 오브젝트·머티리얼 교체를 수행하고,
-    /// 입이 열리면 onOpened를 호출한 후 AutoCycle을 재개한다.
+    /// AutoCycle을 일시 중단하고 입을 닫은 뒤 onClosed → 열기 시작 직전 onOpenStart → 완전히 열리면 onOpened 순서로 콜백을 호출한다.
     /// 이미 전환 중이면 무시.
     /// </summary>
-    public void CloseForTransition(System.Action onClosed, System.Action onOpened)
+    /// <param name="onClosed">입이 완전히 닫혔을 때 호출. 오브젝트·Phase 교체 등.</param>
+    /// <param name="onOpened">입이 완전히 열렸을 때 호출. 플레이어 잠금 해제 등.</param>
+    /// <param name="onOpenStart">입이 열리기 시작하는 순간 호출 (선택). 조명 페이드 복구 등 열림과 동시에 시작할 처리에 사용.</param>
+    public void CloseForTransition(System.Action onClosed, System.Action onOpened, System.Action onOpenStart = null)
     {
         if (_isTransitioning) return;
-        StartCoroutine(TransitionCoroutine(onClosed, onOpened));
+        StartCoroutine(TransitionCoroutine(onClosed, onOpened, onOpenStart));
     }
 
-    IEnumerator TransitionCoroutine(System.Action onClosed, System.Action onOpened)
+    IEnumerator TransitionCoroutine(System.Action onClosed, System.Action onOpened, System.Action onOpenStart)
     {
         _isTransitioning = true;
         bool wasRunning = _cycleCoroutine != null;
@@ -136,6 +138,8 @@ public class MouthController : MonoBehaviour
 
         onClosed?.Invoke();
         yield return null; // 1프레임 대기 — 콜백의 오브젝트 활성화 처리 완료 보장
+
+        onOpenStart?.Invoke(); // 열리기 시작하는 순간 — 조명 페이드 복구 등과 타이밍 동기화
 
         yield return LerpShape(GetWeight(), 0f, openSpeed, openCurve);
 
