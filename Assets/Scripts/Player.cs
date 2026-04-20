@@ -762,7 +762,30 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         return true;
     }
 
-    void Respawn()
+    /// <summary>
+    /// 세이브 포인트 순서와 관계없이 리스폰 위치를 강제 설정.
+    /// StageStartGate가 스테이지 리셋 후 전원을 시작 위치로 되돌릴 때 사용.
+    /// </summary>
+    public void ForceSetSpawnPoint(Vector3 pos, Quaternion rot)
+    {
+        _currentSaveOrder = int.MinValue;
+        spawnPos = pos;
+        spawnRot = rot;
+    }
+
+    /// <summary>
+    /// 즉시 지정 위치로 리스폰.
+    /// - 살아있는 플레이어: 즉시 위치 초기화 (사망 애니메이션 없이 리셋).
+    /// - 이미 사망한 플레이어: spawnPos만 갱신 → RespawnAfter 코루틴이 해당 위치로 복귀.
+    /// StageStartGate에서 사망 시 전원을 시작 위치로 돌릴 때 사용.
+    /// </summary>
+    public void ForceRespawn(Vector3 pos, Quaternion rot)
+    {
+        ForceSetSpawnPoint(pos, rot);
+        if (!IsDead) Respawn();
+    }
+
+    public void Respawn()
     {
         CancelInvoke();
         transform.SetPositionAndRotation(spawnPos, spawnRot);

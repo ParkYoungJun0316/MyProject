@@ -135,7 +135,7 @@ public class StageManager : MonoBehaviour
 
     /// <summary>
     /// 스테이지 상태 초기화 후 모든 Objective 재시작.
-    /// PhaseManager.RestartCurrentPhase()에서 자동 호출됨.
+    /// PhaseManager.RestartCurrentPhase() 또는 StageResetOnPlayerDeath에서 자동 호출됨.
     /// </summary>
     public void ResetStage()
     {
@@ -143,6 +143,9 @@ public class StageManager : MonoBehaviour
         _isCleared      = false;
         _isFailed       = false;
         _completedCount = 0;
+
+        DeactivateAllTraps();
+        DestroyAllProjectiles();
 
         foreach (var obj in objectives)
             if (obj != null) obj.ResetObjective();

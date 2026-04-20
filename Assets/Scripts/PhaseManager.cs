@@ -184,7 +184,8 @@ public class PhaseManager : MonoBehaviour
                 if (obj == null) continue;
 
                 // 1. 투사체 제거 + 하위 오브젝트 초기 상태 복원 (부서진 바닥 등)
-                StageResetter resetter = obj.GetComponent<StageResetter>();
+                //    자식에 StageResetter만 있어도 찾음 (루트와 분리 배치 대응)
+                StageResetter resetter = obj.GetComponentInChildren<StageResetter>(true);
                 if (resetter != null) resetter.RestoreChildStates();
 
                 // 2. SetActive 사이클 → 모든 TrapBase OnDisable/OnEnable 발동 → 0초부터 재발사

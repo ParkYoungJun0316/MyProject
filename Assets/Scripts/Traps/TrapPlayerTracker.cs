@@ -26,6 +26,8 @@ using UnityEngine;
 /// - activateDelay 이후에 추적 시작
 /// - controlTrapActivation = true 시, activateDelay 후 TrapBase.Activate() 도 자동 호출
 ///   (PhaseManager가 Activate를 이미 제어하고 있으면 false 로 유지)
+/// - 부모에 StageManager가 있으면 IsStarted == true 가 될 때까지 DropLoop/Activate 대기
+///   (게임 시작 전 FireAt/낙하 방지)
 /// </summary>
 [RequireComponent(typeof(TrapBase))]
 public class TrapPlayerTracker : MonoBehaviour
@@ -68,16 +70,18 @@ public class TrapPlayerTracker : MonoBehaviour
     [Tooltip("Y축만 회전 (수평 조준). true 권장")]
     [SerializeField] bool rotateYAxisOnly = true;
 
-    TrapBase _trap;
-    DropTrap _dropTrap;
-    Player[] _players;
-    bool     _activated;
-    bool     _hasStarted;
+    TrapBase       _trap;
+    DropTrap       _dropTrap;
+    StageManager   _stageManager;
+    Player[]       _players;
+    bool           _activated;
+    bool           _hasStarted;
 
     void Awake()
     {
-        _trap     = GetComponent<TrapBase>();
-        _dropTrap = GetComponent<DropTrap>();
+        _trap         = GetComponent<TrapBase>();
+        _dropTrap     = GetComponent<DropTrap>();
+        _stageManager = GetComponentInParent<StageManager>();
     }
 
     void Start()
@@ -102,16 +106,23 @@ public class TrapPlayerTracker : MonoBehaviour
     void InitTracking()
     {
         RefreshPlayerCache();
-
-        if (activateDelay > 0f)
-            StartCoroutine(DelayedActivate());
-        else
-            BeginTracking();
+        StopAllCoroutines();
+        StartCoroutine(TrackingBootstrapRoutine());
     }
 
-    IEnumerator DelayedActivate()
+    /// <summary>
+    /// StageManager 자식이면 StartStage() 될 때까지 대기 후 activateDelay 적용.
+    /// 독립 함정(_stageManager == null)은 즉시(또는 딜레이만) 진행.
+    /// </summary>
+    IEnumerator TrackingBootstrapRoutine()
     {
-        yield return new WaitForSeconds(activateDelay);
+        if (_stageManager != null)
+            while (!_stageManager.IsStarted)
+                yield return null;
+
+        if (activateDelay > 0f)
+            yield return new WaitForSeconds(activateDelay);
+
         BeginTracking();
     }
 

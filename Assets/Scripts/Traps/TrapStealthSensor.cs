@@ -16,6 +16,8 @@ using UnityEngine;
 /// 2. Player Visible Layer → "Player" 레이어 설정
 /// 3. Detection Radius → 0이면 씬 전체, 0 초과이면 해당 반경 내만 감지
 /// 4. TrapBase의 Start Active는 이 컴포넌트가 자동으로 제어하므로 무관
+/// 5. 부모 StageManager가 있으면 IsStarted 전에는 Activate 호출 안 함
+///    (가시 플레이어가 있어도 스테이지 시작 전 조기 발사 방지)
 /// </summary>
 [RequireComponent(typeof(TrapBase))]
 public class TrapStealthSensor : MonoBehaviour
@@ -32,16 +34,18 @@ public class TrapStealthSensor : MonoBehaviour
     [Tooltip("플레이어가 스텔스 진입 후 함정이 멈추기까지의 지연(초).\n0이면 스텔스 즉시 정지.")]
     [SerializeField] private float deactivateDelay = 0f;
 
-    TrapBase _trap;
-    Player[] _cachedPlayers;
-    int      _playerLayerId;
-    bool     _anyVisible;
-    float    _deactivateTimer;
+    TrapBase       _trap;
+    StageManager   _stageManager;
+    Player[]       _cachedPlayers;
+    int            _playerLayerId;
+    bool           _anyVisible;
+    float          _deactivateTimer;
 
     void Awake()
     {
-        _trap         = GetComponent<TrapBase>();
+        _trap          = GetComponent<TrapBase>();
         _playerLayerId = LayerMask.NameToLayer("Player");
+        _stageManager  = GetComponentInParent<StageManager>();
     }
 
     void Start()
@@ -51,6 +55,13 @@ public class TrapStealthSensor : MonoBehaviour
         _anyVisible = CheckAnyVisible();
         if (!_anyVisible)
             _trap.Deactivate();
+        else if (_stageManager != null && !_stageManager.IsStarted)
+            _trap.Deactivate(); // 보이는 플레이어가 있어도 스테이지 시작 전에는 대기 (StartStage가 Activate)
+    }
+
+    bool MaySensorActivateTrap()
+    {
+        return _stageManager == null || _stageManager.IsStarted;
     }
 
     void Update()
@@ -64,7 +75,8 @@ public class TrapStealthSensor : MonoBehaviour
             if (!_anyVisible)           // 스텔스 해제 → 활성화
             {
                 _anyVisible = true;
-                _trap.Activate();
+                if (MaySensorActivateTrap())
+                    _trap.Activate();
             }
         }
         else
