@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 449257098558937456}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 178.54288, y: 0.00001, z: 7.874}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -104,6 +104,7 @@ MonoBehaviour:
   destroyOnPlayer: 0
   destroyOnWall: 0
   destroyOnFloor: 0
+  hitEffectPrefab: {fileID: 0}
 --- !u!114 &5201726367200639072
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -118,11 +119,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
   moveDir: {x: 0, y: 0, z: 1}
   initialSpeed: 1
-  acceleration: 1
+  speedPhases: []
   spinSpeed: 1
   damage: 10000
   lifetime: 10000
   lockYVelocity: 1
+  waypoints: []
+  waypointReachDistance: 0
+  endMode: 0
+  autoStart: 1
 --- !u!1 &1171137559777857880
 GameObject:
   m_ObjectHideFlags: 0

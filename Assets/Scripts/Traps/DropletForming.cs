@@ -87,8 +87,6 @@ public class DropletForming : MonoBehaviour
         if (rb != null)
         {
             rb.isKinematic = true;
-            Debug.LogWarning($"[DropletForming] {name}: Rigidbody 발견 → isKinematic=true 자동 설정. " +
-                             "형성 프리팹에서 Rigidbody를 제거하는 것을 권장합니다.", this);
         }
 
         // 회전 대상: 루트(자신)를 기준으로 회전 — 빈 부모 구조 권장
@@ -106,15 +104,10 @@ public class DropletForming : MonoBehaviour
         // BlendShape 유효성 검사 — 실패해도 wobble은 계속 실행
         if (!IsValid())
         {
-            Debug.LogWarning($"[DropletForming] {name}: BlendShape 설정 오류 (Renderer={formRenderer}, " +
-                             $"Index={shapeIndex}). 회전 흔들림만 재생합니다.", this);
         }
         else
         {
             string shapeName = formRenderer.sharedMesh.GetBlendShapeName(shapeIndex);
-            Debug.Log($"[DropletForming] {name}: OK — [{shapeIndex}]='{shapeName}', " +
-                      $"총시간={_totalTime:F2}s (성장={_totalTime * growRatio:F2}s / " +
-                      $"흔들림={_totalTime * wobbleRatio:F2}s)", this);
             SetWeight(startWeight);
         }
 
@@ -207,9 +200,5 @@ public class DropletForming : MonoBehaviour
     [ContextMenu("테스트: BlendShape 목록 출력")]
     void PrintBlendShapes()
     {
-        if (formRenderer == null) { Debug.LogError("formRenderer가 null"); return; }
-        int count = formRenderer.sharedMesh.blendShapeCount;
-        for (int i = 0; i < count; i++)
-            Debug.Log($"  [{i}] {formRenderer.sharedMesh.GetBlendShapeName(i)}");
     }
 }

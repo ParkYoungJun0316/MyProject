@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 /// <summary>
 /// Phase 1개의 데이터.
@@ -50,6 +51,15 @@ public class PhaseManager : MonoBehaviour
     [Header("Phase 목록 (순서대로 진행)")]
     [SerializeField] private PhaseData[] phases;
 
+    [Header("리셋 동작")]
+    [Tooltip("사망 리셋 시 복귀할 Phase 인덱스.\n" +
+             "-1이면 현재 진행 중인 Phase로 재시작.\n" +
+             "  ※ Transition Phase(surviveDuration > 0)에서 죽었을 때 -1이면\n" +
+             "    Transition 자체로 복귀해 버리므로, 반드시 복귀할 Stage Phase\n" +
+             "    인덱스(예: 0)를 명시적으로 지정할 것.\n" +
+             "0 이상이면 해당 인덱스로 복귀 (예: Boss 구간에서 1페이즈 고정 복귀).")]
+    [SerializeField] private int respawnPhaseIndex = -1;
+
     [Header("이벤트")]
     [Tooltip("모든 Phase가 완료되었을 때 호출. StageManager.OnStageClear 등에 연결.")]
     public UnityEvent onAllPhasesComplete;
@@ -57,10 +67,12 @@ public class PhaseManager : MonoBehaviour
     private int   _currentPhaseIndex = -1;
     private float _phaseElapsed      = 0f;
     private bool  _allPhasesComplete = false;
+    private bool  _isResetPending    = false;
 
     public int   CurrentPhaseIndex  => _currentPhaseIndex;
     public float PhaseElapsed       => _phaseElapsed;
     public bool  AllPhasesComplete  => _allPhasesComplete;
+    public bool  IsResetPending     => _isResetPending;
 
     /// <summary>현재 Phase의 남은 시간(초). surviveDuration이 0이면 0 반환.</summary>
     public float PhaseRemaining
@@ -82,6 +94,7 @@ public class PhaseManager : MonoBehaviour
 
     void Update()
     {
+        if (_isResetPending) return;
         if (_allPhasesComplete) return;
         if (phases == null || _currentPhaseIndex < 0 || _currentPhaseIndex >= phases.Length) return;
 
@@ -157,6 +170,7 @@ public class PhaseManager : MonoBehaviour
     /// </summary>
     public void AdvancePhase()
     {
+        if (_isResetPending)  return;   // RestartCurrentPhase() 실행 중 외부 호출 차단
         if (_allPhasesComplete) return;
         if (phases == null || _currentPhaseIndex < 0) return;
         PhaseComplete();
@@ -172,34 +186,84 @@ public class PhaseManager : MonoBehaviour
     {
         if (phases == null || _currentPhaseIndex < 0) return;
 
+        _isResetPending    = true;
         _allPhasesComplete = false;
         _phaseElapsed      = 0f;
 
-        PhaseData current = phases[_currentPhaseIndex];
+        int targetIndex = ResolveRespawnIndex();
 
-        if (current.objectsToEnable != null)
+        // 1) 모든 Phase에서 켜질 수 있는 오브젝트를 일괄 정리
+        //    -> 이전 phase 함정/오브젝트 잔존 방지
+        DisableAllPhaseObjects();
+
+        // 2) 이 PhaseManager가 관리하는 StageManager 상태를 일괄 초기화
+        //    -> 다음 진입 시 StartStage()가 정상 동작하도록 보장
+        ResetAllManagedStageManagers();
+
+        // 3) 목표 phase로 재진입
+        EnterPhase(targetIndex);
+
+        _isResetPending = false;
+    }
+
+    int ResolveRespawnIndex()
+    {
+        if (phases == null || phases.Length == 0)
+            return _currentPhaseIndex;
+
+        if (respawnPhaseIndex >= 0 && respawnPhaseIndex < phases.Length)
+            return respawnPhaseIndex;
+
+        return _currentPhaseIndex;
+    }
+
+    void DisableAllPhaseObjects()
+    {
+        foreach (GameObject root in EnumerateManagedRoots())
         {
-            foreach (GameObject obj in current.objectsToEnable)
+            if (root == null) continue;
+
+            // StageResetter 복원은 비활성화 전에 수행
+            StageResetter resetter = root.GetComponentInChildren<StageResetter>(true);
+            if (resetter != null) resetter.RestoreChildStates();
+
+            if (root.activeSelf)
+                root.SetActive(false);
+        }
+    }
+
+    void ResetAllManagedStageManagers()
+    {
+        foreach (GameObject root in EnumerateManagedRoots())
+        {
+            if (root == null) continue;
+            StageManager[] managers = root.GetComponentsInChildren<StageManager>(true);
+            foreach (StageManager sm in managers)
+                if (sm != null) sm.ResetStage();
+        }
+    }
+
+    IEnumerable<GameObject> EnumerateManagedRoots()
+    {
+        if (phases == null) yield break;
+
+        HashSet<int> yieldedIds = new HashSet<int>();
+
+        for (int i = 0; i < phases.Length; i++)
+        {
+            PhaseData phase = phases[i];
+            if (phase == null || phase.objectsToEnable == null) continue;
+
+            for (int j = 0; j < phase.objectsToEnable.Length; j++)
             {
-                if (obj == null) continue;
-
-                // 1. 투사체 제거 + 하위 오브젝트 초기 상태 복원 (부서진 바닥 등)
-                //    자식에 StageResetter만 있어도 찾음 (루트와 분리 배치 대응)
-                StageResetter resetter = obj.GetComponentInChildren<StageResetter>(true);
-                if (resetter != null) resetter.RestoreChildStates();
-
-                // 2. SetActive 사이클 → 모든 TrapBase OnDisable/OnEnable 발동 → 0초부터 재발사
-                obj.SetActive(false);
-                obj.SetActive(true);
+                GameObject root = phase.objectsToEnable[j];
+                if (root == null) continue;
+                int id = root.GetInstanceID();
+                if (yieldedIds.Contains(id)) continue;
+                yieldedIds.Add(id);
+                yield return root;
             }
         }
-
-        // 3. StageManager 타이머/클리어 상태 초기화
-        StageManager[] managers = FindObjectsByType<StageManager>(FindObjectsSortMode.None);
-        foreach (StageManager sm in managers)
-            if (sm != null) sm.ResetStage();
-
-        EnterPhase(_currentPhaseIndex);
     }
 
     // ── 에디터 지원 ───────────────────────────────────────────────────
@@ -218,5 +282,6 @@ public class PhaseManager : MonoBehaviour
         _allPhasesComplete = false;
         EnterPhase(0);
     }
+
 #endif
 }

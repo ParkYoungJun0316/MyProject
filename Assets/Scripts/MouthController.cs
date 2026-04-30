@@ -82,19 +82,56 @@ public class MouthController : MonoBehaviour
             mouthRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
     }
 
-    void Start()
+    void OnEnable()
     {
-        if (!IsValid())
-        {
-            Debug.LogWarning($"[MouthController] {name}: mouthRenderer 또는 closeShapeIndex 설정을 확인하세요.", this);
-            return;
-        }
+        // SetActive(false → true) 사이클 포함 모든 재활성화 시 입 상태 완전 초기화.
+        // _isClosing / _isTransitioning 이 stale 값으로 남아 사이클이 건너뛰어지는 버그 방지.
+        StopAllCoroutines();
+        _cycleCoroutine  = null;
+        _isClosing       = false;
+        _isTransitioning = false;
+        SetWeight(0f);
 
-        if (startOnAwake)
+        if (startOnAwake && IsValid())
             StartCycle();
     }
 
+    void OnDisable()
+    {
+        // SetActive(false) 시 공유 렌더러의 BlendShape를 즉시 0으로 초기화.
+        // 여러 MouthController 인스턴스가 동일 SkinnedMeshRenderer를 공유하므로,
+        // 비활성화 타이밍에 값이 남으면 다음 phase 진입 시 입이 닫힌 채로 유지되는 버그 방지.
+        StopAllCoroutines();
+        _cycleCoroutine  = null;
+        _isClosing       = false;
+        _isTransitioning = false;
+        SetWeight(0f);
+    }
+
+    void Start()
+    {
+        // 유효성 경고만 담당. 사이클 시작은 OnEnable에서 처리.
+        if (!IsValid())
+            Debug.LogWarning($"[MouthController] {name}: mouthRenderer 또는 closeShapeIndex 설정을 확인하세요.", this);
+    }
+
     // ── 외부 호출 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// 입을 즉시 열린 상태(weight=0)로 강제 초기화 후 사이클 재시작.
+    /// SetActive 사이클 없이 오케스트레이터에서 직접 호출할 때 사용.
+    /// </summary>
+    public void ResetToOpenState()
+    {
+        StopAllCoroutines();
+        _cycleCoroutine  = null;
+        _isClosing       = false;
+        _isTransitioning = false;
+        SetWeight(0f);
+
+        if (startOnAwake && IsValid())
+            StartCycle();
+    }
 
     /// <summary>자동 사이클 시작</summary>
     public void StartCycle()

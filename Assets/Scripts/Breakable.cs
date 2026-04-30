@@ -53,7 +53,15 @@ public class Breakable : MonoBehaviour
     [Tooltip("파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
     public UnityEvent OnBreak;
 
+    Renderer[] _renderers;
+    Collider[] _colliders;
     bool _broken;
+
+    void Awake()
+    {
+        _renderers = GetComponentsInChildren<Renderer>(true);
+        _colliders = GetComponentsInChildren<Collider>(true);
+    }
 
     // ── 물리 충돌 (non-trigger Collider) ──────────────────────────────
 
@@ -129,7 +137,21 @@ public class Breakable : MonoBehaviour
             }
         }
 
-        Destroy(gameObject);
+        SetVisible(false);
+    }
+
+    // ── 리셋 (함정과 동일: 부모 SetActive false→true 사이클로 자동 복원) ─────
+
+    void OnEnable()
+    {
+        _broken = false;
+        SetVisible(true);
+    }
+
+    void SetVisible(bool active)
+    {
+        foreach (Renderer r in _renderers) if (r != null) r.enabled = active;
+        foreach (Collider  c in _colliders) if (c != null) c.enabled = active;
     }
 
     // ── 에디터 기즈모 ─────────────────────────────────────────────────

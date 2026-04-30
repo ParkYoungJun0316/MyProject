@@ -9,16 +9,16 @@ using UnityEngine.Events;
 /// 1. Armed 상태에서 모든 ColoredStartZone에 각자 색 플레이어가 서면 카운트다운 시작
 /// 2. 한 명이라도 이탈하면 카운트다운 즉시 리셋 — 다시 전원 모여야 함
 /// 3. countdownDuration초 유지 → StageManager.StartStage() 호출 후 Disarmed
-/// 4. 플레이어 사망 → Disarmed + 전원 각자 존으로 즉시 리스폰 (resetAllOnDeath=true)
-/// 5. 마지막 리스폰 이후 armDelay초 뒤 자동 재활성화 → 다시 게임 시작 대기
+/// 4. 마지막 리스폰 이후 armDelay초 뒤 자동 재활성화 → 다시 게임 시작 대기
 ///
 /// [StageManager 연동]
 /// - stageManager 필드에 StageManager 연결 → StartStage() 자동 호출
 /// - StageManager.autoStart 는 반드시 false 로 설정할 것
 ///
 /// [사망/리셋 연동]
-/// - 씬에 StageResetOnPlayerDeath + PhaseManager 가 있으면 자동으로 stage reset 처리됨
-/// - 이 컴포넌트는 플레이어 이벤트를 직접 구독해 Disarm + 전원 리스폰을 처리
+/// - 플레이어 사망 시 직접 OnDied를 구독하지 않음
+/// - StageResetOnPlayerDeath(오케스트레이터)가 스테이지 리셋 후 OnStageReset()을 호출
+/// - OnStageReset(): Disarm + 전원 존 리스폰 + armDelay 후 재암
 /// - 추가로 OnStageFailed 등 외부 이벤트와 OnStageReset() 을 연결 가능
 ///
 /// [씬 설정 순서]
@@ -50,10 +50,6 @@ public class StageStartGate : MonoBehaviour
              "Player.respawnDelay 보다 0.5~1초 크게 설정할 것.\n" +
              "(예: respawnDelay=2 → armDelay=2.5)")]
     [SerializeField] float armDelay = 2.5f;
-
-    [Tooltip("true  : 누군가 죽으면 살아있는 플레이어 포함 전원 즉시 각자 존으로 리스폰\n" +
-             "false : 죽은 플레이어만 자기 존으로 리스폰 (살아있는 플레이어는 그 자리 유지)")]
-    [SerializeField] bool resetAllOnDeath = true;
 
     [Header("초기 상태")]
     [Tooltip("씬 로드 즉시 게이트 활성화.\n" +
@@ -92,8 +88,13 @@ public class StageStartGate : MonoBehaviour
     {
         CachePlayers();
         SubscribePlayerEvents();
-
         _countdown = countdownDuration;
+    }
+
+    void OnEnable()
+    {
+        // SetActive(false → true) 사이클 포함, 재활성화될 때마다 armOnStart이면 자동 재암.
+        // Start()는 최초 1회만 실행되므로, 이후 재활성화 시 Arm 복원은 여기서 처리.
         if (armOnStart) Arm();
     }
 
@@ -219,7 +220,6 @@ public class StageStartGate : MonoBehaviour
         {
             PlayerEvents ev = p.GetComponent<PlayerEvents>();
             if (ev == null) continue;
-            ev.OnDied      += HandlePlayerDied;
             ev.OnRespawned += HandlePlayerRespawned;
         }
     }
@@ -232,29 +232,8 @@ public class StageStartGate : MonoBehaviour
             if (p == null) continue;
             PlayerEvents ev = p.GetComponent<PlayerEvents>();
             if (ev == null) continue;
-            ev.OnDied      -= HandlePlayerDied;
             ev.OnRespawned -= HandlePlayerRespawned;
         }
-    }
-
-    /// <summary>
-    /// 플레이어 사망 시 자동 호출.
-    /// - 카운트다운 중이면 리셋
-    /// - 게이트 Disarmed
-    /// - resetAllOnDeath = true 면 전원 즉시 각자 존으로 강제 리스폰
-    /// </summary>
-    void HandlePlayerDied()
-    {
-        if (_armCoroutine != null)
-        {
-            StopCoroutine(_armCoroutine);
-            _armCoroutine = null;
-        }
-        if (_isCounting) ResetCountdown();
-        Disarm();
-
-        if (resetAllOnDeath)
-            ForceRespawnAllToZones();
     }
 
     /// <summary>

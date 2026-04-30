@@ -94,9 +94,16 @@ public class MouthWindAnimator : MonoBehaviour
 
     void OnDisable()
     {
-        if (_wind == null) return;
-        _wind.OnWindCharge -= HandleWindCharge;
-        _wind.OnWindEnd    -= HandleWindEnd;
+        if (_wind != null)
+        {
+            _wind.OnWindCharge -= HandleWindCharge;
+            _wind.OnWindEnd    -= HandleWindEnd;
+        }
+
+        // Wind 발동 중(입 닫힌 상태)에 SetActive(false) 리셋이 들어와도 Shape를 즉시 0으로 복원.
+        // OnWindEnd 이벤트 경로와 무관하게 항상 중립 상태 보장 (이중 안전망).
+        if (_animCoroutine != null) { StopCoroutine(_animCoroutine); _animCoroutine = null; }
+        ResetAllShapes();
     }
 
     // ── 이벤트 핸들러 ──────────────────────────────────────────────────────
@@ -159,6 +166,31 @@ public class MouthWindAnimator : MonoBehaviour
     void SetWeight(float w)
     {
         if (IsValid()) mouthRenderer.SetBlendShapeWeight(_activeShapeIndex, w);
+    }
+
+    /// <summary>
+    /// blowShapeIndex / suckShapeIndex 양쪽 Shape를 모두 0으로 강제.
+    /// _activeShapeIndex에만 의존하면 전환 중인 인덱스가 잔상으로 남을 수 있으므로
+    /// 두 인덱스를 모두 직접 초기화.
+    /// </summary>
+    void ResetAllShapes()
+    {
+        if (mouthRenderer == null || mouthRenderer.sharedMesh == null) return;
+        int count = mouthRenderer.sharedMesh.blendShapeCount;
+        if (blowShapeIndex >= 0 && blowShapeIndex < count)
+            mouthRenderer.SetBlendShapeWeight(blowShapeIndex, 0f);
+        if (suckShapeIndex >= 0 && suckShapeIndex < count)
+            mouthRenderer.SetBlendShapeWeight(suckShapeIndex, 0f);
+    }
+
+    /// <summary>
+    /// 애니메이션 코루틴 즉시 중단 + 모든 Shape 0으로 강제 복원.
+    /// SetActive 사이클 없이 외부(오케스트레이터 등)에서 직접 호출할 때 사용.
+    /// </summary>
+    public void ResetToNeutral()
+    {
+        if (_animCoroutine != null) { StopCoroutine(_animCoroutine); _animCoroutine = null; }
+        ResetAllShapes();
     }
 
     // ── 에디터 테스트 (플레이 중 컴포넌트 우클릭) ─────────────────────────

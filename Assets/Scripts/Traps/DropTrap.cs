@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -65,6 +66,9 @@ public class DropTrap : TrapBase
     float _scheduleStartTime;
     float _phaseSpeedMultiplier = 1f;
     int   _targetIndex;
+
+    // warnDuration 대기 중 Deactivate 시 고아 오브젝트가 남지 않도록 추적
+    readonly List<GameObject> _pendingObjects = new List<GameObject>();
 
     /// <summary>
     /// PhaseManager가 Phase 전환 시 호출.
@@ -158,11 +162,11 @@ public class DropTrap : TrapBase
         Vector3 spawnPos = targetPos + Vector3.up * spawnHeight;
 
         // 천장에 물방울 형성 프리팹 스폰 (아래를 향하도록 회전)
-        // warnDuration을 DropletForming에 전달 → 자동으로 성장/흔들림 타이밍 분배
         GameObject ceilingForm = null;
         if (ceilingFormPrefab != null)
         {
             ceilingForm = Instantiate(ceilingFormPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
+            _pendingObjects.Add(ceilingForm);
             DropletForming forming = ceilingForm.GetComponent<DropletForming>();
             if (forming != null)
                 forming.Initialize(warnDuration);
@@ -171,13 +175,16 @@ public class DropTrap : TrapBase
         // 바닥 경고 마커
         GameObject warn = null;
         if (warnPrefab != null)
+        {
             warn = Instantiate(warnPrefab, targetPos, Quaternion.identity);
+            _pendingObjects.Add(warn);
+        }
 
         if (warnDuration > 0f)
             yield return new WaitForSeconds(warnDuration);
 
-        if (warn != null)        Destroy(warn);
-        if (ceilingForm != null) Destroy(ceilingForm);
+        DestroyAndUntrack(warn);
+        DestroyAndUntrack(ceilingForm);
 
         GameObject drop = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
 
@@ -189,5 +196,37 @@ public class DropTrap : TrapBase
         float speed = GetCurrentSpeed();
         if (speed > 0f)  proj.speed  = speed;
         if (damage > 0)  proj.damage = damage;
+    }
+
+    void DestroyAndUntrack(GameObject obj)
+    {
+        if (obj == null) return;
+        _pendingObjects.Remove(obj);
+        Destroy(obj);
+    }
+
+    void ClearPendingObjects()
+    {
+        for (int i = _pendingObjects.Count - 1; i >= 0; i--)
+        {
+            if (_pendingObjects[i] != null)
+                Destroy(_pendingObjects[i]);
+        }
+        _pendingObjects.Clear();
+    }
+
+    // Deactivate() 경로: StopAllCoroutines() → OnDeactivated()
+    protected override void OnDeactivated()
+    {
+        ClearPendingObjects();
+        _targetIndex = 0;
+    }
+
+    // SetActive(false) 경로: OnDisable()만 불리고 OnDeactivated()는 안 불림
+    // → 여기서도 반드시 청소해야 ceilingForm이 씬에 잔존하지 않음
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        ClearPendingObjects();
     }
 }

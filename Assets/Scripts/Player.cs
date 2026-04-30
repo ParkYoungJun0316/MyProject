@@ -48,34 +48,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     public int maxHeart = 0;
 
-    [Header("Stamina")]
-    public float maxStamina = 0f;
-    [Tooltip("초당 달리기 스테미나 소모량")]
-    public float staminaDrainRate = 0f;
-    [Tooltip("초당 스테미나 충전량")]
-    public float staminaRechargeRate = 0f;
-    [Tooltip("달리기/닷지 후 충전 시작까지 딜레이(초)")]
-    public float staminaRechargeDelay = 0f;
-    [Tooltip("닷지 1회 스테미나 소모량")]
-    public float dodgeStaminaCost = 0f;
-
-    float currentStamina;
-    float staminaRechargeTimer;
-    bool isStaminaDraining;
-
-    [Header("Dodge")]
-    public float dodgeForce = 0f;
-
     [Header("Black/White Switch")]
     public bool isBlack;
     public float bwCooldown = 0f;
-
-    [Header("Action Cooldown")]
-    public float actionCooldown = 0f;
-
-    [Header("Dodge i-frame")]
-    public float dodgeInvincibleDuration = 0f;
-    float dodgeInvincibleUntil = 0f;
 
     [Header("Respawn")]
     public float respawnDelay = 0f;
@@ -112,13 +87,10 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public Vector2 moveInput;
     Vector3 moveVec;
 
-    bool isGrounded;
-    bool isJumping;
-    bool isDodging;
     bool isDamage;
     bool isKnockback;
 
-    bool bwDown, dDown, altDown;
+    bool bwDown, altDown;
 
     // 낙사 Fall 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
     bool fallAnimTriggered = false;
@@ -128,11 +100,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     bool  grenadeHeld       = false;
     float grenadeChargeTime = 0f;
 
-    float nextActionTime = 0f;
     float nextBWTime = 0f;
-
-    /// <summary>UI에서 dodge 쿨타임 계산용. (nextActionTime - Time.time) / actionCooldown</summary>
-    public float NextActionTime => nextActionTime;
 
     Rigidbody rigid;
     Animator anim;
@@ -182,8 +150,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         boxInteraction = GetComponent<BoxInteraction>();
 
         events.RaiseBlackWhiteChanged(isBlack);
-
-        currentStamina = maxStamina;
     }
 
     void Update()
@@ -210,14 +176,12 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         }
 
         GetInput();
-        UpdateStamina();
 
-        // 박스 잡는 중에는 Dodge / Swap / ChangeColor / Throw / Heal 전부 차단
+        // 박스 잡는 중에는 ChangeColor / Throw / Heal 차단
         // 피격·사망은 이 블록 밖에서 처리되므로 영향 없음
         bool isGrabbingBox = boxInteraction != null && boxInteraction.isGrabbing;
         if (!isGrabbingBox)
         {
-            Dodge();
             UseGrenade();
 
             if (bwDown && Time.time >= nextBWTime)
@@ -260,10 +224,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsLocked)
         {
-            dDown = bwDown = altDown = false;
+            bwDown = altDown = false;
             return;
         }
-        dDown   = Keyboard.current.spaceKey.wasPressedThisFrame;
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
     }
@@ -277,7 +240,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             Vector3 lv = rigid.linearVelocity;
             lv.x = 0f; lv.z = 0f;
             rigid.linearVelocity = lv;
-            if (anim != null) { anim.SetBool("isWalk", false); anim.SetBool("isRun", false); }
+            if (anim != null) anim.SetBool("isRun", false);
             return;
         }
 
@@ -292,44 +255,19 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         moveVec = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
         bool hasMove = moveVec.sqrMagnitude > 0.0001f;
-        bool walkKey = Keyboard.current.leftShiftKey.isPressed;
 
-        // 스테미나가 없으면 강제 걷기
-        bool wantsRun = hasMove && !walkKey;
-        bool canRun = wantsRun && currentStamina > 0f;
-
-        if (canRun)
-        {
-            currentStamina -= staminaDrainRate * Time.fixedDeltaTime;
-            if (currentStamina < 0f) currentStamina = 0f;
-            isStaminaDraining = true;
-            staminaRechargeTimer = 0f;
-        }
-        else if (hasMove && wantsRun)
-        {
-            // 달리려 했지만 스테미나 부족 → 걷기로 전환
-            walkKey = true;
-        }
-
-        float baseSpeed  = speed * (walkKey || !canRun && wantsRun ? 1f : runMultiplier);
         float speedBonus = playerBuffSystem != null
             ? playerBuffSystem.GetValue(PlayerBuffSystem.BuffType.SpeedUp)
             : 0f;
-        float finalSpeed = (baseSpeed + speedBonus) * moveSpeedMultiplier;
+        float finalSpeed = (speed * runMultiplier + speedBonus) * moveSpeedMultiplier;
 
         Vector3 v = rigid.linearVelocity;
         v.x = moveVec.x * finalSpeed;
         v.z = moveVec.z * finalSpeed;
         rigid.linearVelocity = v;
 
-        bool actuallyRunning = hasMove && canRun;
-        bool actuallyWalking = hasMove && !actuallyRunning;
-
         if (anim != null)
-        {
-            anim.SetBool("isWalk", actuallyWalking);
-            anim.SetBool("isRun",  actuallyRunning);
-        }
+            anim.SetBool("isRun", hasMove);
     }
 
     void Turn()
@@ -349,51 +287,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         rigid.angularVelocity = Vector3.zero;
     }
 
-    // ── 스테미나 ─────────────────────────────────────────────
-
-    void UpdateStamina()
-    {
-        if (maxStamina <= 0f) return;
-
-        // 무한 스테미나 버프 활성 중 → 소모/딜레이 없이 풀 충전 유지
-        if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.InfiniteStamina))
-        {
-            currentStamina = maxStamina;
-            isStaminaDraining = false;
-            staminaRechargeTimer = 0f;
-            return;
-        }
-
-        bool running = moveVec.sqrMagnitude > 0.0001f
-                       && !Keyboard.current.leftShiftKey.isPressed
-                       && currentStamina > 0f;
-
-        if (running || isDodging)
-        {
-            // 소모 중에는 충전 딜레이 타이머를 계속 초기화
-            isStaminaDraining = true;
-            staminaRechargeTimer = 0f;
-            return;
-        }
-
-        // 소모 종료 → 딜레이 카운트 시작
-        if (isStaminaDraining)
-        {
-            staminaRechargeTimer += Time.deltaTime;
-            if (staminaRechargeTimer >= staminaRechargeDelay)
-                isStaminaDraining = false;
-            return;
-        }
-
-        // 충전
-        if (currentStamina < maxStamina)
-        {
-            currentStamina += staminaRechargeRate * Time.deltaTime;
-            if (currentStamina > maxStamina)
-                currentStamina = maxStamina;
-        }
-    }
-
     // ── 아이템 슬롯 ─────────────────────────────────────────
 
     void UseGrenade()
@@ -408,7 +301,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         }
 
         if (!hasGrenade) return;
-        if (isDodging || isJumping) return;
 
         // 박스 잡는 중 좌클릭이면 수류탄 사용 차단
         if (boxInteraction != null && boxInteraction.BlockingMouseInput) return;
@@ -467,7 +359,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     /// <summary>
     /// 이동·입력 잠금.
     /// 컷씬/스테이지 전환 등 플레이어 제어가 불필요한 상황에서 사용.
-    /// SetLocked(true)  → 이동·닷지·색상전환·투척 등 모든 입력 차단.
+    /// SetLocked(true)  → 이동·색상전환·투척 등 모든 입력 차단.
     /// SetLocked(false) → 잠금 해제.
     /// </summary>
     public void SetLocked(bool locked)
@@ -486,10 +378,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         }
 
         if (anim != null)
-        {
-            anim.SetBool("isWalk", false);
-            anim.SetBool("isRun",  false);
-        }
+            anim.SetBool("isRun", false);
     }
 
     /// <summary>
@@ -578,7 +467,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public void TakeDamage(int amount, bool knockback = false)
     {
         if (IsDead) return;
-        if (Time.time < dodgeInvincibleUntil) return;
         if (isDamage) return;
 
         // 무적 버프: 활성 중 모든 피격 무시
@@ -633,47 +521,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         }
     }
 
-    // ── 회피 ─────────────────────────────────────────────────
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Floor"))
-            isGrounded = true;
-    }
-
-    void Dodge()
-    {
-        if (!isGrounded) return;
-        if (Time.time < nextActionTime) return;
-
-        bool infiniteStam = playerBuffSystem != null
-            && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.InfiniteStamina);
-
-        if (!infiniteStam && currentStamina < dodgeStaminaCost) return;
-
-        if (dDown)
-        {
-            if (!infiniteStam)
-            {
-                currentStamina -= dodgeStaminaCost;
-                if (currentStamina < 0f) currentStamina = 0f;
-                isStaminaDraining = true;
-                staminaRechargeTimer = 0f;
-            }
-
-            nextActionTime = Time.time + actionCooldown;
-            if (anim != null) anim.SetTrigger("doDodge");
-            isDodging = true;
-            dodgeInvincibleUntil = Time.time + dodgeInvincibleDuration;
-
-            Vector3 dir = (moveVec.sqrMagnitude > 0.001f) ? moveVec : transform.forward;
-            rigid.AddForce(dir * dodgeForce, ForceMode.Impulse);
-            Invoke(nameof(EndDodge), 0.6f);
-        }
-    }
-
-    void EndDodge() { isDodging = false; }
-
     // ── 사망 / 리스폰 ─────────────────────────────────────────
 
     IEnumerator OnDamage(bool isBossAtk)
@@ -705,9 +552,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         CancelInvoke();
 
-        isDodging = false;
         isKnockback = false; isDamage = false;
-        dodgeInvincibleUntil = 0f;
         moveSpeedMultiplier  = 1f;
 
         if (playerStealth != null)
@@ -728,8 +573,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         // 이전 이동·상태 애니메이션 초기화 후 사망 애니메이션 재생
         if (anim != null)
         {
-            anim.SetBool("isWalk", false);
-            anim.SetBool("isRun",  false);
+            anim.SetBool("isRun", false);
             anim.ResetTrigger("doDie");
             anim.ResetTrigger("doJammed");
             anim.ResetTrigger("doFall");
@@ -790,18 +634,13 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         CancelInvoke();
         transform.SetPositionAndRotation(spawnPos, spawnRot);
         heart = maxHeart;
-        currentStamina = maxStamina;
-        isStaminaDraining = false;
-        staminaRechargeTimer = 0f;
 
         rigid.isKinematic = false;
         rigid.linearVelocity = Vector3.zero;
         rigid.angularVelocity = Vector3.zero;
 
         IsDead = false;
-        isDamage = false; isKnockback = false; isDodging = false;
-        dodgeInvincibleUntil = 0f;
-        nextActionTime       = 0f;
+        isDamage = false; isKnockback = false;
         moveSpeedMultiplier  = 1f;
         fallAnimTriggered    = false;
         isInstantKill        = false;
@@ -816,10 +655,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (anim != null)
         {
             anim.ResetTrigger("doDie");
-            anim.ResetTrigger("doDodge");
             anim.ResetTrigger("doFall");
             anim.ResetTrigger("doJammed");
-            anim.SetBool("isWalk", false);
             anim.SetBool("isRun", false);
             anim.Play("Idle", 0, 0f);
             anim.Update(0f);

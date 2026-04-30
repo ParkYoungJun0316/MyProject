@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_LocalScale: {x: 7, y: 7, z: 7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1161964238411780045}
@@ -105,6 +105,7 @@ MonoBehaviour:
   destroyOnPlayer: 0
   destroyOnWall: 0
   destroyOnFloor: 0
+  hitEffectPrefab: {fileID: 0}
 --- !u!114 &5201726367200639072
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -118,7 +119,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
   moveDir: {x: 0, y: 0, z: 1}
-  initialSpeed: 14
+  initialSpeed: 10
   speedPhases:
   - afterSeconds: 25
     speedMultiplier: 2
@@ -126,6 +127,10 @@ MonoBehaviour:
   damage: 10000
   lifetime: 10000
   lockYVelocity: 1
+  waypoints: []
+  waypointReachDistance: 0
+  endMode: 0
+  autoStart: 1
 --- !u!114 &6951602749696123179
 MonoBehaviour:
   m_ObjectHideFlags: 0

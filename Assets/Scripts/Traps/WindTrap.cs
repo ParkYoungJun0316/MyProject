@@ -108,6 +108,19 @@ public class WindTrap : TrapBase
         base.Start();
     }
 
+    /// <summary>
+    /// SetActive(false) 시 _windActive 플래그를 즉시 초기화.
+    /// TrapBase.OnDisable은 StopAllCoroutines만 하므로 _windActive가 stale(true)로 남는 버그 방지.
+    /// → 재활성화 후 OnTrapTrigger에서 if(_windActive) return 으로 Wind가 아예 발동 안 되는 현상 해결.
+    /// </summary>
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        _windActive = false;
+        _targetsInZone.Clear();
+        if (windParticle != null) windParticle.Stop();
+    }
+
     protected override IEnumerator TrapLoop()
     {
         _scheduleStartTime = Time.time;
@@ -269,8 +282,13 @@ public class WindTrap : TrapBase
 
     protected override void OnDeactivated()
     {
+        bool wasActive = _windActive;
         _windActive = false;
         _targetsInZone.Clear();
         if (windParticle != null) windParticle.Stop();
+
+        // Wind 발동 중 Deactivate() 직접 호출 시(SetActive 사이클 없이 소프트 중단)
+        // OnWindEnd를 명시적으로 발행 → MouthWindAnimator가 입 열기 복귀를 처리하도록 통보
+        if (wasActive) OnWindEnd?.Invoke();
     }
 }

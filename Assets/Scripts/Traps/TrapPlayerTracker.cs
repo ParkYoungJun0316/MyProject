@@ -76,12 +76,14 @@ public class TrapPlayerTracker : MonoBehaviour
     Player[]       _players;
     bool           _activated;
     bool           _hasStarted;
+    Quaternion     _initialRotation;
 
     void Awake()
     {
-        _trap         = GetComponent<TrapBase>();
-        _dropTrap     = GetComponent<DropTrap>();
-        _stageManager = GetComponentInParent<StageManager>();
+        _trap            = GetComponent<TrapBase>();
+        _dropTrap        = GetComponent<DropTrap>();
+        _stageManager    = GetComponentInParent<StageManager>();
+        _initialRotation = transform.rotation;
     }
 
     void Start()
@@ -101,6 +103,11 @@ public class TrapPlayerTracker : MonoBehaviour
     {
         _activated = false;
         StopAllCoroutines();
+
+        // 페이즈 리셋 시 마지막 추적 방향이 남지 않도록 초기 회전으로 복원.
+        // rotateToTarget = false 이면 회전을 건드리지 않았으므로 복원도 생략.
+        if (rotateToTarget)
+            transform.rotation = _initialRotation;
     }
 
     void InitTracking()

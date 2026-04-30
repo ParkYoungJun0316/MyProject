@@ -60,9 +60,15 @@ public class MouthTrapAnimator : MonoBehaviour
 
     void OnDisable()
     {
-        if (_trap == null) return;
-        _trap.OnPreFireCharge -= HandlePreFireCharge;
-        _trap.OnFiring        -= HandleFiring;
+        if (_trap != null)
+        {
+            _trap.OnPreFireCharge -= HandlePreFireCharge;
+            _trap.OnFiring        -= HandleFiring;
+        }
+
+        // 발사 충전 중(입 닫힌 상태)에 리셋이 들어와도 즉시 0으로 복원
+        if (_closeCoroutine != null) { StopCoroutine(_closeCoroutine); _closeCoroutine = null; }
+        SetWeight(0f);
     }
 
     // ── 이벤트 핸들러 ──────────────────────────────────────────────────────
