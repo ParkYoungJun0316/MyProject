@@ -3,6 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
+/// 스케줄 모드
+/// - FixedFireTimes: fireAtSeconds + loopSchedule/schedulePeriod
+/// - RandomInterval: (randomIntervalMin ~ randomIntervalMax)초마다 한 번씩 낙하
+/// </summary>
+public enum DropTrapScheduleMode
+{
+    FixedFireTimes,
+    RandomInterval,
+}
+
+/// <summary>
 /// 공중 낙하 공격 함정.
 /// fireAtSeconds에 지정한 초(스케줄 시작 기준)에 낙하체를 생성.
 /// loopSchedule=true이면 schedulePeriod마다 패턴을 반복.
@@ -45,7 +56,17 @@ public class DropTrap : TrapBase
     [Tooltip("낙하체 데미지. 0이면 프리팹 기본값 사용")]
     [SerializeField] private int damage = 0;
 
-    [Header("발사 스케줄 (초 단위)")]
+    [Header("발사 스케줄")]
+    [Tooltip("FixedFireTimes: fireAtSeconds 사용. RandomInterval: 매번 랜덤 대기 후 낙하")]
+    [SerializeField] private DropTrapScheduleMode scheduleMode = DropTrapScheduleMode.FixedFireTimes;
+
+    [Tooltip("RandomInterval: 낙하 사이 대기 최소(초). max보다 크면 자동 맞춤")]
+    [SerializeField] private float randomIntervalMin = 0f;
+
+    [Tooltip("RandomInterval: 낙하 사이 대기 최대(초). min과 같으면 고정 간격")]
+    [SerializeField] private float randomIntervalMax = 0f;
+
+    [Header("발사 스케줄 — 고정 시각 (FixedFireTimes)")]
     [Tooltip("낙하할 시각 목록 (스케줄 시작 기준, 초). 예: [0.5, 1.2, 2.0]")]
     [SerializeField] private float[] fireAtSeconds = new float[0];
 
@@ -81,14 +102,39 @@ public class DropTrap : TrapBase
     {
         _scheduleStartTime = Time.time;
 
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+
+        if (scheduleMode == DropTrapScheduleMode.RandomInterval)
+        {
+            if (dropPrefab == null)
+            {
+                isRunning = false;
+                yield break;
+            }
+
+            while (isRunning)
+            {
+                float lo = Mathf.Min(randomIntervalMin, randomIntervalMax);
+                float hi = Mathf.Max(randomIntervalMin, randomIntervalMax);
+                float wait = lo < hi ? Random.Range(lo, hi) : lo;
+                if (wait > 0f)
+                    yield return new WaitForSeconds(wait);
+
+                if (!isRunning) yield break;
+
+                yield return StartCoroutine(FireWithCharge());
+            }
+
+            isRunning = false;
+            yield break;
+        }
+
         if (fireAtSeconds == null || fireAtSeconds.Length == 0)
         {
             isRunning = false;
             yield break;
         }
-
-        if (initialDelay > 0f)
-            yield return new WaitForSeconds(initialDelay);
 
         float cycleOffset = 0f;
 

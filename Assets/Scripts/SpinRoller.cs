@@ -78,6 +78,15 @@ public class SpinRoller : MonoBehaviour
     /// <summary>이동을 중단합니다.</summary>
     public void Deactivate() => _isActive = false;
 
+    /// <summary>BoulderSpawner 등에서 경로를 런타임에 넣을 때. 인덱스·종료 상태를 초기화합니다.</summary>
+    public void SetWaypoints(Transform[] newWaypoints)
+    {
+        waypoints     = newWaypoints;
+        _waypointIndex     = 0;
+        _waypointFinished  = false;
+        _pingPongDir       = 1;
+    }
+
     float GetCurrentSpeed()
     {
         if (initialSpeed <= 0f) return 0f;
