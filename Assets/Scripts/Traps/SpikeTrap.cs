@@ -33,18 +33,24 @@ public class SpikeTrap : TrapBase
     [SerializeField] private float damageInterval = 0f;
 
     Collider spikeTrigger;
+    BoxCollider spikeTriggerBox;
     Vector3 loweredLocalPos;
+    Vector3 baseColliderCenter;
     bool isRaised;
     float nextDamageTime;
 
     protected override void Start()
     {
-        spikeTrigger = GetComponent<Collider>();
+        spikeTrigger    = GetComponent<Collider>();
+        spikeTriggerBox = spikeTrigger as BoxCollider;
         spikeTrigger.isTrigger = true;
-        spikeTrigger.enabled = false;
+        spikeTrigger.enabled   = false;
 
         if (spikeVisual != null)
             loweredLocalPos = spikeVisual.localPosition;
+
+        if (spikeTriggerBox != null)
+            baseColliderCenter = spikeTriggerBox.center;
 
         base.Start();
     }
@@ -73,18 +79,28 @@ public class SpikeTrap : TrapBase
     {
         if (spikeVisual == null) yield break;
 
-        float dist = Vector3.Distance(from, to);
+        float dist     = Vector3.Distance(from, to);
         float duration = (raiseSpeed > 0f) ? dist / raiseSpeed : 0.01f;
-        float elapsed = 0f;
+        float elapsed  = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             spikeVisual.localPosition = Vector3.Lerp(from, to, Mathf.Clamp01(elapsed / duration));
+            SyncColliderCenter();
             yield return null;
         }
 
         spikeVisual.localPosition = to;
+        SyncColliderCenter();
+    }
+
+    // BoxCollider center를 spikeVisual 위치에 맞게 갱신
+    void SyncColliderCenter()
+    {
+        if (spikeTriggerBox == null || spikeVisual == null) return;
+        float yOffset = spikeVisual.localPosition.y - loweredLocalPos.y;
+        spikeTriggerBox.center = baseColliderCenter + Vector3.up * yOffset;
     }
 
     // 가시 위로 걸어 들어올 때
@@ -102,9 +118,9 @@ public class SpikeTrap : TrapBase
     void TryDamagePlayer(Collider other)
     {
         if (!isRaised) return;
-        if (!other.CompareTag("Player")) return;
         if (Time.time < nextDamageTime) return;
 
+        // CompareTag는 자식 콜라이더에선 실패하므로 컴포넌트 검색으로 판별
         Player p = other.GetComponent<Player>()
                    ?? other.GetComponentInParent<Player>();
         if (p == null) return;
