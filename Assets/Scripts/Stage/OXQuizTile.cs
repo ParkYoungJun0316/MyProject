@@ -1,18 +1,20 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// OX 퀴즈 경로의 발판 하나.
+/// OX 퀴즈 발판 하나.
 /// OXQuizManager.Start()에서 quizManager, rowIndex를 자동 주입.
 ///
 /// [상태]
-///  Danger  : 미개방 구역 또는 오답. 밟으면 즉사.
-///  Pending : 현재 퀴즈 대상 행. 밟으면 O/X 답변 등록.
-///  Safe    : 정답 처리된 안전 발판.
+///  Danger  : 오답 발판 또는 미개방. 밟아도 즉사 없음 (위치 판정은 Manager가 처리).
+///  Pending : 현재 문제 진행 중.
+///  Safe    : 정답 처리 후 연출용.
 ///
-/// [설정 방법]
-///  1. 이 컴포넌트를 발판 오브젝트에 부착
-///  2. isOSide: O 발판이면 true, X 발판이면 false
-///  3. OXQuizManager.rows[]에 등록하면 rowIndex가 자동 설정됨
+/// [변경 사항]
+///  - Is Trigger = true 강제 설정 (Awake에서 자동 적용)
+///  - OnTriggerEnter/Exit로 발판 위 플레이어 목록 관리
+///  - 판정은 OXQuizManager 타이머 종료 시 GetOccupants()로 수행
+///  - OnCollisionEnter 기반 즉시 판정 제거
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class OXQuizTile : MonoBehaviour
@@ -26,9 +28,9 @@ public class OXQuizTile : MonoBehaviour
     [Header("색상 (Inspector에서 조정)")]
     [Tooltip("Pending 상태 — 퀴즈 진행 중, 답변 대기")]
     public Color pendingColor = new Color(0.75f, 0.75f, 0.75f);
-    [Tooltip("Safe 상태 — 정답, 안전 통과")]
+    [Tooltip("Safe 상태 — 정답, 안전")]
     public Color safeColor    = new Color(0.10f, 0.65f, 0.20f);
-    [Tooltip("Danger 상태 — 오답, 밟으면 즉사")]
+    [Tooltip("Danger 상태 — 오답")]
     public Color dangerColor  = new Color(0.80f, 0.10f, 0.10f);
 
     TileState _state;
@@ -38,6 +40,8 @@ public class OXQuizTile : MonoBehaviour
     [HideInInspector] public int           rowIndex;
 
     public TileState State => _state;
+
+    readonly List<Player> _occupants = new List<Player>();
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId     = Shader.PropertyToID("_Color");
@@ -49,6 +53,11 @@ public class OXQuizTile : MonoBehaviour
     {
         _rend = GetComponentInChildren<Renderer>();
         _mpb  = new MaterialPropertyBlock();
+
+        // 항상 Trigger로 강제 설정
+        Collider col = GetComponent<Collider>();
+        col.isTrigger = true;
+
         ApplyColor(dangerColor);
     }
 
@@ -57,7 +66,6 @@ public class OXQuizTile : MonoBehaviour
     public void SetState(TileState newState)
     {
         _state = newState;
-
         Color c = newState switch
         {
             TileState.Pending => pendingColor,
@@ -68,25 +76,36 @@ public class OXQuizTile : MonoBehaviour
         ApplyColor(c);
     }
 
-    // ── 물리 충돌 ────────────────────────────────────────────────
-
-    void OnCollisionEnter(Collision col)
+    /// <summary>
+    /// 현재 이 발판 위에 있는 살아있는 플레이어 목록 반환.
+    /// 타이머 종료 시 OXQuizManager에서 호출해 위치 판정에 사용.
+    /// </summary>
+    public List<Player> GetOccupants()
     {
-        Player player = col.transform.GetComponentInParent<Player>();
-        if (player == null || player.IsDead) return;
+        for (int i = _occupants.Count - 1; i >= 0; i--)
+            if (_occupants[i] == null || _occupants[i].IsDead)
+                _occupants.RemoveAt(i);
 
-        switch (_state)
-        {
-            case TileState.Danger:
-                player.KillInstantly();
-                break;
+        return _occupants;
+    }
 
-            case TileState.Pending:
-                quizManager?.OnPlayerAnswer(rowIndex, isOSide, player);
-                break;
+    /// <summary>점유자 목록 초기화. ResetQuiz 시 호출.</summary>
+    public void ClearOccupants() => _occupants.Clear();
 
-            // Safe: 아무 처리 없음 (자유 통과)
-        }
+    // ── Trigger 감지 ─────────────────────────────────────────────
+
+    void OnTriggerEnter(Collider other)
+    {
+        Player p = other.GetComponentInParent<Player>();
+        if (p == null || p.IsDead) return;
+        if (!_occupants.Contains(p)) _occupants.Add(p);
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        Player p = other.GetComponentInParent<Player>();
+        if (p == null) return;
+        _occupants.Remove(p);
     }
 
     // ── 내부 ─────────────────────────────────────────────────────
@@ -105,8 +124,8 @@ public class OXQuizTile : MonoBehaviour
     void OnDrawGizmos()
     {
         Color gc = isOSide
-            ? new Color(0.1f, 0.5f, 1.0f, 0.35f)   // O = 파랑
-            : new Color(1.0f, 0.4f, 0.1f, 0.35f);   // X = 주황
+            ? new Color(0.1f, 0.5f, 1.0f, 0.35f)
+            : new Color(1.0f, 0.4f, 0.1f, 0.35f);
         Gizmos.color = gc;
         Gizmos.DrawCube(transform.position, transform.lossyScale * 0.90f);
         gc.a = 1f;

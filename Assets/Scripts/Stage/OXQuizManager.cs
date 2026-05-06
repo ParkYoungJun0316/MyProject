@@ -1,9 +1,11 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 // ── 데이터 클래스 ────────────────────────────────────────────────
 
-/// <summary>한 행(Row)을 구성하는 O/X 발판 쌍.</summary>
+/// <summary>O/X 발판 한 쌍.</summary>
 [System.Serializable]
 public class OXRow
 {
@@ -17,9 +19,15 @@ public class OXRow
         oTile?.SetState(state);
         xTile?.SetState(state);
     }
+
+    public void ClearOccupants()
+    {
+        oTile?.ClearOccupants();
+        xTile?.ClearOccupants();
+    }
 }
 
-/// <summary>한 행에 대응하는 OX 퀴즈 문제.</summary>
+/// <summary>OX 퀴즈 문제.</summary>
 [System.Serializable]
 public class OXQuestion
 {
@@ -31,85 +39,102 @@ public class OXQuestion
     public bool correctAnswerIsO;
 }
 
-/// <summary>
-/// UnityEvent<string> 직렬화를 위한 래퍼.
-/// OnQuestionReady에 연결해 UI 텍스트 컴포넌트에 문제를 표시할 때 사용.
-/// </summary>
+/// <summary>UnityEvent&lt;string&gt; 직렬화 래퍼.</summary>
 [System.Serializable]
 public class StringEvent : UnityEvent<string> { }
+
+/// <summary>UnityEvent&lt;float&gt; 직렬화 래퍼.</summary>
+[System.Serializable]
+public class FloatEvent : UnityEvent<float> { }
 
 // ── 매니저 ───────────────────────────────────────────────────────
 
 /// <summary>
-/// OX 퀴즈 경로 관리자.
-/// 2×N 발판 그리드에서 행(Row) 단위로 OX 퀴즈를 진행.
+/// 제자리형 OX 퀴즈 매니저.
 ///
-/// [설정 방법]
-///  1. rows[]: 각 행의 O/X 발판을 순서대로 입력
-///      - rows[0~N]: questions[0~N]에 각각 1:1 대응
-///  2. questions[]: rows[0]부터 순서대로 문제 입력 (rows 개수와 동일하게)
-///  3. 이벤트(OnQuestionReady 등)는 UI 구현 시 연결 — 지금은 비워도 동작
+/// [동작 흐름]
+///  1. 퀴즈 시작 → barrierRoot 활성화
+///  2. 문제 제시 + 타이머 시작
+///  3. 타이머 종료 시 O/X 발판 점유 위치로 개별 판정
+///     - 정답 위치 플레이어: 생존
+///     - 오답 위치 또는 아무 발판에도 없는 플레이어: 즉사
+///  4. 전원 정답 → correctCount++ → 다음 문제 (또는 AllCleared)
+///     한 명이라도 오답 → OnWrongAnswer → 리스폰 시 ResetQuiz 호출
+///  5. AllCleared → barrierRoot 비활성화
 ///
-/// [초기 상태]
-///  rows[0]  → Pending (첫 번째 퀴즈 대상)
-///  rows[1~] → Danger (밟으면 즉사)
+/// [barrierRoot]
+///  씬에 보이지 않는 벽 오브젝트들을 자식으로 묶은 부모 GameObject.
+///  퀴즈 중에만 활성화되어 플레이어가 발판 밖으로 나가지 못하게 막음.
 /// </summary>
 public class OXQuizManager : MonoBehaviour
 {
-    [Header("행 배치 (0번부터 오름차순으로 입력)")]
-    public OXRow[] rows = new OXRow[0];
+    [Header("발판 (O/X 한 쌍)")]
+    public OXRow row;
 
-    [Header("문제 목록 (questions[0] = rows[0] 대응, 1:1 매칭)")]
+    [Header("문제 목록")]
     public OXQuestion[] questions = new OXQuestion[0];
 
-    // ── UI 이벤트 훅 (지금은 비워도 동작 — UI 구현 시 연결) ──────
-    [Header("━━ UI 연동 이벤트 — 추후 UI 구현 시 연결 ━━")]
+    [Header("퀴즈 설정")]
+    [Tooltip("문제당 답변 제한 시간(초). 0보다 커야 위치 판정이 작동함")]
+    public float answerTimeLimit = 0f;
 
-    [Tooltip("새 문제가 활성화될 때 호출. string = 문제 텍스트\n" +
-             "→ TextMeshPro UI 텍스트의 SetText() 또는 text 프로퍼티에 연결")]
+    [Tooltip("정답 연출 후 다음 문제까지 대기 시간(초)")]
+    public float correctAnswerDelay = 0f;
+
+    [Tooltip("오답 / 타이머 초과 시 부여할 데미지")]
+    public int wrongDamage = 0;
+
+    [Header("배리어 (DoorController)")]
+    [Tooltip("벽 역할을 하는 DoorController.\n" +
+             "Open() = 벽 솟아오름(퀴즈 시작), Close() = 벽 내려감(퀴즈 종료).\n" +
+             "DoorController의 OpenMode는 SlideUp 권장.")]
+    public DoorController barrierDoor;
+
+    [Header("UI 이벤트")]
+    [Tooltip("새 문제 텍스트 전달 → UI TextMeshPro에 연결")]
     public StringEvent OnQuestionReady;
 
-    [Tooltip("정답 시 호출 → 정답 연출, 효과음 등 연결")]
+    [Tooltip("남은 시간(초) 전달 → 타이머 UI에 연결 (0.1초 간격 갱신)")]
+    public FloatEvent OnTimerTick;
+
+    [Tooltip("전원 정답 시 발동 → 정답 연출, 효과음 등")]
     public UnityEvent OnCorrectAnswer;
 
-    [Tooltip("오답 시 호출 → 오답 연출, 효과음 등 연결")]
+    [Tooltip("한 명 이상 오답/타이머 초과 시 발동 → 오답 연출, 효과음 등")]
     public UnityEvent OnWrongAnswer;
 
-    [Tooltip("모든 행 통과 시 호출 → 문 열기, 다음 스테이지 전환 등 연결")]
+    [Tooltip("questionsToWin개 달성 시 발동 → 문 열기, 스테이지 전환 등")]
     public UnityEvent OnAllCleared;
 
-    [Header("플레이어 (비워두면 자동 탐색)")]
-    [Tooltip("비워두면 씬에서 Player를 자동으로 찾음")]
-    public Player player;
+    int   _questionIndex;
+    int   _correctCount;
+    bool  _quizActive;
+    int[] _questionOrder;
 
-    int  _currentRow;
-    bool _quizActive;
-
+    Coroutine    _timerCoroutine;
     PlayerEvents _playerEvents;
+
+    int QuestionsToWin => questions.Length;
+
+    // ── 초기화 ────────────────────────────────────────────────────
 
     void Start()
     {
-        if (rows.Length == 0) return;
+        Inject(row?.oTile, 0);
+        Inject(row?.xTile, 0);
 
-        // 모든 타일에 manager 참조와 rowIndex 자동 주입 (최초 1회)
-        for (int i = 0; i < rows.Length; i++)
+        Player p = FindFirstObjectByType<Player>();
+        if (p != null)
         {
-            Inject(rows[i].oTile, i);
-            Inject(rows[i].xTile, i);
-        }
-
-        // 플레이어 이벤트 구독
-        if (player == null)
-            player = FindFirstObjectByType<Player>();
-
-        if (player != null)
-        {
-            _playerEvents = player.GetComponent<PlayerEvents>();
+            _playerEvents = p.GetComponent<PlayerEvents>();
             if (_playerEvents != null)
                 _playerEvents.OnRespawned += ResetQuiz;
         }
 
-        ResetQuiz();
+        // 초기 상태: 발판 Danger, 배리어 내려간 상태
+        row?.ClearOccupants();
+        row?.SetState(OXQuizTile.TileState.Danger);
+        ShuffleQuestions();
     }
 
     void OnDestroy()
@@ -118,73 +143,171 @@ public class OXQuizManager : MonoBehaviour
             _playerEvents.OnRespawned -= ResetQuiz;
     }
 
+    // ── 공개 API ──────────────────────────────────────────────────
+
     /// <summary>
-    /// 퀴즈 전체를 처음 상태로 되돌림.
-    /// 플레이어 리스폰 시 자동 호출. 외부에서 직접 호출도 가능.
+    /// 플레이어가 입장 트리거를 통과했을 때 호출.
+    /// PlayerTriggerZone.OnPlayerEnter 이벤트에 연결.
+    /// 배리어를 솟아오르게 하고 퀴즈를 시작.
     /// </summary>
-    public void ResetQuiz()
+    public void StartQuiz()
     {
-        if (rows.Length == 0) return;
-
-        rows[0].SetState(OXQuizTile.TileState.Pending);
-        ActivateQuestion(0);
-
-        for (int i = 1; i < rows.Length; i++)
-            rows[i].SetState(OXQuizTile.TileState.Danger);
+        barrierDoor?.Open();
+        ResetQuiz();
     }
 
-    // ── 공개 API (OXQuizTile.OnCollisionEnter에서 호출) ──────────
-
-    /// <summary>
-    /// 플레이어가 Pending 타일을 밟았을 때 호출.
-    /// 정답이면 해당 행 Safe + 다음 행 Pending으로 진행.
-    /// 오답이면 해당 행 Danger + 플레이어 즉사.
-    /// </summary>
-    public void OnPlayerAnswer(int rowIndex, bool answeredO, Player player)
+    /// <summary>퀴즈 상태만 리셋. 리스폰 시 자동 호출 (배리어는 건드리지 않음).</summary>
+    public void ResetQuiz()
     {
-        if (!_quizActive || rowIndex != _currentRow) return;
+        StopTimer();
+        _correctCount  = 0;
+        _questionIndex = 0;
 
-        int qIdx = rowIndex;
-        if (qIdx < 0 || qIdx >= questions.Length) return;
+        row?.ClearOccupants();
+        row?.SetState(OXQuizTile.TileState.Danger);
+
+        ShuffleQuestions();
+        StartNextQuestion();
+    }
+
+    // ── 내부: 문제 진행 ───────────────────────────────────────────
+
+    void StartNextQuestion()
+    {
+        if (row == null || questions.Length == 0) return;
+
+        row.ClearOccupants();
+        row.SetState(OXQuizTile.TileState.Pending);
+        _quizActive = true;
+
+        string text = questions[_questionOrder[_questionIndex]].questionText;
+        OnQuestionReady?.Invoke(text);
+
+        if (answerTimeLimit > 0f)
+            _timerCoroutine = StartCoroutine(TimerRoutine());
+    }
+
+    IEnumerator TimerRoutine()
+    {
+        float remaining = answerTimeLimit;
+
+        while (remaining > 0f && _quizActive)
+        {
+            OnTimerTick?.Invoke(remaining);
+            float wait = Mathf.Min(0.1f, remaining);
+            yield return new WaitForSeconds(wait);
+            remaining -= wait;
+        }
+
+        if (!_quizActive) yield break;
 
         _quizActive = false;
+        JudgeByPosition();
+    }
 
-        bool correct = (answeredO == questions[qIdx].correctAnswerIsO);
+    IEnumerator NextQuestionAfterDelay()
+    {
+        if (correctAnswerDelay > 0f)
+            yield return new WaitForSeconds(correctAnswerDelay);
 
-        if (correct)
+        StartNextQuestion();
+    }
+
+    // ── 판정 ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 타이머 종료 시 호출. O/X 발판 점유 위치로 개별 판정.
+    ///  - 정답 위치: 생존
+    ///  - 오답 위치 / 아무 데도 없음: 즉사
+    /// 전원 정답이면 다음 문제, 한 명이라도 오답이면 오답 처리.
+    /// </summary>
+    void JudgeByPosition()
+    {
+        if (row == null) return;
+
+        bool correctIsO = questions[_questionOrder[_questionIndex]].correctAnswerIsO;
+
+        List<Player> correctOccupants = correctIsO
+            ? row.oTile?.GetOccupants() ?? new List<Player>()
+            : row.xTile?.GetOccupants() ?? new List<Player>();
+
+        List<Player> wrongOccupants = correctIsO
+            ? row.xTile?.GetOccupants() ?? new List<Player>()
+            : row.oTile?.GetOccupants() ?? new List<Player>();
+
+        // 아무 발판에도 없는 살아있는 플레이어 수집
+        Player[] allPlayers = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        var nowhereList = new List<Player>();
+        foreach (Player p in allPlayers)
         {
-            rows[rowIndex].SetState(OXQuizTile.TileState.Safe);
-            OnCorrectAnswer?.Invoke();
+            if (p.IsDead) continue;
+            if (!correctOccupants.Contains(p) && !wrongOccupants.Contains(p))
+                nowhereList.Add(p);
+        }
 
-            int next = rowIndex + 1;
-            if (next < rows.Length)
+        bool anyWrong = wrongOccupants.Count > 0 || nowhereList.Count > 0;
+
+        Debug.Log($"[OX 판정] correct={correctOccupants.Count} wrong={wrongOccupants.Count} nowhere={nowhereList.Count} anyWrong={anyWrong}");
+
+        if (!anyWrong && correctOccupants.Count > 0)
+        {
+            // 전원 정답
+            row.SetState(OXQuizTile.TileState.Safe);
+            OnCorrectAnswer?.Invoke();
+            _correctCount++;
+
+            if (_correctCount >= QuestionsToWin)
             {
-                rows[next].SetState(OXQuizTile.TileState.Pending);
-                ActivateQuestion(next);
+                Debug.Log($"[OX AllCleared] barrierDoor={barrierDoor?.name ?? "null"} → Close() 호출");
+                barrierDoor?.Close();
+                OnAllCleared?.Invoke();
             }
             else
             {
-                OnAllCleared?.Invoke();
+                _questionIndex++;
+                StartCoroutine(NextQuestionAfterDelay());
             }
         }
         else
         {
-            rows[rowIndex].SetState(OXQuizTile.TileState.Danger);
+            // 오답자 / 무응답자 즉사
+            row.SetState(OXQuizTile.TileState.Danger);
             OnWrongAnswer?.Invoke();
-            player.KillInstantly();
+
+            foreach (Player p in wrongOccupants) p.TakeDamage(wrongDamage);
+            foreach (Player p in nowhereList)    p.TakeDamage(wrongDamage);
+            // 데미지로 사망 시 리스폰 이벤트 → ResetQuiz 자동 호출
         }
     }
 
-    // ── 내부 ─────────────────────────────────────────────────────
+    // ── 유틸 ──────────────────────────────────────────────────────
 
-    void ActivateQuestion(int rowIndex)
+    void StopTimer()
     {
-        _currentRow = rowIndex;
-        _quizActive = true;
+        if (_timerCoroutine != null)
+        {
+            StopCoroutine(_timerCoroutine);
+            _timerCoroutine = null;
+        }
+    }
 
-        int qIdx = rowIndex;
-        if (qIdx >= 0 && qIdx < questions.Length)
-            OnQuestionReady?.Invoke(questions[qIdx].questionText);
+    /// <summary>questions[] 전체 셔플 후 QuestionsToWin개 추출.</summary>
+    void ShuffleQuestions()
+    {
+        int poolSize = questions.Length;
+        int[] pool   = new int[poolSize];
+        for (int i = 0; i < poolSize; i++) pool[i] = i;
+
+        for (int i = poolSize - 1; i > 0; i--)
+        {
+            int j   = Random.Range(0, i + 1);
+            int tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+        }
+
+        int useCount   = QuestionsToWin;
+        _questionOrder = new int[useCount];
+        for (int i = 0; i < useCount; i++)
+            _questionOrder[i] = pool[i];
     }
 
     void Inject(OXQuizTile tile, int idx)
@@ -194,22 +317,14 @@ public class OXQuizManager : MonoBehaviour
         tile.rowIndex    = idx;
     }
 
-    // ── 에디터 지원 ──────────────────────────────────────────────
+    // ── 에디터 지원 ───────────────────────────────────────────────
+
+    [ContextMenu("테스트: 퀴즈 리셋")]
+    void Debug_Reset() => ResetQuiz();
 
     [ContextMenu("테스트: 전체 Safe")]
-    void Debug_AllSafe()
-    {
-        foreach (var row in rows)
-            row.SetState(OXQuizTile.TileState.Safe);
-    }
+    void Debug_Safe() => row?.SetState(OXQuizTile.TileState.Safe);
 
     [ContextMenu("테스트: 전체 Danger")]
-    void Debug_AllDanger()
-    {
-        foreach (var row in rows)
-            row.SetState(OXQuizTile.TileState.Danger);
-    }
-
-    [ContextMenu("테스트: 초기 상태로 리셋")]
-    void Debug_Reset() => ResetQuiz();
+    void Debug_Danger() => row?.SetState(OXQuizTile.TileState.Danger);
 }
