@@ -117,7 +117,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     PlayerEvents events;
     PlayerStealth playerStealth;
     PlayerBuffSystem playerBuffSystem;
-    BoxInteraction boxInteraction;
 
 
     public void OnMove(InputValue value)
@@ -147,8 +146,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         playerBuffSystem = GetComponent<PlayerBuffSystem>();
         if (playerBuffSystem == null) playerBuffSystem = gameObject.AddComponent<PlayerBuffSystem>();
 
-        boxInteraction = GetComponent<BoxInteraction>();
-
         events.RaiseBlackWhiteChanged(isBlack);
     }
 
@@ -177,10 +174,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         GetInput();
 
-        // 박스 잡는 중에는 ChangeColor / Throw / Heal 차단
-        // 피격·사망은 이 블록 밖에서 처리되므로 영향 없음
-        bool isGrabbingBox = boxInteraction != null && boxInteraction.isGrabbing;
-        if (!isGrabbingBox)
         {
             UseGrenade();
 
@@ -301,9 +294,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         }
 
         if (!hasGrenade) return;
-
-        // 박스 잡는 중 좌클릭이면 수류탄 사용 차단
-        if (boxInteraction != null && boxInteraction.BlockingMouseInput) return;
 
         HandleGrenadeInput();
     }

@@ -4,11 +4,22 @@ using UnityEngine.Events;
 
 /// <summary>
 /// 문 컨트롤러.
-/// requiredTriggers[] 에 BoxColorTrigger를 등록하면, 전부 활성화될 때 문이 열리고
-/// 하나라도 비활성화되면 닫힌다.
 ///
-/// Open() / Close()를 직접 호출하거나,
-/// Inspector의 OnOpened / OnClosed UnityEvent를 이용해 다른 오브젝트와 연결할 수 있다.
+/// [이동 방식]
+///  Rigidbody.MovePosition(Kinematic) 사용.
+///  transform.position 직접 변경 방식 대비 물리 충돌이 올바르게 처리됨.
+///
+/// [즉사 판정]
+///  문이 닫히는 도중 플레이어와 충돌하면 Player.KillInstantly() 호출.
+///  OnCollisionEnter + OnCollisionStay 양쪽에서 감지하므로 이미 닿아 있는 경우도 처리됨.
+///
+/// [압력 발판 연동]
+///  requiredPads[] 에 PressurePad를 등록하면, 전부 충족될 때 문이 열린다.
+///  latchOnOpen = false : 발판에서 내려오면 즉시 닫힘
+///  latchOnOpen = true  : 한 번 열리면 발판을 벗어나도 열린 상태 유지
+///
+/// [Inspector 필수 설정]
+///  - Rigidbody: Is Kinematic = true, Use Gravity = false (스크립트가 자동 추가/설정)
 /// </summary>
 public class DoorController : MonoBehaviour
 {
@@ -26,93 +37,95 @@ public class DoorController : MonoBehaviour
     public OpenMode openMode = OpenMode.SlideUp;
 
     [Tooltip("슬라이드 거리(m) 또는 회전 각도(도)")]
-    public float openAmount = 3f;
+    public float openAmount = 0f;
 
     [Tooltip("열리고 닫히는 데 걸리는 시간(초)")]
-    public float duration = 0.5f;
+    public float duration = 0f;
 
-    [Header("트리거 연결 (BoxColorTrigger)")]
-    [Tooltip("등록된 트리거가 전부 활성화돼야 문이 열림. 비어 있으면 Open()/Close() 직접 호출 방식으로만 동작")]
-    public BoxColorTrigger[] requiredTriggers;
+    [Header("압력 발판 연동")]
+    [Tooltip("등록된 발판이 전부 충족돼야 문이 열림. 비어 있으면 Open()/Close() 직접 호출 방식으로만 동작")]
+    public PressurePad[] requiredPads;
 
-    [Header("카운트존 연결 (BoxCountZone)")]
-    [Tooltip("등록된 BoxCountZone이 전부 충족되면 문이 열림")]
-    public BoxCountZone[] requiredCountZones;
+    [Tooltip(
+        "false: 발판에서 내려오면 즉시 문이 닫힘\n" +
+        "true : 한 번 열리면 발판을 벗어나도 열린 상태 유지")]
+    public bool latchOnOpen = false;
 
     [Header("이벤트")]
     public UnityEvent OnOpened;
     public UnityEvent OnClosed;
 
-    public bool IsOpen => _isOpen;
+    public bool IsOpen    => _isOpen;
+    public bool IsLatched => _isLatched;
 
     bool       _isOpen;
+    bool       _isLatched;
+    bool       _isClosing;
+
     Vector3    _closedLocalPos;
     Quaternion _closedLocalRot;
+
+    Rigidbody  _rb;
+
+    // ── 초기화 ────────────────────────────────────────────────
 
     void Awake()
     {
         _closedLocalPos = transform.localPosition;
         _closedLocalRot = transform.localRotation;
+
+        _rb = GetComponent<Rigidbody>();
+        if (_rb == null) _rb = gameObject.AddComponent<Rigidbody>();
+        _rb.isKinematic = true;
+        _rb.useGravity  = false;
     }
 
     void OnEnable()
     {
-        for (int i = 0; i < requiredTriggers.Length; i++)
+        for (int i = 0; i < requiredPads.Length; i++)
         {
-            if (requiredTriggers[i] == null) continue;
-            requiredTriggers[i].OnActivated.AddListener(CheckTriggerState);
-            requiredTriggers[i].OnDeactivated.AddListener(CheckTriggerState);
-        }
-        for (int i = 0; i < requiredCountZones.Length; i++)
-        {
-            if (requiredCountZones[i] == null) continue;
-            requiredCountZones[i].OnFulfilled.AddListener(CheckZoneState);
-            requiredCountZones[i].OnUnfulfilled.AddListener(CheckZoneState);
+            if (requiredPads[i] == null) continue;
+            requiredPads[i].OnFulfilled.AddListener(CheckPadState);
+            requiredPads[i].OnUnfulfilled.AddListener(CheckPadState);
         }
     }
 
     void OnDisable()
     {
-        for (int i = 0; i < requiredTriggers.Length; i++)
+        for (int i = 0; i < requiredPads.Length; i++)
         {
-            if (requiredTriggers[i] == null) continue;
-            requiredTriggers[i].OnActivated.RemoveListener(CheckTriggerState);
-            requiredTriggers[i].OnDeactivated.RemoveListener(CheckTriggerState);
-        }
-        for (int i = 0; i < requiredCountZones.Length; i++)
-        {
-            if (requiredCountZones[i] == null) continue;
-            requiredCountZones[i].OnFulfilled.RemoveListener(CheckZoneState);
-            requiredCountZones[i].OnUnfulfilled.RemoveListener(CheckZoneState);
+            if (requiredPads[i] == null) continue;
+            requiredPads[i].OnFulfilled.RemoveListener(CheckPadState);
+            requiredPads[i].OnUnfulfilled.RemoveListener(CheckPadState);
         }
     }
 
-    // ── 트리거 상태 재검사 ────────────────────────────────────
+    // ── 발판 상태 재검사 ──────────────────────────────────────
 
-    void CheckTriggerState()
+    void CheckPadState()
     {
-        if (requiredTriggers == null || requiredTriggers.Length == 0) return;
+        if (requiredPads == null || requiredPads.Length == 0) return;
+        if (latchOnOpen && _isLatched) return;
 
-        int activeCount = 0;
-        for (int i = 0; i < requiredTriggers.Length; i++)
-            if (requiredTriggers[i] != null && requiredTriggers[i].IsActive)
-                activeCount++;
+        bool allFulfilled = true;
+        for (int i = 0; i < requiredPads.Length; i++)
+        {
+            if (requiredPads[i] == null || !requiredPads[i].IsFulfilled)
+            {
+                allFulfilled = false;
+                break;
+            }
+        }
 
-        if (activeCount >= requiredTriggers.Length)
+        if (allFulfilled)
+        {
+            if (latchOnOpen) _isLatched = true;
             Open();
+        }
         else
+        {
             Close();
-    }
-
-    void CheckZoneState()
-    {
-        if (requiredCountZones == null || requiredCountZones.Length == 0) return;
-
-        for (int i = 0; i < requiredCountZones.Length; i++)
-            if (requiredCountZones[i] == null || !requiredCountZones[i].IsFulfilled)
-            { Close(); return; }
-
-        Open();
+        }
     }
 
     // ── 공개 메서드 ──────────────────────────────────────────
@@ -135,49 +148,99 @@ public class DoorController : MonoBehaviour
         OnClosed?.Invoke();
     }
 
+    /// <summary>래치 초기화 후 즉시 닫힌 위치로 텔레포트. StageResetter 등에서 호출.</summary>
+    public void Reset()
+    {
+        StopAllCoroutines();
+        _isOpen    = false;
+        _isLatched = false;
+        _isClosing = false;
+        _rb.position = LocalToWorld(_closedLocalPos);
+        _rb.rotation = LocalToWorldRot(_closedLocalRot);
+    }
+
+    // ── 충돌 즉사 판정 ────────────────────────────────────────
+
+    void OnCollisionEnter(Collision col)
+    {
+        if (!_isClosing) return;
+        Player p = col.collider.GetComponent<Player>();
+        p?.KillInstantly();
+    }
+
+    void OnCollisionStay(Collision col)
+    {
+        if (!_isClosing) return;
+        Player p = col.collider.GetComponent<Player>();
+        p?.KillInstantly();
+    }
+
     // ── 내부 애니메이션 ───────────────────────────────────────
 
     IEnumerator AnimateDoor(bool opening)
     {
-        Vector3    startPos = transform.localPosition;
-        Quaternion startRot = transform.localRotation;
+        _isClosing = !opening;
 
-        Vector3    targetPos = _closedLocalPos;
-        Quaternion targetRot = _closedLocalRot;
+        Vector3    startWorldPos = _rb.position;
+        Quaternion startWorldRot = _rb.rotation;
+
+        // 목표 로컬 위치/회전 계산
+        Vector3    targetLocalPos = _closedLocalPos;
+        Quaternion targetLocalRot = _closedLocalRot;
 
         if (opening)
         {
             switch (openMode)
             {
                 case OpenMode.SlideUp:
-                    targetPos = _closedLocalPos + Vector3.up * openAmount;
+                    targetLocalPos = _closedLocalPos + Vector3.up * openAmount;
                     break;
                 case OpenMode.SlideDown:
-                    targetPos = _closedLocalPos + Vector3.down * openAmount;
+                    targetLocalPos = _closedLocalPos + Vector3.down * openAmount;
                     break;
                 case OpenMode.SlideRight:
-                    targetPos = _closedLocalPos + transform.right * openAmount;
+                    targetLocalPos = _closedLocalPos + transform.right * openAmount;
                     break;
                 case OpenMode.SlideLeft:
-                    targetPos = _closedLocalPos - transform.right * openAmount;
+                    targetLocalPos = _closedLocalPos - transform.right * openAmount;
                     break;
                 case OpenMode.RotateY:
-                    targetRot = _closedLocalRot * Quaternion.Euler(0f, openAmount, 0f);
+                    targetLocalRot = _closedLocalRot * Quaternion.Euler(0f, openAmount, 0f);
                     break;
             }
         }
 
+        Vector3    targetWorldPos = LocalToWorld(targetLocalPos);
+        Quaternion targetWorldRot = LocalToWorldRot(targetLocalRot);
+
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-            transform.localPosition = Vector3.Lerp(startPos, targetPos, t);
-            transform.localRotation = Quaternion.Lerp(startRot, targetRot, t);
-            yield return null;
+            elapsed += Time.fixedDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            _rb.MovePosition(Vector3.Lerp(startWorldPos, targetWorldPos, t));
+            _rb.MoveRotation(Quaternion.Lerp(startWorldRot, targetWorldRot, t));
+            yield return new WaitForFixedUpdate();
         }
 
-        transform.localPosition = targetPos;
-        transform.localRotation = targetRot;
+        _rb.MovePosition(targetWorldPos);
+        _rb.MoveRotation(targetWorldRot);
+        _isClosing = false;
+    }
+
+    // ── 좌표 변환 헬퍼 ───────────────────────────────────────
+
+    Vector3 LocalToWorld(Vector3 localPos)
+    {
+        return transform.parent != null
+            ? transform.parent.TransformPoint(localPos)
+            : localPos;
+    }
+
+    Quaternion LocalToWorldRot(Quaternion localRot)
+    {
+        return transform.parent != null
+            ? transform.parent.rotation * localRot
+            : localRot;
     }
 }

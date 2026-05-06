@@ -35,6 +35,7 @@ public class SpikeLaneField : TrapBase
     [SerializeField] bool excludeLastLanes = false;
 
     [Header("경고 연출 (추후 구현)")]
+#pragma warning disable CS0414
     [Tooltip("경고 비주얼 프리팹 — 추후 연결")]
     [SerializeField] GameObject warningPrefab = null;
 
@@ -46,6 +47,7 @@ public class SpikeLaneField : TrapBase
 
     [Tooltip("경고 오디오 클립 — 추후 연결")]
     [SerializeField] AudioClip warningSound = null;
+#pragma warning restore CS0414
 
     int[] _lastSelected;
 

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7534188528530919645
+--- !u!1 &623748915474999461
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,48 +8,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 727920683383218872}
-  - component: {fileID: 2532112823073955315}
-  - component: {fileID: 4325737351070096552}
-  - component: {fileID: 525688123486420175}
-  - component: {fileID: 6602816495203546142}
+  - component: {fileID: 6926818642850682201}
+  - component: {fileID: 6793985089164719901}
+  - component: {fileID: 2321958555142752643}
+  - component: {fileID: 8683762108333155827}
+  - component: {fileID: 8028393199763076075}
   m_Layer: 0
-  m_Name: ColorTile_Yellow
+  m_Name: PressurePad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &727920683383218872
+--- !u!4 &6926818642850682201
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7534188528530919645}
+  m_GameObject: {fileID: 623748915474999461}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0, z: 0}
-  m_LocalScale: {x: 3, y: 1, z: 3}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 10, y: 1, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &2532112823073955315
+--- !u!33 &6793985089164719901
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7534188528530919645}
+  m_GameObject: {fileID: 623748915474999461}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &4325737351070096552
+--- !u!23 &2321958555142752643
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7534188528530919645}
+  m_GameObject: {fileID: 623748915474999461}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b04a94c99f03e5d4083c880422e8b8e2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,13 +92,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &525688123486420175
+--- !u!65 &8683762108333155827
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7534188528530919645}
+  m_GameObject: {fileID: 623748915474999461}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -113,22 +113,23 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &6602816495203546142
+--- !u!114 &8028393199763076075
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7534188528530919645}
+  m_GameObject: {fileID: 623748915474999461}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0bdc047838e79a74d9d16f28a31c928b, type: 3}
+  m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ColorTile
-  requiredColorType: 4
-  OnCompleted:
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePad
+  ownerColor: 1
+  requiredCount: 1
+  OnFulfilled:
     m_PersistentCalls:
       m_Calls: []
-  OnUncompleted:
+  OnUnfulfilled:
     m_PersistentCalls:
       m_Calls: []

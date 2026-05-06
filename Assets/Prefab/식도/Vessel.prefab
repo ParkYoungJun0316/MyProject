@@ -56,8 +56,45 @@ PrefabInstance:
       propertyPath: m_Name
       value: Vessel
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 46add237d5c61934d9b3f2c4dfece3c3, type: 3}
+      propertyPath: m_Layer
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 46add237d5c61934d9b3f2c4dfece3c3, type: 3}
+      propertyPath: m_TagString
+      value: Floor
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 46add237d5c61934d9b3f2c4dfece3c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -5702548783324065504}
   m_SourcePrefab: {fileID: 100100000, guid: 46add237d5c61934d9b3f2c4dfece3c3, type: 3}
+--- !u!1 &7815006067860709883 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 46add237d5c61934d9b3f2c4dfece3c3, type: 3}
+  m_PrefabInstance: {fileID: 6968497220199980202}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &-5702548783324065504
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815006067860709883}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.906066, y: 0.14502865, z: 1.1859101}
+  m_Center: {x: 0, y: 0.070342734, z: 0}
