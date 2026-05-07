@@ -141,7 +141,6 @@ public class DoorController : MonoBehaviour
 
     public void Close()
     {
-        Debug.Log($"[Door Close()] {gameObject.name} _isOpen={_isOpen}");
         if (!_isOpen) return;
         _isOpen = false;
         StopAllCoroutines();

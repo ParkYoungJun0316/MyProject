@@ -19,12 +19,6 @@ public class OXRow
         oTile?.SetState(state);
         xTile?.SetState(state);
     }
-
-    public void ClearOccupants()
-    {
-        oTile?.ClearOccupants();
-        xTile?.ClearOccupants();
-    }
 }
 
 /// <summary>OX 퀴즈 문제.</summary>
@@ -50,22 +44,21 @@ public class FloatEvent : UnityEvent<float> { }
 // ── 매니저 ───────────────────────────────────────────────────────
 
 /// <summary>
-/// 제자리형 OX 퀴즈 매니저.
+/// 제자리형 OX 퀴즈 매니저. 자체 Trigger를 통해 퀴즈를 시작합니다.
 ///
 /// [동작 흐름]
-///  1. 퀴즈 시작 → barrierRoot 활성화
+///  1. 플레이어가 이 오브젝트의 Trigger 안으로 진입 → 퀴즈 시작 (배리어 닫힘)
 ///  2. 문제 제시 + 타이머 시작
-///  3. 타이머 종료 시 O/X 발판 점유 위치로 개별 판정
+///  3. 타이머 종료 시 물리 오버랩으로 O/X 발판 위치 개별 판정
 ///     - 정답 위치 플레이어: 생존
-///     - 오답 위치 또는 아무 발판에도 없는 플레이어: 즉사
-///  4. 전원 정답 → correctCount++ → 다음 문제 (또는 AllCleared)
-///     한 명이라도 오답 → OnWrongAnswer → 리스폰 시 ResetQuiz 호출
+///     - 오답 위치 또는 무응답: wrongDamage 피해 (인스펙터)
+///  4. 정답/오답과 무관하게 다음 문제로 진행
+///     - 오답/무응답 플레이어는 wrongDamage 피해
+///     - 사망자는 리스폰 이벤트로 ResetQuiz
+///  5. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 클리어
 ///  5. AllCleared → barrierRoot 비활성화
-///
-/// [barrierRoot]
-///  씬에 보이지 않는 벽 오브젝트들을 자식으로 묶은 부모 GameObject.
-///  퀴즈 중에만 활성화되어 플레이어가 발판 밖으로 나가지 못하게 막음.
 /// </summary>
+[RequireComponent(typeof(Collider))]
 public class OXQuizManager : MonoBehaviour
 {
     [Header("발판 (O/X 한 쌍)")]
@@ -81,8 +74,12 @@ public class OXQuizManager : MonoBehaviour
     [Tooltip("정답 연출 후 다음 문제까지 대기 시간(초)")]
     public float correctAnswerDelay = 0f;
 
-    [Tooltip("오답 / 타이머 초과 시 부여할 데미지")]
-    public int wrongDamage = 0;
+    [Tooltip("오답·무응답 시 플레이어에게 줄 피해량")]
+    public int wrongDamage = 1;
+
+    [Header("판정")]
+    [Tooltip("발판 Bounds 오버랩 검사에 포함할 레이어. 비어 있으면 실행 시 이름 Player 레이어를 사용합니다.")]
+    [SerializeField] LayerMask playerOverlapLayers;
 
     [Header("배리어 (DoorController)")]
     [Tooltip("벽 역할을 하는 DoorController.\n" +
@@ -107,8 +104,8 @@ public class OXQuizManager : MonoBehaviour
     public UnityEvent OnAllCleared;
 
     int   _questionIndex;
-    int   _correctCount;
     bool  _quizActive;
+    bool  _quizStarted; // 트리거 중복 시작 방지
     int[] _questionOrder;
 
     Coroutine    _timerCoroutine;
@@ -117,6 +114,20 @@ public class OXQuizManager : MonoBehaviour
     int QuestionsToWin => questions.Length;
 
     // ── 초기화 ────────────────────────────────────────────────────
+
+    void Awake()
+    {
+        // 자체 트리거 강제 활성화
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.isTrigger = true;
+
+        if (playerOverlapLayers.value == 0)
+        {
+            int pl = LayerMask.NameToLayer("Player");
+            if (pl >= 0)
+                playerOverlapLayers = 1 << pl;
+        }
+    }
 
     void Start()
     {
@@ -132,7 +143,6 @@ public class OXQuizManager : MonoBehaviour
         }
 
         // 초기 상태: 발판 Danger, 배리어 내려간 상태
-        row?.ClearOccupants();
         row?.SetState(OXQuizTile.TileState.Danger);
         ShuffleQuestions();
     }
@@ -143,15 +153,29 @@ public class OXQuizManager : MonoBehaviour
             _playerEvents.OnRespawned -= ResetQuiz;
     }
 
+    // ── 자체 트리거 발동 ──────────────────────────────────────────
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (_quizStarted) return; // 이미 시작된 경우 무시
+
+        Player p = other.GetComponentInParent<Player>();
+        if (p != null && !p.IsDead)
+        {
+            _quizStarted = true;
+            StartQuiz();
+        }
+    }
+
     // ── 공개 API ──────────────────────────────────────────────────
 
     /// <summary>
-    /// 플레이어가 입장 트리거를 통과했을 때 호출.
-    /// PlayerTriggerZone.OnPlayerEnter 이벤트에 연결.
+    /// 외부에서 강제 시작할 때 사용하거나, 자체 트리거에서 호출.
     /// 배리어를 솟아오르게 하고 퀴즈를 시작.
     /// </summary>
     public void StartQuiz()
     {
+        _quizStarted = true;
         barrierDoor?.Open();
         ResetQuiz();
     }
@@ -160,10 +184,8 @@ public class OXQuizManager : MonoBehaviour
     public void ResetQuiz()
     {
         StopTimer();
-        _correctCount  = 0;
         _questionIndex = 0;
 
-        row?.ClearOccupants();
         row?.SetState(OXQuizTile.TileState.Danger);
 
         ShuffleQuestions();
@@ -176,7 +198,6 @@ public class OXQuizManager : MonoBehaviour
     {
         if (row == null || questions.Length == 0) return;
 
-        row.ClearOccupants();
         row.SetState(OXQuizTile.TileState.Pending);
         _quizActive = true;
 
@@ -218,7 +239,7 @@ public class OXQuizManager : MonoBehaviour
     /// <summary>
     /// 타이머 종료 시 호출. O/X 발판 점유 위치로 개별 판정.
     ///  - 정답 위치: 생존
-    ///  - 오답 위치 / 아무 데도 없음: 즉사
+    ///  - 오답 위치 / 무응답: wrongDamage 피해
     /// 전원 정답이면 다음 문제, 한 명이라도 오답이면 오답 처리.
     /// </summary>
     void JudgeByPosition()
@@ -227,57 +248,92 @@ public class OXQuizManager : MonoBehaviour
 
         bool correctIsO = questions[_questionOrder[_questionIndex]].correctAnswerIsO;
 
-        List<Player> correctOccupants = correctIsO
-            ? row.oTile?.GetOccupants() ?? new List<Player>()
-            : row.xTile?.GetOccupants() ?? new List<Player>();
+        List<Player> inO = row.oTile?.GetPlayersInVolume(playerOverlapLayers) ?? new List<Player>();
+        List<Player> inX = row.xTile?.GetPlayersInVolume(playerOverlapLayers) ?? new List<Player>();
 
-        List<Player> wrongOccupants = correctIsO
-            ? row.xTile?.GetOccupants() ?? new List<Player>()
-            : row.oTile?.GetOccupants() ?? new List<Player>();
+        var onO = new HashSet<Player>(inO);
+        var onX = new HashSet<Player>(inX);
 
-        // 아무 발판에도 없는 살아있는 플레이어 수집
+        var correctOccupants = new List<Player>();
+        var wrongOccupants   = new List<Player>();
+        var nowhereList      = new List<Player>();
+
         Player[] allPlayers = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        var nowhereList = new List<Player>();
         foreach (Player p in allPlayers)
         {
             if (p.IsDead) continue;
-            if (!correctOccupants.Contains(p) && !wrongOccupants.Contains(p))
-                nowhereList.Add(p);
-        }
 
-        bool anyWrong = wrongOccupants.Count > 0 || nowhereList.Count > 0;
+            bool o = onO.Contains(p);
+            bool x = onX.Contains(p);
 
-        Debug.Log($"[OX 판정] correct={correctOccupants.Count} wrong={wrongOccupants.Count} nowhere={nowhereList.Count} anyWrong={anyWrong}");
-
-        if (!anyWrong && correctOccupants.Count > 0)
-        {
-            // 전원 정답
-            row.SetState(OXQuizTile.TileState.Safe);
-            OnCorrectAnswer?.Invoke();
-            _correctCount++;
-
-            if (_correctCount >= QuestionsToWin)
+            if (o && x)
             {
-                Debug.Log($"[OX AllCleared] barrierDoor={barrierDoor?.name ?? "null"} → Close() 호출");
-                barrierDoor?.Close();
-                OnAllCleared?.Invoke();
+                wrongOccupants.Add(p);
+                continue;
+            }
+
+            if (correctIsO)
+            {
+                if (o) correctOccupants.Add(p);
+                else if (x) wrongOccupants.Add(p);
+                else nowhereList.Add(p);
             }
             else
             {
-                _questionIndex++;
-                StartCoroutine(NextQuestionAfterDelay());
+                if (x) correctOccupants.Add(p);
+                else if (o) wrongOccupants.Add(p);
+                else nowhereList.Add(p);
             }
+        }
+
+        bool anyWrong = wrongOccupants.Count > 0 || nowhereList.Count > 0;
+        if (!anyWrong)
+        {
+            row.SetState(OXQuizTile.TileState.Safe);
+            OnCorrectAnswer?.Invoke();
         }
         else
         {
-            // 오답자 / 무응답자 즉사
             row.SetState(OXQuizTile.TileState.Danger);
             OnWrongAnswer?.Invoke();
 
-            foreach (Player p in wrongOccupants) p.TakeDamage(wrongDamage);
-            foreach (Player p in nowhereList)    p.TakeDamage(wrongDamage);
-            // 데미지로 사망 시 리스폰 이벤트 → ResetQuiz 자동 호출
+            var damaged = new HashSet<Player>();
+            foreach (Player p in wrongOccupants)
+            {
+                if (damaged.Add(p))
+                    p.TakeDamage(wrongDamage);
+            }
+
+            foreach (Player p in nowhereList)
+            {
+                if (damaged.Add(p))
+                    p.TakeDamage(wrongDamage);
+            }
         }
+
+        // 문제 결과와 관계없이 다음 문제로 진행.
+        // 단, 전원 사망이면 리스폰 이벤트를 통해 ResetQuiz가 호출되므로 여기서 추가 진행하지 않음.
+        bool anyAlive = false;
+        for (int i = 0; i < allPlayers.Length; i++)
+        {
+            if (!allPlayers[i].IsDead)
+            {
+                anyAlive = true;
+                break;
+            }
+        }
+
+        if (!anyAlive) return;
+
+        _questionIndex++;
+        if (_questionIndex >= QuestionsToWin)
+        {
+            barrierDoor?.Close();
+            OnAllCleared?.Invoke();
+            return;
+        }
+
+        StartCoroutine(NextQuestionAfterDelay());
     }
 
     // ── 유틸 ──────────────────────────────────────────────────────

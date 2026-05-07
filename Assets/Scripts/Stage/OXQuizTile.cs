@@ -12,8 +12,8 @@ using UnityEngine;
 ///
 /// [변경 사항]
 ///  - Is Trigger = true 강제 설정 (Awake에서 자동 적용)
-///  - OnTriggerEnter/Exit로 발판 위 플레이어 목록 관리
-///  - 판정은 OXQuizManager 타이머 종료 시 GetOccupants()로 수행
+///  - OnTriggerEnter/Exit로 목록 유지 (선택)
+///  - 판정은 OXQuizManager 타이머 종료 시 GetPlayersInVolume() 물리 오버랩으로 수행
 ///  - OnCollisionEnter 기반 즉시 판정 제거
 /// </summary>
 [RequireComponent(typeof(Collider))]
@@ -77,8 +77,37 @@ public class OXQuizTile : MonoBehaviour
     }
 
     /// <summary>
-    /// 현재 이 발판 위에 있는 살아있는 플레이어 목록 반환.
-    /// 타이머 종료 시 OXQuizManager에서 호출해 위치 판정에 사용.
+    /// 타이머 종료 시점 기준, 이 발판 Collider.bounds 와 겹치는 살아있는 Player 목록.
+    /// 트리거 이벤트에 의존하지 않음 (이미 영역 안에 있어도 인식).
+    /// </summary>
+    public List<Player> GetPlayersInVolume(LayerMask playerLayers)
+    {
+        Collider col = GetComponent<Collider>();
+        if (col == null) return new List<Player>();
+
+        Bounds b = col.bounds;
+        Collider[] hits = Physics.OverlapBox(
+            b.center,
+            b.extents,
+            Quaternion.identity,
+            playerLayers,
+            QueryTriggerInteraction.Ignore);
+
+        var list = new List<Player>();
+        var seen = new HashSet<Player>();
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Player p = hits[i].GetComponentInParent<Player>();
+            if (p == null || p.IsDead) continue;
+            if (seen.Add(p))
+                list.Add(p);
+        }
+
+        return list;
+    }
+
+    /// <summary>
+    /// 트리거 기반 목록 (판정에는 사용하지 않음).
     /// </summary>
     public List<Player> GetOccupants()
     {
