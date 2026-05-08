@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -26,6 +27,25 @@ using UnityEngine.Events;
 /// </summary>
 public class MovingCorridor : MonoBehaviour
 {
+    [Serializable]
+    public class RandomWallSpeedSettings
+    {
+        [Tooltip("랜덤 속도 전환 사용 여부")]
+        public bool enabled = false;
+
+        [Tooltip("속도 배율 변경 최소 간격(초)")]
+        public float minInterval = 0f;
+
+        [Tooltip("속도 배율 변경 최대 간격(초)")]
+        public float maxInterval = 0f;
+
+        [Tooltip("랜덤 속도 배율 최소값")]
+        public float minMultiplier = 0f;
+
+        [Tooltip("랜덤 속도 배율 최대값")]
+        public float maxMultiplier = 0f;
+    }
+
     [Header("벽 참조")]
     [Tooltip("뒤에서 플레이어를 쫓아오는 벽 (Rigidbody 필수)")]
     public Rigidbody backWall;
@@ -43,6 +63,23 @@ public class MovingCorridor : MonoBehaviour
     [Header("속도 단계 (시간 경과 → 속도 증가)")]
     [Tooltip("afterSeconds 이후 speedMultiplier 배율 적용. afterSeconds 오름차순 입력")]
     public SpeedPhase[] speedPhases = new SpeedPhase[0];
+
+    [Header("랜덤 속도 (벽별 개별 적용)")]
+    [Tooltip("뒤 벽 랜덤 속도 규칙")]
+    public RandomWallSpeedSettings backRandomSpeed = new RandomWallSpeedSettings();
+
+    [Tooltip("앞 벽 랜덤 속도 규칙")]
+    public RandomWallSpeedSettings frontRandomSpeed = new RandomWallSpeedSettings();
+
+    [Tooltip("true면 고정 시드를 사용해 재시도 시 동일 패턴을 재현")]
+    public bool useFixedRandomSeed = false;
+
+    [Tooltip("고정 시드 값 (useFixedRandomSeed=true 일 때 사용)")]
+    public int randomSeed = 0;
+
+    [Header("벽 간격 안전 규칙")]
+    [Tooltip("앞/뒤 벽 최소 거리(이동축 기준). 0이면 비활성화")]
+    public float minWallDistance = 0f;
 
     [Header("활성화")]
     [Tooltip("씬 시작 시 자동 활성화 여부. activateOnPlayerTrigger와 함께 사용 불가 (둘 중 하나만)")]
@@ -62,12 +99,16 @@ public class MovingCorridor : MonoBehaviour
     [Tooltip("복도 비활성화 시 호출")]
     public UnityEvent OnDeactivated;
 
-    bool  _isActive;
-    float _currentSpeed;
+    bool _isActive;
+    bool _hasTriggered;
     float _elapsed;
-    bool  _hasTriggered;
+    float _activatedTime;
 
-    float    _activatedTime;
+    float _backRandomMultiplier = 1f;
+    float _frontRandomMultiplier = 1f;
+    float _nextBackRandomChangeTime;
+    float _nextFrontRandomChangeTime;
+    System.Random _rng;
 
     void Start()
     {
@@ -93,13 +134,24 @@ public class MovingCorridor : MonoBehaviour
     {
         if (!_isActive) return;
 
-        _elapsed      = Time.time - _activatedTime;
-        _currentSpeed = GetCurrentSpeed();
+        _elapsed = Time.time - _activatedTime;
 
-        Vector3 delta = moveDirection.normalized * (_currentSpeed * Time.fixedDeltaTime);
+        UpdateRandomMultiplier(ref _backRandomMultiplier, ref _nextBackRandomChangeTime, backRandomSpeed);
+        UpdateRandomMultiplier(ref _frontRandomMultiplier, ref _nextFrontRandomChangeTime, frontRandomSpeed);
 
-        if (backWall  != null) backWall.MovePosition(backWall.position   + delta);
-        if (frontWall != null) frontWall.MovePosition(frontWall.position + delta);
+        Vector3 direction = moveDirection.normalized;
+        float phaseMult = GetPhaseMultiplier();
+        float dt = Time.fixedDeltaTime;
+        float backSpeed = baseSpeed * phaseMult * _backRandomMultiplier;
+        float frontSpeed = baseSpeed * phaseMult * _frontRandomMultiplier;
+
+        Vector3 backNextPos = backWall != null ? backWall.position + direction * (backSpeed * dt) : Vector3.zero;
+        Vector3 frontNextPos = frontWall != null ? frontWall.position + direction * (frontSpeed * dt) : Vector3.zero;
+
+        EnforceMinWallDistance(direction, ref backNextPos, ref frontNextPos);
+
+        if (backWall != null) backWall.MovePosition(backNextPos);
+        if (frontWall != null) frontWall.MovePosition(frontNextPos);
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
@@ -108,8 +160,10 @@ public class MovingCorridor : MonoBehaviour
     public void Activate()
     {
         if (_isActive) return;
-        _isActive      = true;
+
+        _isActive = true;
         _activatedTime = Time.time;
+        InitializeRandomRuntime();
         OnActivated?.Invoke();
     }
 
@@ -123,16 +177,63 @@ public class MovingCorridor : MonoBehaviour
 
     // ── 내부 ────────────────────────────────────────────────────
 
-    float GetCurrentSpeed()
+    float GetPhaseMultiplier()
     {
-        if (baseSpeed <= 0f) return 0f;
-
         float mult = 1f;
         for (int i = 0; i < speedPhases.Length; i++)
             if (_elapsed >= speedPhases[i].afterSeconds)
                 mult = speedPhases[i].speedMultiplier;
 
-        return baseSpeed * mult;
+        return mult;
+    }
+
+    void InitializeRandomRuntime()
+    {
+        int seed = useFixedRandomSeed ? randomSeed : Environment.TickCount;
+        _rng = new System.Random(seed);
+
+        _backRandomMultiplier = 1f;
+        _frontRandomMultiplier = 1f;
+        _nextBackRandomChangeTime = 0f;
+        _nextFrontRandomChangeTime = 0f;
+    }
+
+    void UpdateRandomMultiplier(ref float multiplier, ref float nextChangeTime, RandomWallSpeedSettings settings)
+    {
+        if (!settings.enabled) return;
+        if (_rng == null) InitializeRandomRuntime();
+
+        float minInterval = Mathf.Max(settings.minInterval, 0f);
+        float maxInterval = Mathf.Max(settings.maxInterval, minInterval);
+        float minMultiplier = Mathf.Min(settings.minMultiplier, settings.maxMultiplier);
+        float maxMultiplier = Mathf.Max(settings.minMultiplier, settings.maxMultiplier);
+
+        bool invalidInterval = Mathf.Approximately(maxInterval, 0f);
+        bool invalidMultiplierRange = maxMultiplier <= 0f;
+        if (invalidInterval || invalidMultiplierRange) return;
+
+        if (Time.time >= nextChangeTime)
+        {
+            multiplier = RandomRange(minMultiplier, maxMultiplier);
+            nextChangeTime = Time.time + RandomRange(minInterval, maxInterval);
+        }
+    }
+
+    float RandomRange(float min, float max)
+    {
+        if (Mathf.Approximately(min, max)) return min;
+        return (float)(min + (max - min) * _rng.NextDouble());
+    }
+
+    void EnforceMinWallDistance(Vector3 direction, ref Vector3 backNextPos, ref Vector3 frontNextPos)
+    {
+        if (backWall == null || frontWall == null) return;
+        if (minWallDistance <= 0f) return;
+
+        float signedDistance = Vector3.Dot(frontNextPos - backNextPos, direction);
+        if (signedDistance >= minWallDistance) return;
+
+        frontNextPos = backNextPos + direction * minWallDistance;
     }
 
     // ── 에디터 지원 ──────────────────────────────────────────────
