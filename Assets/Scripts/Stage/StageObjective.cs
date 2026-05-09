@@ -4,8 +4,7 @@ using UnityEngine.Events;
 /// <summary>
 /// 스테이지 목표 추상 기반 클래스.
 /// StageManager에 등록하여 사용.
-/// 구체 클래스: SurviveTimeObjective, KillAllEnemiesObjective,
-///              HoldZoneObjective, HoldColorTilesObjective
+/// 구체 클래스: SurviveTimeObjective, ReachZoneObjective
 /// </summary>
 public abstract class StageObjective : MonoBehaviour
 {

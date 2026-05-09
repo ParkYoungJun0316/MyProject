@@ -5,7 +5,7 @@ using TMPro;
 /// <summary>
 /// Objective_Panel에 붙이는 스크립트.
 /// StageManager의 objectives[] 를 읽어 목표별 슬롯을 자동 생성.
-/// KillAll / SurviveTime / HoldZone / HoldColorTiles / ReachZone 지원.
+/// SurviveTime / ReachZone 지원.
 /// </summary>
 public class ObjectiveUI : MonoBehaviour
 {
@@ -23,7 +23,6 @@ public class ObjectiveUI : MonoBehaviour
     [Header("색상")]
     [SerializeField] Color barBgColor      = new Color(0.15f, 0.15f, 0.15f, 0.8f);
     [SerializeField] Color barFillColor    = new Color(0.2f, 0.8f, 0.3f, 1f);
-    [SerializeField] Color barHoldColor    = new Color(0.2f, 0.6f, 1f,   1f);
     [SerializeField] Color completedColor  = new Color(0.9f, 0.9f, 0.2f, 1f);
 
     // ── 슬롯 데이터 ──────────────────────────────────────────────
@@ -165,18 +164,6 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is SurviveTimeObjective survive)
                 survive.OnTimeChanged.RemoveAllListeners();
-            else if (obj is KillAllEnemiesObjective kill)
-                kill.OnKillCountChanged.RemoveAllListeners();
-            else if (obj is HoldZoneObjective hold)
-            {
-                hold.OnHoldTimeChanged.RemoveAllListeners();
-                hold.OnHoldBroken.RemoveAllListeners();
-            }
-            else if (obj is HoldColorTilesObjective holdColor)
-            {
-                holdColor.OnHoldTimeChanged.RemoveAllListeners();
-                holdColor.OnHoldBroken.RemoveAllListeners();
-            }
         }
         slots = null;
     }
@@ -189,20 +176,8 @@ public class ObjectiveUI : MonoBehaviour
             if (slot == null) continue;
             var obj = slot.objective;
 
-            if (obj is KillAllEnemiesObjective kill)
-                kill.OnKillCountChanged.AddListener((_, __) => UpdateSlot(slot));
-            else if (obj is SurviveTimeObjective survive)
+            if (obj is SurviveTimeObjective survive)
                 survive.OnTimeChanged.AddListener(_ => UpdateSlot(slot));
-            else if (obj is HoldZoneObjective hold)
-            {
-                hold.OnHoldTimeChanged.AddListener(_ => UpdateSlot(slot));
-                hold.OnHoldBroken.AddListener(() => UpdateSlot(slot));
-            }
-            else if (obj is HoldColorTilesObjective holdColor)
-            {
-                holdColor.OnHoldTimeChanged.AddListener(_ => UpdateSlot(slot));
-                holdColor.OnHoldBroken.AddListener(() => UpdateSlot(slot));
-            }
 
             obj.OnCompleted.AddListener(() => OnObjectiveCompleted(slot));
             obj.OnFailed.AddListener(() => OnObjectiveFailed(slot));
@@ -218,15 +193,7 @@ public class ObjectiveUI : MonoBehaviour
         if (slot == null) return;
         var obj = slot.objective;
 
-        if (obj is KillAllEnemiesObjective kill)
-        {
-            float fill = kill.TotalCount > 0
-                ? Mathf.Clamp01((float)kill.KilledCount / kill.TotalCount)
-                : 0f;
-            SetBar(slot, fill, barFillColor);
-            slot.statusText.text = $"{kill.Remaining}마리 남음";
-        }
-        else if (obj is SurviveTimeObjective survive)
+        if (obj is SurviveTimeObjective survive)
         {
             float fill = survive.targetTime > 0
                 ? Mathf.Clamp01(survive.Elapsed / survive.targetTime)
@@ -234,25 +201,6 @@ public class ObjectiveUI : MonoBehaviour
             SetBar(slot, fill, barFillColor);
             int rem = Mathf.CeilToInt(survive.Remaining);
             slot.statusText.text = $"{rem}초 남음";
-        }
-        else if (obj is HoldZoneObjective hold)
-        {
-            float fill = hold.holdDuration > 0
-                ? Mathf.Clamp01(hold.Elapsed / hold.holdDuration)
-                : 0f;
-            Color c = hold.IsHolding ? barHoldColor : barFillColor;
-            SetBar(slot, fill, c);
-            slot.statusText.text = hold.IsHolding
-                ? $"점령 중 {Mathf.CeilToInt(hold.Remaining)}초"
-                : "구역 이탈";
-        }
-        else if (obj is HoldColorTilesObjective holdColor)
-        {
-            float fill = holdColor.holdDuration > 0
-                ? Mathf.Clamp01(holdColor.Elapsed / holdColor.holdDuration)
-                : 0f;
-            SetBar(slot, fill, barHoldColor);
-            slot.statusText.text = $"{Mathf.CeilToInt(holdColor.Remaining)}초";
         }
         else if (obj is ReachZoneObjective reach)
         {
