@@ -10,38 +10,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public float speed = 0f;
     public float runMultiplier = 0f;
 
-    [Header("Grenade Throw")]
-    public GameObject grenadeObj;
-    [Tooltip("최소 투척 힘 (살짝 눌렀을 때)")]
-    public float grenadeMinForce = 0f;
-    [Tooltip("최대 투척 힘 (꽉 눌렀을 때)")]
-    public float grenadeMaxForce = 0f;
-    [Tooltip("최대 차징 도달 시간(초). 0이면 항상 최대 힘")]
-    public float grenadeMaxChargeTime = 0f;
-    [Tooltip("투척 각도(도). 45 = 가장 멀리, 0 = 수평")]
-    public float grenadeThrowAngle = 0f;
-    public Vector3 grenadeSpawnOffset = Vector3.zero;
-    public Collider[] ownerColliders;
-
-    [Header("Grenade Explosion")]
-    [Tooltip("폭발까지 걸리는 시간(초)")]
-    public float grenadeFuseTime = 0f;
-    [Tooltip("폭발 반경")]
-    public float grenadeExplosionRadius = 0f;
-    [Tooltip("폭발 데미지")]
-    public int grenadeExplosionDamage = 0;
-    [Tooltip("폭발 대상 레이어")]
-    public LayerMask grenadeExplosionMask;
-    [Tooltip("폭발 이펙트 프리팹 (선택)")]
-    public GameObject grenadeExplosionEffect;
-
     public Camera followCamera;
 
     [Header("Turn")]
     [Tooltip("이동 방향으로 캐릭터가 회전하는 속도 (0 = 즉시). 폴가이즈 느낌: 10~15")]
     public float turnSpeed = 0f;
-
-    bool hasGrenade;
 
     [Header("Stat")]
     public int heart;
@@ -51,6 +24,10 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     [Header("Black/White Switch")]
     public bool isBlack;
     public float bwCooldown = 0f;
+    [Tooltip("isBlack = true일 때 적용되는 색")]
+    public Color blackColor = Color.black;
+    [Tooltip("isBlack = false일 때 적용되는 색")]
+    public Color whiteColor = Color.white;
 
     [Header("Respawn")]
     public float respawnDelay = 0f;
@@ -59,12 +36,12 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     [Tooltip("이 수치 이상의 데미지를 받으면 Jammed 애니메이션 재생. 0이면 비활성")]
     public int instantKillThreshold = 0;
 
-    [Header("힘 (캐릭터별 설정)")]
-    [Tooltip("캐릭터 힘. 높을수록 무거운 상자도 빠르게 밀고 당김. (마른이 < 보통이 < 뚱뚱이 권장)")]
-    public float strength = 0f;
+    [Header("피격 무적")]
+    [Tooltip("피격 후 이 시간(초) 동안 모든 출처의 데미지 무시. 0이면 0.5초(기존 첫 무적 구간)")]
+    [SerializeField] float damageInvulnerabilityDuration = 0f;
 
     [Header("고유색 (캐릭터 선택 시 결정)")]
-    [Tooltip("이 플레이어의 고유색. 캐릭터 선택 화면에서 1인당 1색을 배정. (테스트: 파란색)")]
+    [Tooltip("이 플레이어의 고유색. Inspector에서 원하는 색으로 설정.")]
     public Color uniqueColor = Color.blue;
     public bool isUniqueColor;
     [Tooltip("오브젝트 색상 소유권(상자·바닥 등) 판별에 사용되는 고유색 타입")]
@@ -84,7 +61,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public bool IsLocked { get; private set; }
     public int PlayerId => playerId;
 
-    public Vector2 moveInput;
+    [HideInInspector] public Vector2 moveInput;
     Vector3 moveVec;
 
     bool isDamage;
@@ -96,9 +73,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     bool fallAnimTriggered = false;
     // 즉사 판정 시 Die()에서 doJammed 재생 여부 결정
     bool isInstantKill = false;
-
-    bool  grenadeHeld       = false;
-    float grenadeChargeTime = 0f;
 
     float nextBWTime = 0f;
 
@@ -174,28 +148,24 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         GetInput();
 
+        if (bwDown && Time.time >= nextBWTime)
         {
-            UseGrenade();
-
-            if (bwDown && Time.time >= nextBWTime)
+            nextBWTime = Time.time + bwCooldown;
+            if (isUniqueColor)
             {
-                nextBWTime = Time.time + bwCooldown;
-                if (isUniqueColor)
-                {
-                    isUniqueColor = false;
-                    events?.RaiseUniqueColorChanged(-1);
-                }
-                isBlack = !isBlack;
-                events?.RaiseBlackWhiteChanged(isBlack);
-                anim?.SetTrigger("doChangeColor");
+                isUniqueColor = false;
+                events?.RaiseUniqueColorChanged(-1);
             }
+            isBlack = !isBlack;
+            events?.RaiseBlackWhiteChanged(isBlack);
+            anim?.SetTrigger("doChangeColor");
+        }
 
-            if (altDown)
-            {
-                isUniqueColor = !isUniqueColor;
-                events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
-                anim?.SetTrigger("doChangeColor");
-            }
+        if (altDown)
+        {
+            isUniqueColor = !isUniqueColor;
+            events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
+            anim?.SetTrigger("doChangeColor");
         }
     }
 
@@ -280,78 +250,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         rigid.angularVelocity = Vector3.zero;
     }
 
-    // ── 아이템 슬롯 ─────────────────────────────────────────
-
-    void UseGrenade()
-    {
-        if (IsLocked) return;
-
-        // 차징 중이면 release 감지 우선
-        if (grenadeHeld)
-        {
-            HandleGrenadeRelease();
-            return;
-        }
-
-        if (!hasGrenade) return;
-
-        HandleGrenadeInput();
-    }
-
-    void HandleGrenadeInput()
-    {
-        // 좌클릭 누름 → 차징 시작
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            grenadeHeld       = true;
-            grenadeChargeTime = 0f;
-        }
-    }
-
-    void HandleGrenadeRelease()
-    {
-        bool lmbHeld     = Mouse.current.leftButton.isPressed;
-        bool lmbReleased = Mouse.current.leftButton.wasReleasedThisFrame;
-
-        if (lmbHeld)
-        {
-            float cap = grenadeMaxChargeTime > 0f ? grenadeMaxChargeTime : 1f;
-            grenadeChargeTime = Mathf.Min(grenadeChargeTime + Time.deltaTime, cap);
-            return;
-        }
-
-        if (lmbReleased)
-        {
-            float force;
-            if (grenadeMaxChargeTime <= 0f)
-            {
-                force = grenadeMaxForce;
-            }
-            else
-            {
-                float t = Mathf.Clamp01(grenadeChargeTime / grenadeMaxChargeTime);
-                force = Mathf.Lerp(grenadeMinForce, grenadeMaxForce, t);
-            }
-
-            if (ThrowGrenadeWithForce(force))
-            {
-                hasGrenade = false;
-                anim?.SetTrigger("doThrow");
-            }
-        }
-
-        grenadeHeld       = false;
-        grenadeChargeTime = 0f;
-    }
-
-    // ── 공개 메서드 ──────────────────────────────────────────
-
-    /// <summary>
-    /// 이동·입력 잠금.
-    /// 컷씬/스테이지 전환 등 플레이어 제어가 불필요한 상황에서 사용.
-    /// SetLocked(true)  → 이동·색상전환·투척 등 모든 입력 차단.
-    /// SetLocked(false) → 잠금 해제.
-    /// </summary>
+    /// <summary>이동·색 전환 입력 잠금/해제.</summary>
     public void SetLocked(bool locked)
     {
         IsLocked = locked;
@@ -371,69 +270,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             anim.SetBool("isRun", false);
     }
 
-    /// <summary>
-    /// 차징 힘으로 수류탄 투척.
-    /// grenadeThrowAngle(도)로 투척 각도 결정, force로 힘 크기 결정.
-    /// 생성 시 Item 컴포넌트/Item 태그 제거 + GrenadeExplosion 부착.
-    /// </summary>
-    bool ThrowGrenadeWithForce(float force)
-    {
-        if (grenadeObj == null) return false;
-
-        // 수평 방향: 캐릭터가 바라보는 방향으로 투척 (폴가이즈 스타일)
-        Vector3 flatDir = transform.forward;
-
-        // 투척 각도 적용 (grenadeThrowAngle 도 → 정규화된 방향)
-        float rad = grenadeThrowAngle * Mathf.Deg2Rad;
-        Vector3 throwDir = (flatDir * Mathf.Cos(rad) + Vector3.up * Mathf.Sin(rad)).normalized;
-
-        Vector3 spawnPosG = transform.position + transform.TransformDirection(grenadeSpawnOffset);
-
-        GameObject instantGrenade = Instantiate(grenadeObj, spawnPosG, Quaternion.identity);
-
-        // 던진 수류탄을 다시 먹지 못하도록 Item 컴포넌트/태그 제거
-        Item itemComp = instantGrenade.GetComponent<Item>();
-        if (itemComp != null) Destroy(itemComp);
-        if (instantGrenade.CompareTag("Item"))
-            instantGrenade.tag = "Untagged";
-
-        // GrenadeExplosion 부착
-        GrenadeExplosion explosion = instantGrenade.GetComponent<GrenadeExplosion>();
-        if (explosion == null) explosion = instantGrenade.AddComponent<GrenadeExplosion>();
-        explosion.fuseTime        = grenadeFuseTime;
-        explosion.explosionRadius = grenadeExplosionRadius;
-        explosion.explosionDamage = grenadeExplosionDamage;
-        explosion.damageMask      = grenadeExplosionMask;
-        explosion.explosionEffect = grenadeExplosionEffect;
-
-        // 던진 수류탄만 바닥과 물리 충돌하도록 Trigger 해제 (바닥에 놓인 픽업용 아이템은 Trigger 유지 → OnTriggerEnter로 먹음)
-        Collider[] allCols = instantGrenade.GetComponentsInChildren<Collider>(true);
-        for (int i = 0; i < allCols.Length; i++)
-            allCols[i].isTrigger = false;
-
-        // Rigidbody는 프리팹에 에디터에서 붙이고, 여기서는 힘만 가함
-        Rigidbody rigidGrenade = instantGrenade.GetComponent<Rigidbody>();
-        Collider gCol = instantGrenade.GetComponent<Collider>();
-        if (gCol != null && ownerColliders != null)
-            for (int i = 0; i < ownerColliders.Length; i++)
-                if (ownerColliders[i] != null)
-                    Physics.IgnoreCollision(gCol, ownerColliders[i], true);
-
-        if (rigidGrenade != null)
-        {
-            rigidGrenade.AddForce(throwDir * force, ForceMode.Impulse);
-            rigidGrenade.AddTorque(Random.insideUnitSphere * 10f, ForceMode.Impulse);
-        }
-        return true;
-    }
-
-    // ── 색상 ─────────────────────────────────────────────────
-
-    /// <summary>
-    /// 무적·쿨다운·버프를 모두 무시하고 즉시 사망 처리.
-    /// 함정·낙사 등 반드시 죽어야 하는 상황에서 사용.
-    /// isInstantKill = true → Die()에서 doJammed 애니메이션 재생.
-    /// </summary>
+    /// <summary>버프·무적 무시 즉사. Die()에서 doJammed 연동.</summary>
     public void KillInstantly()
     {
         if (IsDead) return;
@@ -441,35 +278,39 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         Die();
     }
 
-    /// <summary>
-    /// 현재 캐릭터 기본 색 반환.
-    /// 고유색 모드면 uniqueColors[uniqueColorIndex], 아니면 흑/백.
-    /// </summary>
+    /// <summary>고유색 모드면 uniqueColor, 아니면 blackColor/whiteColor.</summary>
     public Color GetCurrentBaseColor()
     {
         if (isUniqueColor) return uniqueColor;
-        return isBlack ? Color.black : Color.white;
+        return isBlack ? blackColor : whiteColor;
     }
 
-    // ── 데미지 ───────────────────────────────────────────────
+    /// <summary>무적·피격 쿨 중이면 false, 실제 피격 시 true.</summary>
+    public bool TryTakeDamage(int amount, bool knockback = false)
+    {
+        if (IsDead) return false;
+        if (isDamage) return false;
 
-    /// <summary> 외부(적 근거리/원거리 등)에서 호출하는 데미지 처리 </summary>
+        if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
+            return false;
+
+        TakeDamage(amount, knockback);
+        return true;
+    }
+
     public void TakeDamage(int amount, bool knockback = false)
     {
         if (IsDead) return;
         if (isDamage) return;
 
-        // 무적 버프: 활성 중 모든 피격 무시
         if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
             return;
 
-        // 즉사 판정: threshold 초과 데미지면 isInstantKill 플래그 설정 → Die()에서 doJammed 재생
         isInstantKill = instantKillThreshold > 0 && amount >= instantKillThreshold;
 
         heart -= amount;
         events?.RaiseDamaged(knockback);
 
-        // 스텔스 여부와 관계없이 피격 시 고유색 노출 처리
         playerStealth?.RevealTemporarily();
 
         if (heart <= 0) { Die(); return; }
@@ -486,21 +327,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsDead) return;
 
-        if (other.CompareTag("Item"))
-        {
-            Item item = other.GetComponent<Item>();
-            if (item == null) return;
-
-            bool picked = false;
-            if (item.type == Item.Type.Grenade && !hasGrenade)
-            {
-                hasGrenade = true;
-                picked = true;
-            }
-            // 인벤토리 가득 찼으면 아이템을 파괴하지 않음
-            if (picked) Destroy(other.gameObject);
-        }
-        else if (other.CompareTag("EnemyBullet"))
+        if (other.CompareTag("EnemyBullet"))
         {
             Bullet enemyBullet = other.GetComponent<Bullet>();
             if (enemyBullet != null)
@@ -523,7 +350,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             rigid.AddForce(transform.forward * -25, ForceMode.Impulse);
         }
 
-        yield return new WaitForSeconds(0.5f);
+        float invuln = damageInvulnerabilityDuration > 0f ? damageInvulnerabilityDuration : 0.5f;
+        yield return new WaitForSeconds(invuln);
         isDamage = false;
 
         if (isBossAtk)
@@ -531,8 +359,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             rigid.linearVelocity = Vector3.zero;
             isKnockback = false;
         }
-
-        yield return new WaitForSeconds(0.3f);
     }
 
     void Die()
@@ -560,7 +386,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         fixedY = transform.position.y;
         rigid.isKinematic = true;
 
-        // 이전 이동·상태 애니메이션 초기화 후 사망 애니메이션 재생
         if (anim != null)
         {
             anim.SetBool("isRun", false);
@@ -580,13 +405,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         Respawn();
     }
 
-    /// <summary>현재 활성화된 세이브 포인트 순서 (SavePoint.saveOrder)</summary>
     public int CurrentSaveOrder => _currentSaveOrder;
 
-    /// <summary>
-    /// 세이브 포인트에서 리스폰 위치 갱신.
-    /// order가 현재 저장된 순서보다 낮으면 무시 → 앞 세이브 포인트가 뒤를 덮어쓰지 못함.
-    /// </summary>
+    /// <summary>order가 CurrentSaveOrder보다 작으면 무시.</summary>
     public bool SetSpawnPoint(Vector3 pos, Quaternion rot, int order)
     {
         if (order < _currentSaveOrder) return false;
@@ -596,10 +417,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         return true;
     }
 
-    /// <summary>
-    /// 세이브 포인트 순서와 관계없이 리스폰 위치를 강제 설정.
-    /// StageStartGate가 스테이지 리셋 후 전원을 시작 위치로 되돌릴 때 사용.
-    /// </summary>
     public void ForceSetSpawnPoint(Vector3 pos, Quaternion rot)
     {
         _currentSaveOrder = int.MinValue;
@@ -607,12 +424,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         spawnRot = rot;
     }
 
-    /// <summary>
-    /// 즉시 지정 위치로 리스폰.
-    /// - 살아있는 플레이어: 즉시 위치 초기화 (사망 애니메이션 없이 리셋).
-    /// - 이미 사망한 플레이어: spawnPos만 갱신 → RespawnAfter 코루틴이 해당 위치로 복귀.
-    /// StageStartGate에서 사망 시 전원을 시작 위치로 돌릴 때 사용.
-    /// </summary>
     public void ForceRespawn(Vector3 pos, Quaternion rot)
     {
         ForceSetSpawnPoint(pos, rot);

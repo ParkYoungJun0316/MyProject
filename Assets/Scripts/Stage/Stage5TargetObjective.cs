@@ -22,7 +22,6 @@ using System.Collections.Generic;
 ///
 /// [Inspector 설정]
 /// - spawner: Stage5TargetSpawner 연결 필수
-/// - safeZonePrefab: 안전지대 프리팹 연결
 /// - requiredCaptures: 5.1=1, 5.2=3
 /// - timeLimit: 제한 시간(초)
 /// </summary>
@@ -33,10 +32,6 @@ public class Stage5TargetObjective : StageObjective
     public float timeLimit = 60f;
     [Tooltip("성공에 필요한 타겟 포획 수. stage5.1=1 / stage5.2=3")]
     public int requiredCaptures = 1;
-
-    [Header("안전지대")]
-    [Tooltip("포획 성공 위치에 생성할 안전지대 프리팹")]
-    public GameObject safeZonePrefab;
 
     [Header("참조")]
     [Tooltip("4코너 스폰 + 색상 셔플을 담당하는 스포너")]
@@ -124,10 +119,6 @@ public class Stage5TargetObjective : StageObjective
 
         _capturedCount++;
         OnCaptureCountChanged?.Invoke(_capturedCount, requiredCaptures);
-
-        // 포획 위치에 안전지대 즉시 생성
-        if (safeZonePrefab != null)
-            Instantiate(safeZonePrefab, runner.transform.position, Quaternion.identity);
 
         _activeTargets.Remove(runner);
         runner.OnCaptured -= HandleCaptured;

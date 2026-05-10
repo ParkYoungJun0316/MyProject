@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using System.Collections.Generic;
-
 /// <summary>
 /// Stage5 추격 AI.
 ///
@@ -18,13 +16,14 @@ using System.Collections.Generic;
 /// - B: 일정 속도 추격 + 주기적 차지(일시 가속). 차지 구간 전체에서 데미지 가능.
 ///
 /// [데미지]
-/// - 트리거 접촉 기반. 플레이어-Chaser 쌍 단위 쿨다운.
+/// - 자식 Stage5ChaserHitbox 트리거에서 처리 (EnemyHitbox와 동일 패턴).
+/// - 타입 B: 차지(_isCharging) 중에만 CanApplyDamage() true.
+/// - 재피격 간격은 Player.TakeDamage 내부 isDamage(약 0.5초)로 제한.
 /// - 데미지 판정 후 postHitStopDuration 초 동안 제자리 정지.
-///   (Agent 이동 + 타겟 갱신 모두 멈춤)
 ///
 /// [Inspector 설정]
 /// - NavMeshAgent 부착 필수
-/// - Collider isTrigger = true (몸 전체)
+/// - 자식에 ChaserHitBox + Collider isTrigger + Stage5ChaserHitbox
 /// - moveType, targetMode 설정
 /// - UniqueColor 모드: targetColor 설정
 /// - moveType = B: chargeInterval, chargeDuration, chargeSpeed 설정
@@ -62,12 +61,8 @@ public class Stage5ChaserAI : MonoBehaviour
     [Tooltip("차지 중 이동 속도")]
     [SerializeField] float chargeSpeed    = 0f;
 
-    [Header("데미지")]
-    [Tooltip("접촉 데미지. 인스펙터에서 1로 설정 권장")]
-    [SerializeField] int   damage          = 0;
-    [Tooltip("플레이어-Chaser 쌍 단위 재피격 쿨다운(초)")]
-    [SerializeField] float damageCooldown  = 0f;
-    [Tooltip("데미지 판정 후 제자리 정지 시간(초)")]
+    [Header("피격 후 정지")]
+    [Tooltip("히트박스로 피격 판정 후 제자리 정지 시간(초)")]
     [SerializeField] float postHitStopDuration = 1f;
 
     // ── 내부 상태 ─────────────────────────────────────────────────
@@ -84,9 +79,6 @@ public class Stage5ChaserAI : MonoBehaviour
 
     float _retargetTimer;
     float _chargeTimer;
-
-    // key = player GetInstanceID(), value = 다음 피격 허용 시각
-    readonly Dictionary<int, float> _damageCooldowns = new Dictionary<int, float>();
 
     Coroutine _chargeRoutine;
     Coroutine _postHitStopRoutine;
@@ -109,7 +101,6 @@ public class Stage5ChaserAI : MonoBehaviour
         _isPostHitStop = false;
         _retargetTimer = 0f;
         _chargeTimer   = chargeInterval;
-        _damageCooldowns.Clear();
     }
 
     void Update()
@@ -272,26 +263,20 @@ public class Stage5ChaserAI : MonoBehaviour
         _chargeRoutine = null;
     }
 
-    // ── 데미지 판정 ───────────────────────────────────────────────
+    // ── 히트박스 연동 (Stage5ChaserHitbox) ─────────────────────────
 
-    void OnTriggerEnter(Collider other) => TryDealDamage(other);
-    void OnTriggerStay(Collider other)  => TryDealDamage(other);
+    /// <summary>히트박스가 피해를 줄 수 있는지. 타입 B는 차지 중만.</summary>
+    public bool CanApplyDamage()
+    {
+        if (!_isActive) return false;
+        if (moveType == ChaserMoveType.B) return _isCharging;
+        return true;
+    }
 
-    void TryDealDamage(Collider other)
+    /// <summary>히트박스에서 TakeDamage 직후 호출 — 정지 코루틴 시작.</summary>
+    public void NotifyHitFromHitbox()
     {
         if (!_isActive) return;
-        if (!other.CompareTag("Player")) return;
-
-        Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead) return;
-
-        int id = p.GetInstanceID();
-        if (_damageCooldowns.TryGetValue(id, out float next) && Time.time < next) return;
-
-        _damageCooldowns[id] = Time.time + damageCooldown;
-        p.TakeDamage(damage, false);
-
-        // 데미지 판정 후 정지 (차지 중이어도 중단)
         if (_postHitStopRoutine != null) StopCoroutine(_postHitStopRoutine);
         _postHitStopRoutine = StartCoroutine(PostHitStopRoutine());
     }

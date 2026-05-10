@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class PlayerVisualController : MonoBehaviour
 {
@@ -10,8 +10,9 @@ public class PlayerVisualController : MonoBehaviour
     [Header("Body Root (추천)")]
     public Transform bodyRoot; // 본체 루트(Visual_World 같은 것)
 
-    [Header("Exclude Local FX Layer")]
-    public string localFxLayerName = "PlayerLocalFX";
+    [Header("Fixed Renderers (눈·코·입 등 색 변환 제외)")]
+    [Tooltip("색 변환에서 제외할 렌더러. 항상 자신의 머터리얼 색을 유지함.")]
+    public Renderer[] fixedRenderers;
 
     [Header("Damage Flash")]
     public float damageFlashTime = 0.15f;
@@ -26,6 +27,9 @@ public class PlayerVisualController : MonoBehaviour
     float flashUntil;
 
     public bool IsFlashing => flashing;
+
+    /// <summary>흑백·스텔스 알파에 쓰는 몸통 렌더러(고정 파트 제외). Awake 이후 유효.</summary>
+    public Renderer[] BodyTintRenderers => bodyRenderers;
 
     void Awake()
     {
@@ -70,7 +74,10 @@ public class PlayerVisualController : MonoBehaviour
 
     void CollectBodyRenderers()
     {
-        int fxLayer = LayerMask.NameToLayer(localFxLayerName);
+        var fixedSet = new HashSet<Renderer>();
+        if (fixedRenderers != null)
+            for (int i = 0; i < fixedRenderers.Length; i++)
+                if (fixedRenderers[i] != null) fixedSet.Add(fixedRenderers[i]);
 
         Renderer[] all = bodyRoot != null
             ? bodyRoot.GetComponentsInChildren<Renderer>(true)
@@ -81,18 +88,11 @@ public class PlayerVisualController : MonoBehaviour
         {
             var r = all[i];
             if (r == null) continue;
-
-            if (fxLayer != -1 && r.gameObject.layer == fxLayer) continue;
+            if (fixedSet.Contains(r)) continue;
             list.Add(r);
         }
 
         bodyRenderers = list.ToArray();
-    }
-
-    /// <summary> 흑/백 또는 고유색 중 현재 상태에 맞는 색을 적용. </summary>
-    public void ApplyBlackWhite(bool isBlack)
-    {
-        RefreshColor();
     }
 
     void RefreshColor()
@@ -101,7 +101,7 @@ public class PlayerVisualController : MonoBehaviour
         SetColor(player.GetCurrentBaseColor());
     }
 
-    void FlashDamage(bool isBossAtk)
+    void FlashDamage(bool _)
     {
         if (player != null && player.IsDead) return;
 
