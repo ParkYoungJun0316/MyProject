@@ -210,15 +210,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Stage5TargetRunner
   targetColor: 1
-  moveSpeed: 20
-  retargetInterval: 0.25
-  tooCloseDistance: 20
-  tooFarDistance: 50
-  navSampleRadius: 10
-  mapCenter: {fileID: 0}
-  centerPullWeight: 0.4
-  innerSampleBias: 0.5
-  stuckCheckTime: 2
+  moveSpeed: 30
+  retargetInterval: 0.5
+  navSampleRadius: 5
+  fleeMaxAngleFromAwayDeg: 70
+  stuckCheckTime: 1
   stuckDistanceThreshold: 0.05
 --- !u!1 &2724106294293212729
 GameObject:

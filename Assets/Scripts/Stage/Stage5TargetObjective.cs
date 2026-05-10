@@ -41,9 +41,10 @@ public class Stage5TargetObjective : StageObjective
     [Header("참조")]
     [Tooltip("4코너 스폰 + 색상 셔플을 담당하는 스포너")]
     public Stage5TargetSpawner spawner;
-    [Tooltip("맵 중앙에 놓은 빈 오브젝트. 타겟 도주 방향을 안쪽으로 유도.\n" +
-             "씬 오브젝트 참조라 프리팹에 못 넣으므로 여기서 주입")]
-    public Transform mapCenter;
+    [Tooltip("도망 목표 후보 노드. 빈 오브젝트 Transform 배열.\n" +
+             "씬 오브젝트 참조라 프리팹에 못 넣으므로 여기서 주입.\n" +
+             "예: 중앙 1개 + 스폰 코너 4개 = 총 5개 등록")]
+    public Transform[] nodes;
 
     [Header("이벤트 (UI 연결용)")]
     [Tooltip("1초 간격 남은 시간 갱신. ObjectiveUI 등에 연결")]
@@ -89,7 +90,7 @@ public class Stage5TargetObjective : StageObjective
             if (t == null) continue;
             _activeTargets.Add(t);
             t.OnCaptured += HandleCaptured;
-            t.Activate(players, mapCenter);
+            t.Activate(players, nodes);
         }
 
         _started = true;

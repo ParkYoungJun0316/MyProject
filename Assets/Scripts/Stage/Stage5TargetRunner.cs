@@ -3,14 +3,21 @@ using UnityEngine.AI;
 using System;
 
 /// <summary>
-/// Stage5 도주 타겟 AI.
-/// 자기 색과 매칭되는 플레이어(isUniqueColor 상태)만 피해 NavMesh 위에서 도주.
-/// 맞는 색 + 고유색 상태 플레이어가 접촉하면 포획 성공 → OnCaptured 이벤트 발행.
+/// Stage5 도주 타겟 AI — 노드 방식.
 ///
-/// [Inspector 필수 설정]
-/// - Collider: isTrigger = true (포획 판정용)
-/// - NavMeshAgent: 붙어 있어야 함
-/// - targetColor: 담당 색상 설정
+/// [동작]
+/// - 추적 대상(맞는 색 + 고유색)이 있으면 → 노드 중 플레이어에서 가장 먼 것으로 이동
+///   단, 러너→노드 방향이 러너→플레이어 방향과 minDeviationDegrees 이내면 제외(정면 박치기 방지)
+///   각도 조건을 통과하는 노드가 없으면 폴백으로 거리 기준 최대 노드 사용
+/// - 추적 대상 없으면 → 노드 중 랜덤 하나로 이동
+/// - 노드는 Stage5TargetObjective에서 Activate() 시 주입 (씬 오브젝트 → 프리팹에 못 넣음)
+///
+/// [Inspector 설정]
+/// - NavMeshAgent 부착 필수
+/// - Collider isTrigger = true (포획 판정)
+/// - targetColor 설정
+/// - moveSpeed 0 이상으로 설정
+/// - minDeviationDegrees: 플레이어 방향과의 최소 허용 각도(기본 30°)
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class Stage5TargetRunner : MonoBehaviour
@@ -20,43 +27,30 @@ public class Stage5TargetRunner : MonoBehaviour
     public PlayerColorType targetColor = PlayerColorType.Blue;
 
     [Header("이동")]
-    [Tooltip("이동 속도 (플레이어보다 약간 느리게 설정)")]
     [SerializeField] float moveSpeed = 0f;
-    [Tooltip("도주 목적지 갱신 주기(초). 너무 짧으면 떨림, 너무 길면 멍청해짐")]
-    [SerializeField] float retargetInterval = 0.25f;
-    [Tooltip("이 거리 이내면 플레이어 반대 방향 우선 도주")]
-    [SerializeField] float tooCloseDistance = 5f;
-    [Tooltip("이 거리 이상이면 랜덤 도주")]
-    [SerializeField] float tooFarDistance = 15f;
-    [Tooltip("도주 목적지 탐색 반경(m)")]
-    [SerializeField] float navSampleRadius = 10f;
-
-    [Header("맵 중심 당김")]
-    [Tooltip("도망 방향에 중심 쪽 벡터를 섞는 비율 (0=순수 반대방향, 1=중심으로만). 0.3~0.5 권장")]
-    [SerializeField, Range(0f, 1f)] float centerPullWeight = 0.4f;
-    [Tooltip("랜덤 도주 시 NavMesh.SamplePosition 원점을 '현재 위치'가 아니라 '현재~중심 사이'로 제한하는 비율.\n" +
-             "1=완전히 중심 방향, 0=현재 위치 기준 (기존 동작). 0.5 권장")]
-    [SerializeField, Range(0f, 1f)] float innerSampleBias = 0.5f;
-
-    // 씬 오브젝트 참조 → 프리팹에 직접 못 넣으므로 Activate() 시 주입
-    Transform _mapCenter;
+    [Tooltip("목적지 갱신 주기(초)")]
+    [SerializeField] float retargetInterval = 0.3f;
+    [Tooltip("노드 위치를 NavMesh 위 점으로 붙일 때 검색 반경(m)")]
+    [SerializeField] float navSampleRadius = 3f;
+    [Tooltip("러너→노드 방향과 러너→플레이어 방향 사이 최소 허용 각도(도).\n" +
+             "이 각도보다 좁으면(정면 박치기 위험) 해당 노드 제외.")]
+    [SerializeField] float minDeviationDegrees = 30f;
 
     [Header("Stuck Recovery")]
-    [Tooltip("이 시간(초) 동안 이동거리가 임계값 이하면 stuck 판정")]
     [SerializeField] float stuckCheckTime = 2f;
-    [Tooltip("stuck 판정 이동거리 임계값(m)")]
     [SerializeField] float stuckDistanceThreshold = 0.05f;
 
-    /// <summary>포획 성공 시 발행. Stage5TargetObjective가 구독</summary>
     public event Action<Stage5TargetRunner> OnCaptured;
 
     NavMeshAgent _agent;
     Player[] _allPlayers;
     Player _trackedPlayer;
+    Transform[] _nodes;
 
     float _retargetTimer;
     float _stuckTimer;
     Vector3 _lastPosition;
+    float _cosDeviationThreshold;
 
     bool _isActive;
     bool _isCaptured;
@@ -66,6 +60,7 @@ public class Stage5TargetRunner : MonoBehaviour
         _agent = GetComponent<NavMeshAgent>();
         _agent.speed = moveSpeed;
         _agent.isStopped = true;
+        _cosDeviationThreshold = Mathf.Cos(minDeviationDegrees * Mathf.Deg2Rad);
     }
 
     void OnEnable()
@@ -78,13 +73,13 @@ public class Stage5TargetRunner : MonoBehaviour
     }
 
     /// <summary>
-    /// Stage5TargetObjective.Begin()에서 호출. 플레이어 목록 + 맵 중심 주입 후 AI 시작.
-    /// mapCenter는 씬 오브젝트라 프리팹에 직접 넣을 수 없으므로 여기서 주입.
+    /// Stage5TargetObjective.Begin()에서 호출.
+    /// nodes: 도망 목표 후보(씬 오브젝트 → 프리팹에서 못 넣으므로 여기서 주입).
     /// </summary>
-    public void Activate(Player[] players, Transform mapCenterTransform = null)
+    public void Activate(Player[] players, Transform[] nodes = null)
     {
         _allPlayers = players;
-        _mapCenter = mapCenterTransform;
+        _nodes = nodes;
         _isActive = true;
         _isCaptured = false;
         _lastPosition = transform.position;
@@ -111,13 +106,13 @@ public class Stage5TargetRunner : MonoBehaviour
         if (_retargetTimer <= 0f)
         {
             _retargetTimer = retargetInterval;
-            SetEscapeDestination();
+            PickDestination();
         }
 
         CheckStuck();
     }
 
-    // ── 추적 대상 플레이어 갱신 ──────────────────────────────────
+    // ── 플레이어 탐색 ────────────────────────────────────────────
 
     void UpdateTrackedPlayer()
     {
@@ -142,90 +137,82 @@ public class Stage5TargetRunner : MonoBehaviour
         }
     }
 
-    // ── 도주 목적지 결정 ─────────────────────────────────────────
+    // ── 목적지 선택 ──────────────────────────────────────────────
 
-    void SetEscapeDestination()
+    void PickDestination()
     {
-        if (_trackedPlayer == null)
-        {
-            TryMoveToInnerRandom();
-            return;
-        }
+        if (_nodes == null || _nodes.Length == 0) return;
+        if (!_agent.isOnNavMesh) return;
 
-        float dist = Vector3.Distance(transform.position, _trackedPlayer.transform.position);
+        Transform chosen = _trackedPlayer != null
+            ? FarthestNodeFromPlayer()
+            : RandomNode();
 
-        if (dist >= tooFarDistance)
-        {
-            TryMoveToInnerRandom();
-        }
-        else
-        {
-            // 플레이어 반대 방향 + 맵 중심 쪽 벡터를 섞어서 가장자리 몰림 방지
-            Vector3 awayDir = (transform.position - _trackedPlayer.transform.position).normalized;
-            Vector3 blendDir = BlendWithCenter(awayDir);
-            Vector3 awayTarget = transform.position + blendDir * navSampleRadius;
+        if (chosen == null) return;
 
-            if (!TryMoveTo(awayTarget))
-                TryMoveToInnerRandom();
-        }
-    }
-
-    /// <summary>
-    /// awayDir에 맵 중심 방향을 centerPullWeight 비율로 섞어 반환.
-    /// mapCenter 미설정 시 awayDir 그대로 반환(기존 동작 유지).
-    /// </summary>
-    Vector3 BlendWithCenter(Vector3 awayDir)
-    {
-        if (_mapCenter == null || centerPullWeight <= 0f) return awayDir;
-
-        Vector3 toCenter = (_mapCenter.position - transform.position);
-        toCenter.y = 0f;
-        if (toCenter.sqrMagnitude < 0.001f) return awayDir;
-        toCenter.Normalize();
-
-        Vector3 blended = Vector3.Lerp(awayDir, toCenter, centerPullWeight);
-        return blended.sqrMagnitude > 0.001f ? blended.normalized : awayDir;
-    }
-
-    bool TryMoveTo(Vector3 worldPos)
-    {
-        if (!_agent.isOnNavMesh) return false;
-
-        if (NavMesh.SamplePosition(worldPos, out NavMeshHit hit, navSampleRadius, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(chosen.position, out NavMeshHit hit, navSampleRadius, NavMesh.AllAreas))
         {
             _agent.isStopped = false;
             _agent.SetDestination(hit.position);
-            return true;
         }
-        return false;
     }
 
     /// <summary>
-    /// 랜덤 도주 시 샘플 원점을 '현재 위치 → 맵 중심' 방향으로 innerSampleBias만큼 당겨서
-    /// 가장자리·코너보다 안쪽 영역에서 목적지가 나오도록 유도.
+    /// 플레이어에서 가장 먼 노드를 반환.
+    /// 단, 러너→노드 방향이 러너→플레이어 방향과 minDeviationDegrees 이내인 노드는 제외.
+    /// 조건을 통과하는 노드가 없으면 폴백으로 거리만 기준으로 선택.
     /// </summary>
-    void TryMoveToInnerRandom()
+    Transform FarthestNodeFromPlayer()
     {
-        Vector3 sampleOrigin = transform.position;
+        Vector3 runnerXZ = new Vector3(transform.position.x, 0f, transform.position.z);
+        Vector3 playerXZ = new Vector3(_trackedPlayer.transform.position.x, 0f, _trackedPlayer.transform.position.z);
+        Vector3 dirToPlayer = (playerXZ - runnerXZ).normalized;
 
-        if (_mapCenter != null && innerSampleBias > 0f)
+        Transform best = null;
+        float bestDistSq = -1f;
+        Transform fallback = null;
+        float fallbackDistSq = -1f;
+        Vector3 pPos = _trackedPlayer.transform.position;
+
+        for (int i = 0; i < _nodes.Length; i++)
         {
-            Vector3 toCenter = _mapCenter.position - transform.position;
-            toCenter.y = 0f;
-            sampleOrigin = transform.position + toCenter * innerSampleBias;
-        }
+            if (_nodes[i] == null) continue;
 
-        Vector3 rand = sampleOrigin + UnityEngine.Random.insideUnitSphere * navSampleRadius;
-        rand.y = transform.position.y;
+            float dSq = (_nodes[i].position - pPos).sqrMagnitude;
 
-        if (!TryMoveTo(rand))
-        {
-            if (NavMesh.SamplePosition(sampleOrigin, out NavMeshHit hit, navSampleRadius * 2f, NavMesh.AllAreas))
+            // 폴백: 각도 무시하고 거리 최대
+            if (dSq > fallbackDistSq)
             {
-                _agent.isStopped = false;
-                _agent.SetDestination(hit.position);
+                fallbackDistSq = dSq;
+                fallback = _nodes[i];
+            }
+
+            // 러너→노드 방향 XZ 투영
+            Vector3 nodeXZ = new Vector3(_nodes[i].position.x, 0f, _nodes[i].position.z);
+            Vector3 dirToNode = (nodeXZ - runnerXZ).normalized;
+
+            // 두 방향이 거의 같으면(러너가 노드 위에 있으면) 내적 계산 skip
+            if (dirToNode.sqrMagnitude < 0.001f) continue;
+
+            // dot > _cosDeviationThreshold → 두 방향 사이 각 < minDeviationDegrees → 정면 박치기 위험 → 제외
+            float dot = Vector3.Dot(dirToPlayer, dirToNode);
+            if (dot > _cosDeviationThreshold) continue;
+
+            if (dSq > bestDistSq)
+            {
+                bestDistSq = dSq;
+                best = _nodes[i];
             }
         }
+
+        return best != null ? best : fallback;
+    }
+
+    /// <summary>노드 중 랜덤 하나 반환</summary>
+    Transform RandomNode()
+    {
+        int idx = UnityEngine.Random.Range(0, _nodes.Length);
+        return _nodes[idx];
     }
 
     // ── Stuck Recovery ───────────────────────────────────────────
@@ -250,9 +237,8 @@ public class Stage5TargetRunner : MonoBehaviour
             _agent.isStopped = true;
             _agent.ResetPath();
         }
-        // stuck 복구 시에도 중심 쪽 랜덤으로 강제
         _retargetTimer = 0f;
-        TryMoveToInnerRandom();
+        PickDestination();
     }
 
     // ── 포획 판정 ────────────────────────────────────────────────
@@ -264,8 +250,6 @@ public class Stage5TargetRunner : MonoBehaviour
 
         Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
-
-        // 맞는 색 타입 + 고유색 상태여야만 성공 (흑/백 상태는 무효)
         if (p.playerColorType != targetColor) return;
         if (!p.isUniqueColor) return;
 
