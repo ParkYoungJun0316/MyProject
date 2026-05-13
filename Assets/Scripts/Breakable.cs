@@ -1,9 +1,11 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
 /// 충돌 시 파괴되는 오브젝트 컴포넌트.
-/// breakTriggerLayers에 해당하는 레이어 오브젝트가 닿으면 즉시 파괴 + 파편 이펙트.
+/// breakTriggerLayers에 해당하는 오브젝트가 닿으면 파괴 + 파편 이펙트.
+/// breakDelay가 0보다 크면 지연 후 렌더/콜라이더 비활성 및 즉사 처리.
 ///
 /// [권장 사용]
 /// - 돌굴림 맵의 Floor/Wall 피스에 부착
@@ -11,7 +13,7 @@ using UnityEngine.Events;
 /// - TrapProjectile.destroyOnWall=false, destroyOnFloor=false 로 설정해야 돌이 계속 굴러감
 ///
 /// [외부 호출]
-/// Break() 를 직접 호출하면 트리거 없이 즉시 파괴 가능 (연출용 등)
+/// Break() 를 직접 호출하면 트리거 없이 동일한 지연/즉시 파괴 시퀀스 시작 (연출용 등)
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class Breakable : MonoBehaviour
@@ -20,9 +22,15 @@ public class Breakable : MonoBehaviour
     [Tooltip("이 레이어마스크에 해당하는 오브젝트가 닿을 때만 파괴.\n0(Nothing)이면 모든 충돌에 반응.")]
     [SerializeField] private LayerMask breakTriggerLayers;
 
-    [Tooltip("파괴 최소 충돌 속도(m/s). 0이면 속도 무관 즉시 파괴.\n" +
-             "천천히 밀리는 상황에서 실수로 깨지는 것을 방지할 때 사용.")]
-    [SerializeField] private float minBreakSpeed = 0f;
+    [Header("파괴 지연")]
+    [Tooltip("충돌 후 최종 파괴(숨김·파편·즉사)까지 대기 시간(초). 0이면 즉시.")]
+    [SerializeField] private float breakDelay = 0f;
+
+    [Tooltip("지연 구간 시작 시 재생. 없으면 생략.")]
+    [SerializeField] private AudioClip breakDelaySound = null;
+
+    [Tooltip("지연 사운드 볼륨 (0~1)")]
+    [SerializeField] [Range(0f, 1f)] private float breakDelaySoundVolume = 1f;
 
     [Header("파편 / 이펙트")]
     [Tooltip("파괴 시 생성할 파편 또는 Particle 프리팹. 없으면 생략.")]
@@ -32,15 +40,15 @@ public class Breakable : MonoBehaviour
     [SerializeField] private float debrisLifetime = 0f;
 
     [Header("사운드")]
-    [Tooltip("파괴 시 재생할 AudioClip. 없으면 생략.")]
+    [Tooltip("최종 파괴 시 재생할 AudioClip. 없으면 생략.")]
     [SerializeField] private AudioClip breakSound = null;
 
     [Tooltip("파괴 사운드 볼륨 (0~1)")]
     [SerializeField] [Range(0f, 1f)] private float breakSoundVolume = 1f;
 
     [Header("범위 즉사 (선택)")]
-    [Tooltip("파괴 시 반경 내 플레이어를 즉사시킬지 여부.\n" +
-             "천장이 무너지거나 기둥이 쓰러져 플레이어를 으깨는 상황에 사용.")]
+    [Tooltip("최종 파괴 시점에 반경 내 플레이어를 즉사시킬지 여부.\n" +
+             "지연 시간이 있으면 지연이 끝난 뒤에만 판정.")]
     [SerializeField] private bool killPlayerOnBreak = false;
 
     [Tooltip("즉사 반경(m). killPlayerOnBreak=true일 때만 사용.")]
@@ -50,12 +58,14 @@ public class Breakable : MonoBehaviour
     [SerializeField] private LayerMask playerLayer;
 
     [Header("이벤트")]
-    [Tooltip("파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
+    [Tooltip("최종 파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
     public UnityEvent OnBreak;
 
     Renderer[] _renderers;
     Collider[] _colliders;
     bool _broken;
+    bool _breakPending;
+    Coroutine _breakRoutine;
 
     void Awake()
     {
@@ -63,37 +73,40 @@ public class Breakable : MonoBehaviour
         _colliders = GetComponentsInChildren<Collider>(true);
     }
 
+    void OnDisable()
+    {
+        if (_breakRoutine != null)
+        {
+            StopCoroutine(_breakRoutine);
+            _breakRoutine = null;
+        }
+        _breakPending = false;
+    }
+
     // ── 물리 충돌 (non-trigger Collider) ──────────────────────────────
 
     void OnCollisionEnter(Collision col)
     {
-        if (_broken) return;
-        if (ShouldBreak(col.gameObject, col.relativeVelocity.magnitude))
-            Break();
+        if (_broken || _breakPending) return;
+        if (ShouldBreak(col.gameObject))
+            StartBreakSequence();
     }
 
     // ── 트리거 충돌 ──────────────────────────────────────────────────
 
     void OnTriggerEnter(Collider other)
     {
-        if (_broken) return;
-        Rigidbody rb  = other.attachedRigidbody;
-        float     spd = rb != null ? rb.linearVelocity.magnitude : 0f;
-        if (ShouldBreak(other.gameObject, spd))
-            Break();
+        if (_broken || _breakPending) return;
+        if (ShouldBreak(other.gameObject))
+            StartBreakSequence();
     }
 
     // ── 파괴 조건 판단 ───────────────────────────────────────────────
 
-    bool ShouldBreak(GameObject other, float speed)
+    bool ShouldBreak(GameObject other)
     {
-        // 레이어 필터 (0 = Nothing → 모든 충돌 허용)
         if (breakTriggerLayers.value != 0 &&
             (breakTriggerLayers.value & (1 << other.layer)) == 0)
-            return false;
-
-        // 최소 속도 체크
-        if (minBreakSpeed > 0f && speed < minBreakSpeed)
             return false;
 
         return true;
@@ -102,18 +115,44 @@ public class Breakable : MonoBehaviour
     // ── 파괴 처리 (외부에서 직접 호출 가능) ─────────────────────────
 
     /// <summary>
-    /// 즉시 파괴. 파편 이펙트, 사운드, 범위 즉사, 이벤트 모두 발동.
-    /// 외부(연출·트리거 등)에서도 직접 호출 가능.
+    /// 레이어 검사 없이 파괴 시퀀스 시작. breakDelay 적용.
     /// </summary>
     public void Break()
+    {
+        if (_broken || _breakPending) return;
+        StartBreakSequence();
+    }
+
+    void StartBreakSequence()
+    {
+        if (_broken || _breakPending) return;
+        _breakPending = true;
+        if (_breakRoutine != null)
+            StopCoroutine(_breakRoutine);
+        _breakRoutine = StartCoroutine(BreakSequenceRoutine());
+    }
+
+    IEnumerator BreakSequenceRoutine()
+    {
+        if (breakDelay > 0f)
+        {
+            if (breakDelaySound != null)
+                AudioSource.PlayClipAtPoint(breakDelaySound, transform.position, breakDelaySoundVolume);
+            yield return new WaitForSeconds(breakDelay);
+        }
+
+        _breakRoutine = null;
+        _breakPending = false;
+        ApplyFinalBreak();
+    }
+
+    void ApplyFinalBreak()
     {
         if (_broken) return;
         _broken = true;
 
-        // 이벤트 먼저 발동 (구독자가 gameObject 참조 가능한 시점)
         OnBreak?.Invoke();
 
-        // 파편 이펙트 생성
         if (debrisPrefab != null)
         {
             GameObject debris = Instantiate(debrisPrefab, transform.position, transform.rotation);
@@ -121,11 +160,9 @@ public class Breakable : MonoBehaviour
                 Destroy(debris, debrisLifetime);
         }
 
-        // 파괴 사운드 (오브젝트 삭제 후에도 재생되도록 PlayClipAtPoint 사용)
         if (breakSound != null)
             AudioSource.PlayClipAtPoint(breakSound, transform.position, breakSoundVolume);
 
-        // 범위 즉사 처리
         if (killPlayerOnBreak && killRadius > 0f)
         {
             Collider[] hits = Physics.OverlapSphere(transform.position, killRadius, playerLayer);
@@ -144,6 +181,12 @@ public class Breakable : MonoBehaviour
 
     void OnEnable()
     {
+        if (_breakRoutine != null)
+        {
+            StopCoroutine(_breakRoutine);
+            _breakRoutine = null;
+        }
+        _breakPending = false;
         _broken = false;
         SetVisible(true);
     }
