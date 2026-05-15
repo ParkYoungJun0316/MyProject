@@ -108,6 +108,10 @@ public class AdvancingWall : MonoBehaviour
              "예) 30 전진 → 20 후퇴 → 원점이 +10. 정지 시 +10 위치로 복귀.")]
     [SerializeField] float pauseReturnDuration = 0.5f;
 
+    [Header("텔레그래프 연동")]
+    [Tooltip("출발 전 경고 연출 컴포넌트. 비워두면 경고 없이 즉시 출발")]
+    [SerializeField] AdvancingWallTelegraph telegraph;
+
     [Header("이벤트")]
     public UnityEvent OnAdvanceStarted;
     public UnityEvent OnAdvanceCompleted;
@@ -181,6 +185,7 @@ public class AdvancingWall : MonoBehaviour
             StopCoroutine(_advanceCoroutine);
             _advanceCoroutine = null;
         }
+        telegraph?.Cancel();
     }
 
     /// <summary>시작 위치로 완전 초기화.</summary>
@@ -307,6 +312,16 @@ public class AdvancingWall : MonoBehaviour
             float   net           = advDist - retDist;
             Vector3 newOrigin     = _currentOrigin + worldDir * net;
 
+            // 텔레그래프 — 경고 연출 위임
+            if (telegraph != null && telegraph.Duration > 0f)
+            {
+                telegraph.Play();
+                yield return new WaitForSeconds(telegraph.Duration);
+                telegraph.Cancel();
+            }
+
+            telegraph?.PlayMoveSound();
+
             // 전진
             OnAdvanceStarted?.Invoke();
             yield return LerpTo(_currentOrigin, advanceTarget, advDur);
@@ -372,6 +387,7 @@ public class AdvancingWall : MonoBehaviour
             StopCoroutine(_advanceCoroutine);
             _advanceCoroutine = null;
         }
+        telegraph?.Cancel();
         _isActive        = false;
         _isPausedByColor = true;
 
