@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 색 기억 경로 매니저.
@@ -46,14 +47,15 @@ public class ColoredMemoryPath : MonoBehaviour
     public PlayerColorType[] colorSequence = {
         PlayerColorType.Yellow,
         PlayerColorType.Blue,
-        PlayerColorType.Red,
+        PlayerColorType.Purple,
         PlayerColorType.Green,
     };
 
     [Header("미리보기 색상 (Inspector에서 조정)")]
     public Color yellowPreviewColor = Color.yellow;
     public Color bluePreviewColor   = Color.blue;
-    public Color redPreviewColor    = Color.red;
+    [FormerlySerializedAs("redPreviewColor")]
+    public Color purplePreviewColor = new Color(0.55f, 0.2f, 0.95f);
     public Color greenPreviewColor  = Color.green;
 
     [Header("이벤트")]
@@ -214,7 +216,7 @@ public class ColoredMemoryPath : MonoBehaviour
         {
             case PlayerColorType.Yellow: return yellowPreviewColor;
             case PlayerColorType.Blue:   return bluePreviewColor;
-            case PlayerColorType.Red:    return redPreviewColor;
+            case PlayerColorType.Purple: return purplePreviewColor;
             case PlayerColorType.Green:  return greenPreviewColor;
             default: return Color.white;
         }
@@ -227,7 +229,7 @@ public class ColoredMemoryPath : MonoBehaviour
         {
             case PlayerColorType.Yellow: return Color.yellow;
             case PlayerColorType.Blue:   return Color.blue;
-            case PlayerColorType.Red:    return Color.red;
+            case PlayerColorType.Purple: return new Color(0.55f, 0.2f, 0.95f);
             case PlayerColorType.Green:  return Color.green;
             case PlayerColorType.Common: return Color.white;
             case PlayerColorType.Danger: return Color.black;

@@ -6,7 +6,7 @@ public enum PlayerColorType
 {
     Common, // 공용 — 모든 플레이어 사용 가능
     Blue,
-    Red,
+    Purple,
     Green,
     Yellow,
     Danger, // 모두 즉사

@@ -207,6 +207,32 @@ public class AdvancingWall : MonoBehaviour
     /// <summary>현재까지 순전진한 총 거리 (패널티 포함).</summary>
     public float TotalAdvanced => _totalAdvanced;
 
+    /// <summary>현재 전진·후퇴 이동 중인지. WallLineRandomizer 등 외부 스케줄러가 완료 대기에 사용.</summary>
+    public bool IsMoving => _isActive;
+
+    /// <summary>
+    /// 한 번 전진·후퇴 실행 (WallLineRandomizer 등 외부 스케줄 전용).
+    /// 이미 이동 중이거나 색 일시정지 상태이면 무시.
+    /// </summary>
+    /// <param name="advanceDistance">전진 거리(m)</param>
+    /// <param name="retreatRatio">0~1. 후퇴 거리 = 전진 × 비율 (1이면 전진만큼 후퇴)</param>
+    /// <param name="advanceMoveDuration">전진에 걸리는 시간(초). 0이면 moveDuration 사용</param>
+    /// <param name="returnMoveDuration">후퇴에 걸리는 시간(초). 0이면 returnDuration 사용</param>
+    public void RunOnce(float advanceDistance, float retreatRatio, float advanceMoveDuration, float returnMoveDuration)
+    {
+        if (_isActive || _isPausedByColor) return;
+        float ratio = Mathf.Clamp01(retreatRatio);
+        float retreatDist = advanceDistance * ratio;
+        _advanceCoroutine = StartCoroutine(RunEntry(new AdvanceEntry
+        {
+            advanceDistance        = advanceDistance,
+            retreatDistance        = retreatDist,
+            cycles                 = 0,
+            overrideMoveDuration   = advanceMoveDuration,
+            overrideReturnDuration = returnMoveDuration
+        }));
+    }
+
     /// <summary>
     /// ColorWall 색상 일치 시 호출.
     /// 현재 전진을 중단하고 누적 원점(_currentOrigin)으로 부드럽게 복귀 후
