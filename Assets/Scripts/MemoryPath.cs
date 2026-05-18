@@ -37,6 +37,14 @@ public class MemoryPath : MonoBehaviour
     [Tooltip("Safe 발판을 전부 밟지 않아도 됨. true면 Trap만 안 밟으면 Complete")]
     public bool completeOnNoTrap = false;
 
+    [Header("공통 색상")]
+    [Tooltip("도전 중 모든 발판에 적용되는 기본 색")]
+    [SerializeField] Color normalColor  = new Color(0.45f, 0.45f, 0.45f);
+    [Tooltip("미리보기 때 Safe 발판에 표시되는 색")]
+    [SerializeField] Color previewColor = new Color(1f, 0.85f, 0f);
+    [Tooltip("Trap 발판이 밟혔을 때 표시되는 색")]
+    [SerializeField] Color dangerColor  = new Color(1f, 0.2f, 0.2f);
+
     [Header("이벤트")]
     [Tooltip("Challenge 단계 시작 시 (미리보기 끝난 직후)")]
     public UnityEvent OnChallengeStart;
@@ -62,6 +70,7 @@ public class MemoryPath : MonoBehaviour
 
     void Start()
     {
+        ApplyColorsToTiles();
         if (startOnAwake) StartPreview();
     }
 
@@ -80,6 +89,25 @@ public class MemoryPath : MonoBehaviour
                 _safeTiles.Add(all[i]);
             else
                 _trapTiles.Add(all[i]);
+        }
+    }
+
+    void ApplyColorsToTiles()
+    {
+        for (int i = 0; i < _safeTiles.Count; i++)
+        {
+            if (_safeTiles[i] == null) continue;
+            _safeTiles[i].normalColor  = normalColor;
+            _safeTiles[i].previewColor = previewColor;
+            _safeTiles[i].dangerColor  = dangerColor;
+            _safeTiles[i].HidePreview();
+        }
+        for (int i = 0; i < _trapTiles.Count; i++)
+        {
+            if (_trapTiles[i] == null) continue;
+            _trapTiles[i].normalColor = normalColor;
+            _trapTiles[i].dangerColor = dangerColor;
+            _trapTiles[i].HidePreview();
         }
     }
 
@@ -179,9 +207,9 @@ public class MemoryPath : MonoBehaviour
         for (int i = 0; i < all.Length; i++)
         {
             if (all[i] == null) continue;
-            Gizmos.color = all[i].role == MemoryPathTile.TileRole.Safe
-                ? new Color(1f, 0.85f, 0f, 0.25f)
-                : new Color(1f, 0f, 0f, 0.25f);
+            Color gc = all[i].role == MemoryPathTile.TileRole.Safe ? previewColor : dangerColor;
+            gc.a = 0.25f;
+            Gizmos.color = gc;
             Gizmos.DrawCube(all[i].transform.position, all[i].transform.lossyScale * 0.9f);
         }
     }

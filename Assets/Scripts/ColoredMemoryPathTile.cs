@@ -19,9 +19,8 @@ public class ColoredMemoryPathTile : MonoBehaviour
     [Tooltip("이 타일이 안전한 플레이어 색. 여러 개 지정 가능 (예: Yellow + Blue)")]
     public PlayerColorType[] safeColors = new PlayerColorType[0];
 
-    [Header("시각 피드백")]
-    [Tooltip("도전 중(미리보기 끝난 뒤) 표시 색")]
-    public Color normalColor = new Color(0.45f, 0.45f, 0.45f);
+    // 색은 ColoredMemoryPath(매니저)에서 일괄 설정. Inspector 중복 방지.
+    [HideInInspector] public Color normalColor = new Color(0.45f, 0.45f, 0.45f);
 
     // ColoredMemoryPath.Awake()에서 주입
     [HideInInspector] public ColoredMemoryPath coloredMemoryPath;

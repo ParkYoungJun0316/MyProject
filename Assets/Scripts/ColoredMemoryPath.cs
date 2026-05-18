@@ -51,6 +51,10 @@ public class ColoredMemoryPath : MonoBehaviour
         PlayerColorType.Green,
     };
 
+    [Header("공통 색상")]
+    [Tooltip("도전 중 모든 타일에 적용되는 기본 색")]
+    [SerializeField] Color normalColor = new Color(0.45f, 0.45f, 0.45f);
+
     [Header("미리보기 색상 (Inspector에서 조정)")]
     public Color yellowPreviewColor = Color.yellow;
     public Color bluePreviewColor   = Color.blue;
@@ -81,6 +85,7 @@ public class ColoredMemoryPath : MonoBehaviour
 
     void Start()
     {
+        ApplyNormalColor();
         if (startOnAwake) StartPreview();
     }
 
@@ -89,6 +94,16 @@ public class ColoredMemoryPath : MonoBehaviour
         _tiles = GetComponentsInChildren<ColoredMemoryPathTile>(true);
         for (int i = 0; i < _tiles.Length; i++)
             if (_tiles[i] != null) _tiles[i].coloredMemoryPath = this;
+    }
+
+    void ApplyNormalColor()
+    {
+        for (int i = 0; i < _tiles.Length; i++)
+        {
+            if (_tiles[i] == null) continue;
+            _tiles[i].normalColor = normalColor;
+            _tiles[i].HidePreview();
+        }
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
@@ -256,7 +271,7 @@ public class ColoredMemoryPath : MonoBehaviour
             var tile = _tiles[i];
             if (tile.safeColors == null || tile.safeColors.Length == 0) continue;
 
-            Color gc = GetDefaultColorFor(tile.safeColors[0]);
+            Color gc = GetDisplayColor(tile.safeColors[0]);
             gc.a = 0.2f;
             Gizmos.color = gc;
             Gizmos.DrawCube(tile.transform.position, tile.transform.lossyScale * 0.9f);

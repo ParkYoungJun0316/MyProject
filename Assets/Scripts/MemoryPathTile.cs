@@ -16,11 +16,10 @@ public class MemoryPathTile : MonoBehaviour
     [Tooltip("Safe: 미리보기에 표시되는 안전 경로 / Trap: 닿으면 즉사")]
     public TileRole role = TileRole.Trap;
 
-    [Header("시각 피드백")]
-    [Tooltip("평상시(도전 중) 색")]
-    public Color normalColor  = new Color(0.45f, 0.45f, 0.45f);
-    [Tooltip("미리보기 때 Safe 발판에 표시되는 색")]
-    public Color previewColor = new Color(1f, 0.85f, 0f);
+    // 색은 MemoryPath(매니저)에서 일괄 설정. Inspector 중복 방지.
+    [HideInInspector] public Color normalColor  = new Color(0.45f, 0.45f, 0.45f);
+    [HideInInspector] public Color previewColor = new Color(1f, 0.85f, 0f);
+    [HideInInspector] public Color dangerColor  = new Color(1f, 0.2f, 0.2f);
 
     // MemoryPath.Awake()에서 주입
     [HideInInspector] public MemoryPath memoryPath;
@@ -63,6 +62,7 @@ public class MemoryPathTile : MonoBehaviour
         if (role == TileRole.Trap)
         {
             _isDisabled = true;
+            ApplyColor(dangerColor);
             player.KillInstantly();          // 무적/쿨다운 무시하고 즉사
             memoryPath.OnTrapStepped(this);  // 스테이지 실패 처리
         }
@@ -119,7 +119,7 @@ public class MemoryPathTile : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        Color c = role == TileRole.Safe ? previewColor : Color.red;
+        Color c = role == TileRole.Safe ? previewColor : dangerColor;
         c.a = 0.35f;
         Gizmos.color = c;
         Gizmos.DrawCube(transform.position, transform.lossyScale * 0.95f);

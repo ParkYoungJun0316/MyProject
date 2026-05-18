@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1575284842714487677}
   - component: {fileID: 2107891968530525219}
-  m_Layer: 0
+  m_Layer: 25
   m_Name: Memorypath
-  m_TagString: Untagged
+  m_TagString: Floor
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -48,7 +48,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MemoryPath
   startOnAwake: 1
   previewDuration: 10
+  autoResetDelay: 3
   completeOnNoTrap: 0
+  normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  previewColor: {r: 1, g: 0.85, b: 0, a: 1}
+  dangerColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   OnChallengeStart:
     m_PersistentCalls:
       m_Calls: []
@@ -58,8 +62,6 @@ MonoBehaviour:
   OnFailed:
     m_PersistentCalls:
       m_Calls: []
-  _state: 0
-  _safeStepped: 0
 --- !u!1 &4093087065681126231
 GameObject:
   m_ObjectHideFlags: 0
@@ -73,7 +75,7 @@ GameObject:
   - component: {fileID: 4072362531192558537}
   - component: {fileID: 7132802559909391827}
   - component: {fileID: 3729180200360210824}
-  m_Layer: 0
+  m_Layer: 25
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -188,9 +190,7 @@ MonoBehaviour:
   role: 0
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   previewColor: {r: 1, g: 0.85, b: 0, a: 1}
-  trapDisableDelay: 0
-  trapRespawnDelay: 1
-  downwardImpulse: 50
+  dangerColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   memoryPath: {fileID: 0}
 --- !u!1 &6731369895253923018
 GameObject:
@@ -205,7 +205,7 @@ GameObject:
   - component: {fileID: 8238702710722461502}
   - component: {fileID: 4372530036669653815}
   - component: {fileID: 675988088718481544}
-  m_Layer: 0
+  m_Layer: 25
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -320,7 +320,5 @@ MonoBehaviour:
   role: 1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   previewColor: {r: 1, g: 0.85, b: 0, a: 1}
-  trapDisableDelay: 0
-  trapRespawnDelay: 1
-  downwardImpulse: 50
+  dangerColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   memoryPath: {fileID: 0}
