@@ -52,8 +52,14 @@ public class DoorController : MonoBehaviour
     public bool latchOnOpen = false;
 
     [Header("이벤트")]
+    [Tooltip("Open() 호출 직후 (열림 애니메이션 시작 시점)")]
     public UnityEvent OnOpened;
+
+    [Tooltip("Close() 호출 직후 (닫힘 애니메이션 시작 시점). 기존 연결 유지용.")]
     public UnityEvent OnClosed;
+
+    [Tooltip("닫힘 애니메이션이 끝나 문이 완전히 닫힌 뒤 1회 호출. Stage1 비활성화 등에 연결.")]
+    public UnityEvent OnFullyClosed;
 
     public bool IsOpen    => _isOpen;
     public bool IsLatched => _isLatched;
@@ -226,6 +232,9 @@ public class DoorController : MonoBehaviour
         _rb.MovePosition(targetWorldPos);
         _rb.MoveRotation(targetWorldRot);
         _isClosing = false;
+
+        if (!opening)
+            OnFullyClosed?.Invoke();
     }
 
     // ── 좌표 변환 헬퍼 ───────────────────────────────────────

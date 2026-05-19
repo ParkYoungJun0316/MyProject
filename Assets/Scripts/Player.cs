@@ -58,7 +58,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
     public bool IsDead   { get; private set; }
-    public bool IsLocked { get; private set; }
     public int PlayerId => playerId;
 
     [HideInInspector] public Vector2 moveInput;
@@ -95,7 +94,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     public void OnMove(InputValue value)
     {
-        if (IsDead || IsLocked) return;
+        if (IsDead) return;
         moveInput = value.Get<Vector2>();
     }
 
@@ -185,11 +184,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
-        if (IsLocked)
-        {
-            bwDown = altDown = false;
-            return;
-        }
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
     }
@@ -197,15 +191,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     void Move()
     {
         if (isKnockback) return;
-
-        if (IsLocked)
-        {
-            Vector3 lv = rigid.linearVelocity;
-            lv.x = 0f; lv.z = 0f;
-            rigid.linearVelocity = lv;
-            if (anim != null) anim.SetBool("isRun", false);
-            return;
-        }
 
         // 카메라의 수평 forward/right 기준으로 이동 방향 계산 (폴가이즈 스타일)
         Vector3 camForward = (followCamera != null)
@@ -248,26 +233,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     void FreezeRotation()
     {
         rigid.angularVelocity = Vector3.zero;
-    }
-
-    /// <summary>이동·색 전환 입력 잠금/해제.</summary>
-    public void SetLocked(bool locked)
-    {
-        IsLocked = locked;
-        if (!locked) return;
-
-        moveInput = Vector2.zero;
-        moveVec   = Vector3.zero;
-
-        if (rigid != null)
-        {
-            Vector3 v = rigid.linearVelocity;
-            v.x = 0f; v.z = 0f;
-            rigid.linearVelocity = v;
-        }
-
-        if (anim != null)
-            anim.SetBool("isRun", false);
     }
 
     /// <summary>버프·무적 무시 즉사. Die()에서 doJammed 연동.</summary>

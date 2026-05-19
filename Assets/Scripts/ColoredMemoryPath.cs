@@ -39,9 +39,6 @@ public class ColoredMemoryPath : MonoBehaviour
     [Tooltip("색 전환 사이 짧은 암전 대기(초). 0이면 바로 전환")]
     public float colorPreviewGap = 0f;
 
-    [Tooltip("실패 후 자동 초기화·재시작까지 대기(초). 0 = 자동 재시작 없음")]
-    public float autoResetDelay = 0f;
-
     [Header("미리보기 색 순서")]
     [Tooltip("이 순서대로 색 경로를 하나씩 표시. 원하는 색만 포함 가능")]
     public PlayerColorType[] colorSequence = {
@@ -146,9 +143,6 @@ public class ColoredMemoryPath : MonoBehaviour
 
         _state = PathState.Failed;
         OnFailed?.Invoke();
-
-        if (autoResetDelay > 0f)
-            StartCoroutine(AutoResetRoutine());
     }
 
     // ── 내부 ────────────────────────────────────────────────────
@@ -210,13 +204,6 @@ public class ColoredMemoryPath : MonoBehaviour
 
         _state = PathState.Challenge;
         OnChallengeStart?.Invoke();
-    }
-
-    IEnumerator AutoResetRoutine()
-    {
-        yield return new WaitForSeconds(autoResetDelay);
-        ResetPath();
-        StartPreview();
     }
 
     void Complete()
