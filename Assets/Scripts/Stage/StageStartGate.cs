@@ -74,9 +74,6 @@ public class StageStartGate : MonoBehaviour
     float     _countdown;
     Coroutine _armCoroutine;
 
-    /// <summary>현재 게이트가 활성(Armed) 상태인지. StageResetOnPlayerDeath에서 활성 게이트 탐색에 사용.</summary>
-    public bool IsArmed => _isArmed;
-
     Player[] _players;
 
     // ── Unity 라이프사이클 ─────────────────────────────────────────
@@ -85,9 +82,6 @@ public class StageStartGate : MonoBehaviour
     {
         if (zones == null || zones.Length == 0)
             zones = GetComponentsInChildren<ColoredStartZone>(true);
-
-        // 짝을 이루는 StageManager에 자신을 등록 → LinkedGate로 역참조 가능
-        stageManager?.RegisterGate(this);
     }
 
     void Start()

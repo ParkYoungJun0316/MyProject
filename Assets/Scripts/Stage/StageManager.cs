@@ -32,17 +32,13 @@ public class StageManager : MonoBehaviour
     bool _isFailed;
     int  _completedCount;
 
-    // TrapBase / FloorManager / StageStartGate 가 Awake에서 직접 등록
+    // TrapBase / FloorManager 가 Awake에서 직접 등록
     readonly List<TrapBase>   _registeredTraps = new List<TrapBase>();
     FloorManager              _registeredFloor;
-    StageStartGate            _linkedGate;
 
     public bool IsStarted => _isStarted;
     public bool IsCleared => _isCleared;
     public bool IsFailed  => _isFailed;
-
-    /// <summary>이 스테이지와 짝을 이루는 게이트. StageResetOnPlayerDeath에서 사망 시 어느 게이트로 리스폰할지 결정에 사용.</summary>
-    public StageStartGate LinkedGate => _linkedGate;
 
     /// <summary>TrapBase.Awake()에서 자동 호출. 계층 위치 무관하게 등록됨.</summary>
     public void RegisterTrap(TrapBase trap)
@@ -53,9 +49,6 @@ public class StageManager : MonoBehaviour
 
     /// <summary>FloorManager.Awake()에서 자동 호출.</summary>
     public void RegisterFloor(FloorManager floor) => _registeredFloor = floor;
-
-    /// <summary>StageStartGate.Awake()에서 자동 호출. Inspector에서 stageManager를 연결했을 때만 등록됨.</summary>
-    public void RegisterGate(StageStartGate gate) => _linkedGate = gate;
 
     void Awake()
     {
