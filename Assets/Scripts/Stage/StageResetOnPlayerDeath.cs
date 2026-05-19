@@ -16,12 +16,15 @@ using UnityEngine;
 /// - SetActive(false→true) 사이클로 TrapBase.OnEnable 재발동
 /// - StageStartGate.OnStageReset() 호출 → Disarm + 전원 존 리스폰 + armDelay 후 재암
 ///
+/// [게이트 탐색 우선순위 (Inspector 연결 불필요)]
+/// 1. IsStarted && !IsCleared 인 StageManager의 LinkedGate (Manager-Gate 짝)
+/// 2. 현재 Armed 상태인 StageStartGate
+/// 3. 씬에 있는 아무 StageStartGate (fallback + 에디터 경고)
+///
 /// [사용법]
 /// 1. 씬에 빈 GameObject 추가 → 이 컴포넌트 부착
 /// 2. (선택) phaseManager 필드에 PhaseManager 연결
-///    - 비워두면 자동으로 활성 StageManager를 탐색해 직접 리셋
-/// 3. (선택) stageStartGate 필드에 StageStartGate 연결
-///    - 비워두면 자동 탐색. 없으면 게이트 리셋 단계 생략
+///    - 비워두면 자동으로 활성 PhaseManager를 탐색해 연결
 ///
 /// ⚠ StageStartGate는 OnDied를 직접 구독하지 않음.
 ///    이 컴포넌트가 DoReset() 안에서 OnStageReset()을 호출하므로 중복 처리 없음.
@@ -30,10 +33,6 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 {
     [SerializeField] PhaseManager phaseManager;
 
-    [Tooltip("사망 리셋 후 게이트 Disarm + 전원 존 리스폰을 위임할 StageStartGate.\n" +
-             "비워두면 씬에서 자동 탐색. 없으면 이 단계 생략.")]
-    [SerializeField] StageStartGate stageStartGate;
-
     Player[] _players;
     bool     _resetPending;
 
@@ -41,8 +40,6 @@ public class StageResetOnPlayerDeath : MonoBehaviour
     {
         if (phaseManager == null)
             phaseManager = FindFirstObjectByType<PhaseManager>();
-        if (stageStartGate == null)
-            stageStartGate = FindFirstObjectByType<StageStartGate>();
     }
 
     void Start()
@@ -64,10 +61,47 @@ public class StageResetOnPlayerDeath : MonoBehaviour
     {
         if (_resetPending) return;   // 같은 프레임 내 다중 사망 → 리셋 1회만 수행
         _resetPending = true;
-        DoReset();
+
+        // 게이트는 리셋 이전 시점에 캡처해야 함
+        // (PhaseManager.RestartCurrentPhase 이후엔 IsStarted 상태가 바뀔 수 있음)
+        StageStartGate gate = FindActiveGate();
+        DoReset(gate);
     }
 
-    void DoReset()
+    /// <summary>
+    /// 사망 시점에 리스폰에 사용할 StageStartGate를 결정.
+    /// 1순위: IsStarted && !IsCleared 인 StageManager의 LinkedGate
+    /// 2순위: 현재 Armed 상태인 게이트 (스테이지 시작 전 대기 중)
+    /// 3순위: 씬 전체 fallback
+    /// </summary>
+    StageStartGate FindActiveGate()
+    {
+        // 1순위: 진행 중 StageManager의 짝 게이트
+        StageManager[] managers = FindObjectsByType<StageManager>(FindObjectsSortMode.None);
+        foreach (StageManager sm in managers)
+        {
+            if (sm == null || !sm.IsStarted || sm.IsCleared) continue;
+            if (sm.LinkedGate != null) return sm.LinkedGate;
+        }
+
+        // 2순위: Armed 상태 게이트 (게이트 앞에서 죽은 경우 등)
+        StageStartGate[] gates = FindObjectsByType<StageStartGate>(FindObjectsSortMode.None);
+        foreach (StageStartGate g in gates)
+            if (g != null && g.IsArmed) return g;
+
+        // 3순위: 씬에 있는 아무 게이트 (fallback)
+        if (gates.Length > 0)
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning("[StageResetOnPlayerDeath] 진행 중인 StageManager나 Armed 게이트를 찾지 못해 fallback 게이트를 사용합니다.");
+#endif
+            return gates[0];
+        }
+
+        return null;
+    }
+
+    void DoReset(StageStartGate gate)
     {
         _resetPending = false;
 
@@ -83,17 +117,16 @@ public class StageResetOnPlayerDeath : MonoBehaviour
             StageManager[] managers = FindObjectsByType<StageManager>(FindObjectsSortMode.None);
             foreach (StageManager sm in managers)
             {
-                if (sm == null)     continue;
-                if (!sm.IsStarted)  continue;   // 아직 시작 안 된 스테이지 제외
-                if (sm.IsCleared)   continue;   // 이미 클리어된 스테이지 제외
+                if (sm == null)    continue;
+                if (!sm.IsStarted) continue;   // 아직 시작 안 된 스테이지 제외
+                if (sm.IsCleared)  continue;   // 이미 클리어된 스테이지 제외
 
                 ResetStageDirect(sm);
             }
         }
 
         // ── ② 게이트 Disarm + 전원 존 리스폰 + armDelay 후 재암 ────────
-        // StageStartGate.OnDied 구독을 제거하고 오케스트레이터에서 일괄 처리
-        stageStartGate?.OnStageReset();
+        gate?.OnStageReset();
     }
 
     /// <summary>
@@ -142,6 +175,6 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: 강제 리셋")]
-    void Debug_ForceReset() => DoReset();
+    void Debug_ForceReset() => DoReset(FindActiveGate());
 #endif
 }
