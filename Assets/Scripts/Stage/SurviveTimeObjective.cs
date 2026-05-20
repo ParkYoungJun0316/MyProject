@@ -2,22 +2,14 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// 목표 1: X초(분) 동안 살아남기.
-/// players[] 중 한 명이라도 사망하면 failOnDeath 설정에 따라 실패 처리.
-/// targetTime 초가 지나면 완료.
+/// X초 동안 살아남기. targetTime 경과 시 완료.
+/// 사망·추락 처리는 Player / StageResetOnPlayerDeath·PhaseManager가 담당.
 /// </summary>
 public class SurviveTimeObjective : StageObjective
 {
     [Header("살아남기 설정")]
     [Tooltip("버텨야 하는 시간(초). 예) 300 = 5분")]
     public float targetTime = 300f;
-
-    [Tooltip("플레이어가 사망하면 즉시 실패로 처리할지 여부.\n" +
-             "StageResetOnPlayerDeath를 사용할 경우 false 권장 — 사망 리셋은 PhaseManager가 처리.")]
-    public bool failOnDeath = false;
-
-    [Tooltip("추적할 플레이어 목록. 비우면 Start 시 씬에서 자동 수집")]
-    public Player[] players;
 
     float _elapsed;
 
@@ -32,17 +24,6 @@ public class SurviveTimeObjective : StageObjective
     {
         _elapsed    = 0f;
         _nextUITick = 0f;
-
-        if (players == null || players.Length == 0)
-            players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-
-        if (failOnDeath)
-            foreach (var p in players)
-                if (p != null)
-                {
-                    var events = p.GetComponent<PlayerEvents>();
-                    if (events != null) events.OnDied += OnPlayerDied;
-                }
     }
 
     public override void Tick()
@@ -60,21 +41,5 @@ public class SurviveTimeObjective : StageObjective
 
         if (_elapsed >= targetTime)
             Complete();
-    }
-
-    void OnPlayerDied()
-    {
-        if (failOnDeath) Fail();
-    }
-
-    void OnDisable()
-    {
-        if (players == null) return;
-        foreach (var p in players)
-            if (p != null)
-            {
-                var events = p.GetComponent<PlayerEvents>();
-                if (events != null) events.OnDied -= OnPlayerDied;
-            }
     }
 }

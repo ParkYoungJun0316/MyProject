@@ -8,10 +8,6 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class ReachZoneObjective : StageObjective
 {
-    [Header("도달 목표 설정")]
-    [Tooltip("감지할 레이어 마스크. 0이면 Player 컴포넌트 존재 여부로 판단")]
-    public LayerMask targetLayer;
-
     bool _entered;
 
     public override void Begin() { }
@@ -25,12 +21,7 @@ public class ReachZoneObjective : StageObjective
     void OnTriggerEnter(Collider other)
     {
         if (_entered || IsCompleted) return;
-
-        bool isPlayer = (targetLayer.value != 0)
-            ? ((1 << other.gameObject.layer) & targetLayer.value) != 0
-            : other.GetComponentInParent<Player>() != null;
-
-        if (!isPlayer) return;
+        if (other.GetComponentInParent<Player>() == null) return;
 
         _entered = true;
         Complete();
