@@ -5,10 +5,10 @@ using UnityEngine;
 /// OX 퀴즈 발판 하나.
 /// OXQuizManager.Start()에서 quizManager, rowIndex를 자동 주입.
 ///
-/// [상태]
-///  Danger  : 오답 발판 또는 미개방. 밟아도 즉사 없음 (위치 판정은 Manager가 처리).
-///  Pending : 현재 문제 진행 중.
-///  Safe    : 정답 처리 후 연출용.
+/// [상태] (_BaseColor 곱셈 — 흰=원본 텍스처, 검정=안 보임)
+///  Danger  : 검정 틴트 — 오답·대기 전 연출(아이콘 숨김).
+///  Pending : 답변 대기(기본 흰=양쪽 아이콘 표시).
+///  Safe    : 흰 틴트 — 정답 칸, PNG 원색 그대로 표시.
 ///
 /// [변경 사항]
 ///  - Is Trigger = true 강제 설정 (Awake에서 자동 적용)
@@ -26,12 +26,12 @@ public class OXQuizTile : MonoBehaviour
     public bool isOSide = true;
 
     [Header("색상 (Inspector에서 조정)")]
-    [Tooltip("Pending 상태 — 퀴즈 진행 중, 답변 대기")]
-    public Color pendingColor = new Color(0.75f, 0.75f, 0.75f);
-    [Tooltip("Safe 상태 — 정답, 안전")]
-    public Color safeColor    = new Color(0.10f, 0.65f, 0.20f);
-    [Tooltip("Danger 상태 — 오답")]
-    public Color dangerColor  = new Color(0.80f, 0.10f, 0.10f);
+    [Tooltip("Pending — 흰(1,1,1)이면 텍스처 원본 그대로. 답 선택 중 양쪽 표시용.")]
+    public Color pendingColor = Color.white;
+    [Tooltip("Safe — 정답 칸. 흰(1,1,1) = PNG 원색만 보임.")]
+    public Color safeColor    = Color.white;
+    [Tooltip("Danger — 오답 칸. 검정(0,0,0) = 화면에서 숨김.")]
+    public Color dangerColor  = Color.black;
 
     TileState _state;
 

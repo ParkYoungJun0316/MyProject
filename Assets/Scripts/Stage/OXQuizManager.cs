@@ -31,6 +31,10 @@ public class OXQuestion
 
     [Tooltip("정답. true = O, false = X")]
     public bool correctAnswerIsO;
+
+    [Tooltip("판정 후 정답 공개 시 표시할 해설 (OnAnswerRevealed 두 번째 인자)")]
+    [TextArea(2, 5)]
+    public string explanationText;
 }
 
 /// <summary>UnityEvent&lt;string&gt; 직렬화 래퍼.</summary>
@@ -41,6 +45,10 @@ public class StringEvent : UnityEvent<string> { }
 [System.Serializable]
 public class FloatEvent : UnityEvent<float> { }
 
+/// <summary>UnityEvent&lt;bool, string&gt; 직렬화 래퍼. bool = 정답이 O면 true.</summary>
+[System.Serializable]
+public class AnswerRevealEvent : UnityEvent<bool, string> { }
+
 // ── 매니저 ───────────────────────────────────────────────────────
 
 /// <summary>
@@ -48,15 +56,16 @@ public class FloatEvent : UnityEvent<float> { }
 ///
 /// [동작 흐름]
 ///  1. 플레이어가 이 오브젝트의 Trigger 안으로 진입 → 퀴즈 시작 (배리어 닫힘)
-///  2. 문제 제시 + 타이머 시작
+///  2. 문제 제시 + 타이머 시작 (OnQuestionReady)
 ///  3. 타이머 종료 시 물리 오버랩으로 O/X 발판 위치 개별 판정
 ///     - 정답 위치 플레이어: 생존
 ///     - 오답 위치 또는 무응답: wrongDamage 피해 (인스펙터)
-///  4. 정답/오답과 무관하게 다음 문제로 진행
+///  4. 정답 공개 및 해설 (OnAnswerRevealed)
+///  5. correctAnswerDelay 후 다음 문제로 진행
 ///     - 오답/무응답 플레이어는 wrongDamage 피해
 ///     - 사망자는 리스폰 이벤트로 ResetQuiz
-///  5. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 클리어
-///  5. AllCleared → barrierRoot 비활성화
+///  6. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 클리어
+///     - AllCleared → barrierDoor Close
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class OXQuizManager : MonoBehaviour
@@ -68,6 +77,10 @@ public class OXQuizManager : MonoBehaviour
     public OXQuestion[] questions = new OXQuestion[0];
 
     [Header("퀴즈 설정")]
+    [Tooltip("한 판에 출제할 문제 수. 0이면 questions 배열 전체.\n" +
+             "0보다 크면 풀을 셔플한 뒤 그 개수만 랜덤 출제 (풀보다 많으면 풀 크기만큼).")]
+    [SerializeField] int questionsPerRun = 0;
+
     [Tooltip("문제당 답변 제한 시간(초). 0보다 커야 위치 판정이 작동함")]
     public float answerTimeLimit = 0f;
 
@@ -100,7 +113,10 @@ public class OXQuizManager : MonoBehaviour
     [Tooltip("한 명 이상 오답/타이머 초과 시 발동 → 오답 연출, 효과음 등")]
     public UnityEvent OnWrongAnswer;
 
-    [Tooltip("questionsToWin개 달성 시 발동 → 문 열기, 스테이지 전환 등")]
+    [Tooltip("판정 후 정답(O/X) 및 해설 전달. bool=true → O, false → X")]
+    public AnswerRevealEvent OnAnswerRevealed;
+
+    [Tooltip("이번 판 출제 문제를 모두 진행했을 때 발동 → 문 열기, 스테이지 전환 등")]
     public UnityEvent OnAllCleared;
 
     int   _questionIndex;
@@ -111,7 +127,16 @@ public class OXQuizManager : MonoBehaviour
     Coroutine    _timerCoroutine;
     PlayerEvents _playerEvents;
 
-    int QuestionsToWin => questions.Length;
+    int QuestionsToWin
+    {
+        get
+        {
+            int pool = questions.Length;
+            if (pool == 0) return 0;
+            if (questionsPerRun <= 0) return pool;
+            return Mathf.Min(questionsPerRun, pool);
+        }
+    }
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -286,15 +311,17 @@ public class OXQuizManager : MonoBehaviour
             }
         }
 
+        OXQuestion current = questions[_questionOrder[_questionIndex]];
+
         bool anyWrong = wrongOccupants.Count > 0 || nowhereList.Count > 0;
+        ApplyAnswerRevealColors(correctIsO);
+
         if (!anyWrong)
         {
-            row.SetState(OXQuizTile.TileState.Safe);
             OnCorrectAnswer?.Invoke();
         }
         else
         {
-            row.SetState(OXQuizTile.TileState.Danger);
             OnWrongAnswer?.Invoke();
 
             var damaged = new HashSet<Player>();
@@ -310,6 +337,8 @@ public class OXQuizManager : MonoBehaviour
                     p.TakeDamage(wrongDamage);
             }
         }
+
+        OnAnswerRevealed?.Invoke(current.correctAnswerIsO, current.explanationText);
 
         // 문제 결과와 관계없이 다음 문제로 진행.
         // 단, 전원 사망이면 리스폰 이벤트를 통해 ResetQuiz가 호출되므로 여기서 추가 진행하지 않음.
@@ -338,6 +367,15 @@ public class OXQuizManager : MonoBehaviour
 
     // ── 유틸 ──────────────────────────────────────────────────────
 
+    /// <summary>판정 후 정답 발판만 Safe, 오답 발판만 Danger.</summary>
+    void ApplyAnswerRevealColors(bool correctIsO)
+    {
+        if (row?.oTile != null)
+            row.oTile.SetState(correctIsO ? OXQuizTile.TileState.Safe : OXQuizTile.TileState.Danger);
+        if (row?.xTile != null)
+            row.xTile.SetState(correctIsO ? OXQuizTile.TileState.Danger : OXQuizTile.TileState.Safe);
+    }
+
     void StopTimer()
     {
         if (_timerCoroutine != null)
@@ -347,7 +385,7 @@ public class OXQuizManager : MonoBehaviour
         }
     }
 
-    /// <summary>questions[] 전체 셔플 후 QuestionsToWin개 추출.</summary>
+    /// <summary>questions[] 셔플 후 이번 판 출제 개수(QuestionsToWin)만 _questionOrder에 담음.</summary>
     void ShuffleQuestions()
     {
         int poolSize = questions.Length;
