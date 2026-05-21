@@ -67,7 +67,6 @@ public class AnswerRevealEvent : UnityEvent<bool, string> { }
 ///  6. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 클리어
 ///     - AllCleared → barrierDoor Close
 /// </summary>
-[RequireComponent(typeof(Collider))]
 public class OXQuizManager : MonoBehaviour
 {
     [Header("발판 (O/X 한 쌍)")]
@@ -142,10 +141,6 @@ public class OXQuizManager : MonoBehaviour
 
     void Awake()
     {
-        // 자체 트리거 강제 활성화
-        Collider col = GetComponent<Collider>();
-        if (col != null) col.isTrigger = true;
-
         if (playerOverlapLayers.value == 0)
         {
             int pl = LayerMask.NameToLayer("Player");
@@ -176,20 +171,6 @@ public class OXQuizManager : MonoBehaviour
     {
         if (_playerEvents != null)
             _playerEvents.OnRespawned -= ResetQuiz;
-    }
-
-    // ── 자체 트리거 발동 ──────────────────────────────────────────
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (_quizStarted) return; // 이미 시작된 경우 무시
-
-        Player p = other.GetComponentInParent<Player>();
-        if (p != null && !p.IsDead)
-        {
-            _quizStarted = true;
-            StartQuiz();
-        }
     }
 
     // ── 공개 API ──────────────────────────────────────────────────
