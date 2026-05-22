@@ -15,12 +15,13 @@ public class SequenceRingMinigame : MonoBehaviour
 
     public enum MinigameState { Idle, Playing, Success, Failed }
 
-    /// <summary>Lookahead=Phase1(+N), PlusOne=Phase2, SkipOne=Phase3</summary>
+    /// <summary>Lookahead=Phase1(+N), PlusOne=현재+다음, CurrentOnly=현재만, NextOnly=다음만(현재 숨김)</summary>
     public enum PreviewMode
     {
         Lookahead,
         PlusOne,
-        SkipOne,
+        CurrentOnly,
+        NextOnly,
     }
 
     public enum StepKind { Normal, Common, Danger }
@@ -64,6 +65,10 @@ public class SequenceRingMinigame : MonoBehaviour
 
     [Tooltip("Lookahead 모드: 현재 스텝부터 앞으로 몇 칸까지 색 유지 (Phase1 기본 12)")]
     [SerializeField] int previewLookahead = 12;
+
+    [Tooltip("NextOnly: 시작(cur=0) 시 0·1번 칸 색 표시 (이후부터 다음 칸만)")]
+    [FormerlySerializedAs("nextOnlyBootstrapFirstStep")]
+    [SerializeField] bool nextOnlyBootstrapStartSteps = true;
 
     [Header("스텝 생성")]
     [Tooltip("Common(흰) 스텝이 나올 확률 0~1")]
@@ -438,30 +443,23 @@ public class SequenceRingMinigame : MonoBehaviour
                 break;
             }
 
-            case PreviewMode.SkipOne:
-            {
-                if (cur < 2)
+            case PreviewMode.CurrentOnly:
+                set.Add(cur);
+                break;
+
+            case PreviewMode.NextOnly:
+                if (cur + 1 < total)
+                    set.Add(cur + 1);
+                if (cur == 0 && nextOnlyBootstrapStartSteps)
                 {
-                    if (total > 0) set.Add(0);
-                    if (total > 1) set.Add(1);
-                }
-                else
-                {
-                    set.Add(cur);
-                    if (cur + 2 < total) set.Add(cur + 2);
+                    set.Add(0);
+                    if (total > 1)
+                        set.Add(1);
                 }
                 break;
-            }
         }
 
         return set;
-    }
-
-    bool IsStepHiddenInPreview(int stepIndex)
-    {
-        if (previewMode != PreviewMode.SkipOne) return false;
-        if (_currentStepIndex < 2) return false;
-        return stepIndex == _currentStepIndex + 1;
     }
 
     // ── 타일 색 갱신 ─────────────────────────────────────────────
@@ -473,7 +471,6 @@ public class SequenceRingMinigame : MonoBehaviour
         HashSet<int> visible = BuildVisibleStepSet();
         int total = _steps.Length;
         int cur = _currentStepIndex;
-        int curRing = cur < total ? cur % RingTileCount : -1;
 
         for (int r = 0; r < _sortedTiles.Length; r++)
         {
@@ -481,32 +478,47 @@ public class SequenceRingMinigame : MonoBehaviour
             if (tile == null) continue;
 
             int ring = tile.RingIndex;
-            Color color = defaultTileColor;
-
-            if (curRing == ring && cur < total && !IsStepHiddenInPreview(cur))
-            {
-                color = GetDisplayColor(_steps[cur]);
-            }
-            else
-            {
-                int bestStep = -1;
-                for (int s = 0; s < total; s++)
-                {
-                    if (s % RingTileCount != ring) continue;
-                    if (IsStepHiddenInPreview(s)) continue;
-                    if (!visible.Contains(s)) continue;
-                    if (s == cur) continue;
-
-                    if (bestStep < 0 || s < bestStep)
-                        bestStep = s;
-                }
-
-                if (bestStep >= 0)
-                    color = GetDisplayColor(_steps[bestStep]);
-            }
+            int displayStep = ResolveDisplayStepForRing(ring, visible, cur, total);
+            Color color = displayStep >= 0
+                ? GetDisplayColor(_steps[displayStep])
+                : defaultTileColor;
 
             tile.ApplyColor(color);
         }
+    }
+
+    /// <summary>링 칸에 표시할 스텝 인덱스. 없으면 -1(기본색).</summary>
+    int ResolveDisplayStepForRing(int ring, HashSet<int> visible, int cur, int total)
+    {
+        if (total == 0 || cur < 0) return -1;
+
+        if (previewMode == PreviewMode.NextOnly)
+        {
+            bool hideCurrent = !(cur == 0 && nextOnlyBootstrapStartSteps);
+            return FindBestStepOnRing(ring, visible, cur, total, hideCurrentStep: hideCurrent);
+        }
+
+        int curRing = cur < total ? cur % RingTileCount : -1;
+        if (curRing == ring && cur < total)
+            return cur;
+
+        return FindBestStepOnRing(ring, visible, cur, total, hideCurrentStep: false);
+    }
+
+    static int FindBestStepOnRing(int ring, HashSet<int> visible, int cur, int total, bool hideCurrentStep)
+    {
+        int bestStep = -1;
+        for (int s = 0; s < total; s++)
+        {
+            if (s % RingTileCount != ring) continue;
+            if (!visible.Contains(s)) continue;
+            if (hideCurrentStep && s == cur) continue;
+
+            if (bestStep < 0 || s < bestStep)
+                bestStep = s;
+        }
+
+        return bestStep;
     }
 
     Color GetDisplayColor(StepData step)
