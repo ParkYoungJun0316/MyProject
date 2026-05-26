@@ -3,6 +3,11 @@ using UnityEngine;
 /// <summary>
 /// 순서 링 미니게임 바깥 링(16칸) 타일 하나.
 /// SequenceRingMinigame이 Base Color로 색을 갱신합니다.
+///
+/// [MaterialPropertyBlock 사용]
+///  renderer.material(인스턴스 생성) 대신 PropertyBlock을 사용해
+///  메모리 누수 없이 색상을 변경합니다.
+///  URP(_BaseColor)·Legacy(_Color) 셰이더 모두 대응.
 /// </summary>
 public class SequenceRingTile : MonoBehaviour
 {
@@ -12,45 +17,31 @@ public class SequenceRingTile : MonoBehaviour
 
     public int RingIndex => ringIndex;
 
-    Material[] _mats;
-
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId     = Shader.PropertyToID("_Color");
 
+    MeshRenderer[]      _renderers;
+    MaterialPropertyBlock _mpb;
+
     void Awake()
     {
-        CacheMaterials();
-    }
-
-    void CacheMaterials()
-    {
-        var renderers = GetComponentsInChildren<MeshRenderer>(true);
-        _mats = new Material[renderers.Length];
-        for (int i = 0; i < renderers.Length; i++)
-            if (renderers[i] != null)
-                _mats[i] = renderers[i].material;
+        _renderers = GetComponentsInChildren<MeshRenderer>(true);
+        _mpb       = new MaterialPropertyBlock();
     }
 
     public void ApplyColor(Color color)
     {
-        if (_mats == null || _mats.Length == 0)
-            CacheMaterials();
+        if (_renderers == null) return;
 
-        if (_mats == null) return;
+        // PropertyBlock에 두 프로퍼티를 모두 설정 — 셰이더가 사용하는 쪽만 반영됨
+        _mpb.SetColor(BaseColorId, color);
+        _mpb.SetColor(ColorId,     color);
 
-        for (int i = 0; i < _mats.Length; i++)
+        foreach (MeshRenderer r in _renderers)
         {
-            if (_mats[i] == null) continue;
-            if (_mats[i].HasProperty(BaseColorId)) _mats[i].SetColor(BaseColorId, color);
-            else if (_mats[i].HasProperty(ColorId)) _mats[i].SetColor(ColorId, color);
+            if (r != null)
+                r.SetPropertyBlock(_mpb);
         }
-    }
-
-    void OnDestroy()
-    {
-        if (_mats == null) return;
-        for (int i = 0; i < _mats.Length; i++)
-            if (_mats[i] != null) Destroy(_mats[i]);
     }
 
     void OnDrawGizmosSelected()

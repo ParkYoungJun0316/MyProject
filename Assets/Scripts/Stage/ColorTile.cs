@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -8,6 +9,10 @@ using UnityEngine.Events;
 ///  requiredColorType에 맞는 플레이어가 올라서면 IsCompleted = true.
 ///  현재 흑/백/고유색 모드와 무관하게 playerColorType으로만 판별.
 ///  틀린 색 플레이어가 올라서도 완료되지 않음.
+///
+/// [테스트 모드]
+///  ignorePlayerCheck = true 시 플레이어 색/isUniqueColor 체크 없이 누구든 밟으면 활성화.
+///  DirectionalBarrierRound에서 디버그용으로 사용.
 ///
 /// [설정]
 ///  Collider(Is Trigger = true) 필수.
@@ -20,12 +25,19 @@ public class ColorTile : MonoBehaviour
     [Tooltip("이 타일이 요구하는 플레이어 고유색")]
     [SerializeField] PlayerColorType requiredColorType = PlayerColorType.Blue;
 
+    [Header("테스트")]
+    [Tooltip("true: 플레이어 색/isUniqueColor 체크 없이 누구든 밟으면 활성화")]
+    public bool ignorePlayerCheck = false;
+
     [Header("이벤트 (선택)")]
     [Tooltip("올바른 플레이어가 올라섰을 때 (시각 피드백 등)")]
     public UnityEvent OnCompleted;
 
     [Tooltip("올바른 플레이어가 내려갔을 때")]
     public UnityEvent OnUncompleted;
+
+    /// <summary>타일이 활성화됐을 때 색상을 넘겨주는 콜백. DirectionalBarrierRound 등에서 연결.</summary>
+    public Action<PlayerColorType> OnActivatedCallback;
 
     public PlayerColorType RequiredColorType => requiredColorType;
 
@@ -54,6 +66,15 @@ public class ColorTile : MonoBehaviour
 
     void CheckPlayer(Collider other)
     {
+        if (ignorePlayerCheck)
+        {
+            if (_isCompleted) return;
+            _isCompleted = true;
+            OnCompleted?.Invoke();
+            OnActivatedCallback?.Invoke(requiredColorType);
+            return;
+        }
+
         Player p = other.GetComponentInParent<Player>();
         if (p == null || p.IsDead) return;
         if (p.playerColorType != requiredColorType) return;
@@ -63,6 +84,7 @@ public class ColorTile : MonoBehaviour
         {
             _isCompleted = true;
             OnCompleted?.Invoke();
+            OnActivatedCallback?.Invoke(requiredColorType);
         }
         // 고유색 → 흑/백으로 전환된 순간 취소
         else if (!p.isUniqueColor && _isCompleted)
@@ -75,6 +97,12 @@ public class ColorTile : MonoBehaviour
     void OnTriggerExit(Collider other)
     {
         if (!_isCompleted) return;
+
+        if (ignorePlayerCheck)
+        {
+            _isCompleted = false;
+            return;
+        }
 
         Player p = other.GetComponentInParent<Player>();
         if (p == null) return;

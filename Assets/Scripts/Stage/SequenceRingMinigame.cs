@@ -5,6 +5,10 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 
+// OXQuizManager 안에 정의된 FloatEvent와 충돌하지 않도록 이 파일에 별도 선언
+[Serializable]
+public class SequenceFloatEvent : UnityEvent<float> { }
+
 /// <summary>
 /// 5×5 링 16칸 순서 협동 미니게임 (1인: 키 1~4 / Space 시뮬).
 /// 서버 권한 구조를 위해 판정·시퀀스 생성은 이 매니저 한 곳에서 처리합니다.
@@ -104,7 +108,7 @@ public class SequenceRingMinigame : MonoBehaviour
     public UnityEvent OnMinigameFailed;
     public UnityEvent OnWrongInput;
     [FormerlySerializedAs("OnTimerTick")]
-    public FloatEvent OnTimeRemainingChanged;
+    public SequenceFloatEvent OnTimeRemainingChanged;
 
     MinigameState _state = MinigameState.Idle;
     StepData[] _steps = Array.Empty<StepData>();
@@ -286,20 +290,24 @@ public class SequenceRingMinigame : MonoBehaviour
     {
         if (_currentStepIndex < 0 || _currentStepIndex >= _steps.Length) return;
         if (_steps[_currentStepIndex].kind != StepKind.Danger) return;
+        // dangerStepDuration이 0이면 타이머 자동 통과 비활성 (Inspector에서 설정 필요)
+        if (dangerStepDuration <= 0f) return;
 
         _dangerStepTimer -= dt;
         if (_dangerStepTimer <= 0f)
+        {
+            _dangerStepTimer = 0f; // 연속 Danger 스텝에서 음수 누적 방지
             AdvanceStep();
+        }
     }
 
     void OnEnterStep(int stepIndex)
     {
         if (stepIndex < 0 || stepIndex >= _steps.Length) return;
 
-        if (_steps[stepIndex].kind == StepKind.Danger)
-            _dangerStepTimer = dangerStepDuration > 0f ? dangerStepDuration : 0f;
-        else
-            _dangerStepTimer = 0f;
+        _dangerStepTimer = (_steps[stepIndex].kind == StepKind.Danger && dangerStepDuration > 0f)
+            ? dangerStepDuration
+            : 0f;
     }
 
     // ── 진행·판정 ────────────────────────────────────────────────
@@ -358,8 +366,9 @@ public class SequenceRingMinigame : MonoBehaviour
 
     void BroadcastTime()
     {
-        float t = timeLimit > 0f ? Mathf.Max(0f, _timeRemaining) : _timeRemaining;
-        OnTimeRemainingChanged?.Invoke(t);
+        // 무제한(timeLimit <= 0) 일 때는 float.MaxValue가 UI에 노출되지 않도록 브로드캐스트 생략
+        if (timeLimit <= 0f) return;
+        OnTimeRemainingChanged?.Invoke(Mathf.Max(0f, _timeRemaining));
     }
 
     // ── 시퀀스 생성 ──────────────────────────────────────────────

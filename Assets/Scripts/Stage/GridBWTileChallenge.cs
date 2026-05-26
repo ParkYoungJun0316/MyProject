@@ -173,8 +173,10 @@ public class GridBWTileChallenge : MonoBehaviour
 
             yield return new WaitForSeconds(roundDuration);
 
-            bool anyOnDefault = EvaluateRound(out bool roundSuccess);
-            ApplySettlement(anyOnDefault, roundSuccess);
+            // 정산 시점에 한 번만 수집해서 EvaluateRound·ApplySettlement에 동일한 리스트 전달
+            List<Player> aliveAtSettlement = GatherAlivePlayers();
+            bool anyOnDefault = EvaluateRound(aliveAtSettlement, out bool roundSuccess);
+            ApplySettlement(anyOnDefault, roundSuccess, aliveAtSettlement);
             OnRoundSettled?.Invoke(round, roundSuccess);
 
             SetAllTilesDefault();
@@ -224,11 +226,10 @@ public class GridBWTileChallenge : MonoBehaviour
     }
 
     /// <summary>정산 시점: Default 칸 점유 여부 + 라운드 성공 여부.</summary>
-    bool EvaluateRound(out bool roundSuccess)
+    bool EvaluateRound(List<Player> alive, out bool roundSuccess)
     {
         roundSuccess = false;
 
-        List<Player> alive = GatherAlivePlayers();
         int required = requiredAliveCount > 0 ? requiredAliveCount : alive.Count;
 
         if (required <= 0)
@@ -308,15 +309,14 @@ public class GridBWTileChallenge : MonoBehaviour
         return list;
     }
 
-    void ApplySettlement(bool anyOnDefault, bool roundSuccess)
+    void ApplySettlement(bool anyOnDefault, bool roundSuccess, List<Player> alive)
     {
-        List<Player> alive = GatherAlivePlayers();
         if (alive.Count == 0) return;
 
+        // anyOnDefault 데미지 우선. 둘 다 해당해도 중복 적용 방지
         if (anyOnDefault && teamDamageIfAnyOnDefault > 0)
             ApplyTeamDamage(alive, teamDamageIfAnyOnDefault);
-
-        if (!roundSuccess && teamDamageIfRoundFail > 0)
+        else if (!roundSuccess && teamDamageIfRoundFail > 0)
             ApplyTeamDamage(alive, teamDamageIfRoundFail);
     }
 
