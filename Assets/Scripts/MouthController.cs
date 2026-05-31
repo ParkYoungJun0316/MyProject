@@ -2,145 +2,103 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 입 배경 연출 컨트롤러 — BlendShape(Shape Key)로 입을 닫았다 여는 시각 효과.
-/// 데미지/충돌 없이 순수 연출 전용.
+/// 입 배경 연출 컨트롤러 — Animator 기반, 함정처럼 랜덤 스케줄로 동작.
 ///
-/// [타이밍 모드]
-/// FixedInterval  : fixedInterval 초마다 자동 닫힘
-/// RandomInterval : randomMin~randomMax 사이 랜덤 간격으로 자동 닫힘
+/// 배경 입은 평소 열린 상태(Idle)이므로 사이클은 닫기 → Hold → 열기 순서.
+///
+/// [동작 흐름]
+///   initialDelay 대기
+///   → 랜덤 간격(randomIntervalMin ~ randomIntervalMax) 대기
+///   → doClose (입 닫기 시작) → closeClipLength 대기
+///   → doHold (입 닫힌 채 유지) → holdDuration 대기
+///   → doOpen (입 열기) → openClipLength 대기
+///   → doIdle 복귀
+///   → 다시 랜덤 대기 반복
+///
+/// [Animator 구성]
+///   States   : Idle / Close / Hold / Open
+///   Triggers : doClose / doHold / doOpen / doIdle
+///   (모든 Transition: Has Exit Time = false, Duration = 0)
+///   Idle 클립 : Loop Time = true
+///   Hold 클립 : Loop Time = true  ← holdDuration 동안 입 닫힌 채 유지
 ///
 /// [설정 방법]
-/// 1. 이 스크립트를 루트 GameObject에 부착
-/// 2. mouthRenderer : 입 메시의 SkinnedMeshRenderer 연결 (비워두면 자식에서 자동 탐색)
-/// 3. closeShapeIndex : Inspector > SkinnedMeshRenderer > BlendShapes 에서 "입 닫기" Shape Key 인덱스 확인 후 입력
-///    (Blender 순서 그대로 : Basis 제외하고 0번부터 카운트)
+///   1. 이 스크립트를 빈 GameObject에 부착 (배경 입 메시와 분리)
+///   2. mouthAnimator : 배경 입 메시의 Animator를 Inspector에서 직접 연결
+///   3. 클립 길이 필드를 실제 Animator 클립 Length와 정확히 맞출 것
 /// </summary>
 public class MouthController : MonoBehaviour
 {
     [Header("참조")]
-    [Tooltip("입 메시의 SkinnedMeshRenderer. 비워두면 자식에서 자동 탐색")]
-    [SerializeField] private SkinnedMeshRenderer mouthRenderer = null;
+    [Tooltip("입 오브젝트의 Animator. 비워두면 자식에서 자동 탐색")]
+    [SerializeField] private Animator mouthAnimator = null;
 
-    [Tooltip("'입 닫기' Shape Key 인덱스\n" +
-             "Inspector > SkinnedMeshRenderer > BlendShapes 목록에서 확인")]
-    [SerializeField] private int closeShapeIndex = 2;
+    [Header("Animator 파라미터 이름")]
+    [SerializeField] private string openTrigger  = "doOpen";
+    [SerializeField] private string holdTrigger  = "doHold";
+    [SerializeField] private string closeTrigger = "doClose";
+    [SerializeField] private string idleTrigger  = "doIdle";
 
-    [Tooltip("WindTrap이 활성화 중일 때 입닫기 사이클을 건너뜀.\n" +
-             "Push/Pull 각각 등록 가능. 하나라도 활성화 중이면 건너뜀. 없으면 비워두면 됨.")]
-    [SerializeField] private WindTrap[] windTraps = new WindTrap[0];
+    [Header("클립 길이 (초) — Animator 클립 Length와 정확히 맞출 것")]
+    [Tooltip("Close 클립 길이(초). 입이 완전히 닫히는 데 걸리는 시간.\n예) 24fps 8프레임 = 0.333s")]
+    [SerializeField] private float closeClipLength = 0f;
 
-    [Header("속도 설정")]
-    [Tooltip("닫히는 데 걸리는 시간(초)")]
-    [SerializeField] private float closeSpeed = 0.3f;
+    [Tooltip("Hold 유지 시간(초). 이 시간 동안 입이 닫힌 채 루프함.")]
+    [SerializeField] private float holdDuration    = 0f;
 
-    [Tooltip("완전히 닫힌 상태 유지 시간(초)")]
-    [SerializeField] private float holdDuration = 1.0f;
+    [Tooltip("Open 클립 길이(초). 입이 완전히 열리는 데 걸리는 시간.\n예) 24fps 8프레임 = 0.333s")]
+    [SerializeField] private float openClipLength  = 0f;
 
-    [Tooltip("다시 열리는 데 걸리는 시간(초)")]
-    [SerializeField] private float openSpeed = 0.5f;
-
-    [Tooltip("닫힐 때 커브")]
-    [SerializeField] private AnimationCurve closeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Tooltip("열릴 때 커브")]
-    [SerializeField] private AnimationCurve openCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Header("타이밍 설정")]
-    [Tooltip("FixedInterval: 고정 간격 반복\nRandomInterval: 랜덤 간격 반복")]
-    [SerializeField] private TimingMode timingMode = TimingMode.RandomInterval;
-
-    [Tooltip("FixedInterval 모드 전용 — 닫힘 발동 간격(초)")]
-    [SerializeField] private float fixedInterval = 10f;
-
-    [Tooltip("RandomInterval 모드 전용 — 최소 간격(초)")]
+    [Header("랜덤 스케줄")]
+    [Tooltip("입 닫기 사이클 사이 최소 대기 시간(초)")]
     [SerializeField] private float randomIntervalMin = 5f;
 
-    [Tooltip("RandomInterval 모드 전용 — 최대 간격(초)")]
+    [Tooltip("입 닫기 사이클 사이 최대 대기 시간(초)")]
     [SerializeField] private float randomIntervalMax = 15f;
 
-    [Tooltip("첫 발동까지 대기 시간(초)")]
+    [Tooltip("게임 시작 후 첫 발동까지의 딜레이(초)")]
     [SerializeField] private float initialDelay = 0f;
 
     [Tooltip("Start 시 자동으로 사이클 시작 여부")]
     [SerializeField] private bool startOnAwake = true;
 
-    public enum TimingMode { FixedInterval, RandomInterval }
-
-    bool _isClosing;
-    bool _isTransitioning;
     Coroutine _cycleCoroutine;
+    bool _isBusy;
 
-    /// <summary>현재 입이 닫히는 중 또는 열리는 중이면 true. MouthWindAnimator가 대기 여부 판단에 사용.</summary>
-    public bool IsBusy => _isClosing;
-
-    /// <summary>전환 연출 중이면 true. 이 동안 AutoCycle이 중단됨.</summary>
-    public bool IsTransitioning => _isTransitioning;
+    /// <summary>현재 Close/Hold/Open 사이클 진행 중이면 true.</summary>
+    public bool IsBusy => _isBusy;
 
     void Awake()
     {
-        if (mouthRenderer == null)
-            mouthRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
+        if (mouthAnimator == null)
+            mouthAnimator = GetComponentInChildren<Animator>();
     }
 
     void OnEnable()
     {
-        // SetActive(false → true) 사이클 포함 모든 재활성화 시 입 상태 완전 초기화.
-        // _isClosing / _isTransitioning 이 stale 값으로 남아 사이클이 건너뛰어지는 버그 방지.
-        StopAllCoroutines();
-        _cycleCoroutine  = null;
-        _isClosing       = false;
-        _isTransitioning = false;
-        SetWeight(0f);
-
-        if (startOnAwake && IsValid())
+        _isBusy = false;
+        TriggerIdle();
+        if (startOnAwake)
             StartCycle();
     }
 
     void OnDisable()
     {
-        // SetActive(false) 시 공유 렌더러의 BlendShape를 즉시 0으로 초기화.
-        // 여러 MouthController 인스턴스가 동일 SkinnedMeshRenderer를 공유하므로,
-        // 비활성화 타이밍에 값이 남으면 다음 phase 진입 시 입이 닫힌 채로 유지되는 버그 방지.
         StopAllCoroutines();
-        _cycleCoroutine  = null;
-        _isClosing       = false;
-        _isTransitioning = false;
-        SetWeight(0f);
-    }
-
-    void Start()
-    {
-        // 유효성 경고만 담당. 사이클 시작은 OnEnable에서 처리.
-        if (!IsValid())
-            Debug.LogWarning($"[MouthController] {name}: mouthRenderer 또는 closeShapeIndex 설정을 확인하세요.", this);
+        _cycleCoroutine = null;
+        _isBusy = false;
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>
-    /// 입을 즉시 열린 상태(weight=0)로 강제 초기화 후 사이클 재시작.
-    /// SetActive 사이클 없이 오케스트레이터에서 직접 호출할 때 사용.
-    /// </summary>
-    public void ResetToOpenState()
-    {
-        StopAllCoroutines();
-        _cycleCoroutine  = null;
-        _isClosing       = false;
-        _isTransitioning = false;
-        SetWeight(0f);
-
-        if (startOnAwake && IsValid())
-            StartCycle();
-    }
-
-    /// <summary>자동 사이클 시작</summary>
+    /// <summary>랜덤 사이클 시작.</summary>
     public void StartCycle()
     {
         if (_cycleCoroutine != null) StopCoroutine(_cycleCoroutine);
         _cycleCoroutine = StartCoroutine(AutoCycle());
     }
 
-    /// <summary>자동 사이클 중지</summary>
+    /// <summary>랜덤 사이클 중지. 현재 진행 중인 Open/Hold/Close는 즉시 중단됨.</summary>
     public void StopCycle()
     {
         if (_cycleCoroutine != null)
@@ -148,46 +106,11 @@ public class MouthController : MonoBehaviour
             StopCoroutine(_cycleCoroutine);
             _cycleCoroutine = null;
         }
+        _isBusy = false;
+        TriggerIdle();
     }
 
-    /// <summary>
-    /// 스테이지/Phase 전환용 일회성 강제 닫기.
-    /// AutoCycle을 일시 중단하고 입을 닫은 뒤 onClosed → 열기 시작 직전 onOpenStart → 완전히 열리면 onOpened 순서로 콜백을 호출한다.
-    /// 이미 전환 중이면 무시.
-    /// </summary>
-    /// <param name="onClosed">입이 완전히 닫혔을 때 호출. 오브젝트·Phase 교체 등.</param>
-    /// <param name="onOpened">입이 완전히 열렸을 때 호출. 플레이어 잠금 해제 등.</param>
-    /// <param name="onOpenStart">입이 열리기 시작하는 순간 호출 (선택). 조명 페이드 복구 등 열림과 동시에 시작할 처리에 사용.</param>
-    public void CloseForTransition(System.Action onClosed, System.Action onOpened, System.Action onOpenStart = null)
-    {
-        if (_isTransitioning) return;
-        StartCoroutine(TransitionCoroutine(onClosed, onOpened, onOpenStart));
-    }
-
-    IEnumerator TransitionCoroutine(System.Action onClosed, System.Action onOpened, System.Action onOpenStart)
-    {
-        _isTransitioning = true;
-        bool wasRunning = _cycleCoroutine != null;
-        StopCycle();
-
-        _isClosing = true;
-        yield return LerpShape(GetWeight(), 100f, closeSpeed, closeCurve);
-
-        onClosed?.Invoke();
-        yield return null; // 1프레임 대기 — 콜백의 오브젝트 활성화 처리 완료 보장
-
-        onOpenStart?.Invoke(); // 열리기 시작하는 순간 — 조명 페이드 복구 등과 타이밍 동기화
-
-        yield return LerpShape(GetWeight(), 0f, openSpeed, openCurve);
-
-        _isClosing       = false;
-        _isTransitioning = false;
-        onOpened?.Invoke();
-
-        if (wasRunning) StartCycle();
-    }
-
-    // ── 내부 ────────────────────────────────────────────────────
+    // ── 코루틴 ────────────────────────────────────────────────────
 
     IEnumerator AutoCycle()
     {
@@ -196,91 +119,74 @@ public class MouthController : MonoBehaviour
 
         while (true)
         {
-            if (!_isClosing)
-                StartCoroutine(CloseCycle());
-
-            float interval = timingMode == TimingMode.RandomInterval
-                ? Random.Range(randomIntervalMin, randomIntervalMax)
-                : fixedInterval;
-
+            float interval = Random.Range(randomIntervalMin, randomIntervalMax);
             yield return new WaitForSeconds(interval);
+
+            yield return StartCoroutine(CloseOpenCycle());
         }
     }
 
-    IEnumerator CloseCycle()
+    IEnumerator CloseOpenCycle()
     {
-        // 전환 연출 중이거나 등록된 WindTrap 중 하나라도 활성화 중이면 이번 사이클 건너뜀
-        if (_isTransitioning) yield break;
-        foreach (WindTrap wt in windTraps)
-        {
-            if (wt != null && wt.IsWindActive)
-                yield break;
-        }
+        _isBusy = true;
 
-        _isClosing = true;
+        // 닫기 (Idle 열린 상태 → 닫힘)
+        TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
+        if (closeClipLength > 0f)
+            yield return new WaitForSeconds(closeClipLength);
 
-        yield return LerpShape(GetWeight(), 100f, closeSpeed, closeCurve);
-
+        // Hold (닫힌 채 유지)
+        TriggerSafe(holdTrigger, closeTrigger, openTrigger, idleTrigger);
         if (holdDuration > 0f)
             yield return new WaitForSeconds(holdDuration);
 
-        yield return LerpShape(GetWeight(), 0f, openSpeed, openCurve);
+        // 열기 (닫힘 → 다시 열림)
+        TriggerSafe(openTrigger, closeTrigger, holdTrigger, idleTrigger);
+        if (openClipLength > 0f)
+            yield return new WaitForSeconds(openClipLength);
 
-        _isClosing = false;
+        // Idle 복귀
+        TriggerIdle();
+        _isBusy = false;
     }
 
-    IEnumerator LerpShape(float from, float to, float duration, AnimationCurve curve)
+    // ── 트리거 헬퍼 ────────────────────────────────────────────────
+
+    void TriggerIdle() => TriggerSafe(idleTrigger, openTrigger, holdTrigger, closeTrigger);
+
+    void TriggerSafe(string trigger, string r1 = null, string r2 = null, string r3 = null)
     {
-        if (!IsValid() || duration <= 0f)
-        {
-            SetWeight(to);
-            yield break;
-        }
-
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = curve.Evaluate(Mathf.Clamp01(elapsed / duration));
-            SetWeight(Mathf.Lerp(from, to, t));
-            yield return null;
-        }
-        SetWeight(to);
-    }
-
-    // ── 헬퍼 ────────────────────────────────────────────────────
-
-    bool IsValid() =>
-        mouthRenderer != null &&
-        mouthRenderer.sharedMesh != null &&
-        closeShapeIndex >= 0 &&
-        closeShapeIndex < mouthRenderer.sharedMesh.blendShapeCount;
-
-    float GetWeight() => IsValid() ? mouthRenderer.GetBlendShapeWeight(closeShapeIndex) : 0f;
-
-    void SetWeight(float w)
-    {
-        if (IsValid()) mouthRenderer.SetBlendShapeWeight(closeShapeIndex, w);
+        if (mouthAnimator == null) return;
+        if (r1 != null) mouthAnimator.ResetTrigger(r1);
+        if (r2 != null) mouthAnimator.ResetTrigger(r2);
+        if (r3 != null) mouthAnimator.ResetTrigger(r3);
+        mouthAnimator.SetTrigger(trigger);
     }
 
     // ── 에디터 테스트 (플레이 중 컴포넌트 우클릭) ─────────────────────────
 
-    [ContextMenu("테스트: 즉시 닫기")]
-    void TestClose()
+    [ContextMenu("테스트: Open")]
+    void TestOpen() => TriggerSafe(openTrigger, holdTrigger, closeTrigger, idleTrigger);
+
+    [ContextMenu("테스트: Hold")]
+    void TestHold() => TriggerSafe(holdTrigger, openTrigger, closeTrigger, idleTrigger);
+
+    [ContextMenu("테스트: Close")]
+    void TestClose() => TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
+
+    [ContextMenu("테스트: Idle 복귀")]
+    void TestIdle() => TriggerIdle();
+
+    [ContextMenu("테스트: 사이클 1회 실행")]
+    void TestOneCycle()
     {
-        if (_isClosing) return;
-        StartCoroutine(CloseCycle());
+        if (_isBusy) return;
+        StartCoroutine(CloseOpenCycle());
     }
 
-    [ContextMenu("테스트: 즉시 열기")]
-    void TestOpen() => SetWeight(0f);
+    [ContextMenu("테스트: 사이클 시작")]
+    void TestStartCycle() => StartCycle();
 
-    [ContextMenu("테스트: BlendShape 목록 출력")]
-    void PrintBlendShapes()
-    {
-        if (mouthRenderer == null) { Debug.LogError("[MouthController] mouthRenderer가 null입니다."); return; }
-        int count = mouthRenderer.sharedMesh.blendShapeCount;
-        for (int i = 0; i < count; i++)
-            Debug.Log($"  [{i}] {mouthRenderer.sharedMesh.GetBlendShapeName(i)}");
-    }
+    [ContextMenu("테스트: 사이클 중지")]
+    void TestStopCycle() => StopCycle();
 }

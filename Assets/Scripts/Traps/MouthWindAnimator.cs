@@ -2,87 +2,75 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// WindTrap의 바람 흡입/방출에 맞춰 입 오므림/벌림 BlendShape 애니메이션을 재생하는 컴포넌트.
-/// MouthTrapAnimator와 동일한 패턴으로 WindTrap 전용으로 분리.
+/// WindTrap의 바람 흡입/방출에 맞춰 입 오브젝트의 Animator를 제어하는 컴포넌트.
 ///
-/// [동작 흐름]
-/// 1. OnWindCharge  → 바람 발동 chargeTime 전에 입구를 서서히 오므림
-/// 2. (바람 효과 재생, 입은 오므린 상태 유지)
-/// 3. OnWindEnd     → 바람 종료 후 입구를 서서히 벌림
+/// [동작 흐름 — Pull(흡입)]
+///   OnWindCharge  → doPullOpen  (입 벌리기)
+///   chargeTime 후 → doPullHold  (입 벌린 채 바람 유지)
+///   OnWindEnd     → doPullClose (입 닫기 복귀)
 ///
-/// [Push / Pull 구분]
-/// Push(내뱉기) : blowShapeIndex 사용
-/// Pull(흡입)   : suckShapeIndex 사용 (−1이면 blowShapeIndex로 대체)
-/// Shape Key 하나로 통일할 경우 suckShapeIndex를 −1로 두면 됨.
+/// [동작 흐름 — Push(내뱉기)]
+///   OnWindCharge  → doPushClose  (입 오므리기)
+///   chargeTime 후 → doPushHold   (오므린 채 바람 유지)
+///   OnWindEnd     → doPushOpen   (입 되돌리기)
+///
+/// [Animator 구성]
+///   States   : Idle / PullOpen / PullHold / PushClose / PushHold
+///   Triggers : doPullOpen / doPullHold / doPullClose
+///              doPushClose / doPushHold / doPushOpen / doIdle
+///   (모든 Transition: Has Exit Time = false, Duration = 0)
+///   Hold 클립: Loop Time = true
 ///
 /// [설정 방법]
-/// 1. WindTrap과 같은 GameObject에 부착
-/// 2. mouthRenderer : 입 메시의 SkinnedMeshRenderer 연결 (비워두면 자식에서 자동 탐색)
-/// 3. blowShapeIndex / suckShapeIndex : Unity Inspector > SkinnedMeshRenderer > BlendShapes 인덱스
-///    (Blender Basis는 Unity에서 제외 → Blender 1번 = Unity 0번)
-/// 4. chargeTime : 이 값만큼 바람 발동이 자동으로 지연되어 오므림과 동기화됨
+///   1. WindTrap과 같은 GameObject에 부착
+///   2. mouthAnimator : 입 메시의 Animator 연결 (비워두면 자식에서 자동 탐색)
+///   3. chargeTime : Open/Close 클립 길이와 맞출 것 — WindTrap 발동이 이만큼 지연됨
 /// </summary>
 [RequireComponent(typeof(WindTrap))]
 public class MouthWindAnimator : MonoBehaviour
 {
-    [Header("BlendShape 대상")]
-    [Tooltip("입 메시의 SkinnedMeshRenderer. 비워두면 자식에서 자동 탐색")]
-    [SerializeField] SkinnedMeshRenderer mouthRenderer = null;
+    [Header("참조")]
+    [Tooltip("입 오브젝트의 Animator. 비워두면 자식에서 자동 탐색")]
+    [SerializeField] Animator mouthAnimator = null;
 
-    [Tooltip("MouthController 참조. 설정 시 MouthController 애니메이션이 완전히 끝난 후에만 바람 발동.\n" +
+    [Tooltip("MouthController 참조 (선택). 설정 시 MouthController 전환 연출이 끝난 후 바람 발동.\n" +
              "비워두면 동기화 없이 즉시 발동.")]
     [SerializeField] MouthController mouthController = null;
 
-    [Tooltip("Push(내뱉기) 모드의 BlendShape 인덱스")]
-    [SerializeField] int blowShapeIndex = 0;
+    [Header("Animator 파라미터 이름 — Pull(흡입)")]
+    [SerializeField] string pullOpenTrigger  = "doPullOpen";
+    [SerializeField] string pullHoldTrigger  = "doPullHold";
+    [SerializeField] string pullCloseTrigger = "doPullClose";
 
-    [Tooltip("Pull(흡입) 모드의 BlendShape 인덱스. −1이면 blowShapeIndex 사용")]
-    [SerializeField] int suckShapeIndex = -1;
+    [Header("Animator 파라미터 이름 — Push(내뱉기)")]
+    [SerializeField] string pushCloseTrigger = "doPushClose";
+    [SerializeField] string pushHoldTrigger  = "doPushHold";
+    [SerializeField] string pushOpenTrigger  = "doPushOpen";
+
+    [Header("Animator 파라미터 이름 — 공용")]
+    [SerializeField] string idleTrigger = "doIdle";
 
     [Header("타이밍 (초)")]
-    [Tooltip("입구를 오므리는 데 걸리는 시간. 이 시간만큼 WindTrap 발동이 자동 지연됨")]
-    [SerializeField] float chargeTime = 0.4f;
-
-    [Tooltip("바람 종료 후 입구가 다시 벌어지는 데 걸리는 시간")]
-    [SerializeField] float openTime   = 0.3f;
-
-    [Header("애니메이션 커브")]
-    [Tooltip("오므릴 때 커브. EaseIn 권장 (천천히 시작, 빠르게 닫힘)")]
-    [SerializeField] AnimationCurve closeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Tooltip("벌어질 때 커브. EaseOut 권장 (빠르게 열렸다가 안정)")]
-    [SerializeField] AnimationCurve openCurve  = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("Open/Close 클립 길이(초). 이 값만큼 WindTrap 발동이 지연되어 입 애니메이션과 동기화됨.\n" +
+             "예) 24fps 10프레임 = 0.417s")]
+    [SerializeField] float chargeTime = 0f;
 
     WindTrap  _wind;
-    Coroutine _animCoroutine;
-    int       _activeShapeIndex;
+    Coroutine _holdCoroutine;
 
     void Awake()
     {
         _wind = GetComponent<WindTrap>();
 
-        if (mouthRenderer == null)
-            mouthRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
+        if (mouthAnimator == null)
+            mouthAnimator = GetComponentInChildren<Animator>();
 
-        // chargeTime만큼 WindTrap 발동을 지연시켜 입 오므림과 자동 동기화
+        // chargeTime만큼 WindTrap 발동을 지연 → 입 오픈/클로즈 애니메이션과 자동 동기화
         _wind.SetWindChargeTime(chargeTime);
 
-        // MouthController가 연결된 경우: 바람 발동 전 입 애니메이션 완료 대기 훅 등록
+        // MouthController 전환 연출 완료 대기 훅 등록
         if (mouthController != null)
             _wind.PreChargeHook = WaitForMouthIdle;
-    }
-
-    /// <summary>MouthController가 닫힘/열림 애니메이션 중이면 완료될 때까지 대기. 안전 타임아웃 5초.</summary>
-    IEnumerator WaitForMouthIdle()
-    {
-        if (mouthController == null) yield break;
-
-        float elapsed = 0f;
-        while (mouthController.IsBusy && elapsed < 5f)
-        {
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
     }
 
     void OnEnable()
@@ -100,130 +88,151 @@ public class MouthWindAnimator : MonoBehaviour
             _wind.OnWindEnd    -= HandleWindEnd;
         }
 
-        // Wind 발동 중(입 닫힌 상태)에 SetActive(false) 리셋이 들어와도 Shape를 즉시 0으로 복원.
-        // OnWindEnd 이벤트 경로와 무관하게 항상 중립 상태 보장 (이중 안전망).
-        if (_animCoroutine != null) { StopCoroutine(_animCoroutine); _animCoroutine = null; }
-        ResetAllShapes();
+        if (_holdCoroutine != null) { StopCoroutine(_holdCoroutine); _holdCoroutine = null; }
+        TriggerIdle();
     }
 
     // ── 이벤트 핸들러 ──────────────────────────────────────────────────────
 
     void HandleWindCharge()
     {
-        // Pull 모드이고 별도 suckShapeIndex가 설정된 경우 해당 인덱스 사용
-        _activeShapeIndex = (_wind.CurrentWindMode == WindTrap.WindMode.Pull && suckShapeIndex >= 0)
-            ? suckShapeIndex
-            : blowShapeIndex;
+        if (_holdCoroutine != null) { StopCoroutine(_holdCoroutine); _holdCoroutine = null; }
 
-        if (!IsValid())
+        if (_wind.CurrentWindMode == WindTrap.WindMode.Pull)
         {
-            Debug.LogWarning($"[MouthWindAnimator] {name}: BlendShape 설정 오류 " +
-                             $"(shapeIndex={_activeShapeIndex}). Inspector를 확인하세요.", this);
-            return;
+            TriggerSafe(pullOpenTrigger, pullHoldTrigger, pullCloseTrigger, pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
+        }
+        else
+        {
+            TriggerSafe(pushCloseTrigger, pullOpenTrigger, pullHoldTrigger, pullCloseTrigger, pushHoldTrigger, pushOpenTrigger);
         }
 
-        if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        _animCoroutine = StartCoroutine(LerpShape(GetWeight(), 100f, chargeTime, closeCurve));
+        // chargeTime 후 Hold 진입 — Wind가 실제로 부는 동안 입 상태를 유지
+        _holdCoroutine = StartCoroutine(TriggerHoldAfterCharge());
     }
 
     void HandleWindEnd()
     {
-        if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        _animCoroutine = StartCoroutine(LerpShape(GetWeight(), 0f, openTime, openCurve));
+        if (_holdCoroutine != null) { StopCoroutine(_holdCoroutine); _holdCoroutine = null; }
+
+        if (_wind.CurrentWindMode == WindTrap.WindMode.Pull)
+        {
+            TriggerSafe(pullCloseTrigger, pullOpenTrigger, pullHoldTrigger, pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
+        }
+        else
+        {
+            TriggerSafe(pushOpenTrigger, pullOpenTrigger, pullHoldTrigger, pullCloseTrigger, pushCloseTrigger, pushHoldTrigger);
+        }
     }
 
-    // ── 애니메이션 루틴 ────────────────────────────────────────────────────
+    // ── 코루틴 ─────────────────────────────────────────────────────────────
 
-    IEnumerator LerpShape(float from, float to, float duration, AnimationCurve curve)
+    IEnumerator TriggerHoldAfterCharge()
     {
-        if (!IsValid() || duration <= 0f)
-        {
-            SetWeight(to);
-            yield break;
-        }
+        if (chargeTime > 0f)
+            yield return new WaitForSeconds(chargeTime);
+
+        // OnWindEnd가 chargeTime보다 빨리 왔으면 이미 _holdCoroutine이 null
+        if (_wind == null || !_wind.IsWindActive) yield break;
+
+        if (_wind.CurrentWindMode == WindTrap.WindMode.Pull)
+            TriggerSafe(pullHoldTrigger, pullOpenTrigger, pullCloseTrigger, pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
+        else
+            TriggerSafe(pushHoldTrigger, pullOpenTrigger, pullHoldTrigger, pullCloseTrigger, pushCloseTrigger, pushOpenTrigger);
+
+        _holdCoroutine = null;
+    }
+
+    /// <summary>
+    /// MouthController 전환 연출이 진행 중이면 완료까지 대기. 안전 타임아웃 5초.
+    /// </summary>
+    IEnumerator WaitForMouthIdle()
+    {
+        if (mouthController == null) yield break;
 
         float elapsed = 0f;
-        while (elapsed < duration)
+        while (mouthController.IsBusy && elapsed < 5f)
         {
             elapsed += Time.deltaTime;
-            float t = curve.Evaluate(Mathf.Clamp01(elapsed / duration));
-            SetWeight(Mathf.Lerp(from, to, t));
             yield return null;
         }
-        SetWeight(to);
     }
 
-    // ── 헬퍼 ────────────────────────────────────────────────────────────────
-
-    bool IsValid() =>
-        mouthRenderer != null &&
-        mouthRenderer.sharedMesh != null &&
-        _activeShapeIndex >= 0 &&
-        _activeShapeIndex < mouthRenderer.sharedMesh.blendShapeCount;
-
-    float GetWeight() => IsValid() ? mouthRenderer.GetBlendShapeWeight(_activeShapeIndex) : 0f;
-
-    void SetWeight(float w)
-    {
-        if (IsValid()) mouthRenderer.SetBlendShapeWeight(_activeShapeIndex, w);
-    }
+    // ── 외부 호출 ──────────────────────────────────────────────────────────
 
     /// <summary>
-    /// blowShapeIndex / suckShapeIndex 양쪽 Shape를 모두 0으로 강제.
-    /// _activeShapeIndex에만 의존하면 전환 중인 인덱스가 잔상으로 남을 수 있으므로
-    /// 두 인덱스를 모두 직접 초기화.
-    /// </summary>
-    void ResetAllShapes()
-    {
-        if (mouthRenderer == null || mouthRenderer.sharedMesh == null) return;
-        int count = mouthRenderer.sharedMesh.blendShapeCount;
-        if (blowShapeIndex >= 0 && blowShapeIndex < count)
-            mouthRenderer.SetBlendShapeWeight(blowShapeIndex, 0f);
-        if (suckShapeIndex >= 0 && suckShapeIndex < count)
-            mouthRenderer.SetBlendShapeWeight(suckShapeIndex, 0f);
-    }
-
-    /// <summary>
-    /// 애니메이션 코루틴 즉시 중단 + 모든 Shape 0으로 강제 복원.
-    /// SetActive 사이클 없이 외부(오케스트레이터 등)에서 직접 호출할 때 사용.
+    /// 코루틴 중단 + Idle 복귀. SetActive 사이클 없이 외부에서 직접 리셋할 때 사용.
     /// </summary>
     public void ResetToNeutral()
     {
-        if (_animCoroutine != null) { StopCoroutine(_animCoroutine); _animCoroutine = null; }
-        ResetAllShapes();
+        if (_holdCoroutine != null) { StopCoroutine(_holdCoroutine); _holdCoroutine = null; }
+        TriggerIdle();
+    }
+
+    // ── 트리거 헬퍼 ────────────────────────────────────────────────────────
+
+    void TriggerIdle() => TriggerSafe(idleTrigger,
+        pullOpenTrigger, pullHoldTrigger, pullCloseTrigger,
+        pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
+
+    void TriggerSafe(string trigger,
+        string r1 = null, string r2 = null, string r3 = null,
+        string r4 = null, string r5 = null, string r6 = null)
+    {
+        if (mouthAnimator == null) return;
+        if (r1 != null) mouthAnimator.ResetTrigger(r1);
+        if (r2 != null) mouthAnimator.ResetTrigger(r2);
+        if (r3 != null) mouthAnimator.ResetTrigger(r3);
+        if (r4 != null) mouthAnimator.ResetTrigger(r4);
+        if (r5 != null) mouthAnimator.ResetTrigger(r5);
+        if (r6 != null) mouthAnimator.ResetTrigger(r6);
+        mouthAnimator.SetTrigger(trigger);
     }
 
     // ── 에디터 테스트 (플레이 중 컴포넌트 우클릭) ─────────────────────────
 
-    [ContextMenu("테스트: 오므리기 (Blow)")]
-    void TestClose()
+    [ContextMenu("테스트: Pull Open")]
+    void TestPullOpen()
     {
-        _activeShapeIndex = blowShapeIndex;
-        if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        _animCoroutine = StartCoroutine(LerpShape(GetWeight(), 100f, chargeTime, closeCurve));
+        TriggerSafe(pullOpenTrigger, pullHoldTrigger, pullCloseTrigger,
+                    pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
     }
 
-    [ContextMenu("테스트: 오므리기 (Suck)")]
-    void TestCloseSuck()
+    [ContextMenu("테스트: Pull Hold")]
+    void TestPullHold()
     {
-        _activeShapeIndex = suckShapeIndex >= 0 ? suckShapeIndex : blowShapeIndex;
-        if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        _animCoroutine = StartCoroutine(LerpShape(GetWeight(), 100f, chargeTime, closeCurve));
+        TriggerSafe(pullHoldTrigger, pullOpenTrigger, pullCloseTrigger,
+                    pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
     }
 
-    [ContextMenu("테스트: 즉시 열기")]
-    void TestOpen()
+    [ContextMenu("테스트: Pull Close")]
+    void TestPullClose()
     {
-        if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        SetWeight(0f);
+        TriggerSafe(pullCloseTrigger, pullOpenTrigger, pullHoldTrigger,
+                    pushCloseTrigger, pushHoldTrigger, pushOpenTrigger);
     }
 
-    [ContextMenu("테스트: BlendShape 목록 출력")]
-    void PrintBlendShapes()
+    [ContextMenu("테스트: Push Close")]
+    void TestPushClose()
     {
-        if (mouthRenderer == null) { Debug.LogError("[MouthWindAnimator] mouthRenderer가 null입니다."); return; }
-        int count = mouthRenderer.sharedMesh.blendShapeCount;
-        for (int i = 0; i < count; i++)
-            Debug.Log($"  [{i}] {mouthRenderer.sharedMesh.GetBlendShapeName(i)}");
+        TriggerSafe(pushCloseTrigger, pullOpenTrigger, pullHoldTrigger,
+                    pullCloseTrigger, pushHoldTrigger, pushOpenTrigger);
     }
+
+    [ContextMenu("테스트: Push Hold")]
+    void TestPushHold()
+    {
+        TriggerSafe(pushHoldTrigger, pullOpenTrigger, pullHoldTrigger,
+                    pullCloseTrigger, pushCloseTrigger, pushOpenTrigger);
+    }
+
+    [ContextMenu("테스트: Push Open")]
+    void TestPushOpen()
+    {
+        TriggerSafe(pushOpenTrigger, pullOpenTrigger, pullHoldTrigger,
+                    pullCloseTrigger, pushCloseTrigger, pushHoldTrigger);
+    }
+
+    [ContextMenu("테스트: Idle 복귀")]
+    void TestIdle() => TriggerIdle();
 }

@@ -50,8 +50,6 @@ public class ArrowTrap : TrapBase
 
     protected override IEnumerator TrapLoop()
     {
-        scheduleStartTime = Time.time;
-
         if (fireAtSeconds == null || fireAtSeconds.Length == 0)
         {
             isRunning = false;
@@ -60,6 +58,10 @@ public class ArrowTrap : TrapBase
 
         if (initialDelay > 0f)
             yield return new WaitForSeconds(initialDelay);
+
+        // initialDelay 이후 기준으로 스케줄 타임 기록
+        // 이전 위치(initialDelay 전)에 있으면, delay 후 모든 targetTime이 과거가 되어 연속 발사 버그 발생
+        scheduleStartTime = Time.time;
 
         float cycleOffset = 0f;
 
