@@ -44,11 +44,6 @@ public class DropTrap : TrapBase
     [Tooltip("경고 표시 시간 (초). 플레이어가 피할 여유 시간")]
     [SerializeField] private float warnDuration = 0f;
 
-    [Header("경고 — 천장 물방울 형성")]
-    [Tooltip("낙하 전 천장(spawnHeight 위치)에 표시할 형성 프리팹.\n" +
-             "DropletForming 컴포넌트를 붙여 크기가 서서히 자라게 할 것.")]
-    [SerializeField] private GameObject ceilingFormPrefab = null;
-
     [Header("낙하")]
     [Tooltip("낙하체가 생성될 높이 (타겟 위치 기준 Y 오프셋, m)")]
     [SerializeField] private float spawnHeight = 0f;
@@ -207,17 +202,6 @@ public class DropTrap : TrapBase
     {
         Vector3 spawnPos = targetPos + Vector3.up * spawnHeight;
 
-        // 천장에 물방울 형성 프리팹 스폰 (아래를 향하도록 회전)
-        GameObject ceilingForm = null;
-        if (ceilingFormPrefab != null)
-        {
-            ceilingForm = Instantiate(ceilingFormPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
-            _pendingObjects.Add(ceilingForm);
-            DropletForming forming = ceilingForm.GetComponent<DropletForming>();
-            if (forming != null)
-                forming.Initialize(warnDuration);
-        }
-
         // 바닥 경고 마커
         GameObject warn = null;
         if (warnPrefab != null)
@@ -230,7 +214,6 @@ public class DropTrap : TrapBase
             yield return new WaitForSeconds(warnDuration);
 
         DestroyAndUntrack(warn);
-        DestroyAndUntrack(ceilingForm);
 
         GameObject drop = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
 
@@ -274,7 +257,6 @@ public class DropTrap : TrapBase
     }
 
     // SetActive(false) 경로: OnDisable()만 불리고 OnDeactivated()는 안 불림
-    // → 여기서도 반드시 청소해야 ceilingForm이 씬에 잔존하지 않음
     protected override void OnDisable()
     {
         base.OnDisable();
