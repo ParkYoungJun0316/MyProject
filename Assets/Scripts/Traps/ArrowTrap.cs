@@ -2,14 +2,20 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 발사형 함정 범용 컴포넌트 (화살, 돌굴림 등).
+/// 발사형 함정 범용 컴포넌트.
 /// fireAtSeconds에 지정한 초(스케줄 시작 기준)에 프리팹을 발사.
 /// loopSchedule=true이면 schedulePeriod마다 패턴을 반복.
 /// speedPhases로 시간 경과에 따른 속도 단계 상승을 지원.
 ///
-/// [Boulder(돌굴림) 사용 시]
-/// arrowPrefab에 SpinRoller 컴포넌트가 있으면 speed를 SpinRoller.initialSpeed에도 자동 적용.
-/// TrapProjectile.type=Boulder, SpinRoller 부착 프리팹을 연결하면 BoulderTrap과 동일하게 동작.
+/// [속도 설정]
+/// baseSpeed > 0 이면 발사 시 rb.linearVelocity를 직접 설정.
+/// baseSpeed = 0 이면 프리팹 Rigidbody 초기 상태(정지 또는 중력) 그대로.
+///
+/// [회전이 필요한 투사체]
+/// 프리팹에 SpinRoller를 부착. SpinRoller는 rb.linearVelocity 방향을 읽어 angularVelocity만 설정.
+///
+/// [경로 이동 투사체]
+/// 프리팹에 WaypointMover를 부착.
 /// </summary>
 public class ArrowTrap : TrapBase
 {
@@ -114,19 +120,7 @@ public class ArrowTrap : TrapBase
         Transform spawn   = firePoint != null ? firePoint : transform;
         Vector3   flatFwd = spawn.forward;
 
-        // Boulder 타입은 Y를 제거해 수평 직진
-        TrapProjectile sampleProj = arrowPrefab.GetComponent<TrapProjectile>();
-        bool isBoulder = sampleProj != null &&
-                         sampleProj.type == TrapProjectile.ProjectileType.Boulder;
-        if (isBoulder)
-        {
-            flatFwd.y = 0f;
-            if (flatFwd.sqrMagnitude < 0.001f) flatFwd = Vector3.forward;
-            flatFwd.Normalize();
-        }
-
-        Quaternion spawnRot = isBoulder ? Quaternion.LookRotation(flatFwd) : spawn.rotation;
-        GameObject fired    = Instantiate(arrowPrefab, spawn.position, spawnRot);
+        GameObject fired = Instantiate(arrowPrefab, spawn.position, spawn.rotation);
 
         TrapProjectile proj = fired.GetComponent<TrapProjectile>();
         if (proj == null) return;
@@ -136,12 +130,9 @@ public class ArrowTrap : TrapBase
         float speed = GetCurrentSpeed();
         if (speed > 0f)
         {
-            proj.speed = speed;
-
-            // SpinRoller가 있으면 initialSpeed도 함께 설정 (Boulder 굴림 속도 제어)
-            SpinRoller roller = fired.GetComponent<SpinRoller>();
-            if (roller != null)
-                roller.initialSpeed = speed;
+            Rigidbody firedRb = fired.GetComponent<Rigidbody>();
+            if (firedRb != null)
+                firedRb.linearVelocity = flatFwd * speed;
         }
     }
 }

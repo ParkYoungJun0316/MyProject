@@ -238,10 +238,15 @@ public class DropTrap : TrapBase
         if (proj == null) yield break;
 
         proj.moveDirection = Vector3.down;
+        if (damage > 0) proj.damage = damage;
 
         float speed = GetCurrentSpeed();
-        if (speed > 0f)  proj.speed  = speed;
-        if (damage > 0)  proj.damage = damage;
+        if (speed > 0f)
+        {
+            Rigidbody dropRb = drop.GetComponent<Rigidbody>();
+            if (dropRb != null)
+                dropRb.linearVelocity = Vector3.down * speed;
+        }
     }
 
     void DestroyAndUntrack(GameObject obj)
