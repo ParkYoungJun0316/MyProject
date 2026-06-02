@@ -34,9 +34,9 @@ public class MouthController : MonoBehaviour
     [SerializeField] private Animator mouthAnimator = null;
 
     [Header("Animator 파라미터 이름")]
-    [SerializeField] private string openTrigger  = "doOpen";
-    [SerializeField] private string holdTrigger  = "doHold";
-    [SerializeField] private string closeTrigger = "doClose";
+    [SerializeField] private string openTrigger  = "doTransOpen";
+    [SerializeField] private string holdTrigger  = "doTransHold";
+    [SerializeField] private string closeTrigger = "doTransClose";
     [SerializeField] private string idleTrigger  = "doIdle";
 
     [Header("클립 길이 (초) — Animator 클립 Length와 정확히 맞출 것")]
