@@ -25,6 +25,22 @@ using UnityEngine.Events;
 /// </summary>
 public class DirectionalBarrierRound : MonoBehaviour
 {
+    public enum SpawnDirection
+    {
+        NorthSouth, // 북/남 — 프리팹 회전 그대로
+        EastWest,   // 동/서 — 프리팹 회전에 Y -90 추가
+    }
+
+    [System.Serializable]
+    public class BarrierSpawnPoint
+    {
+        [Tooltip("베리어가 생성될 위치")]
+        public Transform point;
+
+        [Tooltip("NorthSouth: 프리팹 회전 그대로 / EastWest: Y -90 추가 적용")]
+        public SpawnDirection direction = SpawnDirection.NorthSouth;
+    }
+
     [System.Serializable]
     public class BarrierPrefabEntry
     {
@@ -46,8 +62,8 @@ public class DirectionalBarrierRound : MonoBehaviour
     }
 
     [Header("베리어 스폰 위치 (동/서/남/북 4개)")]
-    [Tooltip("각 방향에 베리어가 생성될 Transform. 순서는 무관 — 매 라운드마다 랜덤 배치")]
-    [SerializeField] Transform[] barrierSpawnPoints = new Transform[4];
+    [Tooltip("point: 스폰 위치 / direction: NorthSouth=프리팹 그대로, EastWest=Y-90 추가")]
+    [SerializeField] BarrierSpawnPoint[] barrierSpawnPoints = new BarrierSpawnPoint[4];
 
     [Header("베리어 프리팹 (색상별 4개)")]
     [Tooltip("Blue / Purple / Green / Yellow — DoorController + 색상 비주얼이 포함된 프리팹")]
@@ -120,7 +136,7 @@ public class DirectionalBarrierRound : MonoBehaviour
     {
         ClearBarriers();
 
-        if (barrierSpawnPoints.Length == 0 || barrierPrefabs.Length == 0)
+        if (barrierSpawnPoints == null || barrierSpawnPoints.Length == 0 || barrierPrefabs.Length == 0)
         {
             Debug.LogWarning("[DirectionalBarrierRound] barrierSpawnPoints 또는 barrierPrefabs가 비어 있습니다.");
             return;
@@ -137,22 +153,28 @@ public class DirectionalBarrierRound : MonoBehaviour
         int count = Mathf.Min(shuffledColors.Length, barrierSpawnPoints.Length);
         for (int i = 0; i < count; i++)
         {
-            PlayerColorType color  = shuffledColors[i];
-            Transform       point  = barrierSpawnPoints[i];
-            GameObject      prefab = GetBarrierPrefabForColor(color);
+            PlayerColorType  color  = shuffledColors[i];
+            BarrierSpawnPoint entry  = barrierSpawnPoints[i];
+            GameObject        prefab = GetBarrierPrefabForColor(color);
 
             if (prefab == null)
             {
                 Debug.LogWarning($"[DirectionalBarrierRound] {color} 베리어 프리팹이 등록되지 않았습니다.");
                 continue;
             }
-            if (point == null)
+            if (entry == null || entry.point == null)
             {
                 Debug.LogWarning($"[DirectionalBarrierRound] barrierSpawnPoints[{i}]가 null입니다.");
                 continue;
             }
 
-            GameObject     obj  = Instantiate(prefab, point.position, point.rotation);
+            // NorthSouth: 프리팹 회전 그대로 / EastWest: 월드 Y축 기준 -90 추가
+            Quaternion baseRot   = prefab.transform.rotation;
+            Quaternion spawnRot  = entry.direction == SpawnDirection.EastWest
+                ? Quaternion.Euler(0f, -90f, 0f) * baseRot
+                : baseRot;
+
+            GameObject     obj  = Instantiate(prefab, entry.point.position, spawnRot);
             DoorController door = obj.GetComponent<DoorController>();
 
             if (door == null)
@@ -282,11 +304,13 @@ public class DirectionalBarrierRound : MonoBehaviour
     {
         if (barrierSpawnPoints != null)
         {
-            Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.7f);
-            foreach (Transform sp in barrierSpawnPoints)
+            foreach (BarrierSpawnPoint entry in barrierSpawnPoints)
             {
-                if (sp != null)
-                    Gizmos.DrawWireCube(sp.position, new Vector3(1f, 2f, 0.2f));
+                if (entry == null || entry.point == null) continue;
+                Gizmos.color = entry.direction == SpawnDirection.EastWest
+                    ? new Color(0.3f, 0.6f, 1f, 0.7f)
+                    : new Color(1f, 0.3f, 0.3f, 0.7f);
+                Gizmos.DrawWireCube(entry.point.position, new Vector3(1f, 2f, 0.2f));
             }
         }
 
