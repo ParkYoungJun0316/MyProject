@@ -154,7 +154,7 @@ public class DoorController : MonoBehaviour
         OnClosed?.Invoke();
     }
 
-    /// <summary>래치 초기화 후 즉시 닫힌 위치로 텔레포트. StageResetter 등에서 호출.</summary>
+    /// <summary>래치 초기화 후 즉시 닫힌 위치로 텔레포트.</summary>
     public void Reset()
     {
         StopAllCoroutines();

@@ -5,7 +5,7 @@ using TMPro;
 /// <summary>
 /// Objective_Panel에 붙이는 스크립트.
 /// StageManager의 objectives[] 를 읽어 목표별 슬롯을 자동 생성.
-/// SurviveTime / ReachZone 지원.
+/// SurviveTime / ReachZone / OXQuiz 지원.
 /// </summary>
 public class ObjectiveUI : MonoBehaviour
 {
@@ -164,6 +164,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is SurviveTimeObjective survive)
                 survive.OnTimeChanged.RemoveAllListeners();
+
+            if (obj is OXQuizObjective ox)
+                ox.OnProgressChanged.RemoveAllListeners();
         }
         slots = null;
     }
@@ -178,6 +181,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is SurviveTimeObjective survive)
                 survive.OnTimeChanged.AddListener(_ => UpdateSlot(slot));
+
+            if (obj is OXQuizObjective ox)
+                ox.OnProgressChanged.AddListener((_, __) => UpdateSlot(slot));
 
             obj.OnCompleted.AddListener(() => OnObjectiveCompleted(slot));
             obj.OnFailed.AddListener(() => OnObjectiveFailed(slot));
@@ -206,6 +212,16 @@ public class ObjectiveUI : MonoBehaviour
         {
             SetBar(slot, reach.IsCompleted ? 1f : 0f, barFillColor);
             slot.statusText.text = reach.IsCompleted ? "도달 완료" : "이동 중...";
+        }
+        else if (obj is OXQuizObjective ox)
+        {
+            float fill = ox.TotalQuestions > 0
+                ? Mathf.Clamp01((float)ox.CurrentQuestion / ox.TotalQuestions)
+                : 0f;
+            SetBar(slot, fill, barFillColor);
+            slot.statusText.text = ox.TotalQuestions > 0
+                ? $"{ox.CurrentQuestion} / {ox.TotalQuestions} 문제"
+                : "대기 중...";
         }
     }
 

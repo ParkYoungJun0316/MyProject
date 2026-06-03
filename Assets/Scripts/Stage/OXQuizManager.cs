@@ -137,6 +137,12 @@ public class OXQuizManager : MonoBehaviour
         }
     }
 
+    /// <summary>현재 진행 중인 문제 인덱스 (0-based). OXQuizObjective에서 참조.</summary>
+    public int CurrentQuestionIndex => _questionIndex;
+
+    /// <summary>이번 판 총 출제 문제 수. OXQuizObjective에서 참조.</summary>
+    public int TotalQuestions => QuestionsToWin;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
