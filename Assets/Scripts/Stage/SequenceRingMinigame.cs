@@ -125,6 +125,8 @@ public class SequenceRingMinigame : MonoBehaviour
     public int SuccessCount => _successCount;
     public float TimeRemaining => _timeRemaining;
     public int TargetStepCount => targetStepCount;
+    /// <summary>Inspector에 설정된 제한 시간. 0 이하면 무제한 설정. SequenceRingObjective가 읽음.</summary>
+    public float TimeLimit => timeLimit;
 
     void Awake()
     {

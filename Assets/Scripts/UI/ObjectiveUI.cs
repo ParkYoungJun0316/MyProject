@@ -5,7 +5,7 @@ using TMPro;
 /// <summary>
 /// Objective_Panel에 붙이는 스크립트.
 /// StageManager의 objectives[] 를 읽어 목표별 슬롯을 자동 생성.
-/// SurviveTime / ReachZone / OXQuiz / ColorTileRound 지원.
+/// SurviveTime / ReachZone / OXQuiz / ColorTileRound / SequenceRing 지원.
 /// </summary>
 public class ObjectiveUI : MonoBehaviour
 {
@@ -170,6 +170,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is ColorTileRoundObjective round)
                 round.OnHistoryUpdated.RemoveAllListeners();
+
+            if (obj is SequenceRingObjective ring)
+                ring.OnProgressChanged.RemoveAllListeners();
         }
         slots = null;
     }
@@ -190,6 +193,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is ColorTileRoundObjective round)
                 round.OnHistoryUpdated.AddListener(() => UpdateSlot(slot));
+
+            if (obj is SequenceRingObjective ring)
+                ring.OnProgressChanged.AddListener(() => UpdateSlot(slot));
 
             obj.OnCompleted.AddListener(() => OnObjectiveCompleted(slot));
             obj.OnFailed.AddListener(() => OnObjectiveFailed(slot));
@@ -239,6 +245,19 @@ public class ObjectiveUI : MonoBehaviour
             slot.statusText.text = total > 0
                 ? $"{succ} / {req}성공  ({round.PlayedRounds}/{total}라운드)"
                 : "대기 중...";
+        }
+        else if (obj is SequenceRingObjective ring)
+        {
+            int   remSteps = ring.RemainingSteps;
+            int   total    = ring.TotalSteps;
+            float remTime  = ring.TimeRemaining;
+            float timeLimit = ring.TimeLimit;
+
+            float fill = total > 0 ? Mathf.Clamp01(1f - (float)remSteps / total) : 0f;
+            SetBar(slot, fill, barFillColor);
+
+            int remSec = Mathf.CeilToInt(remTime);
+            slot.statusText.text = $"{remSteps} step · {remSec}초";
         }
     }
 

@@ -62,6 +62,10 @@ public class MouthController : MonoBehaviour
     [Tooltip("Start 시 자동으로 사이클 시작 여부")]
     [SerializeField] private bool startOnAwake = true;
 
+    [Header("암전 연동 (선택)")]
+    [Tooltip("입 닫힐 때 FadeOut, 열릴 때 FadeIn 을 자동 호출.\n비워두면 암전 없음.")]
+    [SerializeField] private ScreenFader screenFader = null;
+
     Coroutine _cycleCoroutine;
     bool _isBusy;
 
@@ -132,6 +136,7 @@ public class MouthController : MonoBehaviour
 
         // 닫기 (Idle 열린 상태 → 닫힘)
         TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
+        screenFader?.FadeOut(closeClipLength > 0f ? closeClipLength : 0f);
         if (closeClipLength > 0f)
             yield return new WaitForSeconds(closeClipLength);
 
@@ -142,6 +147,7 @@ public class MouthController : MonoBehaviour
 
         // 열기 (닫힘 → 다시 열림)
         TriggerSafe(openTrigger, closeTrigger, holdTrigger, idleTrigger);
+        screenFader?.FadeIn(openClipLength > 0f ? openClipLength : 0f);
         if (openClipLength > 0f)
             yield return new WaitForSeconds(openClipLength);
 
