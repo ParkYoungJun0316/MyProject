@@ -3554,7 +3554,6 @@ MonoBehaviour:
   - {fileID: 1770956567}
   stageManager: {fileID: 420632660}
   countdownDuration: 2
-  armDelay: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -8268,6 +8267,7 @@ MonoBehaviour:
   - {fileID: 334765923}
   - {fileID: 943030677}
   timeLimit: 3.5
+  autoStart: 1
   activateAtSeconds:
   - 7
   - 14
@@ -18115,6 +18115,7 @@ MonoBehaviour:
   - {fileID: 1700870119}
   - {fileID: 1487961737}
   timeLimit: 4
+  autoStart: 1
   activateAtSeconds:
   - 7
   - 14
@@ -24397,7 +24398,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1023737161
 Transform:
   m_ObjectHideFlags: 0
@@ -26735,6 +26736,7 @@ MonoBehaviour:
   - {fileID: 1033340303}
   - {fileID: 2091314095}
   timeLimit: 3.5
+  autoStart: 1
   activateAtSeconds:
   - 7
   - 14
@@ -28225,6 +28227,7 @@ MonoBehaviour:
   - {fileID: 10304697}
   - {fileID: 146352438}
   timeLimit: 3.5
+  autoStart: 1
   activateAtSeconds:
   - 7
   - 14
@@ -46222,6 +46225,7 @@ MonoBehaviour:
   - {fileID: 2127128627}
   - {fileID: 1527276697}
   timeLimit: 3.5
+  autoStart: 1
   activateAtSeconds:
   - 7
   - 14
@@ -46920,7 +46924,6 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  respawnPhaseIndex: 0
   onAllPhasesComplete:
     m_PersistentCalls:
       m_Calls: []
@@ -46951,8 +46954,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79b2fab2733786d44814d5f5c355dba3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageResetOnPlayerDeath
-  phaseManager: {fileID: 2018443942}
-  stageStartGate: {fileID: 0}
 --- !u!1 &2019314267 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}

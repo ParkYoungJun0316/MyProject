@@ -5,7 +5,7 @@ using TMPro;
 /// <summary>
 /// Objective_Panel에 붙이는 스크립트.
 /// StageManager의 objectives[] 를 읽어 목표별 슬롯을 자동 생성.
-/// SurviveTime / ReachZone / OXQuiz 지원.
+/// SurviveTime / ReachZone / OXQuiz / ColorTileRound 지원.
 /// </summary>
 public class ObjectiveUI : MonoBehaviour
 {
@@ -167,6 +167,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is OXQuizObjective ox)
                 ox.OnProgressChanged.RemoveAllListeners();
+
+            if (obj is ColorTileRoundObjective round)
+                round.OnHistoryUpdated.RemoveAllListeners();
         }
         slots = null;
     }
@@ -184,6 +187,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is OXQuizObjective ox)
                 ox.OnProgressChanged.AddListener((_, __) => UpdateSlot(slot));
+
+            if (obj is ColorTileRoundObjective round)
+                round.OnHistoryUpdated.AddListener(() => UpdateSlot(slot));
 
             obj.OnCompleted.AddListener(() => OnObjectiveCompleted(slot));
             obj.OnFailed.AddListener(() => OnObjectiveFailed(slot));
@@ -221,6 +227,17 @@ public class ObjectiveUI : MonoBehaviour
             SetBar(slot, fill, barFillColor);
             slot.statusText.text = ox.TotalQuestions > 0
                 ? $"{ox.CurrentQuestion} / {ox.TotalQuestions} 문제"
+                : "대기 중...";
+        }
+        else if (obj is ColorTileRoundObjective round)
+        {
+            int req   = round.RequiredSuccesses;
+            int succ  = round.SuccessCount;
+            int total = round.TotalRounds;
+            float fill = req > 0 ? Mathf.Clamp01((float)succ / req) : 0f;
+            SetBar(slot, fill, barFillColor);
+            slot.statusText.text = total > 0
+                ? $"{succ} / {req}성공  ({round.PlayedRounds}/{total}라운드)"
                 : "대기 중...";
         }
     }

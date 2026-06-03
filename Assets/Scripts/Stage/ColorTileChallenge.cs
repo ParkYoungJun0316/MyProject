@@ -35,6 +35,10 @@ public class ColorTileChallenge : MonoBehaviour
         public GameObject prefab;
     }
 
+    [Tooltip("true: 씬/스테이지 시작 즉시 스케줄 자동 시작.\n" +
+             "false: StageStartGate 등 외부에서 StartSchedule() 또는 Activate()를 직접 호출해야 함.")]
+    [SerializeField] bool autoStart = true;
+
     [Header("타일 프리팹 (색상별 4개 등록)")]
     [Tooltip("Blue / Red / Green / Yellow 각각의 ColorTile 프리팹을 등록.\n" +
              "런타임에 플레이어 고유색을 감지해 해당 프리팹을 사용.")]
@@ -88,11 +92,17 @@ public class ColorTileChallenge : MonoBehaviour
     Coroutine _scheduleCoroutine;
     float     _scheduleStartTime;
 
+    /// <summary>
+    /// activateAtSeconds에 등록된 총 스케줄 개수 = 총 라운드 수.
+    /// ColorTileRoundObjective에서 읽어 UI 표시에 사용.
+    /// </summary>
+    public int ScheduledRoundCount => activateAtSeconds != null ? activateAtSeconds.Length : 0;
+
     // ── 생명주기 ─────────────────────────────────────────────────
 
     void Start()
     {
-        if (activateAtSeconds != null && activateAtSeconds.Length > 0)
+        if (autoStart && activateAtSeconds != null && activateAtSeconds.Length > 0)
             StartSchedule();
     }
 
