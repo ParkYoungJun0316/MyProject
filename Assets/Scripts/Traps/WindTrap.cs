@@ -60,6 +60,8 @@ public class WindTrap : TrapBase
     Collider _zone;
 
     float _windChargeTime = 0f;
+    bool  _forceActive = false;    // charge 완료 후 FixedUpdate 힘 적용 허용 플래그
+    float _windForceElapsed = 0f;
 
     // Random 모드일 때 이번 사이클에서 확정된 모드. MouthWindAnimator가 이 값을 읽음
     WindMode _activeWindMode = WindMode.Push;
@@ -117,6 +119,8 @@ public class WindTrap : TrapBase
     {
         base.OnDisable();
         _windActive = false;
+        _forceActive = false;
+        _windForceElapsed = 0f;
         _targetsInZone.Clear();
         if (windParticle != null) windParticle.Stop();
     }
@@ -196,17 +200,28 @@ public class WindTrap : TrapBase
             yield break;
         }
 
-        float elapsed = 0f;
-        while (elapsed < windDuration)
+        // charge 완료 → FixedUpdate 힘 적용 시작
+        _windForceElapsed = 0f;
+        _forceActive = true;
+    }
+
+    void FixedUpdate()
+    {
+        if (!_forceActive) return;
+
+        if (_windForceElapsed < windDuration)
         {
             ApplyForceToAll(ForceMode.Force);
-            elapsed += Time.deltaTime;
-            yield return null;
+            _windForceElapsed += Time.fixedDeltaTime;
         }
-
-        _windActive = false;
-        if (windParticle != null) windParticle.Stop();
-        OnWindEnd?.Invoke();
+        else
+        {
+            _windActive = false;
+            _forceActive = false;
+            _windForceElapsed = 0f;
+            if (windParticle != null) windParticle.Stop();
+            OnWindEnd?.Invoke();
+        }
     }
 
     void ApplyForceToAll(ForceMode mode)
@@ -282,8 +297,10 @@ public class WindTrap : TrapBase
 
     protected override void OnDeactivated()
     {
-        bool wasActive = _windActive;
+        bool wasActive = _windActive || _forceActive;
         _windActive = false;
+        _forceActive = false;
+        _windForceElapsed = 0f;
         _targetsInZone.Clear();
         if (windParticle != null) windParticle.Stop();
 

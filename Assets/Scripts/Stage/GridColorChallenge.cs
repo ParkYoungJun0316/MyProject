@@ -63,12 +63,10 @@ public class GridColorChallenge : MonoBehaviour
     [Tooltip("0이면 생존한 모든 Player를 검사. 4인 플레이 시 4 권장")]
     [SerializeField] int requiredAliveCount = 0;
 
-    [Header("정산 데미지 (팀)")]
-    [Tooltip("정산 시 1명이라도 Default 칸에 있으면 생존자 전원에게 적용")]
-    [SerializeField] int teamDamageIfAnyOnDefault = 0;
-
-    [Tooltip("정산 시 색 조건 미달 시 생존자 전원에게 적용")]
-    [SerializeField] int teamDamageIfRoundFail = 0;
+    [Header("정산 데미지 (개인)")]
+    [Tooltip("정산 시 자기 색 Safe 칸에 없는 플레이어 개인에게 적용.\n" +
+             "Default 칸이거나, Safe 칸이어도 자기 색이 아니면 데미지.")]
+    [SerializeField] int individualDamageOnFail = 0;
 
     [Header("이벤트")]
     public UnityEvent OnChallengeStarted;
@@ -89,6 +87,7 @@ public class GridColorChallenge : MonoBehaviour
         new Dictionary<PlayerColorType, int>();
 
     public bool IsRunning => _isRunning;
+    public int TotalRounds => totalRounds;
     public int CurrentRoundIndex { get; private set; }
 
     void Awake()
@@ -185,8 +184,8 @@ public class GridColorChallenge : MonoBehaviour
             yield return new WaitForSeconds(roundDuration);
 
             List<Player> aliveAtSettlement = GatherAlivePlayers();
-            bool anyOnDefault = EvaluateRound(aliveAtSettlement, out bool roundSuccess);
-            ApplySettlement(anyOnDefault, roundSuccess, aliveAtSettlement);
+            EvaluateRound(aliveAtSettlement, out bool roundSuccess);
+            ApplyIndividualDamage(aliveAtSettlement);
             OnRoundSettled?.Invoke(round, roundSuccess);
 
             SetAllTilesDefault();
@@ -324,22 +323,26 @@ public class GridColorChallenge : MonoBehaviour
         return list;
     }
 
-    void ApplySettlement(bool anyOnDefault, bool roundSuccess, List<Player> alive)
+    /// <summary>
+    /// 정산 시 자기 색 Safe 칸에 없는 플레이어에게 개인 데미지 적용.
+    /// 조건: isUniqueColor가 true이고, 자기 playerColorType에 맞는 Safe 칸 위에 있어야 통과.
+    /// </summary>
+    void ApplyIndividualDamage(List<Player> alive)
     {
-        if (alive.Count == 0) return;
+        if (individualDamageOnFail <= 0 || alive.Count == 0) return;
 
-        if (anyOnDefault && teamDamageIfAnyOnDefault > 0)
-            ApplyTeamDamage(alive, teamDamageIfAnyOnDefault);
-        else if (!roundSuccess && teamDamageIfRoundFail > 0)
-            ApplyTeamDamage(alive, teamDamageIfRoundFail);
-    }
-
-    static void ApplyTeamDamage(List<Player> targets, int amount)
-    {
-        foreach (Player p in targets)
+        foreach (Player p in alive)
         {
             if (p == null || p.IsDead) continue;
-            p.ReceiveDamage(amount, null);
+
+            GridColorTile tile = GetDominantTileForPlayer(p);
+            bool passed = tile != null
+                       && tile.IsSafe
+                       && p.isUniqueColor
+                       && tile.RequiredColorType == p.playerColorType;
+
+            if (!passed)
+                p.ReceiveDamage(individualDamageOnFail, null);
         }
     }
 

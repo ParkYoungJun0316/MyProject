@@ -5,8 +5,8 @@ using UnityEngine.Events;
 /// SequenceRingMinigame 결과를 StageObjective로 연동.
 ///
 /// [동작]
-/// - Begin()              : 이벤트 구독 + 카운터 리셋. StartMinigame()은 호출 안 함.
-///                          (Gate.OnCountdownComplete 또는 PhaseManager.onPhaseEnter에서 StartMinigame() 연결)
+/// - Begin()              : 미니게임 리셋 + 시작 + 이벤트 구독
+///                          StageManager.StartStage() 하나만 연결하면 됨 (다른 Objective와 동일)
 /// - OnMinigameSuccess    : Complete() → StageManager.OnStageClear → PhaseManager.AdvancePhase
 /// - OnMinigameFailed     : Fail()    → StageManager.OnStageFailed → 씬 리셋
 /// - Tick()               : 매 프레임 시간/스텝 변화 감지 → OnProgressChanged 발동 (UI 갱신)
@@ -20,14 +20,15 @@ using UnityEngine.Events;
 ///
 /// [Inspector 설정]
 /// - minigame             : 연동할 SequenceRingMinigame
+///                          ⚠ SequenceRingMinigame.startOnAwake 는 반드시 false 로 설정할 것
 /// - objectiveName        : UI 표시 이름
 /// </summary>
 public class SequenceRingObjective : StageObjective
 {
     [Header("링 미니게임")]
-    [Tooltip("감시할 SequenceRingMinigame.\n" +
-             "StartMinigame()은 이 Objective가 호출하지 않습니다.\n" +
-             "Gate.OnCountdownComplete 또는 PhaseManager.onPhaseEnter에 연결하세요.")]
+    [Tooltip("연동할 SequenceRingMinigame.\n" +
+             "⚠ SequenceRingMinigame.startOnAwake 는 반드시 false 로 설정할 것.\n" +
+             "StageManager.StartStage() → Begin() → StartMinigame() 자동 호출.")]
     [SerializeField] SequenceRingMinigame minigame;
 
     [Header("이벤트 (UI 연결용)")]
@@ -75,6 +76,9 @@ public class SequenceRingObjective : StageObjective
         minigame.OnMinigameSuccess.AddListener(HandleSuccess);
         minigame.OnMinigameFailed.AddListener(HandleFail);
 
+        minigame.ResetMinigame();
+        minigame.StartMinigame();
+
         OnProgressChanged?.Invoke();
     }
 
@@ -108,6 +112,17 @@ public class SequenceRingObjective : StageObjective
     {
         OnProgressChanged?.Invoke();
         Fail();
+        KillAllPlayers();
+    }
+
+    void KillAllPlayers()
+    {
+        Player[] players = UnityEngine.Object.FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (Player p in players)
+        {
+            if (p == null || p.IsDead) continue;
+            p.KillInstantly();
+        }
     }
 
     // ── 구독 해제 ─────────────────────────────────────────────────

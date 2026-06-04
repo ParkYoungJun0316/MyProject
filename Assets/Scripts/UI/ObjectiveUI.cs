@@ -173,6 +173,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is SequenceRingObjective ring)
                 ring.OnProgressChanged.RemoveAllListeners();
+
+            if (obj is GridRoundObjective gridRound)
+                gridRound.OnProgressChanged.RemoveAllListeners();
         }
         slots = null;
     }
@@ -196,6 +199,9 @@ public class ObjectiveUI : MonoBehaviour
 
             if (obj is SequenceRingObjective ring)
                 ring.OnProgressChanged.AddListener(() => UpdateSlot(slot));
+
+            if (obj is GridRoundObjective gridRound)
+                gridRound.OnProgressChanged.AddListener(() => UpdateSlot(slot));
 
             obj.OnCompleted.AddListener(() => OnObjectiveCompleted(slot));
             obj.OnFailed.AddListener(() => OnObjectiveFailed(slot));
@@ -258,6 +264,18 @@ public class ObjectiveUI : MonoBehaviour
 
             int remSec = Mathf.CeilToInt(remTime);
             slot.statusText.text = $"{remSteps} step · {remSec}초";
+        }
+        else if (obj is GridRoundObjective gridRound)
+        {
+            int played = gridRound.PlayedRounds;
+            int total  = gridRound.TotalRounds;
+            int cur    = gridRound.CurrentRoundIndex;
+
+            float fill = total > 0 ? Mathf.Clamp01((float)played / total) : 0f;
+            SetBar(slot, fill, barFillColor);
+            slot.statusText.text = total > 0
+                ? (cur >= 0 ? $"라운드 {cur + 1} / {total}" : $"{played} / {total}")
+                : "대기 중...";
         }
     }
 
