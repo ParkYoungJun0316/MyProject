@@ -83,7 +83,9 @@ public class StageManager : MonoBehaviour
                 _completedCount++;
         }
 
-        if (_completedCount >= objectives.Length)
+        // objectives가 0개면 즉시 클리어되지 않도록 가드
+        // 보스 씬에서 StageManager가 함정 전용으로만 쓰일 때 적용
+        if (objectives.Length > 0 && _completedCount >= objectives.Length)
         {
             _isCleared = true;
             DeactivateAllTraps();
