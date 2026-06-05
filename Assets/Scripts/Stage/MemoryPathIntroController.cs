@@ -40,6 +40,9 @@ public class MemoryPathIntroController : MonoBehaviour
     [Tooltip("이 구역의 ColoredMemoryPath 목록. startOnAwake = false 필수.")]
     [SerializeField] ColoredMemoryPath[] coloredMemoryPaths;
 
+    [Tooltip("이 구역의 PioneerPathManager 목록. startOnAwake = false 필수.")]
+    [SerializeField] PioneerPathManager[] pioneerPathManagers;
+
     [Header("베리어")]
     [Tooltip("Challenge 시작 시 Open할 DoorController. 여러 개 등록 가능.")]
     [SerializeField] DoorController[] barrierDoors;
@@ -98,6 +101,12 @@ public class MemoryPathIntroController : MonoBehaviour
             _totalPaths++;
             cp.OnChallengeStart.AddListener(OnPathChallengeStarted);
         }
+        foreach (PioneerPathManager pp in pioneerPathManagers)
+        {
+            if (pp == null) continue;
+            _totalPaths++;
+            pp.OnChallengeStart.AddListener(OnPathChallengeStarted);
+        }
 
         // 2. 카메라 탑다운으로 전환 (pivot 고정)
         if (topDownCamera != null && previewPivot != null)
@@ -112,6 +121,8 @@ public class MemoryPathIntroController : MonoBehaviour
             if (p != null) p.StartPreview();
         foreach (ColoredMemoryPath cp in coloredMemoryPaths)
             if (cp != null) cp.StartPreview();
+        foreach (PioneerPathManager pp in pioneerPathManagers)
+            if (pp != null) pp.StartPreview();
 
         // 5. 전체 경로가 Challenge에 진입할 때까지 대기
         //    경로가 없으면 즉시 통과
@@ -144,6 +155,8 @@ public class MemoryPathIntroController : MonoBehaviour
             if (p != null) p.OnChallengeStart.RemoveListener(OnPathChallengeStarted);
         foreach (ColoredMemoryPath cp in coloredMemoryPaths)
             if (cp != null) cp.OnChallengeStart.RemoveListener(OnPathChallengeStarted);
+        foreach (PioneerPathManager pp in pioneerPathManagers)
+            if (pp != null) pp.OnChallengeStart.RemoveListener(OnPathChallengeStarted);
     }
 
     // ── 에디터 테스트 ──────────────────────────────────────────────

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 /// <summary>
 /// GridColorChallenge 또는 GridBWTileChallenge 공용 Objective.
@@ -19,7 +18,7 @@ using UnityEngine.Events;
 /// - StageManager.objectives[]에 이 Objective 등록
 /// - StageManager.autoStart = false (StageStartGate가 StartStage 호출)
 /// </summary>
-public class GridRoundObjective : StageObjective
+public class GridRoundObjective : RoundProgressObjective
 {
     [Header("Grid 챌린지 (하나만 연결)")]
     [Tooltip("Color 모드 페이즈 챌린지")]
@@ -28,10 +27,6 @@ public class GridRoundObjective : StageObjective
     [Tooltip("BW 모드 페이즈 챌린지")]
     [SerializeField] GridBWTileChallenge bwChallenge;
 
-    [Header("이벤트 (UI 연결용)")]
-    [Tooltip("라운드 시작 / 정산 / 챌린지 완료 시 호출. GridRoundProgressUI가 자동 구독.")]
-    public UnityEvent OnProgressChanged;
-
     // ── 상태 ──────────────────────────────────────────────────────
 
     int _playedRounds;
@@ -39,13 +34,13 @@ public class GridRoundObjective : StageObjective
     int _currentRoundIndex;
 
     /// <summary>정산 완료된 라운드 수.</summary>
-    public int PlayedRounds      => _playedRounds;
+    public override int PlayedRounds      => _playedRounds;
 
     /// <summary>챌린지 전체 라운드 수.</summary>
-    public int TotalRounds       => _totalRounds;
+    public override int TotalRounds       => _totalRounds;
 
     /// <summary>현재 진행 중인 라운드 인덱스(0부터). 진행 중이 아니면 -1.</summary>
-    public int CurrentRoundIndex => _currentRoundIndex;
+    public override int CurrentRoundIndex => _currentRoundIndex;
 
     // ── StageObjective 구현 ──────────────────────────────────────
 

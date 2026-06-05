@@ -21,8 +21,8 @@ using UnityEngine.UI;
 public class GridRoundProgressUI : MonoBehaviour
 {
     [Header("연결")]
-    [Tooltip("감시할 GridRoundObjective")]
-    [SerializeField] GridRoundObjective objective;
+    [Tooltip("감시할 RoundProgressObjective (GridRoundObjective 또는 MemoryRoundObjective)")]
+    [SerializeField] RoundProgressObjective objective;
 
     [Header("크기")]
     [Tooltip("원 한 변의 길이(px)")]
