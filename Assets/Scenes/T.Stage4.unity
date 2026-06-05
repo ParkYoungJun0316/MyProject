@@ -830,7 +830,7 @@ MonoBehaviour:
     correctAnswerIsO: 1
     explanationText: Irritation in the esophagus can make your brain still feel something
       there.
-  questionsPerRun: 7
+  questionsPerRun: 5
   answerTimeLimit: 5
   correctAnswerDelay: 3
   wrongDamage: 1
@@ -1689,7 +1689,7 @@ Transform:
   - {fileID: 1116434929}
   - {fileID: 681355218}
   - {fileID: 559258438}
-  m_Father: {fileID: 551576137}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &379897733
 PrefabInstance:
@@ -2533,40 +2533,6 @@ Transform:
   - {fileID: 1935010409}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &551576136
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 551576137}
-  m_Layer: 0
-  m_Name: Stage4
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &551576137
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 551576136}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1282599969}
-  - {fileID: 554497831}
-  - {fileID: 362632672}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &554497830
 GameObject:
   m_ObjectHideFlags: 0
@@ -2602,7 +2568,7 @@ Transform:
   - {fileID: 1501867814}
   - {fileID: 753741414}
   - {fileID: 1086616273}
-  m_Father: {fileID: 551576137}
+  m_Father: {fileID: 907770936}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &554497832
 MonoBehaviour:
@@ -2747,7 +2713,6 @@ MonoBehaviour:
   - {fileID: 760205877}
   stageManager: {fileID: 1282599968}
   countdownDuration: 2
-  armDelay: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -2774,18 +2739,6 @@ MonoBehaviour:
         m_TargetAssemblyTypeName: DoorController, Assembly-CSharp
         m_MethodName: Close
         m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -3274,7 +3227,7 @@ PrefabInstance:
     - target: {fileID: 3381746487339141653, guid: 3d6adc4307873dd4883aaadb54cc9630, type: 3}
       propertyPath: OnFullyClosed.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 551576136}
+      objectReference: {fileID: 0}
     - target: {fileID: 3381746487339141653, guid: 3d6adc4307873dd4883aaadb54cc9630, type: 3}
       propertyPath: OnFullyClosed.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -3384,6 +3337,38 @@ Transform:
   - {fileID: 237087244}
   - {fileID: 1890854824}
   m_Father: {fileID: 554497831}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &759889026
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 759889027}
+  m_Layer: 0
+  m_Name: Stage4.1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &759889027
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 759889026}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1282599969}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &760205876 stripped
 Transform:
@@ -4308,6 +4293,38 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7439852234368383809, guid: 42137a658e80dc84ab72655e8e7d16b6, type: 3}
   m_PrefabInstance: {fileID: 1453872490}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &907770935
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 907770936}
+  m_Layer: 0
+  m_Name: Stage4.2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &907770936
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 907770935}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 554497831}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &916947221 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
@@ -5053,7 +5070,6 @@ MonoBehaviour:
   - {fileID: 969914512}
   stageManager: {fileID: 554497832}
   countdownDuration: 2
-  armDelay: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -5371,55 +5387,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1133857333}
-  - component: {fileID: 1133857332}
-  - component: {fileID: 1133857331}
+  - component: {fileID: 1133857334}
   m_Layer: 0
-  m_Name: Objective
+  m_Name: QuizObjective
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1133857331
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1133857330}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5323136e7021e4a4498504e941a4f72d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ReachZoneObjective
-  objectiveName: Objective
-  OnCompleted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnFailed:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!65 &1133857332
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1133857330}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 60, y: 5, z: 2}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1133857333
 Transform:
   m_ObjectHideFlags: 0
@@ -5435,6 +5410,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1282599969}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1133857334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1133857330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af5c20fab2800b747a32fd110da88861, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OXQuizObjective
+  objectiveName: Objective
+  OnCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFailed:
+    m_PersistentCalls:
+      m_Calls: []
+  quizManager: {fileID: 217953224}
+  OnProgressChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1216244755
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6112,7 +6110,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageManager
   objectives:
-  - {fileID: 1133857331}
+  - {fileID: 1133857334}
   autoStart: 0
   OnStageClear:
     m_PersistentCalls:
@@ -6138,7 +6136,7 @@ Transform:
   - {fileID: 217953223}
   - {fileID: 240463069}
   - {fileID: 1398268273}
-  m_Father: {fileID: 551576137}
+  m_Father: {fileID: 759889027}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1296683468 stripped
 GameObject:
@@ -8705,7 +8703,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3933221038258659696, guid: b60b544418f8f9b40bb6ae8793baef8d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -355.4
+      value: 2794.6
       objectReference: {fileID: 0}
     - target: {fileID: 3933221038258659696, guid: b60b544418f8f9b40bb6ae8793baef8d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8835,7 +8833,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1969132762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8849,20 +8847,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseManager
   phases:
-  - phaseName: Stage5.1
+  - phaseName: Stage4.1
     surviveDuration: 0
     objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
+    objectsToEnable: []
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
+        - m_Target: {fileID: 577839487}
+          m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+          m_MethodName: Arm
+          m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -8874,19 +8870,18 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage5.2
+  - phaseName: Stage4.2
     surviveDuration: 0
     objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
+    objectsToEnable: []
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
+        - m_Target: {fileID: 1086616274}
+          m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+          m_MethodName: Arm
+          m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -8898,158 +8893,9 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage5.3
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage5.4
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage1
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls: []
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage2
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage3
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage4
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 551576136}
-    - {fileID: 623802985}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  respawnPhaseIndex: -1
   onAllPhasesComplete:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: PhaseManager, Assembly-CSharp
-        m_MethodName: AdvancePhase
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!4 &1969132763
 Transform:
   m_ObjectHideFlags: 0
@@ -9077,8 +8923,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79b2fab2733786d44814d5f5c355dba3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageResetOnPlayerDeath
-  phaseManager: {fileID: 1969132762}
-  stageStartGate: {fileID: 0}
 --- !u!1001 &1969283947
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9680,4 +9524,6 @@ SceneRoots:
   - {fileID: 734429174}
   - {fileID: 550704557}
   - {fileID: 1969132763}
-  - {fileID: 551576137}
+  - {fileID: 759889027}
+  - {fileID: 907770936}
+  - {fileID: 362632672}

@@ -126,7 +126,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -143,8 +143,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cfcbda248953c6429767825456e245e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
-  damage: 0
-  lifetime: 0
+  damage: 1
+  lifetime: 200
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
   destroyOnWall: 0
@@ -226,8 +226,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 261f5ec11c8df8542a9665ec93775b87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaypointMover
-  initialSpeed: 10
-  lockYVelocity: 0
+  initialSpeed: 20
+  lockYVelocity: 1
   waypoints: []
   waypointReachDistance: 0
   endMode: 0
