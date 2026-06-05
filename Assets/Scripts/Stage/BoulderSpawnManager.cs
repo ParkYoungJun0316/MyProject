@@ -28,6 +28,9 @@ public class BoulderSpawnManager : MonoBehaviour
     [Tooltip("켜면 OnEnable 시 BeginSpawning() 자동 호출")]
     [SerializeField] bool startSpawningOnEnable = false;
 
+    [Tooltip("true: 모든 Spawner를 한 번씩만 발사 후 종료. false: 랜덤 간격 루프 반복")]
+    [SerializeField] bool spawnOnce = false;
+
     [Tooltip("첫 스폰 전 대기(초)")]
     [SerializeField] float initialDelay = 0f;
 
@@ -119,6 +122,15 @@ public class BoulderSpawnManager : MonoBehaviour
     {
         if (initialDelay > 0f)
             yield return new WaitForSeconds(initialDelay);
+
+        if (spawnOnce)
+        {
+            foreach (var s in spawners)
+                if (s != null) s.SpawnOne();
+
+            _loopCoroutine = null;
+            yield break;
+        }
 
         while (!_stopRequested)
         {
