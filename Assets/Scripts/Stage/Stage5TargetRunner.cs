@@ -42,6 +42,10 @@ public class Stage5TargetRunner : MonoBehaviour
     [SerializeField] float stuckCheckTime = 1f;
     [SerializeField] float stuckDistanceThreshold = 0.05f;
 
+    [Header("애니메이션")]
+    [Tooltip("비워두면 자식에서 자동 탐색")]
+    [SerializeField] Animator _anim;
+
     public event Action<Stage5TargetRunner> OnCaptured;
 
     NavMeshAgent _agent;
@@ -63,6 +67,9 @@ public class Stage5TargetRunner : MonoBehaviour
         _agent.speed = moveSpeed;
         _agent.isStopped = true;
         _cosDeviationThreshold = Mathf.Cos(minDeviationDegrees * Mathf.Deg2Rad);
+
+        if (_anim == null)
+            _anim = GetComponentInChildren<Animator>();
     }
 
     void OnEnable()
@@ -93,6 +100,7 @@ public class Stage5TargetRunner : MonoBehaviour
     public void Deactivate()
     {
         _isActive = false;
+        UpdateAnim();
         if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
         _agent.isStopped = true;
         _agent.ResetPath();
@@ -103,6 +111,7 @@ public class Stage5TargetRunner : MonoBehaviour
         if (!_isActive || _isCaptured) return;
 
         UpdateTrackedPlayer();
+        UpdateAnim();
 
         _retargetTimer -= Time.deltaTime;
         if (_retargetTimer <= 0f)
@@ -240,6 +249,22 @@ public class Stage5TargetRunner : MonoBehaviour
         }
         _retargetTimer = 0f;
         PickDestination();
+    }
+
+    // ── 애니메이션 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// isRun / isWalk 상태를 현재 추적 여부에 따라 갱신.
+    /// - 플레이어 추적 중 → Run
+    /// - 랜덤 배회 중    → Walk
+    /// - 비활성/포획     → Idle (둘 다 false)
+    /// </summary>
+    void UpdateAnim()
+    {
+        if (_anim == null) return;
+        bool active = _isActive && !_isCaptured;
+        _anim.SetBool("isRun",  active && _trackedPlayer != null);
+        _anim.SetBool("isWalk", active && _trackedPlayer == null);
     }
 
     // ── 포획 판정 (고유색 표시일 때만 트리거 성공) ─────────────────

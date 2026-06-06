@@ -211,7 +211,7 @@ Transform:
   m_GameObject: {fileID: 31004825}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -30, y: 0, z: 3170}
+  m_LocalPosition: {x: -30, y: 2, z: 3170}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -403,7 +403,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1191725831}
-  m_Father: {fileID: 1313587282}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &62754935
 PrefabInstance:
@@ -888,8 +888,7 @@ MonoBehaviour:
   zones:
   - {fileID: 1755283823}
   stageManager: {fileID: 698490472}
-  countdownDuration: 0
-  armDelay: 0
+  countdownDuration: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -1603,8 +1602,7 @@ MonoBehaviour:
   zones:
   - {fileID: 618283513}
   stageManager: {fileID: 1964166962}
-  countdownDuration: 0
-  armDelay: 0
+  countdownDuration: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -2209,8 +2207,7 @@ MonoBehaviour:
   zones:
   - {fileID: 214806303}
   stageManager: {fileID: 1005861531}
-  countdownDuration: 0
-  armDelay: 0
+  countdownDuration: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -2244,18 +2241,6 @@ MonoBehaviour:
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
         m_CallState: 2
 --- !u!1 &427261349
 GameObject:
@@ -3076,7 +3061,7 @@ Transform:
   - {fileID: 697166981}
   - {fileID: 1647677421}
   - {fileID: 1682680027}
-  m_Father: {fileID: 1313587282}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &580835524 stripped
 Transform:
@@ -3745,8 +3730,7 @@ MonoBehaviour:
   zones:
   - {fileID: 1857615653}
   stageManager: {fileID: 573194966}
-  countdownDuration: 0
-  armDelay: 0
+  countdownDuration: 2
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
@@ -3891,11 +3875,11 @@ Transform:
   m_Children:
   - {fileID: 1447214402}
   - {fileID: 954878341}
+  - {fileID: 1369770943}
   - {fileID: 1010799961}
   - {fileID: 157198208}
-  - {fileID: 1369770943}
   - {fileID: 2134820399}
-  m_Father: {fileID: 1313587282}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &706005375 stripped
 Transform:
@@ -5426,8 +5410,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Stage5ChaserSpawner
   chaserPrefabs:
-  - {fileID: 7094816755038203290, guid: 5e2d024294ec15b4a9042da6f6b7e4dc, type: 3}
-  - {fileID: 9136281548088420428, guid: 9338af349e318e548ba993526040132a, type: 3}
+  - {fileID: 3261521706223994658, guid: 17e4084c10b6d0741ade0a1fe092a42c, type: 3}
+  - {fileID: 3261521706223994658, guid: 382b9168f6e53a443bad4d4b0e3efd8a, type: 3}
   - {fileID: 6631471133532091562, guid: e6bf7c3d36dcc7445a555bf6dad256a8, type: 3}
   - {fileID: 9136281548088420428, guid: 0ecf2f6c269105e48bb0b40bcd0d99f3, type: 3}
   spawnPoints:
@@ -5523,7 +5507,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1005861530
 Transform:
   m_ObjectHideFlags: 0
@@ -5542,7 +5526,7 @@ Transform:
   - {fileID: 1770705637}
   - {fileID: 422873303}
   - {fileID: 767882029}
-  m_Father: {fileID: 1313587282}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1005861531
 MonoBehaviour:
@@ -5903,7 +5887,7 @@ Transform:
   m_GameObject: {fileID: 1094956848}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 30, y: 0, z: 3230}
+  m_LocalPosition: {x: 30, y: 2, z: 3230}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7457,43 +7441,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 769882af57757c54f9fb0fe271ada7e1, type: 3}
---- !u!1 &1313587281
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1313587282}
-  m_Layer: 0
-  m_Name: Stage5
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1313587282
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1313587281}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1005861530}
-  - {fileID: 573194967}
-  - {fileID: 698490473}
-  - {fileID: 1964166961}
-  - {fileID: 1586750992}
-  - {fileID: 54929416}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1315371820
 GameObject:
   m_ObjectHideFlags: 0
@@ -8708,7 +8655,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -8825,7 +8772,7 @@ Transform:
   m_GameObject: {fileID: 1436712472}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 30, y: 0, z: 3170}
+  m_LocalPosition: {x: 30, y: 2, z: 3170}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9353,7 +9300,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Stage5TargetSpawner
   targetPrefabs:
-  - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
+  - {fileID: 2350308045094608541, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
   - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
   - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
   - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
@@ -9477,7 +9424,7 @@ Transform:
   - {fileID: 65379924}
   - {fileID: 307960266}
   - {fileID: 947495499}
-  m_Father: {fileID: 1313587282}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1586750993
 MonoBehaviour:
@@ -9509,7 +9456,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 0}
+  m_NavMeshData: {fileID: 23800000, guid: fc34212e168b2904ca776631903e2596, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1001 &1591121066
 PrefabInstance:
@@ -10935,7 +10882,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Stage5TargetSpawner
   targetPrefabs:
-  - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
+  - {fileID: 1080149707197453782, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
   cornerPoints:
   - {fileID: 2047673173}
   - {fileID: 31004826}
@@ -12005,7 +11952,7 @@ Transform:
   - {fileID: 316705763}
   - {fileID: 1627366262}
   - {fileID: 413406855}
-  m_Father: {fileID: 1313587282}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1964166962
 MonoBehaviour:
@@ -12288,7 +12235,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3933221038258659696, guid: b60b544418f8f9b40bb6ae8793baef8d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -355.4
+      value: 3206.0002
       objectReference: {fileID: 0}
     - target: {fileID: 3933221038258659696, guid: b60b544418f8f9b40bb6ae8793baef8d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -12436,203 +12383,56 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 1313587281}
     - {fileID: 1005861529}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
+        m_Calls: []
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
   - phaseName: Stage5.2
     surviveDuration: 0
-    objectsToDisable: []
+    objectsToDisable:
+    - {fileID: 1005861529}
     objectsToEnable:
     - {fileID: 573194965}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
+        m_Calls: []
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
   - phaseName: Stage5.3
     surviveDuration: 0
-    objectsToDisable: []
+    objectsToDisable:
+    - {fileID: 573194965}
     objectsToEnable:
     - {fileID: 698490471}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
+        m_Calls: []
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
   - phaseName: Stage5.4
     surviveDuration: 0
-    objectsToDisable: []
+    objectsToDisable:
+    - {fileID: 698490471}
     objectsToEnable:
     - {fileID: 1964166960}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage1
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
         m_Calls: []
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage2
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage3
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage4
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable:
-    - {fileID: 0}
-    - {fileID: 0}
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: UnityEngine.BoxCollider, UnityEngine
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  respawnPhaseIndex: -1
   onAllPhasesComplete:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: PhaseManager, Assembly-CSharp
-        m_MethodName: AdvancePhase
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!4 &1969132763
 Transform:
   m_ObjectHideFlags: 0
@@ -12660,8 +12460,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79b2fab2733786d44814d5f5c355dba3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageResetOnPlayerDeath
-  phaseManager: {fileID: 1969132762}
-  stageStartGate: {fileID: 0}
 --- !u!1001 &1978045050
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13022,7 +12820,7 @@ Transform:
   m_GameObject: {fileID: 2047673172}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -30, y: 0, z: 3230}
+  m_LocalPosition: {x: -30, y: 2, z: 3230}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13548,4 +13346,9 @@ SceneRoots:
   - {fileID: 734429174}
   - {fileID: 550704557}
   - {fileID: 1969132763}
-  - {fileID: 1313587282}
+  - {fileID: 1005861530}
+  - {fileID: 573194967}
+  - {fileID: 698490473}
+  - {fileID: 1964166961}
+  - {fileID: 1586750992}
+  - {fileID: 54929416}

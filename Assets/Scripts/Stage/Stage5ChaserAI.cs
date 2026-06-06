@@ -65,6 +65,12 @@ public class Stage5ChaserAI : MonoBehaviour
     [Tooltip("히트박스로 피격 판정 후 제자리 정지 시간(초)")]
     [SerializeField] float postHitStopDuration = 1f;
 
+    [Header("애니메이션")]
+    [Tooltip("비워두면 자식에서 자동 탐색")]
+    [SerializeField] Animator _anim;
+    [Tooltip("B타입 - 차지 빌드업 지속 시간(초). 이후 Dash로 전환. chargeWindUpDuration < chargeDuration 이어야 함")]
+    [SerializeField] float chargeWindUpDuration = 0.2f;
+
     // ── 내부 상태 ─────────────────────────────────────────────────
 
     NavMeshAgent _agent;
@@ -92,6 +98,9 @@ public class Stage5ChaserAI : MonoBehaviour
         _agent.isStopped = true;
 
         _playerLayer = LayerMask.NameToLayer("Player");
+
+        if (_anim == null)
+            _anim = GetComponentInChildren<Animator>();
     }
 
     void OnEnable()
@@ -150,6 +159,8 @@ public class Stage5ChaserAI : MonoBehaviour
             _agent.isStopped = true;
             _agent.ResetPath();
         }
+
+        SetAnimState(false, false, false);
     }
 
     // ── 타겟 갱신 ─────────────────────────────────────────────────
@@ -230,6 +241,7 @@ public class Stage5ChaserAI : MonoBehaviour
         {
             _agent.isStopped = true;
             _agent.ResetPath();
+            SetAnimState(false, false, false);
             return;
         }
 
@@ -241,14 +253,15 @@ public class Stage5ChaserAI : MonoBehaviour
         _agent.speed     = moveSpeed;
         _agent.isStopped = false;
         _agent.SetDestination(dest);
+        SetAnimState(true, false, false);
     }
 
     // ── 타입 B 차지 ───────────────────────────────────────────────
 
     IEnumerator ChargeRoutine()
     {
-        _isCharging      = true;
-        _agent.speed     = chargeSpeed;
+        _isCharging  = true;
+        _agent.speed = chargeSpeed;
 
         if (_currentTarget != null && _agent.isOnNavMesh)
         {
@@ -256,11 +269,23 @@ public class Stage5ChaserAI : MonoBehaviour
             _agent.SetDestination(_currentTarget.transform.position);
         }
 
-        yield return new WaitForSeconds(chargeDuration);
+        // ─ 빌드업 구간 ─
+        float windUp = Mathf.Clamp(chargeWindUpDuration, 0f, chargeDuration);
+        SetAnimState(false, true, false);
+        yield return new WaitForSeconds(windUp);
+
+        // ─ 대시 구간 ─
+        float dashTime = chargeDuration - windUp;
+        if (dashTime > 0f)
+        {
+            SetAnimState(false, false, true);
+            yield return new WaitForSeconds(dashTime);
+        }
 
         _isCharging    = false;
         _agent.speed   = moveSpeed;
         _chargeRoutine = null;
+        SetAnimState(true, false, false);
     }
 
     // ── 히트박스 연동 (Stage5ChaserHitbox) ─────────────────────────
@@ -299,9 +324,12 @@ public class Stage5ChaserAI : MonoBehaviour
             _agent.ResetPath();
         }
 
+        SetAnimState(false, false, false);
+        if (_anim != null) _anim.SetTrigger("doHit");
+
         yield return new WaitForSeconds(postHitStopDuration);
 
-        _isPostHitStop = false;
+        _isPostHitStop      = false;
         _postHitStopRoutine = null;
 
         // 정지 해제 후 즉시 타겟 갱신 트리거 + 차지 타이머 리셋(연속 차지 방지)
@@ -310,6 +338,17 @@ public class Stage5ChaserAI : MonoBehaviour
 
         if (_agent.isOnNavMesh)
             _agent.isStopped = false;
+    }
+
+    // ── 애니메이션 ────────────────────────────────────────────────
+
+    /// <summary>isChase / isCharge / isDash bool 3개를 한번에 설정.</summary>
+    void SetAnimState(bool chase, bool charge, bool dash)
+    {
+        if (_anim == null) return;
+        _anim.SetBool("isChase",  chase);
+        _anim.SetBool("isCharge", charge);
+        _anim.SetBool("isDash",   dash);
     }
 
     // ── 유틸 ─────────────────────────────────────────────────────

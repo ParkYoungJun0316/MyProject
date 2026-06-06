@@ -1917,7 +1917,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c15032f272dba40924cdf801ff7f03, type: 3}
       propertyPath: m_LocalScale.z
-      value: 100
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c15032f272dba40924cdf801ff7f03, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1929,7 +1929,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c15032f272dba40924cdf801ff7f03, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2853.3613
+      value: 2995.4614
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c15032f272dba40924cdf801ff7f03, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6114,7 +6114,19 @@ MonoBehaviour:
   autoStart: 0
   OnStageClear:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1969132762}
+        m_TargetAssemblyTypeName: PhaseManager, Assembly-CSharp
+        m_MethodName: AdvancePhase
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnStageFailed:
     m_PersistentCalls:
       m_Calls: []
@@ -6897,7 +6909,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
