@@ -889,7 +889,7 @@ MonoBehaviour:
   - {fileID: 1755283823}
   stageManager: {fileID: 698490472}
   countdownDuration: 2
-  armOnStart: 1
+  armOnStart: 0
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls: []
@@ -1603,7 +1603,7 @@ MonoBehaviour:
   - {fileID: 618283513}
   stageManager: {fileID: 1964166962}
   countdownDuration: 2
-  armOnStart: 1
+  armOnStart: 0
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls: []
@@ -2208,7 +2208,7 @@ MonoBehaviour:
   - {fileID: 214806303}
   stageManager: {fileID: 1005861531}
   countdownDuration: 2
-  armOnStart: 1
+  armOnStart: 0
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls: []
@@ -2856,6 +2856,50 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 769882af57757c54f9fb0fe271ada7e1, type: 3}
+--- !u!1 &534624969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 534624971}
+  - component: {fileID: 534624970}
+  m_Layer: 0
+  m_Name: SceneFlowRelay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &534624970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534624969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25515f9a4ec31e044974a18a73d0c22d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneFlowRelay
+--- !u!4 &534624971
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534624969}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &539034087
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3731,7 +3775,7 @@ MonoBehaviour:
   - {fileID: 1857615653}
   stageManager: {fileID: 573194966}
   countdownDuration: 2
-  armOnStart: 1
+  armOnStart: 0
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls: []
@@ -5507,7 +5551,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1005861530
 Transform:
   m_ObjectHideFlags: 0
@@ -6053,7 +6097,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 812541550332260662, guid: f7944e496f929f14d8138faca4402d69, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3198
+      value: 3189.9
       objectReference: {fileID: 0}
     - target: {fileID: 812541550332260662, guid: f7944e496f929f14d8138faca4402d69, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9300,9 +9344,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Stage5TargetSpawner
   targetPrefabs:
-  - {fileID: 2350308045094608541, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
-  - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
-  - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
+  - {fileID: 1080149707197453782, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
+  - {fileID: 1080149707197453782, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
+  - {fileID: 1080149707197453782, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
   - {fileID: 9097069329471076975, guid: 372b9039100215348b43b3db6ac57ac7, type: 3}
   cornerPoints:
   - {fileID: 1251516924}
@@ -12365,7 +12409,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1969132762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12387,7 +12431,19 @@ MonoBehaviour:
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 422873304}
+          m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+          m_MethodName: Arm
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -12400,7 +12456,19 @@ MonoBehaviour:
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 697166982}
+          m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+          m_MethodName: Arm
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -12413,7 +12481,19 @@ MonoBehaviour:
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 157198207}
+          m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+          m_MethodName: Arm
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -12426,13 +12506,37 @@ MonoBehaviour:
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 316705764}
+          m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+          m_MethodName: Arm
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
   onAllPhasesComplete:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 534624970}
+        m_TargetAssemblyTypeName: SceneFlowRelay, Assembly-CSharp
+        m_MethodName: LoadNextScene
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &1969132763
 Transform:
   m_ObjectHideFlags: 0
@@ -13352,3 +13456,4 @@ SceneRoots:
   - {fileID: 1964166961}
   - {fileID: 1586750992}
   - {fileID: 54929416}
+  - {fileID: 534624971}

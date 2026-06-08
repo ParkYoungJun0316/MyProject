@@ -609,6 +609,50 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8985496207912671639, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
   m_PrefabInstance: {fileID: 294536142}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &143616321
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 143616323}
+  - component: {fileID: 143616322}
+  m_Layer: 0
+  m_Name: SceneFlowRelay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &143616322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 143616321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25515f9a4ec31e044974a18a73d0c22d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneFlowRelay
+--- !u!4 &143616323
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 143616321}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &156576384 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
@@ -8907,7 +8951,19 @@ MonoBehaviour:
         m_Calls: []
   onAllPhasesComplete:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 143616322}
+        m_TargetAssemblyTypeName: SceneFlowRelay, Assembly-CSharp
+        m_MethodName: LoadNextScene
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &1969132763
 Transform:
   m_ObjectHideFlags: 0
@@ -9539,3 +9595,4 @@ SceneRoots:
   - {fileID: 759889027}
   - {fileID: 907770936}
   - {fileID: 362632672}
+  - {fileID: 143616323}
