@@ -168,13 +168,17 @@ public class ColorTileChallenge : MonoBehaviour
     {
         _isRunning = true;
 
-        // 1. 플레이어 4명 수집 (색상 모드 무관, playerColorType 기준)
-        Player[] allPlayers = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        // 1. 플레이어 수집 — GameSession이 있으면 활성 플레이어만, 없으면 씬 전체
         var players = new List<Player>();
-        foreach (Player p in allPlayers)
+        if (GameSession.Instance != null)
         {
-            if (!p.IsDead)
-                players.Add(p);
+            foreach (Player p in GameSession.Instance.GetActivePlayers())
+                if (p != null && !p.IsDead) players.Add(p);
+        }
+        else
+        {
+            foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+                if (!p.IsDead) players.Add(p);
         }
 
         if (players.Count == 0 || spawnPoints.Length == 0 || tilePrefabs.Length == 0)

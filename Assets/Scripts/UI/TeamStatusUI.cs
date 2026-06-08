@@ -74,7 +74,13 @@ public class TeamStatusUI : MonoBehaviour
         vlg.childForceExpandHeight = false;
         vlg.childAlignment         = TextAnchor.UpperLeft;
 
-        Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        // GameSession이 있으면 활성 플레이어만, 없으면 씬 전체
+        IEnumerable<Player> players;
+        if (GameSession.Instance != null)
+            players = GameSession.Instance.GetActivePlayers();
+        else
+            players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+
         foreach (var p in players)
             if (p != null)
                 slots.Add(CreateSlot(p));

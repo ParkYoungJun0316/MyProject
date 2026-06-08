@@ -16,7 +16,18 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void Start()
     {
-        _players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        // GameSession이 있으면 활성 플레이어만, 없으면 씬 전체
+        if (GameSession.Instance != null)
+        {
+            var active = GameSession.Instance.GetActivePlayers();
+            _players = new Player[active.Count];
+            for (int i = 0; i < active.Count; i++) _players[i] = active[i];
+        }
+        else
+        {
+            _players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        }
+
         foreach (Player p in _players)
         {
             PlayerEvents ev = p.GetComponent<PlayerEvents>();
