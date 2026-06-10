@@ -4,21 +4,21 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 게임 세션 관리자. DontDestroyOnLoad 싱글턴.
-/// 인원 수와 활성 플레이어·색 목록을 한곳에서 관리한다.
+/// 활성 색 목록을 기준으로 플레이어 on/off 및 색 오브젝트 필터링 기반을 제공한다.
 ///
 /// [배치 방법]
 /// 1. M.Stage1 씬에만 배치. DontDestroyOnLoad로 모든 씬에서 유지됨.
-/// 2. playerCount: 2 / 3 / 4 입력
-/// 3. allPlayers[]: 씬에 배치된 Player를 색 순서대로 등록
-///    (Blue → Purple → Green → Yellow 순)
+/// 2. activeColors[]: 이번 판에 참가하는 색만 체크 (순서·인원 무관, 중복 불가)
+///    예) Green + Yellow → 2인 Green/Yellow 모드
+/// 3. allPlayers[]: 씬에 배치된 Player 4개 등록 (Blue·Purple·Green·Yellow 순)
 ///
 /// [씬 전환 시 플레이어 재수집]
 /// 새 씬 로드 시 씬 안의 Player를 playerColorType 순으로 자동 수집·재적용.
-/// 각 씬에 Player 오브젝트가 Blue→Purple→Green→Yellow 순으로 배치되어 있어야 함.
-/// 수동으로 재적용하려면 Inspector 우클릭 → "테스트: 인원 설정 재적용".
+/// 수동 재적용: Inspector 우클릭 → "테스트: 인원 설정 재적용".
 ///
 /// [다른 스크립트에서 사용]
 /// GameSession.Instance.GetActivePlayers()
+/// GameSession.Instance.GetActiveColors()
 /// GameSession.Instance.IsColorActive(PlayerColorType.Blue)
 /// GameSession.Instance.ActivePlayerCount
 /// </summary>
@@ -26,16 +26,24 @@ public class GameSession : MonoBehaviour
 {
     public static GameSession Instance { get; private set; }
 
-    [Header("인원 설정")]
-    [Tooltip("실제 플레이 인원. 2 / 3 / 4 중 하나 입력.")]
-    [SerializeField, Range(1, 4)] private int playerCount = 4;
+    [Header("활성 색 (이번 판 참가 색만 선택)")]
+    [Tooltip("이번 판에 참가하는 플레이어 색을 모두 등록.\n" +
+             "예) Green + Yellow → 2인 Green/Yellow 모드\n" +
+             "중복 등록 시 무시됨.")]
+    [SerializeField] private PlayerColorType[] activeColorSlots =
+    {
+        PlayerColorType.Blue,
+        PlayerColorType.Purple,
+        PlayerColorType.Green,
+        PlayerColorType.Yellow,
+    };
 
-    [Header("플레이어 목록 (색 순서대로 등록, M.Stage1 전용)")]
-    [Tooltip("M.Stage1 씬의 Player 오브젝트. Blue → Purple → Green → Yellow 순.\n" +
+    [Header("플레이어 목록 (M.Stage1 전용)")]
+    [Tooltip("M.Stage1 씬의 Player 오브젝트 4개 등록. Blue·Purple·Green·Yellow 순.\n" +
              "다른 씬은 자동 수집됨.")]
     [SerializeField] private Player[] allPlayers;
 
-    // 활성 색 정렬 기준 (앞 N색 활성 규칙에 사용)
+    // 정렬 기준 (로그·UI 표시용)
     private static readonly PlayerColorType[] ColorOrder =
     {
         PlayerColorType.Blue,
@@ -97,8 +105,27 @@ public class GameSession : MonoBehaviour
     /// <summary>활성 플레이어 목록 반환.</summary>
     public IReadOnlyList<Player> GetActivePlayers() => _activePlayers;
 
+    /// <summary>활성 색 목록 반환 (ColorOrder 기준 정렬).</summary>
+    public IReadOnlyList<PlayerColorType> GetActiveColors()
+    {
+        var sorted = new List<PlayerColorType>(_activeColors);
+        sorted.Sort((a, b) => ColorIndex(a).CompareTo(ColorIndex(b)));
+        return sorted;
+    }
+
     /// <summary>활성 색 여부 확인.</summary>
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
+
+    /// <summary>
+    /// 픽창 또는 외부에서 활성 색을 바꿀 때 호출.
+    /// 씬 안의 플레이어에 즉시 재적용된다.
+    /// </summary>
+    public void SetActiveColors(PlayerColorType[] colors)
+    {
+        activeColorSlots = colors;
+        Player[] found = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        Apply(found);
+    }
 
     // ── 내부 ──────────────────────────────────────────────────────
 
@@ -107,20 +134,24 @@ public class GameSession : MonoBehaviour
         _activePlayers.Clear();
         _activeColors.Clear();
 
+        // activeColorSlots → HashSet (중복 제거)
+        var slotSet = new HashSet<PlayerColorType>();
+        if (activeColorSlots != null)
+            foreach (PlayerColorType c in activeColorSlots)
+                if (c != PlayerColorType.Common && c != PlayerColorType.Danger)
+                    slotSet.Add(c);
+
         if (players == null || players.Length == 0)
         {
             Debug.LogWarning("[GameSession] 적용할 Player가 없습니다.");
             return;
         }
 
-        int count = Mathf.Clamp(playerCount, 1, players.Length);
-
-        for (int i = 0; i < players.Length; i++)
+        foreach (Player p in players)
         {
-            Player p = players[i];
             if (p == null) continue;
 
-            bool active = i < count;
+            bool active = slotSet.Contains(p.playerColorType);
             p.gameObject.SetActive(active);
 
             if (active)
@@ -130,7 +161,7 @@ public class GameSession : MonoBehaviour
             }
         }
 
-        Debug.Log($"[GameSession] {count}인 모드 적용 — 활성 색: {string.Join(", ", _activeColors)}");
+        Debug.Log($"[GameSession] {_activePlayers.Count}인 모드 적용 — 활성 색: {string.Join(", ", _activeColors)}");
     }
 
     static int ColorIndex(PlayerColorType type)
@@ -153,5 +184,18 @@ public class GameSession : MonoBehaviour
         foreach (Player p in _activePlayers)
             Debug.Log($"  → {p.name} / {p.playerColorType}");
     }
+
+    [ContextMenu("테스트: 2인 Green+Yellow")]
+    void Debug_2P_GreenYellow() =>
+        SetActiveColors(new[] { PlayerColorType.Green, PlayerColorType.Yellow });
+
+    [ContextMenu("테스트: 2인 Blue+Purple")]
+    void Debug_2P_BluePurple() =>
+        SetActiveColors(new[] { PlayerColorType.Blue, PlayerColorType.Purple });
+
+    [ContextMenu("테스트: 4인 전체")]
+    void Debug_4P() =>
+        SetActiveColors(new[] { PlayerColorType.Blue, PlayerColorType.Purple,
+                                PlayerColorType.Green, PlayerColorType.Yellow });
 #endif
 }

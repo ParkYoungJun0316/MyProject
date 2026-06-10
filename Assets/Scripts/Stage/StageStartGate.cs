@@ -151,12 +151,17 @@ public class StageStartGate : MonoBehaviour
     bool AllZonesOccupied()
     {
         if (zones == null || zones.Length == 0) return false;
+
+        bool anyActive = false;
         foreach (ColoredStartZone z in zones)
         {
-            if (z == null) continue;
+            if (z == null || !z.gameObject.activeInHierarchy) continue;
+            anyActive = true;
             if (!z.IsOccupied) return false;
         }
-        return true;
+
+        // 활성화된 존이 하나도 없으면 카운트다운 불가
+        return anyActive;
     }
 
     void SetZoneCountdownVisual(bool counting)

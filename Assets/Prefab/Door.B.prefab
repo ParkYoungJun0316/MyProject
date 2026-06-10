@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 473713838326883303}
   - component: {fileID: 6008778340356147586}
   - component: {fileID: -4502303759882508006}
+  - component: {fileID: -4676352529499108052}
+  - component: {fileID: 6090753971453249027}
   m_Layer: 0
   m_Name: Door.B
   m_TagString: Untagged
@@ -143,6 +145,9 @@ MonoBehaviour:
   OnClosed:
     m_PersistentCalls:
       m_Calls: []
+  OnFullyClosed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!64 &-4502303759882508006
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -165,3 +170,41 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
+--- !u!114 &-4676352529499108052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5121105358896401533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33927cb56b8857e4ba4627801b377988, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColoredDoorVisual
+  colorMaterials:
+  - colorType: 1
+    material: {fileID: 2100000, guid: b04a94c99f03e5d4083c880422e8b8e2, type: 2}
+  - colorType: 2
+    material: {fileID: 2100000, guid: 3b8ba857390d897439b2b7e6b57cbc37, type: 2}
+  - colorType: 3
+    material: {fileID: 2100000, guid: 5baabe1ec33b9904ab40e047274724fe, type: 2}
+  - colorType: 4
+    material: {fileID: 2100000, guid: dad50cda64eb7eb4abc68860f6d4fe52, type: 2}
+  materialSlotIndex: 0
+--- !u!114 &6090753971453249027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5121105358896401533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c0feb523e789345869aa4840f3f152, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorPuzzleGroup
+  topology: 2
+  designPlayerCount: 1
+  pads: []
+  doors: []

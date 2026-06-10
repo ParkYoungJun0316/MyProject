@@ -87,14 +87,14 @@ public class DirectionalBarrierRound : MonoBehaviour
     [Header("이벤트")]
     public UnityEvent OnRoundStarted;
 
-    // 색 → 이번 라운드에 스폰된 DoorController
-    readonly Dictionary<PlayerColorType, DoorController> _colorToDoor = new();
+    // 색 → 이번 라운드에 스폰된 DoorController 목록 (동일 색이 여러 슬롯에 배정될 수 있음)
+    readonly Dictionary<PlayerColorType, List<DoorController>> _colorToDoors = new();
 
     readonly List<GameObject> _spawnedBarriers = new();
     readonly List<ColorTile>  _activeTiles      = new();
 
-    static readonly PlayerColorType[] PlayableColors =
-        { PlayerColorType.Blue, PlayerColorType.Purple, PlayerColorType.Green, PlayerColorType.Yellow };
+    // 이번 라운드 4슬롯에 배정된 색 목록 (GameSession 활성색 기준 균등 분배)
+    PlayerColorType[] _roundColors;
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
@@ -116,16 +116,18 @@ public class DirectionalBarrierRound : MonoBehaviour
         SpawnBarriers();
 
         // 전체 Open → 매핑 공개
-        foreach (DoorController door in _colorToDoor.Values)
-            door.Open();
+        foreach (List<DoorController> doors in _colorToDoors.Values)
+            foreach (DoorController door in doors)
+                door?.Open();
 
         OnRoundStarted?.Invoke();
 
         yield return new WaitForSeconds(revealDuration);
 
         // 전체 Close → 하강
-        foreach (DoorController door in _colorToDoor.Values)
-            door.Close();
+        foreach (List<DoorController> doors in _colorToDoors.Values)
+            foreach (DoorController door in doors)
+                door?.Close();
 
         SpawnTiles();
     }
@@ -142,18 +144,22 @@ public class DirectionalBarrierRound : MonoBehaviour
             return;
         }
 
-        // 색상 배열 셔플 (Fisher-Yates)
-        PlayerColorType[] shuffledColors = (PlayerColorType[])PlayableColors.Clone();
-        for (int i = shuffledColors.Length - 1; i > 0; i--)
+        // GameSession 활성색 기준 4슬롯 균등 분배 (2인→2+2, 3인→2+1+1, 4인→1+1+1+1)
+        int totalSlots = barrierSpawnPoints.Length > 0 ? barrierSpawnPoints.Length : 4;
+        _roundColors = GameSessionColorDistribution.Distribute(totalSlots);
+
+        // 어떤 방향 슬롯에 어떤 색이 배치될지 셔플
+        PlayerColorType[] shuffledForBarriers = (PlayerColorType[])_roundColors.Clone();
+        for (int i = shuffledForBarriers.Length - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
-            (shuffledColors[i], shuffledColors[j]) = (shuffledColors[j], shuffledColors[i]);
+            (shuffledForBarriers[i], shuffledForBarriers[j]) = (shuffledForBarriers[j], shuffledForBarriers[i]);
         }
 
-        int count = Mathf.Min(shuffledColors.Length, barrierSpawnPoints.Length);
+        int count = Mathf.Min(shuffledForBarriers.Length, barrierSpawnPoints.Length);
         for (int i = 0; i < count; i++)
         {
-            PlayerColorType  color  = shuffledColors[i];
+            PlayerColorType   color  = shuffledForBarriers[i];
             BarrierSpawnPoint entry  = barrierSpawnPoints[i];
             GameObject        prefab = GetBarrierPrefabForColor(color);
 
@@ -169,8 +175,8 @@ public class DirectionalBarrierRound : MonoBehaviour
             }
 
             // NorthSouth: 프리팹 회전 그대로 / EastWest: 월드 Y축 기준 -90 추가
-            Quaternion baseRot   = prefab.transform.rotation;
-            Quaternion spawnRot  = entry.direction == SpawnDirection.EastWest
+            Quaternion baseRot  = prefab.transform.rotation;
+            Quaternion spawnRot = entry.direction == SpawnDirection.EastWest
                 ? Quaternion.Euler(0f, -90f, 0f) * baseRot
                 : baseRot;
 
@@ -184,7 +190,12 @@ public class DirectionalBarrierRound : MonoBehaviour
                 continue;
             }
 
-            _colorToDoor[color]   = door;
+            if (!_colorToDoors.TryGetValue(color, out List<DoorController> list))
+            {
+                list = new List<DoorController>();
+                _colorToDoors[color] = list;
+            }
+            list.Add(door);
             _spawnedBarriers.Add(obj);
         }
     }
@@ -200,19 +211,32 @@ public class DirectionalBarrierRound : MonoBehaviour
             Debug.LogWarning("[DirectionalBarrierRound] tileSpawnPoints 또는 tilePrefabs가 비어 있습니다.");
             return;
         }
-
-        // 타일 스폰 포인트 셔플 (Fisher-Yates)
-        List<Transform> shuffled = new List<Transform>(tileSpawnPoints);
-        for (int i = shuffled.Count - 1; i > 0; i--)
+        if (_roundColors == null || _roundColors.Length == 0)
         {
-            int j = Random.Range(0, i + 1);
-            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+            Debug.LogWarning("[DirectionalBarrierRound] _roundColors가 없습니다. SpawnBarriers를 먼저 호출하세요.");
+            return;
         }
 
-        int count = Mathf.Min(PlayableColors.Length, shuffled.Count);
+        // 스폰 포인트 셔플
+        List<Transform> shuffledPoints = new List<Transform>(tileSpawnPoints);
+        for (int i = shuffledPoints.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (shuffledPoints[i], shuffledPoints[j]) = (shuffledPoints[j], shuffledPoints[i]);
+        }
+
+        // 타일 색 셔플 (베리어 배치와 독립적으로 랜덤화)
+        PlayerColorType[] shuffledColors = (PlayerColorType[])_roundColors.Clone();
+        for (int i = shuffledColors.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (shuffledColors[i], shuffledColors[j]) = (shuffledColors[j], shuffledColors[i]);
+        }
+
+        int count = Mathf.Min(shuffledColors.Length, shuffledPoints.Count);
         for (int i = 0; i < count; i++)
         {
-            PlayerColorType color  = PlayableColors[i];
+            PlayerColorType color  = shuffledColors[i];
             GameObject      prefab = GetTilePrefabForColor(color);
 
             if (prefab == null)
@@ -221,7 +245,7 @@ public class DirectionalBarrierRound : MonoBehaviour
                 continue;
             }
 
-            GameObject obj  = Instantiate(prefab, shuffled[i].position, Quaternion.identity);
+            GameObject obj  = Instantiate(prefab, shuffledPoints[i].position, Quaternion.identity);
             ColorTile  tile = obj.GetComponent<ColorTile>() ?? obj.AddComponent<ColorTile>();
 
             tile.Setup(color);
@@ -235,16 +259,17 @@ public class DirectionalBarrierRound : MonoBehaviour
 
     void HandleTileActivated(PlayerColorType color)
     {
-        if (!_colorToDoor.TryGetValue(color, out DoorController target)) return;
+        if (!_colorToDoors.ContainsKey(color)) return;
 
-        foreach (KeyValuePair<PlayerColorType, DoorController> pair in _colorToDoor)
+        foreach (KeyValuePair<PlayerColorType, List<DoorController>> pair in _colorToDoors)
         {
-            if (pair.Value == null) continue;
-
-            if (pair.Value == target)
-                pair.Value.Open();
-            else
-                pair.Value.Close();
+            bool isTarget = pair.Key == color;
+            foreach (DoorController door in pair.Value)
+            {
+                if (door == null) continue;
+                if (isTarget) door.Open();
+                else          door.Close();
+            }
         }
     }
 
@@ -257,7 +282,7 @@ public class DirectionalBarrierRound : MonoBehaviour
             if (obj != null) Destroy(obj);
         }
         _spawnedBarriers.Clear();
-        _colorToDoor.Clear();
+        _colorToDoors.Clear();
     }
 
     void ClearTiles()

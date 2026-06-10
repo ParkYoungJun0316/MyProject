@@ -31,17 +31,26 @@ public class PioneerPathZone : MonoBehaviour
     PioneerPathTile[]  _pathTiles;   // Path 타일만
     PioneerPathTile[]  _allTiles;    // Path + Trap 전체
 
-    public PlayerColorType     PioneerColor => pioneerColor;
-    public PioneerPathManager  Manager      => _manager;
+    // 런타임 pioneer 색 (GameSession 기준 교체, 4인이면 pioneerColor와 동일)
+    PlayerColorType _effectivePioneerColor;
+    Color           _effectivePreviewColor;
+
+    /// <summary>이번 라운드에 실제로 적용되는 pioneer 색 (타일 판정 기준)</summary>
+    public PlayerColorType     EffectivePioneerColor => _effectivePioneerColor;
+    public PioneerPathManager  Manager               => _manager;
 
     // ── 초기화 (PioneerPathManager.Awake에서 호출) ───────────────
 
     public void Init(PioneerPathManager manager, Color normal, Color unlocked, Color trap)
     {
-        _manager     = manager;
-        normalColor  = normal;
+        _manager      = manager;
+        normalColor   = normal;
         unlockedColor = unlocked;
-        trapColor    = trap;
+        trapColor     = trap;
+
+        // Inspector 값으로 초기화 (4인 모드 또는 AssignPioneerColors 호출 전 fallback)
+        _effectivePioneerColor = pioneerColor;
+        _effectivePreviewColor = previewColor;
 
         _allTiles = GetComponentsInChildren<PioneerPathTile>(true);
         var pathList = new List<PioneerPathTile>();
@@ -60,14 +69,26 @@ public class PioneerPathZone : MonoBehaviour
         _pathTiles = pathList.ToArray();
     }
 
+    // ── 외부 호출 (PioneerPathManager에서 호출) ──────────────────
+
+    /// <summary>
+    /// GameSession 활성색 기준으로 런타임 pioneer 색과 미리보기 색을 교체.
+    /// PioneerPathManager.AssignPioneerColors()에서 호출.
+    /// </summary>
+    public void SetEffectivePioneer(PlayerColorType color, Color preview)
+    {
+        _effectivePioneerColor = color;
+        _effectivePreviewColor = preview;
+    }
+
     // ── 상태 전환 (PioneerPathManager에서 호출) ──────────────────
 
-    /// <summary>미리보기: 이 구역 Path 타일만 발광</summary>
+    /// <summary>미리보기: 이 구역 Path 타일만 발광 (effective 색 기준)</summary>
     public void ShowPreview()
     {
         if (_pathTiles == null) return;
         for (int i = 0; i < _pathTiles.Length; i++)
-            if (_pathTiles[i] != null) _pathTiles[i].ShowPreview(previewColor);
+            if (_pathTiles[i] != null) _pathTiles[i].ShowPreview(_effectivePreviewColor);
     }
 
     /// <summary>미리보기 종료: 모든 타일 normalColor 복귀</summary>

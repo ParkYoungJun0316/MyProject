@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -74,6 +75,9 @@ public class ColoredMemoryPath : MonoBehaviour
     int _safeTotalCount;
     PlayerColorType _currentPreviewColor;
 
+    // Inspector의 colorSequence에서 GameSession 활성색만 추린 런타임 시퀀스
+    PlayerColorType[] _activeSequence;
+
     public PathState State => _state;
 
     ColoredMemoryPathTile[] _tiles;
@@ -109,6 +113,7 @@ public class ColoredMemoryPath : MonoBehaviour
     public void StartPreview()
     {
         if (_state != PathState.Idle) return;
+        _activeSequence = BuildActiveSequence();
         StartCoroutine(PreviewRoutine());
     }
 
@@ -119,6 +124,7 @@ public class ColoredMemoryPath : MonoBehaviour
         _state          = PathState.Idle;
         _safeStepped    = 0;
         _safeTotalCount = 0;
+        _activeSequence = null;
 
         for (int i = 0; i < _tiles.Length; i++)
             if (_tiles[i] != null) _tiles[i].Restore();
@@ -152,15 +158,15 @@ public class ColoredMemoryPath : MonoBehaviour
         _state       = PathState.Previewing;
         _safeStepped = 0;
 
-        if (colorSequence == null || colorSequence.Length == 0)
+        if (_activeSequence == null || _activeSequence.Length == 0)
         {
             EnterChallenge();
             yield break;
         }
 
-        for (int ci = 0; ci < colorSequence.Length; ci++)
+        for (int ci = 0; ci < _activeSequence.Length; ci++)
         {
-            PlayerColorType col = colorSequence[ci];
+            PlayerColorType col = _activeSequence[ci];
             _currentPreviewColor = col;
             Color displayColor   = GetDisplayColor(col);
 
@@ -177,7 +183,7 @@ public class ColoredMemoryPath : MonoBehaviour
                     _tiles[i].HidePreview();
 
             // 마지막 색이 아니면 gap 대기
-            if (ci < colorSequence.Length - 1 && colorPreviewGap > 0f)
+            if (ci < _activeSequence.Length - 1 && colorPreviewGap > 0f)
                 yield return new WaitForSeconds(colorPreviewGap);
         }
 
@@ -186,18 +192,21 @@ public class ColoredMemoryPath : MonoBehaviour
 
     void EnterChallenge()
     {
-        // 안전 타일 총수 집계: colorSequence에 포함된 색을 하나라도 가진 타일 수
+        // 안전 타일 총수 집계: 활성 시퀀스에 포함된 색을 하나라도 가진 타일 수
         _safeTotalCount = 0;
-        for (int i = 0; i < _tiles.Length; i++)
+        if (_activeSequence != null)
         {
-            if (_tiles[i] == null) continue;
-
-            for (int ci = 0; ci < colorSequence.Length; ci++)
+            for (int i = 0; i < _tiles.Length; i++)
             {
-                if (_tiles[i].HasColor(colorSequence[ci]))
+                if (_tiles[i] == null) continue;
+
+                for (int ci = 0; ci < _activeSequence.Length; ci++)
                 {
-                    _safeTotalCount++;
-                    break; // 타일 1개당 1번만 카운트
+                    if (_tiles[i].HasColor(_activeSequence[ci]))
+                    {
+                        _safeTotalCount++;
+                        break; // 타일 1개당 1번만 카운트
+                    }
                 }
             }
         }
@@ -210,6 +219,27 @@ public class ColoredMemoryPath : MonoBehaviour
     {
         _state = PathState.Complete;
         OnCompleted?.Invoke();
+    }
+
+    /// <summary>
+    /// Inspector의 colorSequence에서 GameSession 활성색만 추려 순서를 유지한 배열을 반환.
+    /// GameSession 없으면 colorSequence 그대로 반환 (에디터 테스트/fallback).
+    /// </summary>
+    PlayerColorType[] BuildActiveSequence()
+    {
+        if (colorSequence == null || colorSequence.Length == 0)
+            return System.Array.Empty<PlayerColorType>();
+
+        if (GameSession.Instance == null)
+            return colorSequence;
+
+        var result = new List<PlayerColorType>(colorSequence.Length);
+        foreach (PlayerColorType col in colorSequence)
+        {
+            if (GameSession.Instance.IsColorActive(col))
+                result.Add(col);
+        }
+        return result.ToArray();
     }
 
     Color GetDisplayColor(PlayerColorType colorType)

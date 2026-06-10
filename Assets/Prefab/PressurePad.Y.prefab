@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6874474247122277813
+--- !u!1 &623748915474999461
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,48 +8,49 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8203626774549421801}
-  - component: {fileID: 5848418772727677070}
-  - component: {fileID: 1067798199395160683}
-  - component: {fileID: 1259297647758762648}
-  - component: {fileID: 7192509835249580237}
-  m_Layer: 28
-  m_Name: Wall (1)
-  m_TagString: Floor
+  - component: {fileID: 6926818642850682201}
+  - component: {fileID: 6793985089164719901}
+  - component: {fileID: 2321958555142752643}
+  - component: {fileID: 8683762108333155827}
+  - component: {fileID: 8028393199763076075}
+  - component: {fileID: -4550559878097176215}
+  m_Layer: 0
+  m_Name: PressurePad.Y
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8203626774549421801
+--- !u!4 &6926818642850682201
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6874474247122277813}
+  m_GameObject: {fileID: 623748915474999461}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 55, y: 80, z: -180}
-  m_LocalScale: {x: 50, y: 40, z: 10}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 10, y: 0.5, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &5848418772727677070
+--- !u!33 &6793985089164719901
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6874474247122277813}
+  m_GameObject: {fileID: 623748915474999461}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &1067798199395160683
+--- !u!23 &2321958555142752643
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6874474247122277813}
+  m_GameObject: {fileID: 623748915474999461}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -68,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: dad50cda64eb7eb4abc68860f6d4fe52, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,13 +93,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &1259297647758762648
+--- !u!65 &8683762108333155827
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6874474247122277813}
+  m_GameObject: {fileID: 623748915474999461}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -107,37 +108,52 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7192509835249580237
+--- !u!114 &8028393199763076075
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6874474247122277813}
+  m_GameObject: {fileID: 623748915474999461}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69b615c85fdb94842ad058a102a32fab, type: 3}
+  m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Breakable
-  breakTriggerLayers:
-    serializedVersion: 2
-    m_Bits: 131072
-  minBreakSpeed: 5
-  debrisPrefab: {fileID: 0}
-  debrisLifetime: 0
-  breakSound: {fileID: 0}
-  breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  OnBreak:
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePad
+  designColor: 4
+  requiredCount: 1
+  OnFulfilled:
     m_PersistentCalls:
       m_Calls: []
+  OnUnfulfilled:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &-4550559878097176215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748915474999461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2e2fef36ad2d5a48b4e4451a561d7cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
+  colorMaterials:
+  - colorType: 1
+    material: {fileID: 2100000, guid: b04a94c99f03e5d4083c880422e8b8e2, type: 2}
+  - colorType: 2
+    material: {fileID: 2100000, guid: 3b8ba857390d897439b2b7e6b57cbc37, type: 2}
+  - colorType: 3
+    material: {fileID: 2100000, guid: 5baabe1ec33b9904ab40e047274724fe, type: 2}
+  - colorType: 4
+    material: {fileID: 2100000, guid: dad50cda64eb7eb4abc68860f6d4fe52, type: 2}
+  targetRenderer: {fileID: 0}
+  materialSlotIndex: 0

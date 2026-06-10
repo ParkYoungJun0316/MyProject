@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -54,12 +55,21 @@ public class PioneerPathManager : MonoBehaviour
     [Tooltip("Trap 타일이 밟혔을 때 색")]
     [SerializeField] Color trapColor     = new Color(1f,    0.2f,  0.2f);
 
+    [Header("미리보기 색상 (Inspector에서 조정)")]
+    [SerializeField] Color yellowPreviewColor = Color.yellow;
+    [SerializeField] Color bluePreviewColor   = Color.blue;
+    [SerializeField] Color purplePreviewColor = new Color(0.55f, 0.2f, 0.95f);
+    [SerializeField] Color greenPreviewColor  = Color.green;
+
     [Header("이벤트")]
     [Tooltip("Challenge 단계 시작 시 (미리보기 끝난 직후). MemoryPathIntroController가 구독.")]
     public UnityEvent OnChallengeStart;
 
-    PathState        _state;
+    PathState         _state;
     PioneerPathZone[] _zones;
+
+    // 이번 라운드 4구역에 배정된 pioneer 색 (GameSession 활성색 기준 균등 분배)
+    PlayerColorType[] _assignedColors;
 
     public PathState State => _state;
 
@@ -85,6 +95,7 @@ public class PioneerPathManager : MonoBehaviour
     public void StartPreview()
     {
         if (_state != PathState.Idle) return;
+        AssignPioneerColors();
         StartCoroutine(PreviewRoutine());
     }
 
@@ -131,6 +142,46 @@ public class PioneerPathManager : MonoBehaviour
     }
 
     // ── 내부 유틸 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// GameSession 활성색 기준으로 4구역 pioneer를 셔플 배정한다.
+    ///  - 2인 : [A, A, B, B] 셔플 후 구역별 배정
+    ///  - 3인 : [A, A, B, C] 여분은 랜덤 색에
+    ///  - 4인 : [A, B, C, D]
+    /// </summary>
+    void AssignPioneerColors()
+    {
+        if (_zones == null || _zones.Length == 0) return;
+
+        _assignedColors = GameSessionColorDistribution.Distribute(_zones.Length);
+
+        // 어떤 구역에 어떤 색이 배정될지 셔플
+        PlayerColorType[] shuffled = (PlayerColorType[])_assignedColors.Clone();
+        for (int i = shuffled.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
+
+        int count = Mathf.Min(shuffled.Length, _zones.Length);
+        for (int i = 0; i < count; i++)
+        {
+            if (_zones[i] != null)
+                _zones[i].SetEffectivePioneer(shuffled[i], GetPreviewColorForType(shuffled[i]));
+        }
+    }
+
+    Color GetPreviewColorForType(PlayerColorType colorType)
+    {
+        switch (colorType)
+        {
+            case PlayerColorType.Yellow: return yellowPreviewColor;
+            case PlayerColorType.Blue:   return bluePreviewColor;
+            case PlayerColorType.Purple: return purplePreviewColor;
+            case PlayerColorType.Green:  return greenPreviewColor;
+            default: return Color.white;
+        }
+    }
 
     /// <summary>모든 구역의 모든 타일을 normalColor로 통일.</summary>
     void ApplyNormalColorsToAll()

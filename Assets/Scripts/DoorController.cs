@@ -154,6 +154,45 @@ public class DoorController : MonoBehaviour
         OnClosed?.Invoke();
     }
 
+    /// <summary>
+    /// 런타임에 latchOnOpen 값을 강제 설정한다.
+    /// Hold → Trigger 전환(StagePressurePadSetup)에서 사용.
+    /// </summary>
+    public void SetLatchOnOpen(bool value)
+    {
+        latchOnOpen = value;
+        if (!value) _isLatched = false;
+    }
+
+    /// <summary>
+    /// 런타임에 필요 발판 목록을 교체한다.
+    /// 기존 발판 이벤트를 해제하고 새 발판에 재구독한 뒤 상태를 즉시 재평가한다.
+    /// Simultaneous → 단일 패드 축소(StagePressurePadSetup)에서 사용.
+    /// </summary>
+    public void SetRequiredPads(PressurePad[] newPads)
+    {
+        // 기존 발판 이벤트 해제
+        if (requiredPads != null)
+            foreach (PressurePad pad in requiredPads)
+            {
+                if (pad == null) continue;
+                pad.OnFulfilled.RemoveListener(CheckPadState);
+                pad.OnUnfulfilled.RemoveListener(CheckPadState);
+            }
+
+        requiredPads = newPads ?? System.Array.Empty<PressurePad>();
+
+        // 새 발판 이벤트 구독
+        foreach (PressurePad pad in requiredPads)
+        {
+            if (pad == null) continue;
+            pad.OnFulfilled.AddListener(CheckPadState);
+            pad.OnUnfulfilled.AddListener(CheckPadState);
+        }
+
+        CheckPadState();
+    }
+
     /// <summary>래치 초기화 후 즉시 닫힌 위치로 텔레포트.</summary>
     public void Reset()
     {

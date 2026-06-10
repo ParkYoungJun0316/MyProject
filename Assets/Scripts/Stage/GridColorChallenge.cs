@@ -7,7 +7,8 @@ using UnityEngine.Events;
 /// 5×5 고유색 보드 챌린지 (모드 B).
 ///
 /// [라운드]
-///  - 25칸 중 4칸이 Safe (Blue / Purple / Green / Yellow 각 1개, 위치 랜덤), 나머지 Default
+///  - 25칸 중 활성 색 수만큼 Safe 칸 배치 (위치 랜덤), 나머지 Default
+///  - 4인: 4칸 / 2인: 2칸 (GameSession 기준, 없으면 4색 fallback)
 ///  - roundDuration 후 정산: Default 위 1명이라도 → 팀 데미지
 ///  - 정산 시 각 플레이어가 자기 playerColorType에 맞는 칸에 없으면 → 팀 데미지
 ///  - 성공 시 데미지 없이 쿨타임 후 다음 라운드 (totalRounds회)
@@ -201,8 +202,8 @@ public class GridColorChallenge : MonoBehaviour
     }
 
     /// <summary>
-    /// Blue / Purple / Green / Yellow 각 1개씩,
-    /// 25칸 중 서로 겹치지 않게 랜덤 위치 배정.
+    /// 활성 색(GameSession 기준)마다 Safe 칸 1개씩 랜덤 배정.
+    /// GameSession 없으면 ColorOrder 전체(4색) fallback.
     /// </summary>
     void PickRandomColorTiles()
     {
@@ -211,8 +212,13 @@ public class GridColorChallenge : MonoBehaviour
         var pool = new List<int>(tiles.Length);
         for (int i = 0; i < tiles.Length; i++) pool.Add(i);
 
-        foreach (PlayerColorType color in ColorOrder)
+        IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
+            ? GameSession.Instance.GetActiveColors()
+            : (IReadOnlyList<PlayerColorType>)ColorOrder;
+
+        foreach (PlayerColorType color in activeColors)
         {
+            if (pool.Count == 0) break;
             int pick = Random.Range(0, pool.Count);
             _currentSafeIndices[color] = pool[pick];
             pool.RemoveAt(pick);
@@ -314,12 +320,18 @@ public class GridColorChallenge : MonoBehaviour
     List<Player> GatherAlivePlayers()
     {
         var list = new List<Player>();
-        Player[] all = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (Player p in all)
+
+        if (GameSession.Instance != null)
         {
-            if (p != null && !p.IsDead)
-                list.Add(p);
+            foreach (Player p in GameSession.Instance.GetActivePlayers())
+                if (p != null && !p.IsDead) list.Add(p);
         }
+        else
+        {
+            foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+                if (p != null && !p.IsDead) list.Add(p);
+        }
+
         return list;
     }
 

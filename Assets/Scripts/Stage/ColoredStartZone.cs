@@ -61,6 +61,13 @@ public class ColoredStartZone : MonoBehaviour
         ApplyColor(vacantColor);
     }
 
+    void Start()
+    {
+        // GameSession이 있으면 활성 색 기준으로 자신을 켜고 끔
+        if (GameSession.Instance != null && !GameSession.Instance.IsColorActive(colorType))
+            gameObject.SetActive(false);
+    }
+
     void OnDestroy()
     {
         if (_mats == null) return;

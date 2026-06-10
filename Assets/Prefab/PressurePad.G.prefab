@@ -13,8 +13,9 @@ GameObject:
   - component: {fileID: 2321958555142752643}
   - component: {fileID: 8683762108333155827}
   - component: {fileID: 8028393199763076075}
+  - component: {fileID: 1406949697870934979}
   m_Layer: 0
-  m_Name: PressurePad
+  m_Name: PressurePad.G
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b04a94c99f03e5d4083c880422e8b8e2, type: 2}
+  - {fileID: 2100000, guid: 5baabe1ec33b9904ab40e047274724fe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -125,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePad
-  ownerColor: 1
+  designColor: 3
   requiredCount: 1
   OnFulfilled:
     m_PersistentCalls:
@@ -133,3 +134,26 @@ MonoBehaviour:
   OnUnfulfilled:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1406949697870934979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748915474999461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2e2fef36ad2d5a48b4e4451a561d7cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
+  colorMaterials:
+  - colorType: 1
+    material: {fileID: 2100000, guid: b04a94c99f03e5d4083c880422e8b8e2, type: 2}
+  - colorType: 2
+    material: {fileID: 2100000, guid: 3b8ba857390d897439b2b7e6b57cbc37, type: 2}
+  - colorType: 3
+    material: {fileID: 2100000, guid: 5baabe1ec33b9904ab40e047274724fe, type: 2}
+  - colorType: 4
+    material: {fileID: 2100000, guid: dad50cda64eb7eb4abc68860f6d4fe52, type: 2}
+  targetRenderer: {fileID: 0}
+  materialSlotIndex: 0

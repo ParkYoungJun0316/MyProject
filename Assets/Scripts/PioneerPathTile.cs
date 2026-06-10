@@ -86,7 +86,7 @@ public class PioneerPathTile : MonoBehaviour
         if (_isUnlocked) return;
 
         // 미개방 타일 — pioneer 색이면 개방, 아니면 즉사
-        if (player.playerColorType == zone.PioneerColor)
+        if (player.playerColorType == zone.EffectivePioneerColor)
         {
             Unlock();
         }
