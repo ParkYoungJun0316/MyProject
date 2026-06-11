@@ -6,28 +6,23 @@ using System;
 /// Stage5 도주 타겟 AI — 노드 방식.
 ///
 /// [동작]
-/// - 도망 대상: playerColorType == targetColor 인 생존 플레이어(흑백 표시 포함)
+/// - 도망 대상: 가장 가까운 생존 플레이어 (색 무관)
 /// - 추적 대상이 있으면 → 노드 중 플레이어에서 가장 먼 것으로 이동
 ///   단, 러너→노드 방향이 러너→플레이어 방향과 minDeviationDegrees 이내면 제외(정면 박치기 방지)
 ///   각도 조건을 통과하는 노드가 없으면 폴백으로 거리 기준 최대 노드 사용
 /// - 추적 대상 없으면 → 노드 중 랜덤 하나로 이동
-/// - 포획(트리거): 맞는 색 + 고유색 표시(isUniqueColor)일 때만 성공
+/// - 포획(트리거): 활성 플레이어 누구나 접촉 시 성공 (색·고유색 조건 없음)
 /// - 노드는 Stage5TargetObjective에서 Activate() 시 주입 (씬 오브젝트 → 프리팹에 못 넣음)
 ///
 /// [Inspector 설정]
 /// - NavMeshAgent 부착 필수
 /// - Collider isTrigger = true (포획 판정)
-/// - targetColor 설정
 /// - moveSpeed 0 이상으로 설정
 /// - minDeviationDegrees: 플레이어 방향과의 최소 허용 각도(기본 30°)
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class Stage5TargetRunner : MonoBehaviour
 {
-    [Header("색상")]
-    [Tooltip("이 타겟이 피해야 할 플레이어의 색. playerColorType과 1:1 매칭")]
-    public PlayerColorType targetColor = PlayerColorType.Blue;
-
     [Header("이동")]
     [SerializeField] float moveSpeed = 0f;
     [Tooltip("목적지 갱신 주기(초)")]
@@ -136,7 +131,6 @@ public class Stage5TargetRunner : MonoBehaviour
         {
             Player p = _allPlayers[i];
             if (p == null || p.IsDead) continue;
-            if (p.playerColorType != targetColor) continue;
 
             float dSq = (p.transform.position - transform.position).sqrMagnitude;
             if (dSq < bestDistSq)
@@ -267,7 +261,7 @@ public class Stage5TargetRunner : MonoBehaviour
         _anim.SetBool("isWalk", active && _trackedPlayer == null);
     }
 
-    // ── 포획 판정 (고유색 표시일 때만 트리거 성공) ─────────────────
+    // ── 포획 판정 ────────────────────────────────────────────────
 
     void OnTriggerEnter(Collider other)
     {
@@ -276,8 +270,6 @@ public class Stage5TargetRunner : MonoBehaviour
 
         Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
-        if (p.playerColorType != targetColor) return;
-        if (!p.isUniqueColor) return;
 
         _isCaptured = true;
         Deactivate();

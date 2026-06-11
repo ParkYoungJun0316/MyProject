@@ -22,16 +22,38 @@ using System.Collections.Generic;
 ///
 /// [Inspector 설정]
 /// - spawner: Stage5TargetSpawner 연결 필수
-/// - requiredCaptures: 5.1=1, 5.2=3
+/// - captureTable: 인원별 스폰 수 + 포획 조건 테이블 (페이즈마다 다르게 설정)
 /// - timeLimit: 제한 시간(초)
 /// </summary>
 public class Stage5TargetObjective : StageObjective
 {
+    [System.Serializable]
+    public struct CaptureEntry
+    {
+        [Tooltip("활성 플레이어 수 (1~4)")]
+        public int playerCount;
+        [Tooltip("스폰 마릿수 및 성공에 필요한 포획 수")]
+        public int count;
+    }
+
     [Header("Stage5 설정")]
     [Tooltip("제한 시간 (초)")]
     public float timeLimit = 60f;
-    [Tooltip("성공에 필요한 타겟 포획 수. stage5.1=1 / stage5.2=3")]
-    public int requiredCaptures = 1;
+
+    [Tooltip("인원별 Runner 스폰 수 / 포획 조건 테이블.\n" +
+             "스폰 수 = 포획 조건 (전부 잡아야 성공).\n" +
+             "playerCount에 해당하는 행이 없으면 마지막 행으로 fallback.\n" +
+             "예) stage5.2: 1인=1, 2인=2, 3인=3, 4인=3")]
+    public CaptureEntry[] captureTable = new CaptureEntry[]
+    {
+        new CaptureEntry { playerCount = 1, count = 1 },
+        new CaptureEntry { playerCount = 2, count = 1 },
+        new CaptureEntry { playerCount = 3, count = 1 },
+        new CaptureEntry { playerCount = 4, count = 1 },
+    };
+
+    // captureTable이 비어 있을 때 fallback
+    [HideInInspector] public int requiredCaptures = 1;
 
     [Header("참조")]
     [Tooltip("4코너 스폰 + 색상 셔플을 담당하는 스포너")]
@@ -66,6 +88,9 @@ public class Stage5TargetObjective : StageObjective
         _started = false;
         _nextUITick = 0f;
 
+        // captureTable에서 현재 인원에 맞는 값을 읽어 설정
+        requiredCaptures = ResolveCaptureCount();
+
         CleanupTargets();
 
         // PhaseManager 리셋 중 오브젝트가 비활성인 경우 스폰 건너뜀.
@@ -79,7 +104,7 @@ public class Stage5TargetObjective : StageObjective
 
         Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
 
-        List<Stage5TargetRunner> targets = spawner.SpawnTargets();
+        List<Stage5TargetRunner> targets = spawner.SpawnTargets(requiredCaptures);
         foreach (Stage5TargetRunner t in targets)
         {
             if (t == null) continue;
@@ -109,6 +134,25 @@ public class Stage5TargetObjective : StageObjective
         // 접촉 성공이 타임아웃보다 자동으로 우선 처리됨
         if (_elapsed >= timeLimit && !IsCompleted)
             HandleTimeout();
+    }
+
+    // ── 내부 유틸 ────────────────────────────────────────────────
+
+    /// <summary>captureTable에서 현재 활성 인원에 맞는 count를 반환. 테이블이 비어 있으면 fallback.</summary>
+    int ResolveCaptureCount()
+    {
+        int active = GameSession.Instance != null ? GameSession.Instance.ActivePlayerCount : 4;
+
+        if (captureTable != null && captureTable.Length > 0)
+        {
+            foreach (CaptureEntry entry in captureTable)
+                if (entry.playerCount == active) return Mathf.Max(1, entry.count);
+
+            // 일치하는 행 없으면 마지막 행으로 fallback
+            return Mathf.Max(1, captureTable[captureTable.Length - 1].count);
+        }
+
+        return Mathf.Max(1, requiredCaptures);
     }
 
     // ── 포획 처리 ────────────────────────────────────────────────

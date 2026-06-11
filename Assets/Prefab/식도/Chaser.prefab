@@ -76,16 +76,28 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5.00096
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.14286
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3170.502
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
       propertyPath: m_LocalRotation.w
@@ -117,7 +129,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
       propertyPath: m_Name
-      value: Chaser1 1
+      value: Chaser
       objectReference: {fileID: 0}
     - target: {fileID: 8259343149075243686, guid: f13a0b68d36f2bf43ba3ff91a9dfa1ec, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -160,10 +172,10 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
+  m_Speed: 5
+  m_Acceleration: 20
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 360
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -184,18 +196,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72a90bbfac37c6147a27c80a94e9860f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Stage5ChaserAI
-  targetMode: 0
-  moveType: 1
-  targetColor: 1
   moveSpeed: 20
   retargetInterval: 1
   navSampleRadius: 3
-  chargeInterval: 2
-  chargeDuration: 2
-  chargeSpeed: 2
   postHitStopDuration: 1
   _anim: {fileID: 5625214004210353801}
-  chargeWindUpDuration: 0.2
 --- !u!95 &5625214004210353801
 Animator:
   serializedVersion: 7
