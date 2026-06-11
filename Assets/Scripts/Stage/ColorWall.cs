@@ -9,9 +9,10 @@ using UnityEngine.Events;
 /// [색상 일치]
 ///  WallMover → ResetToStart() 후 pauseDuration 뒤 Activate() (밀려남 + 잠시 멈춤)
 ///  WallWaveController → Stop() 후 pauseDuration 뒤 Play()
+///  ContactDamage(같은 오브젝트) → Deactivate (일치 중 면역) → 종료 시 Activate
 ///
 /// [색상 불일치]
-///  플레이어에게 damage 적용 (damageInterval마다)
+///  데미지 없음. 데미지는 ContactDamage 컴포넌트가 전담.
 ///
 /// [스케줄 색상 전환]
 ///  colorSchedule[] 배열에 {atSeconds, color} 를 지정하면
@@ -91,25 +92,14 @@ public class ColorWall : MonoBehaviour
     [Tooltip("색상이 같으면 이 시간(초) 동안 벽 이동 정지")]
     [SerializeField] float pauseDuration = 2f;
 
-    [Header("색상 불일치 — 데미지")]
-    [Tooltip("불일치 시 플레이어에게 입히는 데미지")]
-    [SerializeField] int damage = 1;
-
-    [Tooltip("연속 데미지 간격(초)")]
-    [SerializeField] float damageInterval = 0.5f;
-
     [Header("이벤트 (선택)")]
     [Tooltip("색상 일치 시 호출 (시각 피드백 등)")]
     public UnityEvent OnColorMatch;
-
-    [Tooltip("색상 불일치 데미지 발생 시 호출")]
-    public UnityEvent OnColorMismatch;
 
     [Tooltip("색상이 바뀔 때 호출 (추가 시각 피드백용)")]
     public UnityEvent OnColorChanged;
 
     WallColorType _wallColor;
-    float     _nextDamageTime;
     bool      _isPaused;
     Coroutine _pauseCoroutine;
     Coroutine _scheduleCoroutine;
@@ -118,6 +108,7 @@ public class ColorWall : MonoBehaviour
     AdvancingWall       _advancingWall;
     WallMover           _wallMover;
     WallWaveController  _waveController;
+    ContactDamage       _contactDamage;
 
     // ── 현재 논리 색 외부 읽기용 ──────────────────────────────────
     public WallColorType CurrentColor => _wallColor;
@@ -130,6 +121,7 @@ public class ColorWall : MonoBehaviour
         _advancingWall  = GetComponent<AdvancingWall>() ?? GetComponentInParent<AdvancingWall>();
         _wallMover      = GetComponent<WallMover>()     ?? GetComponentInParent<WallMover>();
         _waveController = GetComponent<WallWaveController>() ?? GetComponentInParent<WallWaveController>();
+        _contactDamage  = GetComponent<ContactDamage>();
 
         _wallColor = defaultColor;
         ApplyMaterial(defaultColor);
@@ -147,7 +139,9 @@ public class ColorWall : MonoBehaviour
     public void StartSchedule()
     {
         if (_scheduleCoroutine != null) StopCoroutine(_scheduleCoroutine);
-        _scheduleCoroutine = StartCoroutine(ScheduleRoutine());
+        // 플레이어 색 슬롯을 GameSession 활성색으로 재매핑 (GameSession 없으면 원본 그대로)
+        ColorChangeEvent[] effective = GameSessionWallColorRemap.RemapSchedule(colorSchedule);
+        _scheduleCoroutine = StartCoroutine(ScheduleRoutine(effective));
     }
 
     /// <summary>색상 스케줄 정지.</summary>
@@ -197,15 +191,6 @@ public class ColorWall : MonoBehaviour
                 OnColorMatch?.Invoke();
             }
         }
-        else
-        {
-            if (damage > 0 && Time.time >= _nextDamageTime)
-            {
-                p.TakeDamage(damage, false);
-                _nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.05f);
-                OnColorMismatch?.Invoke();
-            }
-        }
     }
 
     bool IsColorMatch(Player p)
@@ -234,6 +219,7 @@ public class ColorWall : MonoBehaviour
     IEnumerator PauseRoutine()
     {
         _isPaused = true;
+        _contactDamage?.Deactivate();
 
         _advancingWall?.PauseTemporarily(pauseDuration);
         _wallMover?.ResetToStart();
@@ -244,6 +230,7 @@ public class ColorWall : MonoBehaviour
         _wallMover?.Activate();
         _waveController?.Play();
 
+        _contactDamage?.Activate();
         _isPaused = false;
     }
 
@@ -286,17 +273,19 @@ public class ColorWall : MonoBehaviour
 
     /// <summary>
     /// <summary>
-    /// colorSchedule 배열 순서대로 해당 시각에 색상 변경.
+    /// events 배열 순서대로 해당 시각에 색상 변경.
     /// loopSchedule = true면 schedulePeriod 주기로 반복.
+    /// events는 StartSchedule()에서 GameSessionWallColorRemap으로 재매핑된 배열.
+    /// Inspector 원본 colorSchedule은 그대로 유지됨.
     /// </summary>
-    IEnumerator ScheduleRoutine()
+    IEnumerator ScheduleRoutine(ColorChangeEvent[] events)
     {
         while (true)
         {
             float startTime = Time.time;
 
             // 배열을 순서대로 순회 (atSeconds 오름차순 권장)
-            foreach (var evt in colorSchedule)
+            foreach (var evt in events)
             {
                 float waitUntil = startTime + evt.atSeconds;
                 float remaining = waitUntil - Time.time;

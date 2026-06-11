@@ -1631,6 +1631,7 @@ GameObject:
   - component: {fileID: 66246258}
   - component: {fileID: 66246257}
   - component: {fileID: 66246256}
+  - component: {fileID: 66246262}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -1685,12 +1686,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -1895,6 +1891,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 66246254}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &66246262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 66246254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &73654158 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -2031,6 +2042,7 @@ GameObject:
   - component: {fileID: 79638615}
   - component: {fileID: 79638614}
   - component: {fileID: 79638613}
+  - component: {fileID: 79638619}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -2085,12 +2097,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -2295,6 +2302,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 79638611}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &79638619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 79638611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &83970703
 GameObject:
   m_ObjectHideFlags: 0
@@ -2310,6 +2332,7 @@ GameObject:
   - component: {fileID: 83970707}
   - component: {fileID: 83970706}
   - component: {fileID: 83970705}
+  - component: {fileID: 83970711}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -2364,12 +2387,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -2586,6 +2604,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 83970703}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &83970711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 83970703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &85689599 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -2816,6 +2849,7 @@ GameObject:
   - component: {fileID: 95729938}
   - component: {fileID: 95729937}
   - component: {fileID: 95729936}
+  - component: {fileID: 95729942}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -2870,12 +2904,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -3080,6 +3109,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 95729934}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &95729942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 95729934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &96169827
 GameObject:
   m_ObjectHideFlags: 0
@@ -3184,6 +3228,7 @@ GameObject:
   - component: {fileID: 108265105}
   - component: {fileID: 108265104}
   - component: {fileID: 108265103}
+  - component: {fileID: 108265108}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -3381,6 +3426,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 108265100}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &108265108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 108265100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &120466531
 GameObject:
   m_ObjectHideFlags: 0
@@ -3396,7 +3456,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &120466532
 Transform:
   m_ObjectHideFlags: 0
@@ -3958,6 +4018,7 @@ GameObject:
   - component: {fileID: 158878078}
   - component: {fileID: 158878077}
   - component: {fileID: 158878076}
+  - component: {fileID: 158878081}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -4155,6 +4216,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 158878073}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &158878081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 158878073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &161467525
 GameObject:
   m_ObjectHideFlags: 0
@@ -4261,6 +4337,7 @@ GameObject:
   - component: {fileID: 164311358}
   - component: {fileID: 164311357}
   - component: {fileID: 164311356}
+  - component: {fileID: 164311361}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -4458,6 +4535,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 164311353}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &164311361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164311353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &170799622
 GameObject:
   m_ObjectHideFlags: 0
@@ -4769,6 +4861,7 @@ GameObject:
   - component: {fileID: 178939420}
   - component: {fileID: 178939419}
   - component: {fileID: 178939418}
+  - component: {fileID: 178939424}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -4823,12 +4916,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -5033,6 +5121,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 178939416}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &178939424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 178939416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &187236143
 GameObject:
   m_ObjectHideFlags: 0
@@ -5200,6 +5303,7 @@ GameObject:
   - component: {fileID: 195392332}
   - component: {fileID: 195392331}
   - component: {fileID: 195392330}
+  - component: {fileID: 195392336}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -5254,12 +5358,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -5464,6 +5563,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 195392328}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &195392336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 195392328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &198324321
 GameObject:
   m_ObjectHideFlags: 0
@@ -6074,6 +6188,7 @@ GameObject:
   - component: {fileID: 230173297}
   - component: {fileID: 230173296}
   - component: {fileID: 230173303}
+  - component: {fileID: 230173304}
   m_Layer: 27
   m_Name: BossWall.R
   m_TagString: Untagged
@@ -6109,7 +6224,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WallLineRandomizer
   useWall: 1
-  wallFirstDelay: 0
+  wallFirstDelay: 2
   wallIntervalMin: 2
   wallIntervalMax: 5
   wallAdvance: 10
@@ -6152,12 +6267,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -6333,6 +6443,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &230173304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 230173294}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &234417126 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -6410,6 +6535,7 @@ GameObject:
   - component: {fileID: 248923717}
   - component: {fileID: 248923716}
   - component: {fileID: 248923715}
+  - component: {fileID: 248923721}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -6468,12 +6594,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -6678,6 +6799,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 248923713}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &248923721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 248923713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &251883637
 GameObject:
   m_ObjectHideFlags: 0
@@ -7067,6 +7203,7 @@ GameObject:
   - component: {fileID: 277399279}
   - component: {fileID: 277399278}
   - component: {fileID: 277399277}
+  - component: {fileID: 277399282}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -7264,6 +7401,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 277399274}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &277399282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 277399274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &284583970
 GameObject:
   m_ObjectHideFlags: 0
@@ -7279,6 +7431,7 @@ GameObject:
   - component: {fileID: 284583974}
   - component: {fileID: 284583973}
   - component: {fileID: 284583972}
+  - component: {fileID: 284583978}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -7333,12 +7486,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -7543,6 +7691,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 284583970}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &284583978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284583970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &284607151 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -7593,6 +7756,7 @@ GameObject:
   - component: {fileID: 294581137}
   - component: {fileID: 294581136}
   - component: {fileID: 294581135}
+  - component: {fileID: 294581140}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -7790,6 +7954,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 294581132}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &294581140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 294581132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &296519888 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -9348,6 +9527,7 @@ GameObject:
   - component: {fileID: 370966444}
   - component: {fileID: 370966443}
   - component: {fileID: 370966442}
+  - component: {fileID: 370966448}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -9402,12 +9582,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -9612,6 +9787,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 370966440}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &370966448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 370966440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &375023864 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -9660,6 +9850,7 @@ GameObject:
   - component: {fileID: 377056146}
   - component: {fileID: 377056145}
   - component: {fileID: 377056152}
+  - component: {fileID: 377056153}
   m_Layer: 27
   m_Name: BossWall.B
   m_TagString: Untagged
@@ -9695,7 +9886,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WallLineRandomizer
   useWall: 1
-  wallFirstDelay: 0
+  wallFirstDelay: 3
   wallIntervalMin: 2
   wallIntervalMax: 5
   wallAdvance: 10
@@ -9738,12 +9929,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -9919,6 +10105,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &377056153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377056143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &379120662 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -11405,6 +11606,7 @@ GameObject:
   - component: {fileID: 470955538}
   - component: {fileID: 470955537}
   - component: {fileID: 470955536}
+  - component: {fileID: 470955541}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -11602,6 +11804,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 470955533}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &470955541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 470955533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &475901465
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11728,6 +11945,7 @@ GameObject:
   - component: {fileID: 485235994}
   - component: {fileID: 485235993}
   - component: {fileID: 485235992}
+  - component: {fileID: 485235998}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -11782,12 +12000,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -11992,6 +12205,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 485235990}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &485235998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 485235990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &486855366 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -12068,6 +12296,7 @@ GameObject:
   - component: {fileID: 490355310}
   - component: {fileID: 490355309}
   - component: {fileID: 490355308}
+  - component: {fileID: 490355313}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -12265,6 +12494,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 490355305}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &490355313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 490355305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &493269744 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -12691,6 +12935,7 @@ GameObject:
   - component: {fileID: 528883975}
   - component: {fileID: 528883974}
   - component: {fileID: 528883973}
+  - component: {fileID: 528883978}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -12888,6 +13133,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 528883970}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &528883978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 528883970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &549678719 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -13013,6 +13273,7 @@ GameObject:
   - component: {fileID: 555801679}
   - component: {fileID: 555801678}
   - component: {fileID: 555801677}
+  - component: {fileID: 555801682}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -13210,6 +13471,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 555801674}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &555801682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 555801674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &558085652
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13589,6 +13865,7 @@ GameObject:
   - component: {fileID: 574938365}
   - component: {fileID: 574938364}
   - component: {fileID: 574938363}
+  - component: {fileID: 574938368}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -13786,6 +14063,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 574938360}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &574938368
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 574938360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &575053118
 GameObject:
   m_ObjectHideFlags: 0
@@ -13800,6 +14092,7 @@ GameObject:
   - component: {fileID: 575053123}
   - component: {fileID: 575053122}
   - component: {fileID: 575053121}
+  - component: {fileID: 575053126}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -13997,6 +14290,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 575053118}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &575053126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 575053118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &590355194
 GameObject:
   m_ObjectHideFlags: 0
@@ -14012,6 +14320,7 @@ GameObject:
   - component: {fileID: 590355198}
   - component: {fileID: 590355197}
   - component: {fileID: 590355196}
+  - component: {fileID: 590355202}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -14066,12 +14375,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -14276,6 +14580,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 590355194}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &590355202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590355194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &593736054
 GameObject:
   m_ObjectHideFlags: 0
@@ -14290,6 +14609,7 @@ GameObject:
   - component: {fileID: 593736059}
   - component: {fileID: 593736058}
   - component: {fileID: 593736057}
+  - component: {fileID: 593736062}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -14487,6 +14807,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 593736054}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &593736062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593736054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &606363301
 GameObject:
   m_ObjectHideFlags: 0
@@ -14501,6 +14836,7 @@ GameObject:
   - component: {fileID: 606363306}
   - component: {fileID: 606363305}
   - component: {fileID: 606363304}
+  - component: {fileID: 606363309}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -14698,6 +15034,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 606363301}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &606363309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606363301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &609187666
 GameObject:
   m_ObjectHideFlags: 0
@@ -14788,6 +15139,67 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 609187666}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!1001 &622104813
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1548669509614049921, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: followCamera
+      value: 
+      objectReference: {fileID: 774435089}
+    - target: {fileID: 6569586772583891754, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_Name
+      value: Player.B
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.01791
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3388.0857
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
 --- !u!1 &633794339
 GameObject:
   m_ObjectHideFlags: 0
@@ -15193,6 +15605,56 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
   m_PrefabInstance: {fileID: 865705257}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &643636702
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 643636704}
+  - component: {fileID: 643636703}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &643636703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 643636702}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7ed0fd79bf15744ba3ba97e79c2c43e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameSession
+  activeColorSlots: 01000000
+  allPlayers:
+  - {fileID: 718335466}
+  - {fileID: 2478706847424194976, guid: de303d31b178cd14392fe7323fa0ca71, type: 3}
+  - {fileID: 7996734488742216887, guid: 5d1c00a468f23a24e9c6da8db61ba30d, type: 3}
+  - {fileID: 2080940975173098801, guid: 52f9e867291ed36479eb5bf5ac843647, type: 3}
+--- !u!4 &643636704
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 643636702}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.19236, y: 0.25, z: 3390.3125}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &646347308 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -16360,6 +16822,7 @@ GameObject:
   - component: {fileID: 717541635}
   - component: {fileID: 717541634}
   - component: {fileID: 717541633}
+  - component: {fileID: 717541639}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -16414,12 +16877,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -16624,6 +17082,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 717541631}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &717541639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 717541631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
+--- !u!114 &718335466 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1548669509614049921, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+  m_PrefabInstance: {fileID: 622104813}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51f69dca472ebb0479dbb1310ec56cbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Player
+--- !u!4 &718335471 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+  m_PrefabInstance: {fileID: 622104813}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &724240964
 GameObject:
   m_ObjectHideFlags: 0
@@ -16693,6 +17182,7 @@ GameObject:
   - component: {fileID: 725736921}
   - component: {fileID: 725736920}
   - component: {fileID: 725736919}
+  - component: {fileID: 725736925}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -16751,12 +17241,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -16961,6 +17446,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 725736917}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &725736925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 725736917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &733682969
 GameObject:
   m_ObjectHideFlags: 0
@@ -16976,6 +17476,7 @@ GameObject:
   - component: {fileID: 733682973}
   - component: {fileID: 733682972}
   - component: {fileID: 733682971}
+  - component: {fileID: 733682977}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -17034,12 +17535,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -17244,6 +17740,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 733682969}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &733682977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 733682969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &734429173
 GameObject:
   m_ObjectHideFlags: 0
@@ -17463,6 +17974,7 @@ GameObject:
   - component: {fileID: 752673980}
   - component: {fileID: 752673979}
   - component: {fileID: 752673978}
+  - component: {fileID: 752673984}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -17517,12 +18029,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -17727,6 +18234,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 752673976}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &752673984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752673976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &755078263 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -18129,6 +18651,7 @@ GameObject:
   - component: {fileID: 763910957}
   - component: {fileID: 763910956}
   - component: {fileID: 763910958}
+  - component: {fileID: 763910959}
   m_Layer: 27
   m_Name: BossWall_R
   m_TagString: Untagged
@@ -18279,12 +18802,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -18330,6 +18848,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &763910959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763910951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &772470343
 GameObject:
   m_ObjectHideFlags: 0
@@ -18345,6 +18878,7 @@ GameObject:
   - component: {fileID: 772470347}
   - component: {fileID: 772470346}
   - component: {fileID: 772470345}
+  - component: {fileID: 772470351}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -18415,12 +18949,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -18625,6 +19154,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 772470343}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &772470351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 772470343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &774435087
 GameObject:
   m_ObjectHideFlags: 0
@@ -18731,7 +19275,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ffa4b59a1665624abf5b6409764aaba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCamera
-  target: {fileID: 0}
+  target: {fileID: 718335471}
   distance: 12
   minDistanceWhenLookingUp: 1
   targetOffset: {x: 0, y: 5, z: 0}
@@ -18886,6 +19430,7 @@ GameObject:
   - component: {fileID: 780702528}
   - component: {fileID: 780702527}
   - component: {fileID: 780702526}
+  - component: {fileID: 780702531}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -19083,6 +19628,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 780702523}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &780702531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780702523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &780887896
 GameObject:
   m_ObjectHideFlags: 0
@@ -19337,6 +19897,7 @@ GameObject:
   - component: {fileID: 783268929}
   - component: {fileID: 783268928}
   - component: {fileID: 783268927}
+  - component: {fileID: 783268933}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -19391,12 +19952,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -19601,6 +20157,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 783268925}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &783268933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783268925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &791163752
 GameObject:
   m_ObjectHideFlags: 0
@@ -19807,6 +20378,7 @@ GameObject:
   - component: {fileID: 796882255}
   - component: {fileID: 796882254}
   - component: {fileID: 796882253}
+  - component: {fileID: 796882259}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -19861,12 +20433,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -20071,6 +20638,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 796882251}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &796882259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 796882251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &799790590 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -20886,6 +21468,7 @@ GameObject:
   - component: {fileID: 858531413}
   - component: {fileID: 858531412}
   - component: {fileID: 858531411}
+  - component: {fileID: 858531416}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -21083,6 +21666,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 858531408}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &858531416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 858531408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &865705257
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21747,6 +22345,7 @@ GameObject:
   - component: {fileID: 903436541}
   - component: {fileID: 903436540}
   - component: {fileID: 903436539}
+  - component: {fileID: 903436544}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -21944,6 +22543,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 903436536}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &903436544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 903436536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &904957917
 GameObject:
   m_ObjectHideFlags: 0
@@ -21958,6 +22572,7 @@ GameObject:
   - component: {fileID: 904957922}
   - component: {fileID: 904957921}
   - component: {fileID: 904957920}
+  - component: {fileID: 904957925}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -22155,6 +22770,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 904957917}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &904957925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 904957917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &905874189
 GameObject:
   m_ObjectHideFlags: 0
@@ -22263,6 +22893,7 @@ GameObject:
   - component: {fileID: 917900690}
   - component: {fileID: 917900689}
   - component: {fileID: 917900688}
+  - component: {fileID: 917900693}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -22460,6 +23091,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 917900685}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &917900693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 917900685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &918405474
 GameObject:
   m_ObjectHideFlags: 0
@@ -22506,6 +23152,7 @@ GameObject:
   - component: {fileID: 933445572}
   - component: {fileID: 933445571}
   - component: {fileID: 933445570}
+  - component: {fileID: 933445576}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -22560,12 +23207,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -22770,6 +23412,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 933445568}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &933445576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933445568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &937315188
 GameObject:
   m_ObjectHideFlags: 0
@@ -22785,6 +23442,7 @@ GameObject:
   - component: {fileID: 937315192}
   - component: {fileID: 937315191}
   - component: {fileID: 937315190}
+  - component: {fileID: 937315196}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -22843,12 +23501,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -23053,6 +23706,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 937315188}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &937315196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 937315188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &938796122
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24576,6 +25244,7 @@ GameObject:
   - component: {fileID: 1051229713}
   - component: {fileID: 1051229712}
   - component: {fileID: 1051229711}
+  - component: {fileID: 1051229716}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -24773,6 +25442,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1051229708}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1051229716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051229708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1051247462
 GameObject:
   m_ObjectHideFlags: 0
@@ -24787,6 +25471,7 @@ GameObject:
   - component: {fileID: 1051247467}
   - component: {fileID: 1051247466}
   - component: {fileID: 1051247465}
+  - component: {fileID: 1051247470}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -24984,6 +25669,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1051247462}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1051247470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051247462}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1052451696
 GameObject:
   m_ObjectHideFlags: 0
@@ -25487,6 +26187,7 @@ GameObject:
   - component: {fileID: 1069581488}
   - component: {fileID: 1069581487}
   - component: {fileID: 1069581486}
+  - component: {fileID: 1069581492}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -25545,12 +26246,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -25755,6 +26451,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1069581484}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1069581492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069581484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1071543700
 GameObject:
   m_ObjectHideFlags: 0
@@ -25769,6 +26480,7 @@ GameObject:
   - component: {fileID: 1071543705}
   - component: {fileID: 1071543704}
   - component: {fileID: 1071543703}
+  - component: {fileID: 1071543708}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -25966,6 +26678,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1071543700}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1071543708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071543700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1078982381
 GameObject:
   m_ObjectHideFlags: 0
@@ -26405,6 +27132,7 @@ GameObject:
   - component: {fileID: 1094162418}
   - component: {fileID: 1094162417}
   - component: {fileID: 1094162416}
+  - component: {fileID: 1094162421}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -26602,6 +27330,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1094162413}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1094162421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1094162413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1098450498 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -27006,7 +27749,7 @@ MonoBehaviour:
   OnFailed:
     m_PersistentCalls:
       m_Calls: []
-  targetTime: 300
+  targetTime: 77
   OnTimeChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -27290,7 +28033,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1162255674}
   m_Layer: 0
-  m_Name: 343-
+  m_Name: 343-420
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -27598,6 +28341,7 @@ GameObject:
   - component: {fileID: 1172538222}
   - component: {fileID: 1172538221}
   - component: {fileID: 1172538220}
+  - component: {fileID: 1172538226}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -27652,12 +28396,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -27862,6 +28601,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1172538218}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1172538226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172538218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &1173121745
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27957,6 +28711,7 @@ GameObject:
   - component: {fileID: 1177722939}
   - component: {fileID: 1177722938}
   - component: {fileID: 1177722937}
+  - component: {fileID: 1177722943}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -28019,12 +28774,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -28229,6 +28979,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1177722935}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1177722943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1177722935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1190127174
 GameObject:
   m_ObjectHideFlags: 0
@@ -28466,6 +29231,7 @@ GameObject:
   - component: {fileID: 1212139012}
   - component: {fileID: 1212139011}
   - component: {fileID: 1212139010}
+  - component: {fileID: 1212139015}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -28663,6 +29429,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1212139007}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1212139015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1212139007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1216206186 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -28811,6 +29592,7 @@ GameObject:
   - component: {fileID: 1224480762}
   - component: {fileID: 1224480761}
   - component: {fileID: 1224480760}
+  - component: {fileID: 1224480765}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -29008,6 +29790,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1224480757}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1224480765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1224480757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1228183522 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -29274,6 +30071,7 @@ GameObject:
   - component: {fileID: 1239362679}
   - component: {fileID: 1239362678}
   - component: {fileID: 1239362677}
+  - component: {fileID: 1239362682}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -29471,6 +30269,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1239362674}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1239362682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239362674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &1244344806
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29975,6 +30788,7 @@ GameObject:
   - component: {fileID: 1257361616}
   - component: {fileID: 1257361615}
   - component: {fileID: 1257361614}
+  - component: {fileID: 1257361619}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -30172,6 +30986,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1257361611}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1257361619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1257361611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1258641033
 GameObject:
   m_ObjectHideFlags: 0
@@ -30276,6 +31105,7 @@ GameObject:
   - component: {fileID: 1262185627}
   - component: {fileID: 1262185626}
   - component: {fileID: 1262185625}
+  - component: {fileID: 1262185630}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -30473,6 +31303,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1262185622}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1262185630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1262185622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1263871354
 GameObject:
   m_ObjectHideFlags: 0
@@ -30488,6 +31333,7 @@ GameObject:
   - component: {fileID: 1263871360}
   - component: {fileID: 1263871359}
   - component: {fileID: 1263871361}
+  - component: {fileID: 1263871362}
   m_Layer: 27
   m_Name: BossWall_B
   m_TagString: Untagged
@@ -30638,12 +31484,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -30689,6 +31530,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &1263871362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1263871354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1272397062
 GameObject:
   m_ObjectHideFlags: 0
@@ -30796,6 +31652,7 @@ GameObject:
   - component: {fileID: 1276895631}
   - component: {fileID: 1276895630}
   - component: {fileID: 1276895629}
+  - component: {fileID: 1276895635}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -30850,12 +31707,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -31060,6 +31912,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1276895627}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1276895635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1276895627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &1282749373
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31599,6 +32466,7 @@ GameObject:
   - component: {fileID: 1334584744}
   - component: {fileID: 1334584743}
   - component: {fileID: 1334584742}
+  - component: {fileID: 1334584748}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -31653,12 +32521,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -31863,6 +32726,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1334584740}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1334584748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1334584740}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1345343764
 GameObject:
   m_ObjectHideFlags: 0
@@ -32148,6 +33026,7 @@ GameObject:
   - component: {fileID: 1354974864}
   - component: {fileID: 1354974863}
   - component: {fileID: 1354974862}
+  - component: {fileID: 1354974868}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -32202,12 +33081,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -32412,6 +33286,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1354974860}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1354974868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1354974860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1358319838 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -32550,6 +33439,7 @@ GameObject:
   - component: {fileID: 1360030461}
   - component: {fileID: 1360030460}
   - component: {fileID: 1360030467}
+  - component: {fileID: 1360030468}
   m_Layer: 27
   m_Name: BossWall.L
   m_TagString: Untagged
@@ -32628,12 +33518,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -32809,6 +33694,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &1360030468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360030458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1364161280
 GameObject:
   m_ObjectHideFlags: 0
@@ -33669,6 +34569,7 @@ GameObject:
   - component: {fileID: 1392880666}
   - component: {fileID: 1392880665}
   - component: {fileID: 1392880664}
+  - component: {fileID: 1392880670}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -33723,12 +34624,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -33933,6 +34829,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1392880662}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1392880670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1392880662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1397691825
 GameObject:
   m_ObjectHideFlags: 0
@@ -34200,6 +35111,7 @@ GameObject:
   - component: {fileID: 1424995471}
   - component: {fileID: 1424995470}
   - component: {fileID: 1424995469}
+  - component: {fileID: 1424995474}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -34397,6 +35309,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1424995466}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1424995474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424995466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1433558067
 GameObject:
   m_ObjectHideFlags: 0
@@ -35126,6 +36053,7 @@ GameObject:
   - component: {fileID: 1485689718}
   - component: {fileID: 1485689717}
   - component: {fileID: 1485689716}
+  - component: {fileID: 1485689721}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -35323,6 +36251,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1485689713}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1485689721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1485689713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1487582768 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -35480,6 +36423,7 @@ GameObject:
   - component: {fileID: 1496808744}
   - component: {fileID: 1496808743}
   - component: {fileID: 1496808742}
+  - component: {fileID: 1496808748}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -35534,12 +36478,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -35744,6 +36683,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1496808740}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1496808748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1496808740}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1506268697
 GameObject:
   m_ObjectHideFlags: 0
@@ -35955,6 +36909,7 @@ GameObject:
   - component: {fileID: 1517006391}
   - component: {fileID: 1517006390}
   - component: {fileID: 1517006389}
+  - component: {fileID: 1517006395}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -36017,12 +36972,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -36227,6 +37177,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1517006387}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1517006395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1517006387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1521969532 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -36480,6 +37445,7 @@ GameObject:
   - component: {fileID: 1543773423}
   - component: {fileID: 1543773422}
   - component: {fileID: 1543773421}
+  - component: {fileID: 1543773427}
   m_Layer: 0
   m_Name: BossWall (7)
   m_TagString: Untagged
@@ -36534,12 +37500,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -36744,6 +37705,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1543773419}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1543773427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1543773419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1551122521
 GameObject:
   m_ObjectHideFlags: 0
@@ -37401,6 +38377,7 @@ GameObject:
   - component: {fileID: 1568414846}
   - component: {fileID: 1568414845}
   - component: {fileID: 1568414844}
+  - component: {fileID: 1568414850}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -37471,12 +38448,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -37681,6 +38653,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1568414842}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1568414850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1568414842}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &1575285401
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38039,6 +39026,7 @@ GameObject:
   - component: {fileID: 1589730835}
   - component: {fileID: 1589730834}
   - component: {fileID: 1589730833}
+  - component: {fileID: 1589730838}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -38236,6 +39224,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1589730830}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1589730838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1589730830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1594673115
 GameObject:
   m_ObjectHideFlags: 0
@@ -39016,6 +40019,7 @@ GameObject:
   - component: {fileID: 1634321686}
   - component: {fileID: 1634321685}
   - component: {fileID: 1634321684}
+  - component: {fileID: 1634321690}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -39070,12 +40074,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -39280,6 +40279,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1634321682}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1634321690
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1634321682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1635795402
 GameObject:
   m_ObjectHideFlags: 0
@@ -39372,6 +40386,7 @@ GameObject:
   - component: {fileID: 1642011079}
   - component: {fileID: 1642011078}
   - component: {fileID: 1642011085}
+  - component: {fileID: 1642011086}
   m_Layer: 27
   m_Name: BossWall.F
   m_TagString: Untagged
@@ -39407,7 +40422,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WallLineRandomizer
   useWall: 1
-  wallFirstDelay: 0
+  wallFirstDelay: 1
   wallIntervalMin: 2
   wallIntervalMax: 5
   wallAdvance: 10
@@ -39450,12 +40465,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -39631,6 +40641,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &1642011086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1642011076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1645754285 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -39707,6 +40732,7 @@ GameObject:
   - component: {fileID: 1672509252}
   - component: {fileID: 1672509251}
   - component: {fileID: 1672509250}
+  - component: {fileID: 1672509255}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -39904,6 +40930,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1672509247}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1672509255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1672509247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1676485874
 GameObject:
   m_ObjectHideFlags: 0
@@ -40624,6 +41665,7 @@ GameObject:
   - component: {fileID: 1701931360}
   - component: {fileID: 1701931359}
   - component: {fileID: 1701931358}
+  - component: {fileID: 1701931363}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -40821,6 +41863,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1701931355}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1701931363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1701931355}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &1703132138
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41812,6 +42869,7 @@ GameObject:
   - component: {fileID: 1753335987}
   - component: {fileID: 1753335986}
   - component: {fileID: 1753335985}
+  - component: {fileID: 1753335990}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -42009,6 +43067,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1753335982}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1753335990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753335982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1758007224 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -42085,6 +43158,7 @@ GameObject:
   - component: {fileID: 1765679846}
   - component: {fileID: 1765679845}
   - component: {fileID: 1765679844}
+  - component: {fileID: 1765679849}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -42282,6 +43356,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1765679841}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1765679849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765679841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1767680347
 GameObject:
   m_ObjectHideFlags: 0
@@ -42297,6 +43386,7 @@ GameObject:
   - component: {fileID: 1767680351}
   - component: {fileID: 1767680350}
   - component: {fileID: 1767680349}
+  - component: {fileID: 1767680355}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -42363,12 +43453,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -42573,6 +43658,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1767680347}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1767680355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1767680347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1770257743 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -43290,6 +44390,7 @@ GameObject:
   - component: {fileID: 1828270948}
   - component: {fileID: 1828270947}
   - component: {fileID: 1828270946}
+  - component: {fileID: 1828270952}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -43344,12 +44445,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -43554,6 +44650,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1828270944}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1828270952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1828270944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1849323379
 GameObject:
   m_ObjectHideFlags: 0
@@ -43568,6 +44679,7 @@ GameObject:
   - component: {fileID: 1849323384}
   - component: {fileID: 1849323383}
   - component: {fileID: 1849323382}
+  - component: {fileID: 1849323387}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -43765,6 +44877,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1849323379}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1849323387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1849323379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1850958328 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -43896,6 +45023,7 @@ GameObject:
   - component: {fileID: 1861762620}
   - component: {fileID: 1861762619}
   - component: {fileID: 1861762618}
+  - component: {fileID: 1861762623}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -44093,6 +45221,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1861762615}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1861762623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1861762615}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1863653071
 GameObject:
   m_ObjectHideFlags: 0
@@ -44231,6 +45374,7 @@ GameObject:
   - component: {fileID: 1887989835}
   - component: {fileID: 1887989834}
   - component: {fileID: 1887989833}
+  - component: {fileID: 1887989838}
   m_Layer: 0
   m_Name: BossWall (1)
   m_TagString: Untagged
@@ -44428,6 +45572,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1887989830}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1887989838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1887989830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1889547751
 GameObject:
   m_ObjectHideFlags: 0
@@ -44442,6 +45601,7 @@ GameObject:
   - component: {fileID: 1889547756}
   - component: {fileID: 1889547755}
   - component: {fileID: 1889547754}
+  - component: {fileID: 1889547759}
   m_Layer: 0
   m_Name: BossWall (4)
   m_TagString: Untagged
@@ -44639,6 +45799,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1889547751}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &1889547759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1889547751}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &1892276077 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -46506,6 +47681,7 @@ GameObject:
   - component: {fileID: 2017583064}
   - component: {fileID: 2017583063}
   - component: {fileID: 2017583062}
+  - component: {fileID: 2017583068}
   m_Layer: 0
   m_Name: BossWall (2)
   m_TagString: Untagged
@@ -46560,12 +47736,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -46770,6 +47941,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2017583060}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2017583068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017583060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2018443941
 GameObject:
   m_ObjectHideFlags: 0
@@ -46956,6 +48142,7 @@ GameObject:
   - component: {fileID: 2032691837}
   - component: {fileID: 2032691836}
   - component: {fileID: 2032691835}
+  - component: {fileID: 2032691841}
   m_Layer: 0
   m_Name: BossWall (6)
   m_TagString: Untagged
@@ -47014,12 +48201,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -47224,6 +48406,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2032691833}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2032691841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2032691833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2035027868
 GameObject:
   m_ObjectHideFlags: 0
@@ -47239,6 +48436,7 @@ GameObject:
   - component: {fileID: 2035027872}
   - component: {fileID: 2035027871}
   - component: {fileID: 2035027870}
+  - component: {fileID: 2035027876}
   m_Layer: 0
   m_Name: BossWall (8)
   m_TagString: Untagged
@@ -47293,12 +48491,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -47503,6 +48696,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2035027868}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2035027876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2035027868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2035332233
 GameObject:
   m_ObjectHideFlags: 0
@@ -48103,6 +49311,7 @@ GameObject:
   - component: {fileID: 2064025347}
   - component: {fileID: 2064025346}
   - component: {fileID: 2064025345}
+  - component: {fileID: 2064025350}
   m_Layer: 0
   m_Name: BossWall (9)
   m_TagString: Untagged
@@ -48300,6 +49509,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2064025342}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2064025350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2064025342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1001 &2069611649
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -48395,6 +49619,7 @@ GameObject:
   - component: {fileID: 2083305976}
   - component: {fileID: 2083305975}
   - component: {fileID: 2083305977}
+  - component: {fileID: 2083305978}
   m_Layer: 27
   m_Name: BossWall_F
   m_TagString: Untagged
@@ -48545,12 +49770,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -48596,6 +49816,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &2083305978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2083305970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2085717183
 GameObject:
   m_ObjectHideFlags: 0
@@ -48610,6 +49845,7 @@ GameObject:
   - component: {fileID: 2085717188}
   - component: {fileID: 2085717187}
   - component: {fileID: 2085717186}
+  - component: {fileID: 2085717191}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -48807,6 +50043,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2085717183}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2085717191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085717183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2090614517
 GameObject:
   m_ObjectHideFlags: 0
@@ -49589,6 +50840,7 @@ GameObject:
   - component: {fileID: 2113327451}
   - component: {fileID: 2113327450}
   - component: {fileID: 2113327449}
+  - component: {fileID: 2113327455}
   m_Layer: 0
   m_Name: BossWall (3)
   m_TagString: Untagged
@@ -49643,12 +50895,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -49853,6 +51100,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2113327447}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2113327455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2113327447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2114092660 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -49979,6 +51241,7 @@ GameObject:
   - component: {fileID: 2126351010}
   - component: {fileID: 2126351009}
   - component: {fileID: 2126351008}
+  - component: {fileID: 2126351014}
   m_Layer: 0
   m_Name: BossWall
   m_TagString: Untagged
@@ -50033,12 +51296,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -50243,6 +51501,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2126351006}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2126351014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126351006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2126906797
 GameObject:
   m_ObjectHideFlags: 0
@@ -50258,6 +51531,7 @@ GameObject:
   - component: {fileID: 2126906805}
   - component: {fileID: 2126906804}
   - component: {fileID: 2126906806}
+  - component: {fileID: 2126906807}
   m_Layer: 27
   m_Name: BossWall_L
   m_TagString: Untagged
@@ -50408,12 +51682,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -50459,6 +51728,21 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   telegraphClip: {fileID: 0}
   moveClip: {fileID: 0}
+--- !u!114 &2126906807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126906797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2127128626
 GameObject:
   m_ObjectHideFlags: 0
@@ -50585,6 +51869,7 @@ GameObject:
   - component: {fileID: 2134911583}
   - component: {fileID: 2134911582}
   - component: {fileID: 2134911581}
+  - component: {fileID: 2134911587}
   m_Layer: 0
   m_Name: BossWall (5)
   m_TagString: Untagged
@@ -50651,12 +51936,7 @@ MonoBehaviour:
   schedulePeriod: 60
   scheduleOnStart: 1
   pauseDuration: 2
-  damage: 1
-  damageInterval: 0.5
   OnColorMatch:
-    m_PersistentCalls:
-      m_Calls: []
-  OnColorMismatch:
     m_PersistentCalls:
       m_Calls: []
   OnColorChanged:
@@ -50861,6 +52141,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2134911579}
   m_Mesh: {fileID: 8777139954052135742, guid: bdb2782063236204c809bd04b0c75e05, type: 3}
+--- !u!114 &2134911587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2134911579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
+  damage: 1
+  damageInterval: 1
+  isActive: 1
 --- !u!1 &2136734954 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3645dc041d0b69240b005e40273bb89c, type: 3}
@@ -50939,3 +52234,5 @@ SceneRoots:
   - {fileID: 1917173773}
   - {fileID: 1162255674}
   - {fileID: 1635795404}
+  - {fileID: 643636704}
+  - {fileID: 622104813}

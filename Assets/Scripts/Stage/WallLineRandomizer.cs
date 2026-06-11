@@ -202,16 +202,26 @@ public class WallLineRandomizer : MonoBehaviour
 
     ColorWall.WallColorType[] BuildPool()
     {
-        if (colorPool != null && colorPool.Length > 0)
-            return colorPool;
+        ColorWall.WallColorType[] raw;
 
-        var list = new List<ColorWall.WallColorType>();
-        foreach (ColorWall.WallColorType v in System.Enum.GetValues(typeof(ColorWall.WallColorType)))
+        if (colorPool != null && colorPool.Length > 0)
         {
-            if (v != ColorWall.WallColorType.Default)
-                list.Add(v);
+            raw = colorPool;
         }
-        return list.Count > 0 ? list.ToArray() : new[] { ColorWall.WallColorType.Black };
+        else
+        {
+            // colorPool 비어있으면 Default 제외 전체 enum
+            var list = new List<ColorWall.WallColorType>();
+            foreach (ColorWall.WallColorType v in System.Enum.GetValues(typeof(ColorWall.WallColorType)))
+            {
+                if (v != ColorWall.WallColorType.Default)
+                    list.Add(v);
+            }
+            raw = list.Count > 0 ? list.ToArray() : new[] { ColorWall.WallColorType.Black };
+        }
+
+        // 비활성 플레이어 색 제거 (GameSession 없으면 raw 그대로)
+        return GameSessionWallColorRemap.FilterPool(raw);
     }
 
     [ContextMenu("테스트: 색상 즉시 발동")]
