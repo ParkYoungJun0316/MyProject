@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameSession
   activeColorSlots: 01000000
   allPlayers:
-  - {fileID: 314665843}
+  - {fileID: 660660978}
   - {fileID: 2478706847424194976, guid: de303d31b178cd14392fe7323fa0ca71, type: 3}
   - {fileID: 7996734488742216887, guid: 5d1c00a468f23a24e9c6da8db61ba30d, type: 3}
   - {fileID: 2080940975173098801, guid: 52f9e867291ed36479eb5bf5ac843647, type: 3}
@@ -462,7 +462,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: fireAtSeconds.Array.size
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[0]'
@@ -482,7 +482,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
+      propertyPath: 'fireAtSeconds.Array.data[5]'
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -603,11 +607,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -1005,7 +1009,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: fireAtSeconds.Array.size
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[0]'
@@ -1025,7 +1029,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
+      propertyPath: 'fireAtSeconds.Array.data[5]'
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -1273,17 +1281,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 277512901}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &314665843 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1548669509614049921, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-  m_PrefabInstance: {fileID: 658627316}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 51f69dca472ebb0479dbb1310ec56cbc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Player
 --- !u!1 &318423714
 GameObject:
   m_ObjectHideFlags: 0
@@ -1327,7 +1324,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 846f1a4e5d5c843448d93c9e37a798dd, type: 2}
+  - {fileID: 2100000, guid: 4bfd2cfb32b95234eab3455ac9645b02, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1828,7 +1825,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: fireAtSeconds.Array.size
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[0]'
@@ -1844,7 +1841,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -2237,8 +2234,8 @@ MonoBehaviour:
   closeClipLength: 1
   holdDuration: 2
   openClipLength: 1
-  randomIntervalMin: 0
-  randomIntervalMax: 5
+  randomIntervalMin: 10
+  randomIntervalMax: 20
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
@@ -2252,7 +2249,7 @@ GameObject:
   m_Component:
   - component: {fileID: 551221225}
   m_Layer: 0
-  m_Name: Boss 185-255
+  m_Name: Boss 190-260
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2624,11 +2621,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -2711,63 +2708,22 @@ MonoBehaviour:
   rotateToTarget: 1
   rotateSpeed: 20
   rotateYAxisOnly: 0
---- !u!1001 &658627316
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 6569586772583891754, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_Name
-      value: Player.B
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6698005324359192748, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 240315b23f47cba48ae3237923eafb49, type: 3}
+--- !u!114 &660660978 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4262352155908590282, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+  m_PrefabInstance: {fileID: 1145368992}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51f69dca472ebb0479dbb1310ec56cbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Player
+--- !u!4 &660660983 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+  m_PrefabInstance: {fileID: 1145368992}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &664922017
 GameObject:
   m_ObjectHideFlags: 0
@@ -3170,7 +3126,7 @@ GameObject:
   - component: {fileID: 735431684}
   - component: {fileID: 735431685}
   m_Layer: 0
-  m_Name: Boss 120-185
+  m_Name: Boss 125-190
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3204,7 +3160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d313369d79953f84681e0cfc02764b71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseSurviveChallenge
-  targetTime: 2
+  targetTime: 65
   OnChallengeComplete:
     m_PersistentCalls:
       m_Calls:
@@ -3754,11 +3710,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -3829,7 +3785,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ffa4b59a1665624abf5b6409764aaba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCamera
-  target: {fileID: 0}
+  target: {fileID: 660660983}
   distance: 5
   minDistanceWhenLookingUp: 1
   targetOffset: {x: 0, y: 2, z: 0}
@@ -4402,7 +4358,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: fireAtSeconds.Array.size
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[0]'
@@ -4414,11 +4370,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[2]'
-      value: 42
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 51
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
@@ -4623,6 +4579,67 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 356787502599796545, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
   m_PrefabInstance: {fileID: 1508627161}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1145368992
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4262352155908590282, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: followCamera
+      value: 
+      objectReference: {fileID: 878859387}
+    - target: {fileID: 5933153780236534023, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_Name
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.07268
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -3.52778
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421318610063694781, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4f6752d92c0c0204ca033aac3ceb5e7d, type: 3}
 --- !u!114 &1165929814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4706,7 +4723,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1180567567
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5096,11 +5113,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[2]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
@@ -5190,7 +5207,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4862474480044982399, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5003647459588958771, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: player
@@ -5511,7 +5528,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -5636,11 +5653,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -5988,11 +6005,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -6191,7 +6208,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: fireAtSeconds.Array.size
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[0]'
@@ -6207,7 +6224,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
+      propertyPath: 'fireAtSeconds.Array.data[4]'
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -6508,11 +6529,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 42
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[5]'
-      value: 51
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -6637,11 +6658,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -6822,7 +6843,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: fireAtSeconds.Array.size
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[0]'
@@ -6842,7 +6863,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -7318,11 +7339,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -7630,7 +7651,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -8215,7 +8236,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -8456,11 +8477,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 42
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[5]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -8762,7 +8783,7 @@ GameObject:
   - component: {fileID: 1783057322}
   - component: {fileID: 1783057323}
   m_Layer: 0
-  m_Name: Boss 60-120
+  m_Name: Boss 60-125
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8797,7 +8818,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d313369d79953f84681e0cfc02764b71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseSurviveChallenge
-  targetTime: 2
+  targetTime: 65
   OnChallengeComplete:
     m_PersistentCalls:
       m_Calls:
@@ -8858,7 +8879,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d313369d79953f84681e0cfc02764b71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseSurviveChallenge
-  targetTime: 5
+  targetTime: 60
   OnChallengeComplete:
     m_PersistentCalls:
       m_Calls:
@@ -9962,12 +9983,12 @@ GameObject:
   m_Component:
   - component: {fileID: 2056263678}
   m_Layer: 0
-  m_Name: Boss 255-345
+  m_Name: Boss 260-350
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2056263678
 Transform:
   m_ObjectHideFlags: 0
@@ -10319,11 +10340,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[3]'
-      value: 42
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: 'fireAtSeconds.Array.data[4]'
-      value: 51
+      value: 55
       objectReference: {fileID: 0}
     - target: {fileID: 4768387408271606514, guid: 8b80de49e89d15c4b902463458e08844, type: 3}
       propertyPath: speedPhases.Array.data[0].afterSeconds
@@ -24030,4 +24051,4 @@ SceneRoots:
   - {fileID: 1324908009}
   - {fileID: 1293928619}
   - {fileID: 10836623}
-  - {fileID: 658627316}
+  - {fileID: 1145368992}
