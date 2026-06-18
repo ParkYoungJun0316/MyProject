@@ -9,10 +9,20 @@ using UnityEngine.UI;
 [ExecuteAlways]
 public class PlayerHPUI : MonoBehaviour
 {
+    [System.Serializable]
+    public class ColorHeartEntry
+    {
+        public PlayerColorType colorType;
+        public Sprite fullHeartSprite;
+    }
+
     [Header("연결")]
     [SerializeField] Player player;
 
-    [Header("하트 스프라이트")]
+    [Header("하트 스프라이트 (색별)")]
+    [SerializeField] ColorHeartEntry[] colorHeartMap;
+
+    [Header("하트 스프라이트 (폴백/공통)")]
     [SerializeField] Sprite fullHeartSprite;
     [SerializeField] Sprite emptyHeartSprite;
 
@@ -37,6 +47,15 @@ public class PlayerHPUI : MonoBehaviour
         }
 
         RefreshHearts();
+    }
+
+    Sprite GetFullHeartSprite()
+    {
+        if (colorHeartMap != null && player != null)
+            foreach (var entry in colorHeartMap)
+                if (entry.colorType == player.playerColorType)
+                    return entry.fullHeartSprite;
+        return fullHeartSprite;
     }
 
     void BuildHearts()
@@ -70,7 +89,7 @@ public class PlayerHPUI : MonoBehaviour
             obj.transform.SetParent(transform, false);
 
             Image img = obj.AddComponent<Image>();
-            img.sprite         = fullHeartSprite;
+            img.sprite         = GetFullHeartSprite();
             img.preserveAspect = true;
 
             RectTransform rt = obj.GetComponent<RectTransform>();
@@ -87,7 +106,7 @@ public class PlayerHPUI : MonoBehaviour
         for (int i = 0; i < heartImages.Length; i++)
         {
             if (heartImages[i] == null) continue;
-            heartImages[i].sprite = i < player.heart ? fullHeartSprite : emptyHeartSprite;
+            heartImages[i].sprite = i < player.heart ? GetFullHeartSprite() : emptyHeartSprite;
         }
     }
 

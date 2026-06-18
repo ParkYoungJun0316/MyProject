@@ -250,6 +250,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         return isBlack ? blackColor : whiteColor;
     }
 
+    /// <summary>색 전환 쿨다운 남은 시간(초). 0이면 사용 가능.</summary>
+    public float GetBWCooldownRemaining() => Mathf.Max(0f, nextBWTime - Time.time);
+
     /// <summary>무적·피격 쿨 중이면 false, 실제 피격 시 true.</summary>
     public bool TryTakeDamage(int amount, bool knockback = false)
     {

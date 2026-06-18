@@ -18,23 +18,40 @@ public class TeamStatusUI : MonoBehaviour
         public Sprite icon;
     }
 
+    // ── 색별 하트 매핑 ───────────────────────────────────────────
+    [System.Serializable]
+    public class ColorHeartEntry
+    {
+        public PlayerColorType colorType;
+        public Sprite fullHeartSprite;
+    }
+
+    [Header("연결")]
+    [Tooltip("팀원 목록에서 제외할 플레이어 (내 캐릭터). HP_Panel의 Player와 동일하게 연결.")]
+    [SerializeField] Player excludePlayer;
+
     [Header("슬롯 크기")]
-    [SerializeField] float slotWidth      = 180f;
-    [SerializeField] float slotHeight     = 50f;
-    [SerializeField] float slotSpacing    = 6f;
-    [SerializeField] float heartSize      = 20f;
-    [SerializeField] float heartSpacing   = 2f;
-    [SerializeField] float buffIconSize   = 18f;
+    [SerializeField] float slotWidth        = 180f;
+    [SerializeField] float slotHeight       = 50f;
+    [SerializeField] float slotSpacing      = 6f;
+    [SerializeField] float heartSize        = 20f;
+    [SerializeField] float heartSpacing     = 2f;
+    [SerializeField] float buffIconSize     = 18f;
+    [Tooltip("하트 마지막 칸과 버프 아이콘 사이 간격 (px)")]
+    [SerializeField] float heartBuffSpacing = 6f;
 
     [Header("스프라이트")]
     [SerializeField] Sprite fullHeartSprite;
     [SerializeField] Sprite emptyHeartSprite;
 
+    [Header("색별 하트 스프라이트")]
+    [SerializeField] ColorHeartEntry[] colorHeartMap;
+
     [Header("버프 아이콘")]
     [SerializeField] BuffIconEntry[] buffIconMap;
 
     [Header("색상")]
-    [SerializeField] Color slotBgColor   = new Color(0f, 0f, 0f, 0.5f);
+    [SerializeField] Color slotBgColor   = Color.clear;
     [SerializeField] Color deadBgColor   = new Color(0.6f, 0f, 0f, 0.5f);
     [SerializeField] Color deadTextColor = new Color(1f, 0.3f, 0.3f, 1f);
 
@@ -82,8 +99,17 @@ public class TeamStatusUI : MonoBehaviour
             players = FindObjectsByType<Player>(FindObjectsSortMode.None);
 
         foreach (var p in players)
-            if (p != null)
+            if (p != null && p != excludePlayer)
                 slots.Add(CreateSlot(p));
+    }
+
+    Sprite GetFullHeartSprite(PlayerColorType colorType)
+    {
+        if (colorHeartMap != null)
+            foreach (var entry in colorHeartMap)
+                if (entry.colorType == colorType)
+                    return entry.fullHeartSprite;
+        return fullHeartSprite;
     }
 
     PlayerSlot CreateSlot(Player player)
@@ -114,57 +140,53 @@ public class TeamStatusUI : MonoBehaviour
         nameRt.offsetMin = new Vector2(6f, 0f);
         nameRt.offsetMax = new Vector2(-4f, -2f);
 
-        // 하트 그룹
-        GameObject heartGroupObj = new GameObject("Hearts");
-        heartGroupObj.transform.SetParent(root.transform, false);
-        HorizontalLayoutGroup hHlg = heartGroupObj.AddComponent<HorizontalLayoutGroup>();
-        hHlg.spacing                = heartSpacing;
-        hHlg.childControlWidth      = false;
-        hHlg.childControlHeight     = false;
-        hHlg.childForceExpandWidth  = false;
-        hHlg.childForceExpandHeight = false;
-        hHlg.childAlignment         = TextAnchor.MiddleLeft;
-        RectTransform heartGroupRt = heartGroupObj.GetComponent<RectTransform>();
-        heartGroupRt.anchorMin = new Vector2(0f, 0f);
-        heartGroupRt.anchorMax = new Vector2(0.65f, 0.55f);
-        heartGroupRt.offsetMin = new Vector2(6f, 3f);
-        heartGroupRt.offsetMax = new Vector2(0f, 0f);
+        // 하트 + 버프 인라인 행
+        GameObject bottomRow = new GameObject("BottomRow");
+        bottomRow.transform.SetParent(root.transform, false);
+        HorizontalLayoutGroup rowHlg = bottomRow.AddComponent<HorizontalLayoutGroup>();
+        rowHlg.spacing                = heartSpacing;
+        rowHlg.childControlWidth      = false;
+        rowHlg.childControlHeight     = false;
+        rowHlg.childForceExpandWidth  = false;
+        rowHlg.childForceExpandHeight = false;
+        rowHlg.childAlignment         = TextAnchor.MiddleLeft;
+        RectTransform bottomRowRt = bottomRow.GetComponent<RectTransform>();
+        bottomRowRt.anchorMin = new Vector2(0f, 0f);
+        bottomRowRt.anchorMax = new Vector2(1f, 0.55f);
+        bottomRowRt.offsetMin = new Vector2(6f, 3f);
+        bottomRowRt.offsetMax = new Vector2(-4f, 0f);
 
-        // 하트 생성
+        // 하트 생성 (플레이어 색에 맞는 스프라이트)
         slot.heartImages = new Image[player.maxHeart];
+        Sprite resolvedFull = GetFullHeartSprite(player.playerColorType);
         for (int i = 0; i < player.maxHeart; i++)
         {
             GameObject hObj = new GameObject($"H{i}");
-            hObj.transform.SetParent(heartGroupObj.transform, false);
+            hObj.transform.SetParent(bottomRow.transform, false);
             Image hImg = hObj.AddComponent<Image>();
-            hImg.sprite         = fullHeartSprite;
+            hImg.sprite         = resolvedFull;
             hImg.preserveAspect = true;
             hObj.GetComponent<RectTransform>().sizeDelta = new Vector2(heartSize, heartSize);
             slot.heartImages[i] = hImg;
         }
 
-        // 버프 그룹
+        // 하트-버프 스페이서
+        if (slot.buffSystem != null && buffIconMap != null && buffIconMap.Length > 0 && heartBuffSpacing > 0f)
+        {
+            GameObject spacerObj = new GameObject("HeartBuffSpacer");
+            spacerObj.transform.SetParent(bottomRow.transform, false);
+            LayoutElement le = spacerObj.AddComponent<LayoutElement>();
+            le.minWidth       = heartBuffSpacing;
+            le.preferredWidth = heartBuffSpacing;
+        }
+
+        // 버프 아이콘 (하트 끝에 인라인)
         if (slot.buffSystem != null && buffIconMap != null && buffIconMap.Length > 0)
         {
-            GameObject buffGroupObj = new GameObject("Buffs");
-            buffGroupObj.transform.SetParent(root.transform, false);
-            HorizontalLayoutGroup bHlg = buffGroupObj.AddComponent<HorizontalLayoutGroup>();
-            bHlg.spacing                = 2f;
-            bHlg.childControlWidth      = false;
-            bHlg.childControlHeight     = false;
-            bHlg.childForceExpandWidth  = false;
-            bHlg.childForceExpandHeight = false;
-            bHlg.childAlignment         = TextAnchor.MiddleLeft;
-            RectTransform buffGroupRt = buffGroupObj.GetComponent<RectTransform>();
-            buffGroupRt.anchorMin = new Vector2(0.65f, 0f);
-            buffGroupRt.anchorMax = new Vector2(1f,   0.55f);
-            buffGroupRt.offsetMin = new Vector2(0f, 3f);
-            buffGroupRt.offsetMax = new Vector2(-4f, 0f);
-
             foreach (var entry in buffIconMap)
             {
                 GameObject bObj = new GameObject(entry.type.ToString());
-                bObj.transform.SetParent(buffGroupObj.transform, false);
+                bObj.transform.SetParent(bottomRow.transform, false);
                 Image bImg = bObj.AddComponent<Image>();
                 bImg.sprite         = entry.icon;
                 bImg.preserveAspect = true;
@@ -193,14 +215,14 @@ public class TeamStatusUI : MonoBehaviour
     {
         if (slot == null || slot.player == null) return;
 
-        // 하트
+        Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
         if (slot.heartImages != null)
         {
             for (int i = 0; i < slot.heartImages.Length; i++)
             {
                 if (slot.heartImages[i] == null) continue;
                 slot.heartImages[i].sprite = i < slot.player.heart
-                    ? fullHeartSprite : emptyHeartSprite;
+                    ? resolvedFull : emptyHeartSprite;
             }
         }
     }

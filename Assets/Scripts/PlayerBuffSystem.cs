@@ -31,6 +31,9 @@ public class PlayerBuffSystem : MonoBehaviour
         public float value;
     }
 
+    /// <summary>버프가 새로 적용되거나 갱신될 때 발생. (BuffType, 전체 지속시간)</summary>
+    public event System.Action<BuffType, float> OnBuffApplied;
+
     List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
 
     void Update()
@@ -60,10 +63,12 @@ public class PlayerBuffSystem : MonoBehaviour
             {
                 activeBuffs[i].remainingTime = duration;
                 activeBuffs[i].value         = value;
+                OnBuffApplied?.Invoke(type, duration);
                 return;
             }
         }
         activeBuffs.Add(new ActiveBuff { type = type, remainingTime = duration, value = value });
+        OnBuffApplied?.Invoke(type, duration);
     }
 
     public bool IsActive(BuffType type)
