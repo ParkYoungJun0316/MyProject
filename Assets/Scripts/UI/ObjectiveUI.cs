@@ -5,7 +5,11 @@ using TMPro;
 /// <summary>
 /// Objective_Panel에 붙이는 스크립트.
 /// StageManager의 objectives[] 를 읽어 목표 이름 슬롯을 자동 생성.
-/// Stage Clear 시 슬롯 배경색이 clearBgColor로 전환됨.
+///
+/// [Stage Clear 표시 흐름]
+/// - 중간 스테이지 클리어(OnStageClear) → 슬롯 갱신 없음 (문구 X)
+/// - 씬 전체 클리어(onAllPhasesComplete) → ShowSceneClear() 연결 → 문구 표시
+/// - 다음 스테이지 전환(onPhaseEnter)    → Refresh() 연결 → 슬롯 재생성
 /// </summary>
 public class ObjectiveUI : MonoBehaviour
 {
@@ -125,21 +129,18 @@ public class ObjectiveUI : MonoBehaviour
 
     void DisconnectPreviousSlots()
     {
-        if (stageManager != null)
-            stageManager.OnStageClear.RemoveListener(OnStageClear);
-
         slots = null;
     }
 
-    void ConnectEvents()
-    {
-        if (stageManager != null)
-            stageManager.OnStageClear.AddListener(OnStageClear);
-    }
+    void ConnectEvents() { }
 
-    // ── Stage Clear ───────────────────────────────────────────────
+    // ── 씬 전체 클리어 ───────────────────────────────────────────
 
-    void OnStageClear()
+    /// <summary>
+    /// 씬 전체 클리어 시 Stage Clear 문구 표시.
+    /// PhaseManager.onAllPhasesComplete 에 연결.
+    /// </summary>
+    public void ShowSceneClear()
     {
         if (slots == null) return;
         foreach (var slot in slots)
@@ -152,11 +153,5 @@ public class ObjectiveUI : MonoBehaviour
                 slot.titleText.color = clearTextColor;
             }
         }
-    }
-
-    void OnDestroy()
-    {
-        if (stageManager != null)
-            stageManager.OnStageClear.RemoveListener(OnStageClear);
     }
 }

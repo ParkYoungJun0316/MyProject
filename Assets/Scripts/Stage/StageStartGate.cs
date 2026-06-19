@@ -114,6 +114,7 @@ public class StageStartGate : MonoBehaviour
         _isArmed    = true;
         _isCounting = false;
         _countdown  = countdownDuration;
+        SetZonesActive(true);
         SetZoneCountdownVisual(false);
         OnCountdownReset?.Invoke();
         OnCountdownTick?.Invoke(countdownDuration);
@@ -143,6 +144,7 @@ public class StageStartGate : MonoBehaviour
     void CompleteCountdown()
     {
         SetZoneCountdownVisual(false);
+        SetZonesActive(false);
         OnCountdownComplete?.Invoke();
         Disarm();
         stageManager?.StartStage();
@@ -169,6 +171,13 @@ public class StageStartGate : MonoBehaviour
         if (zones == null) return;
         foreach (ColoredStartZone z in zones)
             z?.SetCountdownVisual(counting);
+    }
+
+    void SetZonesActive(bool active)
+    {
+        if (zones == null) return;
+        foreach (ColoredStartZone z in zones)
+            if (z != null) z.gameObject.SetActive(active);
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

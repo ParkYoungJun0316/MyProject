@@ -143,6 +143,9 @@ public class OXQuizManager : MonoBehaviour
     /// <summary>이번 판 총 출제 문제 수. OXQuizObjective에서 참조.</summary>
     public int TotalQuestions => QuestionsToWin;
 
+    /// <summary>StartQuiz() 이후 true. OXQuizObjective.Begin()에서 이미 진행 중인지 판별에 사용.</summary>
+    public bool IsStarted => _quizStarted;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()

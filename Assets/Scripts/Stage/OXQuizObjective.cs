@@ -39,8 +39,6 @@ public class OXQuizObjective : StageObjective
     {
         Unsubscribe();
 
-        _currentQuestion = 0;
-
         if (quizManager == null)
         {
             Debug.LogWarning($"[OXQuizObjective] quizManager가 연결되지 않았습니다. ({gameObject.name})");
@@ -48,6 +46,10 @@ public class OXQuizObjective : StageObjective
         }
 
         _totalQuestions = quizManager.TotalQuestions;
+
+        // StartQuiz()가 Begin()보다 먼저 호출된 경우 이미 진행 중인 문제 번호로 동기화.
+        // 순서가 올바르면(Begin 먼저) 0에서 시작.
+        _currentQuestion = quizManager.IsStarted ? quizManager.CurrentQuestionIndex + 1 : 0;
 
         quizManager.OnQuestionReady.AddListener(HandleQuestionReady);
         quizManager.OnAllCleared.AddListener(HandleAllCleared);
