@@ -26,7 +26,7 @@ public class TitleMenuController : MonoBehaviour
 {
     [Header("씬 전환")]
     [Tooltip("게임 만들기 버튼으로 로드할 씬 이름. Build Settings 이름과 정확히 일치.")]
-    [SerializeField] private string firstStageSceneName = "M.Stage1";
+    [SerializeField] private string firstStageSceneName = "1.Lobby";
 
     [Header("Discord")]
     [Tooltip("Discord 초대 링크 (예: https://discord.gg/abc123)")]
