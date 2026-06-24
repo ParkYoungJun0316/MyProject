@@ -132,6 +132,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             {
                 fallAnimTriggered = true;
                 anim?.SetTrigger("doFall");
+                events?.RaiseFallDeath();
             }
             if (y < fallDeathY)
                 Die();
@@ -362,6 +363,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             anim.ResetTrigger("doFall");
             anim.SetTrigger(isInstantKill ? "doJammed" : "doDie");
         }
+        if (isInstantKill) events?.RaiseInstantKilled();
         isInstantKill = false;
         events?.RaiseDied();
         StartCoroutine(RespawnAfter(respawnDelay));

@@ -6,12 +6,16 @@ public class PlayerEvents : MonoBehaviour
     public event Action<bool> OnBlackWhiteChanged; // true=black
     public event Action<bool> OnDamaged;           // bool isBossAtk
     public event Action OnDied;
+    public event Action OnInstantKilled;           // 즉사 판정 (doJammed 애니와 동시)
+    public event Action OnFallDeath;               // 추락 사망 애니 시작 시점
     public event Action OnRespawned;
     public event Action<int> OnUniqueColorChanged; // -1=해제, 그 외=고유색 활성
 
-    public void RaiseBlackWhiteChanged(bool isBlack)   => OnBlackWhiteChanged?.Invoke(isBlack);
-    public void RaiseDamaged(bool isBossAtk)          => OnDamaged?.Invoke(isBossAtk);
-    public void RaiseDied()                           => OnDied?.Invoke();
-    public void RaiseRespawned()                      => OnRespawned?.Invoke();
+    public void RaiseBlackWhiteChanged(bool isBlack)    => OnBlackWhiteChanged?.Invoke(isBlack);
+    public void RaiseDamaged(bool isBossAtk)            => OnDamaged?.Invoke(isBossAtk);
+    public void RaiseDied()                             => OnDied?.Invoke();
+    public void RaiseInstantKilled()                    => OnInstantKilled?.Invoke();
+    public void RaiseFallDeath()                        => OnFallDeath?.Invoke();
+    public void RaiseRespawned()                        => OnRespawned?.Invoke();
     public void RaiseUniqueColorChanged(int colorIndex) => OnUniqueColorChanged?.Invoke(colorIndex);
 }
