@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -37,6 +38,8 @@ public class SFXManager : MonoBehaviour
 
     // masterVolume 이 설정되지 않았을 때(0)를 최대 볼륨으로 처리
     float EffectiveVolume => masterVolume > 0f ? masterVolume : 1f;
+
+    readonly Dictionary<int, bool> _alternateUseSecond = new Dictionary<int, bool>();
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -89,6 +92,37 @@ public class SFXManager : MonoBehaviour
         if (clip == null) return;
         AudioSource.PlayClipAtPoint(clip, worldPosition, EffectiveVolume);
     }
+
+    // ── 1/2 교차 재생 ─────────────────────────────────────────────
+
+    static int AlternateKey(SFXId a, SFXId b) => ((int)a * 397) ^ (int)b;
+
+    /// <summary>a ↔ b 를 호출마다 번갈아 2D 재생.</summary>
+    public void PlayAlternating(SFXId a, SFXId b)
+    {
+        int key = AlternateKey(a, b);
+        bool useSecond = _alternateUseSecond.TryGetValue(key, out bool v) && v;
+        Play(useSecond ? b : a);
+        _alternateUseSecond[key] = !useSecond;
+    }
+
+    /// <summary>a ↔ b 를 호출마다 번갈아 3D 재생.</summary>
+    public void PlayAlternating(SFXId a, SFXId b, Vector3 worldPosition)
+    {
+        int key = AlternateKey(a, b);
+        bool useSecond = _alternateUseSecond.TryGetValue(key, out bool v) && v;
+        Play(useSecond ? b : a, worldPosition);
+        _alternateUseSecond[key] = !useSecond;
+    }
+
+    public void PlayFruitPop(Vector3 worldPosition) =>
+        PlayAlternating(SFXId.FruitPop_1, SFXId.FruitPop_2, worldPosition);
+
+    public void PlayMouthTeethBreak(Vector3 worldPosition) =>
+        PlayAlternating(SFXId.Mouth_TeethBreak_1, SFXId.Mouth_TeethBreak_2, worldPosition);
+
+    public void PlayTrapArrow(Vector3 worldPosition) =>
+        PlayAlternating(SFXId.Trap_Arrow_1, SFXId.Trap_Arrow_2, worldPosition);
 
     // ── 루프 재생 ────────────────────────────────────────────────
 

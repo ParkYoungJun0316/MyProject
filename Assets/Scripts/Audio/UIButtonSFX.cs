@@ -11,8 +11,6 @@ using UnityEngine.EventSystems;
 ///   1. 사운드를 재생할 Button GameObject 선택.
 ///   2. Add Component → UIButtonSFX.
 ///   3. sfxId 를 원하는 ID 로 변경 (기본: UI_Click).
-///      - 일반 버튼  : UI_Click
-///      - 드롭다운   : UI_DropdownChange
 ///   4. SFXManager 가 씬에 있어야 함.
 /// </summary>
 [RequireComponent(typeof(Button))]

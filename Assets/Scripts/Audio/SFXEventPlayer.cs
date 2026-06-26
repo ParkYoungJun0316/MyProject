@@ -15,7 +15,7 @@ using UnityEngine;
 ///   DoorController.OnOpened  → SFXEventPlayer.Play()  (sfxId = Door_Open)
 ///   DoorController.OnClosed  → SFXEventPlayer.Play()  (sfxId = Door_Close)
 ///   WallMover.OnMoveStarted  → SFXEventPlayer.Play()  (sfxId = Trap_WallMover)
-///   PhaseData.onPhaseEnter   → SFXEventPlayer.Play()  (sfxId = Boss_PhaseTransition)
+///   PhaseData.onPhaseEnter   → SFXEventPlayer.Play()  (sfxId = Boss_PhaseTransition_Mouth / Boss_PhaseTransition_Esophagus)
 ///
 /// [3D 재생]
 ///   위치 기반 사운드가 필요하면 Play3D() 를 연결하면 됨.

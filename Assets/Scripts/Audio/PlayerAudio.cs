@@ -5,18 +5,13 @@ using UnityEngine;
 /// Player 프리팹 루트에 추가한다.
 ///
 /// [담당 SFX]
-///   Player_Hit / Player_Death / Player_InstantKill / Player_FallDeath
-///   Player_Respawn / Player_ColorChange / Player_Run (루프)
-///   Buff_SpeedUp / Buff_Invincibility / Buff_Received
+///   Player_Hit / Player_Death / Player_Respawn / Player_ColorChange / Player_Run (루프)
+///   Buff_SpeedUp / Buff_Shield
 ///
 /// [배치 방법]
 ///   1. Player.G / Player.B 등 프리팹 루트에 Add Component → PlayerAudio.
 ///   2. runVolume 을 Inspector 에서 설정 (기본 0 → Inspector 에서 조정).
 ///   3. SFXManager 가 씬에 있어야 함.
-///
-/// [Player_Run 루프]
-///   이 컴포넌트가 자체 AudioSource 를 생성해서 관리함.
-///   SFXManager 의 루프 채널을 쓰지 않으므로 플레이어별로 독립됨.
 /// </summary>
 [RequireComponent(typeof(PlayerEvents))]
 public class PlayerAudio : MonoBehaviour
@@ -42,7 +37,6 @@ public class PlayerAudio : MonoBehaviour
         _events     = GetComponent<PlayerEvents>();
         _buffSystem = GetComponent<PlayerBuffSystem>();
 
-        // 달리기 전용 AudioSource (Play 상태를 완전히 이 컴포넌트가 제어)
         _runSource              = gameObject.AddComponent<AudioSource>();
         _runSource.playOnAwake  = false;
         _runSource.loop         = true;
@@ -55,8 +49,6 @@ public class PlayerAudio : MonoBehaviour
         {
             _events.OnDamaged            += OnHit;
             _events.OnDied               += OnDeath;
-            _events.OnInstantKilled      += OnInstantKill;
-            _events.OnFallDeath          += OnFallDeath;
             _events.OnRespawned          += OnRespawn;
             _events.OnBlackWhiteChanged  += OnBWChanged;
             _events.OnUniqueColorChanged += OnUniqueChanged;
@@ -72,8 +64,6 @@ public class PlayerAudio : MonoBehaviour
         {
             _events.OnDamaged            -= OnHit;
             _events.OnDied               -= OnDeath;
-            _events.OnInstantKilled      -= OnInstantKill;
-            _events.OnFallDeath          -= OnFallDeath;
             _events.OnRespawned          -= OnRespawn;
             _events.OnBlackWhiteChanged  -= OnBWChanged;
             _events.OnUniqueColorChanged -= OnUniqueChanged;
@@ -85,7 +75,7 @@ public class PlayerAudio : MonoBehaviour
         StopRun();
     }
 
-    // ── 달리기 루프 (매 프레임 감지) ──────────────────────────────
+    // ── 달리기 루프 ──────────────────────────────────────────────
 
     void Update()
     {
@@ -124,24 +114,19 @@ public class PlayerAudio : MonoBehaviour
 
     // ── PlayerEvents 핸들러 ───────────────────────────────────────
 
-    void OnHit(bool _)               => SFXManager.Instance?.Play(SFXId.Player_Hit);
-    void OnDeath()                   => SFXManager.Instance?.Play(SFXId.Player_Death);
-    void OnInstantKill()             => SFXManager.Instance?.Play(SFXId.Player_InstantKill);
-    void OnFallDeath()               => SFXManager.Instance?.Play(SFXId.Player_FallDeath);
-    void OnRespawn()                 => SFXManager.Instance?.Play(SFXId.Player_Respawn);
-    void OnBWChanged(bool _)         => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
-    void OnUniqueChanged(int _)      => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
+    void OnHit(bool _)          => SFXManager.Instance?.Play(SFXId.Player_Hit);
+    void OnDeath()              => SFXManager.Instance?.Play(SFXId.Player_Death);
+    void OnRespawn()            => SFXManager.Instance?.Play(SFXId.Player_Respawn);
+    void OnBWChanged(bool _)    => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
+    void OnUniqueChanged(int _) => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
 
     // ── PlayerBuffSystem 핸들러 ───────────────────────────────────
 
     void OnBuffApplied(PlayerBuffSystem.BuffType type, float _)
     {
-        SFXId id = type switch
-        {
-            PlayerBuffSystem.BuffType.SpeedUp       => SFXId.Buff_SpeedUp,
-            PlayerBuffSystem.BuffType.Invincibility => SFXId.Buff_Invincibility,
-            _                                       => SFXId.Buff_Received,
-        };
+        SFXId id = type == PlayerBuffSystem.BuffType.SpeedUp
+            ? SFXId.Buff_SpeedUp
+            : SFXId.Buff_Shield;
         SFXManager.Instance?.Play(id);
     }
 }

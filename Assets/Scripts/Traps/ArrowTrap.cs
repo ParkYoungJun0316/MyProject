@@ -44,6 +44,10 @@ public class ArrowTrap : TrapBase
     [Tooltip("afterSeconds 이후 speedMultiplier 배율을 적용. afterSeconds 오름차순 입력")]
     [SerializeField] private SpeedPhase[] speedPhases = new SpeedPhase[0];
 
+    [Header("발사 사운드")]
+    [Tooltip("발사 시 재생할 SFX. None이면 무음.")]
+    [SerializeField] private SFXId fireSfxId = SFXId.None;
+
     float scheduleStartTime;
     float _phaseSpeedMultiplier = 1f;
 
@@ -119,6 +123,9 @@ public class ArrowTrap : TrapBase
 
         Transform spawn   = firePoint != null ? firePoint : transform;
         Vector3   flatFwd = spawn.forward;
+
+        if (fireSfxId != SFXId.None)
+            SFXManager.Instance?.Play(fireSfxId, spawn.position);
 
         GameObject fired = Instantiate(arrowPrefab, spawn.position, spawn.rotation);
 

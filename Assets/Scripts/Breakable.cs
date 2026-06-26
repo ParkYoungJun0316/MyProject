@@ -40,7 +40,10 @@ public class Breakable : MonoBehaviour
     [SerializeField] private float debrisLifetime = 0f;
 
     [Header("사운드")]
-    [Tooltip("최종 파괴 시 재생할 AudioClip. 없으면 생략.")]
+    [Tooltip("true: SFXLibrary Mouth_TeethBreak 1/2 교차 재생 (M.Stage4 이빨 등)")]
+    [SerializeField] private bool useMouthTeethBreakSfx = false;
+
+    [Tooltip("최종 파괴 시 재생할 AudioClip. useMouthTeethBreakSfx 가 켜져 있으면 무시.")]
     [SerializeField] private AudioClip breakSound = null;
 
     [Tooltip("파괴 사운드 볼륨 (0~1)")]
@@ -160,7 +163,9 @@ public class Breakable : MonoBehaviour
                 Destroy(debris, debrisLifetime);
         }
 
-        if (breakSound != null)
+        if (useMouthTeethBreakSfx)
+            SFXManager.Instance?.PlayMouthTeethBreak(transform.position);
+        else if (breakSound != null)
             AudioSource.PlayClipAtPoint(breakSound, transform.position, breakSoundVolume);
 
         if (killPlayerOnBreak && killRadius > 0f)

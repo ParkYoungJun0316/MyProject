@@ -35,6 +35,10 @@ public class TrapProjectile : MonoBehaviour
     [Tooltip("충돌 파괴 시 스폰할 파티클 프리팹")]
     [SerializeField] private GameObject hitEffectPrefab = null;
 
+    [Header("충돌 사운드")]
+    [Tooltip("충돌 파괴 시 재생할 SFX. None이면 무음. 3D 위치 기반 재생.")]
+    [SerializeField] private SFXId onHitSfxId = SFXId.None;
+
     bool      isDestroyed;
     Vector3   _lastHitPoint  = Vector3.zero;
     Vector3   _lastHitNormal = Vector3.up;
@@ -95,8 +99,15 @@ public class TrapProjectile : MonoBehaviour
     {
         if (isDestroyed) return;
         isDestroyed = true;
+        PlayHitSfx();
         SpawnHitEffect();
         Destroy(gameObject);
+    }
+
+    void PlayHitSfx()
+    {
+        if (onHitSfxId == SFXId.None) return;
+        SFXManager.Instance?.Play(onHitSfxId, _lastHitPoint);
     }
 
     void SpawnHitEffect()

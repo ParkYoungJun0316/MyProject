@@ -12,17 +12,16 @@ using UnityEngine;
 ///      - 아직 없는 SFX 는 비워 둔다 (null 이면 재생 스킵됨).
 ///   3. SFXManager Inspector 의 Library 필드에 이 에셋을 연결한다.
 ///
-/// [Fallback 규칙]
-///   - Buff_SpeedUp / Buff_Invincibility 가 null → Buff_Received 로 대체
-///   - Player_FallDeath / Player_InstantKill 이 null → Player_Death 로 대체
-///   - UI_DropdownChange 가 null → UI_Click 으로 대체
+/// [1/2 교차 재생]
+///   FruitPop, Mouth_TeethBreak, Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
 /// </summary>
 [CreateAssetMenu(fileName = "SFXLibrary", menuName = "Audio/SFX Library")]
 public class SFXLibrary : ScriptableObject
 {
     // ── Boss ─────────────────────────────────────────────────────
     [Header("Boss")]
-    public AudioClip Boss_PhaseTransition;
+    public AudioClip Boss_PhaseTransition_Mouth;
+    public AudioClip Boss_PhaseTransition_Esophagus;
 
     // ── Boulder ──────────────────────────────────────────────────
     [Header("Boulder")]
@@ -35,17 +34,18 @@ public class SFXLibrary : ScriptableObject
 
     // ── Buff ─────────────────────────────────────────────────────
     [Header("Buff")]
-    [Tooltip("SpeedUp / Invincibility 가 null 일 때 재생되는 공통 버프음")]
-    public AudioClip Buff_Received;
-    [Tooltip("null 이면 Buff_Received 로 대체")]
+    public AudioClip Buff_Shield;
     public AudioClip Buff_SpeedUp;
-    [Tooltip("null 이면 Buff_Received 로 대체")]
-    public AudioClip Buff_Invincibility;
 
     // ── Door ─────────────────────────────────────────────────────
     [Header("Door")]
     public AudioClip Door_Close;
     public AudioClip Door_Open;
+
+    // ── Fruit ────────────────────────────────────────────────────
+    [Header("Fruit")]
+    public AudioClip FruitPop_1;
+    public AudioClip FruitPop_2;
 
     // ── Minigame / Quiz ──────────────────────────────────────────
     [Header("Minigame / Quiz")]
@@ -55,24 +55,17 @@ public class SFXLibrary : ScriptableObject
 
     // ── Mouth ────────────────────────────────────────────────────
     [Header("Mouth")]
-    public AudioClip Mouth_TeethBreak;
+    public AudioClip Mouth_TeethBreak_1;
+    public AudioClip Mouth_TeethBreak_2;
 
     // ── Player ───────────────────────────────────────────────────
     [Header("Player")]
     public AudioClip Player_ColorChange;
     public AudioClip Player_Death;
-    [Tooltip("null 이면 Player_Death 로 대체")]
-    public AudioClip Player_FallDeath;
     public AudioClip Player_Hit;
-    [Tooltip("null 이면 Player_Death 로 대체")]
-    public AudioClip Player_InstantKill;
     public AudioClip Player_Respawn;
     [Tooltip("달리기 루프 클립. 앞뒤를 잘라서 루프가 자연스럽도록 준비할 것")]
     public AudioClip Player_Run;
-
-    // ── Pressure Pad ─────────────────────────────────────────────
-    [Header("Pressure Pad")]
-    public AudioClip PressurePad_Step;
 
     // ── Stage / Flow ─────────────────────────────────────────────
     [Header("Stage / Flow")]
@@ -92,9 +85,9 @@ public class SFXLibrary : ScriptableObject
     [Header("Trap / Hazard")]
     public AudioClip Trap_AdvancingWall_Move;
     public AudioClip Trap_AdvancingWall_Telegraph;
-    public AudioClip Trap_Arrow;
+    public AudioClip Trap_Arrow_1;
+    public AudioClip Trap_Arrow_2;
     public AudioClip Trap_Ceiling;
-    public AudioClip Trap_ContactDamage;
     public AudioClip Trap_Drop;
     public AudioClip Trap_SpikeRaise;
     public AudioClip Trap_WallMover;
@@ -102,8 +95,6 @@ public class SFXLibrary : ScriptableObject
     // ── UI / Menu ────────────────────────────────────────────────
     [Header("UI / Menu")]
     public AudioClip UI_Click;
-    [Tooltip("null 이면 UI_Click 으로 대체")]
-    public AudioClip UI_DropdownChange;
 
     // ── Wind ─────────────────────────────────────────────────────
     [Header("Wind")]
@@ -117,35 +108,35 @@ public class SFXLibrary : ScriptableObject
     {
         switch (id)
         {
-            case SFXId.Boss_PhaseTransition:              return Boss_PhaseTransition;
+            case SFXId.Boss_PhaseTransition_Mouth:        return Boss_PhaseTransition_Mouth;
+            case SFXId.Boss_PhaseTransition_Esophagus:    return Boss_PhaseTransition_Esophagus;
 
             case SFXId.Boulder_PlayerCollision:           return Boulder_PlayerCollision;
             case SFXId.Boulder_Roll:                      return Boulder_Roll;
 
             case SFXId.Breakable_Destroy:                 return Breakable_Destroy;
 
-            case SFXId.Buff_Received:                     return Buff_Received;
-            case SFXId.Buff_SpeedUp:                      return Buff_SpeedUp != null ? Buff_SpeedUp : Buff_Received;
-            case SFXId.Buff_Invincibility:                return Buff_Invincibility != null ? Buff_Invincibility : Buff_Received;
+            case SFXId.Buff_Shield:                       return Buff_Shield;
+            case SFXId.Buff_SpeedUp:                      return Buff_SpeedUp;
 
             case SFXId.Door_Close:                        return Door_Close;
             case SFXId.Door_Open:                         return Door_Open;
+
+            case SFXId.FruitPop_1:                        return FruitPop_1;
+            case SFXId.FruitPop_2:                        return FruitPop_2;
 
             case SFXId.Minigame_OX_Correct:               return Minigame_OX_Correct;
             case SFXId.Minigame_OX_Wrong:                 return Minigame_OX_Wrong;
             case SFXId.Minigame_SequenceRing_Correct:     return Minigame_SequenceRing_Correct;
 
-            case SFXId.Mouth_TeethBreak:                  return Mouth_TeethBreak;
+            case SFXId.Mouth_TeethBreak_1:                  return Mouth_TeethBreak_1;
+            case SFXId.Mouth_TeethBreak_2:                  return Mouth_TeethBreak_2;
 
             case SFXId.Player_ColorChange:                return Player_ColorChange;
             case SFXId.Player_Death:                      return Player_Death;
-            case SFXId.Player_FallDeath:                  return Player_FallDeath != null ? Player_FallDeath : Player_Death;
             case SFXId.Player_Hit:                        return Player_Hit;
-            case SFXId.Player_InstantKill:                return Player_InstantKill != null ? Player_InstantKill : Player_Death;
             case SFXId.Player_Respawn:                    return Player_Respawn;
             case SFXId.Player_Run:                        return Player_Run;
-
-            case SFXId.PressurePad_Step:                  return PressurePad_Step;
 
             case SFXId.Stage_Clear:                       return Stage_Clear;
             case SFXId.Stage_Countdown:                   return Stage_Countdown;
@@ -159,15 +150,14 @@ public class SFXLibrary : ScriptableObject
 
             case SFXId.Trap_AdvancingWall_Move:           return Trap_AdvancingWall_Move;
             case SFXId.Trap_AdvancingWall_Telegraph:      return Trap_AdvancingWall_Telegraph;
-            case SFXId.Trap_Arrow:                        return Trap_Arrow;
+            case SFXId.Trap_Arrow_1:                      return Trap_Arrow_1;
+            case SFXId.Trap_Arrow_2:                      return Trap_Arrow_2;
             case SFXId.Trap_Ceiling:                      return Trap_Ceiling;
-            case SFXId.Trap_ContactDamage:                return Trap_ContactDamage;
             case SFXId.Trap_Drop:                         return Trap_Drop;
             case SFXId.Trap_SpikeRaise:                   return Trap_SpikeRaise;
             case SFXId.Trap_WallMover:                    return Trap_WallMover;
 
             case SFXId.UI_Click:                          return UI_Click;
-            case SFXId.UI_DropdownChange:                 return UI_DropdownChange != null ? UI_DropdownChange : UI_Click;
 
             case SFXId.Wind_Pull:                         return Wind_Pull;
             case SFXId.Wind_Push:                         return Wind_Push;

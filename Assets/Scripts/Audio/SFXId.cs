@@ -5,7 +5,8 @@
 public enum SFXId
 {
     // ── Boss ─────────────────────────────────────────────────────
-    Boss_PhaseTransition,
+    Boss_PhaseTransition_Mouth,
+    Boss_PhaseTransition_Esophagus,
 
     // ── Boulder ──────────────────────────────────────────────────
     Boulder_PlayerCollision,
@@ -15,13 +16,16 @@ public enum SFXId
     Breakable_Destroy,
 
     // ── Buff ─────────────────────────────────────────────────────
-    Buff_Received,
+    Buff_Shield,
     Buff_SpeedUp,
-    Buff_Invincibility,
 
     // ── Door ─────────────────────────────────────────────────────
     Door_Close,
     Door_Open,
+
+    // ── Fruit ────────────────────────────────────────────────────
+    FruitPop_1,
+    FruitPop_2,
 
     // ── Minigame / Quiz ──────────────────────────────────────────
     Minigame_OX_Correct,
@@ -29,19 +33,15 @@ public enum SFXId
     Minigame_SequenceRing_Correct,
 
     // ── Mouth ────────────────────────────────────────────────────
-    Mouth_TeethBreak,
+    Mouth_TeethBreak_1,
+    Mouth_TeethBreak_2,
 
     // ── Player ───────────────────────────────────────────────────
     Player_ColorChange,
     Player_Death,
-    Player_FallDeath,
     Player_Hit,
-    Player_InstantKill,
     Player_Respawn,
     Player_Run,
-
-    // ── Pressure Pad ─────────────────────────────────────────────
-    PressurePad_Step,
 
     // ── Stage / Flow ─────────────────────────────────────────────
     Stage_Clear,
@@ -58,18 +58,20 @@ public enum SFXId
     // ── Trap / Hazard ────────────────────────────────────────────
     Trap_AdvancingWall_Move,
     Trap_AdvancingWall_Telegraph,
-    Trap_Arrow,
+    Trap_Arrow_1,
+    Trap_Arrow_2,
     Trap_Ceiling,
-    Trap_ContactDamage,
     Trap_Drop,
     Trap_SpikeRaise,
     Trap_WallMover,
 
     // ── UI / Menu ────────────────────────────────────────────────
     UI_Click,
-    UI_DropdownChange,
 
     // ── Wind ─────────────────────────────────────────────────────
     Wind_Pull,
     Wind_Push,
+
+    // ── 재생 없음 (Inspector 기본값용) ───────────────────────────
+    None,
 }

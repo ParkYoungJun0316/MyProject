@@ -272,6 +272,7 @@ public class Stage5TargetRunner : MonoBehaviour
         if (p == null || p.IsDead) return;
 
         _isCaptured = true;
+        SFXManager.Instance?.PlayFruitPop(transform.position);
         Deactivate();
         OnCaptured?.Invoke(this);
     }
