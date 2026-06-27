@@ -9,24 +9,25 @@ using UnityEngine.SceneManagement;
 /// TitleCanvas 또는 별도 빈 GameObject에 부착.
 ///
 /// [Inspector 연결]
-/// - firstStageSceneName : 게임 시작 시 로드할 씬 이름 (기본 "M.Stage1")
+/// - lobbySceneName      : 로비 씬 이름 (기본 "1.Lobby")
 /// - discordUrl          : Discord 초대 링크
 /// - screenFader         : 선택. 씬 전환 전 페이드아웃
 /// - settingsPanel       : 설정/옵션 패널 GameObject
 /// - joinGameUnavailablePanel : "게임 참여는 Full Version에서" 안내 패널 (선택)
 ///
 /// [버튼 On Click() 연결]
-/// 게임 만들기 → OnClickCreateGame()
-/// 게임 참여   → OnClickJoinGame()
-/// 설정        → OnClickSettings()
-/// 게임 종료   → OnClickQuit()
-/// Discord     → OnClickDiscord()
+/// 솔로         → OnClickSolo()
+/// 게임 만들기  → OnClickCreateGame()
+/// 게임 참여    → OnClickJoinGame()
+/// 설정         → OnClickSettings()
+/// 게임 종료    → OnClickQuit()
+/// Discord      → OnClickDiscord()
 /// </summary>
 public class TitleMenuController : MonoBehaviour
 {
     [Header("씬 전환")]
-    [Tooltip("게임 만들기 버튼으로 로드할 씬 이름. Build Settings 이름과 정확히 일치.")]
-    [SerializeField] private string firstStageSceneName = "1.Lobby";
+    [Tooltip("솔로·멀티 공통으로 로드할 로비 씬 이름.")]
+    [SerializeField] private string lobbySceneName = "1.Lobby";
 
     [Header("Discord")]
     [Tooltip("Discord 초대 링크 (예: https://discord.gg/abc123)")]
@@ -48,13 +49,21 @@ public class TitleMenuController : MonoBehaviour
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
-    /// <summary>게임 만들기 버튼</summary>
-    public void OnClickCreateGame()
+    /// <summary>솔로 버튼 — NGO 없이 로비(Offline 모드)로 이동.</summary>
+    public void OnClickSolo()
     {
-        StartCoroutine(LoadSceneWithFade(firstStageSceneName));
+        LobbyContext.Mode = LobbyMode.Offline;
+        StartCoroutine(LoadSceneWithFade(lobbySceneName));
     }
 
-    /// <summary>게임 참여 버튼 — 데모에서는 비활성 안내</summary>
+    /// <summary>게임 만들기 버튼 — 온라인 Host로 로비 이동.</summary>
+    public void OnClickCreateGame()
+    {
+        LobbyContext.Mode = LobbyMode.OnlineHost;
+        StartCoroutine(LoadSceneWithFade(lobbySceneName));
+    }
+
+    /// <summary>게임 참여 버튼 — 데모에서는 비활성 안내.</summary>
     public void OnClickJoinGame()
     {
         if (joinGameUnavailablePanel != null)
@@ -63,7 +72,7 @@ public class TitleMenuController : MonoBehaviour
         }
         else
         {
-            Debug.Log("[TitleMenuController] 게임 참여는 Full Version에서 지원합니다.");
+            Debug.Log("[TitleMenuController] 게임 참여는 멀티플레이어 버전에서 지원합니다.");
         }
     }
 
@@ -131,7 +140,10 @@ public class TitleMenuController : MonoBehaviour
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR
-    [ContextMenu("테스트: 게임 만들기")]
+    [ContextMenu("테스트: 솔로")]
+    void Debug_Solo() => OnClickSolo();
+
+    [ContextMenu("테스트: 게임 만들기 (Host)")]
     void Debug_CreateGame() => OnClickCreateGame();
 
     [ContextMenu("테스트: 설정 패널 열기")]

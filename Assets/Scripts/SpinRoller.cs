@@ -15,7 +15,29 @@ public class SpinRoller : MonoBehaviour
     [Tooltip("회전 속도 (rad/s). 0이면 회전 없음")]
     public float spinSpeed = 0f;
 
-    Rigidbody rb;
+    [Header("굴림 사운드")]
+    [Tooltip("굴러가는 동안 루프 재생할 SFX. None이면 무음.")]
+    [SerializeField] SFXId rollSfxId = SFXId.None;
+
+    [Tooltip("루프 볼륨 (0~1). 0이면 1로 처리.")]
+    [SerializeField] [Range(0f, 1f)] float rollVolume = 0f;
+
+    [Header("3D 오디오 설정")]
+    [Tooltip("0 = 완전 2D, 1 = 완전 3D. 위압감을 위해 0.7~1 권장.")]
+    [SerializeField] [Range(0f, 1f)] float rollSpatialBlend = 1f;
+
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨. 클수록 멀리서도 크게 들림. 위압감 있는 boulder는 15~25 권장.")]
+    [SerializeField] float rollMinDistance = 1f;
+
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리.")]
+    [SerializeField] float rollMaxDistance = 0f;
+
+    [Tooltip("Logarithmic = 기본 로그 감쇠, Linear = 선형 감쇠(균일하게 들림)")]
+    [SerializeField] AudioRolloffMode rollRolloffMode = AudioRolloffMode.Logarithmic;
+
+    Rigidbody  rb;
+    AudioSource _rollSource;
+    bool        _isRolling;
 
     void Awake()
     {
@@ -24,14 +46,53 @@ public class SpinRoller : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (rb == null || spinSpeed == 0f) return;
+        if (rb == null) return;
 
         Vector3 vel = rb.linearVelocity;
-        if (vel.sqrMagnitude < 0.001f) return;
+        bool moving = vel.sqrMagnitude >= 0.001f;
 
-        Vector3 spinAxis = Vector3.Cross(vel.normalized, Vector3.up).normalized;
-        if (spinAxis.sqrMagnitude < 0.001f) return;
+        if (moving && spinSpeed != 0f)
+        {
+            Vector3 spinAxis = Vector3.Cross(vel.normalized, Vector3.up).normalized;
+            if (spinAxis.sqrMagnitude >= 0.001f)
+                rb.angularVelocity = spinAxis * spinSpeed;
+        }
 
-        rb.angularVelocity = spinAxis * spinSpeed;
+        if (!_isRolling) StartRollSound();
+    }
+
+    void StartRollSound()
+    {
+        if (rollSfxId == SFXId.None || SFXManager.Instance == null) return;
+        AudioClip clip = SFXManager.Instance.GetClip(rollSfxId);
+        if (clip == null) return;
+
+        _rollSource                  = gameObject.AddComponent<AudioSource>();
+        _rollSource.clip             = clip;
+        _rollSource.loop             = true;
+        _rollSource.spatialBlend     = rollSpatialBlend;
+        _rollSource.volume           = rollVolume > 0f ? rollVolume : 1f;
+        _rollSource.rolloffMode      = rollRolloffMode;
+        _rollSource.minDistance      = rollMinDistance > 0f ? rollMinDistance : 1f;
+        _rollSource.maxDistance      = rollMaxDistance > 0f ? rollMaxDistance : 500f;
+        _rollSource.playOnAwake      = false;
+        _rollSource.Play();
+        _isRolling = true;
+    }
+
+    void StopRollSound()
+    {
+        if (_rollSource != null)
+        {
+            _rollSource.Stop();
+            Destroy(_rollSource);
+            _rollSource = null;
+        }
+        _isRolling = false;
+    }
+
+    void OnDisable()
+    {
+        StopRollSound();
     }
 }

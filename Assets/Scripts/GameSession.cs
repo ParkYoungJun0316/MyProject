@@ -7,10 +7,11 @@ using UnityEngine.SceneManagement;
 /// 활성 색 목록을 기준으로 플레이어 on/off 및 색 오브젝트 필터링 기반을 제공한다.
 ///
 /// [배치 방법]
-/// 1. M.Stage1 씬에만 배치. DontDestroyOnLoad로 모든 씬에서 유지됨.
-/// 2. activeColors[]: 이번 판에 참가하는 색만 체크 (순서·인원 무관, 중복 불가)
-///    예) Green + Yellow → 2인 Green/Yellow 모드
-/// 3. allPlayers[]: 씬에 배치된 Player 4개 등록 (Blue·Purple·Green·Yellow 순)
+/// 1. 0.Title 씬에 배치. DontDestroyOnLoad로 모든 씬에서 유지됨.
+/// 2. activeColorSlots[]: Inspector 기본값은 참고용. 실제 적용은 아래 방법으로.
+///    - 솔로  : LobbyMenuController.ApplySoloColor() → SetActiveColors(1색)
+///    - 멀티  : 로비 Ready 완료 후 NGO 스폰 전 → SetActiveColors(접속 색 목록)
+/// 3. allPlayers[]: 비워둘 것. 씬 로드 시 자동 수집.
 ///
 /// [씬 전환 시 플레이어 재수집]
 /// 새 씬 로드 시 씬 안의 Player를 playerColorType 순으로 자동 수집·재적용.
@@ -38,9 +39,9 @@ public class GameSession : MonoBehaviour
         PlayerColorType.Yellow,
     };
 
-    [Header("플레이어 목록 (M.Stage1 전용)")]
-    [Tooltip("M.Stage1 씬의 Player 오브젝트 4개 등록. Blue·Purple·Green·Yellow 순.\n" +
-             "다른 씬은 자동 수집됨.")]
+    [Header("플레이어 목록")]
+    [Tooltip("비워둘 것. 씬 로드 시 자동 수집됨.\n" +
+             "에디터에서 M.Stage1 직접 Play할 때만 임시로 등록 가능.")]
     [SerializeField] private Player[] allPlayers;
 
     // 정렬 기준 (로그·UI 표시용)

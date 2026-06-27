@@ -79,6 +79,13 @@ public class DropTrap : TrapBase
     [Tooltip("afterSeconds 이후 speedMultiplier 배율을 적용. afterSeconds 오름차순 입력")]
     [SerializeField] private SpeedPhase[] speedPhases = new SpeedPhase[0];
 
+    [Header("사운드")]
+    [Tooltip("경고 마커 표시 시 재생할 SFX. None이면 무음.")]
+    [SerializeField] private SFXId warnSfxId = SFXId.None;
+
+    [Tooltip("낙하체 생성(낙하 시작) 시 재생할 SFX. None이면 무음.")]
+    [SerializeField] private SFXId fireSfxId = SFXId.None;
+
     float _scheduleStartTime;
     float _phaseSpeedMultiplier = 1f;
     int   _targetIndex;
@@ -208,12 +215,17 @@ public class DropTrap : TrapBase
         {
             warn = Instantiate(warnPrefab, targetPos, Quaternion.identity);
             _pendingObjects.Add(warn);
+            if (warnSfxId != SFXId.None)
+                SFXManager.Instance?.Play(warnSfxId, targetPos);
         }
 
         if (warnDuration > 0f)
             yield return new WaitForSeconds(warnDuration);
 
         DestroyAndUntrack(warn);
+
+        if (fireSfxId != SFXId.None)
+            SFXManager.Instance?.Play(fireSfxId, spawnPos);
 
         GameObject drop = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
 

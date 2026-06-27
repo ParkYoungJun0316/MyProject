@@ -997,6 +997,8 @@ MonoBehaviour:
   schedulePeriod: 3
   baseDropSpeed: 20
   speedPhases: []
+  warnSfxId: 40
+  fireSfxId: 34
 --- !u!1 &437495287
 GameObject:
   m_ObjectHideFlags: 0
@@ -2767,6 +2769,8 @@ MonoBehaviour:
   schedulePeriod: 3
   baseDropSpeed: 15
   speedPhases: []
+  warnSfxId: 40
+  fireSfxId: 34
 --- !u!1 &1418844249 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5933153780236534023, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
@@ -2784,7 +2788,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ba3cc6aad637d0458882d5be4c3e3b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAudio
-  runVolume: 1
+  runVolume: 0.1
 --- !u!82 &1418844251 stripped
 AudioSource:
   m_CorrespondingSourceObject: {fileID: -8739998439568447894, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
@@ -2890,6 +2894,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8739998439568447894, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+      propertyPath: m_Volume
+      value: 0.1
+      objectReference: {fileID: 0}
     - target: {fileID: -8739998439568447894, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
       propertyPath: MinDistance
       value: 300
@@ -3358,6 +3366,8 @@ MonoBehaviour:
   schedulePeriod: 3
   baseDropSpeed: 12
   speedPhases: []
+  warnSfxId: 40
+  fireSfxId: 34
 --- !u!1001 &1573549451
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3796,6 +3806,8 @@ MonoBehaviour:
   schedulePeriod: 3
   baseDropSpeed: 5
   speedPhases: []
+  warnSfxId: 40
+  fireSfxId: 34
 --- !u!1 &1871857760
 GameObject:
   m_ObjectHideFlags: 0
@@ -4108,6 +4120,8 @@ MonoBehaviour:
   schedulePeriod: 3
   baseDropSpeed: 1
   speedPhases: []
+  warnSfxId: 40
+  fireSfxId: 34
 --- !u!1 &1596284920620874483
 GameObject:
   m_ObjectHideFlags: 0
