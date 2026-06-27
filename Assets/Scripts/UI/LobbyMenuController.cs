@@ -106,6 +106,7 @@ public class LobbyMenuController : MonoBehaviour
     void Start()
     {
         ApplyModeUI();
+        RefreshRoomCode();
 
         int initialIndex = characterDropdown != null ? characterDropdown.value : 0;
         RefreshPortrait(initialIndex);
@@ -166,12 +167,16 @@ public class LobbyMenuController : MonoBehaviour
         StartCoroutine(LoadSceneWithFade(titleSceneName));
     }
 
-    /// <summary>Copy 버튼 — 룸코드 클립보드 복사 (온라인 전용).</summary>
+    /// <summary>Copy 버튼 — 전체 6자리 룸코드를 클립보드에 복사 (온라인 전용).</summary>
     public void OnClickCopy()
     {
         if (LobbyContext.IsOffline) return;
 
-        string code = roomCodeText != null ? roomCodeText.text : string.Empty;
+        // 표시는 마스킹(12**56)이지만 복사는 전체 6자리
+        string code = NetworkManagerSetup.Instance != null
+            ? NetworkManagerSetup.Instance.RoomCode
+            : string.Empty;
+
         if (!string.IsNullOrEmpty(code))
         {
             GUIUtility.systemCopyBuffer = code;
@@ -211,6 +216,19 @@ public class LobbyMenuController : MonoBehaviour
 
         GameSession.Instance.SetActiveColors(new[] { chosen });
         Debug.Log($"[LobbyMenuController] 솔로 색상 적용: {chosen}");
+    }
+
+    /// <summary>
+    /// 온라인 Host일 때 룸코드를 마스킹 형식(12**56)으로 표시.
+    /// Start()에서 자동 호출.
+    /// </summary>
+    void RefreshRoomCode()
+    {
+        if (!LobbyContext.IsOnlineHost) return;
+        if (roomCodeText == null) return;
+        if (NetworkManagerSetup.Instance == null) return;
+
+        roomCodeText.text = LanDiscovery.FormatDisplayCode(NetworkManagerSetup.Instance.RoomCode);
     }
 
     void RefreshReadyVisual()

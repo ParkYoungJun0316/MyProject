@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,19 +10,25 @@ using UnityEngine.SceneManagement;
 /// TitleCanvas 또는 별도 빈 GameObject에 부착.
 ///
 /// [Inspector 연결]
-/// - lobbySceneName      : 로비 씬 이름 (기본 "1.Lobby")
-/// - discordUrl          : Discord 초대 링크
-/// - screenFader         : 선택. 씬 전환 전 페이드아웃
-/// - settingsPanel       : 설정/옵션 패널 GameObject
-/// - joinGameUnavailablePanel : "게임 참여는 Full Version에서" 안내 패널 (선택)
+/// - lobbySceneName         : 로비 씬 이름 (기본 "1.Lobby")
+/// - discordUrl             : Discord 초대 링크
+/// - screenFader            : 선택. 씬 전환 전 페이드아웃
+/// - settingsPanel          : 설정/옵션 패널 GameObject
+/// - joinPanel              : 룸코드 입력 패널 GameObject
+/// - roomCodeInputField     : 6자리 숫자 입력 TMP_InputField
+/// - joinStatusText         : 상태 메시지 TMP_Text (찾는 중... / 방을 찾을 수 없습니다.)
+/// - discoveryTimeoutSeconds: 타임아웃 (기본 5초)
 ///
-/// [버튼 On Click() 연결]
-/// 솔로         → OnClickSolo()
-/// 게임 만들기  → OnClickCreateGame()
-/// 게임 참여    → OnClickJoinGame()
-/// 설정         → OnClickSettings()
-/// 게임 종료    → OnClickQuit()
-/// Discord      → OnClickDiscord()
+/// [버튼 OnClick 연결]
+/// 솔로           → OnClickSolo()
+/// 게임 만들기    → OnClickCreateGame()
+/// 게임 참여      → OnClickJoinGame()
+/// Join 확인      → OnClickConfirmJoin()
+/// Join 닫기      → OnClickCloseJoin()
+/// 설정           → OnClickSettings()
+/// 설정 닫기      → OnClickCloseSettings()
+/// 게임 종료      → OnClickQuit()
+/// Discord        → OnClickDiscord()
 /// </summary>
 public class TitleMenuController : MonoBehaviour
 {
@@ -37,8 +44,17 @@ public class TitleMenuController : MonoBehaviour
     [Tooltip("설정 버튼 클릭 시 열릴 패널. 비워두면 클릭 무시.")]
     [SerializeField] private GameObject settingsPanel;
 
-    [Tooltip("게임 참여 버튼 클릭 시 표시할 안내 패널 (선택). 비워두면 로그만 출력.")]
-    [SerializeField] private GameObject joinGameUnavailablePanel;
+    [Tooltip("게임 참여 버튼 클릭 시 열릴 룸코드 입력 패널.")]
+    [SerializeField] private GameObject joinPanel;
+
+    [Tooltip("joinPanel 안의 TMP_InputField (6자리 숫자).")]
+    [SerializeField] private TMP_InputField roomCodeInputField;
+
+    [Tooltip("joinPanel 안의 상태 메시지 TMP_Text.\n예) 찾는 중... / 방을 찾을 수 없습니다.")]
+    [SerializeField] private TMP_Text joinStatusText;
+
+    [Tooltip("룸코드 Discovery 타임아웃 (초).")]
+    [SerializeField] private float discoveryTimeoutSeconds = 5f;
 
     [Header("페이드 (선택)")]
     [Tooltip("씬 전환 전 페이드아웃. 비워두면 즉시 전환.")]
@@ -46,6 +62,8 @@ public class TitleMenuController : MonoBehaviour
 
     [Tooltip("페이드아웃 시간(초). 0이면 즉시.")]
     [SerializeField] private float fadeOutDuration = 0f;
+
+    private Coroutine _discoveryTimeoutCoroutine;
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
@@ -56,51 +74,91 @@ public class TitleMenuController : MonoBehaviour
         StartCoroutine(LoadSceneWithFade(lobbySceneName));
     }
 
-    /// <summary>게임 만들기 버튼 — 온라인 Host로 로비 이동.</summary>
+    /// <summary>게임 만들기 버튼 — 룸코드 생성 후 NetworkManager.StartHost() → 로비 이동.</summary>
     public void OnClickCreateGame()
     {
         LobbyContext.Mode = LobbyMode.OnlineHost;
-        StartCoroutine(LoadSceneWithFade(lobbySceneName));
-    }
 
-    /// <summary>게임 참여 버튼 — 데모에서는 비활성 안내.</summary>
-    public void OnClickJoinGame()
-    {
-        if (joinGameUnavailablePanel != null)
+        if (NetworkManagerSetup.Instance != null)
         {
-            joinGameUnavailablePanel.SetActive(true);
+            string code = LanDiscovery.GenerateRoomCode();
+            NetworkManagerSetup.Instance.StartHost(code);
         }
         else
         {
-            Debug.Log("[TitleMenuController] 게임 참여는 멀티플레이어 버전에서 지원합니다.");
+            Debug.LogWarning("[TitleMenuController] NetworkManagerSetup을 찾을 수 없습니다. " +
+                             "0.Title 씬의 NetworkManager GameObject에 컴포넌트를 추가하세요.");
         }
+
+        StartCoroutine(LoadSceneWithFade(lobbySceneName));
+    }
+
+    /// <summary>게임 참여 버튼 — 룸코드 입력 패널 열기.</summary>
+    public void OnClickJoinGame()
+    {
+        if (joinPanel != null)
+        {
+            joinPanel.SetActive(true);
+            if (roomCodeInputField != null) roomCodeInputField.text = string.Empty;
+            SetJoinStatus(string.Empty);
+        }
+        else
+        {
+            Debug.LogWarning("[TitleMenuController] joinPanel이 연결되지 않았습니다. Inspector에서 연결하세요.");
+        }
+    }
+
+    /// <summary>
+    /// 룸코드 확인 버튼 — 입력값 검증 후 LAN Discovery 시작.
+    /// joinPanel 내 확인 버튼에 연결.
+    /// </summary>
+    public void OnClickConfirmJoin()
+    {
+        string code = roomCodeInputField != null ? roomCodeInputField.text.Trim() : string.Empty;
+
+        if (code.Length != 6 || !IsDigitsOnly(code))
+        {
+            SetJoinStatus("6자리 숫자를 입력해주세요.");
+            return;
+        }
+
+        if (LanDiscovery.Instance == null)
+        {
+            Debug.LogWarning("[TitleMenuController] LanDiscovery를 찾을 수 없습니다. " +
+                             "0.Title NetworkManager GameObject에 컴포넌트를 추가하세요.");
+            return;
+        }
+
+        SetJoinStatus("찾는 중...");
+        LanDiscovery.Instance.StartDiscovery(code, OnDiscoveryFound);
+        _discoveryTimeoutCoroutine = StartCoroutine(DiscoveryTimeout());
+    }
+
+    /// <summary>룸코드 입력 패널 닫기 + Discovery 중단.</summary>
+    public void OnClickCloseJoin()
+    {
+        if (_discoveryTimeoutCoroutine != null)
+        {
+            StopCoroutine(_discoveryTimeoutCoroutine);
+            _discoveryTimeoutCoroutine = null;
+        }
+
+        LanDiscovery.Instance?.Stop();
+
+        if (joinPanel != null) joinPanel.SetActive(false);
     }
 
     /// <summary>설정 버튼</summary>
     public void OnClickSettings()
     {
-        if (settingsPanel != null)
-        {
-            settingsPanel.SetActive(true);
-        }
-        else
-        {
-            Debug.LogWarning("[TitleMenuController] settingsPanel이 연결되지 않았습니다.");
-        }
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+        else Debug.LogWarning("[TitleMenuController] settingsPanel이 연결되지 않았습니다.");
     }
 
     /// <summary>설정 패널 닫기. 설정 패널 내 닫기 버튼에도 연결.</summary>
     public void OnClickCloseSettings()
     {
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
-    }
-
-    /// <summary>게임 참여 안내 패널 닫기.</summary>
-    public void OnClickCloseJoinUnavailable()
-    {
-        if (joinGameUnavailablePanel != null)
-            joinGameUnavailablePanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
     /// <summary>게임 종료 버튼</summary>
@@ -124,7 +182,44 @@ public class TitleMenuController : MonoBehaviour
         Application.OpenURL(discordUrl);
     }
 
+    // ── Discovery 콜백 ────────────────────────────────────────────
+
+    void OnDiscoveryFound(string hostIp)
+    {
+        if (_discoveryTimeoutCoroutine != null)
+        {
+            StopCoroutine(_discoveryTimeoutCoroutine);
+            _discoveryTimeoutCoroutine = null;
+        }
+
+        if (joinPanel != null) joinPanel.SetActive(false);
+
+        LobbyContext.Mode = LobbyMode.OnlineClient;
+        NetworkManagerSetup.Instance?.StartClient(hostIp);
+        StartCoroutine(LoadSceneWithFade(lobbySceneName));
+    }
+
+    IEnumerator DiscoveryTimeout()
+    {
+        yield return new WaitForSeconds(discoveryTimeoutSeconds);
+        LanDiscovery.Instance?.Stop();
+        SetJoinStatus("방을 찾을 수 없습니다.");
+        _discoveryTimeoutCoroutine = null;
+    }
+
     // ── 내부 ──────────────────────────────────────────────────────
+
+    void SetJoinStatus(string message)
+    {
+        if (joinStatusText != null) joinStatusText.text = message;
+    }
+
+    static bool IsDigitsOnly(string s)
+    {
+        foreach (char c in s)
+            if (!char.IsDigit(c)) return false;
+        return true;
+    }
 
     IEnumerator LoadSceneWithFade(string sceneName)
     {
@@ -146,10 +241,10 @@ public class TitleMenuController : MonoBehaviour
     [ContextMenu("테스트: 게임 만들기 (Host)")]
     void Debug_CreateGame() => OnClickCreateGame();
 
+    [ContextMenu("테스트: 게임 참여 패널 열기")]
+    void Debug_JoinPanel() => OnClickJoinGame();
+
     [ContextMenu("테스트: 설정 패널 열기")]
     void Debug_OpenSettings() => OnClickSettings();
-
-    [ContextMenu("테스트: 게임 참여 안내")]
-    void Debug_JoinGame() => OnClickJoinGame();
 #endif
 }
