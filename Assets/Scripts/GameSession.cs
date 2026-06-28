@@ -91,7 +91,12 @@ public class GameSession : MonoBehaviour
         // (씬 전환/리로드 후에는 오브젝트가 파괴되어 null이 되므로 그때만 재수집)
         if (_activePlayers.Count > 0 && _activePlayers[0] != null) return;
 
-        Player[] found = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        // 오프라인: 씬에 미리 배치된 비활성 플레이어 포함 탐색
+        // 온라인 : 활성 플레이어만 (NetworkObject로 동적 스폰된 것만)
+        Player[] found = LobbyContext.IsOffline
+            ? FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            : FindObjectsByType<Player>(FindObjectsSortMode.None);
+
         if (found.Length == 0) return;
 
         // playerColorType 순으로 정렬 (ColorOrder 기준)
@@ -118,13 +123,30 @@ public class GameSession : MonoBehaviour
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
 
     /// <summary>
+    /// 세션 런타임 상태 초기화. 타이틀 복귀 시 호출.
+    /// activeColorSlots는 다음 판의 SetActiveColors()가 덮어씀.
+    /// </summary>
+    public void ResetSession()
+    {
+        _activePlayers.Clear();
+        _activeColors.Clear();
+        Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
+    }
+
+    /// <summary>
     /// 픽창 또는 외부에서 활성 색을 바꿀 때 호출.
     /// 씬 안의 플레이어에 즉시 재적용된다.
     /// </summary>
     public void SetActiveColors(PlayerColorType[] colors)
     {
         activeColorSlots = colors;
-        Player[] found = FindObjectsByType<Player>(FindObjectsSortMode.None);
+
+        // 오프라인: 씬에 미리 배치된 비활성 플레이어 포함 탐색
+        // 온라인 : 활성 플레이어만 (NetworkObject로 동적 스폰된 것만)
+        Player[] found = LobbyContext.IsOffline
+            ? FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            : FindObjectsByType<Player>(FindObjectsSortMode.None);
+
         Apply(found);
     }
 

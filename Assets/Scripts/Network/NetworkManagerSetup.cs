@@ -116,13 +116,20 @@ public class NetworkManagerSetup : MonoBehaviour
     }
 
     /// <summary>
-    /// 네트워크 종료. 타이틀 복귀 시 호출 (Step 8에서 연결).
+    /// 네트워크 종료 + 세션 전체 정리. 타이틀 복귀 시 호출.
+    /// LanDiscovery 중단 → NetworkSessionData 초기화 → NGO Shutdown.
     /// </summary>
     public void Shutdown()
     {
-        if (_net == null || !_net.IsListening) return;
-        _net.Shutdown();
-        Debug.Log("[NetworkManagerSetup] Shutdown 완료");
+        LanDiscovery.Instance?.Stop();
+        NetworkSessionData.Clear();
+        RoomCode = string.Empty;
+
+        if (_net != null && _net.IsListening)
+        {
+            _net.Shutdown();
+            Debug.Log("[NetworkManagerSetup] Shutdown 완료");
+        }
     }
 
     // ── Connection Approval ───────────────────────────────────────

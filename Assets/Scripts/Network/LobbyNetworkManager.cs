@@ -110,10 +110,10 @@ public class LobbyNetworkManager : NetworkBehaviour
     // ── ServerRpc ─────────────────────────────────────────────────
 
     /// <summary>Ready 상태 설정. 모든 클라이언트에서 호출 가능.</summary>
-    [ServerRpc(RequireOwnership = false)]
-    public void SetReadyServerRpc(bool isReady, ServerRpcParams p = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SetReadyServerRpc(bool isReady, RpcParams rpcParams = default)
     {
-        ulong sender = p.Receive.SenderClientId;
+        ulong sender = rpcParams.Receive.SenderClientId;
         for (int i = 0; i < _slots.Count; i++)
         {
             if (_slots[i].ClientId != sender) continue;
@@ -127,10 +127,10 @@ public class LobbyNetworkManager : NetworkBehaviour
     /// <summary>
     /// 색 선택. Ready 상태거나 타인이 이미 선택한 색이면 무시 (서버 측 강제).
     /// </summary>
-    [ServerRpc(RequireOwnership = false)]
-    public void SetColorServerRpc(int colorIndex, ServerRpcParams p = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SetColorServerRpc(int colorIndex, RpcParams rpcParams = default)
     {
-        ulong sender = p.Receive.SenderClientId;
+        ulong sender = rpcParams.Receive.SenderClientId;
 
         if (IsColorTaken(colorIndex, sender)) return;
 
@@ -146,11 +146,11 @@ public class LobbyNetworkManager : NetworkBehaviour
     }
 
     /// <summary>Kick. 호스트만 호출. 즉시 슬롯 비움.</summary>
-    [ServerRpc(RequireOwnership = false)]
-    public void KickPlayerServerRpc(ulong targetClientId, ServerRpcParams p = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void KickPlayerServerRpc(ulong targetClientId, RpcParams rpcParams = default)
     {
         // 보안: 실제 Host client Id만 허용
-        if (p.Receive.SenderClientId != NetworkManager.LocalClientId) return;
+        if (rpcParams.Receive.SenderClientId != NetworkManager.LocalClientId) return;
         NetworkManager.DisconnectClient(targetClientId);
     }
 
@@ -159,8 +159,8 @@ public class LobbyNetworkManager : NetworkBehaviour
     /// 조건: 전원 Ready + 색 중복 없음.
     /// GameSession에 활성 색 적용 후 NetworkSceneManager로 M.Stage1 로드.
     /// </summary>
-    [ServerRpc(RequireOwnership = false)]
-    public void StartGameServerRpc(ServerRpcParams p = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void StartGameServerRpc(RpcParams rpcParams = default)
     {
         if (!IsHost) return;
         if (!CanStart())
@@ -178,6 +178,11 @@ public class LobbyNetworkManager : NetworkBehaviour
             NetworkSessionData.ClientColors[_slots[i].ClientId] = ColorOrder[_slots[i].ColorIndex];
             colorList[i] = ColorOrder[_slots[i].ColorIndex];
         }
+
+        // 세션 시드 생성 + 모든 클라이언트에 브로드캐스트
+        int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+        NetworkSessionData.Seed = seed;
+        BroadcastSeedClientRpc(seed);
 
         // GameSession에 활성 색 적용
         if (GameSession.Instance != null)
@@ -219,6 +224,14 @@ public class LobbyNetworkManager : NetworkBehaviour
     }
 
     // ── 내부 ──────────────────────────────────────────────────────
+
+    /// <summary>시드를 모든 클라이언트에 배포. StartGameServerRpc 에서 호출.</summary>
+    [ClientRpc]
+    void BroadcastSeedClientRpc(int seed)
+    {
+        NetworkSessionData.Seed = seed;
+        Debug.Log($"[LobbyNetworkManager] 세션 시드 수신: {seed}");
+    }
 
     void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>
         OnSlotsChanged?.Invoke();

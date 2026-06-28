@@ -204,11 +204,16 @@ public class LobbyMenuController : MonoBehaviour
         LobbyNetworkManager.Instance?.SetReadyServerRpc(_isReady);
     }
 
-    /// <summary>Quit 버튼 — 온라인이면 NetworkManager Shutdown 후 타이틀 복귀.</summary>
+    /// <summary>Quit 버튼 — 세션 전체 정리 후 타이틀 복귀.</summary>
     public void OnClickQuit()
     {
+        // 온라인: NGO Shutdown + LanDiscovery 중단 + 세션 데이터 초기화
         if (LobbyContext.IsOnline)
             NetworkManagerSetup.Instance?.Shutdown();
+
+        // 공통: GameSession 런타임 리셋 + 모드 초기화
+        GameSession.Instance?.ResetSession();
+        LobbyContext.Mode = LobbyMode.Offline;
 
         StartCoroutine(LoadSceneWithFade(titleSceneName));
     }

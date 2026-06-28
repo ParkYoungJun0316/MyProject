@@ -44,6 +44,15 @@ public class StagePressurePadSetup : MonoBehaviour
 
     void Start()
     {
+        // 온라인: 동기화된 시드로 Random 초기화 → 전 클라이언트 동일 색 배치 보장
+        if (LobbyContext.IsOnline && NetworkSessionData.Seed != 0)
+        {
+            // salt: 이 시스템 고유 값으로 다른 시스템과 Random 시퀀스 독립
+            const int salt = 0x050AD5E7; // U 접미사 없이 int 리터럴
+            UnityEngine.Random.InitState(NetworkSessionData.Seed ^ salt);
+            Debug.Log($"[StagePressurePadSetup] 시드 적용 — seed={NetworkSessionData.Seed}");
+        }
+
         Collect();
         BuildPadToDoorMap();
         DistributeColors();

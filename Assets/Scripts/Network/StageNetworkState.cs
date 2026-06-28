@@ -59,15 +59,26 @@ public class StageNetworkState : NetworkBehaviour
     /// 플레이어 사망 시 어느 클라이언트에서든 호출.
     /// Host가 1명이라도 사망 신호를 받으면 전원 씬 리로드.
     /// </summary>
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void NotifyPlayerDeathServerRpc()
     {
         if (_resetPending) return;
         _resetPending = true;
 
+        // 사망 리로드 시 새 시드 생성 + 전체 클라이언트에 배포
+        int newSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+        NetworkSessionData.Seed = newSeed;
+        BroadcastNewSeedClientRpc(newSeed);
+
         string sceneName = SceneManager.GetActiveScene().name;
-        Debug.Log($"[StageNetworkState] 사망 감지 — '{sceneName}' 리로드 시작");
+        Debug.Log($"[StageNetworkState] 사망 감지 — '{sceneName}' 리로드 (새 시드: {newSeed})");
         NetworkManager.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+    }
+
+    [ClientRpc]
+    void BroadcastNewSeedClientRpc(int seed)
+    {
+        NetworkSessionData.Seed = seed;
     }
 
     // ── Phase 동기화 ──────────────────────────────────────────────

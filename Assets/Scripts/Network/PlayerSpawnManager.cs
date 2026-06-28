@@ -26,12 +26,77 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     // ── 초기화 ────────────────────────────────────────────────────
 
+    void Start()
+    {
+        // 오프라인: NGO 없이 일반 Instantiate로 스폰
+        if (LobbyContext.IsOffline)
+            SpawnOfflinePlayers();
+    }
+
     public override void OnNetworkSpawn()
     {
         if (!IsHost) return;
+        if (LobbyContext.IsOffline) return;
 
         RemoveScenePlayers();
         SpawnAllPlayers();
+    }
+
+    // ── 오프라인 스폰 ────────────────────────────────────────────
+
+    void SpawnOfflinePlayers()
+    {
+        if (playerPrefab == null)
+        {
+            Debug.LogError("[PlayerSpawnManager] playerPrefab이 연결되지 않았습니다.");
+            return;
+        }
+
+        if (GameSession.Instance == null) return;
+
+        var activeColors = GameSession.Instance.GetActiveColors();
+        if (activeColors.Count == 0)
+        {
+            Debug.LogWarning("[PlayerSpawnManager] 오프라인: 활성 색 없음. " +
+                             "Lobby에서 색 선택 후 Start를 눌렀는지 확인하세요.");
+            return;
+        }
+
+        var zones     = FindObjectsByType<ColoredStartZone>(FindObjectsSortMode.None);
+        var topDownCam = FindAnyObjectByType<TopDownCamera>();
+        bool firstPlayer = true;
+
+        foreach (var color in activeColors)
+        {
+            ColoredStartZone zone = FindZone(zones, color);
+            Vector3    pos = zone != null ? zone.SpawnPosition : Vector3.zero;
+            Quaternion rot = zone != null ? zone.SpawnRotation : Quaternion.identity;
+
+            var go     = Instantiate(playerPrefab, pos, rot);
+            var player = go.GetComponent<Player>();
+
+            if (player != null)
+            {
+                player.playerColorType   = color;
+                player.isOwnerControlled = true;
+                player.ForceSetSpawnPoint(pos, rot);
+
+                // 솔로(1인)에서 첫 번째 플레이어를 카메라가 따라가도록 설정
+                if (firstPlayer && topDownCam != null)
+                {
+                    topDownCam.target     = go.transform;
+                    player.followCamera   = topDownCam.GetComponent<Camera>();
+                    firstPlayer           = false;
+                }
+            }
+
+            Debug.Log($"[PlayerSpawnManager] 오프라인 스폰 — {color} at {pos}");
+        }
+
+        // GameSession에 방금 스폰된 플레이어를 등록
+        var colorArr = new PlayerColorType[activeColors.Count];
+        for (int i = 0; i < activeColors.Count; i++) colorArr[i] = activeColors[i];
+        GameSession.Instance.SetActiveColors(colorArr);
     }
 
     // ── 씬 내 기존 Player 제거 ───────────────────────────────────
