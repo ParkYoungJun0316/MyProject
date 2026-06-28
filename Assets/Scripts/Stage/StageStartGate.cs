@@ -177,7 +177,17 @@ public class StageStartGate : MonoBehaviour
     {
         if (zones == null) return;
         foreach (ColoredStartZone z in zones)
-            if (z != null) z.gameObject.SetActive(active);
+        {
+            if (z == null) continue;
+
+            // 존을 켤 때: GameSession이 있으면 활성 색인 경우만 켬
+            // 존을 끌 때: 그냥 끔 (게임 시작 후 Disarm 등)
+            if (active && GameSession.Instance != null
+                       && !GameSession.Instance.IsColorActive(z.ColorType))
+                continue;
+
+            z.gameObject.SetActive(active);
+        }
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

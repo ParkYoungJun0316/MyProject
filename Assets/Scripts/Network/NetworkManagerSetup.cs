@@ -75,6 +75,10 @@ public class NetworkManagerSetup : MonoBehaviour
 
         _transport.SetConnectionData("0.0.0.0", port);
 
+        // Connection Approval 활성 — 4인 초과 접속 거부
+        _net.NetworkConfig.ConnectionApproval = true;
+        _net.ConnectionApprovalCallback       = ApproveConnection;
+
         bool ok = _net.StartHost();
         if (ok)
         {
@@ -119,6 +123,23 @@ public class NetworkManagerSetup : MonoBehaviour
         if (_net == null || !_net.IsListening) return;
         _net.Shutdown();
         Debug.Log("[NetworkManagerSetup] Shutdown 완료");
+    }
+
+    // ── Connection Approval ───────────────────────────────────────
+
+    void ApproveConnection(
+        NetworkManager.ConnectionApprovalRequest  req,
+        NetworkManager.ConnectionApprovalResponse resp)
+    {
+        int current = _net.ConnectedClients.Count;
+        bool approved = current < maxConnections;
+
+        resp.Approved          = approved;
+        resp.CreatePlayerObject = false; // Player Prefab은 스테이지 진입 시 수동 스폰
+        resp.Pending           = false;
+
+        if (!approved)
+            Debug.Log($"[NetworkManagerSetup] 접속 거부 — 현재 {current}명 / 최대 {maxConnections}명");
     }
 
     // ── 프로퍼티 ──────────────────────────────────────────────────

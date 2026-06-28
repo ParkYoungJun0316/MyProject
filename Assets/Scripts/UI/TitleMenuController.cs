@@ -1,5 +1,6 @@
 using System.Collections;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -79,18 +80,26 @@ public class TitleMenuController : MonoBehaviour
     {
         LobbyContext.Mode = LobbyMode.OnlineHost;
 
-        if (NetworkManagerSetup.Instance != null)
+        if (NetworkManagerSetup.Instance == null)
         {
-            string code = LanDiscovery.GenerateRoomCode();
-            NetworkManagerSetup.Instance.StartHost(code);
+            Debug.LogWarning("[TitleMenuController] NetworkManagerSetup을 찾을 수 없습니다.");
+            StartCoroutine(LoadSceneWithFade(lobbySceneName));
+            return;
+        }
+
+        string code = LanDiscovery.GenerateRoomCode();
+        bool ok = NetworkManagerSetup.Instance.StartHost(code);
+
+        if (ok)
+        {
+            // in-scene NetworkObject(LobbyNetworkManager)가 OnNetworkSpawn을 받으려면
+            // NetworkSceneManager를 통해 씬을 로드해야 한다.
+            NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
         }
         else
         {
-            Debug.LogWarning("[TitleMenuController] NetworkManagerSetup을 찾을 수 없습니다. " +
-                             "0.Title 씬의 NetworkManager GameObject에 컴포넌트를 추가하세요.");
+            Debug.LogError("[TitleMenuController] StartHost 실패. 로비 이동 중단.");
         }
-
-        StartCoroutine(LoadSceneWithFade(lobbySceneName));
     }
 
     /// <summary>게임 참여 버튼 — 룸코드 입력 패널 열기.</summary>
@@ -195,8 +204,10 @@ public class TitleMenuController : MonoBehaviour
         if (joinPanel != null) joinPanel.SetActive(false);
 
         LobbyContext.Mode = LobbyMode.OnlineClient;
+
+        // StartClient 후 씬 전환은 NGO SceneManager가 자동으로 처리.
+        // 수동 LoadScene 금지 — Host의 NetworkSceneManager.LoadScene이 Client를 동기화함.
         NetworkManagerSetup.Instance?.StartClient(hostIp);
-        StartCoroutine(LoadSceneWithFade(lobbySceneName));
     }
 
     IEnumerator DiscoveryTimeout()

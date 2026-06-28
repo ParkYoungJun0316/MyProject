@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -183,6 +184,15 @@ public class SceneFlowManager : MonoBehaviour
             yield return new WaitForSeconds(fadeOutDuration);
         }
 
+        // 온라인 Host: NetworkSceneManager 사용 (in-scene NetworkObject 스폰 필수)
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
+        {
+            NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            _isTransitioning = false;
+            yield break;
+        }
+
+        // 오프라인: 기존 SceneManager 사용
         yield return SceneManager.LoadSceneAsync(sceneName);
 
         // OnSceneLoaded → SyncCurrentIndex + FadeIn 자동 처리됨

@@ -23,10 +23,10 @@ public class StageResetOnPlayerDeath : MonoBehaviour
             _players = new Player[active.Count];
             for (int i = 0; i < active.Count; i++) _players[i] = active[i];
         }
-        else
-        {
+
+        // 활성 플레이어를 못 찾은 경우 (네트워크 모드 타이밍 등) 씬 내 Player 직접 탐색
+        if (_players == null || _players.Length == 0)
             _players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        }
 
         foreach (Player p in _players)
         {
@@ -44,6 +44,17 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void DoReset()
     {
+        // 온라인: StageNetworkState를 통해 Host가 전원 리로드 처리
+        if (LobbyContext.IsOnline)
+        {
+            if (StageNetworkState.Instance != null)
+                StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
+            else
+                Debug.LogWarning("[StageResetOnPlayerDeath] StageNetworkState를 찾을 수 없습니다.");
+            return;
+        }
+
+        // 오프라인: 기존 SceneFlowManager/SceneManager 처리
         if (SceneFlowManager.Instance != null)
             SceneFlowManager.Instance.ReloadCurrentScene();
         else

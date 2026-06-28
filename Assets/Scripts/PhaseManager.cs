@@ -47,6 +47,8 @@ public class PhaseData
 /// </summary>
 public class PhaseManager : MonoBehaviour
 {
+    public static PhaseManager Instance { get; private set; }
+
     [Header("Phase 목록 (순서대로 진행)")]
     [SerializeField] private PhaseData[] phases;
 
@@ -72,6 +74,16 @@ public class PhaseManager : MonoBehaviour
             float dur = phases[_currentPhaseIndex].surviveDuration;
             return dur <= 0f ? 0f : Mathf.Max(0f, dur - _phaseElapsed);
         }
+    }
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     void Start()
@@ -118,12 +130,38 @@ public class PhaseManager : MonoBehaviour
 
         phase.onPhaseEnter?.Invoke();
 
+        // 온라인 Host → Phase 변경을 다른 클라이언트에 동기화
+        StageNetworkState.Instance?.SyncPhase(index);
+
         // manualAdvanceOnly = true 면 AdvancePhase() 호출 대기, 자동 진행 없음
         if (phase.manualAdvanceOnly) return;
 
         // surviveDuration = 0 이면 즉시 다음 Phase
         if (phase.surviveDuration <= 0f)
             PhaseComplete();
+    }
+
+    /// <summary>
+    /// 클라이언트 측에서 Phase 변경 수신 시 호출 (연출·오브젝트 반영).
+    /// StageNetworkState.OnPhaseChanged → 이 메서드 호출.
+    /// 게임 로직(타이머 등)은 Host만 실행하므로 여기서는 시각 효과만.
+    /// </summary>
+    public void EnterPhaseOnClient(int index)
+    {
+        if (phases == null || index < 0 || index >= phases.Length) return;
+        _currentPhaseIndex = index;
+
+        PhaseData phase = phases[index];
+
+        if (phase.objectsToDisable != null)
+            foreach (GameObject obj in phase.objectsToDisable)
+                if (obj != null) obj.SetActive(false);
+
+        if (phase.objectsToEnable != null)
+            foreach (GameObject obj in phase.objectsToEnable)
+                if (obj != null) obj.SetActive(true);
+
+        phase.onPhaseEnter?.Invoke();
     }
 
     // ── Phase 완료 ────────────────────────────────────────────────────
@@ -158,7 +196,16 @@ public class PhaseManager : MonoBehaviour
     public void AdvancePhase()
     {
         if (_allPhasesComplete) return;
-        if (phases == null || _currentPhaseIndex < 0) return;
+
+        // phases가 없으면 PassThrough 용도 — 즉시 onAllPhasesComplete 발동
+        if (phases == null || phases.Length == 0)
+        {
+            _allPhasesComplete = true;
+            onAllPhasesComplete?.Invoke();
+            return;
+        }
+
+        if (_currentPhaseIndex < 0) return;
         PhaseComplete();
     }
 

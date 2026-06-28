@@ -135,16 +135,16 @@ public class GameSession : MonoBehaviour
         _activePlayers.Clear();
         _activeColors.Clear();
 
-        // activeColorSlots → HashSet (중복 제거)
-        var slotSet = new HashSet<PlayerColorType>();
+        // ① activeColorSlots → _activeColors 즉시 반영 (플레이어 유무 무관)
+        //    ColoredStartZone 등 다른 시스템이 IsColorActive()를 신뢰할 수 있도록 먼저 채움
         if (activeColorSlots != null)
             foreach (PlayerColorType c in activeColorSlots)
                 if (c != PlayerColorType.Common && c != PlayerColorType.Danger)
-                    slotSet.Add(c);
+                    _activeColors.Add(c);
 
         if (players == null || players.Length == 0)
         {
-            Debug.LogWarning("[GameSession] 적용할 Player가 없습니다.");
+            Debug.Log($"[GameSession] Player 없음 — 활성 색 등록만 완료: {string.Join(", ", _activeColors)}");
             return;
         }
 
@@ -152,14 +152,16 @@ public class GameSession : MonoBehaviour
         {
             if (p == null) continue;
 
-            bool active = slotSet.Contains(p.playerColorType);
-            p.gameObject.SetActive(active);
+            bool active = _activeColors.Contains(p.playerColorType);
+
+            // ② NetworkObject가 붙은 플레이어는 PlayerSpawnManager가 스폰을 담당.
+            //    SetActive 제어를 GameSession이 하면 정상 플레이어가 꺼질 수 있으므로 제외.
+            bool isNetworkPlayer = p.GetComponent<Unity.Netcode.NetworkObject>() != null;
+            if (!isNetworkPlayer)
+                p.gameObject.SetActive(active);
 
             if (active)
-            {
                 _activePlayers.Add(p);
-                _activeColors.Add(p.playerColorType);
-            }
         }
 
         Debug.Log($"[GameSession] {_activePlayers.Count}인 모드 적용 — 활성 색: {string.Join(", ", _activeColors)}");

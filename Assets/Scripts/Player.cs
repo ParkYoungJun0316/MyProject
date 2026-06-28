@@ -57,6 +57,12 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
 
+    /// <summary>
+    /// 네트워크 Owner 여부. NetworkPlayerSetup이 OnNetworkSpawn에서 설정.
+    /// 오프라인(NGO 미사용) 시 기본값 true → 입력 그대로 동작.
+    /// </summary>
+    [HideInInspector] public bool isOwnerControlled = true;
+
     public bool IsDead   { get; private set; }
     public int PlayerId => playerId;
 
@@ -94,7 +100,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     public void OnMove(InputValue value)
     {
-        if (IsDead) return;
+        if (IsDead || !isOwnerControlled) return;
         moveInput = value.Get<Vector2>();
     }
 
@@ -185,6 +191,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
+        if (!isOwnerControlled) { bwDown = altDown = false; return; }
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
     }

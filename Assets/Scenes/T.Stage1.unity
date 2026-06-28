@@ -1444,6 +1444,78 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5ae80685de1770f46b10f8bcd5c20daa, type: 3}
+--- !u!1 &145415100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 145415103}
+  - component: {fileID: 145415101}
+  - component: {fileID: 145415102}
+  m_Layer: 0
+  m_Name: PlayerSpawnManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &145415101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145415100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 941866066
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &145415102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145415100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02d5df97d677f8f4c9debeabfaee201a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawnManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerPrefab: {fileID: 5933153780236534023, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+--- !u!4 &145415103
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145415100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &146816887
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4381,12 +4453,12 @@ GameObject:
   - component: {fileID: 365604867}
   - component: {fileID: 365604866}
   m_Layer: 0
-  m_Name: GameObject (1)
+  m_Name: SFXManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &365604866
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4411,7 +4483,7 @@ Transform:
   m_GameObject: {fileID: 365604865}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.86608, y: 10, z: 864.83655}
+  m_LocalPosition: {x: 0, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5895,6 +5967,18 @@ PrefabInstance:
       propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2668477064337694649, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3003767904
+      objectReference: {fileID: 0}
+    - target: {fileID: 2668477064337694649, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2668477064337694649, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 4273023829
+      objectReference: {fileID: 0}
     - target: {fileID: 4262352155908590282, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
       propertyPath: followCamera
       value: 
@@ -5902,6 +5986,10 @@ PrefabInstance:
     - target: {fileID: 5933153780236534023, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
       propertyPath: m_Name
       value: Player.B 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5933153780236534023, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6421318610063694781, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -10087,6 +10175,77 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 24b75759c82ee4b4fbd90a3e7eacf6c1, type: 3}
+--- !u!1 &780759106
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 780759109}
+  - component: {fileID: 780759107}
+  - component: {fileID: 780759108}
+  m_Layer: 0
+  m_Name: StageNetworkState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &780759107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780759106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1577479877
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &780759108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780759106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8937ef38873af141985bff9ef382959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageNetworkState
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!4 &780759109
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780759106}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &786060235 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5933153780236534023, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
@@ -16768,12 +16927,12 @@ GameObject:
   - component: {fileID: 1443651737}
   - component: {fileID: 1443651736}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Gamesession
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1443651736
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16797,7 +16956,7 @@ Transform:
   m_GameObject: {fileID: 1443651735}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.86608, y: 10, z: 864.83655}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -26615,3 +26774,5 @@ SceneRoots:
   - {fileID: 397952128}
   - {fileID: 1443651737}
   - {fileID: 365604867}
+  - {fileID: 780759109}
+  - {fileID: 145415103}
