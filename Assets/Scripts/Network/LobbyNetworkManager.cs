@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -37,6 +38,13 @@ public class LobbyNetworkManager : NetworkBehaviour
     // NetworkList 는 Awake 전에 초기화해야 함 (필드 초기화 or Awake)
     private readonly NetworkList<LobbyPlayerState> _slots = new();
 
+    // 룸코드: Host가 설정하고 모든 클라이언트에 동기화
+    private readonly NetworkVariable<FixedString32Bytes> _sharedRoomCode = new(
+        default,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     /// <summary>슬롯 상태가 바뀔 때마다 발행. LobbyMenuController에서 구독해 UI 갱신.</summary>
     public event Action OnSlotsChanged;
 
@@ -56,6 +64,10 @@ public class LobbyNetworkManager : NetworkBehaviour
         {
             NetworkManager.OnClientConnectedCallback  += OnClientJoined;
             NetworkManager.OnClientDisconnectCallback += OnClientLeft;
+
+            // 룸코드를 NetworkVariable에 저장 → 클라이언트에 자동 동기화
+            if (NetworkManagerSetup.Instance != null)
+                _sharedRoomCode.Value = NetworkManagerSetup.Instance.RoomCode;
 
             // Host 자신을 Slot0에 추가
             _slots.Add(new LobbyPlayerState
@@ -131,8 +143,7 @@ public class LobbyNetworkManager : NetworkBehaviour
     public void SetColorServerRpc(int colorIndex, RpcParams rpcParams = default)
     {
         ulong sender = rpcParams.Receive.SenderClientId;
-
-        if (IsColorTaken(colorIndex, sender)) return;
+        // 중복 색 선택 허용 — CanStart()에서 중복 체크로 Start만 비활성화
 
         for (int i = 0; i < _slots.Count; i++)
         {
@@ -193,10 +204,28 @@ public class LobbyNetworkManager : NetworkBehaviour
 
     // ── 공개 읽기 API ─────────────────────────────────────────────
 
-    public int SlotCount => _slots?.Count ?? 0;
+    public int    SlotCount    => _slots?.Count ?? 0;
+
+    /// <summary>모든 클라이언트에서 동일한 룸코드 (NetworkVariable 동기화).</summary>
+    public string SharedRoomCode => _sharedRoomCode.Value.ToString();
+
+    /// <summary>호스트 clientId. _slots[0]이 항상 호스트.</summary>
+    public ulong  HostClientId  => _slots != null && _slots.Count > 0
+        ? _slots[0].ClientId
+        : ulong.MaxValue;
 
     public LobbyPlayerState GetSlot(int i) =>
         (_slots == null || i < 0 || i >= _slots.Count) ? LobbyPlayerState.Empty : _slots[i];
+
+    /// <summary>현재 슬롯 중 중복 색이 하나라도 있으면 true.</summary>
+    public bool HasDuplicateColors()
+    {
+        if (_slots == null) return false;
+        var used = new HashSet<int>();
+        foreach (var s in _slots)
+            if (!used.Add(s.ColorIndex)) return true;
+        return false;
+    }
 
     /// <summary>
     /// Start 버튼 활성 조건.
@@ -207,9 +236,9 @@ public class LobbyNetworkManager : NetworkBehaviour
     {
         if (_slots == null || _slots.Count == 0) return false;
 
-        ulong hostId = NetworkManager.Singleton != null
-            ? NetworkManager.Singleton.LocalClientId
-            : ulong.MaxValue;
+        // HostClientId = _slots[0].ClientId (모든 화면에서 동일)
+        // LocalClientId는 각자 다르므로 사용 금지
+        ulong hostId = HostClientId;
 
         var usedColors = new HashSet<int>();
         foreach (var s in _slots)

@@ -75,9 +75,9 @@ public class NetworkManagerSetup : MonoBehaviour
 
         _transport.SetConnectionData("0.0.0.0", port);
 
-        // Connection Approval 활성 — 4인 초과 접속 거부
-        _net.NetworkConfig.ConnectionApproval = true;
-        _net.ConnectionApprovalCallback       = ApproveConnection;
+        // Connection Approval은 NetworkManager Inspector에서 체크.
+        // 콜백만 코드로 등록.
+        _net.ConnectionApprovalCallback = ApproveConnection;
 
         bool ok = _net.StartHost();
         if (ok)

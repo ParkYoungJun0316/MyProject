@@ -78,6 +78,10 @@ public class LobbyMenuController : MonoBehaviour
     [Tooltip("Start 버튼 부모 — Host만 SetActive(true).")]
     [SerializeField] private GameObject startButtonRoot;
 
+    [Tooltip("색 중복 시 표시할 경고 GameObject.\n" +
+             "예) TMP_Text: '같은 색을 선택한 플레이어가 있습니다. 다른 색을 선택해주세요.'")]
+    [SerializeField] private GameObject duplicateColorWarning;
+
     [Header("페이드 (선택)")]
     [SerializeField] private ScreenFader screenFader;
     [SerializeField] private float       fadeOutDuration = 0f;
@@ -95,12 +99,15 @@ public class LobbyMenuController : MonoBehaviour
     // ── 런타임 상태 ──────────────────────────────────────────────
 
     bool _isReady;
+    bool _isNetworkSubscribed;
 
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
     {
-        if (characterDropdown != null)
+        // 오프라인 모드: LobbySlotUI 없이 직접 dropdown 사용
+        // 온라인 모드: LobbySlotUI가 드롭다운 이벤트를 담당하므로 여기서는 오프라인만 구독
+        if (characterDropdown != null && LobbyContext.IsOffline)
             characterDropdown.onValueChanged.AddListener(OnCharacterChanged);
     }
 
@@ -131,12 +138,24 @@ public class LobbyMenuController : MonoBehaviour
         if (LobbyNetworkManager.Instance != null)
         {
             LobbyNetworkManager.Instance.OnSlotsChanged += RefreshAllSlots;
-            // 구독 직후 즉시 갱신 — OnNetworkSpawn이 이미 끝난 경우 대비
+            _isNetworkSubscribed = true;
             RefreshAllSlots();
         }
+        // Instance가 아직 null이면 Update에서 재시도
 
         if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientDisconnectCallback += OnNetworkDisconnected;
+    }
+
+    // Instance가 나중에 생기는 경우 대비 (Client 타이밍 이슈)
+    void Update()
+    {
+        if (!_isNetworkSubscribed && LobbyContext.IsOnline && LobbyNetworkManager.Instance != null)
+        {
+            LobbyNetworkManager.Instance.OnSlotsChanged += RefreshAllSlots;
+            _isNetworkSubscribed = true;
+            RefreshAllSlots();
+        }
     }
 
     void UnsubscribeNetworkEvents()
@@ -218,14 +237,22 @@ public class LobbyMenuController : MonoBehaviour
         StartCoroutine(LoadSceneWithFade(titleSceneName));
     }
 
-    /// <summary>Copy 버튼 — 전체 6자리 룸코드 클립보드 복사.</summary>
+    /// <summary>
+    /// Copy 버튼 — 전체 6자리 룸코드 클립보드 복사.
+    /// Host / Client 모두 동일한 코드 복사 (SharedRoomCode NetworkVariable).
+    /// </summary>
     public void OnClickCopy()
     {
         if (LobbyContext.IsOffline) return;
 
-        string code = NetworkManagerSetup.Instance != null
-            ? NetworkManagerSetup.Instance.RoomCode
+        // SharedRoomCode: NetworkVariable이므로 Host·Client 모두 동일 값
+        string code = LobbyNetworkManager.Instance != null
+            ? LobbyNetworkManager.Instance.SharedRoomCode
             : string.Empty;
+
+        // 폴백: LobbyNetworkManager 미초기화 시 Host는 직접 읽음
+        if (string.IsNullOrEmpty(code) && NetworkManagerSetup.Instance != null)
+            code = NetworkManagerSetup.Instance.RoomCode;
 
         if (!string.IsNullOrEmpty(code))
         {
@@ -253,7 +280,8 @@ public class LobbyMenuController : MonoBehaviour
 
     /// <summary>
     /// 전체 슬롯 UI 갱신. LobbyNetworkManager.OnSlotsChanged 이벤트에서 호출됨.
-    /// 로컬 플레이어 → Slot0 UI / 나머지 → Slot1~3 UI
+    /// _slots 순서대로 표시 → Host 항상 Slot0, 이후 접속 순.
+    /// 모든 화면에서 동일한 순서로 보임.
     /// </summary>
     void RefreshAllSlots()
     {
@@ -263,63 +291,59 @@ public class LobbyMenuController : MonoBehaviour
             ? NetworkManager.Singleton.LocalClientId
             : ulong.MaxValue;
 
-        bool isHost = LobbyContext.IsOnlineHost;
+        ulong hostId = LobbyNetworkManager.Instance.HostClientId;
+        bool  isHost = LobbyContext.IsOnlineHost;
 
-        // 로컬 vs 타인 분리
-        LobbyPlayerState localState = LobbyPlayerState.Empty;
-        var others = new List<LobbyPlayerState>();
-
-        for (int i = 0; i < LobbyNetworkManager.Instance.SlotCount; i++)
-        {
-            LobbyPlayerState s = LobbyNetworkManager.Instance.GetSlot(i);
-            if (s.ClientId == localId) localState = s;
-            else                       others.Add(s);
-        }
-
-        // Slot0 = 로컬 플레이어 (Kick 불가)
-        if (allSlotUIs.Length > 0 && allSlotUIs[0] != null)
-        {
-            if (localState.IsOccupied)
-                allSlotUIs[0].Refresh(localState, GetPortrait(localState.ColorIndex), false);
-            else
-                allSlotUIs[0].SetEmpty();
-        }
-
-        // Slot1~3 = 타 플레이어
-        for (int i = 1; i < allSlotUIs.Length; i++)
+        // _slots 순서대로 UI 갱신 (Host=0번, 이후 접속 순)
+        for (int i = 0; i < allSlotUIs.Length; i++)
         {
             if (allSlotUIs[i] == null) continue;
-            int oi = i - 1;
-            if (oi < others.Count)
-                allSlotUIs[i].Refresh(others[oi], GetPortrait(others[oi].ColorIndex), isHost);
+
+            if (i < LobbyNetworkManager.Instance.SlotCount)
+            {
+                LobbyPlayerState s = LobbyNetworkManager.Instance.GetSlot(i);
+                bool isLocalSlot = s.ClientId == localId;
+                bool isHostSlot  = s.ClientId == hostId;
+                bool canKick     = isHost && !isLocalSlot;
+
+                allSlotUIs[i].Refresh(s, GetPortrait(s.ColorIndex), canKick, isHostSlot, isLocalSlot);
+            }
             else
+            {
                 allSlotUIs[i].SetEmpty();
+            }
         }
 
-        // Start 버튼 interactable (Host만)
-        if (startButton != null)
-            startButton.interactable = LobbyNetworkManager.Instance.CanStart();
+        bool canStart      = LobbyNetworkManager.Instance.CanStart();
+        bool hasDuplicate  = LobbyNetworkManager.Instance.HasDuplicateColors();
 
-        // LobbyNetworkManager.OnSlotsChanged 구독이 늦을 수 있으므로 재구독 시도
-        LobbyNetworkManager.Instance.OnSlotsChanged -= RefreshAllSlots;
-        LobbyNetworkManager.Instance.OnSlotsChanged += RefreshAllSlots;
+        if (startButton       != null) startButton.interactable   = canStart;
+        if (waitingTextObject != null) waitingTextObject.SetActive(!canStart);
+
+        // 색 중복 경고: 중복 있을 때 표시 (Start 비활성 이유를 명확히 알려줌)
+        if (duplicateColorWarning != null)
+            duplicateColorWarning.SetActive(hasDuplicate);
+
+        // 룸코드 갱신 (NetworkVariable이므로 Host·Client 모두 동일)
+        RefreshRoomCode();
     }
 
     void RefreshRoomCode()
     {
-        if (!LobbyContext.IsOnlineHost) return;
-        if (roomCodeText == null || NetworkManagerSetup.Instance == null) return;
+        if (roomCodeText == null) return;
+        if (!LobbyContext.IsOnline) return;
+        if (LobbyNetworkManager.Instance == null) return;
 
-        roomCodeText.text = LanDiscovery.FormatDisplayCode(NetworkManagerSetup.Instance.RoomCode);
+        string code = LobbyNetworkManager.Instance.SharedRoomCode;
+        if (!string.IsNullOrEmpty(code))
+            roomCodeText.text = LanDiscovery.FormatDisplayCode(code);
     }
 
     void RefreshReadyVisual()
     {
         if (checkImage != null)
             checkImage.sprite = _isReady ? readySprite : notReadySprite;
-
-        if (waitingTextObject != null)
-            waitingTextObject.SetActive(!_isReady);
+        // waitingTextObject는 RefreshAllSlots()의 CanStart() 기준으로 제어
     }
 
     void RefreshPortrait(int index)
