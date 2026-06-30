@@ -18,8 +18,15 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Player))]
 public class NetworkPlayerSetup : NetworkBehaviour
 {
-    // 서버가 색 인덱스를 쓰고, 모든 클라이언트가 읽음
+    // 색 인덱스: 서버 쓰기 / 전원 읽기
     private readonly NetworkVariable<int> _colorIndex = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    // HP: 서버 쓰기 / 전원 읽기
+    private readonly NetworkVariable<int> _hp = new(
         0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
@@ -41,9 +48,14 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         _colorIndex.OnValueChanged += OnColorIndexChanged;
+        _hp.OnValueChanged         += OnHpChanged;
 
         // 색 초기 적용
         ApplyColor(_colorIndex.Value);
+
+        // Host: 플레이어 초기 HP를 NetworkVariable에 설정
+        if (IsServer && _player != null)
+            _hp.Value = _player.maxHeart;
 
         // Owner / 비오너 분기
         if (IsOwner)
@@ -55,6 +67,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         _colorIndex.OnValueChanged -= OnColorIndexChanged;
+        _hp.OnValueChanged         -= OnHpChanged;
     }
 
     // ── Owner 설정 ────────────────────────────────────────────────
@@ -117,6 +130,56 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // uniqueColor 시각 색상은 PlayerVisualController 등에서 playerColorType 기반으로 별도 처리
     }
 
+    // ── HP 동기화 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Host에서 직접 호출해 HP를 차감.
+    /// ArrowTrap·DropTrap 등 함정이 Host에서 플레이어 충돌을 감지했을 때 사용.
+    /// </summary>
+    public void ApplyDamageFromServer(int amount, bool knockback = false)
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead) return;
+        if (_player.IsDamageInvulnerable) return;
+
+        int newHp = Mathf.Max(0, _hp.Value - amount);
+        _hp.Value = newHp;
+
+        NotifyHitClientRpc(knockback);
+
+        if (newHp <= 0)
+            ForceKillClientRpc();
+    }
+
+    /// <summary>오너 클라이언트에 피격 연출(애니·무적)을 요청.</summary>
+    [ClientRpc]
+    void NotifyHitClientRpc(bool knockback)
+    {
+        if (!IsOwner) return;
+        // NetworkVariable(_hp) 변경과 ClientRpc가 같은 틱에 전송되더라도
+        // 처리 순서가 보장되지 않으므로 여기서 heart를 명시적으로 맞춘다.
+        if (_player != null) _player.heart = _hp.Value;
+        _player?.TakeDamageVisualOnly(knockback);
+    }
+
+    /// <summary>오너 클라이언트에 사망을 확정.</summary>
+    [ClientRpc]
+    void ForceKillClientRpc()
+    {
+        if (!IsOwner) return;
+        _player?.ForceKill();
+    }
+
+    void OnHpChanged(int prev, int next)
+    {
+        if (_player == null) return;
+        _player.heart = next;
+
+        // 비오너: 다른 플레이어의 HP UI도 갱신 (오너는 NotifyHitClientRpc에서 이미 처리)
+        if (!IsOwner)
+            _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
+    }
+
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR
@@ -124,7 +187,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
     void Debug_Status()
     {
         Debug.Log($"[NetworkPlayerSetup] IsOwner={IsOwner} IsServer={IsServer} " +
-                  $"colorIndex={_colorIndex.Value} colorType={_player?.playerColorType}");
+                  $"colorIndex={_colorIndex.Value} HP={_hp.Value} colorType={_player?.playerColorType}");
     }
+
+    [ContextMenu("테스트: 데미지 1 적용 (Host 전용)")]
+    void Debug_Damage1() => ApplyDamageFromServer(1);
 #endif
 }

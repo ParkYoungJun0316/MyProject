@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -121,6 +122,12 @@ public class ArrowTrap : TrapBase
     {
         if (arrowPrefab == null) return;
 
+        var  nm          = NetworkManager.Singleton;
+        bool isNetworked = nm != null && nm.IsListening;
+
+        // 네트워크 모드: Host만 화살을 스폰. Client는 Host가 Spawn한 오브젝트를 수신.
+        if (isNetworked && !nm.IsServer) return;
+
         Transform spawn   = firePoint != null ? firePoint : transform;
         Vector3   flatFwd = spawn.forward;
 
@@ -140,6 +147,14 @@ public class ArrowTrap : TrapBase
             Rigidbody firedRb = fired.GetComponent<Rigidbody>();
             if (firedRb != null)
                 firedRb.linearVelocity = flatFwd * speed;
+        }
+
+        // 네트워크 모드: NetworkObject.Spawn()으로 클라이언트에 복제
+        // Spawn 호출 전에 velocity를 미리 설정해야 Host의 물리가 즉시 시작됨
+        if (isNetworked)
+        {
+            NetworkObject netObj = fired.GetComponent<NetworkObject>();
+            if (netObj != null) netObj.Spawn();
         }
     }
 }

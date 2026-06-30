@@ -81,6 +81,20 @@ public class StageNetworkState : NetworkBehaviour
         NetworkSessionData.Seed = seed;
     }
 
+    // ── StartStage 동기화 ─────────────────────────────────────────
+
+    /// <summary>
+    /// Host의 StageStartGate 카운트다운이 완료되면 호출.
+    /// 모든 Client에 StartStage를 동기화해 함정·목표 시작 시점을 맞춤.
+    /// </summary>
+    [ClientRpc]
+    public void BroadcastStartStageClientRpc()
+    {
+        if (IsServer) return; // Host는 StageStartGate.CompleteCountdown()에서 이미 호출
+        FindFirstObjectByType<StageManager>()?.StartStage();
+        Debug.Log("[StageNetworkState] Client StartStage 동기화 완료");
+    }
+
     // ── Phase 동기화 ──────────────────────────────────────────────
 
     /// <summary>

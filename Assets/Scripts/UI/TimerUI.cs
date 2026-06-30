@@ -29,12 +29,13 @@ public class TimerUI : MonoBehaviour
     [Tooltip("이 초 이하로 남으면 경고 색으로 변경")]
     [SerializeField] float warningThreshold  = 30f;
 
+    // 씬 재로드(사망 리로드)에도 초기화되지 않도록 static 보관
+    static float s_accumulatedTime = 0f;
+
     float _playTime;
 
     void Start()
     {
-        _playTime = 0f;
-
         if (mode == TimerMode.Survival)
         {
             if (objective == null)
@@ -47,9 +48,11 @@ public class TimerUI : MonoBehaviour
         }
         else
         {
+            // PlayTime: 이전 누적 시간에서 이어서 시작
+            _playTime = s_accumulatedTime;
             if (timerText != null)
                 timerText.color = normalColor;
-            UpdateDisplay(0f, isSurvival: false);
+            UpdateDisplay(_playTime, isSurvival: false);
         }
     }
 
@@ -57,9 +60,13 @@ public class TimerUI : MonoBehaviour
     {
         if (mode != TimerMode.PlayTime) return;
 
-        _playTime += Time.deltaTime;
+        _playTime      += Time.deltaTime;
+        s_accumulatedTime = _playTime; // 씬 전환 대비 보존
         UpdateDisplay(_playTime, isSurvival: false);
     }
+
+    /// <summary>새 게임 시작 시 누적 타이머 리셋. GameSession.ResetSession() 등에서 호출.</summary>
+    public static void ResetTimer() => s_accumulatedTime = 0f;
 
     void OnSurvivalTimeChanged(float remaining)
     {

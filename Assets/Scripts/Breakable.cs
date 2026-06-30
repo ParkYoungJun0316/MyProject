@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -170,12 +171,26 @@ public class Breakable : MonoBehaviour
 
         if (killPlayerOnBreak && killRadius > 0f)
         {
-            Collider[] hits = Physics.OverlapSphere(transform.position, killRadius, playerLayer);
-            for (int i = 0; i < hits.Length; i++)
+            var nm = NetworkManager.Singleton;
+            bool isNetworkActive = nm != null && nm.IsListening;
+
+            // 네트워크 모드: Host에서만 즉사 판정 (클라이언트 중복 방지)
+            if (!isNetworkActive || nm.IsServer)
             {
-                Player p = hits[i].GetComponent<Player>()
-                           ?? hits[i].GetComponentInParent<Player>();
-                p?.KillInstantly();
+                Collider[] hits = Physics.OverlapSphere(transform.position, killRadius, playerLayer);
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    Player p = hits[i].GetComponent<Player>()
+                               ?? hits[i].GetComponentInParent<Player>();
+                    if (p == null) continue;
+
+                    if (isNetworkActive)
+                    {
+                        var netSetup = p.GetComponent<NetworkPlayerSetup>();
+                        if (netSetup != null) { netSetup.ApplyDamageFromServer(9999); continue; }
+                    }
+                    p.KillInstantly();
+                }
             }
         }
 

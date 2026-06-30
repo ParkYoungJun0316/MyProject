@@ -39,7 +39,25 @@ public class PlayerSpawnManager : NetworkBehaviour
         if (LobbyContext.IsOffline) return;
 
         RemoveScenePlayers();
+
+        // SpawnAllPlayers()를 OnSessionOwnerLoadedScene 시점에 바로 호출하면
+        // 클라이언트가 씬 로드 완료 전에 CreateObjectMessage를 받아 10초 후 타임아웃.
+        // LoadEventCompleted: ALL 클라이언트의 씬 로드가 완료된 시점 → 여기서 스폰.
+        NetworkManager.SceneManager.OnSceneEvent += OnSceneEventForSpawn;
+    }
+
+    void OnSceneEventForSpawn(SceneEvent sceneEvent)
+    {
+        if (sceneEvent.SceneEventType != SceneEventType.LoadEventCompleted) return;
+
+        NetworkManager.SceneManager.OnSceneEvent -= OnSceneEventForSpawn;
         SpawnAllPlayers();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (NetworkManager?.SceneManager != null)
+            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEventForSpawn;
     }
 
     // ── 오프라인 스폰 ────────────────────────────────────────────

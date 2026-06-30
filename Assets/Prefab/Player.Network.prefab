@@ -411,10 +411,10 @@ GameObject:
   - component: {fileID: 7864323553328254545}
   - component: {fileID: 1863352540141459128}
   - component: {fileID: -8739998439568447894}
-  - component: {fileID: -4971602885598900818}
   - component: {fileID: 2668477064337694649}
   - component: {fileID: -6787561231724640185}
   - component: {fileID: -8892093094393070218}
+  - component: {fileID: -8886857640759148882}
   m_Layer: 7
   m_Name: Player.Network
   m_TagString: Player
@@ -746,14 +746,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!81 &-4971602885598900818
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5933153780236534023}
-  m_Enabled: 1
 --- !u!114 &2668477064337694649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -838,6 +830,54 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkPlayerSetup
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &-8886857640759148882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5933153780236534023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 1
+  m_Animator: {fileID: 4128662277231887988}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: isRun
+      NameHash: -1125067167
+      Synchronize: 1
+      ParameterType: 4
+    - name: isWalk
+      NameHash: 749498201
+      Synchronize: 1
+      ParameterType: 4
+    - name: doDie
+      NameHash: 933339616
+      Synchronize: 1
+      ParameterType: 9
+    - name: doChangeColor
+      NameHash: -276404923
+      Synchronize: 1
+      ParameterType: 9
+    - name: doFall
+      NameHash: 1138991965
+      Synchronize: 1
+      ParameterType: 9
+    - name: doJammed
+      NameHash: -1644529699
+      Synchronize: 1
+      ParameterType: 9
+    - name: doHit
+      NameHash: 1410037878
+      Synchronize: 1
+      ParameterType: 9
+  AnimatorParametersExpanded: 0
 --- !u!1 &7685645179032029918
 GameObject:
   m_ObjectHideFlags: 0

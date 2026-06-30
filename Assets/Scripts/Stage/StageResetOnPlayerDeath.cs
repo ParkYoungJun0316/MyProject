@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,28 +13,61 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class StageResetOnPlayerDeath : MonoBehaviour
 {
+    // 이미 구독한 Player Set — 중복 구독 방지
+    readonly HashSet<Player> _subscribed = new();
+    bool _resetPending;
+
+    // Player[] _players는 하위 호환을 위해 유지 (UnsubscribePlayers에서 사용)
     Player[] _players;
-    bool     _resetPending;
 
     void Start()
     {
-        // GameSession이 있으면 활성 플레이어만, 없으면 씬 전체
+        // 네트워크 모드: PlayerSpawnManager가 LoadEventCompleted 이후 스폰하므로
+        // Start() 시점에 플레이어가 없을 수 있음 → 코루틴으로 재시도
+        StartCoroutine(FindAndSubscribeRoutine());
+    }
+
+    IEnumerator FindAndSubscribeRoutine()
+    {
+        // 최대 15초(0.3초 × 50) 동안 재시도
+        for (int i = 0; i < 50; i++)
+        {
+            TrySubscribePlayers();
+            if (_subscribed.Count > 0) yield break;
+            yield return new WaitForSeconds(0.3f);
+        }
+        Debug.LogWarning("[StageResetOnPlayerDeath] 15초 내 플레이어를 찾지 못했습니다.");
+    }
+
+    void TrySubscribePlayers()
+    {
+        // GameSession 활성 플레이어 우선
         if (GameSession.Instance != null)
         {
             var active = GameSession.Instance.GetActivePlayers();
-            _players = new Player[active.Count];
-            for (int i = 0; i < active.Count; i++) _players[i] = active[i];
+            foreach (Player p in active) Subscribe(p);
         }
 
-        // 활성 플레이어를 못 찾은 경우 (네트워크 모드 타이밍 등) 씬 내 Player 직접 탐색
-        if (_players == null || _players.Length == 0)
-            _players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        // 씬 내 모든 Player 보조 탐색 (네트워크 스폰 포함)
+        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (Player p in all) Subscribe(p);
 
-        foreach (Player p in _players)
+        // 레거시 배열 갱신 (UnsubscribePlayers에서 사용)
+        if (_subscribed.Count > 0)
         {
-            PlayerEvents ev = p.GetComponent<PlayerEvents>();
-            if (ev != null) ev.OnDied += OnAnyPlayerDied;
+            _players = new Player[_subscribed.Count];
+            _subscribed.CopyTo(_players);
         }
+    }
+
+    void Subscribe(Player p)
+    {
+        if (p == null || _subscribed.Contains(p)) return;
+        PlayerEvents ev = p.GetComponent<PlayerEvents>();
+        if (ev == null) return;
+        ev.OnDied += OnAnyPlayerDied;
+        _subscribed.Add(p);
+        Debug.Log($"[StageResetOnPlayerDeath] 플레이어 구독: {p.name}");
     }
 
     void OnAnyPlayerDied()
@@ -73,13 +108,13 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void UnsubscribePlayers()
     {
-        if (_players == null) return;
-        foreach (Player p in _players)
+        foreach (Player p in _subscribed)
         {
             if (p == null) continue;
             PlayerEvents ev = p.GetComponent<PlayerEvents>();
             if (ev != null) ev.OnDied -= OnAnyPlayerDied;
         }
+        _subscribed.Clear();
     }
 
 #if UNITY_EDITOR

@@ -195,9 +195,15 @@ public class LobbyNetworkManager : NetworkBehaviour
         NetworkSessionData.Seed = seed;
         BroadcastSeedClientRpc(seed);
 
-        // GameSession에 활성 색 적용
+        // GameSession 활성 색 적용 (Host)
         if (GameSession.Instance != null)
             GameSession.Instance.SetActiveColors(colorList);
+
+        // 활성 색을 Client에도 동기화 — ColoredStartZone.Start()가 올바르게 작동하려면 씬 로드 전에 도달해야 함
+        var colorIndices = new int[colorList.Length];
+        for (int i = 0; i < colorList.Length; i++)
+            colorIndices[i] = (int)colorList[i];
+        SyncActiveColorsClientRpc(colorIndices);
 
         NetworkManager.SceneManager.LoadScene("M.Stage1", LoadSceneMode.Single);
     }
@@ -260,6 +266,26 @@ public class LobbyNetworkManager : NetworkBehaviour
     {
         NetworkSessionData.Seed = seed;
         Debug.Log($"[LobbyNetworkManager] 세션 시드 수신: {seed}");
+    }
+
+    /// <summary>
+    /// 활성 색(PlayerColorType[])을 Client에 동기화.
+    /// StartGameServerRpc → LoadScene 직전에 호출되므로
+    /// 씬 로드 시 ColoredStartZone.Start()에서 올바른 색 기준을 사용할 수 있음.
+    /// </summary>
+    [ClientRpc]
+    void SyncActiveColorsClientRpc(int[] colorIndices)
+    {
+        if (IsHost) return; // Host는 이미 적용됨
+
+        if (GameSession.Instance == null) return;
+
+        var colorList = new PlayerColorType[colorIndices.Length];
+        for (int i = 0; i < colorIndices.Length; i++)
+            colorList[i] = (PlayerColorType)colorIndices[i];
+
+        GameSession.Instance.SetActiveColors(colorList);
+        Debug.Log($"[LobbyNetworkManager] Client 활성 색 동기화: {string.Join(", ", colorList)}");
     }
 
     void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>

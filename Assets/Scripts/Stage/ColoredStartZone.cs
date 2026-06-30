@@ -75,7 +75,16 @@ public class ColoredStartZone : MonoBehaviour
             if (m != null) Destroy(m);
     }
 
-    void OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other) => TryOccupy(other);
+
+    /// <summary>
+    /// NetworkTransform이 transform.position을 직접 설정하거나 플레이어가 스폰 시
+    /// 트리거 내부에 이미 있을 경우 OnTriggerEnter가 발동하지 않을 수 있다.
+    /// OnTriggerStay로 매 프레임 보완 감지한다.
+    /// </summary>
+    void OnTriggerStay(Collider other) => TryOccupy(other);
+
+    void TryOccupy(Collider other)
     {
         if (_isOccupied) return;
 

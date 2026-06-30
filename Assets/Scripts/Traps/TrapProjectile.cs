@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -41,8 +42,13 @@ public class TrapProjectile : MonoBehaviour
 
     void Start()
     {
-        if (lifetime > 0f)
-            Destroy(gameObject, lifetime);
+        if (lifetime <= 0f) return;
+
+        // 네트워크 모드: Host만 수명 파괴 담당 (Destroy → 전원 자동 Despawn)
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
+        Destroy(gameObject, lifetime);
     }
 
     void OnCollisionEnter(Collision collision)
@@ -67,13 +73,18 @@ public class TrapProjectile : MonoBehaviour
 
     void HandleContact(GameObject other)
     {
+        // 네트워크 모드: 서버(Host)만 충돌 처리 — 파괴 및 데미지 판정
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         if (other.CompareTag("Player"))
         {
             if (damage > 0)
             {
                 Player p = other.GetComponent<Player>()
                            ?? other.GetComponentInParent<Player>();
-                if (p != null) p.TakeDamage(damage, false);
+                if (p != null)
+                    ApplyDamageToPlayer(p, damage);
             }
             if (destroyOnPlayer) DestroyProjectile();
             return;
@@ -88,6 +99,27 @@ public class TrapProjectile : MonoBehaviour
         if (destroyOnFloor && other.CompareTag("Floor"))
         {
             DestroyProjectile();
+        }
+    }
+
+    static void ApplyDamageToPlayer(Player p, int amount)
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening)
+        {
+            // 네트워크 모드: Host에서만 데미지 판정 (클라이언트는 무시)
+            if (!nm.IsServer) return;
+
+            var netSetup = p.GetComponent<NetworkPlayerSetup>();
+            if (netSetup != null)
+                netSetup.ApplyDamageFromServer(amount);
+            else
+                p.TakeDamage(amount, false); // NetworkPlayerSetup 없는 경우 폴백
+        }
+        else
+        {
+            // 오프라인
+            p.TakeDamage(amount, false);
         }
     }
 

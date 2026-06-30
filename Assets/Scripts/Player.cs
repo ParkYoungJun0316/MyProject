@@ -66,6 +66,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public bool IsDead   { get; private set; }
     public int PlayerId => playerId;
 
+    /// <summary>피격 무적 시간 중 true. NetworkPlayerSetup이 서버에서 중복 피격 방지에 사용.</summary>
+    public bool IsDamageInvulnerable => isDamage;
+
     [HideInInspector] public Vector2 moveInput;
     Vector3 moveVec;
 
@@ -177,6 +180,10 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void FixedUpdate()
     {
+        // 비오너 플레이어: NetworkTransform(ClientNetworkTransform)이 위치 제어.
+        // kinematic Rigidbody에 velocity 설정 시 "not supported" 에러 → 건너뜀.
+        if (!isOwnerControlled) return;
+
         if (IsDead)
         {
             rigid.linearVelocity = Vector3.zero;
@@ -243,6 +250,27 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         rigid.angularVelocity = Vector3.zero;
     }
 
+    /// <summary>
+    /// HP 차감 없이 피격 연출(애니·무적·넉백)만 처리.
+    /// Host → 오너 클라이언트 경로(ForceKillClientRpc 이전 단계)에서 사용.
+    /// </summary>
+    public void TakeDamageVisualOnly(bool knockback = false)
+    {
+        if (IsDead) return;
+        if (isDamage) return;
+
+        events?.RaiseDamaged(knockback);
+        playerStealth?.RevealTemporarily();
+        anim?.SetTrigger("doHit");
+        StartCoroutine(OnDamage(knockback));
+    }
+
+    /// <summary>Host가 사망을 확정한 뒤 오너 클라이언트를 통해 호출.</summary>
+    public void ForceKill()
+    {
+        if (!IsDead) Die();
+    }
+
     /// <summary>버프·무적 무시 즉사. Die()에서 doJammed 연동.</summary>
     public void KillInstantly()
     {
@@ -278,6 +306,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsDead) return;
         if (isDamage) return;
+
+        // 비오너 플레이어: 피격 판정은 Host 경로에서만. 로컬 직접 호출 무시
+        if (!isOwnerControlled) return;
 
         if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
             return;
@@ -320,7 +351,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         isDamage = true;
 
-        if (isBossAtk)
+        if (isBossAtk && isOwnerControlled)
         {
             isKnockback = true;
             rigid.AddForce(transform.forward * -25, ForceMode.Impulse);
@@ -330,11 +361,14 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         yield return new WaitForSeconds(invuln);
         isDamage = false;
 
-        if (isBossAtk)
+        if (isBossAtk && isOwnerControlled)
         {
             rigid.linearVelocity = Vector3.zero;
             isKnockback = false;
         }
+
+        if (isBossAtk && !isOwnerControlled)
+            isKnockback = false;
     }
 
     void Die()
@@ -357,9 +391,13 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
                 if (cols[i] != null) cols[i].enabled = false;
 
         moveInput = Vector2.zero;
-        rigid.linearVelocity = Vector3.zero;
-        rigid.angularVelocity = Vector3.zero;
         fixedY = transform.position.y;
+        // kinematic 상태에서 velocity 설정 시 Unity 경고 방지
+        if (!rigid.isKinematic)
+        {
+            rigid.linearVelocity  = Vector3.zero;
+            rigid.angularVelocity = Vector3.zero;
+        }
         rigid.isKinematic = true;
 
         if (anim != null)
@@ -413,9 +451,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         transform.SetPositionAndRotation(spawnPos, spawnRot);
         heart = maxHeart;
 
-        rigid.isKinematic = false;
-        rigid.linearVelocity = Vector3.zero;
-        rigid.angularVelocity = Vector3.zero;
+        // 비오너: NetworkTransform이 위치 제어 → isKinematic 유지
+        if (isOwnerControlled)
+            rigid.isKinematic = false;
+        // kinematic 상태에서 velocity 설정 시 Unity 경고 방지
+        if (!rigid.isKinematic)
+        {
+            rigid.linearVelocity  = Vector3.zero;
+            rigid.angularVelocity = Vector3.zero;
+        }
 
         IsDead = false;
         isDamage = false; isKnockback = false;

@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -44,6 +45,10 @@ public class BuffPickup : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
+
+        // 네트워크 모드: Host에서만 버프 적용 및 파괴 (클라이언트 중복 방지)
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
 
         PlayerBuffSystem buffSystem = other.GetComponent<PlayerBuffSystem>();
         if (buffSystem == null) return;

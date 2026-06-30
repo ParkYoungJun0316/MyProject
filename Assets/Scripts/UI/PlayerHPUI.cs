@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,6 +6,10 @@ using UnityEngine.UI;
 /// HP_Panel에 붙이는 스크립트.
 /// maxHeart 수만큼 하트 Image를 자동 생성.
 /// [ExecuteAlways] 로 씬 모드에서도 미리보기 가능.
+///
+/// [네트워크 모드]
+/// player 필드가 비어 있으면 Start()에서 로컬 오너 플레이어를 자동으로 탐색.
+/// PlayerSpawnManager가 스폰 완료 전일 경우를 대비해 짧은 대기 후 재시도.
 /// </summary>
 [ExecuteAlways]
 public class PlayerHPUI : MonoBehaviour
@@ -36,9 +41,66 @@ public class PlayerHPUI : MonoBehaviour
     {
         BuildHearts();
 
-        // 이벤트 구독은 플레이 모드에서만
         if (!Application.isPlaying) return;
 
+        if (player != null)
+        {
+            SubscribeAndRefresh();
+            return;
+        }
+
+        // player가 Inspector에 연결되지 않은 경우 (네트워크 스폰 대기)
+        StartCoroutine(FindLocalPlayerRoutine());
+    }
+
+    System.Collections.IEnumerator FindLocalPlayerRoutine()
+    {
+        // PlayerSpawnManager가 LoadEventCompleted 시점에 스폰하므로
+        // 최대 10초 동안 0.2초 간격으로 재시도
+        float elapsed = 0f;
+        while (elapsed < 10f)
+        {
+            yield return new WaitForSeconds(0.2f);
+            elapsed += 0.2f;
+
+            Player found = FindLocalOwnerPlayer();
+            if (found != null)
+            {
+                player = found;
+                BuildHearts();
+                SubscribeAndRefresh();
+                yield break;
+            }
+        }
+
+        Debug.LogWarning("[PlayerHPUI] 10초 내 로컬 오너 플레이어를 찾지 못했습니다.");
+    }
+
+    /// <summary>
+    /// 씬에서 로컬 오너 플레이어를 찾는다.
+    /// 오프라인: isOwnerControlled=true인 첫 번째 Player
+    /// 네트워크: NetworkObject.IsOwner인 Player
+    /// </summary>
+    static Player FindLocalOwnerPlayer()
+    {
+        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in all)
+        {
+            var netObj = p.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                if (netObj.IsOwner) return p;
+            }
+            else if (p.isOwnerControlled)
+            {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    void SubscribeAndRefresh()
+    {
         PlayerEvents events = player.GetComponent<PlayerEvents>();
         if (events != null)
         {

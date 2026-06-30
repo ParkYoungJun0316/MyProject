@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -27,7 +29,7 @@ public class TeamStatusUI : MonoBehaviour
     }
 
     [Header("연결")]
-    [Tooltip("팀원 목록에서 제외할 플레이어 (내 캐릭터). HP_Panel의 Player와 동일하게 연결.")]
+    [Tooltip("팀원 목록에서 제외할 플레이어 (내 캐릭터). 비워두면 로컬 오너 플레이어를 자동 탐색.")]
     [SerializeField] Player excludePlayer;
 
     [Header("슬롯 크기")]
@@ -73,7 +75,48 @@ public class TeamStatusUI : MonoBehaviour
 
     void Start()
     {
+        StartCoroutine(FindPlayersAndBuildRoutine());
+    }
+
+    IEnumerator FindPlayersAndBuildRoutine()
+    {
+        // 네트워크 스폰 플레이어 대기 (최대 10초)
+        for (int i = 0; i < 50; i++)
+        {
+            // 로컬 오너 자동 탐색 (Inspector 미연결 시)
+            if (excludePlayer == null)
+                excludePlayer = FindLocalOwnerPlayer();
+
+            var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+            // 내 플레이어 제외 팀원이 1명 이상 있으면 빌드
+            bool hasPeers = false;
+            foreach (var p in all)
+                if (p != null && p != excludePlayer) { hasPeers = true; break; }
+
+            if (hasPeers || (excludePlayer != null && all.Length > 0))
+            {
+                BuildSlots();
+                yield break;
+            }
+
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        // 타임아웃: 팀원이 없어도(솔로) 일단 빌드
         BuildSlots();
+    }
+
+    /// <summary>로컬 오너 플레이어 탐색. 네트워크: IsOwner, 오프라인: isOwnerControlled.</summary>
+    static Player FindLocalOwnerPlayer()
+    {
+        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in all)
+        {
+            var netObj = p.GetComponent<NetworkObject>();
+            if (netObj != null) { if (netObj.IsOwner) return p; }
+            else if (p.isOwnerControlled) return p;
+        }
+        return null;
     }
 
     void BuildSlots()
@@ -91,14 +134,9 @@ public class TeamStatusUI : MonoBehaviour
         vlg.childForceExpandHeight = false;
         vlg.childAlignment         = TextAnchor.UpperLeft;
 
-        // GameSession이 있으면 활성 플레이어만, 없으면 씬 전체
-        IEnumerable<Player> players;
-        if (GameSession.Instance != null)
-            players = GameSession.Instance.GetActivePlayers();
-        else
-            players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-
-        foreach (var p in players)
+        // 씬의 모든 플레이어에서 내 캐릭터 제외
+        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in all)
             if (p != null && p != excludePlayer)
                 slots.Add(CreateSlot(p));
     }

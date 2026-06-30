@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -147,7 +148,23 @@ public class StageStartGate : MonoBehaviour
         SetZonesActive(false);
         OnCountdownComplete?.Invoke();
         Disarm();
-        stageManager?.StartStage();
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening)
+        {
+            // 네트워크 모드: Host만 StartStage를 호출하고 ClientRpc로 전파
+            if (nm.IsServer)
+            {
+                stageManager?.StartStage();
+                StageNetworkState.Instance?.BroadcastStartStageClientRpc();
+            }
+            // Client: BroadcastStartStageClientRpc 수신 시 StartStage 실행. 여기서는 스킵.
+        }
+        else
+        {
+            // 오프라인
+            stageManager?.StartStage();
+        }
     }
 
     bool AllZonesOccupied()
