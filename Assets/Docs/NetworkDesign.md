@@ -18,7 +18,7 @@
 | 4 | **난이도 밸런싱** | **데모 + 1~3 완료 후** 플레이테스트 기반 |
 | 5 | **UI 마무리** | 옵션·사운드 볼륨 등. 데모용 최소 / 정식에서 확장 |
 | 6 | **캐릭터 애니메이션** | sit, dance 등 — **정식 출시 이후 또는 v1.1** |
-| 7 | **Steamworks 연동** | Transport·Lobby·빌드·Depot (§0.3) |
+| 7 | **Steamworks 연동** | Transport·Lobby·Depot·**데모 Steam P2P** (§0.3) |
 | 8 | **컷씬** | **2주 일정에 넣지 않음** → 출시 후 |
 | 9 | **출시 QA** | 빌드·Steam·2~4인 시나리오 체크리스트 |
 
@@ -26,57 +26,77 @@
 
 **LAN 실기 테스트는 현재 불가.** 아래 순서로만 검증한다.
 
+**데모 핵심:** Steam에서 **원격 협동 + 인게임 보이스 + 응원** (홍보용).  
+**개발자 장비:** 테스트 PC **최대 2대** — Steam P2P 일상 검증은 **2인** 기준 (§0.2.1).
+
 ```
 ① ParrelSync (에디터 Host + Clone Client)
-   → Host 화면 포커스 기준 빠른 반복. 버그 발견·수정용.
-   ※ ParrelSync만으로 “완료” 판정 금지. Clone/에디터 한계로 오탐·미탐 많음.
+   → 빠른 반복·버그 수정. ※ 출시 판정용 아님.
 
-② Development Build (Host EXE + Client EXE, localhost 또는 같은 PC)
-   → 양쪽 화면 포커스하며 실제 플레이. **데모 출시 전 필수 통과.**
+② Development Build (Host EXE + Client EXE, localhost / 같은 PC)
+   → exe·NGO·마이크 등 **빌드 전용 버그** 중간 게이트. ※ 원격 4인 검증 아님.
 
-③ Steam P2P (정식 출시 직전)
-   → Transport 교체 + Steam Lobby. 친구/외부 1회 이상 실연.
+③ 응원 시스템 (CheerService + Dissonance + Vosk + /cheer)
+   → ②에서 1차, ④ Steam에서 최종 검증. (상세: CheerAndTutorialDesign.md §11)
+
+④ Steam P2P + Steam Lobby + Depot
+   → Transport 교체. **Steam 데모 출시 게이트** — 2인 필수, 4인 권장 (§0.2.1).
 ```
 
 | 단계 | 목적 | 통과 기준 (최소) |
 |------|------|------------------|
-| ParrelSync | 구현·버그 수정 속도 | Title→Lobby→M→T→End 2인 클리어 1회 |
-| 빌드 | 실제 출시 품질 | 2인·4인 각 1회 클리어, 사망 리로드 1회, 스테이지 전환 OK |
-| Steam P2P | 배포 환경 | ②와 동일 시나리오 Steam에서 1회 |
+| ① ParrelSync | 구현·버그 수정 속도 | Title→Lobby→M→T→End **2인** 클리어 1회 |
+| ② Dev Build | 빌드 품질·localhost NGO | **2인** 클리어, 사망 리로드 1회, 스테이지 전환 OK |
+| ③ 응원 | 협동+보이스+응원 | CheerAndTutorialDesign §12 시나리오 |
+| ④ **Steam P2P** | **데모 출시 (홍보)** | **2인** Steam 원격: M→T + 보이스 + 응원. **4인 1회 권장** |
 
-**Transport:** 코드상 LAN(`UnityTransport`) 유지 가능. **검증은 ② 빌드부터** 신뢰한다.
+**Transport:** ①② 개발 중 `UnityTransport`(localhost). **데모 배포 = Steam Networking transport 필수.**
+
+#### 0.2.1 개발자 2PC · 2인 테스트 vs 4인
+
+| | **2인 Steam P2P** (일상) | **4인 Steam P2P** (데모 전 권장) |
+|--|--------------------------|----------------------------------|
+| 검증됨 | Transport, Lobby, Join, NGO 동기화, Dissonance, Vosk, 응원(필요 1표), M→T | 위 + **4슬롯·4스폰·응원 3표·4음성** |
+| **보장 안 됨 → 4인 전용 버그** | — | `ActivePlayerCount`·집계, 4색 Gate, 4명 보이스 혼잡, 인원 이탈(§12.0) |
+| 판정 | **데모 출시 최소 게이트** (2PC 한정) | **홍보 신뢰도** — 친구/플레이테스트 1회 **강력 권장** |
+
+**2인 통과 = 4인 100% 보장 아님.** 다만 NGO·Steam P2P·응원 **연결·규칙 골격**은 2인에서 대부분 검증 가능.  
+**4인만 터지는 버그**는 §0.2.1 표 우측 항목 — 데모 직전 **4인 1회**로 잡는다.
 
 ### 0.3 데모 vs 정식 출시 — 어디까지 끝내나
 
-#### 데모 출시 (Must Have)
+#### 데모 출시 (Must Have) — Steam 홍보 데모
 
-- **플레이 경로:** Title → Lobby → `M.Stage1` → `T.Stage1` → `End.Demo` (멀티 2~4인)
+- **플레이 경로:** Title → Lobby → `M.Stage1` → `T.Stage1` → `End.Demo` (멀티 **2~4인**)
 - **솔로:** Title 오프라인 패널 → 동일 스테이지 (NGO 없음)
-- **네트워크:** §9 **핵심 동기화만** — 플레이어, HP/사망, StageStartGate, Phase, 함정 발사·피격, T.Stage 패드·문·Boulder, 클리어
-- **네트워크 검증:** ② **빌드 Host/Client** 통과 (ParrelSync만으로 출시 금지)
-- **UI:** 타이틀·로비·HP·카운트다운·End.Demo (옵션 패널 **없어도 됨**)
-- **사운드:** BGM 1~2 + 핵심 SFX (발사, 피격, Break, UI 클릭)
-- **파티클:** 피격·Break만 (없어도 데모 가능, 있으면 이 두 개만)
-- **난이도:** “클리어 가능” 수준만. **본격 밸런싱은 데모 후**
+- **네트워크:** §9 Must 동기화 + **§0.2 ④ Steam P2P + Steam Lobby**
+- **응원·보이스:** 인게임 **Dissonance 4인 보이스** + **Vosk 응원** + `/cheer` (→ `CheerAndTutorialDesign.md`)
+- **배포:** **Steam** (Depot 업로드). 원격 멀티 = **Steam P2P 필수** (LAN/IP 데모 아님)
+- **네트워크 검증:** ② Dev Build (중간) → ④ **Steam P2P 2인 Must** + **4인 1회 권장** (§0.2.1)
+- **UI:** 타이틀·로비·HP·카운트다운·End.Demo·응원 HUD·채팅 `/cheer`
+- **사운드:** BGM 1~2 + 핵심 SFX
+- **파티클:** 피격·Break만 (선택)
+- **난이도:** “클리어 가능” 수준. 본격 밸런싱은 데모 후
 
 #### 데모에서 **의도적으로 빼는 것** (버그·일정 방어)
 
 | 항목 | 이유 |
 |------|------|
-| §12 재접속·Kick·60초 유예·스냅샷 복원 | 복잡도 최상. 데모: **호스트 이탈 = 종료**, 중간 이탈 = **즉시 리로드** 수준으로 단순화 |
-| LAN UDP discovery 실기 검증 | 개발 환경 불가. **빌드 localhost + IP 직접 입력**으로 대체 |
-| Steam P2P | 데모는 **빌드 LAN/localhost**로 배포 가능. Steam은 정식 직전 |
+| §12 재접속·Kick·60초 유예·스냅샷 복원 | 복잡도 최상. 데모: **호스트 이탈 = 종료**, 중간 이탈 = **즉시 리로드** |
+| LAN UDP discovery 실기 검증 | 개발 환경 불가. ②는 localhost, ④는 **Steam** |
+| Tutorial·CheerName 커스텀 | 정식 (CheerAndTutorialDesign.md) |
 | sit / dance 등 이모트 애니 | 정식 이후 |
 | 컷씬 | 정식 이후 |
-| 옵션·설정 UI 전체 | 정식에서 (데모: OS 볼륨으로 대체) |
+| 옵션·설정 UI 전체 | 정식 (데모: OS 볼륨) |
 
 #### 정식 출시 (데모 후 2주 — Must Have)
 
-- ③ **Steam P2P** + Steam Lobby (Invite는 있으면 좋음, 없으면 코드 Join)
-- **난이도 밸런싱** (데모 피드백 반영)
-- **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면 최소
-- **출시 QA** 체크리스트 전 항목
-- **Steamworks:** App ID, Depot, 빌드 업로드, SteamPipe
+- Steam P2P·Lobby **유지·안정화** (데모에서 이미 구현 — Invite UX polish)
+- **난이도 밸런싱** (데모 피드백)
+- **Tutorial** + CheerName 커스텀 + lexicon G2P
+- **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면
+- **출시 QA** 체크리스트
+- (선택) Dissonance **Steam P2P** 음성 transport 분리
 
 #### 정식 2주 안에 **넣지 않는 것** (Post-Launch)
 
@@ -89,30 +109,31 @@
 ### 0.4 권장 작업 순서 (실행용)
 
 ```
-[데모 전]
-1. 네트워크 핵심 동기화 (§9 Must) + Spawner Spawn 패턴
-2. ParrelSync로 버그 수정 (①)
-3. Development Build ② 통과 — 여기서 데모 출시 가능
-4. 사운드·파티클(피격/Break) — 병행 가능, 네트워크 ② 전에는 최소만
+[데모 — Steam 홍보]
+1. NGO Must 동기화 (§9) + ParrelSync ①
+2. Development Build ② — localhost 2인 (중간 게이트)
+3. 응원: CheerService → Dissonance → Vosk (CheerAndTutorialDesign §11)
+4. Steamworks: Transport → Steam P2P + Lobby + Depot
+5. Steam ④ — 2인 Must (2PC) + 4인 1회 권장 → Steam 데모 출시
 
 [데모 후 ~ 정식 2주]
-주 1: 데모 피드백 → 난이도 → Steam Transport/Lobby → UI 옵션
-주 2: Steamworks 빌드·업로드 → QA → 출시
-(컷씬·이모트·재접속 풀스펙은 출시 후)
+주 1: 피드백 → 난이도 → Tutorial·커스텀 CheerName → UI 옵션
+주 2: QA → 정식 출시
+(Post-Launch: 컷씬·이모트·§12 풀스펙)
 ```
 
 ---
 
 ## 1. 기술 스택
 
-| 항목 | MVP | 이후 |
-|------|-----|------|
-| 네트워크 | **Netcode for GameObjects (NGO)** | 동일 |
-| 연결 | **LAN** (`UnityTransport`, 포트 **7777**) | **Steam P2P** |
-| 권한 | **호스트 권한** | 동일 |
-| 최대 인원 | **4인** (호스트 포함) | 동일 |
+| 항목 | 개발 ①② | **데모 배포 ④** | 정식 |
+|------|---------|-----------------|------|
+| 네트워크 | **NGO** | **NGO** | 동일 |
+| 연결 | `UnityTransport` localhost (**7777**) | **Steam P2P + Lobby** | 동일·안정화 |
+| 권한 | Host | Host | 동일 |
+| 최대 인원 | 4인 | 4인 | 동일 |
 
-- Transport는 교체 가능하게 분리 (LAN `UnityTransport` ↔ Steam Networking).
+- Transport **교체 가능**하게 분리 (`UnityTransport` ↔ Steam Networking). **Steam 데모 = Steam transport 필수.**
 - 중간 참가(Late Join) **없음**. 재접속 **지원**.
 
 ---
@@ -160,30 +181,25 @@
 
 ## 4. 연결 · 룸코드
 
-### 4.1 LAN / localhost (코드·데모 배포)
+### 4.1 LAN / localhost (개발 ①② 전용)
 
 | 항목 | 값 |
 |------|-----|
 | 포트 | **7777** (고정) |
-| 방식 | **개발:** localhost 또는 IP 직접 입력 (빌드 ②) |
-| Discovery | UDP 브로드캐스트 — **실기 LAN 검증 불가**. 코드 유지, 데모는 IP/localhost 우선 |
-| Join UX | **6자리 숫자 룸코드 입력** (또는 Host IP 직접 입력 폴백) |
-| Host | 랜덤 6자리 코드 생성 (+ broadcast는 Steam/LAN 실기 환경에서만 의미) |
-| 실패 | **「방을 찾을 수 없음」** (타임아웃 후) |
+| 용도 | ParrelSync 보조, **Dev Build ②** localhost만 |
+| Join | `127.0.0.1:7777` 또는 6자리 룸코드 UI (개발용) |
 
-**룸코드 UI (LAN)**
+**※ Steam 데모 배포·플레이어 멀티에는 사용하지 않음.**
 
-- 표시: 앞 2자리 + `**` + 뒤 2자리 (예: `12**56`)
-- 복사: **전체 6자리** 클립보드 (`125634` 등)
+**개발자 테스트:** ParrelSync(①) → Dev Build ② (같은 PC 2 exe).
 
-**개발자 테스트:** ParrelSync(①) → **Development Build Host+Client(②)**. 같은 PC에서 Client는 `127.0.0.1:7777` Join.
+### 4.2 Steam P2P + Lobby (**데모 Must**, §0.2 ④)
 
-### 4.2 Steam (정식 출시 직전, ③)
-
-- 실제 연결은 Steamworks P2P.
-- UI 마스킹 예: 포트/식별자 `7**1` 형태 (중간 비표시).
-- 룸코드: **랜덤 생성** (Steam Lobby ID 등과 매핑).
-- Join UX는 LAN과 동일하게 **코드 입력** 유지.
+- **Steamworks** 초기화 + **Steam Networking** transport + **Steam Lobby**.
+- Join: Lobby 코드 / 친구 초대 (Invite 있으면 좋음, 없으면 코드 Join).
+- UI 마스킹 예: 식별자 `7**1` 형태.
+- **Depot 업로드** 후 Steam 클라이언트에서 실행 — **원격 2~4인** 협동·응원·보이스 검증 환경.
+- **개발자 2PC:** 일상 QA = **2인** Steam Join. 데모 직전 **4인 1회** 권장 (§0.2.1).
 
 ---
 
@@ -398,26 +414,27 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 ## 16. 구현 순서 (권장)
 
-### 16.1 네트워크 (데모 전)
+### 16.1 네트워크 · 응원 · Steam (데모)
 
 1. NGO + `UnityTransport` + Title `NetworkManager`
 2. 로비 Ready / 캐릭터 / Start 동기화
 3. Player Network Prefab + 존 스폰 + Owner 입력·카메라
-4. **Must 동기화** (§9 표): StageStartGate, Phase, Trap Spawn, T.Stage 패드·문·Boulder, Breakable, 클리어, HP/사망
-5. **ParrelSync ①** — Must 항목 버그 수정
-6. **Development Build ②** — 데모 출시 게이트
-7. `End.Demo` + 타이틀 복귀 + 멀티 Shutdown
-8. Title **오프라인** 패널 + 솔로 경로
-9. Should 항목 (Mouth, Wind, Buff 등) — ② 통과 후 또는 데모 직전 여유분
+4. **Must 동기화** (§9 표)
+5. **ParrelSync ①**
+6. **Development Build ②** — localhost **2인** (중간 게이트)
+7. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
+8. **Steamworks** — P2P transport, Lobby, Depot
+9. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Steam 데모 출시**
+10. `End.Demo` + 솔로 경로 + Should 항목 (여유분)
 
 ### 16.2 데모 후 ~ 정식 (2주)
 
-1. Steam Transport + Lobby (③)
-2. 난이도 밸런싱 (데모 피드백)
+1. 난이도 밸런싱 (데모 피드백)
+2. Tutorial + CheerName 커스텀
 3. UI 옵션 (볼륨·해상도)
-4. Steamworks Depot·업로드
+4. Steam Invite UX polish
 5. 출시 QA
-6. (선택) §12 재접속·Kick — **2주에 못 넣으면 v1.1**
+6. (선택) §12 재접속·Kick — v1.1
 
 ### 16.3 Post-Launch
 
@@ -455,10 +472,19 @@ A. **보인다.** Host가 판정한 **결과**를 동기화해 전원이 같은 
 A. **`NetworkManager.Shutdown()`** 으로 해제.
 
 **Q. ParrelSync만 통과하면 데모 출시해도 되나?**  
-A. **아니오.** Development Build Host+Client(§0.2 ②) 통과가 데모 게이트.
+A. **아니오.** **Steam P2P ④** (2인 Must + 4인 1회 권장) + 응원·보이스 통과가 데모 게이트.
+
+**Q. Dev Build ②만 통과하면 데모 출시?**  
+A. **아니오.** ②는 **중간 게이트**. 데모 = **Steam 원격** + 협동 + 응원.
+
+**Q. 개발 PC 2대뿐인데 4인 테스트?**  
+A. 일상 = **Steam 2인** (§0.2.1). 데모 직전 **4인 1회** — 친구/플레이테스트 권장. 2인 통과 ≠ 4인 100% 보장.
+
+**Q. 2인 OK면 4인도 OK?**  
+A. **연결·Transport·응원 골격**은 2인에서 대부분 검증. **4인 전용** (3표 집계, 4보이스, 4Gate)은 4인 1회 필요.
 
 **Q. LAN discovery 없이 테스트하나?**  
-A. **localhost / IP 직접 Join**으로 빌드 테스트. discovery는 Steam·실제 LAN 환경에서 검증.
+A. ② localhost. **플레이어 멀티 = Steam P2P** (LAN 데모 아님).
 
 **Q. 2주 안에 컷씬·이모트·재접속 풀스펙을 넣어야 하나?**  
-A. **아니오.** 정식 Must는 Steam P2P, 밸런싱, 옵션 UI, QA. 나머지는 Post-Launch.
+A. **아니오.** 정식 Must는 Tutorial·밸런싱·옵션 UI·QA. Steam P2P는 **데모에서 이미 Must**.
