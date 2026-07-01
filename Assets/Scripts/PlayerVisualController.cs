@@ -40,6 +40,11 @@ public class PlayerVisualController : MonoBehaviour
         CollectBodyRenderers();
     }
 
+    void Start()
+    {
+        RefreshColor();
+    }
+
     void OnEnable()
     {
         if (events == null) return;
@@ -95,7 +100,7 @@ public class PlayerVisualController : MonoBehaviour
         bodyRenderers = list.ToArray();
     }
 
-    void RefreshColor()
+    public void RefreshColor()
     {
         if (player == null) return;
         SetColor(player.GetCurrentBaseColor());

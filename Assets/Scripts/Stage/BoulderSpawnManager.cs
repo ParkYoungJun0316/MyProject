@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -9,16 +10,20 @@ using UnityEngine.Events;
 /// BeginSpawning() 호출 → initialDelay 후 → 풀 셔플 → 하나씩 SpawnOne() → 풀 소진되면 재셔플 → 반복
 /// 풀 소진 전 같은 레인이 두 번 연속 나오지 않음.
 ///
+/// [네트워크]
+/// Host만 SpawnLoop 소유. BoulderSpawner.SpawnOne()이 NetworkObject.Spawn()으로 Client에 전파.
+/// ClientRpc 불필요 — NGO 자동 동기화.
+///
 /// [스폰 정지]
 /// 플레이어가 stopTriggerPoint 반경 안에 처음 들어오면 스폰 루프만 중단.
 /// 이미 나간 바위는 SpinRoller·lifetime 설정대로 끝까지 이동.
 ///
 /// [씬 구성]
-/// BoulderSpawnManager
+/// BoulderSpawnManager (NetworkObject 필수)
 /// ├─ BoulderSpawner_Left   (레인 A)
 /// └─ BoulderSpawner_Right  (레인 B)
 /// </summary>
-public class BoulderSpawnManager : MonoBehaviour
+public class BoulderSpawnManager : NetworkBehaviour
 {
     [Header("레인 스포너 목록")]
     [Tooltip("레인별 BoulderSpawner를 순서 무관하게 등록. 셔플 풀로 중복 없이 선택")]
@@ -73,6 +78,8 @@ public class BoulderSpawnManager : MonoBehaviour
 
     void Update()
     {
+        // 스폰 루프 제어는 Host만 담당.
+        if (IsMultiplayer() && !IsServer) return;
         if (_triggerFired) return;
         if (stopTriggerPoint == null || stopTriggerRadius <= 0f) return;
         if (_loopCoroutine == null) return;
@@ -90,6 +97,8 @@ public class BoulderSpawnManager : MonoBehaviour
     /// <summary>랜덤 간격 스폰 루프 시작. 이미 돌고 있으면 무시.</summary>
     public void BeginSpawning()
     {
+        // 멀티: Host만 스폰 루프 소유. 스폰은 SpawnOne() → NetworkObject.Spawn()으로 Client에 자동 전파.
+        if (IsMultiplayer() && !IsServer) return;
         if (!isActiveAndEnabled) return;
         if (spawners == null || spawners.Length == 0) return;
         if (_loopCoroutine != null) return;
@@ -108,6 +117,9 @@ public class BoulderSpawnManager : MonoBehaviour
 
     // ── 내부 ───────────────────────────────────────────────────
 
+    static bool IsMultiplayer()
+        => NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+
     void StopInternal()
     {
         _stopRequested = true;
@@ -125,8 +137,11 @@ public class BoulderSpawnManager : MonoBehaviour
 
         if (spawnOnce)
         {
-            foreach (var s in spawners)
-                if (s != null) s.SpawnOne();
+            for (int i = 0; i < spawners.Length; i++)
+            {
+                if (spawners[i] == null) continue;
+                spawners[i].SpawnOne();
+            }
 
             _loopCoroutine = null;
             yield break;

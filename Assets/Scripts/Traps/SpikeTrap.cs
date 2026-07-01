@@ -125,7 +125,7 @@ public class SpikeTrap : TrapBase
                    ?? other.GetComponentInParent<Player>();
         if (p == null) return;
 
-        p.TakeDamage(damage, false);
+        NetworkDamageUtil.ApplyDamageWithOwnerReport(p, damage, false);
         nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.1f);
     }
 }

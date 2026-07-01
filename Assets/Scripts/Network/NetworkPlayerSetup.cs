@@ -32,9 +32,26 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    private Player      _player;
-    private Rigidbody   _rb;
-    private PlayerInput _playerInput;
+    // 색 표시 상태: 오너 쓰기 / 전원 읽기
+    private readonly NetworkVariable<bool> _isBlack = new(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
+
+    private readonly NetworkVariable<bool> _isUniqueColor = new(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
+
+    private Player       _player;
+    private Rigidbody    _rb;
+    private PlayerInput  _playerInput;
+    private PlayerEvents _events;
+
+    // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
+    private float _damageInvulnEndTime = -1f;
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -43,12 +60,15 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _player      = GetComponent<Player>();
         _rb          = GetComponent<Rigidbody>();
         _playerInput = GetComponent<PlayerInput>();
+        _events      = GetComponent<PlayerEvents>();
     }
 
     public override void OnNetworkSpawn()
     {
-        _colorIndex.OnValueChanged += OnColorIndexChanged;
-        _hp.OnValueChanged         += OnHpChanged;
+        _colorIndex.OnValueChanged    += OnColorIndexChanged;
+        _hp.OnValueChanged            += OnHpChanged;
+        _isBlack.OnValueChanged       += OnIsBlackChanged;
+        _isUniqueColor.OnValueChanged += OnIsUniqueColorChanged;
 
         // 색 초기 적용
         ApplyColor(_colorIndex.Value);
@@ -59,15 +79,37 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         // Owner / 비오너 분기
         if (IsOwner)
+        {
             SetupOwner();
+            // 오너: 로컬 색 상태 변경 → NetworkVariable에 반영
+            if (_events == null) _events = GetComponent<PlayerEvents>();
+            if (_events != null)
+            {
+                _events.OnBlackWhiteChanged  += PushIsBlack;
+                _events.OnUniqueColorChanged += PushIsUniqueColor;
+            }
+        }
         else
+        {
             SetupNonOwner();
+            // 비오너: 현재 NetworkVariable 값을 즉시 적용
+            ApplyIsBlack(_isBlack.Value);
+            ApplyIsUniqueColor(_isUniqueColor.Value);
+        }
     }
 
     public override void OnNetworkDespawn()
     {
-        _colorIndex.OnValueChanged -= OnColorIndexChanged;
-        _hp.OnValueChanged         -= OnHpChanged;
+        _colorIndex.OnValueChanged    -= OnColorIndexChanged;
+        _hp.OnValueChanged            -= OnHpChanged;
+        _isBlack.OnValueChanged       -= OnIsBlackChanged;
+        _isUniqueColor.OnValueChanged -= OnIsUniqueColorChanged;
+
+        if (IsOwner && _events != null)
+        {
+            _events.OnBlackWhiteChanged  -= PushIsBlack;
+            _events.OnUniqueColorChanged -= PushIsUniqueColor;
+        }
     }
 
     // ── Owner 설정 ────────────────────────────────────────────────
@@ -126,8 +168,51 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_player == null) return;
         if (index < 0 || index >= LobbyNetworkManager.ColorOrder.Length) return;
 
-        _player.playerColorType = LobbyNetworkManager.ColorOrder[index];
-        // uniqueColor 시각 색상은 PlayerVisualController 등에서 playerColorType 기반으로 별도 처리
+        PlayerColorUtil.ApplyToPlayer(_player, LobbyNetworkManager.ColorOrder[index]);
+    }
+
+    // ── 색 상태 동기화 (isBlack / isUniqueColor) ──────────────────
+
+    /// <summary>오너 클라이언트: PlayerEvents 수신 → NetworkVariable 갱신.</summary>
+    void PushIsBlack(bool value)
+    {
+        if (!IsOwner) return;
+        _isBlack.Value = value;
+    }
+
+    void PushIsUniqueColor(int colorIndex)
+    {
+        if (!IsOwner) return;
+        _isUniqueColor.Value = colorIndex >= 0;
+    }
+
+    /// <summary>비오너: NetworkVariable 변경 수신 → 로컬 Player 상태·비주얼 갱신.</summary>
+    void OnIsBlackChanged(bool prev, bool next)
+    {
+        if (IsOwner) return;
+        ApplyIsBlack(next);
+    }
+
+    void OnIsUniqueColorChanged(bool prev, bool next)
+    {
+        if (IsOwner) return;
+        ApplyIsUniqueColor(next);
+    }
+
+    void ApplyIsBlack(bool value)
+    {
+        if (_player == null) return;
+        _player.isBlack = value;
+        if (_events == null) _events = GetComponent<PlayerEvents>();
+        _events?.RaiseBlackWhiteChanged(value);
+    }
+
+    void ApplyIsUniqueColor(bool value)
+    {
+        if (_player == null) return;
+        _player.isUniqueColor = value;
+        if (_events == null) _events = GetComponent<PlayerEvents>();
+        _events?.RaiseUniqueColorChanged(value ? 0 : -1);
     }
 
     // ── HP 동기화 ─────────────────────────────────────────────────
@@ -140,10 +225,15 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         if (!IsServer) return;
         if (_player == null || _player.IsDead) return;
-        if (_player.IsDamageInvulnerable) return;
+
+        // 비오너 플레이어는 isDamage가 서버에서 갱신되지 않으므로
+        // 서버 자체 무적 타이머로 연속 피격을 차단
+        if (Time.time < _damageInvulnEndTime) return;
 
         int newHp = Mathf.Max(0, _hp.Value - amount);
         _hp.Value = newHp;
+
+        _damageInvulnEndTime = Time.time + (_player?.InvulnerabilityDuration ?? 0.5f);
 
         NotifyHitClientRpc(knockback);
 
@@ -151,14 +241,11 @@ public class NetworkPlayerSetup : NetworkBehaviour
             ForceKillClientRpc();
     }
 
-    /// <summary>오너 클라이언트에 피격 연출(애니·무적)을 요청.</summary>
+    /// <summary>오너 클라이언트에 피격 연출(애니·무적)만 요청. HP/heart 수정은 OnHpChanged에서 담당.</summary>
     [ClientRpc]
     void NotifyHitClientRpc(bool knockback)
     {
         if (!IsOwner) return;
-        // NetworkVariable(_hp) 변경과 ClientRpc가 같은 틱에 전송되더라도
-        // 처리 순서가 보장되지 않으므로 여기서 heart를 명시적으로 맞춘다.
-        if (_player != null) _player.heart = _hp.Value;
         _player?.TakeDamageVisualOnly(knockback);
     }
 
@@ -175,9 +262,72 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_player == null) return;
         _player.heart = next;
 
-        // 비오너: 다른 플레이어의 HP UI도 갱신 (오너는 NotifyHitClientRpc에서 이미 처리)
-        if (!IsOwner)
-            _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
+        // 오너/비오너 모두 동일하게 UI 갱신
+        // (오너는 NotifyHitClientRpc 연출과 별개로 HP 수치 UI는 여기서 확정)
+        _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
+    }
+
+    // ── Phase2: 클라이언트 피격 신고 ──────────────────────────────
+
+    /// <summary>
+    /// 오너 클라이언트가 발사체·접촉 함정과 충돌했을 때 서버에 피격을 신고.
+    /// 서버가 무적·사망·_hp 검증 후 데미지를 확정.
+    /// RequireOwnership=true: 이 플레이어의 오너만 호출 가능.
+    /// </summary>
+    [Rpc(SendTo.Server, RequireOwnership = true)]
+    public void ReportHitServerRpc(int amount, bool knockback)
+    {
+        ApplyDamageFromServer(amount, knockback);
+    }
+
+    // ── 문 즉사 (Jammed 애니) ──────────────────────────────────────
+
+    /// <summary>
+    /// 서버에서 즉사 확정. HP를 0으로 내리고 Owner에게 KillInstantly() 전달.
+    /// _hp.Value <= 0 가드로 중복 호출(Host 물리 + Owner 신고 동시) 방지.
+    /// </summary>
+    public void ApplyInstantKillFromServer()
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead || _hp.Value <= 0) return;
+        _hp.Value = 0;
+        ForceInstantKillClientRpc();
+    }
+
+    /// <summary>Owner에게 Jammed 애니 즉사 전달.</summary>
+    [ClientRpc]
+    void ForceInstantKillClientRpc()
+    {
+        if (!IsOwner) return;
+        _player?.KillInstantly();
+    }
+
+    /// <summary>오너 클라이언트가 문 충돌을 감지했을 때 서버에 즉사 신고.</summary>
+    [Rpc(SendTo.Server, RequireOwnership = true)]
+    public void ReportInstantKillServerRpc()
+    {
+        ApplyInstantKillFromServer();
+    }
+
+    // ── 추락 사망 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doDie 애니).
+    /// doFall 애니는 Owner Update에서 이미 재생됐으므로 여기서는 기본 사망 처리만.
+    /// </summary>
+    void ApplyFallDeathFromServer()
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead || _hp.Value <= 0) return;
+        _hp.Value = 0;
+        ForceKillClientRpc();
+    }
+
+    /// <summary>오너 클라이언트가 낙사 기준점 통과를 신고. 서버가 낙사를 확정하고 Owner에게 Die()를 전달.</summary>
+    [Rpc(SendTo.Server, RequireOwnership = true)]
+    public void ReportFallDeathServerRpc()
+    {
+        ApplyFallDeathFromServer();
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

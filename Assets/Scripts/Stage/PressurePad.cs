@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -116,6 +117,13 @@ public class PressurePad : MonoBehaviour
         if (nowFulfilled == _isFulfilled) return;
 
         _isFulfilled = nowFulfilled;
+
+        // Client는 이벤트를 발동하지 않음.
+        // Host가 OnFulfilled → DoorController.CheckPadState() → DoorNetworkSync._isOpen NV
+        // → 전원 door.Open()/Close() 연출로 전파됨.
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         if (_isFulfilled) OnFulfilled?.Invoke();
         else              OnUnfulfilled?.Invoke();
     }

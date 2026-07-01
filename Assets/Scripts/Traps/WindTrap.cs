@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -127,16 +128,31 @@ public class WindTrap : TrapBase
 
     protected override IEnumerator TrapLoop()
     {
-        _scheduleStartTime = Time.time;
-
         if (fireAtSeconds == null || fireAtSeconds.Length == 0)
         {
             isRunning = false;
             yield break;
         }
 
-        if (initialDelay > 0f)
-            yield return new WaitForSeconds(initialDelay);
+        var  nm       = NetworkManager.Singleton;
+        bool isOnline = nm != null && nm.IsListening;
+
+        // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
+        // 온라인: StageStartServerTime(활성화 시각 기준) → Host/Client 동일한 절대 기준점
+        // 오프라인: 기존 방식 (Time.time)
+        if (isOnline && StageNetworkState.Instance != null
+                     && StageNetworkState.Instance.StageStartServerTime > 0)
+        {
+            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
+            while ((float)nm.ServerTime.Time < _scheduleStartTime + initialDelay)
+                yield return null;
+        }
+        else
+        {
+            _scheduleStartTime = isOnline ? (float)nm.ServerTime.Time : Time.time;
+            if (initialDelay > 0f)
+                yield return new WaitForSeconds(initialDelay);
+        }
 
         float cycleOffset = 0f;
 
@@ -147,7 +163,8 @@ public class WindTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = _scheduleStartTime + cycleOffset + t;
-                float waitTime   = targetTime - Time.time;
+                float now        = isOnline ? (float)nm.ServerTime.Time : Time.time;
+                float waitTime   = targetTime - now;
 
                 if (waitTime > 0f)
                     yield return new WaitForSeconds(waitTime);
@@ -261,7 +278,9 @@ public class WindTrap : TrapBase
     {
         if (baseForce <= 0f) return 0f;
 
-        float elapsed = Time.time - _scheduleStartTime;
+        var   nm      = NetworkManager.Singleton;
+        float now     = (nm != null && nm.IsListening) ? (float)nm.ServerTime.Time : Time.time;
+        float elapsed = now - _scheduleStartTime;
         float mult    = 1f;
 
         foreach (SpeedPhase phase in speedPhases)

@@ -318,13 +318,13 @@ public class OXQuizManager : MonoBehaviour
             foreach (Player p in wrongOccupants)
             {
                 if (damaged.Add(p))
-                    p.TakeDamage(wrongDamage);
+                    NetworkDamageUtil.ApplyDamage(p, wrongDamage);
             }
 
             foreach (Player p in nowhereList)
             {
                 if (damaged.Add(p))
-                    p.TakeDamage(wrongDamage);
+                    NetworkDamageUtil.ApplyDamage(p, wrongDamage);
             }
         }
 

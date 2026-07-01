@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -24,12 +26,14 @@ public class ReachZoneObjective : StageObjective
 
     public float Progress01 { get; private set; }
 
-    bool     _entered;
+    // 이미 도달한 플레이어 집합 (Host-only 판정)
+    readonly HashSet<Player> _reachedPlayers = new HashSet<Player>();
     float    _lastProgress;
     Player[] _players;
 
     public override void Begin()
     {
+        _reachedPlayers.Clear();
         _players      = Object.FindObjectsByType<Player>(FindObjectsSortMode.None);
         Progress01    = CalcProgress();
         _lastProgress = Progress01;
@@ -86,11 +90,26 @@ public class ReachZoneObjective : StageObjective
 
     void OnTriggerEnter(Collider other)
     {
-        if (_entered || IsCompleted) return;
-        if (other.GetComponentInParent<Player>() == null) return;
+        if (IsCompleted) return;
 
-        _entered = true;
-        Complete();
+        // Host-only 판정: NetworkTransform이 Host에 플레이어 위치를 전달하므로 신뢰 가능
+        // Client에서 Complete()가 불리면 StageManager가 로컬에서 OnStageClear를 발동해
+        // SceneFlowManager가 오프라인 경로(LoadSceneAsync)로 씬을 로드하는 버그 발생
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
+        Player p = other.GetComponentInParent<Player>();
+        if (p == null || p.IsDead) return;
+
+        _reachedPlayers.Add(p);
+
+        // 활성 플레이어 전원이 도달해야 클리어
+        int required = GameSession.Instance != null
+            ? GameSession.Instance.GetActiveColors().Count
+            : (_players != null ? _players.Length : 1);
+
+        if (_reachedPlayers.Count >= required)
+            Complete();
     }
 
 #if UNITY_EDITOR

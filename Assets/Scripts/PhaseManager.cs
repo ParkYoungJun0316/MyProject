@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -88,14 +89,30 @@ public class PhaseManager : MonoBehaviour
 
     void Start()
     {
-        if (phases != null && phases.Length > 0)
-            EnterPhase(0);
+        if (phases == null || phases.Length == 0) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer)
+        {
+            // Client: EnterPhase() 호출 금지 — Host SyncPhase → EnterPhaseOnClient()만 따름
+            var sns = StageNetworkState.Instance;
+            if (sns != null && sns.CurrentPhase >= 0)
+                EnterPhaseOnClient(sns.CurrentPhase);
+            return;
+        }
+
+        EnterPhase(0);
     }
 
     void Update()
     {
         if (_allPhasesComplete) return;
         if (phases == null || _currentPhaseIndex < 0 || _currentPhaseIndex >= phases.Length) return;
+
+        // Client는 타이머를 돌리지 않음 — Phase 진행은 Host가 결정하고
+        // StageNetworkState._currentPhase NetworkVariable → EnterPhaseOnClient() 경로로 수신
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
 
         PhaseData phase = phases[_currentPhaseIndex];
 
@@ -133,6 +150,10 @@ public class PhaseManager : MonoBehaviour
         // 온라인 Host → Phase 변경을 다른 클라이언트에 동기화
         StageNetworkState.Instance?.SyncPhase(index);
 
+        // Client는 여기서 종료 — 완료 판단은 Host만 수행
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         // manualAdvanceOnly = true 면 AdvancePhase() 호출 대기, 자동 진행 없음
         if (phase.manualAdvanceOnly) return;
 
@@ -149,7 +170,9 @@ public class PhaseManager : MonoBehaviour
     public void EnterPhaseOnClient(int index)
     {
         if (phases == null || index < 0 || index >= phases.Length) return;
+        if (_currentPhaseIndex == index) return;
         _currentPhaseIndex = index;
+        _phaseElapsed      = 0f; // PhaseRemaining 계산 오염 방지
 
         PhaseData phase = phases[index];
 
@@ -195,6 +218,10 @@ public class PhaseManager : MonoBehaviour
     /// </summary>
     public void AdvancePhase()
     {
+        // Client가 외부 이벤트로 직접 호출하더라도 무시 — Phase 진행은 Host만 결정
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         if (_allPhasesComplete) return;
 
         // phases가 없으면 PassThrough 용도 — 즉시 onAllPhasesComplete 발동

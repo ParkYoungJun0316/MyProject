@@ -87,14 +87,8 @@ public class PlayerHPUI : MonoBehaviour
         foreach (var p in all)
         {
             var netObj = p.GetComponent<NetworkObject>();
-            if (netObj != null)
-            {
-                if (netObj.IsOwner) return p;
-            }
-            else if (p.isOwnerControlled)
-            {
-                return p;
-            }
+            if (netObj != null && netObj.IsOwner) return p;
+            if (p.isOwnerControlled) return p;
         }
         return null;
     }

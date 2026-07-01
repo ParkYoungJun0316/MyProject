@@ -85,6 +85,17 @@ public class StageStartGate : MonoBehaviour
     {
         if (!_isArmed) return;
 
+        var  nm       = NetworkManager.Singleton;
+        bool isOnline = nm != null && nm.IsListening;
+
+        // ── Client: ServerTime 기반 카운트다운 표시 ───────────────
+        if (isOnline && !nm.IsServer)
+        {
+            UpdateCountdownOnClient(nm);
+            return;
+        }
+
+        // ── Host / 오프라인: 기존 카운트다운 로직 ────────────────
         if (!AllZonesOccupied())
         {
             if (_isCounting) ResetCountdown();
@@ -98,6 +109,7 @@ public class StageStartGate : MonoBehaviour
             _countdown  = countdownDuration;
             SetZoneCountdownVisual(true);
             OnCountdownTick?.Invoke(_countdown);
+            if (isOnline) StageNetworkState.Instance?.MarkCountdownStart();
         }
 
         _countdown -= Time.deltaTime;
@@ -105,6 +117,48 @@ public class StageStartGate : MonoBehaviour
 
         if (_countdown <= 0f)
             CompleteCountdown();
+    }
+
+    /// <summary>
+    /// Client 전용: StageNetworkState의 NetworkVariable을 읽어
+    /// ServerTime 기반 카운트다운 남은 시간을 계산하고 UI에 전달.
+    /// </summary>
+    void UpdateCountdownOnClient(NetworkManager nm)
+    {
+        var sns = StageNetworkState.Instance;
+        if (sns == null) return;
+
+        // 스테이지가 시작됐다면 이 게이트가 직접 연결된 StageManager를 시작
+        // (RPC보다 NetworkVariable이 먼저 도달할 수 있으므로 여기서 처리)
+        if (sns.StageStartServerTime > 0 && _isArmed)
+        {
+            SetZoneCountdownVisual(false);
+            SetZonesActive(false);
+            OnCountdownComplete?.Invoke();
+            stageManager?.StartStage();
+            Disarm();
+            return;
+        }
+
+        if (sns.IsCountdownActive)
+        {
+            float remaining = Mathf.Max(0f,
+                countdownDuration - (float)(nm.ServerTime.Time - sns.CountdownStartServerTime));
+            if (!_isCounting)
+            {
+                _isCounting = true;
+                SetZoneCountdownVisual(true);
+            }
+            OnCountdownTick?.Invoke(remaining);
+        }
+        else if (_isCounting)
+        {
+            // Host가 카운트다운을 리셋했음 (이탈 등)
+            _isCounting = false;
+            SetZoneCountdownVisual(false);
+            OnCountdownReset?.Invoke();
+            OnCountdownTick?.Invoke(countdownDuration);
+        }
     }
 
     // ── 외부 API ──────────────────────────────────────────────────
@@ -140,6 +194,10 @@ public class StageStartGate : MonoBehaviour
         SetZoneCountdownVisual(false);
         OnCountdownReset?.Invoke();
         OnCountdownTick?.Invoke(countdownDuration);
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && nm.IsServer)
+            StageNetworkState.Instance?.MarkCountdownReset();
     }
 
     void CompleteCountdown()
@@ -155,6 +213,9 @@ public class StageStartGate : MonoBehaviour
             // 네트워크 모드: Host만 StartStage를 호출하고 ClientRpc로 전파
             if (nm.IsServer)
             {
+                // MarkStageStart() 먼저: NetworkVariable이 ClientRpc보다 빠르게 전파되어
+                // Client가 TimerUI 기준 시각을 RPC 도달 전에 확보할 수 있음
+                StageNetworkState.Instance?.MarkStageStart();
                 stageManager?.StartStage();
                 StageNetworkState.Instance?.BroadcastStartStageClientRpc();
             }

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
@@ -7,6 +8,10 @@ using UnityEngine.Events;
 /// 충돌 시 파괴되는 오브젝트 컴포넌트.
 /// breakTriggerLayers에 해당하는 오브젝트가 닿으면 파괴 + 파편 이펙트.
 /// breakDelay가 0보다 크면 지연 후 렌더/콜라이더 비활성 및 즉사 처리.
+///
+/// [네트워크 동기화]
+/// syncBreakOverNetwork = true (기본): Host만 충돌 판정 → SyncBreakClientRpc로 Client에 동기화.
+/// syncBreakOverNetwork = false      : 각 머신 독립 처리 (런타임 스폰 Boulder 등).
 ///
 /// [권장 사용]
 /// - 돌굴림 맵의 Floor/Wall 피스에 부착
@@ -19,6 +24,19 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Collider))]
 public class Breakable : MonoBehaviour
 {
+    // ── 정적 레지스트리 (stable ID 기반 동기화용) ────────────────
+    // ID는 씬 로드마다 0부터 순서대로 부여. 파괴·제거가 일어나도 ID는 불변.
+    // Host/Client 모두 씬 로드 시 동일 순서로 Awake가 실행되므로 ID가 일치.
+    static readonly Dictionary<int, Breakable> _registry = new();
+    static int _nextId = 0;
+
+    /// <summary>stable ID로 Breakable을 찾아 Client 측 파괴 연출을 적용. StageNetworkState에서 호출.</summary>
+    public static void BreakById(int id)
+    {
+        if (_registry.TryGetValue(id, out Breakable b))
+            b?.ApplyBreakFromNetwork();
+    }
+
     [Header("파괴 조건")]
     [Tooltip("이 레이어마스크에 해당하는 오브젝트가 닿을 때만 파괴.\n0(Nothing)이면 모든 충돌에 반응.")]
     [SerializeField] private LayerMask breakTriggerLayers;
@@ -61,6 +79,11 @@ public class Breakable : MonoBehaviour
     [Tooltip("플레이어 감지 레이어. killPlayerOnBreak=true일 때 사용.")]
     [SerializeField] private LayerMask playerLayer;
 
+    [Header("네트워크")]
+    [Tooltip("true: 멀티에서 Host만 파괴 판정 후 Client에 동기화 (씬 배치 Breakable 기본값).\n" +
+             "false: 각 머신에서 독립 처리 (런타임 스폰 오브젝트에 부착된 Breakable 등).")]
+    [SerializeField] bool syncBreakOverNetwork = true;
+
     [Header("이벤트")]
     [Tooltip("최종 파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
     public UnityEvent OnBreak;
@@ -70,11 +93,25 @@ public class Breakable : MonoBehaviour
     bool _broken;
     bool _breakPending;
     Coroutine _breakRoutine;
+    int _netIndex = -1;
 
     void Awake()
     {
         _renderers = GetComponentsInChildren<Renderer>(true);
         _colliders = GetComponentsInChildren<Collider>(true);
+
+        // 씬 리로드 시 첫 Breakable이 Awake되는 시점에 레지스트리를 초기화.
+        // (이전 씬의 stale 항목 방지)
+        if (_registry.Count == 0) _nextId = 0;
+
+        _netIndex = _nextId++;
+        _registry[_netIndex] = this;
+    }
+
+    void OnDestroy()
+    {
+        // 씬 언로드·리로드 시 제거. ID 자체는 불변이므로 다른 오브젝트 ID에 영향 없음.
+        _registry.Remove(_netIndex);
     }
 
     void OnDisable()
@@ -130,6 +167,15 @@ public class Breakable : MonoBehaviour
     void StartBreakSequence()
     {
         if (_broken || _breakPending) return;
+
+        // syncBreakOverNetwork: Host만 파괴 판정, Client는 SyncBreakClientRpc 수신 후 ApplyBreakFromNetwork() 실행
+        // false(런타임 스폰 오브젝트): 각 머신 독립 처리 허용
+        if (syncBreakOverNetwork)
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && !nm.IsServer) return;
+        }
+
         _breakPending = true;
         if (_breakRoutine != null)
             StopCoroutine(_breakRoutine);
@@ -155,26 +201,21 @@ public class Breakable : MonoBehaviour
         if (_broken) return;
         _broken = true;
 
-        OnBreak?.Invoke();
-
-        if (debrisPrefab != null)
+        // 멀티: Host가 파괴 확정 → Client에 stable ID 브로드캐스트
+        if (syncBreakOverNetwork && _netIndex >= 0)
         {
-            GameObject debris = Instantiate(debrisPrefab, transform.position, transform.rotation);
-            if (debrisLifetime > 0f)
-                Destroy(debris, debrisLifetime);
+            var nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && nm.IsServer)
+                StageNetworkState.Instance?.SyncBreakClientRpc(_netIndex);
         }
 
-        if (useMouthTeethBreakSfx)
-            SFXManager.Instance?.PlayMouthTeethBreak(transform.position);
-        else if (breakSound != null)
-            AudioSource.PlayClipAtPoint(breakSound, transform.position, breakSoundVolume);
+        DoBreakVisuals();
 
+        // 즉사 판정: Host(또는 오프라인)에서만
         if (killPlayerOnBreak && killRadius > 0f)
         {
             var nm = NetworkManager.Singleton;
             bool isNetworkActive = nm != null && nm.IsListening;
-
-            // 네트워크 모드: Host에서만 즉사 판정 (클라이언트 중복 방지)
             if (!isNetworkActive || nm.IsServer)
             {
                 Collider[] hits = Physics.OverlapSphere(transform.position, killRadius, playerLayer);
@@ -195,6 +236,36 @@ public class Breakable : MonoBehaviour
         }
 
         SetVisible(false);
+    }
+
+    /// <summary>
+    /// 네트워크 동기화 수신 시 Client 측 파괴 연출.
+    /// 브로드캐스트·즉사 판정 없이 로컬에서만 연출 + SetVisible(false).
+    /// </summary>
+    public void ApplyBreakFromNetwork()
+    {
+        if (_broken) return;
+        _broken = true;
+        DoBreakVisuals();
+        SetVisible(false);
+        // killPlayerOnBreak: Host 전용. Client에서는 실행하지 않음.
+    }
+
+    void DoBreakVisuals()
+    {
+        OnBreak?.Invoke();
+
+        if (debrisPrefab != null)
+        {
+            GameObject debris = Instantiate(debrisPrefab, transform.position, transform.rotation);
+            if (debrisLifetime > 0f)
+                Destroy(debris, debrisLifetime);
+        }
+
+        if (useMouthTeethBreakSfx)
+            SFXManager.Instance?.PlayMouthTeethBreak(transform.position);
+        else if (breakSound != null)
+            AudioSource.PlayClipAtPoint(breakSound, transform.position, breakSoundVolume);
     }
 
     // ── 리셋 (함정과 동일: 부모 SetActive false→true 사이클로 자동 복원) ─────

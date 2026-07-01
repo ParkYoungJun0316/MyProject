@@ -44,11 +44,11 @@ public class StagePressurePadSetup : MonoBehaviour
 
     void Start()
     {
-        // 온라인: 동기화된 시드로 Random 초기화 → 전 클라이언트 동일 색 배치 보장
-        if (LobbyContext.IsOnline && NetworkSessionData.Seed != 0)
+        // 온라인: 시드로 Random 초기화 → Host/Client 동일 Random 시퀀스 보장
+        // Seed=0(로비 미경유 등)도 InitState 호출 → 양측 동일 결과
+        if (LobbyContext.IsOnline)
         {
-            // salt: 이 시스템 고유 값으로 다른 시스템과 Random 시퀀스 독립
-            const int salt = 0x050AD5E7; // U 접미사 없이 int 리터럴
+            const int salt = 0x050AD5E7;
             UnityEngine.Random.InitState(NetworkSessionData.Seed ^ salt);
             Debug.Log($"[StagePressurePadSetup] 시드 적용 — seed={NetworkSessionData.Seed}");
         }
@@ -109,6 +109,10 @@ public class StagePressurePadSetup : MonoBehaviour
 
         if (coloredPads.Count == 0) return;
 
+        // 이름 기준 오름차순 정렬 → Host/Client 양측에서 동일 순서 보장
+        coloredPads.Sort((a, b) =>
+            string.Compare(a.gameObject.name, b.gameObject.name, System.StringComparison.Ordinal));
+
         // 색 분배 + 셔플
         PlayerColorType[] distributed = GameSessionColorDistribution.Distribute(coloredPads.Count);
         Shuffle(distributed);
@@ -129,8 +133,11 @@ public class StagePressurePadSetup : MonoBehaviour
     {
         if (puzzleGroups == null || puzzleGroups.Length == 0) return;
 
+        // ActivePlayerCount는 Player 오브젝트 기반 → Start() 시점에 아직 스폰 전일 수 있음.
+        // GetActiveColors().Count는 씬 로드 전 LobbyNetworkManager.SyncActiveColorsClientRpc로
+        // 전 Client에 보장되므로 타이밍 문제 없음.
         int activeCount = GameSession.Instance != null
-            ? GameSession.Instance.ActivePlayerCount
+            ? GameSession.Instance.GetActiveColors().Count
             : 4;
 
         foreach (DoorPuzzleGroup group in puzzleGroups)

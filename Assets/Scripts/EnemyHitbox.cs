@@ -17,6 +17,6 @@ public class EnemyHitbox : MonoBehaviour
 
         Player p = other.GetComponent<Player>();
         if (p != null)
-            p.TakeDamage(damage, true);
+            NetworkDamageUtil.ApplyDamage(p, damage, true);
     }
 }

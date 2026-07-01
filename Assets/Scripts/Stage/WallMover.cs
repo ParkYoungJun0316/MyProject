@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -151,6 +152,25 @@ public class WallMover : MonoBehaviour
     {
         if (moveAtSeconds == null || moveAtSeconds.Length == 0) yield break;
 
+        var  nm       = NetworkManager.Singleton;
+        bool isOnline = nm != null && nm.IsListening;
+
+        // ── 기준 시각 결정 (ArrowTrap 패턴) ─────────────────────────────
+        // 온라인: StageStartServerTime 기준 → Host/Client 동일 타이밍 보장
+        // 오프라인: StartSchedule()이 설정한 Time.time 기준 유지
+        if (isOnline && StageNetworkState.Instance != null
+                     && StageNetworkState.Instance.StageStartServerTime > 0)
+        {
+            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
+            while ((float)nm.ServerTime.Time < _scheduleStartTime)
+                yield return null;
+        }
+        else if (isOnline)
+        {
+            _scheduleStartTime = (float)nm.ServerTime.Time;
+        }
+        // 오프라인은 _scheduleStartTime이 이미 Time.time으로 설정돼 있음
+
         float cycleOffset = 0f;
 
         do
@@ -158,10 +178,18 @@ public class WallMover : MonoBehaviour
             foreach (float t in moveAtSeconds)
             {
                 float targetTime = _scheduleStartTime + cycleOffset + t;
-                float waitTime   = targetTime - Time.time;
 
-                if (waitTime > 0f)
-                    yield return new WaitForSeconds(waitTime);
+                if (isOnline)
+                {
+                    while ((float)nm.ServerTime.Time < targetTime)
+                        yield return null;
+                }
+                else
+                {
+                    float waitTime = targetTime - Time.time;
+                    if (waitTime > 0f)
+                        yield return new WaitForSeconds(waitTime);
+                }
 
                 Activate();
             }

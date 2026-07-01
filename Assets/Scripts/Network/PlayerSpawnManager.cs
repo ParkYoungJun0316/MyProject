@@ -95,7 +95,7 @@ public class PlayerSpawnManager : NetworkBehaviour
 
             if (player != null)
             {
-                player.playerColorType   = color;
+                PlayerColorUtil.ApplyToPlayer(player, color);
                 player.isOwnerControlled = true;
                 player.ForceSetSpawnPoint(pos, rot);
 

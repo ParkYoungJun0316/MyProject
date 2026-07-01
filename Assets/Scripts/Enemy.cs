@@ -583,7 +583,7 @@ public class Enemy : MonoBehaviour, IDamageReceiver
         Player player = collision.gameObject.GetComponent<Player>();
         if (player == null) return;
 
-        player.TakeDamage(contactDamage, false);
+        NetworkDamageUtil.ApplyDamage(player, contactDamage, false);
         contactDamageTimer = Time.time + contactDamageCooldown;
     }
 

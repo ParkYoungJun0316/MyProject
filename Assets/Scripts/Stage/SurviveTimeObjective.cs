@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -30,16 +31,34 @@ public class SurviveTimeObjective : StageObjective
     {
         if (IsCompleted || IsFailed) return;
 
-        _elapsed += Time.deltaTime;
+        var  nm              = NetworkManager.Singleton;
+        bool isHostOrOffline = nm == null || !nm.IsListening || nm.IsServer;
 
-        // 1초마다 UI 이벤트 발동
-        if (Time.time >= _nextUITick)
+        // ── Host / 오프라인: 타이머 진행 및 완료 판정 ────────────
+        if (isHostOrOffline)
         {
-            _nextUITick = Time.time + 1f;
-            OnTimeChanged?.Invoke(Remaining);
-        }
+            _elapsed += Time.deltaTime;
 
-        if (_elapsed >= targetTime)
-            Complete();
+            // 1초마다 UI 갱신 + RPC로 Client에 전파
+            if (Time.time >= _nextUITick)
+            {
+                _nextUITick = Time.time + 1f;
+                OnTimeChanged?.Invoke(Remaining);
+                StageNetworkState.Instance?.SyncSurvivalRemainingClientRpc(Remaining);
+            }
+
+            if (_elapsed >= targetTime)
+                Complete();
+        }
+        // ── Client: StageNetworkState.SyncSurvivalRemainingClientRpc 수신으로만 UI 갱신 ──
+    }
+
+    /// <summary>
+    /// StageNetworkState.SyncSurvivalRemainingClientRpc가 수신되면 호출.
+    /// OnTimeChanged 이벤트를 통해 TimerUI 등 연결된 UI를 갱신한다.
+    /// </summary>
+    public void NotifyRemainingTime(float remaining)
+    {
+        OnTimeChanged?.Invoke(remaining);
     }
 }

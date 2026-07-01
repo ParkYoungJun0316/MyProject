@@ -210,14 +210,16 @@ public class DoorController : MonoBehaviour
     {
         if (!_isClosing) return;
         Player p = col.collider.GetComponent<Player>();
-        p?.KillInstantly();
+        if (p == null) return;
+        NetworkDamageUtil.ApplyInstantKill(p);
     }
 
     void OnCollisionStay(Collision col)
     {
         if (!_isClosing) return;
         Player p = col.collider.GetComponent<Player>();
-        p?.KillInstantly();
+        if (p == null) return;
+        NetworkDamageUtil.ApplyInstantKill(p);
     }
 
     // ── 내부 애니메이션 ───────────────────────────────────────

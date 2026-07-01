@@ -1,3 +1,5 @@
+using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -63,10 +65,48 @@ public class ChangeColorCooldownUI : MonoBehaviour
 
     void Start()
     {
-        if (player == null)
-            player = FindFirstObjectByType<Player>();
-        if (player == null) return;
+        if (player != null)
+        {
+            InitWithPlayer();
+            return;
+        }
+        StartCoroutine(FindLocalPlayerRoutine());
+    }
 
+    IEnumerator FindLocalPlayerRoutine()
+    {
+        float elapsed = 0f;
+        while (elapsed < 10f)
+        {
+            yield return new WaitForSeconds(0.2f);
+            elapsed += 0.2f;
+
+            Player found = FindLocalOwnerPlayer();
+            if (found != null)
+            {
+                player = found;
+                InitWithPlayer();
+                yield break;
+            }
+        }
+        Debug.LogWarning("[ChangeColorCooldownUI] 10초 내 로컬 오너 플레이어를 찾지 못했습니다.");
+    }
+
+    /// <summary>오프라인: isOwnerControlled=true, 온라인: NetworkObject.IsOwner 기준으로 탐색.</summary>
+    static Player FindLocalOwnerPlayer()
+    {
+        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in all)
+        {
+            var netObj = p.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsOwner) return p;
+            if (p.isOwnerControlled) return p;
+        }
+        return null;
+    }
+
+    void InitWithPlayer()
+    {
         _events = player.GetComponent<PlayerEvents>();
 
         BuildSlot();

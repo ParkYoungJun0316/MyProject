@@ -73,9 +73,8 @@ public class TrapProjectile : MonoBehaviour
 
     void HandleContact(GameObject other)
     {
-        // 네트워크 모드: 서버(Host)만 충돌 처리 — 파괴 및 데미지 판정
         var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening && !nm.IsServer) return;
+        bool isNetworked = nm != null && nm.IsListening;
 
         if (other.CompareTag("Player"))
         {
@@ -86,42 +85,30 @@ public class TrapProjectile : MonoBehaviour
                 if (p != null)
                     ApplyDamageToPlayer(p, damage);
             }
-            if (destroyOnPlayer) DestroyProjectile();
+
+            // 파괴: 서버만 Destroy(→ 전원 Despawn). 비오너 클라이언트는 건드리지 않음.
+            if (destroyOnPlayer)
+            {
+                if (!isNetworked || nm.IsServer) DestroyProjectile();
+            }
             return;
         }
 
+        // 벽·바닥 충돌 파괴도 서버만 담당 (NetworkObject Despawn 흐름)
         if (destroyOnWall && other.CompareTag("Wall"))
         {
-            DestroyProjectile();
+            if (!isNetworked || nm.IsServer) DestroyProjectile();
             return;
         }
 
         if (destroyOnFloor && other.CompareTag("Floor"))
         {
-            DestroyProjectile();
+            if (!isNetworked || nm.IsServer) DestroyProjectile();
         }
     }
 
     static void ApplyDamageToPlayer(Player p, int amount)
-    {
-        var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening)
-        {
-            // 네트워크 모드: Host에서만 데미지 판정 (클라이언트는 무시)
-            if (!nm.IsServer) return;
-
-            var netSetup = p.GetComponent<NetworkPlayerSetup>();
-            if (netSetup != null)
-                netSetup.ApplyDamageFromServer(amount);
-            else
-                p.TakeDamage(amount, false); // NetworkPlayerSetup 없는 경우 폴백
-        }
-        else
-        {
-            // 오프라인
-            p.TakeDamage(amount, false);
-        }
-    }
+        => NetworkDamageUtil.ApplyDamageWithOwnerReport(p, amount, false);
 
     void DestroyProjectile()
     {

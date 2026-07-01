@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using TMPro;
 
@@ -33,6 +34,9 @@ public class TimerUI : MonoBehaviour
     static float s_accumulatedTime = 0f;
 
     float _playTime;
+    // 이번 씬 시작 시점의 누적 시간 (이전 스테이지 합산).
+    // ServerTime 기반 경과 시간을 더하는 기준값.
+    float _accumulatedOffset;
 
     void Start()
     {
@@ -49,7 +53,8 @@ public class TimerUI : MonoBehaviour
         else
         {
             // PlayTime: 이전 누적 시간에서 이어서 시작
-            _playTime = s_accumulatedTime;
+            _accumulatedOffset = s_accumulatedTime;
+            _playTime          = _accumulatedOffset;
             if (timerText != null)
                 timerText.color = normalColor;
             UpdateDisplay(_playTime, isSurvival: false);
@@ -60,8 +65,24 @@ public class TimerUI : MonoBehaviour
     {
         if (mode != TimerMode.PlayTime) return;
 
-        _playTime      += Time.deltaTime;
-        s_accumulatedTime = _playTime; // 씬 전환 대비 보존
+        var nm  = NetworkManager.Singleton;
+        var sns = StageNetworkState.Instance;
+
+        if (nm != null && nm.IsListening && sns != null && sns.StageStartServerTime > 0)
+        {
+            // 네트워크 모드: Host ServerTime 기준으로 Host/Client 모두 동일한 시간을 표시.
+            // _accumulatedOffset은 이번 씬 Start() 시점의 s_accumulatedTime이므로
+            // 이전 스테이지 시간이 그대로 유지된다.
+            float stageElapsed = (float)(nm.ServerTime.Time - sns.StageStartServerTime);
+            _playTime = _accumulatedOffset + Mathf.Max(0f, stageElapsed);
+        }
+        else
+        {
+            // 오프라인 또는 스테이지 시작 전 대기 구간: 로컬 시간으로 카운트
+            _playTime += Time.deltaTime;
+        }
+
+        s_accumulatedTime = _playTime;
         UpdateDisplay(_playTime, isSurvival: false);
     }
 

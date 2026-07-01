@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -133,7 +134,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void Update()
     {
-        if (!IsDead && enableFallDeath)
+        // 온라인: Owner만 실제 Y를 알고 있음 (ClientNetworkTransform). 비오너는 낙사 판정 제외.
+        if (!IsDead && enableFallDeath && isOwnerControlled)
         {
             float y = transform.position.y;
             // fallAnimY 통과 시 Fall 애니메이션 1회 재생 (fallDeathY보다 높은 지점에서 미리 트리거)
@@ -144,7 +146,13 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
                 events?.RaiseFallDeath();
             }
             if (y < fallDeathY)
-                Die();
+            {
+                var nm = NetworkManager.Singleton;
+                if (nm != null && nm.IsListening)
+                    GetComponent<NetworkPlayerSetup>()?.ReportFallDeathServerRpc();
+                else
+                    Die();
+            }
         }
 
         if (IsDead)
@@ -257,13 +265,21 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public void TakeDamageVisualOnly(bool knockback = false)
     {
         if (IsDead) return;
-        if (isDamage) return;
 
+        // HP UI 갱신은 무적 여부와 무관하게 항상 수행
+        // (무적 중 연속 피격 시 _player.heart가 갱신됐어도 UI가 멈추는 버그 방지)
         events?.RaiseDamaged(knockback);
+
+        if (isDamage) return; // 무적 중: 애니·효과만 스킵
+
         playerStealth?.RevealTemporarily();
         anim?.SetTrigger("doHit");
         StartCoroutine(OnDamage(knockback));
     }
+
+    /// <summary>피격 무적 지속 시간. NetworkPlayerSetup에서 서버 무적 타이머 계산에 사용.</summary>
+    public float InvulnerabilityDuration =>
+        damageInvulnerabilityDuration > 0f ? damageInvulnerabilityDuration : 0.5f;
 
     /// <summary>Host가 사망을 확정한 뒤 오너 클라이언트를 통해 호출.</summary>
     public void ForceKill()
@@ -310,6 +326,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         // 비오너 플레이어: 피격 판정은 Host 경로에서만. 로컬 직접 호출 무시
         if (!isOwnerControlled) return;
 
+        // 온라인 모드: HP 변경은 반드시 NetworkDamageUtil → NetworkPlayerSetup 경로만 허용
+        // (TakeDamage 직접 호출 시 heart와 _hp NetworkVariable이 어긋나는 버그 방지)
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening) return;
+
         if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
             return;
 
@@ -338,10 +359,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         {
             Bullet enemyBullet = other.GetComponent<Bullet>();
             if (enemyBullet != null)
-                TakeDamage(enemyBullet.damage, false);
+                NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage, false);
 
-            if (other.GetComponent<Rigidbody>() != null)
-                Destroy(other.gameObject);
+            // 네트워크 모드: 발사체 파괴는 서버만. 오프라인: 그대로 Destroy
+            var nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening)
+            {
+                if (other.GetComponent<Rigidbody>() != null)
+                    Destroy(other.gameObject);
+            }
         }
     }
 

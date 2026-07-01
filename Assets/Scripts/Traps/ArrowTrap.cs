@@ -67,12 +67,25 @@ public class ArrowTrap : TrapBase
             yield break;
         }
 
-        if (initialDelay > 0f)
-            yield return new WaitForSeconds(initialDelay);
+        var  nm       = NetworkManager.Singleton;
+        bool isOnline = nm != null && nm.IsListening;
 
-        // initialDelay 이후 기준으로 스케줄 타임 기록
-        // 이전 위치(initialDelay 전)에 있으면, delay 후 모든 targetTime이 과거가 되어 연속 발사 버그 발생
-        scheduleStartTime = Time.time;
+        // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
+        // 온라인: StageStartServerTime + initialDelay → Host/Client 동일한 절대 기준점
+        // 오프라인: 기존 방식 (WaitForSeconds + Time.time)
+        if (isOnline && StageNetworkState.Instance != null
+                     && StageNetworkState.Instance.StageStartServerTime > 0)
+        {
+            scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime + initialDelay;
+            while ((float)nm.ServerTime.Time < scheduleStartTime)
+                yield return null;
+        }
+        else
+        {
+            if (initialDelay > 0f)
+                yield return new WaitForSeconds(initialDelay);
+            scheduleStartTime = isOnline ? (float)nm.ServerTime.Time : Time.time;
+        }
 
         float cycleOffset = 0f;
 
@@ -83,8 +96,9 @@ public class ArrowTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = scheduleStartTime + cycleOffset + t;
+                float now        = isOnline ? (float)nm.ServerTime.Time : Time.time;
                 // preFireChargeTime 만큼 앞당겨 대기 → 충전 시작 → 정확한 targetTime에 발사
-                float waitTime = Mathf.Max(0f, targetTime - Time.time - preFireChargeTime);
+                float waitTime   = Mathf.Max(0f, targetTime - now - preFireChargeTime);
                 yield return new WaitForSeconds(waitTime);
 
                 if (!isRunning) yield break;
@@ -106,8 +120,10 @@ public class ArrowTrap : TrapBase
         // baseSpeed가 0이면 프리팹 기본값을 그대로 사용
         if (baseSpeed <= 0f) return 0f;
 
-        float elapsed = Time.time - scheduleStartTime;
-        float mult = 1f;
+        var   nm      = NetworkManager.Singleton;
+        float now     = (nm != null && nm.IsListening) ? (float)nm.ServerTime.Time : Time.time;
+        float elapsed = now - scheduleStartTime;
+        float mult    = 1f;
 
         foreach (SpeedPhase phase in speedPhases)
         {
@@ -154,7 +170,8 @@ public class ArrowTrap : TrapBase
         if (isNetworked)
         {
             NetworkObject netObj = fired.GetComponent<NetworkObject>();
-            if (netObj != null) netObj.Spawn();
+            // destroyWithScene: true → 씬 리로드 시 자동 Despawn (잔존 화살 방지)
+            if (netObj != null) netObj.Spawn(destroyWithScene: true);
         }
     }
 }

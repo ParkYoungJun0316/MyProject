@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -5,7 +6,11 @@ using UnityEngine.Events;
 /// 레인 1개 담당 스포너.
 /// 타이밍·루프·정지는 BoulderSpawnManager가 제어.
 /// SpawnOne()만 외부에서 호출.
-/// 바위 프리팹에 WaypointMover가 필수.
+///
+/// [네트워크]
+/// 멀티: Host만 Instantiate + NetworkObject.Spawn(). Client는 NGO 수신으로 자동 생성.
+/// 오프라인: 기존 방식 그대로 Instantiate.
+/// boulderPrefab에 NetworkObject 컴포넌트가 없으면 경고 로그 출력.
 /// </summary>
 public class BoulderSpawner : MonoBehaviour
 {
@@ -28,6 +33,12 @@ public class BoulderSpawner : MonoBehaviour
     {
         if (boulderPrefab == null) return;
 
+        var  nm            = NetworkManager.Singleton;
+        bool isMultiplayer = nm != null && nm.IsListening;
+
+        // 멀티: Host만 스폰. NGO가 Client에 자동 전파하므로 Client는 아무것도 하지 않음.
+        if (isMultiplayer && !nm.IsServer) return;
+
         Vector3    pos = spawnPoint != null ? spawnPoint.position : transform.position;
         Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
 
@@ -46,6 +57,18 @@ public class BoulderSpawner : MonoBehaviour
 
         mover.Deactivate();
         mover.Activate();
+
+        // 멀티: NetworkObject.Spawn()으로 Client에 전파.
+        // Host의 Destroy(lifetime 만료 등) → 전원 Despawn 자동 처리.
+        if (isMultiplayer)
+        {
+            var netObj = instance.GetComponent<NetworkObject>();
+            if (netObj != null)
+                netObj.Spawn(destroyWithScene: true);
+            else
+                Debug.LogWarning("[BoulderSpawner] boulderPrefab에 NetworkObject가 없습니다. " +
+                                 "BreakableBoulder.prefab에 NetworkObject 컴포넌트를 추가하세요.");
+        }
 
         onBoulderSpawned?.Invoke();
     }

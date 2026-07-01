@@ -1,8 +1,105 @@
 # Network Design (MVP)
 
-네트워크 구현 전 확정된 설계 문서.  
-대상: **LAN MVP** → 이후 **Steam P2P** 전환.  
-스테이지 범위: **`M.Stage1` → `T.Stage1` → `End.Demo`**.
+네트워크 · 출시 계획 문서.  
+스테이지 범위: **`M.Stage1` → `T.Stage1` → `End.Demo`**.  
+목표: **데모 출시** → **2주 내 정식 출시**.
+
+---
+
+## 0. 출시 로드맵 · 작업 우선순위
+
+### 0.1 전체 작업 목록 (확정 순서)
+
+| 순위 | 작업 | 비고 |
+|------|------|------|
+| 1 | **네트워크** | ParrelSync → 빌드 → Steam P2P (§0.2) |
+| 2 | **사운드 마무리** | 최소한만. 과하면 방해되므로 억제 |
+| 3 | **파티클** | 시작 안 함. **피격·Break** 등 핵심만 |
+| 4 | **난이도 밸런싱** | **데모 + 1~3 완료 후** 플레이테스트 기반 |
+| 5 | **UI 마무리** | 옵션·사운드 볼륨 등. 데모용 최소 / 정식에서 확장 |
+| 6 | **캐릭터 애니메이션** | sit, dance 등 — **정식 출시 이후 또는 v1.1** |
+| 7 | **Steamworks 연동** | Transport·Lobby·빌드·Depot (§0.3) |
+| 8 | **컷씬** | **2주 일정에 넣지 않음** → 출시 후 |
+| 9 | **출시 QA** | 빌드·Steam·2~4인 시나리오 체크리스트 |
+
+### 0.2 네트워크 테스트 단계 (개발자 환경)
+
+**LAN 실기 테스트는 현재 불가.** 아래 순서로만 검증한다.
+
+```
+① ParrelSync (에디터 Host + Clone Client)
+   → Host 화면 포커스 기준 빠른 반복. 버그 발견·수정용.
+   ※ ParrelSync만으로 “완료” 판정 금지. Clone/에디터 한계로 오탐·미탐 많음.
+
+② Development Build (Host EXE + Client EXE, localhost 또는 같은 PC)
+   → 양쪽 화면 포커스하며 실제 플레이. **데모 출시 전 필수 통과.**
+
+③ Steam P2P (정식 출시 직전)
+   → Transport 교체 + Steam Lobby. 친구/외부 1회 이상 실연.
+```
+
+| 단계 | 목적 | 통과 기준 (최소) |
+|------|------|------------------|
+| ParrelSync | 구현·버그 수정 속도 | Title→Lobby→M→T→End 2인 클리어 1회 |
+| 빌드 | 실제 출시 품질 | 2인·4인 각 1회 클리어, 사망 리로드 1회, 스테이지 전환 OK |
+| Steam P2P | 배포 환경 | ②와 동일 시나리오 Steam에서 1회 |
+
+**Transport:** 코드상 LAN(`UnityTransport`) 유지 가능. **검증은 ② 빌드부터** 신뢰한다.
+
+### 0.3 데모 vs 정식 출시 — 어디까지 끝내나
+
+#### 데모 출시 (Must Have)
+
+- **플레이 경로:** Title → Lobby → `M.Stage1` → `T.Stage1` → `End.Demo` (멀티 2~4인)
+- **솔로:** Title 오프라인 패널 → 동일 스테이지 (NGO 없음)
+- **네트워크:** §9 **핵심 동기화만** — 플레이어, HP/사망, StageStartGate, Phase, 함정 발사·피격, T.Stage 패드·문·Boulder, 클리어
+- **네트워크 검증:** ② **빌드 Host/Client** 통과 (ParrelSync만으로 출시 금지)
+- **UI:** 타이틀·로비·HP·카운트다운·End.Demo (옵션 패널 **없어도 됨**)
+- **사운드:** BGM 1~2 + 핵심 SFX (발사, 피격, Break, UI 클릭)
+- **파티클:** 피격·Break만 (없어도 데모 가능, 있으면 이 두 개만)
+- **난이도:** “클리어 가능” 수준만. **본격 밸런싱은 데모 후**
+
+#### 데모에서 **의도적으로 빼는 것** (버그·일정 방어)
+
+| 항목 | 이유 |
+|------|------|
+| §12 재접속·Kick·60초 유예·스냅샷 복원 | 복잡도 최상. 데모: **호스트 이탈 = 종료**, 중간 이탈 = **즉시 리로드** 수준으로 단순화 |
+| LAN UDP discovery 실기 검증 | 개발 환경 불가. **빌드 localhost + IP 직접 입력**으로 대체 |
+| Steam P2P | 데모는 **빌드 LAN/localhost**로 배포 가능. Steam은 정식 직전 |
+| sit / dance 등 이모트 애니 | 정식 이후 |
+| 컷씬 | 정식 이후 |
+| 옵션·설정 UI 전체 | 정식에서 (데모: OS 볼륨으로 대체) |
+
+#### 정식 출시 (데모 후 2주 — Must Have)
+
+- ③ **Steam P2P** + Steam Lobby (Invite는 있으면 좋음, 없으면 코드 Join)
+- **난이도 밸런싱** (데모 피드백 반영)
+- **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면 최소
+- **출시 QA** 체크리스트 전 항목
+- **Steamworks:** App ID, Depot, 빌드 업로드, SteamPipe
+
+#### 정식 2주 안에 **넣지 않는 것** (Post-Launch)
+
+- 컷씬
+- sit / dance / 이모트 애니메이션
+- §12 재접속 풀 스펙 (스냅샷 무리로드 없이 재개 등) — 여유 있으면 v1.1
+- Late Join, 호스트 마이그레이션
+- 파티클 대량 추가
+
+### 0.4 권장 작업 순서 (실행용)
+
+```
+[데모 전]
+1. 네트워크 핵심 동기화 (§9 Must) + Spawner Spawn 패턴
+2. ParrelSync로 버그 수정 (①)
+3. Development Build ② 통과 — 여기서 데모 출시 가능
+4. 사운드·파티클(피격/Break) — 병행 가능, 네트워크 ② 전에는 최소만
+
+[데모 후 ~ 정식 2주]
+주 1: 데모 피드백 → 난이도 → Steam Transport/Lobby → UI 옵션
+주 2: Steamworks 빌드·업로드 → QA → 출시
+(컷씬·이모트·재접속 풀스펙은 출시 후)
+```
 
 ---
 
@@ -63,14 +160,15 @@
 
 ## 4. 연결 · 룸코드
 
-### 4.1 LAN (MVP)
+### 4.1 LAN / localhost (코드·데모 배포)
 
 | 항목 | 값 |
 |------|-----|
 | 포트 | **7777** (고정) |
-| 방식 | 같은 Wi‑Fi **UDP 브로드캐스트** discovery |
-| Join UX | **6자리 숫자 룸코드 입력** |
-| Host | 랜덤 6자리 코드 생성 + broadcast `{ code, ip, port }` |
+| 방식 | **개발:** localhost 또는 IP 직접 입력 (빌드 ②) |
+| Discovery | UDP 브로드캐스트 — **실기 LAN 검증 불가**. 코드 유지, 데모는 IP/localhost 우선 |
+| Join UX | **6자리 숫자 룸코드 입력** (또는 Host IP 직접 입력 폴백) |
+| Host | 랜덤 6자리 코드 생성 (+ broadcast는 Steam/LAN 실기 환경에서만 의미) |
 | 실패 | **「방을 찾을 수 없음」** (타임아웃 후) |
 
 **룸코드 UI (LAN)**
@@ -78,7 +176,9 @@
 - 표시: 앞 2자리 + `**` + 뒤 2자리 (예: `12**56`)
 - 복사: **전체 6자리** 클립보드 (`125634` 등)
 
-### 4.2 Steam (Post-MVP, 예정)
+**개발자 테스트:** ParrelSync(①) → **Development Build Host+Client(②)**. 같은 PC에서 Client는 `127.0.0.1:7777` Join.
+
+### 4.2 Steam (정식 출시 직전, ③)
 
 - 실제 연결은 Steamworks P2P.
 - UI 마스킹 예: 포트/식별자 `7**1` 형태 (중간 비표시).
@@ -164,27 +264,39 @@
 
 ### MVP 동기화 대상
 
+**우선순위:** `Must (데모)` → `Should (데모 여유)` → `Post (정식 이후)`
+
 **M.Stage1**
 
-- `StageStartGate` / 카운트다운
-- `PhaseManager`
-- `MouthController`
-- `TrapPlayerTracker` 및 Mouth 계열 함정
+| 대상 | 우선순위 |
+|------|----------|
+| `StageStartGate` / 카운트다운 | Must |
+| `PhaseManager` | Must |
+| `ArrowTrap` / `DropTrap` 발사·피격 (Host Spawn) | Must |
+| `TrapProjectile` 데미지·파괴 | Must |
+| `MouthController` / Mouth Animator 연동 | Should |
+| `WindTrap` (Owner 힘 전달) | Should |
+| `TrapPlayerTracker` 및 Mouth 계열 함정 | Should |
 
 **T.Stage1**
 
-- `StagePressurePadSetup` 결과 (색 배정)
-- `PressurePad` / `DoorController` / `DoorPuzzleGroup`
-- `WallMover`
-- `Breakable`
-- `BuffPickup`
-- `BoulderSpawnManager` / `BoulderSpawner` (발사·피격 타이밍)
-- 기타 함정 (`TrapBase` 파생) — 발사·피격·활성 타이밍
-- `ReachZoneObjective` / `StageManager` 클리어
+| 대상 | 우선순위 |
+|------|----------|
+| `StagePressurePadSetup` 결과 (Host 시드) | Must |
+| `PressurePad` / `DoorController` / `DoorPuzzleGroup` | Must |
+| `BoulderSpawnManager` / `BoulderSpawner` | Must |
+| `Breakable` 파괴 **시각** 동기화 | Must |
+| `ReachZoneObjective` / `StageManager` 클리어 | Must |
+| `BuffPickup` Despawn | Should |
+| `WallMover` | Should |
+| 기타 `TrapBase` 파생 | Should |
 
 **공통**
 
-- 플레이어 HP·색 상태·사망 (Host 적용 후 동기화)
+| 대상 | 우선순위 |
+|------|----------|
+| 플레이어 HP·색·사망·리로드 | Must |
+| `StageResetOnPlayerDeath` | Must |
 
 ---
 
@@ -210,7 +322,17 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 ## 12. 이탈 · 재접속 · Kick
 
-### 12.1 공통
+> **데모 범위:** §12 **풀 스펙은 Post-Launch (v1.1)**. 데모는 아래 **§12.0 단순 규칙**만 적용.
+
+### 12.0 데모 단순 규칙
+
+| 상황 | 동작 |
+|------|------|
+| **호스트 이탈** | 세션 종료 → 전원 타이틀 |
+| **클라이언트 이탈** | Host: **즉시 씬 리로드** (인원 변경 + 새 시드). 재접속 UI 없음 |
+| **Kick** | 데모에서 **미구현 가능** (정식 또는 v1.1) |
+
+### 12.1 공통 (정식 / v1.1 목표)
 
 - 유예 시간: **60초**
 - 일시정지: **`Time.timeScale = 0`** (전역 정지)
@@ -276,24 +398,42 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 ## 16. 구현 순서 (권장)
 
-1. NGO + `UnityTransport` (7777) + Title `NetworkManager`
-2. LAN UDP discovery + 6자리 룸코드 + Join UI
-3. 로비 Ready / 캐릭터 / Start 동기화
-4. Player Network Prefab + 존 위 스폰 + Owner 입력·카메라
-5. `StageNetworkState` 골격 + `M.Stage1` 동기화
-6. `T.Stage1` 동기화 (패드, 문, Boulder, 함정 전부)
-7. 이탈·재접속·Kick·리로드·시드
-8. `End.Demo` + 타이틀 복귀 + 멀티 Shutdown
-9. Title **오프라인** 패널 + 솔로 경로
-10. (이후) Steam Transport 교체
+### 16.1 네트워크 (데모 전)
+
+1. NGO + `UnityTransport` + Title `NetworkManager`
+2. 로비 Ready / 캐릭터 / Start 동기화
+3. Player Network Prefab + 존 스폰 + Owner 입력·카메라
+4. **Must 동기화** (§9 표): StageStartGate, Phase, Trap Spawn, T.Stage 패드·문·Boulder, Breakable, 클리어, HP/사망
+5. **ParrelSync ①** — Must 항목 버그 수정
+6. **Development Build ②** — 데모 출시 게이트
+7. `End.Demo` + 타이틀 복귀 + 멀티 Shutdown
+8. Title **오프라인** 패널 + 솔로 경로
+9. Should 항목 (Mouth, Wind, Buff 등) — ② 통과 후 또는 데모 직전 여유분
+
+### 16.2 데모 후 ~ 정식 (2주)
+
+1. Steam Transport + Lobby (③)
+2. 난이도 밸런싱 (데모 피드백)
+3. UI 옵션 (볼륨·해상도)
+4. Steamworks Depot·업로드
+5. 출시 QA
+6. (선택) §12 재접속·Kick — **2주에 못 넣으면 v1.1**
+
+### 16.3 Post-Launch
+
+- Steam Invite UX polish
+- 컷씬, sit/dance 이모트
+- §12 풀 스펙, Late Join
+- 호스트 마이그레이션
 
 ---
 
-## 17. Post-MVP (참고)
+## 17. Post-Launch (참고)
 
-- Steam P2P + Steam Lobby / Invite
-- `PostMVP_Multiplayer_Backlog.md` 항목 (세이브 슬롯, Late Join 등)
-- 호스트 마이그레이션: **MVP 범위 외**
+- §12 재접속·Kick·스냅샷 풀 스펙
+- 컷씬, 캐릭터 이모트 (sit, dance)
+- `PostMVP_Multiplayer_Backlog.md` (Late Join, 세이브 슬롯 등)
+- 호스트 마이그레이션
 
 ---
 
@@ -313,3 +453,12 @@ A. **보인다.** Host가 판정한 **결과**를 동기화해 전원이 같은 
 
 **Q. 타이틀 복귀 시 멀티 연결은?**  
 A. **`NetworkManager.Shutdown()`** 으로 해제.
+
+**Q. ParrelSync만 통과하면 데모 출시해도 되나?**  
+A. **아니오.** Development Build Host+Client(§0.2 ②) 통과가 데모 게이트.
+
+**Q. LAN discovery 없이 테스트하나?**  
+A. **localhost / IP 직접 Join**으로 빌드 테스트. discovery는 Steam·실제 LAN 환경에서 검증.
+
+**Q. 2주 안에 컷씬·이모트·재접속 풀스펙을 넣어야 하나?**  
+A. **아니오.** 정식 Must는 Steam P2P, 밸런싱, 옵션 UI, QA. 나머지는 Post-Launch.

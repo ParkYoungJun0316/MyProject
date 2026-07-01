@@ -9,7 +9,8 @@ using UnityEngine;
 ///
 /// [requiredCount 스케일]
 ///  designPlayerCount > 1 이면 topology에 무관하게 항상 적용됨.
-///  예) Hold + designPlayerCount=3 → latch 승격 + requiredCount=min(3, activeCount)
+///  공식: min(designPlayerCount, activeCount - 1) → "전원 - 1" 기준 스케일
+///  예) designPlayerCount=3: 4인→3, 3인→2, 2인→1
 ///
 /// [Inspector 설정]
 ///  topology          : 이 문의 퍼즐 방식
@@ -33,8 +34,9 @@ public class DoorPuzzleGroup : MonoBehaviour
 
     [Tooltip("4인 기준 원래 requiredCount. 1이면 스케일 생략.\n" +
              "topology에 무관하게 항상 적용됨.\n" +
-             "예) Hold + 3 → latch 승격 + requiredCount=min(3, activeCount)\n" +
-             "예) Solo + 3 → requiredCount=min(3, activeCount)")]
+             "예) Hold + 3 → latch 승격 + requiredCount=min(3, activeCount-1)\n" +
+             "예) Solo + 3 → requiredCount=min(3, activeCount-1)\n" +
+             "결과: 4인→3, 3인→2, 2인→1 (전원-1 스케일)")]
     [SerializeField] int designPlayerCount = 1;
 
     DoorController _door;
@@ -67,12 +69,16 @@ public class DoorPuzzleGroup : MonoBehaviour
             _door.SetLatchOnOpen(true);
     }
 
-    /// <summary>requiredPads 전체의 requiredCount = min(designPlayerCount, activeCount).</summary>
+    /// <summary>
+    /// requiredPads 전체의 requiredCount = min(designPlayerCount, activeCount - 1).
+    /// "전원 - 1" 기준으로 스케일해 2인에서도 1명이 열 수 있게 보장.
+    /// </summary>
     void ScaleRequiredCount(int activeCount)
     {
         if (_door.requiredPads == null) return;
 
-        int scaled = Mathf.Max(1, Mathf.Min(designPlayerCount, activeCount));
+        // activeCount - 1 을 상한으로 사용: 4인→3, 3인→2, 2인→1
+        int scaled = Mathf.Max(1, Mathf.Min(designPlayerCount, activeCount - 1));
         foreach (PressurePad pad in _door.requiredPads)
             if (pad != null) pad.requiredCount = scaled;
     }
@@ -85,6 +91,9 @@ public class DoorPuzzleGroup : MonoBehaviour
 
     [ContextMenu("테스트: 2인 스케일링")]
     void Debug_2P() => ApplyScaling(2);
+
+    [ContextMenu("테스트: 3인 스케일링")]
+    void Debug_3P() => ApplyScaling(3);
 
     [ContextMenu("테스트: 4인 스케일링")]
     void Debug_4P() => ApplyScaling(4);
