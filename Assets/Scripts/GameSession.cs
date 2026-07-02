@@ -78,32 +78,42 @@ public class GameSession : MonoBehaviour
         Apply(allPlayers);
     }
 
-    void OnEnable()  => SceneManager.sceneLoaded += OnSceneLoaded;
-    void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
+    void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
 
-    // 씬 전환 시 새 씬의 Player를 자동 수집해 재적용
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayersOnReady;
+    }
+
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         // DontDestroyOnLoad 씬이면 무시
         if (scene.name == "DontDestroyOnLoad") return;
 
-        // 활성 플레이어 참조가 유효하면 Awake에서 이미 올바르게 셋업된 것 → 재수집 불필요
-        // (씬 전환/리로드 후에는 오브젝트가 파괴되어 null이 되므로 그때만 재수집)
+        // 활성 플레이어 참조가 유효하면 재수집 불필요
         if (_activePlayers.Count > 0 && _activePlayers[0] != null) return;
 
-        // 오프라인: 씬에 미리 배치된 비활성 플레이어 포함 탐색
-        // 온라인 : 활성 플레이어만 (NetworkObject로 동적 스폰된 것만)
-        Player[] found = LobbyContext.IsOffline
-            ? FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            : FindObjectsByType<Player>(FindObjectsSortMode.None);
+        if (LobbyContext.IsOffline)
+        {
+            // 오프라인: 씬에 배치된 플레이어 즉시 수집
+            Player[] found = FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Apply(found);
+            return;
+        }
 
-        if (found.Length == 0) return;
+        // 온라인: 색 목록만 즉시 갱신하고, 플레이어 목록은 스폰 완료 후 재수집
+        Apply(new Player[0]);
+        PlayerSpawnCoordinator.OnPlayersReady += RefreshPlayersOnReady;
+    }
 
-        // playerColorType 순으로 정렬 (ColorOrder 기준)
-        System.Array.Sort(found, (a, b) =>
-            ColorIndex(a.playerColorType).CompareTo(ColorIndex(b.playerColorType)));
-
-        Apply(found);
+    void RefreshPlayersOnReady()
+    {
+        PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayersOnReady;
+        SetActiveColors(activeColorSlots);
     }
 
     // ── 공개 API ──────────────────────────────────────────────────
@@ -130,6 +140,11 @@ public class GameSession : MonoBehaviour
     {
         _activePlayers.Clear();
         _activeColors.Clear();
+
+        // 타이틀 복귀 시 타이머·채팅 히스토리 초기화
+        TimerUI.ResetTimer();
+        InGameChatUI.ClearHistory();
+
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }
 

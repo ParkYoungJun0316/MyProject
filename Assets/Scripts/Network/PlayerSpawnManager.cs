@@ -52,6 +52,7 @@ public class PlayerSpawnManager : NetworkBehaviour
 
         NetworkManager.SceneManager.OnSceneEvent -= OnSceneEventForSpawn;
         SpawnAllPlayers();
+        PlayerSpawnCoordinator.Instance?.NotifyPlayersReady();
     }
 
     public override void OnNetworkDespawn()
@@ -115,6 +116,8 @@ public class PlayerSpawnManager : NetworkBehaviour
         var colorArr = new PlayerColorType[activeColors.Count];
         for (int i = 0; i < activeColors.Count; i++) colorArr[i] = activeColors[i];
         GameSession.Instance.SetActiveColors(colorArr);
+
+        PlayerSpawnCoordinator.Instance?.NotifyPlayersReady();
     }
 
     // ── 씬 내 기존 Player 제거 ───────────────────────────────────

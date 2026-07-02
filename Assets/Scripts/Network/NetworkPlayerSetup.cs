@@ -272,9 +272,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// <summary>
     /// 오너 클라이언트가 발사체·접촉 함정과 충돌했을 때 서버에 피격을 신고.
     /// 서버가 무적·사망·_hp 검증 후 데미지를 확정.
-    /// RequireOwnership=true: 이 플레이어의 오너만 호출 가능.
+    /// InvokePermission=Owner: 이 플레이어의 오너만 호출 가능.
     /// </summary>
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void ReportHitServerRpc(int amount, bool knockback)
     {
         ApplyDamageFromServer(amount, knockback);
@@ -303,10 +303,33 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>오너 클라이언트가 문 충돌을 감지했을 때 서버에 즉사 신고.</summary>
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void ReportInstantKillServerRpc()
     {
         ApplyInstantKillFromServer();
+    }
+
+    // ── 응원 버프 동기화 ──────────────────────────────────────────
+
+    /// <summary>
+    /// CheerService (Host)가 호출. 전 클라이언트에 버프 적용을 전달.
+    /// TeamStatusUI가 PlayerBuffSystem.OnBuffApplied를 구독하므로 자동으로 아이콘 갱신됨.
+    /// </summary>
+    public void ApplyCheerBuff(PlayerBuffSystem.BuffType type, float duration)
+    {
+        if (!IsServer) return;
+
+        var setting = _player?.GetComponent<PlayerBuffSystem>()?.GetSetting(type);
+        float value = setting?.value ?? 0f;
+        ApplyCheerBuffClientRpc((int)type, duration, value);
+    }
+
+    /// <summary>전 클라이언트에서 이 플레이어의 PlayerBuffSystem에 버프를 적용.</summary>
+    [ClientRpc]
+    void ApplyCheerBuffClientRpc(int buffTypeIndex, float duration, float value)
+    {
+        GetComponent<PlayerBuffSystem>()?.ApplyBuff(
+            (PlayerBuffSystem.BuffType)buffTypeIndex, duration, value);
     }
 
     // ── 추락 사망 ─────────────────────────────────────────────────
@@ -324,7 +347,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>오너 클라이언트가 낙사 기준점 통과를 신고. 서버가 낙사를 확정하고 Owner에게 Die()를 전달.</summary>
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void ReportFallDeathServerRpc()
     {
         ApplyFallDeathFromServer();

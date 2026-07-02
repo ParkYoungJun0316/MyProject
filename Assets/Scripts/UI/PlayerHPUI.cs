@@ -50,30 +50,28 @@ public class PlayerHPUI : MonoBehaviour
         }
 
         // player가 Inspector에 연결되지 않은 경우 (네트워크 스폰 대기)
-        StartCoroutine(FindLocalPlayerRoutine());
+        PlayerSpawnCoordinator.OnPlayersReady += FindAndSubscribe;
+        if (PlayerSpawnCoordinator.IsReady) FindAndSubscribe();
     }
 
-    System.Collections.IEnumerator FindLocalPlayerRoutine()
+    void FindAndSubscribe()
     {
-        // PlayerSpawnManager가 LoadEventCompleted 시점에 스폰하므로
-        // 최대 10초 동안 0.2초 간격으로 재시도
-        float elapsed = 0f;
-        while (elapsed < 10f)
-        {
-            yield return new WaitForSeconds(0.2f);
-            elapsed += 0.2f;
+        PlayerSpawnCoordinator.OnPlayersReady -= FindAndSubscribe;
 
-            Player found = FindLocalOwnerPlayer();
-            if (found != null)
-            {
-                player = found;
-                BuildHearts();
-                SubscribeAndRefresh();
-                yield break;
-            }
+        player = FindLocalOwnerPlayer();
+        if (player == null)
+        {
+            Debug.LogWarning("[PlayerHPUI] OnPlayersReady 시점에도 로컬 오너 플레이어를 찾지 못했습니다.");
+            return;
         }
 
-        Debug.LogWarning("[PlayerHPUI] 10초 내 로컬 오너 플레이어를 찾지 못했습니다.");
+        BuildHearts();
+        SubscribeAndRefresh();
+    }
+
+    void OnDestroy()
+    {
+        PlayerSpawnCoordinator.OnPlayersReady -= FindAndSubscribe;
     }
 
     /// <summary>

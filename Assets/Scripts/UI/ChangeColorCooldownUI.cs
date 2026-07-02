@@ -70,26 +70,23 @@ public class ChangeColorCooldownUI : MonoBehaviour
             InitWithPlayer();
             return;
         }
-        StartCoroutine(FindLocalPlayerRoutine());
+
+        PlayerSpawnCoordinator.OnPlayersReady += FindAndInit;
+        if (PlayerSpawnCoordinator.IsReady) FindAndInit();
     }
 
-    IEnumerator FindLocalPlayerRoutine()
+    void FindAndInit()
     {
-        float elapsed = 0f;
-        while (elapsed < 10f)
-        {
-            yield return new WaitForSeconds(0.2f);
-            elapsed += 0.2f;
+        PlayerSpawnCoordinator.OnPlayersReady -= FindAndInit;
 
-            Player found = FindLocalOwnerPlayer();
-            if (found != null)
-            {
-                player = found;
-                InitWithPlayer();
-                yield break;
-            }
+        player = FindLocalOwnerPlayer();
+        if (player == null)
+        {
+            Debug.LogWarning("[ChangeColorCooldownUI] OnPlayersReady 시점에도 로컬 오너 플레이어를 찾지 못했습니다.");
+            return;
         }
-        Debug.LogWarning("[ChangeColorCooldownUI] 10초 내 로컬 오너 플레이어를 찾지 못했습니다.");
+
+        InitWithPlayer();
     }
 
     /// <summary>오프라인: isOwnerControlled=true, 온라인: NetworkObject.IsOwner 기준으로 탐색.</summary>
@@ -122,6 +119,7 @@ public class ChangeColorCooldownUI : MonoBehaviour
 
     void OnDestroy()
     {
+        PlayerSpawnCoordinator.OnPlayersReady -= FindAndInit;
         if (_events != null)
         {
             _events.OnBlackWhiteChanged  -= OnBlackWhiteChanged;

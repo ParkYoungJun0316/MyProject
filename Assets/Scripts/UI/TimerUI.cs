@@ -1,18 +1,21 @@
-using Unity.Netcode;
 using UnityEngine;
 using TMPro;
 
 /// <summary>
 /// Timer_Panel에 붙이는 스크립트.
-/// TimerMode.PlayTime  : 씬 시작부터 경과 시간 표시 (항상 동작)
+/// TimerMode.PlayTime  : 게임 시작부터 실제 경과 시간 표시.
+///                       씬 재로드·전환에 무관하게 누적. Disconnect Pause(timeScale=0)에만 멈춤.
 /// TimerMode.Survival  : SurviveTimeObjective 남은 시간 표시 (Objective 연결 필요)
+///
+/// [리셋 타이밍]
+/// GameSession.ResetSession() 호출 시 (타이틀 복귀 등) ResetTimer()로 초기화.
 /// </summary>
 public class TimerUI : MonoBehaviour
 {
     public enum TimerMode
     {
-        PlayTime,   // 경과 시간 (플레이 타임)
-        Survival,   // 남은 시간 (생존 목표)
+        PlayTime,
+        Survival,
     }
 
     [Header("모드 선택")]
@@ -25,18 +28,15 @@ public class TimerUI : MonoBehaviour
     [SerializeField] TextMeshProUGUI timerText;
 
     [Header("경고 색상 (Survival 모드에서만 적용)")]
-    [SerializeField] Color normalColor       = Color.white;
-    [SerializeField] Color warningColor      = Color.red;
+    [SerializeField] Color normalColor      = Color.white;
+    [SerializeField] Color warningColor     = Color.red;
     [Tooltip("이 초 이하로 남으면 경고 색으로 변경")]
-    [SerializeField] float warningThreshold  = 30f;
+    [SerializeField] float warningThreshold = 30f;
 
-    // 씬 재로드(사망 리로드)에도 초기화되지 않도록 static 보관
+    // 씬 재로드·전환에도 유지되는 누적 플레이 시간
     static float s_accumulatedTime = 0f;
 
     float _playTime;
-    // 이번 씬 시작 시점의 누적 시간 (이전 스테이지 합산).
-    // ServerTime 기반 경과 시간을 더하는 기준값.
-    float _accumulatedOffset;
 
     void Start()
     {
@@ -52,11 +52,9 @@ public class TimerUI : MonoBehaviour
         }
         else
         {
-            // PlayTime: 이전 누적 시간에서 이어서 시작
-            _accumulatedOffset = s_accumulatedTime;
-            _playTime          = _accumulatedOffset;
-            if (timerText != null)
-                timerText.color = normalColor;
+            // 이전 씬에서 누적된 시간 이어받기
+            _playTime = s_accumulatedTime;
+            if (timerText != null) timerText.color = normalColor;
             UpdateDisplay(_playTime, isSurvival: false);
         }
     }
@@ -65,34 +63,18 @@ public class TimerUI : MonoBehaviour
     {
         if (mode != TimerMode.PlayTime) return;
 
-        var nm  = NetworkManager.Singleton;
-        var sns = StageNetworkState.Instance;
-
-        if (nm != null && nm.IsListening && sns != null && sns.StageStartServerTime > 0)
-        {
-            // 네트워크 모드: Host ServerTime 기준으로 Host/Client 모두 동일한 시간을 표시.
-            // _accumulatedOffset은 이번 씬 Start() 시점의 s_accumulatedTime이므로
-            // 이전 스테이지 시간이 그대로 유지된다.
-            float stageElapsed = (float)(nm.ServerTime.Time - sns.StageStartServerTime);
-            _playTime = _accumulatedOffset + Mathf.Max(0f, stageElapsed);
-        }
-        else
-        {
-            // 오프라인 또는 스테이지 시작 전 대기 구간: 로컬 시간으로 카운트
-            _playTime += Time.deltaTime;
-        }
+        // Time.deltaTime: timeScale=0(Disconnect Pause)이면 자동으로 0 → 멈춤
+        // 씬 전환·Phase 전환·컷씬 등 다른 요소의 영향 없음
+        _playTime += Time.deltaTime;
 
         s_accumulatedTime = _playTime;
         UpdateDisplay(_playTime, isSurvival: false);
     }
 
-    /// <summary>새 게임 시작 시 누적 타이머 리셋. GameSession.ResetSession() 등에서 호출.</summary>
+    /// <summary>타이틀 복귀 등 새 게임 시작 시 누적 타이머 초기화.</summary>
     public static void ResetTimer() => s_accumulatedTime = 0f;
 
-    void OnSurvivalTimeChanged(float remaining)
-    {
-        UpdateDisplay(remaining, isSurvival: true);
-    }
+    void OnSurvivalTimeChanged(float remaining) => UpdateDisplay(remaining, isSurvival: true);
 
     void UpdateDisplay(float seconds, bool isSurvival)
     {

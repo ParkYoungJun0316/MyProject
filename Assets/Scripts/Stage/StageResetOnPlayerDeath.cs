@@ -22,21 +22,9 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void Start()
     {
-        // 네트워크 모드: PlayerSpawnManager가 LoadEventCompleted 이후 스폰하므로
-        // Start() 시점에 플레이어가 없을 수 있음 → 코루틴으로 재시도
-        StartCoroutine(FindAndSubscribeRoutine());
-    }
-
-    IEnumerator FindAndSubscribeRoutine()
-    {
-        // 최대 15초(0.3초 × 50) 동안 재시도
-        for (int i = 0; i < 50; i++)
-        {
-            TrySubscribePlayers();
-            if (_subscribed.Count > 0) yield break;
-            yield return new WaitForSeconds(0.3f);
-        }
-        Debug.LogWarning("[StageResetOnPlayerDeath] 15초 내 플레이어를 찾지 못했습니다.");
+        // 네트워크·오프라인 모두: PlayerSpawnCoordinator 이벤트 기준으로 구독
+        PlayerSpawnCoordinator.OnPlayersReady += TrySubscribePlayers;
+        if (PlayerSpawnCoordinator.IsReady) TrySubscribePlayers();
     }
 
     void TrySubscribePlayers()
@@ -103,6 +91,7 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void OnDestroy()
     {
+        PlayerSpawnCoordinator.OnPlayersReady -= TrySubscribePlayers;
         UnsubscribePlayers();
     }
 

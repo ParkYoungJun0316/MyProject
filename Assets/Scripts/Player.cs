@@ -105,6 +105,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public void OnMove(InputValue value)
     {
         if (IsDead || !isOwnerControlled) return;
+        if (InGameChatUI.IsChatOpen) { moveInput = Vector2.zero; return; }
         moveInput = value.Get<Vector2>();
     }
 
@@ -206,7 +207,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
-        if (!isOwnerControlled) { bwDown = altDown = false; return; }
+        if (!isOwnerControlled || InGameChatUI.IsChatOpen) { bwDown = altDown = false; return; }
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
     }

@@ -101,7 +101,7 @@ public class PlayerBuffSystem : MonoBehaviour
                 activeBuffs.RemoveAt(i);
     }
 
-    BuffSetting GetSetting(BuffType type)
+    public BuffSetting GetSetting(BuffType type)
     {
         for (int i = 0; i < buffSettings.Length; i++)
             if (buffSettings[i].type == type) return buffSettings[i];

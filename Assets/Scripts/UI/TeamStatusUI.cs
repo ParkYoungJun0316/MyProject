@@ -75,35 +75,13 @@ public class TeamStatusUI : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(FindPlayersAndBuildRoutine());
+        PlayerSpawnCoordinator.OnPlayersReady += BuildSlots;
+        if (PlayerSpawnCoordinator.IsReady) BuildSlots();
     }
 
-    IEnumerator FindPlayersAndBuildRoutine()
+    void OnDestroy()
     {
-        // 네트워크 스폰 플레이어 대기 (최대 10초)
-        for (int i = 0; i < 50; i++)
-        {
-            // 로컬 오너 자동 탐색 (Inspector 미연결 시)
-            if (excludePlayer == null)
-                excludePlayer = FindLocalOwnerPlayer();
-
-            var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
-            // 내 플레이어 제외 팀원이 1명 이상 있으면 빌드
-            bool hasPeers = false;
-            foreach (var p in all)
-                if (p != null && p != excludePlayer) { hasPeers = true; break; }
-
-            if (hasPeers || (excludePlayer != null && all.Length > 0))
-            {
-                BuildSlots();
-                yield break;
-            }
-
-            yield return new WaitForSeconds(0.2f);
-        }
-
-        // 타임아웃: 팀원이 없어도(솔로) 일단 빌드
-        BuildSlots();
+        PlayerSpawnCoordinator.OnPlayersReady -= BuildSlots;
     }
 
     /// <summary>로컬 오너 플레이어 탐색. 네트워크: IsOwner, 오프라인: isOwnerControlled.</summary>
@@ -121,6 +99,10 @@ public class TeamStatusUI : MonoBehaviour
 
     void BuildSlots()
     {
+        // 로컬 오너 자동 탐색 (Inspector 미연결 시)
+        if (excludePlayer == null)
+            excludePlayer = FindLocalOwnerPlayer();
+
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
         slots.Clear();
