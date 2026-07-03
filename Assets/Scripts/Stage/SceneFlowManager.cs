@@ -140,6 +140,17 @@ public class SceneFlowManager : MonoBehaviour
         StartCoroutine(TransitionTo(sceneSequence[index]));
     }
 
+    /// <summary>
+    /// 스테이지 진행도를 초기 상태(전부 Unlocked)로 리셋한다.
+    /// TitleReturnFlow.FullRunReset 시 호출됨.
+    /// </summary>
+    public void ResetRunProgress()
+    {
+        InitStageStates();
+        _currentSceneIndex = -1;
+        Debug.Log("[SceneFlowManager] 스테이지 진행도 초기화 완료");
+    }
+
     // ── 내부 ──────────────────────────────────────────────────────
 
     void InitStageStates()
@@ -184,10 +195,12 @@ public class SceneFlowManager : MonoBehaviour
             yield return new WaitForSeconds(fadeOutDuration);
         }
 
-        // 온라인 Host: NetworkSceneManager 사용 (in-scene NetworkObject 스폰 필수)
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening)
         {
-            NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            // 온라인 Host만 씬 전환 요청 — Client는 NGO가 자동으로 처리하므로 아무것도 하지 않음
+            if (nm.IsHost)
+                nm.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
             _isTransitioning = false;
             yield break;
         }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -29,8 +30,8 @@ public class CheerService : NetworkBehaviour
 
     // ── Inspector ─────────────────────────────────────────────────
 
-    [Header("스테이지 버프 (M.Stage1 = Invincibility, T.Stage1 = SpeedUp)")]
-    [SerializeField] PlayerBuffSystem.BuffType stageBuffType = PlayerBuffSystem.BuffType.Invincibility;
+    [Header("스테이지 버프 (M.Stage1 = Shield, T.Stage1 = SpeedUp)")]
+    [SerializeField] PlayerBuffSystem.BuffType stageBuffType = PlayerBuffSystem.BuffType.Shield;
 
     [Header("버프 파라미터")]
     [Tooltip("버프 지속 시간(초). PlayerBuffSystem.buffSettings 값과 일치시킬 것.")]
@@ -108,7 +109,10 @@ public class CheerService : NetworkBehaviour
     void Update()
     {
         if (!IsServer) return;
-        double now = NetworkManager.Singleton.ServerTime.Time;
+        // NetworkManager 로컬 참조 사용: Singleton은 씬 전환 중 null이 될 수 있음
+        var nm = NetworkManager;
+        if (nm == null || !nm.IsListening) return;
+        double now = nm.ServerTime.Time;
         CheckTimeouts(now);
         CheckBuffEnd(now);
     }
@@ -153,21 +157,84 @@ public class CheerService : NetworkBehaviour
 
     // ── 솔로 모드 (NGO 없을 때) ───────────────────────────────────
 
+    // 솔로 전용 로컬 타이머 (Time.time 기준)
+    float _localBuffEnd      = -1f;
+    float _localCooldownEnd  = -1f;
+    float _localRateLimitEnd = -1f;
+
     /// <summary>
     /// 솔로 플레이 시 직접 호출. NGO가 활성이면 무시됨.
+    /// 온라인 경로와 동일한 UI 이벤트 흐름을 로컬에서 재현:
+    ///   VoteChanged → CheerersChanged → (즉시) VoteReset → BuffActivated → CooldownStart
+    /// 솔로에서는 자기 자신 응원 포함, 1표로 즉시 발동.
     /// </summary>
     public void SubmitCheerLocal(int targetColorIndex)
     {
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening) return;
         if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return;
 
-        var buff = FindFirstObjectByType<PlayerBuffSystem>();
-        if (buff != null)
+        // 버프 활성 중 → 차단
+        if (_localBuffEnd > Time.time) return;
+
+        // 쿨타임 중 → 차단
+        if (_localCooldownEnd > Time.time) return;
+
+        // 채팅 rate limit
+        if (_localRateLimitEnd > Time.time) return;
+        _localRateLimitEnd = Time.time + chatRateLimitSeconds;
+
+        int myColorIndex = GetLocalPlayerColorIndex();
+
+        // UI: 슬롯 1/1 채우기 → 응원자 표시
+        OnVoteChanged?.Invoke(targetColorIndex, 1, 1);
+        OnCheerersChanged?.Invoke(targetColorIndex, new[] { myColorIndex });
+
+        ApplyLocalBuff(targetColorIndex);
+    }
+
+    void ApplyLocalBuff(int targetColorIndex)
+    {
+        // 해당 colorIndex 플레이어에게 버프 적용
+        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in players)
         {
-            var setting = buff.GetSetting(stageBuffType);
-            float dur = setting != null ? setting.duration : buffDuration;
-            buff.ApplyBuff(stageBuffType, dur, setting?.value ?? 0f);
+            int idx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
+            if (idx != targetColorIndex) continue;
+
+            var buff = p.GetComponent<PlayerBuffSystem>();
+            if (buff != null)
+            {
+                var setting = buff.GetSetting(stageBuffType);
+                float dur = setting != null ? setting.duration : buffDuration;
+                buff.ApplyBuff(stageBuffType, dur, setting?.value ?? 0f);
+            }
+            break;
         }
+
+        _localBuffEnd = Time.time + buffDuration;
+
+        // UI: 표 초기화 + 버프 활성 발행
+        OnVoteReset?.Invoke(targetColorIndex);
+        OnBuffActivated?.Invoke(targetColorIndex);
+
+        // 버프 종료 후 쿨타임 시작
+        StartCoroutine(LocalCooldownRoutine(targetColorIndex));
+    }
+
+    IEnumerator LocalCooldownRoutine(int targetColorIndex)
+    {
+        yield return new WaitForSeconds(buffDuration);
+        _localCooldownEnd = Time.time + cheerCooldownSeconds;
+        OnCooldownStart?.Invoke(targetColorIndex, cheerCooldownSeconds);
+    }
+
+    static int GetLocalPlayerColorIndex()
+    {
+        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in players)
+            if (p.isOwnerControlled)
+                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
+        return 0;
     }
 
     // ── 버프 적용 (Host 전용) ──────────────────────────────────────

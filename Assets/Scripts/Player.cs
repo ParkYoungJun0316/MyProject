@@ -311,10 +311,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsDead) return false;
         if (isDamage) return false;
-
-        if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
-            return false;
-
         TakeDamage(amount, knockback);
         return true;
     }
@@ -332,17 +328,29 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening) return;
 
-        if (playerBuffSystem != null && playerBuffSystem.IsActive(PlayerBuffSystem.BuffType.Invincibility))
-            return;
+        // 오프라인 Shield 선차감 — 남은 데미지만 HP에 적용
+        if (playerBuffSystem != null)
+        {
+            int shieldCharges = (int)playerBuffSystem.GetValue(PlayerBuffSystem.BuffType.Shield);
+            if (shieldCharges > 0)
+            {
+                int absorbed = Mathf.Min(shieldCharges, amount);
+                playerBuffSystem.SetShieldCharges(shieldCharges - absorbed);
+                amount -= absorbed;
+            }
+        }
 
-        isInstantKill = instantKillThreshold > 0 && amount >= instantKillThreshold;
+        // Shield만 깎인 경우에도 피격 연출은 동일하게 재생
+        if (amount > 0)
+        {
+            isInstantKill = instantKillThreshold > 0 && amount >= instantKillThreshold;
+            heart -= amount;
+        }
 
-        heart -= amount;
         events?.RaiseDamaged(knockback);
-
         playerStealth?.RevealTemporarily();
 
-        if (heart <= 0) { Die(); return; }
+        if (amount > 0 && heart <= 0) { Die(); return; }
         anim?.SetTrigger("doHit");
         StartCoroutine(OnDamage(knockback));
     }
@@ -511,8 +519,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             anim.Update(0f);
         }
 
-        isUniqueColor = false;
-        events?.RaiseUniqueColorChanged(-1);
+        // 리스폰 시 고유색 상태 유지 (초기 스폰 상태 보존)
+        events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
         events?.RaiseRespawned();
         events?.RaiseBlackWhiteChanged(isBlack);
     }

@@ -53,6 +53,10 @@ public class InGameChatUI : NetworkBehaviour
     [Tooltip("마지막 메시지 이후 이 시간(초) 동안 새 메시지 없으면 히스토리 패널 자동 숨김.")]
     [SerializeField] float autoHideSeconds = 10f;
 
+    [Header("스크롤 휠 (채팅 열림 시)")]
+    [Tooltip("마우스 휠 1단위당 스크롤 속도 배율. 너무 빠르면 줄이고 느리면 늘림.")]
+    [SerializeField] float scrollWheelSensitivity = 100f;
+
     [Header("메시지 설정")]
     [SerializeField] int   maxMessages     = 50;
     [SerializeField] float messageFontSize = 14f;
@@ -69,6 +73,16 @@ public class InGameChatUI : NetworkBehaviour
 
     // (message, senderColorIndex)
     static readonly List<(string message, int colorIndex)> s_history = new();
+
+    /// <summary>
+    /// 타이틀 복귀 시 채팅 상태 전체 초기화. TitleReturnFlow에서 호출.
+    /// 히스토리 삭제 + 입력창 열림 플래그 리셋.
+    /// </summary>
+    public static void ResetForTitleReturn()
+    {
+        s_history.Clear();
+        IsChatOpen = false;
+    }
 
     /// <summary>타이틀 복귀 시 채팅 히스토리 초기화. GameSession.ResetSession()에서 호출.</summary>
     public static void ClearHistory() => s_history.Clear();
@@ -113,10 +127,13 @@ public class InGameChatUI : NetworkBehaviour
         if (chatHistoryPanel != null) chatHistoryPanel.SetActive(true);
         RestartAutoHide();
 
-        yield return new WaitForEndOfFrame();
-        Canvas.ForceUpdateCanvases();
+        yield return null;                    // TMP 메시 갱신 대기
+        yield return new WaitForEndOfFrame(); // Canvas 레이아웃 확정 대기
         if (chatScrollRect != null)
-            chatScrollRect.verticalNormalizedPosition = 0f;
+        {
+            chatScrollRect.StopMovement();
+            chatScrollRect.verticalNormalizedPosition = 0f; // 0 = 하단(최신)
+        }
     }
 
     // ── 입력 감지 (New Input System 직접 읽기) ────────────────────
@@ -158,6 +175,15 @@ public class InGameChatUI : NetworkBehaviour
 
             // skipNextSubmit 해제 (OpenInput 직후 한 프레임만 보호)
             if (_skipNextSubmit) _skipNextSubmit = false;
+
+            // 마우스 휠 → 히스토리 스크롤
+            // 커서가 Locked 상태일 때 EventSystem이 ScrollRect에 휠 이벤트를 전달하지 못하므로 직접 처리
+            if (Mouse.current != null && chatScrollRect != null)
+            {
+                float wheel = Mouse.current.scroll.ReadValue().y;
+                if (wheel != 0f)
+                    HandleScrollWheel(wheel);
+            }
         }
     }
 
@@ -312,11 +338,21 @@ public class InGameChatUI : NetworkBehaviour
 
     IEnumerator ScrollToBottomRoutine()
     {
-        // 레이아웃 재계산을 위해 EndOfFrame까지 대기
-        yield return new WaitForEndOfFrame();
-        Canvas.ForceUpdateCanvases();
-        if (chatScrollRect != null)
-            chatScrollRect.verticalNormalizedPosition = 0f;
+        yield return null;                    // TMP 메시 갱신 대기
+        yield return new WaitForEndOfFrame(); // Canvas 레이아웃 확정 대기
+        if (chatScrollRect == null) yield break;
+        chatScrollRect.StopMovement();
+        chatScrollRect.verticalNormalizedPosition = 0f; // 0 = 하단(최신)
+    }
+
+    /// <summary>커서 잠금 환경에서 마우스 휠을 직접 읽어 히스토리 스크롤.</summary>
+    void HandleScrollWheel(float delta)
+    {
+        if (chatScrollRect == null) return;
+        // ScrollRect velocity.y: 양수 = 콘텐츠 위로(→ 최신), 음수 = 콘텐츠 아래(→ 오래된)
+        // 휠 위(delta>0) → 오래된 메시지 → velocity 음수
+        // 휠 아래(delta<0) → 최신 메시지 → velocity 양수
+        chatScrollRect.velocity = new Vector2(0f, -delta * scrollWheelSensitivity);
     }
 
     // ── 자동 숨김 ─────────────────────────────────────────────────

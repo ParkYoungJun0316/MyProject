@@ -39,12 +39,14 @@ public class SurviveTimeObjective : StageObjective
         {
             _elapsed += Time.deltaTime;
 
-            // 1초마다 UI 갱신 + RPC로 Client에 전파
+            // 1초마다 UI 갱신 + (온라인 Host만) RPC로 Client에 전파
             if (Time.time >= _nextUITick)
             {
                 _nextUITick = Time.time + 1f;
                 OnTimeChanged?.Invoke(Remaining);
-                StageNetworkState.Instance?.SyncSurvivalRemainingClientRpc(Remaining);
+                // IsListening 확인: NGO가 씬에 있지만 Start 안 됐을 때 RPC 오류 방지
+                if (nm != null && nm.IsListening && nm.IsServer)
+                    StageNetworkState.Instance?.SyncSurvivalRemainingClientRpc(Remaining);
             }
 
             if (_elapsed >= targetTime)

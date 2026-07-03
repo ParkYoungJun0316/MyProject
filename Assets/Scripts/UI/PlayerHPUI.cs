@@ -96,8 +96,10 @@ public class PlayerHPUI : MonoBehaviour
         PlayerEvents events = player.GetComponent<PlayerEvents>();
         if (events != null)
         {
-            events.OnDamaged   += _ => RefreshHearts();
-            events.OnRespawned +=     RefreshHearts;
+            events.OnDamaged          += _ => RefreshHearts();
+            events.OnRespawned        +=     RefreshHearts;
+            // _colorIndex NetworkVariable 동기화 지연 대비: 색 확정 후 하트 스프라이트 재적용
+            events.OnColorTypeChanged += _ => RefreshHearts();
         }
 
         RefreshHearts();

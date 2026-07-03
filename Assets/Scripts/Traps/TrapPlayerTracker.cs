@@ -90,6 +90,15 @@ public class TrapPlayerTracker : MonoBehaviour
     {
         _hasStarted = true;
         InitTracking();
+        // 네트워크·오프라인 모두 스폰 완료 시 캐시 갱신
+        // (Start 시점에 플레이어가 없을 경우를 대비)
+        PlayerSpawnCoordinator.OnPlayersReady += RefreshPlayerCache;
+        if (PlayerSpawnCoordinator.IsReady) RefreshPlayerCache();
+    }
+
+    void OnDestroy()
+    {
+        PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayerCache;
     }
 
     // Stage SetActive(false → true) 사이클 시 자동 재시작

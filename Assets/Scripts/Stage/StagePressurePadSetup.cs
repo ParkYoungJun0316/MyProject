@@ -44,8 +44,37 @@ public class StagePressurePadSetup : MonoBehaviour
 
     void Start()
     {
-        // 온라인: 시드로 Random 초기화 → Host/Client 동일 Random 시퀀스 보장
-        // Seed=0(로비 미경유 등)도 InitState 호출 → 양측 동일 결과
+        Collect();
+        BuildPadToDoorMap();
+
+        if (LobbyContext.IsOffline)
+        {
+            // 오프라인: 즉시 초기화 (시드 동기화 불필요)
+            ApplySeedAndColors();
+            return;
+        }
+
+        // 온라인: 사망 리로드 시 시드 RPC(BroadcastNewSeedClientRpc)가
+        // StagePressurePadSetup.Start()보다 먼저 도착한다는 보장이 없으므로,
+        // LoadEventCompleted → SpawnAllPlayers → OnPlayersReady 이후로 색 배정을 지연.
+        // 이 시점은 씬 로드 + 플레이어 스폰 완료 이후로, 시드 RPC가 반드시 선행 처리됨.
+        PlayerSpawnCoordinator.OnPlayersReady += OnPlayersReadyHandler;
+        if (PlayerSpawnCoordinator.IsReady) OnPlayersReadyHandler();
+    }
+
+    void OnPlayersReadyHandler()
+    {
+        PlayerSpawnCoordinator.OnPlayersReady -= OnPlayersReadyHandler;
+        ApplySeedAndColors();
+    }
+
+    void OnDestroy()
+    {
+        PlayerSpawnCoordinator.OnPlayersReady -= OnPlayersReadyHandler;
+    }
+
+    void ApplySeedAndColors()
+    {
         if (LobbyContext.IsOnline)
         {
             const int salt = 0x050AD5E7;
@@ -53,8 +82,6 @@ public class StagePressurePadSetup : MonoBehaviour
             Debug.Log($"[StagePressurePadSetup] 시드 적용 — seed={NetworkSessionData.Seed}");
         }
 
-        Collect();
-        BuildPadToDoorMap();
         DistributeColors();
         ApplyTopologyScaling();
         SyncDoorVisuals();

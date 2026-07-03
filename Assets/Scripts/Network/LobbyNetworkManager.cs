@@ -285,7 +285,13 @@ public class LobbyNetworkManager : NetworkBehaviour
             colorList[i] = (PlayerColorType)colorIndices[i];
 
         GameSession.Instance.SetActiveColors(colorList);
-        Debug.Log($"[LobbyNetworkManager] Client 활성 색 동기화: {string.Join(", ", colorList)}");
+
+        // ClientColors 동기화: _slots 순서 = colorIndices 순서 보장 (StartGameServerRpc에서 동일 순서로 빌드)
+        NetworkSessionData.ClientColors.Clear();
+        for (int i = 0; i < _slots.Count && i < colorIndices.Length; i++)
+            NetworkSessionData.ClientColors[_slots[i].ClientId] = (PlayerColorType)colorIndices[i];
+
+        Debug.Log($"[LobbyNetworkManager] Client 활성 색·ClientColors 동기화: {string.Join(", ", colorList)}");
     }
 
     void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>

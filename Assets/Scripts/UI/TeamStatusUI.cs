@@ -220,9 +220,11 @@ public class TeamStatusUI : MonoBehaviour
         PlayerEvents events = player.GetComponent<PlayerEvents>();
         if (events != null)
         {
-            events.OnDamaged   += _ => RefreshSlot(slot);
-            events.OnDied      +=  () => SetDead(slot, true);
-            events.OnRespawned +=  () => SetDead(slot, false);
+            events.OnDamaged        += _ => RefreshSlot(slot);
+            events.OnDied           +=  () => SetDead(slot, true);
+            events.OnRespawned      +=  () => SetDead(slot, false);
+            // 네트워크 색 동기화가 BuildSlots 이후 도착하는 경우 하트 색 재적용
+            events.OnColorTypeChanged += _ => RefreshSlot(slot);
         }
 
         RefreshSlot(slot);

@@ -32,6 +32,13 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // 쉴드 charge: 서버 쓰기 / 전원 읽기
+    private readonly NetworkVariable<int> _shield = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     // 색 표시 상태: 오너 쓰기 / 전원 읽기
     private readonly NetworkVariable<bool> _isBlack = new(
         false,
@@ -53,6 +60,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
 
+    // Shield duration 만료 코루틴 (서버 전용)
+    private Coroutine _shieldExpireCoroutine;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -67,6 +77,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         _colorIndex.OnValueChanged    += OnColorIndexChanged;
         _hp.OnValueChanged            += OnHpChanged;
+        _shield.OnValueChanged        += OnShieldChanged;
         _isBlack.OnValueChanged       += OnIsBlackChanged;
         _isUniqueColor.OnValueChanged += OnIsUniqueColorChanged;
 
@@ -102,6 +113,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         _colorIndex.OnValueChanged    -= OnColorIndexChanged;
         _hp.OnValueChanged            -= OnHpChanged;
+        _shield.OnValueChanged        -= OnShieldChanged;
         _isBlack.OnValueChanged       -= OnIsBlackChanged;
         _isUniqueColor.OnValueChanged -= OnIsUniqueColorChanged;
 
@@ -119,6 +131,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // 입력 활성
         if (_playerInput != null) _playerInput.enabled = true;
         if (_player != null)      _player.isOwnerControlled = true;
+
+        // 스폰 시 고유색 활성 — PressurePad 인식 조건(isUniqueColor) 충족
+        if (_player != null)      _player.isUniqueColor = true;
+        _isUniqueColor.Value = true;
+        if (_events == null) _events = GetComponent<PlayerEvents>();
+        _events?.RaiseUniqueColorChanged(0);
 
         // Rigidbody 물리 활성 (ClientNetworkTransform이 위치를 브로드캐스트)
         if (_rb != null) _rb.isKinematic = false;
@@ -169,6 +187,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (index < 0 || index >= LobbyNetworkManager.ColorOrder.Length) return;
 
         PlayerColorUtil.ApplyToPlayer(_player, LobbyNetworkManager.ColorOrder[index]);
+        // 색 동기화 완료 이벤트 발행 (TeamStatusUI 등 UI 갱신)
+        if (_events == null) _events = GetComponent<PlayerEvents>();
+        _events?.RaiseColorTypeChanged(LobbyNetworkManager.ColorOrder[index]);
     }
 
     // ── 색 상태 동기화 (isBlack / isUniqueColor) ──────────────────
@@ -230,11 +251,20 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // 서버 자체 무적 타이머로 연속 피격을 차단
         if (Time.time < _damageInvulnEndTime) return;
 
+        // Shield 선차감 — charge 소모 후 남은 데미지만 HP에 적용
+        if (_shield.Value > 0)
+        {
+            int absorbed = Mathf.Min(_shield.Value, amount);
+            _shield.Value -= absorbed;   // OnShieldChanged → 전 클라이언트 PlayerBuffSystem 동기화
+            amount -= absorbed;
+        }
+
         int newHp = Mathf.Max(0, _hp.Value - amount);
         _hp.Value = newHp;
 
         _damageInvulnEndTime = Time.time + (_player?.InvulnerabilityDuration ?? 0.5f);
 
+        // Shield만 깎인 경우에도 피격 연출은 동일하게 재생
         NotifyHitClientRpc(knockback);
 
         if (newHp <= 0)
@@ -313,7 +343,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     /// <summary>
     /// CheerService (Host)가 호출. 전 클라이언트에 버프 적용을 전달.
-    /// TeamStatusUI가 PlayerBuffSystem.OnBuffApplied를 구독하므로 자동으로 아이콘 갱신됨.
+    /// Shield: _shield NV 설정 + 서버 측 duration 만료 코루틴 시작.
+    /// SpeedUp: ClientRpc만으로 처리 (기존 방식).
     /// </summary>
     public void ApplyCheerBuff(PlayerBuffSystem.BuffType type, float duration)
     {
@@ -321,15 +352,38 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         var setting = _player?.GetComponent<PlayerBuffSystem>()?.GetSetting(type);
         float value = setting?.value ?? 0f;
+
+        if (type == PlayerBuffSystem.BuffType.Shield)
+        {
+            _shield.Value = Mathf.Max(1, Mathf.RoundToInt(value));
+            // 서버에서 duration 만료 시 _shield 리셋 → 클라이언트 동기화
+            if (_shieldExpireCoroutine != null) StopCoroutine(_shieldExpireCoroutine);
+            _shieldExpireCoroutine = StartCoroutine(ExpireShieldAfter(duration));
+        }
+
         ApplyCheerBuffClientRpc((int)type, duration, value);
     }
 
-    /// <summary>전 클라이언트에서 이 플레이어의 PlayerBuffSystem에 버프를 적용.</summary>
+    /// <summary>전 클라이언트에서 이 플레이어의 PlayerBuffSystem에 버프를 적용 (타이머·SFX·UI용).</summary>
     [ClientRpc]
     void ApplyCheerBuffClientRpc(int buffTypeIndex, float duration, float value)
     {
         GetComponent<PlayerBuffSystem>()?.ApplyBuff(
             (PlayerBuffSystem.BuffType)buffTypeIndex, duration, value);
+    }
+
+    /// <summary>Shield NV sync — 전 클라이언트의 PlayerBuffSystem charge 갱신.</summary>
+    void OnShieldChanged(int prev, int next)
+    {
+        GetComponent<PlayerBuffSystem>()?.SetShieldCharges(next);
+    }
+
+    /// <summary>서버: duration 만료 후 _shield 리셋. 클라이언트 OnShieldChanged → 아이콘 즉시 숨김.</summary>
+    System.Collections.IEnumerator ExpireShieldAfter(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        _shield.Value = 0;
+        _shieldExpireCoroutine = null;
     }
 
     // ── 추락 사망 ─────────────────────────────────────────────────

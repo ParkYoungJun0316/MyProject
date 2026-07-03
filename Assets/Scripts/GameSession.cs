@@ -133,17 +133,14 @@ public class GameSession : MonoBehaviour
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
 
     /// <summary>
-    /// 세션 런타임 상태 초기화. 타이틀 복귀 시 호출.
+    /// 활성 플레이어·색 목록 초기화. TitleReturnFlow에서 호출.
+    /// 타이머·채팅 초기화는 TitleReturnFlow가 직접 처리한다.
     /// activeColorSlots는 다음 판의 SetActiveColors()가 덮어씀.
     /// </summary>
     public void ResetSession()
     {
         _activePlayers.Clear();
         _activeColors.Clear();
-
-        // 타이틀 복귀 시 타이머·채팅 히스토리 초기화
-        TimerUI.ResetTimer();
-        InGameChatUI.ClearHistory();
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }

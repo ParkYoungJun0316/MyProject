@@ -98,6 +98,7 @@ public class PlayerSpawnManager : NetworkBehaviour
             {
                 PlayerColorUtil.ApplyToPlayer(player, color);
                 player.isOwnerControlled = true;
+                player.isUniqueColor = true;
                 player.ForceSetSpawnPoint(pos, rot);
 
                 // 솔로(1인)에서 첫 번째 플레이어를 카메라가 따라가도록 설정
@@ -155,13 +156,11 @@ public class PlayerSpawnManager : NetworkBehaviour
 
         foreach (var (clientId, colorType) in NetworkSessionData.ClientColors)
         {
-            // 해당 색의 ColoredStartZone 탐색
             ColoredStartZone zone = FindZone(zones, colorType);
 
             Vector3    pos = zone != null ? zone.SpawnPosition : Vector3.zero;
             Quaternion rot = zone != null ? zone.SpawnRotation : Quaternion.identity;
 
-            // 스폰
             var go     = Instantiate(playerPrefab, pos, rot);
             var netObj = go.GetComponent<NetworkObject>();
             if (netObj == null)
@@ -173,7 +172,6 @@ public class PlayerSpawnManager : NetworkBehaviour
 
             netObj.SpawnWithOwnership(clientId, destroyWithScene: true);
 
-            // 색 설정 (NetworkVariable → 전원 동기화)
             var setup = go.GetComponent<NetworkPlayerSetup>();
             if (setup != null)
                 setup.SetColorIndex(ColorTypeToIndex(colorType));

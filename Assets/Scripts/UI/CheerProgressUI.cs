@@ -86,6 +86,8 @@ public class CheerProgressUI : MonoBehaviour
     float _cooldownStartTime;
     float _cooldownDuration;
 
+    PlayerBuffSystem _localBuffSystem;
+
     // ── 생성된 UI 요소 ────────────────────────────────────────────
 
     GameObject          _iconRow;           // HorizontalLayoutGroup
@@ -129,6 +131,9 @@ public class CheerProgressUI : MonoBehaviour
         if (gameObject.activeInHierarchy)
             SubscribeEvents();
 
+        // 로컬 플레이어의 PlayerBuffSystem 구독 (Shield 소모 즉시 UI 종료용)
+        SubscribeBuffSystem();
+
         SetState(CheerState.Idle);
     }
 
@@ -136,6 +141,7 @@ public class CheerProgressUI : MonoBehaviour
     {
         PlayerSpawnCoordinator.OnPlayersReady -= Init;
         UnsubscribeEvents();
+        UnsubscribeBuffSystem();
     }
 
     void OnEnable()  => SubscribeEvents();
@@ -167,6 +173,42 @@ public class CheerProgressUI : MonoBehaviour
         svc.OnBuffActivated  -= HandleBuffActivated;
         svc.OnVoteReset      -= HandleVoteReset;
         svc.OnCooldownStart  -= HandleCooldownStart;
+    }
+
+    void SubscribeBuffSystem()
+    {
+        UnsubscribeBuffSystem();
+        _localBuffSystem = FindLocalBuffSystem();
+        if (_localBuffSystem != null)
+            _localBuffSystem.OnBuffRemoved += HandleBuffRemoved;
+    }
+
+    void UnsubscribeBuffSystem()
+    {
+        if (_localBuffSystem != null)
+            _localBuffSystem.OnBuffRemoved -= HandleBuffRemoved;
+        _localBuffSystem = null;
+    }
+
+    static PlayerBuffSystem FindLocalBuffSystem()
+    {
+        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (var p in all)
+        {
+            var netObj = p.GetComponent<NetworkObject>();
+            bool isOwner = (netObj != null && netObj.IsOwner) || p.isOwnerControlled;
+            if (isOwner) return p.GetComponent<PlayerBuffSystem>();
+        }
+        return null;
+    }
+
+    /// <summary>Shield charge 소모로 버프가 제거되면 즉시 Cooldown 전환.</summary>
+    void HandleBuffRemoved(PlayerBuffSystem.BuffType type)
+    {
+        if (type != PlayerBuffSystem.BuffType.Shield) return;
+        if (_state != CheerState.BuffActive) return;
+        _cooldownStartTime = Time.time;
+        SetState(CheerState.Cooldown);
     }
 
     // ── UI 생성 ───────────────────────────────────────────────────
@@ -312,7 +354,7 @@ public class CheerProgressUI : MonoBehaviour
 
             case CheerState.BuffActive:
                 _buffIconImage.sprite = GetBuffSprite(CheerService.Instance?.StageBuffType
-                    ?? PlayerBuffSystem.BuffType.Invincibility);
+                    ?? PlayerBuffSystem.BuffType.Shield);
                 _buffOverlayImage.fillAmount = 0f;
                 break;
 
@@ -420,6 +462,8 @@ public class CheerProgressUI : MonoBehaviour
     void HandleCooldownStart(int targetIdx, float seconds)
     {
         if (targetIdx != _myColorIndex) return;
+        // Shield 소모로 이미 Cooldown 진입한 경우 재진입 방지
+        if (_state == CheerState.Cooldown) return;
         _cooldownStartTime = Time.time;
         _cooldownDuration  = seconds;
         SetState(CheerState.Cooldown);

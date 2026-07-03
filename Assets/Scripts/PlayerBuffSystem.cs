@@ -6,8 +6,8 @@ public class PlayerBuffSystem : MonoBehaviour
 {
     public enum BuffType
     {
-        SpeedUp,            // 달리기 속도 + value 만큼 추가
-        Invincibility,      // 피격 무시
+        SpeedUp,    // 달리기 속도 + value 만큼 추가
+        Shield,     // charge(value)만큼 피격을 흡수. charge 0 또는 duration 만료 시 소멸
     }
 
     [System.Serializable]
@@ -16,7 +16,7 @@ public class PlayerBuffSystem : MonoBehaviour
         public BuffType type;
         [Tooltip("버프 지속 시간(초)")]
         public float duration = 0f;
-        [Tooltip("SpeedUp: 추가 속도 / Invincibility: 사용 안 함")]
+        [Tooltip("SpeedUp: 추가 속도 / Shield: 쉴드 charge 수")]
         public float value = 0f;
     }
 
@@ -34,6 +34,9 @@ public class PlayerBuffSystem : MonoBehaviour
     /// <summary>버프가 새로 적용되거나 갱신될 때 발생. (BuffType, 전체 지속시간)</summary>
     public event System.Action<BuffType, float> OnBuffApplied;
 
+    /// <summary>버프가 제거될 때 발생. (charge 소모 포함 모든 제거 경로)</summary>
+    public event System.Action<BuffType> OnBuffRemoved;
+
     List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
 
     void Update()
@@ -42,7 +45,11 @@ public class PlayerBuffSystem : MonoBehaviour
         {
             activeBuffs[i].remainingTime -= Time.deltaTime;
             if (activeBuffs[i].remainingTime <= 0f)
+            {
+                BuffType expiredType = activeBuffs[i].type;
                 activeBuffs.RemoveAt(i);
+                OnBuffRemoved?.Invoke(expiredType);
+            }
         }
     }
 
@@ -96,9 +103,16 @@ public class PlayerBuffSystem : MonoBehaviour
 
     public void RemoveBuff(BuffType type)
     {
+        bool removed = false;
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
+        {
             if (activeBuffs[i].type == type)
+            {
                 activeBuffs.RemoveAt(i);
+                removed = true;
+            }
+        }
+        if (removed) OnBuffRemoved?.Invoke(type);
     }
 
     public BuffSetting GetSetting(BuffType type)
@@ -106,5 +120,27 @@ public class PlayerBuffSystem : MonoBehaviour
         for (int i = 0; i < buffSettings.Length; i++)
             if (buffSettings[i].type == type) return buffSettings[i];
         return null;
+    }
+
+    /// <summary>
+    /// Shield charge 수를 직접 덮어씀.
+    /// NetworkVariable sync 및 오프라인 소모 시 호출.
+    /// charges <= 0 이면 Shield 버프 즉시 제거 (아이콘 숨김).
+    /// </summary>
+    public void SetShieldCharges(int charges)
+    {
+        if (charges <= 0)
+        {
+            RemoveBuff(BuffType.Shield);
+            return;
+        }
+        for (int i = 0; i < activeBuffs.Count; i++)
+        {
+            if (activeBuffs[i].type == BuffType.Shield)
+            {
+                activeBuffs[i].value = charges;
+                return;
+            }
+        }
     }
 }

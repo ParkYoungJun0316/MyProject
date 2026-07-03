@@ -44,6 +44,7 @@ public class LobbyMenuController : MonoBehaviour
 {
     [Header("씬 전환")]
     [SerializeField] private string stageSceneName = "M.Stage1";
+    [Tooltip("TitleReturnFlow 도입 후 미사용. Inspector 기존 값 보존용.")]
     [SerializeField] private string titleSceneName  = "0.Title";
 
     [Header("캐릭터 초상화")]
@@ -223,18 +224,14 @@ public class LobbyMenuController : MonoBehaviour
         LobbyNetworkManager.Instance?.SetReadyServerRpc(_isReady);
     }
 
-    /// <summary>Quit 버튼 — 세션 전체 정리 후 타이틀 복귀.</summary>
+    /// <summary>Quit 버튼 — TitleReturnFlow에 복귀 위임.</summary>
     public void OnClickQuit()
     {
-        // 온라인: NGO Shutdown + LanDiscovery 중단 + 세션 데이터 초기화
-        if (LobbyContext.IsOnline)
-            NetworkManagerSetup.Instance?.Shutdown();
-
-        // 공통: GameSession 런타임 리셋 + 모드 초기화
-        GameSession.Instance?.ResetSession();
-        LobbyContext.Mode = LobbyMode.Offline;
-
-        StartCoroutine(LoadSceneWithFade(titleSceneName));
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.LobbyQuit,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
     }
 
     /// <summary>
@@ -380,7 +377,6 @@ public class LobbyMenuController : MonoBehaviour
     /// </summary>
     void OnNetworkDisconnected(ulong clientId)
     {
-        // 내 연결이 끊긴 경우만 처리 (Host는 다른 클라이언트 이탈도 여기 들어옴)
         bool isSelf = NetworkManager.Singleton == null ||
                       !NetworkManager.Singleton.IsListening ||
                       clientId == NetworkManager.Singleton.LocalClientId;
@@ -389,7 +385,11 @@ public class LobbyMenuController : MonoBehaviour
 
         Debug.Log("[LobbyMenuController] 연결 종료 — 타이틀로 복귀");
         UnsubscribeNetworkEvents();
-        StartCoroutine(LoadSceneWithFade(titleSceneName));
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.ClientDisconnected,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
     }
 
     // ── 씬 전환 ───────────────────────────────────────────────────

@@ -2,7 +2,6 @@ using System.Collections;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -52,7 +51,7 @@ public class DisconnectManager : NetworkBehaviour
     [Tooltip("자동 계속 진행까지 대기(초). 이 시간 내 호스트 결정 없으면 자동 씬 리로드.")]
     [SerializeField] private float gracePeriodSec = 60f;
 
-    [Tooltip("복귀할 타이틀 씬 이름.")]
+    [Tooltip("복귀할 타이틀 씬 이름. TitleReturnFlow 도입 후 미사용 — Inspector 기존 값 보존용.")]
     [SerializeField] private string titleSceneName = "0.Title";
 
     private bool      _disconnectPending;
@@ -187,11 +186,11 @@ public class DisconnectManager : NetworkBehaviour
 
     void ReturnToTitle()
     {
-        Time.timeScale = 1f;
-        NetworkManagerSetup.Instance?.Shutdown();
-        GameSession.Instance?.ResetSession();
-        LobbyContext.Mode = LobbyMode.Offline;
-        SceneManager.LoadScene(titleSceneName);
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.ClientDisconnected,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
     }
 
     // ── ClientRpc ─────────────────────────────────────────────────
@@ -200,8 +199,12 @@ public class DisconnectManager : NetworkBehaviour
     [ClientRpc]
     void ShutdownAndReturnClientRpc()
     {
-        if (IsHost) return; // 호스트는 직접 처리
-        ReturnToTitle();
+        if (IsHost) return;
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.HostQuitRoom,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
     }
 
     /// <summary>계속 진행 시 클라이언트에 새 시드 배포.</summary>

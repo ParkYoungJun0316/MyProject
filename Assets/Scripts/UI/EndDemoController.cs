@@ -1,6 +1,4 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// End.Demo 씬 컨트롤러.
@@ -9,61 +7,31 @@ using UnityEngine.SceneManagement;
 /// [배치 방법]
 /// End.Demo 씬 Canvas 또는 빈 GameObject에 부착.
 ///
-/// [Inspector 연결]
-/// - titleSceneName   : "0.Title" (기본값)
-/// - screenFader      : 선택. 페이드아웃 연출
-/// - fadeOutDuration  : 페이드 시간(초)
-///
 /// [버튼 OnClick 연결]
 /// 타이틀 복귀 버튼 → OnClickReturnToTitle()
 ///
-/// [타이틀 복귀 시 처리 순서]
-/// 1. NGO Shutdown + LanDiscovery 중단 + NetworkSessionData 초기화
-/// 2. GameSession 런타임 리셋
-/// 3. LobbyContext 오프라인 초기화
-/// 4. SceneManager.LoadScene("0.Title") — NGO 종료 후 일반 로드
+/// [타이틀 복귀 처리]
+/// TitleReturnFlow.Request(FullRunReset)으로 위임.
+/// 페이드·Shutdown·ResetSession 등은 TitleReturnFlow가 통합 처리.
 /// </summary>
 public class EndDemoController : MonoBehaviour
 {
-    [Header("씬 전환")]
-    [Tooltip("복귀할 타이틀 씬 이름. Build Settings 이름과 정확히 일치해야 함.")]
-    [SerializeField] private string titleSceneName = "0.Title";
-
-    [Header("페이드 (선택)")]
+    // Inspector 직렬화 값 보존용 (TitleReturnFlow 도입 전 설정 유지)
+    [Header("미사용 (TitleReturnFlow로 이전됨)")]
+    [SerializeField] private string titleSceneName  = "0.Title";
     [SerializeField] private ScreenFader screenFader;
-
-    [Tooltip("페이드아웃 시간(초). 0이면 즉시 전환.")]
-    [SerializeField] private float fadeOutDuration = 0f;
+    [SerializeField] private float fadeOutDuration  = 0f;
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
     /// <summary>타이틀 복귀 버튼 OnClick에 연결.</summary>
     public void OnClickReturnToTitle()
     {
-        StartCoroutine(ReturnToTitle());
-    }
-
-    // ── 내부 ──────────────────────────────────────────────────────
-
-    IEnumerator ReturnToTitle()
-    {
-        if (screenFader != null && fadeOutDuration > 0f)
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
         {
-            screenFader.FadeOut(fadeOutDuration);
-            yield return new WaitForSeconds(fadeOutDuration);
-        }
-
-        // ① NGO Shutdown + LanDiscovery 중단 + 세션 데이터 초기화
-        NetworkManagerSetup.Instance?.Shutdown();
-
-        // ② GameSession 런타임 리셋
-        GameSession.Instance?.ResetSession();
-
-        // ③ LobbyContext 초기화
-        LobbyContext.Mode = LobbyMode.Offline;
-
-        // ④ 타이틀 복귀 — NGO 종료 후 일반 SceneManager 사용
-        SceneManager.LoadScene(titleSceneName);
+            Reason = TitleReturnReason.EndDemo,
+            Scope  = TitleReturnScope.FullRunReset,
+        });
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────
