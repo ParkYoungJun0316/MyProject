@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,8 +6,15 @@ using TMPro;
 
 /// <summary>
 /// TeamStatus_Panel에 붙이는 스크립트.
-/// 씬의 모든 Player를 자동 수집해 슬롯을 생성.
-/// 각 슬롯에 이름, 하트, 버프 아이콘, 사망 오버레이 표시.
+/// 씬의 모든 Player(자신 제외)를 자동 수집해 슬롯 생성.
+///
+/// [각 슬롯 레이아웃 — bottomRow]
+/// [버프 아이콘] [하트...] [Cheering 라벨]
+///  ← HP 왼쪽       HP      HP 오른쪽 →
+///
+/// - 버프 아이콘: 해당 팀원이 현재 버프 중일 때만 표시
+/// - Cheering  : 해당 팀원이 '나를' 응원 중일 때만 표시
+///               (다른 팀원을 응원 중이면 표시하지 않음)
 /// </summary>
 public class TeamStatusUI : MonoBehaviour
 {
@@ -29,18 +35,16 @@ public class TeamStatusUI : MonoBehaviour
     }
 
     [Header("연결")]
-    [Tooltip("팀원 목록에서 제외할 플레이어 (내 캐릭터). 비워두면 로컬 오너 플레이어를 자동 탐색.")]
+    [Tooltip("팀원 목록에서 제외할 플레이어 (내 캐릭터). 비워두면 자동 탐색.")]
     [SerializeField] Player excludePlayer;
 
     [Header("슬롯 크기")]
-    [SerializeField] float slotWidth        = 180f;
-    [SerializeField] float slotHeight       = 50f;
-    [SerializeField] float slotSpacing      = 6f;
-    [SerializeField] float heartSize        = 20f;
-    [SerializeField] float heartSpacing     = 2f;
-    [SerializeField] float buffIconSize     = 18f;
-    [Tooltip("하트 마지막 칸과 버프 아이콘 사이 간격 (px)")]
-    [SerializeField] float heartBuffSpacing = 6f;
+    [SerializeField] float slotWidth    = 220f;
+    [SerializeField] float slotHeight   = 50f;
+    [SerializeField] float slotSpacing  = 6f;
+    [SerializeField] float heartSize    = 20f;
+    [SerializeField] float heartSpacing = 2f;
+    [SerializeField] float buffIconSize = 20f;
 
     [Header("스프라이트")]
     [SerializeField] Sprite fullHeartSprite;
@@ -57,19 +61,31 @@ public class TeamStatusUI : MonoBehaviour
     [SerializeField] Color deadBgColor   = new Color(0.6f, 0f, 0f, 0.5f);
     [SerializeField] Color deadTextColor = new Color(1f, 0.3f, 0.3f, 1f);
 
+    [Header("Cheering 라벨")]
+    [SerializeField] Color  cheeringBgColor   = new Color(1f, 1f, 1f, 0.9f);
+    [SerializeField] Color  cheeringTextColor = Color.black;
+    [SerializeField] float  cheeringFontSize  = 11f;
+    [SerializeField] float  cheeringWidth     = 60f;
+
     // ── 런타임 슬롯 ──────────────────────────────────────────────
     class PlayerSlot
     {
-        public Player            player;
-        public PlayerBuffSystem  buffSystem;
-        public Image             slotBg;
-        public TextMeshProUGUI   nameText;
-        public Image[]           heartImages;
+        public Player           player;
+        public PlayerBuffSystem buffSystem;
+        public int              colorIndex;   // LobbyNetworkManager.ColorOrder 기준
+        public Image            slotBg;
+        public TextMeshProUGUI  nameText;
+        public Image[]          heartImages;
         public Dictionary<PlayerBuffSystem.BuffType, Image> buffIcons
             = new Dictionary<PlayerBuffSystem.BuffType, Image>();
+        public GameObject cheeringPanel;     // "Cheering" 배경 패널 (자식에 텍스트 포함)
     }
 
-    List<PlayerSlot> slots = new List<PlayerSlot>();
+    readonly List<PlayerSlot> slots = new();
+
+    // ── 응원 추적 ─────────────────────────────────────────────────
+    int              _myColorIndex           = -1;
+    readonly HashSet<int> _myCheerersColorIndices = new();
 
     // ── 초기화 ───────────────────────────────────────────────────
 
@@ -82,24 +98,40 @@ public class TeamStatusUI : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= BuildSlots;
+        UnsubscribeCheerService();
     }
 
-    /// <summary>로컬 오너 플레이어 탐색. 네트워크: IsOwner, 오프라인: isOwnerControlled.</summary>
     static Player FindLocalOwnerPlayer()
     {
-        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (var p in all)
+        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {
-            var netObj = p.GetComponent<NetworkObject>();
-            if (netObj != null && netObj.IsOwner) return p;
+            var net = p.GetComponent<NetworkObject>();
+            if (net != null && net.IsOwner) return p;
             if (p.isOwnerControlled) return p;
         }
         return null;
     }
 
+    static int GetMyColorIndex()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            ulong myId = NetworkManager.Singleton.LocalClientId;
+            if (NetworkSessionData.ClientColors.TryGetValue(myId, out var color))
+                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+        }
+        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        {
+            var net      = p.GetComponent<NetworkObject>();
+            bool isOwner = (net != null && net.IsOwner) || p.isOwnerControlled;
+            if (isOwner)
+                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
+        }
+        return -1;
+    }
+
     void BuildSlots()
     {
-        // 로컬 오너 자동 탐색 (Inspector 미연결 시)
         if (excludePlayer == null)
             excludePlayer = FindLocalOwnerPlayer();
 
@@ -107,8 +139,7 @@ public class TeamStatusUI : MonoBehaviour
             Destroy(transform.GetChild(i).gameObject);
         slots.Clear();
 
-        VerticalLayoutGroup vlg = GetComponent<VerticalLayoutGroup>();
-        if (vlg == null) vlg = gameObject.AddComponent<VerticalLayoutGroup>();
+        var vlg = GetComponent<VerticalLayoutGroup>() ?? gameObject.AddComponent<VerticalLayoutGroup>();
         vlg.spacing                = slotSpacing;
         vlg.childControlWidth      = false;
         vlg.childControlHeight     = false;
@@ -116,114 +147,186 @@ public class TeamStatusUI : MonoBehaviour
         vlg.childForceExpandHeight = false;
         vlg.childAlignment         = TextAnchor.UpperLeft;
 
-        // 씬의 모든 플레이어에서 내 캐릭터 제외
-        var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (var p in all)
+        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
             if (p != null && p != excludePlayer)
                 slots.Add(CreateSlot(p));
+
+        // 응원 추적 초기화 및 CheerService 구독
+        _myColorIndex = GetMyColorIndex();
+        _myCheerersColorIndices.Clear();
+        UnsubscribeCheerService();
+        SubscribeCheerService();
     }
+
+    // ── CheerService 구독 ─────────────────────────────────────────
+
+    void SubscribeCheerService()
+    {
+        var svc = CheerService.Instance;
+        if (svc == null) return;
+        svc.OnCheerersChanged -= HandleCheerersChanged;
+        svc.OnVoteReset       -= HandleVoteReset;
+        svc.OnCheerersChanged += HandleCheerersChanged;
+        svc.OnVoteReset       += HandleVoteReset;
+    }
+
+    void UnsubscribeCheerService()
+    {
+        var svc = CheerService.Instance;
+        if (svc == null) return;
+        svc.OnCheerersChanged -= HandleCheerersChanged;
+        svc.OnVoteReset       -= HandleVoteReset;
+    }
+
+    /// <summary>서버/솔로에서 응원자 목록이 바뀔 때 호출.</summary>
+    void HandleCheerersChanged(int targetIdx, int[] cheererColorIndices)
+    {
+        // 내가 응원 대상일 때만 처리
+        if (targetIdx != _myColorIndex) return;
+
+        _myCheerersColorIndices.Clear();
+        foreach (int c in cheererColorIndices)
+            _myCheerersColorIndices.Add(c);
+
+        RefreshCheeringLabels();
+    }
+
+    /// <summary>표가 초기화(타임아웃·버프 발동)되면 Cheering 라벨 모두 숨김.</summary>
+    void HandleVoteReset(int targetIdx)
+    {
+        if (targetIdx != _myColorIndex) return;
+        _myCheerersColorIndices.Clear();
+        RefreshCheeringLabels();
+    }
+
+    void RefreshCheeringLabels()
+    {
+        foreach (var slot in slots)
+        {
+            if (slot?.cheeringPanel == null) continue;
+            slot.cheeringPanel.SetActive(_myCheerersColorIndices.Contains(slot.colorIndex));
+        }
+    }
+
+    // ── 슬롯 생성 ─────────────────────────────────────────────────
 
     Sprite GetFullHeartSprite(PlayerColorType colorType)
     {
         if (colorHeartMap != null)
             foreach (var entry in colorHeartMap)
-                if (entry.colorType == colorType)
-                    return entry.fullHeartSprite;
+                if (entry.colorType == colorType) return entry.fullHeartSprite;
         return fullHeartSprite;
     }
 
     PlayerSlot CreateSlot(Player player)
     {
-        PlayerSlot slot = new PlayerSlot();
+        var slot        = new PlayerSlot();
         slot.player     = player;
         slot.buffSystem = player.GetComponent<PlayerBuffSystem>();
+        slot.colorIndex = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
 
-        // 슬롯 루트
-        GameObject root = new GameObject(player.name);
+        // ── 슬롯 루트 ─────────────────────────────────────────────
+        var root   = new GameObject(player.name);
         root.transform.SetParent(transform, false);
-        RectTransform rootRt = root.AddComponent<RectTransform>();
-        rootRt.sizeDelta = new Vector2(slotWidth, slotHeight);
+        var rootRt = root.AddComponent<RectTransform>();
+        rootRt.sizeDelta  = new Vector2(slotWidth, slotHeight);
         slot.slotBg       = root.AddComponent<Image>();
         slot.slotBg.color = slotBgColor;
 
-        // 이름
-        GameObject nameObj = new GameObject("Name");
+        // ── 이름 (위쪽 절반) ──────────────────────────────────────
+        var nameObj = new GameObject("Name");
         nameObj.transform.SetParent(root.transform, false);
         slot.nameText           = nameObj.AddComponent<TextMeshProUGUI>();
         slot.nameText.text      = player.name;
         slot.nameText.fontSize  = 13f;
         slot.nameText.fontStyle = FontStyles.Bold;
         slot.nameText.color     = Color.white;
-        RectTransform nameRt = nameObj.GetComponent<RectTransform>();
+        var nameRt = nameObj.GetComponent<RectTransform>();
         nameRt.anchorMin = new Vector2(0f, 0.55f);
         nameRt.anchorMax = new Vector2(1f, 1f);
         nameRt.offsetMin = new Vector2(6f, 0f);
         nameRt.offsetMax = new Vector2(-4f, -2f);
 
-        // 하트 + 버프 인라인 행
-        GameObject bottomRow = new GameObject("BottomRow");
+        // ── 아래쪽 행 (HorizontalLayoutGroup) ────────────────────
+        // 순서: [버프 아이콘(들)] [하트(들)] [Cheering 라벨]
+        var bottomRow = new GameObject("BottomRow");
         bottomRow.transform.SetParent(root.transform, false);
-        HorizontalLayoutGroup rowHlg = bottomRow.AddComponent<HorizontalLayoutGroup>();
+        var rowHlg = bottomRow.AddComponent<HorizontalLayoutGroup>();
         rowHlg.spacing                = heartSpacing;
         rowHlg.childControlWidth      = false;
         rowHlg.childControlHeight     = false;
         rowHlg.childForceExpandWidth  = false;
         rowHlg.childForceExpandHeight = false;
         rowHlg.childAlignment         = TextAnchor.MiddleLeft;
-        RectTransform bottomRowRt = bottomRow.GetComponent<RectTransform>();
-        bottomRowRt.anchorMin = new Vector2(0f, 0f);
-        bottomRowRt.anchorMax = new Vector2(1f, 0.55f);
-        bottomRowRt.offsetMin = new Vector2(6f, 3f);
-        bottomRowRt.offsetMax = new Vector2(-4f, 0f);
+        var rowRt = bottomRow.GetComponent<RectTransform>();
+        rowRt.anchorMin = new Vector2(0f, 0f);
+        rowRt.anchorMax = new Vector2(1f, 0.55f);
+        rowRt.offsetMin = new Vector2(6f, 3f);
+        rowRt.offsetMax = new Vector2(-4f, 0f);
 
-        // 하트 생성 (플레이어 색에 맞는 스프라이트)
+        // ── 버프 아이콘 (하트 왼쪽) ───────────────────────────────
+        if (slot.buffSystem != null && buffIconMap != null && buffIconMap.Length > 0)
+        {
+            foreach (var entry in buffIconMap)
+            {
+                var bObj = new GameObject(entry.type.ToString());
+                bObj.transform.SetParent(bottomRow.transform, false);
+                var bImg = bObj.AddComponent<Image>();
+                bImg.sprite         = entry.icon;
+                bImg.preserveAspect = true;
+                bObj.GetComponent<RectTransform>().sizeDelta = new Vector2(buffIconSize, buffIconSize);
+                bObj.SetActive(false); // 기본 숨김, Update에서 IsActive() 기준으로 갱신
+                slot.buffIcons[entry.type] = bImg;
+            }
+        }
+
+        // ── 하트 ─────────────────────────────────────────────────
         slot.heartImages = new Image[player.maxHeart];
         Sprite resolvedFull = GetFullHeartSprite(player.playerColorType);
         for (int i = 0; i < player.maxHeart; i++)
         {
-            GameObject hObj = new GameObject($"H{i}");
+            var hObj = new GameObject($"H{i}");
             hObj.transform.SetParent(bottomRow.transform, false);
-            Image hImg = hObj.AddComponent<Image>();
+            var hImg = hObj.AddComponent<Image>();
             hImg.sprite         = resolvedFull;
             hImg.preserveAspect = true;
             hObj.GetComponent<RectTransform>().sizeDelta = new Vector2(heartSize, heartSize);
             slot.heartImages[i] = hImg;
         }
 
-        // 하트-버프 스페이서
-        if (slot.buffSystem != null && buffIconMap != null && buffIconMap.Length > 0 && heartBuffSpacing > 0f)
-        {
-            GameObject spacerObj = new GameObject("HeartBuffSpacer");
-            spacerObj.transform.SetParent(bottomRow.transform, false);
-            LayoutElement le = spacerObj.AddComponent<LayoutElement>();
-            le.minWidth       = heartBuffSpacing;
-            le.preferredWidth = heartBuffSpacing;
-        }
+        // ── Cheering 라벨 (하트 오른쪽) ──────────────────────────
+        // 배경 패널
+        var cheerBg = new GameObject("CheeringPanel");
+        cheerBg.transform.SetParent(bottomRow.transform, false);
+        var cheerBgImg = cheerBg.AddComponent<Image>();
+        cheerBgImg.color = cheeringBgColor;
+        var cheerBgRt    = cheerBg.GetComponent<RectTransform>();
+        cheerBgRt.sizeDelta = new Vector2(cheeringWidth, heartSize);
 
-        // 버프 아이콘 (하트 끝에 인라인)
-        if (slot.buffSystem != null && buffIconMap != null && buffIconMap.Length > 0)
-        {
-            foreach (var entry in buffIconMap)
-            {
-                GameObject bObj = new GameObject(entry.type.ToString());
-                bObj.transform.SetParent(bottomRow.transform, false);
-                Image bImg = bObj.AddComponent<Image>();
-                bImg.sprite         = entry.icon;
-                bImg.preserveAspect = true;
-                bObj.GetComponent<RectTransform>().sizeDelta = new Vector2(buffIconSize, buffIconSize);
-                bObj.SetActive(false);
-                slot.buffIcons[entry.type] = bImg;
-            }
-        }
+        // 텍스트
+        var cheerTxt = new GameObject("CheeringText");
+        cheerTxt.transform.SetParent(cheerBg.transform, false);
+        var cheerTmp           = cheerTxt.AddComponent<TextMeshProUGUI>();
+        cheerTmp.text          = "Cheering";
+        cheerTmp.fontSize      = cheeringFontSize;
+        cheerTmp.color         = cheeringTextColor;
+        cheerTmp.fontStyle     = FontStyles.Bold;
+        cheerTmp.alignment     = TextAlignmentOptions.Center;
+        var cheerTxtRt = cheerTxt.GetComponent<RectTransform>();
+        cheerTxtRt.anchorMin = Vector2.zero;
+        cheerTxtRt.anchorMax = Vector2.one;
+        cheerTxtRt.offsetMin = cheerTxtRt.offsetMax = Vector2.zero;
 
-        // 이벤트 구독
-        PlayerEvents events = player.GetComponent<PlayerEvents>();
+        cheerBg.SetActive(false); // 기본 숨김, HandleCheerersChanged에서 갱신
+        slot.cheeringPanel = cheerBg;
+
+        // ── PlayerEvents 구독 ─────────────────────────────────────
+        var events = player.GetComponent<PlayerEvents>();
         if (events != null)
         {
-            events.OnDamaged        += _ => RefreshSlot(slot);
-            events.OnDied           +=  () => SetDead(slot, true);
-            events.OnRespawned      +=  () => SetDead(slot, false);
-            // 네트워크 색 동기화가 BuildSlots 이후 도착하는 경우 하트 색 재적용
+            events.OnDamaged          += _ => RefreshSlot(slot);
+            events.OnDied             +=  () => SetDead(slot, true);
+            events.OnRespawned        +=  () => SetDead(slot, false);
             events.OnColorTypeChanged += _ => RefreshSlot(slot);
         }
 
@@ -238,22 +341,19 @@ public class TeamStatusUI : MonoBehaviour
         if (slot == null || slot.player == null) return;
 
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
-        if (slot.heartImages != null)
+        if (slot.heartImages == null) return;
+        for (int i = 0; i < slot.heartImages.Length; i++)
         {
-            for (int i = 0; i < slot.heartImages.Length; i++)
-            {
-                if (slot.heartImages[i] == null) continue;
-                slot.heartImages[i].sprite = i < slot.player.heart
-                    ? resolvedFull : emptyHeartSprite;
-            }
+            if (slot.heartImages[i] == null) continue;
+            slot.heartImages[i].sprite = i < slot.player.heart ? resolvedFull : emptyHeartSprite;
         }
     }
 
     void SetDead(PlayerSlot slot, bool isDead)
     {
         if (slot == null) return;
-        slot.slotBg.color      = isDead ? deadBgColor  : slotBgColor;
-        slot.nameText.color    = isDead ? deadTextColor : Color.white;
+        slot.slotBg.color   = isDead ? deadBgColor  : slotBgColor;
+        slot.nameText.color = isDead ? deadTextColor : Color.white;
 
         if (isDead && slot.heartImages != null)
             foreach (var h in slot.heartImages)
@@ -262,7 +362,8 @@ public class TeamStatusUI : MonoBehaviour
         if (!isDead) RefreshSlot(slot);
     }
 
-    // 버프 아이콘은 Update에서 매 프레임 갱신 (버프 수가 적어 부담 없음)
+    // ── Update ───────────────────────────────────────────────────
+
     void Update()
     {
         foreach (var slot in slots)
