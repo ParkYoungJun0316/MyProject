@@ -135,13 +135,19 @@ public class CheerProgressUI : MonoBehaviour
         UnsubscribeBuffSystem();
         _localBuffSystem = FindLocalBuffSystem();
         if (_localBuffSystem != null)
+        {
+            _localBuffSystem.OnBuffApplied += HandleBuffApplied;
             _localBuffSystem.OnBuffRemoved += HandleBuffRemoved;
+        }
     }
 
     void UnsubscribeBuffSystem()
     {
         if (_localBuffSystem != null)
+        {
+            _localBuffSystem.OnBuffApplied -= HandleBuffApplied;
             _localBuffSystem.OnBuffRemoved -= HandleBuffRemoved;
+        }
         _localBuffSystem = null;
     }
 
@@ -156,10 +162,24 @@ public class CheerProgressUI : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// 로컬 PlayerBuffSystem에 버프가 적용될 때 직접 감지.
+    /// CheerService 이벤트 경로(colorIndex 필터·구독 타이밍)에 무관하게 동작.
+    /// </summary>
+    void HandleBuffApplied(PlayerBuffSystem.BuffType type, float duration)
+    {
+        var stageType = CheerService.Instance?.StageBuffType ?? PlayerBuffSystem.BuffType.Shield;
+        if (type != stageType) return;
+        _buffStartTime = Time.time;
+        _buffDuration  = duration;
+        SetState(CheerState.BuffActive);
+    }
+
     /// <summary>Shield charge 소모로 버프가 제거되면 즉시 Cooldown 전환.</summary>
     void HandleBuffRemoved(PlayerBuffSystem.BuffType type)
     {
-        if (type != PlayerBuffSystem.BuffType.Shield) return;
+        var stageType = CheerService.Instance?.StageBuffType ?? PlayerBuffSystem.BuffType.Shield;
+        if (type != stageType) return;
         if (_state != CheerState.BuffActive) return;
         _cooldownStartTime = Time.time;
         SetState(CheerState.Cooldown);
@@ -182,7 +202,8 @@ public class CheerProgressUI : MonoBehaviour
         // 버프 컨테이너 (BG + 아이콘 + Fill 덮개)
         _buffContainer = new GameObject("BuffContainer");
         _buffContainer.transform.SetParent(transform, false);
-        var cRt = _buffContainer.GetComponent<RectTransform>() ?? _buffContainer.AddComponent<RectTransform>();
+        RectTransform cRt = _buffContainer.GetComponent<RectTransform>();
+        if (cRt == null) cRt = _buffContainer.AddComponent<RectTransform>();
         cRt.anchorMin        = new Vector2(0.5f, 0.5f);
         cRt.anchorMax        = new Vector2(0.5f, 0.5f);
         cRt.sizeDelta        = new Vector2(iconSize, iconSize);
@@ -282,9 +303,11 @@ public class CheerProgressUI : MonoBehaviour
 
     // ── 이벤트 핸들러 ─────────────────────────────────────────────
 
+    // PlayerBuffSystem.OnBuffApplied가 primary. 이 핸들러는 colorIndex가 확실할 때만 보조.
     void HandleBuffActivated(int targetIdx)
     {
-        if (targetIdx != _myColorIndex) return;
+        if (_myColorIndex < 0 || targetIdx != _myColorIndex) return;
+        if (_state == CheerState.BuffActive) return; // OnBuffApplied에서 이미 처리됨
         _buffStartTime = Time.time;
         if (CheerService.Instance != null)
             _buffDuration = CheerService.Instance.BuffDuration;

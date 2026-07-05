@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -12,13 +11,12 @@ using UnityEngine.SceneManagement;
 ///
 /// [실행 순서]
 /// ① UI·입력 복원  (Cursor, timeScale, 채팅 플래그)
-/// ② 페이드아웃    (선택 — screenFader가 있을 때만)
-/// ③ 네트워크 종료 (NetworkManagerSetup.Shutdown)
-/// ④ 세션 초기화   (GameSession.ResetSession, TimerUI.ResetTimer)
-/// ⑤ LobbyContext = Offline
-/// ⑥ 진행도 리셋   (FullRunReset 시만 — SceneFlowManager.ResetRunProgress)
-/// ⑦ ISessionResettable 구독자 알림
-/// ⑧ LoadScene("0.Title")
+/// ② 네트워크 종료 (NetworkManagerSetup.Shutdown)
+/// ③ 세션 초기화   (GameSession.ResetSession, TimerUI.ResetTimer)
+/// ④ LobbyContext = Offline
+/// ⑤ 진행도 리셋   (FullRunReset 시만 — SceneFlowManager.ResetRunProgress)
+/// ⑥ ISessionResettable 구독자 알림
+/// ⑦ LoadScene("0.Title")
 ///
 /// [배치 방법]
 /// 0.Title 씬의 빈 GameObject에 추가 (GameSession 오브젝트와 같은 계층 권장).
@@ -38,15 +36,6 @@ public class TitleReturnFlow : MonoBehaviour
     [Header("타이틀 씬")]
     [Tooltip("복귀할 씬 이름. Build Settings 등록 이름과 정확히 일치해야 함.")]
     [SerializeField] private string titleSceneName = "0.Title";
-
-    [Header("페이드 (선택)")]
-    [Tooltip("타이틀 복귀 전 페이드아웃 시간(초). 0이면 즉시 전환.\n" +
-             "주의: screenFader가 연결돼 있어야 시각적 효과가 동작함.")]
-    [SerializeField] private float fadeOutDuration = 0f;
-
-    [Tooltip("페이드 오버레이 CanvasGroup. DDOL Canvas에 붙인 ScreenFader를 연결.\n" +
-             "없으면 fadeOutDuration만큼 대기 후 씬 전환.")]
-    [SerializeField] private ScreenFader screenFader;
 
     bool _isReturning;
 
@@ -77,7 +66,7 @@ public class TitleReturnFlow : MonoBehaviour
             return;
         }
         _isReturning = true;
-        StartCoroutine(ExecuteReturn(options));
+        ExecuteReturn(options);
     }
 
     // ── ISessionResettable 등록 ───────────────────────────────────
@@ -101,7 +90,7 @@ public class TitleReturnFlow : MonoBehaviour
 
     // ── 내부 ──────────────────────────────────────────────────────
 
-    IEnumerator ExecuteReturn(TitleReturnOptions options)
+    void ExecuteReturn(TitleReturnOptions options)
     {
         Debug.Log($"[TitleReturnFlow] 복귀 시작 — reason={options.Reason}, scope={options.Scope}");
 
@@ -111,32 +100,25 @@ public class TitleReturnFlow : MonoBehaviour
         Cursor.lockState  = CursorLockMode.None;
         InGameChatUI.ResetForTitleReturn();
 
-        // ② 페이드아웃 (screenFader 없으면 시간만 대기)
-        if (fadeOutDuration > 0f)
-        {
-            screenFader?.FadeOut(fadeOutDuration);
-            yield return new WaitForSecondsRealtime(fadeOutDuration);
-        }
-
-        // ③ 네트워크 종료 (LanDiscovery 중단, NetworkSessionData 초기화, NGO Shutdown)
+        // ② 네트워크 종료 (LanDiscovery 중단, NetworkSessionData 초기화, NGO Shutdown)
         NetworkManagerSetup.Instance?.Shutdown();
 
-        // ④ 세션 데이터 초기화
+        // ③ 세션 데이터 초기화
         GameSession.Instance?.ResetSession();
         TimerUI.ResetTimer();
 
-        // ⑤ 로비 모드 초기화
+        // ④ 로비 모드 초기화
         LobbyContext.Mode = LobbyMode.Offline;
 
-        // ⑥ FullRunReset 시 스테이지 진행도 초기화
+        // ⑤ FullRunReset 시 스테이지 진행도 초기화
         if (options.Scope == TitleReturnScope.FullRunReset)
             SceneFlowManager.Instance?.ResetRunProgress();
 
-        // ⑦ ISessionResettable 구독자 알림 (나중에 추가될 시스템용)
+        // ⑥ ISessionResettable 구독자 알림 (나중에 추가될 시스템용)
         foreach (ISessionResettable r in _resettables)
             r.OnSessionReset(options.Scope);
 
-        // ⑧ 씬 전환 (이전 씬 오브젝트 전부 파괴)
+        // ⑦ 씬 전환 (이전 씬 오브젝트 전부 파괴)
         SceneManager.LoadScene(titleSceneName);
 
         _isReturning = false;

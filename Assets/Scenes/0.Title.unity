@@ -1177,8 +1177,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleReturnFlow
   titleSceneName: 0.Title
-  fadeOutDuration: 1
-  screenFader: {fileID: 508085740}
 --- !u!4 &783154052
 Transform:
   m_ObjectHideFlags: 0
@@ -1207,6 +1205,9 @@ GameObject:
   - component: {fileID: 794936806}
   - component: {fileID: 794936805}
   - component: {fileID: 794936809}
+  - component: {fileID: 794936811}
+  - component: {fileID: 794936810}
+  - component: {fileID: 794936812}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1330,6 +1331,59 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LanDiscovery
   discoveryPort: 47777
   broadcastInterval: 1
+--- !u!114 &794936810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794936804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a05b4a5c23af3f46bba3aabc3dbf6a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Dissonance.Integrations.Unity_NFGO.NfgoCommsNetwork
+--- !u!114 &794936811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794936804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cb4dc319de88dc4cb76c47aafb46b1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DissonanceVoip::Dissonance.DissonanceComms
+  _lastPrefabError: 
+  _isMuted: 0
+  _isDeafened: 0
+  _oneMinusBaseRemoteVoiceVolume: 0
+  _playbackPrefab: {fileID: 0}
+  _playbackPrefab2: {fileID: 0}
+  _micName: 
+  _playerPriority: 0
+  _tokens:
+    _tokens: []
+--- !u!114 &794936812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794936804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3737438748cf23f448d18cd2c6192e95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DissonanceVoip::Dissonance.VoiceReceiptTrigger
+  _tokens:
+    _tokens: []
+  _roomExpanded: 1
+  _tokensExpanded: 0
+  _colliderExpanded: 1
+  _roomName: Global
+  _useTrigger: 0
 --- !u!1 &817844834
 GameObject:
   m_ObjectHideFlags: 0

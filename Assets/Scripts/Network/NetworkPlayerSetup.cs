@@ -1,3 +1,4 @@
+using Dissonance;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,8 +8,8 @@ using UnityEngine.InputSystem;
 ///
 /// [역할]
 /// - OnNetworkSpawn: Owner / 비오너 분기 설정
-///   Owner   : PlayerInput 활성, Rigidbody 물리 사용, TopDownCamera 타겟 설정
-///   비오너  : PlayerInput 비활성, Rigidbody kinematic (NetworkTransform이 위치 제어)
+///   Owner   : PlayerInput 활성, Rigidbody 물리 사용, TopDownCamera 타겟 설정, VoiceBroadcastTrigger 활성
+///   비오너  : PlayerInput 비활성, Rigidbody kinematic (NetworkTransform이 위치 제어), VoiceBroadcastTrigger 비활성
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
 ///
 /// [배치]
@@ -52,10 +53,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableWritePermission.Owner
     );
 
-    private Player       _player;
-    private Rigidbody    _rb;
-    private PlayerInput  _playerInput;
-    private PlayerEvents _events;
+    private Player                  _player;
+    private Rigidbody               _rb;
+    private PlayerInput             _playerInput;
+    private PlayerEvents            _events;
+    private VoiceBroadcastTrigger   _voiceBroadcast;
+    private CheerKeywordEngine      _cheerKeyword;
 
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
@@ -67,10 +70,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     void Awake()
     {
-        _player      = GetComponent<Player>();
-        _rb          = GetComponent<Rigidbody>();
-        _playerInput = GetComponent<PlayerInput>();
-        _events      = GetComponent<PlayerEvents>();
+        _player          = GetComponent<Player>();
+        _rb              = GetComponent<Rigidbody>();
+        _playerInput     = GetComponent<PlayerInput>();
+        _events          = GetComponent<PlayerEvents>();
+        _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
+        _cheerKeyword    = GetComponent<CheerKeywordEngine>();
     }
 
     public override void OnNetworkSpawn()
@@ -150,6 +155,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
                 _player.followCamera = cam.GetComponent<Camera>();
         }
 
+        // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
+        if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
+
+        // 키워드 인식도 Owner만 (자기 마이크만 분석)
+        if (_cheerKeyword != null) _cheerKeyword.enabled = true;
+
         Debug.Log($"[NetworkPlayerSetup] Owner 설정 완료 — clientId={OwnerClientId}");
     }
 
@@ -168,6 +179,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
             _rb.linearVelocity  = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
         }
+
+        if (_voiceBroadcast != null) _voiceBroadcast.enabled = false;
+        if (_cheerKeyword  != null) _cheerKeyword.enabled  = false;
     }
 
     // ── 색 동기화 ─────────────────────────────────────────────────

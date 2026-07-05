@@ -62,6 +62,7 @@ public class TeamStatusUI : MonoBehaviour
     [SerializeField] Color deadTextColor = new Color(1f, 0.3f, 0.3f, 1f);
 
     [Header("Cheering 라벨")]
+    [SerializeField] Sprite cheeringBgSprite;
     [SerializeField] Color  cheeringBgColor   = new Color(1f, 1f, 1f, 0.9f);
     [SerializeField] Color  cheeringTextColor = Color.black;
     [SerializeField] float  cheeringFontSize  = 11f;
@@ -181,8 +182,11 @@ public class TeamStatusUI : MonoBehaviour
     /// <summary>서버/솔로에서 응원자 목록이 바뀔 때 호출.</summary>
     void HandleCheerersChanged(int targetIdx, int[] cheererColorIndices)
     {
+        // 초기화 시점 타이밍 문제로 -1이면 재계산
+        if (_myColorIndex < 0) _myColorIndex = GetMyColorIndex();
+
         // 내가 응원 대상일 때만 처리
-        if (targetIdx != _myColorIndex) return;
+        if (_myColorIndex < 0 || targetIdx != _myColorIndex) return;
 
         _myCheerersColorIndices.Clear();
         foreach (int c in cheererColorIndices)
@@ -194,7 +198,7 @@ public class TeamStatusUI : MonoBehaviour
     /// <summary>표가 초기화(타임아웃·버프 발동)되면 Cheering 라벨 모두 숨김.</summary>
     void HandleVoteReset(int targetIdx)
     {
-        if (targetIdx != _myColorIndex) return;
+        if (_myColorIndex < 0 || targetIdx != _myColorIndex) return;
         _myCheerersColorIndices.Clear();
         RefreshCheeringLabels();
     }
@@ -299,8 +303,13 @@ public class TeamStatusUI : MonoBehaviour
         var cheerBg = new GameObject("CheeringPanel");
         cheerBg.transform.SetParent(bottomRow.transform, false);
         var cheerBgImg = cheerBg.AddComponent<Image>();
-        cheerBgImg.color = cheeringBgColor;
-        var cheerBgRt    = cheerBg.GetComponent<RectTransform>();
+        cheerBgImg.color  = cheeringBgColor;
+        if (cheeringBgSprite != null)
+        {
+            cheerBgImg.sprite = cheeringBgSprite;
+            cheerBgImg.type   = Image.Type.Sliced;
+        }
+        var cheerBgRt = cheerBg.GetComponent<RectTransform>();
         cheerBgRt.sizeDelta = new Vector2(cheeringWidth, heartSize);
 
         // 텍스트
