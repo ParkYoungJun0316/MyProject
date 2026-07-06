@@ -48,7 +48,9 @@ public class CheerService : NetworkBehaviour
 
     // ── CheerName 매핑 ────────────────────────────────────────────
 
-    static readonly string[] CheerNames = { "berry", "guma", "ssuk", "danho" };
+    // CheerLexiconBuilder.BuildDemoGrammarJson() 와 순서 동일하게 유지.
+    // 0=berry(Blue), 1=guma(Purple), 2=sook(Green/ssuk대체), 3=tango(Yellow/단호대체)
+    static readonly string[] CheerNames = { "berry", "guma", "sook", "tango" };
 
     // ── Host 내부 상태 ─────────────────────────────────────────────
 

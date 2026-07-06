@@ -4,29 +4,31 @@ using UnityEngine;
 /// <summary>
 /// Vosk grammar JSON 문자열 생성.
 ///
-/// [데모 Must]
-/// 고정 4종(berry/guma/ssuk/danho) + [unk] grammar을 반환.
-/// → VoskRecognizer(model, sampleRate, grammar) 에 직접 전달.
+/// [테스트 키워드 세트 — 인식률 비교용]
+/// Set1 (현재): worcestershire / colonel / anemone / mischievous
+///   발음 주의: woos-ter-sher / ker-nel / ah-nem-oh-nee / mis-chih-vus
+/// Set2: rural / sixth / squirrel  (3종)
+/// Set3: Antidisestablishmentarianism / Floccinaucinihilipilification / Pneumonoultramicroscopicsilicovolcanoconiosis  (3종)
 ///
-/// [발음 참고 테이블] — 데모는 모델 기본 발음 사용. 정식에서 G2P 추가 예정.
-///   berry  : B EH R IY        (영어 사전 포함)
-///   guma   : G UW M AH        (사전 미포함 → 모델이 근사 처리)
-///   ssuk   : S UH K           (사전 미포함 → 모델이 근사 처리)
-///   danho  : D AE N HH OW     (사전 미포함 → 모델이 근사 처리)
-///
-/// [정식 확장 포인트]
-/// BuildGrammarJson(names)에 자기 이름 제외 후 호출.
-/// lexicon API(set_grm_with_lexicon)는 VoskPINVOKE 확장 시 별도 적용.
+/// [확정 키워드 후 원상복구]
+/// BuildDemoGrammarJson() 의 배열을 berry/guma/ssuk대체어/danho대체어 로 교체.
+/// CheerService.CheerNames 도 동일하게 맞출 것.
 /// </summary>
 public static class CheerLexiconBuilder
 {
     /// <summary>
-    /// 데모 고정 4종 grammar JSON 반환.
-    /// 결과 예: ["berry","guma","ssuk","danho","[unk]"]
+    /// 데모 고정 4종 grammar JSON.
+    /// 결과 예: ["berry","guma","sook","tango","[unk]"]
+    ///
+    /// [발음 참고]
+    ///   berry : B EH R IY        (영어 사전 포함)
+    ///   guma  : G UW M AH        (사전 미포함 → 근사 처리)
+    ///   sook  : S UH K           (사전 미포함 → 근사 처리, ssuk 대체)
+    ///   tango : T AE NG G OW     (영어 사전 포함, 단호 /dan.ho/ 근사 대체)
     /// </summary>
     public static string BuildDemoGrammarJson()
     {
-        return BuildGrammarJson(new[] { "berry", "guma", "ssuk", "danho" });
+        return BuildGrammarJson(new[] { "berry", "guma", "sook", "tango" });
     }
 
     /// <summary>

@@ -5,7 +5,7 @@ using UnityEngine;
 /// Vosk 모델 zip을 StreamingAssets에서 persistentDataPath로 1회 압축 해제.
 ///
 /// [흐름]
-/// 1. persistentDataPath/vosk-model-small-en-us-0.15 폴더가 없으면 zip 해제
+/// 1. persistentDataPath/vosk-model-en-us-0.22-lgraph 폴더가 없으면 zip 해제
 /// 2. 이미 있으면 경로만 반환 (재설치 없음)
 /// 3. 실패 시 null 반환 → CheerKeywordEngine이 에러 처리
 ///
@@ -14,8 +14,8 @@ using UnityEngine;
 /// </summary>
 public static class VoskModelLoader
 {
-    const string ZipName         = "vosk-model-small-en-us-0.15.zip";
-    const string ModelFolderName = "vosk-model-small-en-us-0.15";
+    const string ZipName         = "vosk-model-en-us-0.22-lgraph.zip";
+    const string ModelFolderName = "vosk-model-en-us-0.22-lgraph";
 
     /// <summary>
     /// 모델 폴더가 없으면 zip 해제 후 경로 반환.
