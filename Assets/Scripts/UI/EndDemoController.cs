@@ -8,11 +8,17 @@ using UnityEngine;
 /// End.Demo 씬 Canvas 또는 빈 GameObject에 부착.
 ///
 /// [버튼 OnClick 연결]
-/// 타이틀 복귀 버튼 → OnClickReturnToTitle()
+/// 타이틀 복귀 버튼  → OnClickReturnToTitle()
+/// Discord 버튼      → OnClickDiscord()
+/// Steam 위시리스트  → OnClickSteamWishlist()
 ///
 /// [타이틀 복귀 처리]
 /// TitleReturnFlow.Request(FullRunReset)으로 위임.
 /// 페이드·Shutdown·ResetSession 등은 TitleReturnFlow가 통합 처리.
+///
+/// [커서]
+/// Awake에서 커서를 UI용(자유 이동·표시)으로 복원한다.
+/// 오디오(Dissonance)는 타이틀 복귀 전까지 유지된다.
 /// </summary>
 public class EndDemoController : MonoBehaviour
 {
@@ -21,6 +27,22 @@ public class EndDemoController : MonoBehaviour
     [SerializeField] private string titleSceneName  = "0.Title";
     [SerializeField] private ScreenFader screenFader;
     [SerializeField] private float fadeOutDuration  = 0f;
+
+    [Header("외부 링크")]
+    [Tooltip("Discord 초대 링크")]
+    [SerializeField] private string discordUrl      = "https://discord.gg/";
+    [Tooltip("Steam 스토어 페이지 URL (위시리스트 버튼용). Steamworks 연동 전까지 임시 URL 사용 가능.")]
+    [SerializeField] private string steamStoreUrl   = "https://store.steampowered.com/";
+
+    // ── 초기화 ────────────────────────────────────────────────────
+
+    void Awake()
+    {
+        // 스테이지에서 TopDownCamera가 잠근 커서를 UI용으로 복원.
+        // Dissonance 오디오는 건드리지 않으므로 팀원 보이스 연결 유지.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+    }
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
@@ -32,6 +54,20 @@ public class EndDemoController : MonoBehaviour
             Reason = TitleReturnReason.EndDemo,
             Scope  = TitleReturnScope.FullRunReset,
         });
+    }
+
+    /// <summary>Discord 버튼 OnClick에 연결.</summary>
+    public void OnClickDiscord()
+    {
+        if (string.IsNullOrEmpty(discordUrl)) return;
+        Application.OpenURL(discordUrl);
+    }
+
+    /// <summary>Steam 위시리스트 버튼 OnClick에 연결.</summary>
+    public void OnClickSteamWishlist()
+    {
+        if (string.IsNullOrEmpty(steamStoreUrl)) return;
+        Application.OpenURL(steamStoreUrl);
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

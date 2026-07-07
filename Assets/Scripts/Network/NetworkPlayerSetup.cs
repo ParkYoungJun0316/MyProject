@@ -306,9 +306,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_player == null) return;
         _player.heart = next;
 
-        // 오너/비오너 모두 동일하게 UI 갱신
-        // (오너는 NotifyHitClientRpc 연출과 별개로 HP 수치 UI는 여기서 확정)
-        _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
+        // HP가 실제로 줄었을 때만 피격 이벤트 발행.
+        // HP 증가(스폰·리스폰 회복)에서 Hit SFX·연출이 울리는 버그 방지.
+        if (next < prev)
+            _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
     }
 
     // ── Phase2: 클라이언트 피격 신고 ──────────────────────────────

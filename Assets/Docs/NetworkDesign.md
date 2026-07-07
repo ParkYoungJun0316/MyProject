@@ -77,6 +77,7 @@
 - **사운드:** BGM 1~2 + 핵심 SFX
 - **파티클:** 피격·Break만 (선택)
 - **난이도:** “클리어 가능” 수준. 본격 밸런싱은 데모 후
+- **텔레메트리:** §0.5.1 — 공개 데모 유저 데이터 수집 (이탈 구간·스테이지 실패율·음성 응원 실패)
 
 #### 데모에서 **의도적으로 빼는 것** (버그·일정 방어)
 
@@ -85,6 +86,7 @@
 | §12 재접속·Kick·60초 유예·스냅샷 복원 | 복잡도 최상. 데모: **호스트 이탈 = 종료**, 중간 이탈 = **즉시 리로드** |
 | LAN UDP discovery 실기 검증 | 개발 환경 불가. ②는 localhost, ④는 **Steam** |
 | Tutorial·CheerName 커스텀 | 정식 (CheerAndTutorialDesign.md) |
+| 관전(Spectator) 모드 | 내부 QA용. Discord 화면공유로 대체 |
 | sit / dance 등 이모트 애니 | 정식 이후 |
 | 컷씬 | 정식 이후 |
 | 옵션·설정 UI 전체 | 정식 (데모: OS 볼륨) |
@@ -106,21 +108,107 @@
 - Late Join, 호스트 마이그레이션
 - 파티클 대량 추가
 
-### 0.4 권장 작업 순서 (실행용)
+### 0.4 권장 작업 순서 (요약)
+
+**상세 실행 순서·체크 항목은 §0.5 참고.**
 
 ```
 [데모 — Steam 홍보]
-1. NGO Must 동기화 (§9) + ParrelSync ①
-2. Development Build ② — localhost 2인 (중간 게이트)
-3. 응원: CheerService → Dissonance → Vosk (CheerAndTutorialDesign §11)
-4. Steamworks: Transport → Steam P2P + Lobby + Depot
-5. Steam ④ — 2인 Must (2PC) + 4인 1회 권장 → Steam 데모 출시
+0. 테스트 전 블로커 (Vosk, CheerName, AudioListener)
+1. 폴리시 (오디오, 카메라, DialogueUI, End.Demo, 빌드 메타)
+2. 로컬 테스트 (1인 → 2인 Dev Build → 스크린샷 1차)
+3. Steamworks + 텔레메트리 MVP (§0.5.1)
+4. Steam 테스트 (2인 Must → 4인 권장) → 스토어 → 데모 출시
 
-[데모 후 ~ 정식 2주]
-주 1: 피드백 → 난이도 → Tutorial·커스텀 CheerName → UI 옵션
-주 2: QA → 정식 출시
-(Post-Launch: 컷씬·이모트·§12 풀스펙)
+[데모 후]
+→ 별도 논의 (정식 출시 범위)
 ```
+
+### 0.5 데모 출시 전 체크리스트 (실행 순서)
+
+> 음성 시스템(CheerService + Dissonance + Vosk) 구축 완료 이후 기준.  
+> 각 테스트 단계 직후 **버그 수정 구간**을 둔다.
+
+#### Phase 0 — 테스트 전 블로커
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 0-1 | Vosk zip 정합 | `VoskModelLoader` 기대 zip ↔ `StreamingAssets` 실제 파일 일치 |
+| 0-2 | CheerName 최종화 | `berry` / `guma` / `ssuk` / `danho` — `CheerLexiconBuilder`·`CheerService`·`/cheer` 통일 |
+| 0-3 | AudioListener 중복 제거 | 스테이지·타이틀 씬당 **1개** (보통 `TopDownCamera` 자식) |
+
+#### Phase 1 — 폴리시
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 1 | 오디오 | SFX/BGM 볼륨, `SFXManager.masterVolume`, Listener 배치 |
+| 2 | 카메라 | **프리팹 X** — 씬 `TopDownCamera` 유지, Inspector 수치 튜닝 |
+| 3 | DialogueUI | `M.Stage1` / `T.Stage1` 구역별 규칙·응원 설명 (`DialogueUI.cs`) |
+| 4 | End.Demo 꾸미기 | 클리어 연출, 타이틀 복귀, **Discord 피드백 버튼** |
+| 5 | 빌드 메타 | `Player Settings`: Product Name, Default Icon, `bundleVersion` (예: `0.1.0-demo`) |
+
+#### Phase 2 — 로컬 테스트
+
+| # | 작업 | 통과 기준 (최소) |
+|---|------|------------------|
+| 6 | 1인 E2E | Title 오프라인 → M → T → End. `/cheer`·음성 응원 1회 |
+| 7 | 버그 수정 | Phase 2 이슈 정리 |
+| 8 | 2인 Dev Build E2E | localhost, 보이스 양방향, 응원, 사망 리로드 1회 (§0.2 ②) |
+| 9 | 버그 수정 | Phase 2 이슈 정리 |
+| 10 | 스크린샷 1차 | Steam 스토어 초안용 (§0.5.2) |
+
+#### Phase 3 — Steam + 텔레메트리
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 11 | Steam App ID + Steamworks | Transport → Steam Networking, Lobby, Depot 파이프라인 |
+| 12 | 텔레메트리 MVP | §0.5.1 — **Steam 원격 테스트 전** 구축·전송 확인 |
+| 13 | 스토어 페이지 초안 | App ID 필요. 스크린샷·설명은 §0.5.2 참고 |
+
+#### Phase 4 — Steam 테스트 → 출시
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 14 | Steam 솔로/2인 원격 | **데모 출시 최소 게이트** (§0.2 ④) |
+| 15 | 버그 수정 | |
+| 16 | 친구 4인 테스트 | 3표 응원·4보이스·4Gate — **1회 권장** (§0.2.1) |
+| 17 | 버그 수정 | |
+| 18 | 스크린샷 최종 + 스토어 마무리 | 실플레이·안정 빌드 기준 (§0.5.2) |
+| 19 | Steam 데모 출시 | Depot 업로드 |
+
+#### 0.5.1 텔레메트리 MVP (데모 Must)
+
+**목적:** 공개 데모 유저의 **이탈 구간(Quit Point)**, **스테이지 실패율·클리어 타임**, **음성 응원 실패 원인** 수집.  
+**시점:** Steam 원격 테스트(§0.5 Phase 4) **전**에 켜야 초반 유저 데이터를 잃지 않음.
+
+**구현:** `TelemetryService` (DDoL, `0.Title`) — `Track(eventName, properties)` 단일 진입점, 익명 `sessionId` + `buildVersion`, 배치 전송·Quit 시 flush.
+
+**수집 이벤트**
+
+| 이벤트 | 용도 |
+|--------|------|
+| `session_start` | 빌드 버전, 솔로/멀티, 인원 |
+| `scene_enter` / `scene_exit` | 이탈 구간·체류 시간 |
+| `quit` | Title / Lobby / 스테이지 / End 이탈 지점 |
+| `stage_death` | 씬별 사망 → **실패율** |
+| `stage_clear` | 씬별 클리어 시각 → **클리어 타임** |
+| `run_complete` | End.Demo 도달 여부 |
+| `cheer_voice_detected` | Vosk 키워드 감지 성공 |
+| `cheer_voice_rejected` | 제출 거부 (자기응원, 쿨, 버프중 등 — reason enum) |
+| `cheer_buff_activated` | 버프 발동 성공 |
+| `cheer_buff_timeout` | 부분 응원 타임아웃 (표 부족) |
+| `cheer_chat_used` | `/cheer` 폴백 — 음성 UX 문제 신호 |
+
+**수집 금지:** 마이크 원음, 대화 내용 전문, 개인 식별 정보.
+
+**연동 후보:** `SceneFlowManager`, `StageResetOnPlayerDeath`, `StageManager.OnStageClear`, `CheerKeywordEngine`, `CheerService`, Title/Lobby Quit.
+
+#### 0.5.2 스크린샷
+
+| 시점 | 목적 |
+|------|------|
+| §0.5 #10 (2인 Dev Build 후) | 스토어 **초안** — 플레이 가능 확인용 |
+| §0.5 #18 (Steam 테스트 후) | **최종** — capsule·헤더·실플레이 품질 |
 
 ---
 
@@ -416,6 +504,8 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 ### 16.1 네트워크 · 응원 · Steam (데모)
 
+> **현재 실행 체크리스트:** §0.5 (음성 시스템 완료 이후 기준). 아래는 초기 구현 단계 요약.
+
 1. NGO + `UnityTransport` + Title `NetworkManager`
 2. 로비 Ready / 캐릭터 / Start 동기화
 3. Player Network Prefab + 존 스폰 + Owner 입력·카메라
@@ -427,7 +517,9 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 9. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Steam 데모 출시**
 10. `End.Demo` + 솔로 경로 + Should 항목 (여유분)
 
-### 16.2 데모 후 ~ 정식 (2주)
+### 16.2 데모 후
+
+> 범위·일정은 데모 출시 후 별도 확정.
 
 1. 난이도 밸런싱 (데모 피드백)
 2. Tutorial + CheerName 커스텀
