@@ -77,7 +77,7 @@
 - **사운드:** BGM 1~2 + 핵심 SFX
 - **파티클:** 피격·Break만 (선택)
 - **난이도:** “클리어 가능” 수준. 본격 밸런싱은 데모 후
-- **텔레메트리:** §0.5.1 — 공개 데모 유저 데이터 수집 (이탈 구간·스테이지 실패율·음성 응원 실패)
+- **텔레메트리:** §0.5.1 — Steam 데모 전용, Google Sheets upsert (이탈·체류·사망·응원 거부 합계)
 
 #### 데모에서 **의도적으로 빼는 것** (버그·일정 방어)
 
@@ -117,7 +117,7 @@
 0. 테스트 전 블로커 (Vosk, CheerName, AudioListener)
 1. 폴리시 (오디오, 카메라, DialogueUI, End.Demo, 빌드 메타)
 2. 로컬 테스트 (1인 → 2인 Dev Build → 스크린샷 1차)
-3. Steamworks + 텔레메트리 MVP (§0.5.1)
+3. 텔레메트리 MVP (§0.5.1 — Sheet 선행) + Steamworks
 4. Steam 테스트 (2인 Must → 4인 권장) → 스토어 → 데모 출시
 
 [데모 후]
@@ -162,7 +162,7 @@
 | # | 작업 | 비고 |
 |---|------|------|
 | 11 | Steam App ID + Steamworks | Transport → Steam Networking, Lobby, Depot 파이프라인 |
-| 12 | 텔레메트리 MVP | §0.5.1 — **Steam 원격 테스트 전** 구축·전송 확인 |
+| 12 | 텔레메트리 MVP | §0.5.1 — **① Sheet·Apps Script → ② TelemetryService** — Steam 원격 테스트 **전** 전송 확인 |
 | 13 | 스토어 페이지 초안 | App ID 필요. 스크린샷·설명은 §0.5.2 참고 |
 
 #### Phase 4 — Steam 테스트 → 출시
@@ -178,30 +178,184 @@
 
 #### 0.5.1 텔레메트리 MVP (데모 Must)
 
-**목적:** 공개 데모 유저의 **이탈 구간(Quit Point)**, **스테이지 실패율·클리어 타임**, **음성 응원 실패 원인** 수집.  
-**시점:** Steam 원격 테스트(§0.5 Phase 4) **전**에 켜야 초반 유저 데이터를 잃지 않음.
+> **구현 에이전트:** 이 절만 읽고 구현 가능. Steamworks **전**에 Sheet·Apps Script → `TelemetryService` 순.
 
-**구현:** `TelemetryService` (DDoL, `0.Title`) — `Track(eventName, properties)` 단일 진입점, 익명 `sessionId` + `buildVersion`, 배치 전송·Quit 시 flush.
+##### 목적 · 시점
 
-**수집 이벤트**
+- **목적:** Steam **공개 데모** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 스테이지 체류·사망, 응원 거부·채팅 **합계**.
+- **시점:** §0.5 Phase 4(Steam 원격 테스트) **전**에 켜야 초반 유저 데이터를 잃지 않음.
+- **구현 순서:** ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
 
-| 이벤트 | 용도 |
-|--------|------|
-| `session_start` | 빌드 버전, 솔로/멀티, 인원 |
-| `scene_enter` / `scene_exit` | 이탈 구간·체류 시간 |
-| `quit` | Title / Lobby / 스테이지 / End 이탈 지점 |
-| `stage_death` | 씬별 사망 → **실패율** |
-| `stage_clear` | 씬별 클리어 시각 → **클리어 타임** |
-| `run_complete` | End.Demo 도달 여부 |
-| `cheer_voice_detected` | Vosk 키워드 감지 성공 |
-| `cheer_voice_rejected` | 제출 거부 (자기응원, 쿨, 버프중 등 — reason enum) |
-| `cheer_buff_activated` | 버프 발동 성공 |
-| `cheer_buff_timeout` | 부분 응원 타임아웃 (표 부족) |
-| `cheer_chat_used` | `/cheer` 폴백 — 음성 UX 문제 신호 |
+##### 아키텍처
 
-**수집 금지:** 마이크 원음, 대화 내용 전문, 개인 식별 정보.
+| 항목 | 규칙 |
+|------|------|
+| **진입점** | `TelemetryService` — `0.Title` 배치, **DontDestroyOnLoad** |
+| **전송 대상** | Google Sheets (Apps Script **Web App** URL) |
+| **행 모델** | **세션 1행** — `sessionId` 기준 **upsert**(갱신). append-only 금지(중간 스냅샷 쓰레기 행 방지). |
+| **보내는 쪽** | **Host PC 1행만** (솔로 = 그 PC가 Host 역할). Client는 Host에 **+1만 RPC 보고**, Sheets 직접 전송 **금지**. |
+| **Sink 분리** | `ITelemetrySink` (MVP: `GoogleSheetsSink`) — URL·HTTP만 담당. 집계는 `TelemetryService`. |
 
-**연동 후보:** `SceneFlowManager`, `StageResetOnPlayerDeath`, `StageManager.OnStageClear`, `CheerKeywordEngine`, `CheerService`, Title/Lobby Quit.
+##### 전송 ON/OFF (Must)
+
+| 환경 | Sheets 기록 |
+|------|-------------|
+| Unity **에디터** Play | ❌ |
+| **ParrelSync** (에디터 클론) | ❌ |
+| **Development Build** localhost | ❌ |
+| **Steam Depot 데모**, Steam 클라이언트로 실행 | ✅ |
+
+**권장 게이트 (둘 다 만족 시 전송):**
+
+1. `#if !UNITY_EDITOR`
+2. Steamworks 초기화 성공 (`SteamAPI` 등 — Steam 연동 후). 연동 전 임시: Scripting Define `TELEMETRY_DEMO` + **Steam 빌드 파이프라인에서만** define.
+
+Inspector `enabled` 토글은 **로컬 디버그용**. 위 게이트가 **출시 판정** 기준.
+
+##### 세션 생명주기
+
+| | 시점 | 동작 |
+|--|------|------|
+| **세션 시작** | **`M.Stage1` 첫 로드** | 새 `sessionId`(UUID), 카운터·dwell 타이머 초기화. 멀티=로비 Start 후 / 솔로=오프라인 로비 Start 후 동일. |
+| **세션 진행** | M·T 플레이 중 | 누적 카운터 갱신 + 주기 upsert (§전송 타이밍). |
+| **`run_complete`** | Host(또는 솔로 PC)가 **`End.Demo` 씬 로드** | `run_complete = true` (타이틀 복귀 **전**). |
+| **세션 끝** | Host(또는 솔로 PC) **`TitleReturnFlow.ExecuteReturn()`** | **마지막 upsert** + `quitAt` 기록 + `sessionId` 폐기. |
+
+**세션 끝 = Host `TitleReturnFlow` 1회.** 아래 경로는 전부 동일 훅:
+
+- `End.Demo` 타이틀 복귀 (`TitleReturnReason.EndDemo`)
+- Host Quit (`HostQuitRoom`)
+- Client 이탈 → Host `DisconnectManager` (`ClientDisconnected`)
+- Client가 End에서 먼저 나가도 Host도 타이틀 복귀 → Host `TitleReturnFlow`
+
+**예외 (세션 끝 upsert 없음):** Host **Alt+F4** / 작업 관리자 강제 종료 → `TitleReturnFlow` 미실행. **마지막 중간 upsert**(30초·씬 전환·리로드)까지만 유지. **감수.**
+
+로비만 있고 Start 안 누른 구간 = **세션 아님** (기록 없음).
+
+##### Google Sheets — 컬럼 (헤더 1행 고정)
+
+**복붙용 순서:**
+
+```
+timestamp | sessionId | buildVersion | playMode | partySize | run_complete | quitAt | M_dwell_sec | M_death_count | M_buff_count | T_dwell_sec | T_death_count | T_buff_count | reject_self_cheer | reject_target_buffed | reject_timeout | reject_chat_rate_limit | reject_voice_no_match | chat_used_count
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `timestamp` | datetime | **upsert 전송 시각** (UTC 또는 KST 중 하나로 통일) |
+| `sessionId` | string | 익명 UUID. **upsert 키.** |
+| `buildVersion` | string | `Application.version` (예: `0.1.0-demo`) |
+| `playMode` | string | `Solo` / `Multi` (멀티 1인도 `Multi`) |
+| `partySize` | int | 1~4 |
+| `run_complete` | bool | `End.Demo` **씬 진입** 여부 |
+| `quitAt` | string | 세션 끝 upsert 시 Host 위치: `M` / `T` / `End` |
+| `M_dwell_sec` | float | M.Stage1 체류(초) — §측정 규칙 |
+| `M_death_count` | int | M.Stage1 씬 로드(리로드 포함) 횟수 |
+| `M_buff_count` | int | M.Stage1 버프 **적용** 횟수 |
+| `T_dwell_sec` | float | T.Stage1 체류(초) |
+| `T_death_count` | int | T.Stage1 씬 로드 횟수 |
+| `T_buff_count` | int | T.Stage1 버프 적용 횟수 |
+| `reject_self_cheer` | int | 자기 응원 거부 **합계** (전원) |
+| `reject_target_buffed` | int | 대상 버프 중 거부 **합계** |
+| `reject_timeout` | int | 표 부족 타임아웃 **합계** |
+| `reject_chat_rate_limit` | int | 채팅 rate limit **합계** |
+| `reject_voice_no_match` | int | Vosk 미인식 **합계** |
+| `chat_used_count` | int | `/cheer` 사용 **총 횟수** (합계) |
+
+**수집 금지:** 마이크 원음, 채팅/대화 **전문**, SteamID, IP, 닉네임 등 **개인 식별 정보**.
+
+##### 측정 규칙 (Must)
+
+| 항목 | 규칙 |
+|------|------|
+| **dwell** | 해당 스테이지 **씬 로드 직후** ~ **다른 씬으로 나가기 직전**까지 Host `Time.time`(또는 `unscaledTime`) 누적. M→T 전환 시 `M_dwell_sec` 확정, T에서 T dwell 계속. |
+| **death_count** | 해당 스테이지 **씬 Load마다 +1** (첫 진입 포함). 사망=전원 리로드이므로 **리로드 1회 = death 1**. 동시 다수 사망도 **+1**. 분석 시 첫 로드 제외하려면 시트에서 -1 (구현은 +1 유지). |
+| **buff_count** | 버프가 **플레이어 1명에게 적용될 때마다 +1**. 4인 전원 버프 = **+4**. |
+| **reject / chat** | **4인 합계** — Client 발생 시 Host RPC로 +1 보고 후 Host가 누적. |
+| **partySize** | 세션 시작 시 `GameSession` / `NetworkManager.ConnectedClientsIds.Count` 등 Host 기준 스냅샷. |
+
+##### reject / chat — 코드 매핑
+
+| 컬럼 | +1 조건 (구현 참고) |
+|------|---------------------|
+| `reject_self_cheer` | `CheerService.ValidateCheer` — 자기 색 응원 (`myIdx == targetColorIndex`) |
+| `reject_target_buffed` | `ValidateCheer` — `_buffEnd`에 target 존재 (멀티 Host) / `_localBuffEnd` (솔로) |
+| `reject_timeout` | `CheerService.CheckTimeouts` → `ResetVotes` (표 부족). **별도 timeout 이벤트 없음 — 여기만.** |
+| `reject_chat_rate_limit` | `ValidateCheer` — `!isVoice` && rate limit (`_chatRateEnd` / `_localRateLimitEnd`) |
+| `reject_voice_no_match` | `CheerKeywordEngine` — Vosk 미매칭 시 **Client → Host RPC** |
+| `chat_used_count` | `InGameChatUI` — `/cheer` 파싱 성공 1회마다 +1 (Host 집계) |
+
+**제외:** `reject_invalid_target` — **수집하지 않음**.
+
+Host `ValidateCheer` false 반환 시 **reason enum**으로 위 컬럼 중 하나만 +1.
+
+**`TelemetryRejectReason` enum (구현용 — 컬럼명과 1:1):**
+
+```csharp
+public enum TelemetryRejectReason
+{
+    SelfCheer,        // → reject_self_cheer
+    TargetBuffed,     // → reject_target_buffed
+    Timeout,          // → reject_timeout
+    ChatRateLimit,    // → reject_chat_rate_limit
+    VoiceNoMatch,     // → reject_voice_no_match (Client → Host RPC)
+}
+```
+
+##### 전송 타이밍 · upsert
+
+매 전송은 **그 시점까지의 누적 스냅샷** 전체를 보냄 (예: death 5 → 10이면 **같은 `sessionId` 행**만 10으로 갱신).
+
+| 트리거 | upsert |
+|--------|--------|
+| **30초마다** | ✅ (Inspector `flushIntervalSec`, 기본 30) |
+| **M → T** 씬 전환 | ✅ |
+| **T → End** 또는 **타이틀 복귀** 씬 전환 | ✅ |
+| **스테이지 씬 리로드**(사망) | ✅ |
+| **세션 끝** (`TitleReturnFlow`) | ✅ **마지막 flush** |
+| `Application.quitting` | ✅ 가능한 범위 동기 전송 (보조) |
+
+**Apps Script upsert:** POST body JSON → `token` 검증 → `sessionId` 검색 → 있으면 **Update**, 없으면 **Append**.  
+Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 empty).
+
+실패 시 **1~2회 재시도** 후 포기 (영구 로컬 큐는 MVP 범위 밖).
+
+##### 멀티 · 솔로
+
+| | |
+|--|--|
+| **멀티** | **Host만** `TelemetryService` 전송. Client → Host `TelemetryReportServerRpc(reason)` 등으로 reject/chat +1만. |
+| **솔로** | NGO 미사용. **로컬 PC = Host 역할** — 동일 컬럼, `playMode=Solo`, `partySize=1`. |
+| **멀티 1인** | `playMode=Multi`, `partySize=1`. |
+
+##### 게임 연동 훅 (구현 체크리스트)
+
+| # | 훅 | 동작 |
+|---|-----|------|
+| 1 | **`M.Stage1` / `T.Stage1` `SceneManager.sceneLoaded`** (Host·솔로) | 세션 시작(첫 M만), 해당 스테이지 `death_count +1`, dwell 타이머 시작 |
+| 2 | **씬 unload / 다음 씬 로드 직전** | 떠나는 스테이지 dwell 확정 |
+| 3 | **`End.Demo` sceneLoaded** (Host·솔로) | `run_complete = true` |
+| 4 | **`TitleReturnFlow.ExecuteReturn()`** (Host·솔로) | `quitAt` = 현재 씬(`M`/`T`/`End`), **세션 끝 upsert**, 세션 상태 리셋 |
+| 5 | **`CheerService`** (Host·솔로) | reject reason별 +1, `ApplyBuff` / `ApplyLocalBuff` 시 해당 스테이지 `buff_count +1`, timeout +1 |
+| 6 | **`CheerKeywordEngine`** (Client) | 미인식 → Host RPC |
+| 7 | **`InGameChatUI`** | `/cheer` 성공 시 `chat_used_count +1` |
+| 8 | **`TelemetryService.Update`** | 30초 주기 flush |
+
+`TitleReturnFlow`에 직접 삽입 또는 `ISessionResettable` / 전용 콜백 등록 — **게임 코어에 Sheets URL 흩뿌리지 말 것**.
+
+##### Google Sheets · Apps Script (구현 전 선행)
+
+1. Sheet 생성 → **헤더 1행** §컬럼 표와 **동일**하게 입력.
+2. **Apps Script** `doPost(e)`: JSON 파싱 → `token` 검증 → `sessionId` upsert.
+3. **Deploy → Web app** → URL 확보.
+4. Unity: `GoogleSheetsSink`에 URL + token (**Steam 데모 빌드** ScriptableObject 또는 `Resources` — 에디터 기본 empty).
+
+##### MVP 완료 판정
+
+- [ ] Steam 데모 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
+- [ ] 멀티 Host: Client reject/chat 합산 **1행**에 반영.
+- [ ] 에디터 Play / Dev Build localhost: **행 추가 없음**.
+- [ ] payload에 **금지 필드** 없음.
 
 #### 0.5.2 스크린샷
 
@@ -513,6 +667,7 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 5. **ParrelSync ①**
 6. **Development Build ②** — localhost **2인** (중간 게이트)
 7. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
+7.5. **텔레메트리** — §0.5.1 (Sheet → `TelemetryService`, Steam 원격 테스트 전)
 8. **Steamworks** — P2P transport, Lobby, Depot
 9. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Steam 데모 출시**
 10. `End.Demo` + 솔로 경로 + Should 항목 (여유분)

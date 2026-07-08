@@ -88,7 +88,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         foreach (var color in activeColors)
         {
             ColoredStartZone zone = FindZone(zones, color);
-            Vector3    pos = zone != null ? zone.SpawnPosition : Vector3.zero;
+            Vector3    pos = zone != null ? zone.SpawnPosition : new Vector3(0f, 0.5f, 0f);
             Quaternion rot = zone != null ? zone.SpawnRotation : Quaternion.identity;
 
             var go     = Instantiate(playerPrefab, pos, rot);
@@ -158,7 +158,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         {
             ColoredStartZone zone = FindZone(zones, colorType);
 
-            Vector3    pos = zone != null ? zone.SpawnPosition : Vector3.zero;
+            Vector3    pos = zone != null ? zone.SpawnPosition : new Vector3(0f, 0.5f, 0f);
             Quaternion rot = zone != null ? zone.SpawnRotation : Quaternion.identity;
 
             var go     = Instantiate(playerPrefab, pos, rot);
@@ -174,7 +174,13 @@ public class PlayerSpawnManager : NetworkBehaviour
 
             var setup = go.GetComponent<NetworkPlayerSetup>();
             if (setup != null)
+            {
                 setup.SetColorIndex(ColorTypeToIndex(colorType));
+                // ClientNetworkTransform의 AutoOwnerAuthorityTickOffset로 인해
+                // Owner의 OnNetworkSpawn() 시점에 transform.position이 (0,0,0)이다.
+                // RPC는 OnNetworkSpawn() 완료 후 처리되므로 정확한 zone 위치를 안전하게 전달.
+                setup.InitSpawnPointOwnerRpc(pos, rot);
+            }
 
             Debug.Log($"[PlayerSpawnManager] 스폰 완료 — clientId={clientId} color={colorType} pos={pos}");
         }

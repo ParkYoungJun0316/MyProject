@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 5}
-  m_LocalScale: {x: 5, y: 0.5, z: 5}
+  m_LocalScale: {x: 3, y: 5, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -54,7 +54,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 5, z: 1}
+  m_Size: {x: 2, y: 1, z: 2}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &4054060325775464471
 MonoBehaviour:
@@ -70,9 +70,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredStartZone
   colorType: 3
   spawnPoint: {fileID: 4277412356618957285}
-  vacantColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
-  occupiedColor: {r: 0, g: 0.19441414, b: 1, a: 1}
-  countdownColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  occupiedColor: {r: 0.56078434, g: 0.8509804, b: 0.47843137, a: 1}
 --- !u!33 &4114418499858425421
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -80,7 +78,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6825469496282287166}
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 5461320835613783329, guid: 3623c3ce39727ac4eb5e6489fe284241, type: 3}
 --- !u!23 &4207935966280546636
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -106,7 +104,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 430f0743e131d3a4aa330873faa13b46, type: 2}
+  - {fileID: 2100000, guid: e57e61e16de11094baeea1ebed29ed19, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

@@ -311,7 +311,7 @@ public class InGameChatUI : NetworkBehaviour
     void CreateMessageObject(string message, int senderColorIndex)
     {
         string cheerName = CheerService.GetCheerName(senderColorIndex);
-        if (string.IsNullOrEmpty(cheerName)) cheerName = "???";
+        cheerName = string.IsNullOrEmpty(cheerName) ? "???" : cheerName.ToUpper();
         Color  nameColor = GetPlayerColor(senderColorIndex);
         string hex       = ColorUtility.ToHtmlStringRGB(nameColor);
 

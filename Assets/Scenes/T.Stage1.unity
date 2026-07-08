@@ -558,7 +558,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &56545425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2280,6 +2280,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1241141339}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &212470614 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 212470613}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 926144474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1 &220791662
 GameObject:
   m_ObjectHideFlags: 0
@@ -3691,6 +3702,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2090628679}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &312082288 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 312082287}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2090628666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1 &313125269 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5121105358896401533, guid: f90c2145cb330c14d89d97e5ed572e1e, type: 3}
@@ -7341,7 +7363,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2128942829}
-  - {fileID: 2066586231}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &552606861
@@ -7718,7 +7739,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.6
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -7726,11 +7747,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -355
+      value: -356
       objectReference: {fileID: 0}
     - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8463,6 +8484,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2115090703}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &650727941 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 650727940}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115090690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!4 &653444843 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 124727524890360649, guid: 24b75759c82ee4b4fbd90a3e7eacf6c1, type: 3}
@@ -10681,15 +10713,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.6
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5
+      value: -6
       objectReference: {fileID: 0}
     - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
       propertyPath: m_LocalPosition.z
@@ -11336,7 +11368,7 @@ PrefabInstance:
     - target: {fileID: 7545762041096242996, guid: 24b75759c82ee4b4fbd90a3e7eacf6c1, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 290dcfe7d7e840d4c908c469e374e492, type: 2}
+      objectReference: {fileID: 2100000, guid: 185d8809de5d4e24a987abf6eaa04d22, type: 2}
     - target: {fileID: 9064797690002522662, guid: 24b75759c82ee4b4fbd90a3e7eacf6c1, type: 3}
       propertyPath: m_Name
       value: Ground_Fin
@@ -15171,15 +15203,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
-      propertyPath: m_LocalPosition.x
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
       propertyPath: m_LocalPosition.z
@@ -18305,7 +18337,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.6
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
       propertyPath: m_LocalPosition.x
@@ -18313,11 +18345,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -345
+      value: -344
       objectReference: {fileID: 0}
     - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
       propertyPath: m_LocalRotation.w
@@ -19493,6 +19525,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorPuzzleGroup
   topology: 0
   designPlayerCount: 3
+--- !u!114 &1638088045 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 2079765301}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638088028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1001 &1665628548
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19922,75 +19965,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 124727524890360649, guid: 24b75759c82ee4b4fbd90a3e7eacf6c1, type: 3}
   m_PrefabInstance: {fileID: 146816887}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1691080434
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 550704557}
-    m_Modifications:
-    - target: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_Name
-      value: PressurePad1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 877.2143
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
 --- !u!1001 &1701712947
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21838,6 +21812,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 636065510}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &1832923781 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 1832923780}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636065508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1001 &1841186794
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24721,22 +24706,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 24b75759c82ee4b4fbd90a3e7eacf6c1, type: 3}
---- !u!114 &2066586227 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8028393199763076075, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-  m_PrefabInstance: {fileID: 1691080434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PressurePad
---- !u!4 &2066586231 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
-  m_PrefabInstance: {fileID: 1691080434}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2076785436
 GameObject:
   m_ObjectHideFlags: 0
@@ -25754,7 +25723,7 @@ PrefabInstance:
     - target: {fileID: 3381746487339141653, guid: 3d6adc4307873dd4883aaadb54cc9630, type: 3}
       propertyPath: 'requiredPads.Array.data[0]'
       value: 
-      objectReference: {fileID: 2066586227}
+      objectReference: {fileID: 0}
     - target: {fileID: 3381746487339141653, guid: 3d6adc4307873dd4883aaadb54cc9630, type: 3}
       propertyPath: OnClosed.m_PersistentCalls.m_Calls.Array.size
       value: 0
@@ -25811,7 +25780,8 @@ PrefabInstance:
       propertyPath: OnFullyClosed.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3381746487339141653, guid: 3d6adc4307873dd4883aaadb54cc9630, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -26044,6 +26014,7 @@ GameObject:
   - component: {fileID: 8028393200214568095}
   - component: {fileID: 6284557672638094111}
   - component: {fileID: 1874901645}
+  - component: {fileID: 8683762110389861000}
   m_Layer: 0
   m_Name: PressurePad.5(3)
   m_TagString: Untagged
@@ -26066,6 +26037,7 @@ GameObject:
   - component: {fileID: 8028393200627783581}
   - component: {fileID: 6284557673298616349}
   - component: {fileID: 2038087993}
+  - component: {fileID: 8683762109733880198}
   m_Layer: 0
   m_Name: PressurePad.C
   m_TagString: Untagged
@@ -26088,6 +26060,7 @@ GameObject:
   - component: {fileID: 8028393200914730698}
   - component: {fileID: 6284557673548544330}
   - component: {fileID: 1207748929}
+  - component: {fileID: 8683762109480491219}
   m_Layer: 0
   m_Name: PressurePad.7(3)
   m_TagString: Untagged
@@ -26110,6 +26083,7 @@ GameObject:
   - component: {fileID: 8028393199175884293}
   - component: {fileID: 6284557674213648773}
   - component: {fileID: 1933774499}
+  - component: {fileID: 8683762108819671070}
   m_Layer: 0
   m_Name: PressurePad.9(3)
   m_TagString: Untagged
@@ -26132,6 +26106,7 @@ GameObject:
   - component: {fileID: 8028393199279959255}
   - component: {fileID: 3338917044015575887}
   - component: {fileID: 673567052}
+  - component: {fileID: 8683762108917463760}
   m_Layer: 0
   m_Name: PressurePad.C.1
   m_TagString: Untagged
@@ -26634,6 +26609,9 @@ MonoBehaviour:
   OnUnfulfilled:
     m_PersistentCalls:
       m_Calls: []
+  OnCountChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &8028393199279959255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26652,6 +26630,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   OnUnfulfilled:
+    m_PersistentCalls:
+      m_Calls: []
+  OnCountChanged:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &8028393200214568095
@@ -26674,6 +26655,9 @@ MonoBehaviour:
   OnUnfulfilled:
     m_PersistentCalls:
       m_Calls: []
+  OnCountChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &8028393200627783581
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26694,6 +26678,9 @@ MonoBehaviour:
   OnUnfulfilled:
     m_PersistentCalls:
       m_Calls: []
+  OnCountChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &8028393200914730698
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26712,6 +26699,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   OnUnfulfilled:
+    m_PersistentCalls:
+      m_Calls: []
+  OnCountChanged:
     m_PersistentCalls:
       m_Calls: []
 --- !u!65 &8683762108819671069
@@ -26735,6 +26725,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8683762108819671070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748914820695371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 312082288}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!65 &8683762108917463759
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -26756,6 +26761,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8683762108917463760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748914987169689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 1832923781}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!65 &8683762109480491218
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -26777,6 +26797,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8683762109480491219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748914457679236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 650727941}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!65 &8683762109733880197
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -26798,6 +26833,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8683762109733880198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748914175184083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 212470614}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!65 &8683762110389860999
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -26819,6 +26869,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8683762110389861000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748913682544593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 1638088045}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

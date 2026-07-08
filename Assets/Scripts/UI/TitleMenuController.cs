@@ -2,6 +2,7 @@ using System.Collections;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -110,11 +111,20 @@ public class TitleMenuController : MonoBehaviour
             joinPanel.SetActive(true);
             if (roomCodeInputField != null) roomCodeInputField.text = string.Empty;
             SetJoinStatus(string.Empty);
+            StartCoroutine(FocusRoomCodeInputNextFrame());
         }
         else
         {
             Debug.LogWarning("[TitleMenuController] joinPanel이 연결되지 않았습니다. Inspector에서 연결하세요.");
         }
+    }
+
+    IEnumerator FocusRoomCodeInputNextFrame()
+    {
+        yield return null;
+        if (roomCodeInputField == null) yield break;
+        roomCodeInputField.ActivateInputField();
+        EventSystem.current?.SetSelectedGameObject(roomCodeInputField.gameObject);
     }
 
     /// <summary>

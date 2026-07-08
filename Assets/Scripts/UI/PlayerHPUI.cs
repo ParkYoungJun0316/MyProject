@@ -1,3 +1,4 @@
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,6 +35,12 @@ public class PlayerHPUI : MonoBehaviour
     [Header("하트 크기/간격")]
     [SerializeField] float heartSize    = 50f;
     [SerializeField] float heartSpacing = 8f;
+
+    [Header("CheerName 표시")]
+    [Tooltip("하트 위/옆에 배치할 이름 텍스트 (Prefab에서 연결). 비워두면 표시 안 함.")]
+    [SerializeField] TextMeshProUGUI selfNameLabel;
+    [Tooltip("이름 앞에 붙는 접두어. 비워두면 이름만 표시됨.")]
+    [SerializeField] string selfNamePrefix = "YOU · ";
 
     Image[] heartImages;
 
@@ -98,11 +105,21 @@ public class PlayerHPUI : MonoBehaviour
         {
             events.OnDamaged          += _ => RefreshHearts();
             events.OnRespawned        +=     RefreshHearts;
-            // _colorIndex NetworkVariable 동기화 지연 대비: 색 확정 후 하트 스프라이트 재적용
             events.OnColorTypeChanged += _ => RefreshHearts();
+            events.OnColorTypeChanged += _ => RefreshSelfName();
         }
 
         RefreshHearts();
+        RefreshSelfName();
+    }
+
+    /// <summary>selfNameLabel에 "YOU · BERRY" 형태 텍스트를 반영.</summary>
+    void RefreshSelfName()
+    {
+        if (selfNameLabel == null || player == null) return;
+        int ci = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
+        string name = CheerService.GetCheerName(ci);
+        selfNameLabel.text = selfNamePrefix + (string.IsNullOrEmpty(name) ? "???" : name.ToUpper());
     }
 
     Sprite GetFullHeartSprite()

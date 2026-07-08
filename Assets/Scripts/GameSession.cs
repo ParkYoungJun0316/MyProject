@@ -55,8 +55,11 @@ public class GameSession : MonoBehaviour
 
     // ── 런타임 상태 ───────────────────────────────────────────────
 
-    private readonly List<Player>             _activePlayers = new List<Player>();
-    private readonly HashSet<PlayerColorType> _activeColors  = new HashSet<PlayerColorType>();
+    private readonly List<Player>             _activePlayers  = new List<Player>();
+    private readonly HashSet<PlayerColorType> _activeColors   = new HashSet<PlayerColorType>();
+
+    // 씬 인트로 대화를 이미 본 키 목록 (사망 리로드 후 재표시 방지)
+    private readonly HashSet<string> _seenIntroKeys = new HashSet<string>();
 
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
@@ -132,6 +135,14 @@ public class GameSession : MonoBehaviour
     /// <summary>활성 색 여부 확인.</summary>
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
 
+    // ── 인트로 대화 본 여부 ───────────────────────────────────────
+
+    /// <summary>해당 씬 키의 인트로 대화를 이미 봤는지 확인.</summary>
+    public bool IsIntroSeen(string key) => _seenIntroKeys.Contains(key);
+
+    /// <summary>해당 씬 키의 인트로 대화를 봤다고 기록.</summary>
+    public void MarkIntroSeen(string key) => _seenIntroKeys.Add(key);
+
     /// <summary>
     /// 활성 플레이어·색 목록 초기화. TitleReturnFlow에서 호출.
     /// 타이머·채팅 초기화는 TitleReturnFlow가 직접 처리한다.
@@ -141,6 +152,7 @@ public class GameSession : MonoBehaviour
     {
         _activePlayers.Clear();
         _activeColors.Clear();
+        _seenIntroKeys.Clear();
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }

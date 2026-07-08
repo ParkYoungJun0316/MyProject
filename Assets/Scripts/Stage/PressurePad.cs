@@ -41,6 +41,9 @@ public class PressurePad : MonoBehaviour
     [Tooltip("조건이 해제됐을 때 발동 (인원 부족)")]
     public UnityEvent OnUnfulfilled;
 
+    [Tooltip("발판 위 인원이 바뀔 때마다 발동 (currentCount, requiredCount). UI 전용 — Host/Client 모두 발동.")]
+    public UnityEvent<int, int> OnCountChanged;
+
     public bool IsFulfilled  => _isFulfilled;
     public int  CurrentCount => _players.Count;
 
@@ -49,6 +52,7 @@ public class PressurePad : MonoBehaviour
 
     PlayerColorType       _effectiveColor;
     bool                  _isFulfilled;
+    int                   _lastNotifiedCount = -1;
     readonly List<Player> _players = new List<Player>();
 
     void Awake()
@@ -113,12 +117,21 @@ public class PressurePad : MonoBehaviour
 
     void Evaluate()
     {
-        bool nowFulfilled = _players.Count >= requiredCount;
+        int  currentCount = _players.Count;
+        bool nowFulfilled = currentCount >= requiredCount;
+
+        // UI 갱신 이벤트 — 인원 변화 시마다 발동 (Host/Client 모두, 로컬 UI 전용)
+        if (currentCount != _lastNotifiedCount)
+        {
+            _lastNotifiedCount = currentCount;
+            OnCountChanged?.Invoke(currentCount, requiredCount);
+        }
+
         if (nowFulfilled == _isFulfilled) return;
 
         _isFulfilled = nowFulfilled;
 
-        // Client는 이벤트를 발동하지 않음.
+        // Client는 문 개폐 이벤트를 발동하지 않음.
         // Host가 OnFulfilled → DoorController.CheckPadState() → DoorNetworkSync._isOpen NV
         // → 전원 door.Open()/Close() 연출로 전파됨.
         var nm = NetworkManager.Singleton;

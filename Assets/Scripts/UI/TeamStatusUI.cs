@@ -171,6 +171,13 @@ public class TeamStatusUI : MonoBehaviour
         svc.OnVoteReset       += HandleVoteReset;
     }
 
+    /// <summary>colorIndex → "BERRY" 형태 대문자 CheerName. 매핑 실패 시 "???".</summary>
+    static string GetCheerDisplayName(int colorIndex)
+    {
+        string name = CheerService.GetCheerName(colorIndex);
+        return string.IsNullOrEmpty(name) ? "???" : name.ToUpper();
+    }
+
     void UnsubscribeCheerService()
     {
         var svc = CheerService.Instance;
@@ -241,14 +248,14 @@ public class TeamStatusUI : MonoBehaviour
         var nameObj = new GameObject("Name");
         nameObj.transform.SetParent(root.transform, false);
         slot.nameText           = nameObj.AddComponent<TextMeshProUGUI>();
-        slot.nameText.text      = player.name;
+        slot.nameText.text      = GetCheerDisplayName(slot.colorIndex);
         slot.nameText.fontSize  = 13f;
         slot.nameText.fontStyle = FontStyles.Bold;
         slot.nameText.color     = Color.white;
         var nameRt = nameObj.GetComponent<RectTransform>();
         nameRt.anchorMin = new Vector2(0f, 0.55f);
         nameRt.anchorMax = new Vector2(1f, 1f);
-        nameRt.offsetMin = new Vector2(6f, 0f);
+        nameRt.offsetMin = new Vector2(16f, 0f);
         nameRt.offsetMax = new Vector2(-4f, -2f);
 
         // ── 아래쪽 행 (HorizontalLayoutGroup) ────────────────────

@@ -86,6 +86,7 @@ public class StagePressurePadSetup : MonoBehaviour
         ApplyTopologyScaling();
         SyncDoorVisuals();
         SyncPadVisuals();
+        SyncPadCountUIs();
     }
 
     // ── 단계별 처리 ──────────────────────────────────────────────
@@ -209,6 +210,19 @@ public class StagePressurePadSetup : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 씬의 모든 PressurePad를 순회해 PressurePadCountUI를 초기화한다.
+    /// ApplyTopologyScaling 이후 스케일된 requiredCount 기준으로 표시.
+    /// </summary>
+    void SyncPadCountUIs()
+    {
+        foreach (PressurePad pad in pads)
+        {
+            if (pad == null) continue;
+            pad.GetComponent<PressurePadCountUI>()?.Refresh();
+        }
+    }
+
     // ── 내부 유틸 ────────────────────────────────────────────────
 
     static void Shuffle<T>(T[] arr)
@@ -278,6 +292,7 @@ public class StagePressurePadSetup : MonoBehaviour
         ApplyTopologyScaling();
         SyncDoorVisuals();
         SyncPadVisuals();
+        SyncPadCountUIs();
     }
 #endif
 }

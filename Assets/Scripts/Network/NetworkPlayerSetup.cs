@@ -401,6 +401,21 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _shieldExpireCoroutine = null;
     }
 
+    // ── 스폰 위치 동기화 ──────────────────────────────────────────
+
+    /// <summary>
+    /// PlayerSpawnManager가 스폰 직후 호출.
+    /// ClientNetworkTransform의 AutoOwnerAuthorityTickOffset 로 인해
+    /// OnNetworkSpawn() 시점에 transform.position이 아직 (0,0,0)이므로
+    /// 서버가 계산한 정확한 zone 위치를 RPC로 Owner에게 직접 전달해 spawnPos를 확정.
+    /// </summary>
+    [Rpc(SendTo.Owner)]
+    public void InitSpawnPointOwnerRpc(Vector3 pos, Quaternion rot)
+    {
+        _player?.ForceSetSpawnPoint(pos, rot);
+        Debug.Log($"[NetworkPlayerSetup] spawnPos 확정 — clientId={OwnerClientId} pos={pos}");
+    }
+
     // ── 추락 사망 ─────────────────────────────────────────────────
 
     /// <summary>

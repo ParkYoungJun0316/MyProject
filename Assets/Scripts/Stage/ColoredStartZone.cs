@@ -26,25 +26,34 @@ public class ColoredStartZone : MonoBehaviour
     [SerializeField] Transform spawnPoint = null;
 
     [Header("색상 피드백")]
-    [Tooltip("플레이어가 없을 때 존 색상")]
-    [SerializeField] Color vacantColor    = new Color(0.2f, 0.2f, 0.2f);
-    [Tooltip("플레이어가 들어왔을 때 존 색상")]
-    [SerializeField] Color occupiedColor  = Color.green;
-    [Tooltip("카운트다운 중 존 색상")]
-    [SerializeField] Color countdownColor = Color.yellow;
+    [Tooltip("플레이어가 들어왔을 때 존 색상 (_BaseColor 덮어씀). 이탈 시 머터리얼 원본 색으로 복원됨")]
+    [SerializeField] Color occupiedColor = Color.white;
+
+    [Header("스폰 높이")]
+    [Tooltip("스폰·리스폰 시 Y 오프셋 (바닥 관통 방지). 프리팹 루트가 y=0 기준일 때 0.5 권장")]
+    [SerializeField] float spawnHeightOffset = 0.5f;
 
     public PlayerColorType ColorType       => colorType;
     public bool            IsOccupied      => _isOccupied;
     public Player          OccupyingPlayer => _currentPlayer;
-    public Vector3         SpawnPosition   => spawnPoint != null ? spawnPoint.position : transform.position;
+    public Vector3         SpawnPosition
+    {
+        get
+        {
+            Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
+            pos.y += spawnHeightOffset;
+            return pos;
+        }
+    }
     public Quaternion      SpawnRotation   => spawnPoint != null ? spawnPoint.rotation : transform.rotation;
 
     public event System.Action OnOccupied;
     public event System.Action OnVacated;
 
-    bool     _isOccupied;
-    Player   _currentPlayer;
+    bool       _isOccupied;
+    Player     _currentPlayer;
     Material[] _mats;
+    Color[]    _originalColors;
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId     = Shader.PropertyToID("_Color");
@@ -54,11 +63,16 @@ public class ColoredStartZone : MonoBehaviour
         GetComponent<Collider>().isTrigger = true;
 
         MeshRenderer[] rends = GetComponentsInChildren<MeshRenderer>(true);
-        _mats = new Material[rends.Length];
-        for (int i = 0; i < rends.Length; i++)
-            if (rends[i] != null) _mats[i] = rends[i].material;
+        _mats           = new Material[rends.Length];
+        _originalColors = new Color[rends.Length];
 
-        ApplyColor(vacantColor);
+        for (int i = 0; i < rends.Length; i++)
+        {
+            if (rends[i] == null) continue;
+            _mats[i] = rends[i].material;
+            if      (_mats[i].HasProperty(BaseColorId)) _originalColors[i] = _mats[i].GetColor(BaseColorId);
+            else if (_mats[i].HasProperty(ColorId))     _originalColors[i] = _mats[i].GetColor(ColorId);
+        }
     }
 
     void Start()
@@ -109,15 +123,15 @@ public class ColoredStartZone : MonoBehaviour
 
         _currentPlayer = null;
         _isOccupied    = false;
-        ApplyColor(vacantColor);
+        RestoreOriginalColor();
         OnVacated?.Invoke();
     }
 
-    /// <summary>StageStartGate가 카운트다운 상태를 시각적으로 표시할 때 호출.</summary>
+    /// <summary>StageStartGate가 카운트다운 상태를 시각적으로 표시할 때 호출. 색은 occupiedColor 유지.</summary>
     public void SetCountdownVisual(bool counting)
     {
         if (!_isOccupied) return;
-        ApplyColor(counting ? countdownColor : occupiedColor);
+        ApplyColor(occupiedColor);
     }
 
     void ApplyColor(Color c)
@@ -126,8 +140,20 @@ public class ColoredStartZone : MonoBehaviour
         foreach (Material m in _mats)
         {
             if (m == null) continue;
-            if (m.HasProperty(BaseColorId))      m.SetColor(BaseColorId, c);
+            if      (m.HasProperty(BaseColorId)) m.SetColor(BaseColorId, c);
             else if (m.HasProperty(ColorId))     m.SetColor(ColorId,     c);
+        }
+    }
+
+    void RestoreOriginalColor()
+    {
+        if (_mats == null) return;
+        for (int i = 0; i < _mats.Length; i++)
+        {
+            Material m = _mats[i];
+            if (m == null) continue;
+            if      (m.HasProperty(BaseColorId)) m.SetColor(BaseColorId, _originalColors[i]);
+            else if (m.HasProperty(ColorId))     m.SetColor(ColorId,     _originalColors[i]);
         }
     }
 
