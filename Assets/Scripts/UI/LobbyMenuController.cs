@@ -122,8 +122,12 @@ public class LobbyMenuController : MonoBehaviour
 
     void Start()
     {
+        // Host/Client 버튼 분기는 Vosk 로드보다 먼저 — LoadSync 실패·블로킹 시에도 UI가 올바르게 적용되도록
         ApplyModeUI();
         RefreshRoomCode();
+
+        // 로비 진입 시 Vosk 모델 동기 로드 (이미 로드됐으면 no-op)
+        VoskModelLoader.LoadSync();
 
         int initial = characterDropdown != null ? characterDropdown.value : 0;
         RefreshPortrait(initial);

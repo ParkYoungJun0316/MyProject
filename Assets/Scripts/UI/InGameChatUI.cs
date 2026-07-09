@@ -269,7 +269,8 @@ public class InGameChatUI : NetworkBehaviour
     {
         ulong senderId = rpcParams.Receive.SenderClientId;
         int colorIdx   = -1;
-        if (NetworkSessionData.ClientColors.TryGetValue(senderId, out var color))
+        // PlayerSpawnCoordinator(NetworkList) — 서버·클라이언트 공통 단일 소스
+        if (PlayerSpawnCoordinator.TryGetColor(senderId, out var color))
             colorIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
 
         ReceiveMessageClientRpc(message, colorIdx);
@@ -386,7 +387,8 @@ public class InGameChatUI : NetworkBehaviour
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
             ulong myId = NetworkManager.Singleton.LocalClientId;
-            if (NetworkSessionData.ClientColors.TryGetValue(myId, out var color))
+            // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
+            if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
                 return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
         }
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))

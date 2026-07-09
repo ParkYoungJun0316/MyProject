@@ -414,6 +414,7 @@ GameObject:
   - component: {fileID: 5291049825240206143}
   - component: {fileID: 2635584581124348868}
   - component: {fileID: 1561997008694914845}
+  - component: {fileID: -7124517031025872012}
   m_Layer: 7
   m_Name: Player.G
   m_TagString: Player
@@ -829,6 +830,54 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &-7124517031025872012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5933153780236534023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 4128662277231887988, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: isRun
+      NameHash: -1125067167
+      Synchronize: 1
+      ParameterType: 4
+    - name: isWalk
+      NameHash: 749498201
+      Synchronize: 1
+      ParameterType: 4
+    - name: doDie
+      NameHash: 933339616
+      Synchronize: 1
+      ParameterType: 9
+    - name: doChangeColor
+      NameHash: -276404923
+      Synchronize: 1
+      ParameterType: 9
+    - name: doFall
+      NameHash: 1138991965
+      Synchronize: 1
+      ParameterType: 9
+    - name: doJammed
+      NameHash: -1644529699
+      Synchronize: 1
+      ParameterType: 9
+    - name: doHit
+      NameHash: 1410037878
+      Synchronize: 1
+      ParameterType: 9
+  AnimatorParametersExpanded: 0
 --- !u!1 &7685645179032029918
 GameObject:
   m_ObjectHideFlags: 0

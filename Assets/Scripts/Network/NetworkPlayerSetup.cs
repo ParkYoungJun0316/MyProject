@@ -8,13 +8,19 @@ using UnityEngine.InputSystem;
 ///
 /// [역할]
 /// - OnNetworkSpawn: Owner / 비오너 분기 설정
-///   Owner   : PlayerInput 활성, Rigidbody 물리 사용, TopDownCamera 타겟 설정, VoiceBroadcastTrigger 활성
-///   비오너  : PlayerInput 비활성, Rigidbody kinematic (NetworkTransform이 위치 제어), VoiceBroadcastTrigger 비활성
+///   Owner   : PlayerInput 활성, TopDownCamera 타겟, VoiceBroadcastTrigger 활성, 입력→NV 기록
+///   비오너  : PlayerInput 비활성, Rigidbody kinematic, VoiceBroadcastTrigger 비활성
+///   Host    : 전 플레이어 물리·HP·함정·낙사 판정 (Update에서 Y 체크)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
+///
+/// [CheerKeywordEngine 관리 안 함]
+/// 마이크는 클라이언트 프로세스당 1개뿐이라 Owner/NonOwner 토글이 필요 없다.
+/// CheerKeywordEngine은 0.Title의 NetworkManager GameObject에 세션 싱글턴으로 배치되어
+/// 스폰과 무관하게 항상 동작한다 (Player 프리팹에는 더 이상 없음).
 ///
 /// [배치]
 /// Network Player Prefab에 추가.
-/// 같은 GameObject에 Player, ClientNetworkTransform, Rigidbody, PlayerInput 필요.
+/// 같은 GameObject에 Player, ClientNetworkTransform(서버권한), Rigidbody, PlayerInput 필요.
 /// </summary>
 [RequireComponent(typeof(Player))]
 public class NetworkPlayerSetup : NetworkBehaviour
@@ -58,7 +64,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
     private PlayerInput             _playerInput;
     private PlayerEvents            _events;
     private VoiceBroadcastTrigger   _voiceBroadcast;
-    private CheerKeywordEngine      _cheerKeyword;
 
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
@@ -75,7 +80,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _playerInput     = GetComponent<PlayerInput>();
         _events          = GetComponent<PlayerEvents>();
         _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
-        _cheerKeyword    = GetComponent<CheerKeywordEngine>();
     }
 
     public override void OnNetworkSpawn()
@@ -112,6 +116,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
             ApplyIsBlack(_isBlack.Value);
             ApplyIsUniqueColor(_isUniqueColor.Value);
         }
+
+        // Phase 2: Owner/비오너 설정 이후 Rigidbody 권한을 서버 기준으로 확정
+        ApplyPhysicsAuthority();
     }
 
     public override void OnNetworkDespawn()
@@ -143,8 +150,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_events == null) _events = GetComponent<PlayerEvents>();
         _events?.RaiseUniqueColorChanged(0);
 
-        // Rigidbody 물리 활성 (ClientNetworkTransform이 위치를 브로드캐스트)
-        if (_rb != null) _rb.isKinematic = false;
+        // PlayerSpawnCoordinator(NetworkList)에서 자신의 색을 조회해 해당 ColoredStartZone
+        // 위치로 즉시 이동. OnNetworkSpawn() 내에서 위치를 확정해 (0,0,0) 스폰 문제를 방지.
+        MoveToSpawnZone();
 
         // TopDownCamera → 이 오브젝트를 follow 타겟으로 설정
         var cam = FindAnyObjectByType<TopDownCamera>();
@@ -158,10 +166,64 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
 
-        // 키워드 인식도 Owner만 (자기 마이크만 분석)
-        if (_cheerKeyword != null) _cheerKeyword.enabled = true;
-
         Debug.Log($"[NetworkPlayerSetup] Owner 설정 완료 — clientId={OwnerClientId}");
+    }
+
+    /// <summary>
+    /// PlayerSpawnCoordinator(NetworkList)에서 자신의 색을 읽어 일치하는 ColoredStartZone으로 이동.
+    /// 존이 없거나 색 매핑이 없으면, 이미 Netcode가 보정해 둔 현재 위치를 스폰 앵커로 확정한다.
+    /// </summary>
+    void MoveToSpawnZone()
+    {
+        if (NetworkManager.Singleton == null) { EnablePhysics(); return; }
+
+        ulong myId = NetworkManager.Singleton.LocalClientId;
+        if (!PlayerSpawnCoordinator.TryGetColor(myId, out var myColor))
+        {
+            Debug.LogWarning($"[NetworkPlayerSetup] 색 정보 없음 — clientId={myId} 현재 위치를 스폰 앵커로 확정");
+            UseCurrentPositionAsSpawnAnchor();
+            return;
+        }
+
+        // 비활성 존 포함 전체 탐색 (ColoredStartZone.Start()에서 비활성화된 것도 위치는 유효)
+        var zones = FindObjectsByType<ColoredStartZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var zone in zones)
+        {
+            if (zone.ColorType != myColor) continue;
+
+            Vector3    pos = zone.SpawnPosition;
+            Quaternion rot = zone.SpawnRotation;
+
+            transform.SetPositionAndRotation(pos, rot);
+            _player?.ForceSetSpawnPoint(pos, rot);
+            EnablePhysics();
+
+            Debug.Log($"[NetworkPlayerSetup] 스폰 위치 결정 — clientId={OwnerClientId} color={myColor} pos={pos}");
+            return;
+        }
+
+        Debug.LogWarning($"[NetworkPlayerSetup] color={myColor}에 해당하는 ColoredStartZone 없음 — 현재 위치를 스폰 앵커로 확정");
+        UseCurrentPositionAsSpawnAnchor();
+    }
+
+    /// <summary>
+    /// 스폰 존 매칭에 실패했을 때의 폴백.
+    /// 이 시점의 transform.position은 Netcode가 이미 서버 스폰 좌표로 보정해 둔 값이라
+    /// (Player.Awake()가 캐싱한 값보다 신뢰 가능) 이를 그대로 리스폰 앵커로 확정한다.
+    /// 이렇게 해야 나중에 사망 → Respawn() 시 (0,0,0) 등 잘못된 좌표로 밀리지 않는다.
+    /// </summary>
+    void UseCurrentPositionAsSpawnAnchor()
+    {
+        _player?.ForceSetSpawnPoint(transform.position, transform.rotation);
+        EnablePhysics();
+    }
+
+    void EnablePhysics()
+    {
+        if (_rb == null) return;
+        _rb.linearVelocity  = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
+        // isKinematic는 ApplyPhysicsAuthority()에서 IsServer 기준으로 설정
     }
 
     // ── 비오너 설정 ───────────────────────────────────────────────
@@ -172,16 +234,30 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_playerInput != null) _playerInput.enabled = false;
         if (_player != null)      _player.isOwnerControlled = false;
 
-        // Rigidbody kinematic — ClientNetworkTransform이 위치 제어
+        // 속도 초기화 (isKinematic는 ApplyPhysicsAuthority에서 IsServer 기준으로 처리)
         if (_rb != null)
         {
-            _rb.isKinematic = true;
             _rb.linearVelocity  = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
         }
 
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = false;
-        if (_cheerKeyword  != null) _cheerKeyword.enabled  = false;
+    }
+
+    /// <summary>
+    /// Phase 2 — Host Authority: 서버면 Rigidbody 동적(물리 시뮬), 클라이언트면 kinematic(NetworkTransform 수신).
+    /// Owner/비오너 설정 이후 OnNetworkSpawn 마지막에 호출해 최종 권한을 확정한다.
+    /// Host는 전 플레이어의 Rigidbody를 직접 시뮬레이션하므로 모두 동적으로 유지.
+    /// </summary>
+    void ApplyPhysicsAuthority()
+    {
+        if (_rb == null) return;
+        _rb.linearVelocity  = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
+        // Owner: dynamic (직접 물리 이동)
+        // Host 비오너: dynamic (함정 Trigger 판정 유지)
+        // Client 비오너: kinematic (NT 수신 전용)
+        _rb.isKinematic = (!IsOwner && !IsServer);
     }
 
     // ── 색 동기화 ─────────────────────────────────────────────────
@@ -278,10 +354,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         _damageInvulnEndTime = Time.time + (_player?.InvulnerabilityDuration ?? 0.5f);
 
-        // Shield만 깎인 경우에도 피격 연출은 동일하게 재생
-        NotifyHitClientRpc(knockback);
-
-        if (newHp <= 0)
+        if (newHp > 0)
+            NotifyHitClientRpc(knockback);
+        else
             ForceKillClientRpc();
     }
 
@@ -308,21 +383,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         // HP가 실제로 줄었을 때만 피격 이벤트 발행.
         // HP 증가(스폰·리스폰 회복)에서 Hit SFX·연출이 울리는 버그 방지.
-        if (next < prev)
+        if (next > 0 && next < prev)
             _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
-    }
-
-    // ── Phase2: 클라이언트 피격 신고 ──────────────────────────────
-
-    /// <summary>
-    /// 오너 클라이언트가 발사체·접촉 함정과 충돌했을 때 서버에 피격을 신고.
-    /// 서버가 무적·사망·_hp 검증 후 데미지를 확정.
-    /// InvokePermission=Owner: 이 플레이어의 오너만 호출 가능.
-    /// </summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void ReportHitServerRpc(int amount, bool knockback)
-    {
-        ApplyDamageFromServer(amount, knockback);
     }
 
     // ── 문 즉사 (Jammed 애니) ──────────────────────────────────────
@@ -345,13 +407,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         if (!IsOwner) return;
         _player?.KillInstantly();
-    }
-
-    /// <summary>오너 클라이언트가 문 충돌을 감지했을 때 서버에 즉사 신고.</summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void ReportInstantKillServerRpc()
-    {
-        ApplyInstantKillFromServer();
     }
 
     // ── 응원 버프 동기화 ──────────────────────────────────────────
@@ -401,21 +456,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _shieldExpireCoroutine = null;
     }
 
-    // ── 스폰 위치 동기화 ──────────────────────────────────────────
-
-    /// <summary>
-    /// PlayerSpawnManager가 스폰 직후 호출.
-    /// ClientNetworkTransform의 AutoOwnerAuthorityTickOffset 로 인해
-    /// OnNetworkSpawn() 시점에 transform.position이 아직 (0,0,0)이므로
-    /// 서버가 계산한 정확한 zone 위치를 RPC로 Owner에게 직접 전달해 spawnPos를 확정.
-    /// </summary>
-    [Rpc(SendTo.Owner)]
-    public void InitSpawnPointOwnerRpc(Vector3 pos, Quaternion rot)
-    {
-        _player?.ForceSetSpawnPoint(pos, rot);
-        Debug.Log($"[NetworkPlayerSetup] spawnPos 확정 — clientId={OwnerClientId} pos={pos}");
-    }
-
     // ── 추락 사망 ─────────────────────────────────────────────────
 
     /// <summary>
@@ -430,11 +470,15 @@ public class NetworkPlayerSetup : NetworkBehaviour
         ForceKillClientRpc();
     }
 
-    /// <summary>오너 클라이언트가 낙사 기준점 통과를 신고. 서버가 낙사를 확정하고 Owner에게 Die()를 전달.</summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void ReportFallDeathServerRpc()
+    /// <summary>
+    /// Server: 낙사 Y 판정.
+    /// </summary>
+    void Update()
     {
-        ApplyFallDeathFromServer();
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead || !_player.enableFallDeath) return;
+        if (transform.position.y < _player.fallDeathY)
+            ApplyFallDeathFromServer();
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

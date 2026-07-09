@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -62,13 +63,17 @@ public class ContactDamage : MonoBehaviour
         if (!isActive) return;
         if (damage <= 0) return;
         if (!other.CompareTag("Player")) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         if (Time.time < _nextDamageTime) return;
 
         Player p = other.GetComponent<Player>()
                    ?? other.GetComponentInParent<Player>();
         if (p == null) return;
 
-        NetworkDamageUtil.ApplyDamageWithOwnerReport(p, damage, false);
+        NetworkDamageUtil.ApplyDamage(p, damage, false);
         _nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.05f);
     }
 }

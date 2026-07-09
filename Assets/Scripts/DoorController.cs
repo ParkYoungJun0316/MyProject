@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -209,6 +210,8 @@ public class DoorController : MonoBehaviour
     void OnCollisionEnter(Collision col)
     {
         if (!_isClosing) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
         Player p = col.collider.GetComponent<Player>();
         if (p == null) return;
         NetworkDamageUtil.ApplyInstantKill(p);
@@ -217,6 +220,8 @@ public class DoorController : MonoBehaviour
     void OnCollisionStay(Collision col)
     {
         if (!_isClosing) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
         Player p = col.collider.GetComponent<Player>();
         if (p == null) return;
         NetworkDamageUtil.ApplyInstantKill(p);

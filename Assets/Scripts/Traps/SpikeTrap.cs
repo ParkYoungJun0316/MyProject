@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -118,6 +119,10 @@ public class SpikeTrap : TrapBase
     void TryDamagePlayer(Collider other)
     {
         if (!isRaised) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         if (Time.time < nextDamageTime) return;
 
         // CompareTag는 자식 콜라이더에선 실패하므로 컴포넌트 검색으로 판별
@@ -125,7 +130,7 @@ public class SpikeTrap : TrapBase
                    ?? other.GetComponentInParent<Player>();
         if (p == null) return;
 
-        NetworkDamageUtil.ApplyDamageWithOwnerReport(p, damage, false);
+        NetworkDamageUtil.ApplyDamage(p, damage, false);
         nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.1f);
     }
 }

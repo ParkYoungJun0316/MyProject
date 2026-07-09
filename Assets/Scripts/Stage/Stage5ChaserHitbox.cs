@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -34,11 +35,14 @@ public class Stage5ChaserHitbox : MonoBehaviour
         if (!_chaser.CanApplyDamage()) return;
         if (!other.CompareTag("Player")) return;
 
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
 
-        // 넉백 없음 (EnemyHitbox와 구분). 피격이 실제로 들어갔을 때만 Chaser 정지 연동.
-        if (!p.TryTakeDamage(damage, false)) return;
+        // 넉백 없음. 데미지 적용 후 Chaser 정지 연동 (서버에서만).
+        NetworkDamageUtil.ApplyDamage(p, damage, false);
         _chaser.NotifyHitFromHitbox();
     }
 }

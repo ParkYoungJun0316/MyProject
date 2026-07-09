@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
@@ -577,6 +578,10 @@ public class Enemy : MonoBehaviour, IDamageReceiver
     {
         if (isDead) return;
         if (contactDamage <= 0) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         if (Time.time < contactDamageTimer) return;
         if (!collision.gameObject.CompareTag("Player")) return;
 

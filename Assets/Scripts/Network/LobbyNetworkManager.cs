@@ -181,7 +181,8 @@ public class LobbyNetworkManager : NetworkBehaviour
             return;
         }
 
-        // clientId → color 매핑 저장 (PlayerSpawnManager에서 사용)
+        // clientId → color 매핑을 로비→스테이지 1회성 브릿지에 저장.
+        // (스테이지 진입 후엔 PlayerSpawnCoordinator가 이 값을 딱 1번 읽어 NetworkList로 복제함)
         NetworkSessionData.ClientColors.Clear();
         var colorList = new PlayerColorType[_slots.Count];
         for (int i = 0; i < _slots.Count; i++)
@@ -269,9 +270,12 @@ public class LobbyNetworkManager : NetworkBehaviour
     }
 
     /// <summary>
-    /// 활성 색(PlayerColorType[])을 Client에 동기화.
+    /// 활성 색(PlayerColorType[])을 Client에 동기화하는 "초기값 힌트"용 RPC.
     /// StartGameServerRpc → LoadScene 직전에 호출되므로
-    /// 씬 로드 시 ColoredStartZone.Start()에서 올바른 색 기준을 사용할 수 있음.
+    /// 씬 로드 시 ColoredStartZone.Start()에서 이 값을 우선 사용할 수 있음.
+    /// 단, RPC 도착이 씬 로드보다 늦을 수 있으므로 최종 확정은 항상
+    /// PlayerSpawnCoordinator(NetworkList)를 거친다 — 이 RPC는 clientId→color를
+    /// 저장/재구성하지 않는다(단일 소스 원칙, 죽은 코드 방지).
     /// </summary>
     [ClientRpc]
     void SyncActiveColorsClientRpc(int[] colorIndices)
@@ -284,14 +288,11 @@ public class LobbyNetworkManager : NetworkBehaviour
         for (int i = 0; i < colorIndices.Length; i++)
             colorList[i] = (PlayerColorType)colorIndices[i];
 
+        // 씬 로드 전 ColoredStartZone.Start()가 쓸 초기값일 뿐 — 확정값은
+        // PlayerSpawnCoordinator(NetworkList)가 스폰 시 별도로 보장한다(단일 소스 원칙).
         GameSession.Instance.SetActiveColors(colorList);
 
-        // ClientColors 동기화: _slots 순서 = colorIndices 순서 보장 (StartGameServerRpc에서 동일 순서로 빌드)
-        NetworkSessionData.ClientColors.Clear();
-        for (int i = 0; i < _slots.Count && i < colorIndices.Length; i++)
-            NetworkSessionData.ClientColors[_slots[i].ClientId] = (PlayerColorType)colorIndices[i];
-
-        Debug.Log($"[LobbyNetworkManager] Client 활성 색·ClientColors 동기화: {string.Join(", ", colorList)}");
+        Debug.Log($"[LobbyNetworkManager] Client 활성 색 동기화(초기값): {string.Join(", ", colorList)}");
     }
 
     void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>

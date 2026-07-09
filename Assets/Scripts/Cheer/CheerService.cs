@@ -249,7 +249,7 @@ public class CheerService : NetworkBehaviour
         var players = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
         foreach (var p in players)
         {
-            if (!NetworkSessionData.ClientColors.TryGetValue(p.OwnerClientId, out var color)) continue;
+            if (!PlayerSpawnCoordinator.TryGetColor(p.OwnerClientId, out var color)) continue;
             int idx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
             if (idx != targetColorIndex) continue;
 
@@ -316,7 +316,7 @@ public class CheerService : NetworkBehaviour
         if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return false;
 
         // 자기 자신 응원 불가
-        if (NetworkSessionData.ClientColors.TryGetValue(cheererId, out var myColor))
+        if (PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor))
         {
             int myIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, myColor);
             if (myIdx == targetColorIndex) return false;
@@ -377,7 +377,7 @@ public class CheerService : NetworkBehaviour
         var result = new List<int>(voters.Count);
         foreach (ulong id in voters)
         {
-            if (!NetworkSessionData.ClientColors.TryGetValue(id, out var color)) continue;
+            if (!PlayerSpawnCoordinator.TryGetColor(id, out var color)) continue;
             int idx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
             if (idx >= 0) result.Add(idx);
         }

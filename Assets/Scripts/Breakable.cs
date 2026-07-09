@@ -225,12 +225,7 @@ public class Breakable : MonoBehaviour
                                ?? hits[i].GetComponentInParent<Player>();
                     if (p == null) continue;
 
-                    if (isNetworkActive)
-                    {
-                        var netSetup = p.GetComponent<NetworkPlayerSetup>();
-                        if (netSetup != null) { netSetup.ApplyDamageFromServer(9999); continue; }
-                    }
-                    p.KillInstantly();
+                    NetworkDamageUtil.ApplyDamage(p, 9999);
                 }
             }
         }

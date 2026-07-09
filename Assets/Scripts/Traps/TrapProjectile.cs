@@ -108,7 +108,7 @@ public class TrapProjectile : MonoBehaviour
     }
 
     static void ApplyDamageToPlayer(Player p, int amount)
-        => NetworkDamageUtil.ApplyDamageWithOwnerReport(p, amount, false);
+        => NetworkDamageUtil.ApplyDamage(p, amount, false);
 
     void DestroyProjectile()
     {

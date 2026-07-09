@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -14,6 +15,9 @@ public class EnemyHitbox : MonoBehaviour
     {
         if (damage <= 0) return;
         if (!other.CompareTag("Player")) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
 
         Player p = other.GetComponent<Player>();
         if (p != null)

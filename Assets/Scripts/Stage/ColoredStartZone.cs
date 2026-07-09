@@ -73,20 +73,42 @@ public class ColoredStartZone : MonoBehaviour
             if      (_mats[i].HasProperty(BaseColorId)) _originalColors[i] = _mats[i].GetColor(BaseColorId);
             else if (_mats[i].HasProperty(ColorId))     _originalColors[i] = _mats[i].GetColor(ColorId);
         }
+
+        // OnPlayersReady는 스폰이 완전히 끝난 뒤 발행되므로, 이 시점에 확정 재보정한다.
+        // GameObject가 비활성화돼도 static event 구독은 끊기지 않으므로(코루틴이 아닌
+        // 일반 델리게이트 호출) Start()에서 SetActive(false)가 걸려도 이후 정상 수신됨.
+        PlayerSpawnCoordinator.OnPlayersReady += RefreshActiveStateConfirmed;
     }
 
     void Start()
     {
-        // GameSession이 있으면 활성 색 기준으로 자신을 켜고 끔
+        // GameSession 기준 최선 추정치로 즉시 반영 (온라인은 RPC 도달 전이라 틀릴 수 있음 —
+        // OnPlayersReady 발행 시 RefreshActiveStateConfirmed()가 확정 재보정한다)
         if (GameSession.Instance != null && !GameSession.Instance.IsColorActive(colorType))
             gameObject.SetActive(false);
     }
 
     void OnDestroy()
     {
+        PlayerSpawnCoordinator.OnPlayersReady -= RefreshActiveStateConfirmed;
+
         if (_mats == null) return;
         foreach (Material m in _mats)
             if (m != null) Destroy(m);
+    }
+
+    /// <summary>
+    /// 플레이어 스폰이 완전히 끝난 뒤(OnPlayersReady) 호출되는 확정 재보정.
+    /// 온라인 모드에서는 PlayerSpawnCoordinator의 네트워크 동기화된 색 목록(레이스 없음)을
+    /// 사용해, Start() 시점에 GameSession 동기화가 아직 안 끝나 존이 잘못 꺼졌던 경우를 되살린다.
+    /// </summary>
+    void RefreshActiveStateConfirmed()
+    {
+        bool active = LobbyContext.IsOnline
+            ? PlayerSpawnCoordinator.IsColorInSession(colorType)
+            : (GameSession.Instance == null || GameSession.Instance.IsColorActive(colorType));
+
+        gameObject.SetActive(active);
     }
 
     void OnTriggerEnter(Collider other) => TryOccupy(other);

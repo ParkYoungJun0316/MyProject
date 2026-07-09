@@ -60,7 +60,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     /// <summary>
     /// 네트워크 Owner 여부. NetworkPlayerSetup이 OnNetworkSpawn에서 설정.
-    /// 오프라인(NGO 미사용) 시 기본값 true → 입력 그대로 동작.
+    /// 의미(Phase 2): "로컬 입력·카메라·연출 대상" — 물리·이동 판정 주도 아님 (서버가 담당).
+    /// 오프라인(NGO 미사용) 시 기본값 true → 입력·물리 그대로 동작.
     /// </summary>
     [HideInInspector] public bool isOwnerControlled = true;
 
@@ -105,6 +106,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public void OnMove(InputValue value)
     {
         if (IsDead || !isOwnerControlled) return;
+        if (fallAnimTriggered) { moveInput = Vector2.zero; return; }
         if (InGameChatUI.IsChatOpen) { moveInput = Vector2.zero; return; }
         moveInput = value.Get<Vector2>();
     }
@@ -135,7 +137,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void Update()
     {
-        // 온라인: Owner만 실제 Y를 알고 있음 (ClientNetworkTransform). 비오너는 낙사 판정 제외.
+        // Fall 애니: Owner 로컬 재생. 사망 판정: Host(NetworkPlayerSetup.Update)가 Y 체크 후 확정.
         if (!IsDead && enableFallDeath && isOwnerControlled)
         {
             float y = transform.position.y;
@@ -143,15 +145,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             if (!fallAnimTriggered && y < fallAnimY)
             {
                 fallAnimTriggered = true;
+                moveInput = Vector2.zero;
                 anim?.SetTrigger("doFall");
                 events?.RaiseFallDeath();
             }
+            // 오프라인(NGO 미사용)에서만 직접 사망 처리. 온라인은 Host가 NetworkPlayerSetup.Update에서 판정.
             if (y < fallDeathY)
             {
                 var nm = NetworkManager.Singleton;
-                if (nm != null && nm.IsListening)
-                    GetComponent<NetworkPlayerSetup>()?.ReportFallDeathServerRpc();
-                else
+                if (nm == null || !nm.IsListening)
                     Die();
             }
         }
@@ -189,13 +191,13 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void FixedUpdate()
     {
-        // 비오너 플레이어: NetworkTransform(ClientNetworkTransform)이 위치 제어.
-        // kinematic Rigidbody에 velocity 설정 시 "not supported" 에러 → 건너뜀.
+        // Owner Authority: Owner가 직접 물리 이동. 오프라인도 동일.
+        // 비오너(Host 복사본 포함)는 NT로 위치 수신 → Move() 불필요.
         if (!isOwnerControlled) return;
 
         if (IsDead)
         {
-            rigid.linearVelocity = Vector3.zero;
+            rigid.linearVelocity  = Vector3.zero;
             rigid.angularVelocity = Vector3.zero;
             return;
         }
@@ -366,13 +368,18 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         if (other.CompareTag("EnemyBullet"))
         {
-            Bullet enemyBullet = other.GetComponent<Bullet>();
-            if (enemyBullet != null)
-                NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage, false);
-
-            // 네트워크 모드: 발사체 파괴는 서버만. 오프라인: 그대로 Destroy
             var nm = NetworkManager.Singleton;
-            if (nm == null || !nm.IsListening)
+            bool isOnline = nm != null && nm.IsListening;
+
+            if (!isOnline || nm.IsServer)
+            {
+                Bullet enemyBullet = other.GetComponent<Bullet>();
+                if (enemyBullet != null)
+                    NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage, false);
+            }
+
+            // 발사체 파괴: 서버만 Destroy(→ 전원 Despawn). 오프라인: 그대로 Destroy
+            if (!isOnline)
             {
                 if (other.GetComponent<Rigidbody>() != null)
                     Destroy(other.gameObject);
@@ -386,7 +393,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         isDamage = true;
 
-        if (isBossAtk && isOwnerControlled)
+        // Phase 2: Rigidbody가 kinematic(클라이언트)이면 AddForce 불가 → 가드.
+        // 물리 넉백은 서버 RB에서만 유효하나, 현재 넉백은 연출 목적이므로 MVP에서 감수.
+        if (isBossAtk && isOwnerControlled && !rigid.isKinematic)
         {
             isKnockback = true;
             rigid.AddForce(transform.forward * -25, ForceMode.Impulse);
@@ -396,13 +405,13 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         yield return new WaitForSeconds(invuln);
         isDamage = false;
 
-        if (isBossAtk && isOwnerControlled)
+        if (isBossAtk && isOwnerControlled && !rigid.isKinematic)
         {
             rigid.linearVelocity = Vector3.zero;
             isKnockback = false;
         }
 
-        if (isBossAtk && !isOwnerControlled)
+        if (isBossAtk && (!isOwnerControlled || rigid.isKinematic))
             isKnockback = false;
     }
 
@@ -427,13 +436,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         moveInput = Vector2.zero;
         fixedY = transform.position.y;
-        // kinematic 상태에서 velocity 설정 시 Unity 경고 방지
         if (!rigid.isKinematic)
         {
             rigid.linearVelocity  = Vector3.zero;
             rigid.angularVelocity = Vector3.zero;
         }
-        rigid.isKinematic = true;
 
         if (anim != null)
         {
@@ -486,10 +493,10 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         transform.SetPositionAndRotation(spawnPos, spawnRot);
         heart = maxHeart;
 
-        // 비오너: NetworkTransform이 위치 제어 → isKinematic 유지
-        if (isOwnerControlled)
-            rigid.isKinematic = false;
-        // kinematic 상태에서 velocity 설정 시 Unity 경고 방지
+        // Owner Authority: Owner·Host = dynamic, 비오너 Client = kinematic.
+        var nm = NetworkManager.Singleton;
+        bool isOnline = nm != null && nm.IsListening;
+        rigid.isKinematic = isOnline && !isOwnerControlled && !nm.IsServer;
         if (!rigid.isKinematic)
         {
             rigid.linearVelocity  = Vector3.zero;

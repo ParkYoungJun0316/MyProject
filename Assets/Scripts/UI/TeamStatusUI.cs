@@ -113,20 +113,35 @@ public class TeamStatusUI : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// ColorOrder 인덱스(0=berry …). PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType.
+    /// </summary>
+    static int ResolveColorIndex(Player player)
+    {
+        if (player == null) return -1;
+
+        var net = player.GetComponent<NetworkObject>();
+        // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
+        if (net != null
+            && PlayerSpawnCoordinator.TryGetColor(net.OwnerClientId, out var sessionColor))
+            return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, sessionColor);
+
+        return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
+    }
+
     static int GetMyColorIndex()
     {
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
             ulong myId = NetworkManager.Singleton.LocalClientId;
-            if (NetworkSessionData.ClientColors.TryGetValue(myId, out var color))
+            if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
                 return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
         }
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {
             var net      = p.GetComponent<NetworkObject>();
             bool isOwner = (net != null && net.IsOwner) || p.isOwnerControlled;
-            if (isOwner)
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
+            if (isOwner) return ResolveColorIndex(p);
         }
         return -1;
     }
@@ -234,7 +249,7 @@ public class TeamStatusUI : MonoBehaviour
         var slot        = new PlayerSlot();
         slot.player     = player;
         slot.buffSystem = player.GetComponent<PlayerBuffSystem>();
-        slot.colorIndex = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
+        slot.colorIndex = ResolveColorIndex(player);
 
         // ── 슬롯 루트 ─────────────────────────────────────────────
         var root   = new GameObject(player.name);
@@ -355,6 +370,10 @@ public class TeamStatusUI : MonoBehaviour
     void RefreshSlot(PlayerSlot slot)
     {
         if (slot == null || slot.player == null) return;
+
+        slot.colorIndex = ResolveColorIndex(slot.player);
+        if (slot.nameText != null)
+            slot.nameText.text = GetCheerDisplayName(slot.colorIndex);
 
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
         if (slot.heartImages == null) return;

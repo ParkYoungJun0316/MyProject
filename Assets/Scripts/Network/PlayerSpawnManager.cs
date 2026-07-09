@@ -8,7 +8,7 @@ using UnityEngine;
 /// [동작]
 /// OnNetworkSpawn (Host) :
 ///   1. 씬에 미리 배치된 비네트워크 Player 인스턴스 제거
-///   2. NetworkSessionData.ClientColors 기반으로 각 clientId에 맞는 색의
+///   2. PlayerSpawnCoordinator(단일 소스, NetworkList) 기반으로 각 clientId에 맞는 색의
 ///      ColoredStartZone.spawnPoint 위에 Network Player Prefab 스폰
 ///   3. NetworkPlayerSetup.SetColorIndex() 호출해 색 동기화
 ///
@@ -21,7 +21,7 @@ using UnityEngine;
 public class PlayerSpawnManager : NetworkBehaviour
 {
     [Header("Network Player Prefab")]
-    [Tooltip("NetworkObject + Player + NetworkPlayerSetup + ClientNetworkTransform 포함 Prefab.")]
+    [Tooltip("NetworkObject + Player + NetworkPlayerSetup + ClientNetworkTransform(서버권한 NetworkTransform) 포함 Prefab.")]
     [SerializeField] private GameObject playerPrefab;
 
     // ── 초기화 ────────────────────────────────────────────────────
@@ -101,12 +101,19 @@ public class PlayerSpawnManager : NetworkBehaviour
                 player.isUniqueColor = true;
                 player.ForceSetSpawnPoint(pos, rot);
 
-                // 솔로(1인)에서 첫 번째 플레이어를 카메라가 따라가도록 설정
-                if (firstPlayer && topDownCam != null)
+                if (firstPlayer)
                 {
-                    topDownCam.target     = go.transform;
-                    player.followCamera   = topDownCam.GetComponent<Camera>();
-                    firstPlayer           = false;
+                    firstPlayer = false;
+
+                    // 솔로 첫 플레이어에게 카메라 연결
+                    if (topDownCam != null)
+                    {
+                        topDownCam.target   = go.transform;
+                        player.followCamera = topDownCam.GetComponent<Camera>();
+                    }
+
+                    // CheerKeywordEngine은 더 이상 Player 프리팹에 없음 — 0.Title의
+                    // NetworkManager GameObject에 세션 싱글턴으로 배치되어 항상 동작함.
                 }
             }
 
@@ -145,16 +152,16 @@ public class PlayerSpawnManager : NetworkBehaviour
             return;
         }
 
-        if (NetworkSessionData.ClientColors.Count == 0)
+        if (PlayerSpawnCoordinator.EntryCount == 0)
         {
-            Debug.LogWarning("[PlayerSpawnManager] NetworkSessionData.ClientColors가 비어 있습니다. " +
+            Debug.LogWarning("[PlayerSpawnManager] PlayerSpawnCoordinator에 clientId→color 매핑이 없습니다. " +
                              "에디터 직접 실행 시에는 오프라인 경로를 사용하세요.");
             return;
         }
 
         var zones = FindObjectsByType<ColoredStartZone>(FindObjectsSortMode.None);
 
-        foreach (var (clientId, colorType) in NetworkSessionData.ClientColors)
+        foreach (var (clientId, colorType) in PlayerSpawnCoordinator.GetAllEntries())
         {
             ColoredStartZone zone = FindZone(zones, colorType);
 
@@ -174,13 +181,7 @@ public class PlayerSpawnManager : NetworkBehaviour
 
             var setup = go.GetComponent<NetworkPlayerSetup>();
             if (setup != null)
-            {
                 setup.SetColorIndex(ColorTypeToIndex(colorType));
-                // ClientNetworkTransform의 AutoOwnerAuthorityTickOffset로 인해
-                // Owner의 OnNetworkSpawn() 시점에 transform.position이 (0,0,0)이다.
-                // RPC는 OnNetworkSpawn() 완료 후 처리되므로 정확한 zone 위치를 안전하게 전달.
-                setup.InitSpawnPointOwnerRpc(pos, rot);
-            }
 
             Debug.Log($"[PlayerSpawnManager] 스폰 완료 — clientId={clientId} color={colorType} pos={pos}");
         }
@@ -209,8 +210,8 @@ public class PlayerSpawnManager : NetworkBehaviour
     [ContextMenu("테스트: 세션 데이터 출력")]
     void Debug_SessionData()
     {
-        Debug.Log($"[PlayerSpawnManager] ClientColors count={NetworkSessionData.ClientColors.Count}");
-        foreach (var (id, color) in NetworkSessionData.ClientColors)
+        Debug.Log($"[PlayerSpawnManager] PlayerSpawnCoordinator entry count={PlayerSpawnCoordinator.EntryCount}");
+        foreach (var (id, color) in PlayerSpawnCoordinator.GetAllEntries())
             Debug.Log($"  clientId={id} → {color}");
     }
 #endif

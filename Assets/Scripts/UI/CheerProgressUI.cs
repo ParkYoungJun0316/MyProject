@@ -338,7 +338,8 @@ public class CheerProgressUI : MonoBehaviour
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
             ulong myId = NetworkManager.Singleton.LocalClientId;
-            if (NetworkSessionData.ClientColors.TryGetValue(myId, out var color))
+            // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
+            if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
                 return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
         }
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))

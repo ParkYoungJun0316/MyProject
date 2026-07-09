@@ -116,7 +116,12 @@ public class GameSession : MonoBehaviour
     void RefreshPlayersOnReady()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayersOnReady;
-        SetActiveColors(activeColorSlots);
+
+        // 이 콜백은 온라인 모드에서만 구독됨(OnSceneLoaded 참고).
+        // activeColorSlots는 로비 RPC로 채워진 "초기값"이라 레이스가 남아있을 수 있으므로,
+        // 스폰이 완전히 끝난 이 시점엔 PlayerSpawnCoordinator(NetworkList)에서 확정값을 다시 읽는다.
+        var confirmedColors = PlayerSpawnCoordinator.GetActiveColors();
+        SetActiveColors(confirmedColors.Length > 0 ? confirmedColors : activeColorSlots);
     }
 
     // ── 공개 API ──────────────────────────────────────────────────
