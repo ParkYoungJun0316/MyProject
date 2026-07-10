@@ -131,8 +131,8 @@ public class ColoredStartZone : MonoBehaviour
         _currentPlayer = p;
         _isOccupied    = true;
 
-        // 리스폰 위치 갱신 — 이 존이 해당 플레이어의 리스폰 위치가 됨
-        p.ForceSetSpawnPoint(SpawnPosition, SpawnRotation);
+        // [B+C 방식] 리스폰 위치는 PlayerSpawnManager 고정 좌표가 담당.
+        // Zone 점유 시 ForceSetSpawnPoint 호출 불필요.
 
         ApplyColor(occupiedColor);
         OnOccupied?.Invoke();

@@ -13,11 +13,6 @@ using UnityEngine.InputSystem;
 ///   Host    : 전 플레이어 물리·HP·함정·낙사 판정 (Update에서 Y 체크)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
 ///
-/// [CheerKeywordEngine 관리 안 함]
-/// 마이크는 클라이언트 프로세스당 1개뿐이라 Owner/NonOwner 토글이 필요 없다.
-/// CheerKeywordEngine은 0.Title의 NetworkManager GameObject에 세션 싱글턴으로 배치되어
-/// 스폰과 무관하게 항상 동작한다 (Player 프리팹에는 더 이상 없음).
-///
 /// [배치]
 /// Network Player Prefab에 추가.
 /// 같은 GameObject에 Player, ClientNetworkTransform(서버권한), Rigidbody, PlayerInput 필요.
@@ -64,6 +59,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     private PlayerInput             _playerInput;
     private PlayerEvents            _events;
     private VoiceBroadcastTrigger   _voiceBroadcast;
+    private CheerKeywordEngine      _cheerKeyword;
 
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
@@ -80,6 +76,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _playerInput     = GetComponent<PlayerInput>();
         _events          = GetComponent<PlayerEvents>();
         _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
+        _cheerKeyword    = GetComponent<CheerKeywordEngine>();
     }
 
     public override void OnNetworkSpawn()
@@ -166,12 +163,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
 
+        // 키워드 인식도 Owner만 (자기 마이크만 분석)
+        if (_cheerKeyword != null) _cheerKeyword.enabled = true;
+
         Debug.Log($"[NetworkPlayerSetup] Owner 설정 완료 — clientId={OwnerClientId}");
     }
 
     /// <summary>
-    /// PlayerSpawnCoordinator(NetworkList)에서 자신의 색을 읽어 일치하는 ColoredStartZone으로 이동.
-    /// 존이 없거나 색 매핑이 없으면, 이미 Netcode가 보정해 둔 현재 위치를 스폰 앵커로 확정한다.
+    /// PlayerSpawnManager의 고정 좌표표에서 자신의 색에 해당하는 좌표를 읽어 즉시 이동.
+    /// PlayerSpawnManager.Instance가 없으면 현재 위치를 스폰 앵커로 확정 (안전 폴백).
+    /// ColoredStartZone 탐색 불필요 — 씬 원점(0,0,0) 기준 고정 좌표 사용.
     /// </summary>
     void MoveToSpawnZone()
     {
@@ -185,37 +186,106 @@ public class NetworkPlayerSetup : NetworkBehaviour
             return;
         }
 
-        // 비활성 존 포함 전체 탐색 (ColoredStartZone.Start()에서 비활성화된 것도 위치는 유효)
-        var zones = FindObjectsByType<ColoredStartZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        foreach (var zone in zones)
+        // PlayerSpawnManager에서 고정 좌표 조회
+        if (PlayerSpawnManager.Instance == null)
         {
-            if (zone.ColorType != myColor) continue;
-
-            Vector3    pos = zone.SpawnPosition;
-            Quaternion rot = zone.SpawnRotation;
-
-            transform.SetPositionAndRotation(pos, rot);
-            _player?.ForceSetSpawnPoint(pos, rot);
-            EnablePhysics();
-
-            Debug.Log($"[NetworkPlayerSetup] 스폰 위치 결정 — clientId={OwnerClientId} color={myColor} pos={pos}");
+            Debug.LogWarning("[NetworkPlayerSetup] PlayerSpawnManager.Instance 없음 — 현재 위치를 스폰 앵커로 확정");
+            UseCurrentPositionAsSpawnAnchor();
             return;
         }
 
-        Debug.LogWarning($"[NetworkPlayerSetup] color={myColor}에 해당하는 ColoredStartZone 없음 — 현재 위치를 스폰 앵커로 확정");
-        UseCurrentPositionAsSpawnAnchor();
+        Vector3    pos = PlayerSpawnManager.Instance.GetFixedSpawnPos(myColor);
+        Quaternion rot = Quaternion.identity;
+
+        transform.SetPositionAndRotation(pos, rot);
+        _player?.ForceSetSpawnPoint(pos, rot);
+        EnablePhysics();
+
+        Debug.Log($"[NetworkPlayerSetup] 스폰 위치 결정 (고정좌표) — clientId={OwnerClientId} color={myColor} pos={pos}");
     }
 
     /// <summary>
-    /// 스폰 존 매칭에 실패했을 때의 폴백.
-    /// 이 시점의 transform.position은 Netcode가 이미 서버 스폰 좌표로 보정해 둔 값이라
-    /// (Player.Awake()가 캐싱한 값보다 신뢰 가능) 이를 그대로 리스폰 앵커로 확정한다.
-    /// 이렇게 해야 나중에 사망 → Respawn() 시 (0,0,0) 등 잘못된 좌표로 밀리지 않는다.
+    /// 고정 좌표 조회에 실패했을 때의 폴백.
+    /// Netcode가 이미 서버 스폰 좌표로 보정해 둔 현재 위치를 리스폰 앵커로 확정.
     /// </summary>
     void UseCurrentPositionAsSpawnAnchor()
     {
         _player?.ForceSetSpawnPoint(transform.position, transform.rotation);
         EnablePhysics();
+    }
+
+    // ── 씬 전환 / 사망 리로드 리셋 ───────────────────────────────
+
+    /// <summary>
+    /// Host가 씬 전환 또는 사망 리로드 시 호출.
+    /// HP 풀피 복구 · 쉴드 초기화 · 위치 고정좌표 이동 · 사망 상태 해제.
+    /// Owner에게 ResetStageClientRpc를 통해 위치·상태를 전달한다.
+    /// </summary>
+    public void ResetForNewStage(Vector3 spawnPos)
+    {
+        if (!IsServer) return;
+
+        // HP 풀피 복구
+        if (_player != null)
+            _hp.Value = _player.maxHeart;
+
+        // 쉴드 초기화
+        _shield.Value = 0;
+        if (_shieldExpireCoroutine != null)
+        {
+            StopCoroutine(_shieldExpireCoroutine);
+            _shieldExpireCoroutine = null;
+        }
+        _damageInvulnEndTime = -1f;
+
+        // Host 측: 위치 이동 + 스폰 앵커 갱신 + 사망 상태 해제 (Host 비오너 플레이어 포함)
+        transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
+        _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
+        if (_player != null && _player.IsDead)
+            _player.Respawn();
+
+        // Owner 클라이언트에도 전달 (위치 확정 + 색 상태 초기화 + Respawn)
+        ResetStageClientRpc(spawnPos);
+
+        Debug.Log($"[NetworkPlayerSetup] Host 리셋 완료 — clientId={OwnerClientId} pos={spawnPos}");
+    }
+
+    /// <summary>Owner 클라이언트에서 씬 리셋 처리. 색 상태·위치·사망 상태를 초기 고유색 스폰 상태로 되돌린다.</summary>
+    [ClientRpc]
+    void ResetStageClientRpc(Vector3 spawnPos)
+    {
+        if (!IsOwner) return;
+
+        // 색 상태 초기화 (isBlack 해제, 고유색 복원)
+        _isBlack.Value       = false;
+        _isUniqueColor.Value = true;
+        if (_player != null)
+        {
+            _player.isBlack      = false;
+            _player.isUniqueColor = true;
+        }
+        if (_events == null) _events = GetComponent<PlayerEvents>();
+        _events?.RaiseBlackWhiteChanged(false);
+        _events?.RaiseUniqueColorChanged(0);
+
+        // 위치 + 리스폰 (IsDead일 때만 — 서버 경로에서 이미 Respawn 호출된 Host 플레이어 중복 방지)
+        transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
+        _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
+        if (_player != null && _player.IsDead)
+            _player.Respawn();
+
+        // 씬 전환 후 새 TopDownCamera에 재연결 (destroyWithScene:false 유지 시 OnNetworkSpawn 미재실행)
+        var cam = FindAnyObjectByType<TopDownCamera>();
+        if (cam != null)
+        {
+            cam.target = transform;
+            if (_player != null)
+                _player.followCamera = cam.GetComponent<Camera>();
+        }
+
+        EnablePhysics();
+
+        Debug.Log($"[NetworkPlayerSetup] Owner 리셋 완료 — pos={spawnPos}");
     }
 
     void EnablePhysics()
@@ -242,6 +312,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         }
 
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = false;
+        if (_cheerKeyword  != null) _cheerKeyword.enabled  = false;
     }
 
     /// <summary>

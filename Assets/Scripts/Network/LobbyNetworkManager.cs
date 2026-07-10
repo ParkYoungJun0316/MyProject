@@ -35,6 +35,12 @@ public class LobbyNetworkManager : NetworkBehaviour
         PlayerColorType.Yellow,
     };
 
+    [Header("DontDestroyOnLoad 시스템 Prefab")]
+    [Tooltip("PlayerSpawnCoordinator prefab (NetworkObject 포함).\n" +
+             "게임 시작 시 Host가 destroyWithScene:false로 스폰 → 세션 내 씬 간 유지.\n" +
+             "NGO의 Network Prefab List에 반드시 등록되어 있어야 함.")]
+    [SerializeField] private NetworkObject coordinatorPrefab;
+
     // NetworkList 는 Awake 전에 초기화해야 함 (필드 초기화 or Awake)
     private readonly NetworkList<LobbyPlayerState> _slots = new();
 
@@ -181,29 +187,54 @@ public class LobbyNetworkManager : NetworkBehaviour
             return;
         }
 
-        // clientId → color 매핑을 로비→스테이지 1회성 브릿지에 저장.
-        // (스테이지 진입 후엔 PlayerSpawnCoordinator가 이 값을 딱 1번 읽어 NetworkList로 복제함)
+        // ── clientId → color 매핑 확정 ──────────────────────────────────
+        // NetworkSessionData : PlayerSpawnCoordinator.OnNetworkSpawn에서 1회 읽는 브릿지
+        // clientColorDict    : PlayerSpawnManager.InitializeOnline에 직접 전달 (재조회 없음)
         NetworkSessionData.ClientColors.Clear();
-        var colorList = new PlayerColorType[_slots.Count];
+        var clientColorDict = new Dictionary<ulong, PlayerColorType>(_slots.Count);
+        var colorList       = new PlayerColorType[_slots.Count];
         for (int i = 0; i < _slots.Count; i++)
         {
-            NetworkSessionData.ClientColors[_slots[i].ClientId] = ColorOrder[_slots[i].ColorIndex];
-            colorList[i] = ColorOrder[_slots[i].ColorIndex];
+            ulong          id    = _slots[i].ClientId;
+            PlayerColorType color = ColorOrder[_slots[i].ColorIndex];
+            NetworkSessionData.ClientColors[id] = color;
+            clientColorDict[id]                 = color;
+            colorList[i]                        = color;
         }
 
-        // 세션 시드 생성 + 모든 클라이언트에 브로드캐스트
+        // ── PlayerSpawnCoordinator 스폰 (DontDestroyOnLoad NetworkObject) ──
+        // OnNetworkSpawn → PopulateClientColorsFromSession → 전 클라이언트 NetworkList 동기화
+        if (coordinatorPrefab != null)
+        {
+            var coordGo = Instantiate(coordinatorPrefab.gameObject);
+            coordGo.GetComponent<NetworkObject>().Spawn(destroyWithScene: false);
+        }
+        else
+        {
+            Debug.LogError("[LobbyNetworkManager] coordinatorPrefab 미설정 — Inspector에서 연결 필요");
+        }
+
+        // ── PlayerSpawnManager 엔트리 1회 확정 ──────────────────────────
+        // 이후 씬 전환·사망 리로드에서 PSM은 외부 조회 없이 _entries만 사용
+        if (PlayerSpawnManager.Instance == null)
+        {
+            Debug.LogError("[LobbyNetworkManager] PlayerSpawnManager.Instance null — " +
+                           "0.Title에 PlayerSpawnManager가 없거나 DontDestroyOnLoad 실패. 게임 시작 중단.");
+            return;
+        }
+        PlayerSpawnManager.Instance.InitializeOnline(clientColorDict);
+
+        // ── 세션 시드 ────────────────────────────────────────────────────
         int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         NetworkSessionData.Seed = seed;
         BroadcastSeedClientRpc(seed);
 
-        // GameSession 활성 색 적용 (Host)
-        if (GameSession.Instance != null)
-            GameSession.Instance.SetActiveColors(colorList);
+        // ── GameSession 활성 색 적용 ─────────────────────────────────────
+        GameSession.Instance?.SetActiveColors(colorList);
 
-        // 활성 색을 Client에도 동기화 — ColoredStartZone.Start()가 올바르게 작동하려면 씬 로드 전에 도달해야 함
+        // 활성 색을 Client에도 동기화 (ColoredStartZone.Start() 선결 조건)
         var colorIndices = new int[colorList.Length];
-        for (int i = 0; i < colorList.Length; i++)
-            colorIndices[i] = (int)colorList[i];
+        for (int i = 0; i < colorList.Length; i++) colorIndices[i] = (int)colorList[i];
         SyncActiveColorsClientRpc(colorIndices);
 
         NetworkManager.SceneManager.LoadScene("M.Stage1", LoadSceneMode.Single);
@@ -297,14 +328,6 @@ public class LobbyNetworkManager : NetworkBehaviour
 
     void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>
         OnSlotsChanged?.Invoke();
-
-    bool IsColorTaken(int colorIndex, ulong excludeClient)
-    {
-        foreach (var s in _slots)
-            if (s.ClientId != excludeClient && s.ColorIndex == colorIndex)
-                return true;
-        return false;
-    }
 
     int GetNextFreeColorIndex()
     {

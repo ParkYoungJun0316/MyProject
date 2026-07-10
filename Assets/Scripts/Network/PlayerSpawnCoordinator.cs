@@ -161,6 +161,23 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
     // ── 발행 ─────────────────────────────────────────────────────
 
     /// <summary>
+    /// PlayerSpawnManager가 새 씬 스폰 직전에 호출.
+    /// 씬 오브젝트들이 OnPlayersReady 구독 후 IsReady를 확인했을 때 오래된 값을 읽지 않도록 초기화.
+    /// Instance 없이도 동작하도록 static.
+    /// </summary>
+    public static void ResetReady() => IsReady = false;
+
+    /// <summary>
+    /// 오프라인 모드 전용. Instance(NetworkObject) 없이 OnPlayersReady를 로컬 발행.
+    /// PlayerSpawnManager.HandleStageLoaded()에서 IsOffline일 때 호출.
+    /// </summary>
+    public static void NotifyOffline()
+    {
+        IsReady = true;
+        OnPlayersReady?.Invoke();
+    }
+
+    /// <summary>
     /// Host: SpawnAllPlayers() 완료 후 PlayerSpawnManager가 호출.
     /// 오프라인: SpawnOfflinePlayers() 완료 후 호출.
     /// </summary>

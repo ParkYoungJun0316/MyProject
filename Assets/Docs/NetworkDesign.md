@@ -499,14 +499,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | **원격 플레이어 표시** | Host 위치 + `NetworkTransform` **보간만** (extrapolation 없음) |
 | **클라이언트 예측** | **1차·2차 기본: 사용 안 함.** Phase 2 완료 후 ParrelSync → Dev Build → Steam **2인 체감** 테스트. 답답하면 **입력 예측만** 검토 (§9A.7) |
 
-**Owner 전용 (판정 아님):** 키 입력, 카메라, 애니 연출, 로컬 마이크 송신 (`VoiceBroadcastTrigger`).
-
-**세션 싱글턴 (Owner 개념 없음):** `CheerKeywordEngine` — 클라이언트 프로세스당 마이크가 1개뿐이라
-Player 프리팹이 아니라 0.Title `NetworkManager` GameObject(DissonanceComms와 동일 GO)에 배치되어
-앱 실행 중 1개 인스턴스만 존재. `PlayerSpawnCoordinator.OnPlayersReady`(스테이지 최초 스폰 완료 —
-`LobbyContext.Mode` 확정 이후) 시점에 (재)초기화. 온라인에서는 Dissonance가 마이크를 항상 소유하므로
-직접 `Microphone.Start` 폴백을 절대 사용하지 않고(마이크 이중 오픈 → 캡처 재시작 반복 → 프레임
-스톨 → Netcode 스폰 메시지 유실로 이어졌던 버그의 근본 원인), 오프라인(NGO 미연결)에서만 폴백 허용.
+**Owner 전용 (판정 아님):** 키 입력, 카메라, 애니 연출, 로컬 마이크·Vosk 응원 (`CheerKeywordEngine`, `VoiceBroadcastTrigger`).
 
 **레거시 (제거 대상):** `ClientNetworkTransform`, Owner 피격 신고 RPC (`ReportHitServerRpc` 등), `ApplyDamageWithOwnerReport`.
 
