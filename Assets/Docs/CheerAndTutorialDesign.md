@@ -32,7 +32,7 @@
 | **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 | — |
 | 음성 인식 정확도 | 100% 불필요. 플레이테스트로 튜닝 | 커스텀 이름 + **말해보기 테스트 UI** |
 
-> **데모 = Steam 홍보.** LAN/IP 멀티 배포 아님. `NetworkDesign.md` §0.2·§0.2.1 참고.
+> **데모 = Steam 홍보.** 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost 빌드, 데모=Steam (`NetworkDesign.md` §0.2).
 
 ---
 
@@ -161,7 +161,8 @@
 - **Tutorial**에서 1회 설정. 미입력 = 색상 기본값.
 - **저장:** `PlayerPrefs` (로컬) + 세션 **NetworkVariable / LobbyPlayerState** 동기화.
 - **변경 시점 (MVP):** Tutorial 연습 구간만. 로비·인게임 변경 = Post-Launch.
-- **재접속 (경험자):** `PlayerPrefs` → Tutorial 이름 UI **생략** (§9.3).
+- **경험자 Tutorial UI 생략:** `PlayerPrefs`에 CheerName 있으면 이름 UI 생략 (§9.3).  
+  ⚠️ 이건 **네트워크 재접속이 아님.** 세션 이탈·재입장 정책은 `NetworkDesign.md` §12 (재접속 미지원).
 
 ### 3.4 검증 규칙 **[정식]**
 
@@ -211,16 +212,71 @@
 
 **Porcupine / Azure:** 상용·과금·커스텀 파이프라인 부담 → **본 프로젝트 기본 선택 아님**. Post-Launch 검토만.
 
-### 4.3 마이크 공유 **[데모 Must]**
+### 4.3 마이크 공유 **[데모 Must · 코드 확정]**
 
-Dissonance와 Vosk가 **동일 마이크** 사용. `Microphone.Start` 이중 오픈 **금지**.
+Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **이중 오픈 금지**.
 
-| 방안 | 설명 |
-|------|------|
-| A (권장) | 한 경로 캡처 → 보이스 인코드 + Vosk feed **fork** |
-| B | Dissonance C# 소스 tap 지점에서 PCM 분기 |
+| 모드 | 캡처 경로 |
+|------|-----------|
+| **멀티 (NGO)** | Dissonance만 마이크 소유 → `CheerKeywordEngine`이 `SubscribeToRecordedAudio` / 구독자로 **PCM tap** |
+| **솔로** | Dissonance가 오디오를 안 줄 때만 `Microphone.Start` **fallback** |
 
-구현 Phase 3에서 확정.
+**과거 사고:** 멀티에서 Dissonance + 직접 `Microphone.Start` 동시 → 버퍼 오버런·오디오 스레드 경합이 메인 스톨(0.3~0.4s)로 번짐 → NGO 스폰 Deferred/유실. **재발 금지.**
+
+### 4.4 스레드 구조 **[데모 Must · 코드 확정]**
+
+꿀떡은 “보이스 채팅 + 로컬 STT로 버프 트리거”라 일반 보이스 전용 게임과 다름. 인식 부하는 메인에서 빼야 함.
+
+```
+[메인]  Dissonance(또는 솔로 마이크) PCM 캡처
+        → float→short → _pcmQueue
+[워커]  VoskWorker: AcceptWaveform → JSON → _resultQueue
+[메인]  결과 drain → CheerName 매칭 → SubmitCheerServerRpc / Unity·NGO API
+```
+
+| 항목 | 위치 | 비고 |
+|------|------|------|
+| `AcceptWaveform` (Vosk 인식) | **백그라운드 워커** | 메인에서 돌리면 프레임 히치 |
+| `VoskModelLoader.LoadSync` | **메인 동기** (로비 1회) | 로비 진입 순간 히치 **가능** — 감수 또는 추후 비동기 |
+| Cheer 제출 / UI | **메인만** | |
+
+### 4.5 Dissonance 버퍼 경고 — 원인 · 결론 · 해결 방향
+
+콘솔에 보이는 예:
+
+- `BasicMicrophoneCapture: Insufficient buffer space … (dropping N samples)`
+- `BasePreprocessingPipeline: Lost … samples … (buffer full), injecting silence`
+
+**성격:** **Warn(경고)**. 크래시 아님. 마이크 샘플을 제때 못 빼서 **일부를 버리고 무음으로 메움**.
+
+#### 원인 정리 (확정)
+
+| | 무엇이 넘침 | 직접 원인 |
+|--|-------------|-----------|
+| **위 Dissonance 로그** | Dissonance **마이크 캡처 버퍼** | **메인 히치** — `Update`/`DrainMicSamples`가 밀리는 동안 OS 마이크만 쌓임 → 한 번에 너무 많이 빼려다 clamp/drop |
+| **Vosk 쪽 (별개)** | `CheerKeywordEngine` `_pcmQueue` | 워커가 **큰 청크 통째** `AcceptWaveform` → 큐 적체 → 가득 차면 Enqueue drop → **인식률** 하락 |
+
+워커가 느려도 Dissonance를 **직접 블로킹하지는 않음** (`ConcurrentQueue`).  
+다만 메인 `ProcessAudio`에서 큰 덩어리 리샘플·할당이 히치에 **기여**할 수 있고, 그때 Dissonance Warn과 Vosk 큐 밀림이 **같이** 보일 수 있음.
+
+**메인 히치:** 메인 스레드가 수십~수백 ms 동안 다른 일(동기 모델 로드, 씬/스폰, GC, 에디터+빌드 부하 등)에 묶여 프레임/`Update`가 안 도는 것.
+
+**결론:**  
+- **지금 Dissonance 경고의 1순위 원인 = 메인 히치**  
+- **청크 크기 = 2순위 보강** (특히 멀티 경로가 프레임 통째 Enqueue + 워커 통째 Accept일 때 Vosk·간접 메인 부하)
+
+#### 해결 방향 (문서 합의 — 코드는 후속)
+
+| 순위 | 방향 | 목적 |
+|------|------|------|
+| **1** | 메인 히치 줄이기 | Dissonance Warn 직접 완화. 예: `LoadSync` 타이밍/비동기, 스파이크 구간 프로파일 |
+| **2** | Dissonance→큐 **작은 청크**로 넣기 | 메인 `ProcessAudio`·워커 일감 크기 감소 |
+| **3** | 워커 `AcceptWaveform`도 **작은 단위**로 | Vosk 큐 적체·이름 인식 중간 끊김 완화 |
+| **유지** | 마이크 이중 오픈 금지, Vosk는 워커 | 이미 확정 |
+
+**인식률:** 샘플 drop 시 `"berry"`가 `"ber"`처럼 잘릴 수 있음. 완전 불능 수준은 아님. 연발 Warn이면 히치부터 조사.
+
+**비교 관점:** Among Us/VRChat 등은 보통 **채팅용 캡처만**. 꿀떡은 **채팅 + 로컬 STT**라 특수. 비교 기준은 “보이스 캡처가 메인을 막지 않게”이지, 타 게임 STT 파이프라인 복제가 아님.
 
 ---
 
@@ -560,11 +616,14 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 | Tutorial 씬 | `Assets/Scenes/2.Tutorial.unity` |
 | **Dissonance** | Asset Store + NGO integration |
 | **Vosk** | GitHub `alphacep/vosk-unity-asr`, 모델 alphacephei.com |
-| **(구현 예정)** | `CheerService`, `CheerKeywordEngine`, `CheerLexiconBuilder`, `CheerProgressUI` |
+| 응원 구현 | `CheerService`, `CheerKeywordEngine`, `CheerLexiconBuilder`, `CheerProgressUI`, `VoskModelLoader` |
 
 ---
 
 ## 15. FAQ
+
+**Q. Dissonance `Insufficient buffer space` 경고는 버그?**  
+A. **Warn.** 메인 히치로 마이크를 제때 못 비울 때. §4.5 — 1순위 히치, 2순위 청크. 코드 수정은 Docs 정리 후.
 
 **Q. Discord로 팀 대화하면 되지 않나?**  
 A. **아니오.** 데모 Must = **인게임 보이스 (Dissonance)**. Discord 링크는 커뮤니티용만.

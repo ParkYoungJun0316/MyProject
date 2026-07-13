@@ -58,9 +58,8 @@
 
 - `Assets/Docs/NetworkDesign.md`
 - `Assets/Docs/CheerAndTutorialDesign.md`
-- `Assets/Docs/PostMVP_Multiplayer_Backlog.md`
-- 기타 Docs  
-→ **셋업 과정에서 전수 검토 대상**
+- `Assets/Docs/GameArchitectureBoundaries.md`
+→ **셋업 과정에서 전수 검토 대상** (텔레메트리·Steamworks 전용 md는 해당 착수 시 NetworkDesign에서 분리)
 - Docs 내용이 Rules/Skills/AGENTS에 들어가야 할 때가 있으면 **반드시 사용자에게 검토·승인 받을 것**
 - **Rules에 Docs 내용을 함부로 자동 적용하지 말 것**
 - 세션 이탈·재접속 등 정책도 **Docs 검토 패키지에 포함**해 사용자 재확인 후 SSOT화 (코드와 불일치 가능 → 구현 맞춤은 별 티켓)
@@ -87,7 +86,7 @@
 | 단계 | 내용 |
 |------|------|
 | **0** | 클린 슬레이트 + 브리프/필터 SSOT (기존 skill/rule 삭제, Docs는 “검토 대기”로만 링크) |
-| **0.5** | **Docs 전수 검토** (NetworkDesign, Cheer…, PostMVP…) — 사용자 승인 전 Rules 반영 금지 |
+| **0.5** | **Docs 전수 검토** (NetworkDesign, Cheer, GameArchitectureBoundaries) — 사용자 승인 전 Rules 반영 금지 |
 | **1** | 외부 구조 선별 가져오기 (임시 폴더만) |
 | **2** | 요약·삭제·채택 |
 | **2.5** | 충돌 검사 (외부 vs 브리프 vs **승인된** Docs 문장만) |
@@ -153,7 +152,8 @@
 
 ### 0.5단계 — Docs 전수 검토 (Rules 반영 게이트)
 
-대상: NetworkDesign, CheerAndTutorialDesign, PostMVP_Multiplayer_Backlog, 기타 Docs.  
+대상: NetworkDesign, CheerAndTutorialDesign, GameArchitectureBoundaries.  
+(텔레메트리·Steamworks 전용 md는 로컬 빌드 안정 후 착수 시 작성.)  
 **승인 없이 Rules/Skills에 Docs 내용 적용 금지.**
 
 ### 1단계 — 가져오기 (임시 폴더만)

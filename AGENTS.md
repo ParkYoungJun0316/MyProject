@@ -1,7 +1,7 @@
 # AGENTS.md — Project identity (AI entry)
 
-> Slim SSOT for “what this repo is” and first-pass bans.  
-> Design details (authority, projectiles, session, etc.) live in `Assets/Docs/` and are locked into Rules only after **Phase 0.5** user approval.  
+> Slim SSOT for “what this repo is”, first-pass bans, and **approved locks**.  
+> Full design: `Assets/Docs/` (esp. `NetworkDesign.md`, `CheerAndTutorialDesign.md`).  
 > Setup roadmap: `Assets/Docs/CursorVibeSetupBrief.md`
 
 ## Identity
@@ -10,6 +10,13 @@
 - **Unity 6.3 LTS (6000.3.9f1)**, C#, URP, Input System, **uGUI**
 - Network: **Netcode for GameObjects 2.9**, Listen-Server (Host + Clients)
 - Camera: **TopDownCamera** (do not treat Cinemachine as camera source of truth)
+
+## Approved locks (Docs 확정 — Rules에도 동일)
+
+- **Movement:** Owner + `ClientNetworkTransform` (Host-move / client prediction **폐기**)
+- **Projectiles:** **B안** — Host spawn + initial velocity → Client local flight → Client hit report ServerRpc → Host damage
+- **Session:** No reconnect / late-join / host migration. Anyone leaves in-game → **room ends** (all to title)
+- **Test:** **ParrelSync** and/or **Build + Editor/Build** on one PC — **no LAN / discovery** testing
 
 ## Test environment
 
@@ -22,27 +29,30 @@
 - Do not treat as current stack: Facepunch.Steamworks, Steamworks.NET, Mirror, Photon, FishNet, Unity Relay  
   (Steamworks not integrated; Steam Networking transport is a later plan only)
 - Do not invent missing classes/APIs — search the repo or ask
-- Do **not** auto-apply `Assets/Docs/*` into `.cursor/rules` or skills — **user approval required** (Phase 0.5+)
-- Do not recycle deleted old project skills/rules — rebuild from approved imports only
+- Do **not** auto-apply unapproved `Assets/Docs/*` into `.cursor/rules` or skills — **user approval required**
+- Do not recycle deleted old project skills/rules — rebuild from approved imports / new drafts only
+- Do not revive projectile **A안** or Host-only movement
 
 ## Cursor setup status
 
 | Item | Status |
 |------|--------|
+| Docs (Network / Cheer) | Approved locks above |
 | Old project skills/rules | Deleted (rebuild) |
-| `.cursor/rules` / `.cursor/skills` | Not created yet (Phase 3-B) |
+| `.cursor/rules` | **6 rules present** (3 always / 3 on-demand) |
+| `.cursor/skills` | **ngo-debug** present (ParrelSync/commit skills deferred) |
 | Import filter | `.cursor/docs/import-filter.md` |
-| Docs review | Phase **0.5** → `.cursor/docs/docs-review.md` |
-| Customization spec | Phase **3-A** → `.cursor/docs/customization-spec.md` |
+| Customization spec | Phase **3-A** when customizing imports |
 
 ## Where details go
 
 | Topic | Location |
 |-------|----------|
-| Authority, projectiles, session, reconnect, traps, lobby, … | `Assets/Docs/` (esp. `NetworkDesign.md` and related) + Phase **0.5** review |
-| How we rebuild Cursor AI config | `Assets/Docs/CursorVibeSetupBrief.md` |
-| What we may import from outside | `.cursor/docs/import-filter.md` |
+| Authority, projectiles, session, traps, lobby, Steam/telemetry roadmap | `Assets/Docs/NetworkDesign.md` |
+| Cheer / voice / Vosk / tutorial | `Assets/Docs/CheerAndTutorialDesign.md` |
+| Domain boundaries | `Assets/Docs/GameArchitectureBoundaries.md` |
+| Cursor AI rebuild process | `Assets/Docs/CursorVibeSetupBrief.md` |
 
 ## Next
 
-**Phase 0.5 — Docs review:** compare Docs vs code vs brief; write `docs-review.md`; user approves sentences before any Multiplayer Rule.
+Write **6 project Rules** (Unity, Multiplayer, Architecture, Bug Hunting, Plan First, Diff Only). Git = User Rules only if already present.

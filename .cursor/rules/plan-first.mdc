@@ -1,0 +1,28 @@
+---
+description: Plan before large or multi-file changes. Use when scope is unclear or touches several systems.
+alwaysApply: false
+---
+
+# Plan First
+
+Use when the task is large, ambiguous, or will touch **multiple files/systems**.
+
+## Do
+
+1. Short plan first: goal → files/areas → risks (esp. NGO authority)
+2. Wait for user OK on non-trivial plans before mass edits
+3. Call out Docs conflicts (`NetworkDesign` locks) before coding
+4. Keep plans inside the **current milestone** — no Steamworks / telemetry / spectator design until **Dev Build (localhost) multiplay is stable**, or the user explicitly starts that phase
+
+## Plan format
+
+**Goal:** [one line]  
+**Files/Areas:** [touch list]  
+**NGO risks:** [authority / sync collisions]  
+**Steps:** [ordered]  
+**Open questions:** [what needs user confirm]
+
+## Don't
+
+- Don't start by editing 10 files with no plan
+- Don't expand into Steamworks / telemetry / spectator unless the user asked

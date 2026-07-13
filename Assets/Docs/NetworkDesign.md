@@ -24,7 +24,7 @@
 
 ### 0.2 네트워크 테스트 단계 (개발자 환경)
 
-**LAN 실기 테스트는 현재 불가.** 아래 순서로만 검증한다.
+**개발 중 멀티 검증은 아래 순서로만 한다** (원격 IP Join·discovery 없음).
 
 **데모 핵심:** Steam에서 **원격 협동 + 인게임 보이스 + 응원** (홍보용).  
 **개발자 장비:** 테스트 PC **최대 2대** — Steam P2P 일상 검증은 **2인** 기준 (§0.2.1).
@@ -57,7 +57,7 @@
 | | **2인 Steam P2P** (일상) | **4인 Steam P2P** (데모 전 권장) |
 |--|--------------------------|----------------------------------|
 | 검증됨 | Transport, Lobby, Join, NGO 동기화, Dissonance, Vosk, 응원(필요 1표), M→T | 위 + **4슬롯·4스폰·응원 3표·4음성** |
-| **보장 안 됨 → 4인 전용 버그** | — | `ActivePlayerCount`·집계, 4색 Gate, 4명 보이스 혼잡, 인원 이탈(§12.0) |
+| **보장 안 됨 → 4인 전용 버그** | — | `ActivePlayerCount`·집계, 4색 Gate, 4명 보이스 혼잡, 이탈 시 §12 전원 타이틀 수렴 |
 | 판정 | **데모 출시 최소 게이트** (2PC 한정) | **홍보 신뢰도** — 친구/플레이테스트 1회 **강력 권장** |
 
 **2인 통과 = 4인 100% 보장 아님.** 다만 NGO·Steam P2P·응원 **연결·규칙 골격**은 2인에서 대부분 검증 가능.  
@@ -71,7 +71,7 @@
 - **솔로:** Title 오프라인 패널 → 동일 스테이지 (NGO 없음)
 - **네트워크:** §9 Must 동기화 + **§0.2 ④ Steam P2P + Steam Lobby**
 - **응원·보이스:** 인게임 **Dissonance 4인 보이스** + **Vosk 응원** + `/cheer` (→ `CheerAndTutorialDesign.md`)
-- **배포:** **Steam** (Depot 업로드). 원격 멀티 = **Steam P2P 필수** (LAN/IP 데모 아님)
+- **배포:** **Steam** (Depot 업로드). 원격 멀티 = **Steam P2P 필수** (localhost/IP Join 데모 아님)
 - **네트워크 검증:** ② Dev Build (중간) → ④ **Steam P2P 2인 Must** + **4인 1회 권장** (§0.2.1)
 - **UI:** 타이틀·로비·HP·카운트다운·End.Demo·응원 HUD·채팅 `/cheer`
 - **사운드:** BGM 1~2 + 핵심 SFX
@@ -83,8 +83,8 @@
 
 | 항목 | 이유 |
 |------|------|
-| §12 재접속·Kick·유예·스냅샷·호스트 마이그레이션 | **정책상 미지원.** 누구든 이탈 = **방 종료**(전원 타이틀). 재접속 일절 없음 |
-| LAN UDP discovery 실기 검증 | 개발 환경 불가. ②는 localhost, ④는 **Steam** |
+| §12 재접속·유예·스냅샷·호스트 마이그레이션 | **미지원.** 인게임 이탈 = **방 종료**(전원 타이틀). 재접속 일절 없음 |
+| 원격 IP Join / UDP discovery | **미사용.** 개발=ParrelSync·localhost 빌드, 데모=**Steam** |
 | Tutorial·CheerName 커스텀 | 정식 (CheerAndTutorialDesign.md) |
 | 관전(Spectator) 모드 | 내부 QA용. Discord 화면공유로 대체 |
 | sit / dance 등 이모트 애니 | 정식 이후 |
@@ -370,8 +370,8 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | 항목 | 개발 ①② | **데모 배포 ④** | 정식 |
 |------|---------|-----------------|------|
 | 네트워크 | **NGO** | **NGO** | 동일 |
-| 연결 | `UnityTransport` localhost (**7777**) | **Steam P2P + Lobby** | 동일·안정화 |
-| 권한 | Host (§9A) | Host (§9A: 이동·데미지·함정 단일) | 동일 |
+| 연결 | `UnityTransport` **localhost** (**7777**) | **Steam P2P + Lobby** | 동일·안정화 |
+| 권한 | §9.0 매트릭스 (**이동=Owner+CNT**, 판정=Host, 발사체 비행=Client B안) | 동일 | 동일 |
 | 최대 인원 | 4인 | 4인 | 동일 |
 
 - Transport **교체 가능**하게 분리 (`UnityTransport` ↔ Steam Networking). **Steam 데모 = Steam transport 필수.**
@@ -423,15 +423,16 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 
 ## 4. 연결 · 룸코드
 
-### 4.1 LAN / localhost (개발 ①② 전용)
+### 4.1 localhost (개발 ①② 전용 — ParrelSync / 같은 PC 빌드)
 
 | 항목 | 값 |
 |------|-----|
 | 포트 | **7777** (고정) |
-| 용도 | ParrelSync 보조, **Dev Build ②** localhost만 |
+| 용도 | **ParrelSync ①**, **Dev Build ②** (같은 PC Host/Client EXE) |
 | Join | `127.0.0.1:7777` 또는 6자리 룸코드 UI (개발용) |
 
-**※ Steam 데모 배포·플레이어 멀티에는 사용하지 않음.**
+**※ 원격 IP Join·UDP discovery는 하지 않는다.**  
+**※ Steam 데모 배포·플레이어 멀티에는 사용하지 않음** → §4.2.
 
 **개발자 테스트:** ParrelSync(①) → Dev Build ② (같은 PC 2 exe).
 
@@ -465,7 +466,8 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | Start | **호스트만**, 전원 Ready + **4색 중복 없음** |
 | 캐릭터 | **선착순** 점유, **Ready 후 변경 불가** |
 | 빈 슬롯 UI | `Empty` |
-| Kick | **호스트만**, Ready 전/후 모두. **즉시 슬롯 비움** |
+| Kick (**로비 전용**) | **호스트만**, Ready 전/후 모두. **즉시 해당 슬롯만 비움** — **방은 유지**, 남은 인원 계속 Ready |
+| (참고) 인게임 이탈 | 로비 Start **이후** 누구든 끊기면 §12 — **방 전체 종료**. 로비 Kick과 다름 |
 | 호스트 | 드롭다운으로 캐릭터 선택 |
 
 ---
@@ -485,23 +487,23 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 - 존 트리거 진입 → 점유 → `StageStartGate` 카운트다운 (전원 점유 시 진행).
 - **씬 지형(T.Stage) 이동 불필요.** 존·spawnPoint는 씬마다 에디터 배치.
 
-### 7.3 입력 · 카메라 · 이동 (Host Authority — §9A)
+### 7.3 입력 · 카메라 · 이동 (**확정** = Owner + CNT)
 
-> **상세 설계·마이그레이션:** §9A. Steam 데모 출시 전 Must.
+> **확정 (2026-07-13):** 플레이어 이동 = **Owner + `ClientNetworkTransform`**. Host 이동화·Client Prediction으로 **바꾸지 않음**. 이 시스템을 계속 유지한다.
 
-| 항목 | 규칙 |
-|------|------|
-| **이동 판정** | **Host** — 서버 `Rigidbody` 물리. 위치는 **서버 권한 `NetworkTransform`** 으로 전파 |
-| **키 입력** | **Owner** — 로컬 `PlayerInput`만 활성. `moveInput` 등을 **NetworkVariable** 로 Host에 전달 |
+| 항목 | 규칙 (**확정**) |
+|------|----------------|
+| **이동** | **Owner** — `ClientNetworkTransform` (Owner Authority). 로컬 `Rigidbody` 이동 |
+| **키 입력** | **Owner** — 로컬 `PlayerInput`만 활성 |
 | **카메라** | **Owner** — `TopDownCamera`가 **로컬 플레이어만** follow |
-| **애니메이션** | **Owner 연출** — 달리기·피격·사망 트리거는 로컬 재생. **맞음/사망 확정은 Host** (`ClientRpc` 등) |
+| **애니메이션** | **Owner 연출** — 달리기 등 로컬. **맞음/사망 확정은 Host** (`ClientRpc`) |
 | **마우스 시점** | **본인만** |
-| **원격 플레이어 표시** | Host 위치 + `NetworkTransform` **보간만** (extrapolation 없음) |
-| **클라이언트 예측** | **1차·2차 기본: 사용 안 함.** Phase 2 완료 후 ParrelSync → Dev Build → Steam **2인 체감** 테스트. 답답하면 **입력 예측만** 검토 (§9A.7) |
+| **원격 플레이어 표시** | Owner 위치 복제 + 보간 |
+| **클라이언트 예측** | 이동은 Owner 로컬 → **별도 예측 불필요** |
 
-**Owner 전용 (판정 아님):** 키 입력, 카메라, 애니 연출, 로컬 마이크·Vosk 응원 (`CheerKeywordEngine`, `VoiceBroadcastTrigger`).
+**Owner 전용:** 키 입력, 카메라, 애니 연출, 로컬 마이크·Vosk 응원 (`CheerKeywordEngine`, `VoiceBroadcastTrigger`).
 
-**레거시 (제거 대상):** `ClientNetworkTransform`, Owner 피격 신고 RPC (`ReportHitServerRpc` 등), `ApplyDamageWithOwnerReport`.
+**데미지 Owner 신고 RPC (`ReportHitServerRpc` 등) / `ApplyDamageWithOwnerReport`:** Phase 1에서 제거 대상 — **플레이어 본체 “내가 맞았다” 신고**와, 발사체 B안 Client 트리거→ServerRpc(§9.0.1)는 구분한다.
 
 ---
 
@@ -523,11 +525,54 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 
 ## 9. 호스트 판정 · 동기화
 
-- **게임 규칙**(패드, 문, 함정, Phase, **이동**, 데미지, 클리어)은 **Host에서만** 판정.
-- 결과는 **`StageNetworkState` (중앙 매니저)** 를 통해 `NetworkVariable` / RPC로 **전원에 공유**.
-- Client도 **동일한 연출·상태**를 봄 (Host만 보이는 것이 아님).
-- 플레이어 위치는 **Host 물리 + 서버 권한 `NetworkTransform`** (§9A).
-- **데미지·HP:** `NetworkDamageUtil` 단일 파이프라인만 사용 (§9A.3).
+### 9.0 권한 매트릭스 (**현재 확정**)
+
+| 카테고리 | 권한 | 이유 |
+|----------|------|------|
+| 플레이어 이동 | **Owner + CNT** | 입력 레이턴시 없음. **이 모델 유지 (Host 이동화 안 함)** |
+| 플레이어 HP / 데미지 | **Host** | 치트 방지·판정 신뢰 |
+| 함정 (ArrowTrap 등 발사자) | **Host** | 스폰 시점·스케줄을 전원 동일하게 |
+| 발사체 **비행** | **Client (로컬 시뮬)** | Host 물리 복제 끊김 방지·시각 부드러움 |
+| 발사체 **피격 판정** | **Host** (B안: Client 보고 → Host 확정) | §9.0.1 |
+| 문·패드 등 규칙 오브젝트 | **Host** | 게임 규칙과 연동 |
+| VFX / 사운드 | **ClientRpc → All** (또는 로컬) | 판정과 무관한 연출 |
+
+**이동 = Owner + CNT 확정.** Host Authority + Client Prediction / Phase 2 이동 Host화는 **채택하지 않음**.
+
+### 9.0.1 발사체 (ArrowTrap / TrapProjectile 등) — **B안 확정**
+
+> **확정 (2026-07-13):** 비행 = Client 로컬 / 피격 최종 = Host.  
+> **A안**(Host가 안 보이는 화살로 충돌 계산)은 **채택하지 않음**.
+
+**한 줄:** Host가 화살을 “따라가게” 밀어 넣지 않는다. Client가 알아서 날리고, “맞았는지→HP”만 Host가 확정한다.
+
+```
+[Host]      Spawn + 초기 velocity 확정
+    ↓
+[Host]      ClientRpc(또는 NV)로 velocity(및 필요 상태) 브로드캐스트
+    ↓
+[각 Client] 위치 네트워크 따라가기(NetworkTransform 등) 없이
+            받은 속도로 로컬 비행
+    ↓
+[Client]    화면 기준 OnTrigger/Collision → ServerRpc 피격 보고
+    ↓
+[Host]      최소 검증 후 NetworkDamageUtil → HP NV / 연출 Rpc / Despawn
+```
+
+**손대지 않는 것:** 함정 타이머(Host), Spawn=Host, `NetworkDamageUtil`=Host 데미지 진입점.
+
+**구현 체크 (코드):**
+
+1. 발사체 **위치 네트워크 따라가기** 제거/비활성 (끊김 원인 제거)
+2. Spawn 직후 **속도 전달** + Client **자가 비행**
+3. Client 충돌 → ServerRpc → Host 데미지 (발사체 전용; 구 플레이어 `ReportHitServerRpc`와 혼동 금지)
+4. Host Despawn/파괴 동기화
+
+- **게임 규칙**(패드, 문, 함정 **스케줄/상태**, Phase, 데미지, 클리어)은 **Host에서만** 최종 판정.
+- 결과는 **`StageNetworkState` (중앙 매니저)** 등 `NetworkVariable` / RPC로 **전원에 공유**.
+- Client도 **동일한 연출·상태**를 봄.
+- 플레이어 위치는 **Owner + CNT** (§7.3 확정).
+- **데미지·HP:** `NetworkDamageUtil` 단일 파이프라인 (§9A.3). 발사체만 §9.0.1 Client 보고 → Host 적용.
 
 ### MVP 동기화 대상
 
@@ -539,8 +584,8 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 |------|----------|
 | `StageStartGate` / 카운트다운 | Must |
 | `PhaseManager` | Must |
-| `ArrowTrap` / `DropTrap` 발사·피격 (Host Spawn) | Must |
-| `TrapProjectile` 데미지·파괴 | Must |
+| `ArrowTrap` / `DropTrap` — Host Spawn+초기속도, Client 비행, Host 피격 (§9.0.1) | Must |
+| `TrapProjectile` 데미지·파괴 (Host 최종) | Must |
 | `MouthController` / Mouth Animator 연동 | Should |
 | `WindTrap` (Host 힘 적용) | Should |
 | `TrapPlayerTracker` 및 Mouth 계열 함정 | Should |
@@ -567,31 +612,34 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 
 ---
 
-## 9A. Host Authority Architecture (데모 Must)
+## 9A. Authority 상세 · 마이그레이션
 
-> **목적:** Owner 이동 + Owner 피격 신고 이중 구조를 제거하고, **Host 단일 진실**로 버그·체감 불일치를 줄인다.  
-> **일정:** Steam 데모 출시 **전** 완료.  
-> **구현 순서:** **Phase 1 (데미지/함정)** → **Phase 2 (이동)** — §9A.5~6.  
-> **합의일:** 2026-07-09.
+> **현재 확정 총표:** §9.0 / §9.0.1 (**이동=Owner+CNT 유지**, HP·함정·피격=Host, 발사체 비행=Client B안).  
+> **Phase 1 (데미지 파이프라인 + 발사체 B):** 계속 진행.  
+> **Phase 2 (이동 Host화):** **폐기.** CNT 제거·Host 이동·Client Prediction **구현하지 않음**.  
+> **합의 갱신:** 2026-07-13 (이동 Owner+CNT 확정 · 발사체 B안).
 
-### 9A.1 한 줄 요약
+### 9A.1 한 줄 요약 (**확정**)
 
 ```
-Host  = 위치 · HP · 피격 · 함정 · 발사체 · 물리 · 게임 규칙
-Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로컬 마이크/응원
+Host   = HP · 피격 최종 판정 · 함정 스폰/스케줄 · 문/패드 등 규칙 · (발사체) 초기 velocity + 데미지 확정
+Owner  = 이동(CNT) · 키 입력 · 카메라 · 애니/SFX 연출 · 로컬 마이크/응원
+Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX는 Rpc/로컬
 ```
 
-**판정은 Host, 조작·연출은 Owner.** 키보드는 Owner PC에서만 읽고, **이동 결과**는 Host가 확정한다.
+**이동 Host화는 하지 않는다.** Owner + `ClientNetworkTransform`을 계속 가져간다.
 
-### 9A.2 왜 바꾸나 (레거시 문제)
+### 9A.2 왜 Phase 1을 하나 (레거시 데미지 문제)
 
 | 레거시 | 문제 |
 |--------|------|
-| `ClientNetworkTransform` (Owner 위치) | 서버가 보는 원격 플레이어 좌표 ≠ Owner 실제 좌표 |
 | `ApplyDamage` vs `ApplyDamageWithOwnerReport` | 함정마다 데미지 경로가 달라 신규 함정 추가 시 실수 |
-| `ReportHitServerRpc` / `ReportInstantKillServerRpc` / `ReportFallDeathServerRpc` | Owner “맞았다” 신고 — Host 물리와 이중 세계 |
+| `ReportHitServerRpc` / `ReportInstantKillServerRpc` / `ReportFallDeathServerRpc` | 플레이어 **본체** “내가 맞았다” 신고 — Host와 이중 세계 |
 | `Player.TakeDamage()` 온라인 차단 | `TryTakeDamage` 직접 호출 시 데미지 0 (`Stage5ChaserHitbox` 등) |
 | `_hp` (Host) + `heart` (로컬) | 정식 경로 밖 HP 수정 시 UI·권한 불일치 |
+| Host가 발사체 **비행까지** 시뮬 | Client에서 화살 끊김·튐 (§9.0.1로 해소) |
+
+**참고:** 발사체 Client `OnTrigger`→ServerRpc(§9.0.1)는 **허용된 보고 경로**. 구 `ReportHitServerRpc`(플레이어 본체)와 **동일시하지 말 것**.
 
 ### 9A.3 허용 API (게임·함정 스크립트에서 사용)
 
@@ -601,7 +649,8 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 |------|-----|
 | 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount, knockback)` |
 | 즉사 (문 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
-| 충돌 감지 | `OnTriggerEnter` / `OnCollisionEnter` 등 — **첫 줄 `if (!IsServer) return;`** (또는 동등한 Host 가드) |
+| 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
+| 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 
 **오프라인 / 솔로 (NGO 없음):**
 
@@ -624,16 +673,17 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 | `NetworkPlayerSetup.ReportHitServerRpc` | 삭제 |
 | `NetworkPlayerSetup.ReportInstantKillServerRpc` | 삭제. `ApplyInstantKill` → 서버 직접만 |
 | `NetworkPlayerSetup.ReportFallDeathServerRpc` | 삭제. 낙사 Host `Update`/서버 루프 |
-| `ClientNetworkTransform` | Phase 2에서 제거 → 서버 권한 `NetworkTransform` |
+| `ClientNetworkTransform` | **유지 (확정).** Owner 이동. 제거·Host NT 교체 **금지** |
 | 함정/스크립트의 `Player.TakeDamage` / `TryTakeDamage` (온라인) | `NetworkDamageUtil` 로 교체 |
 | `Breakable`의 `ApplyDamageFromServer` 직접 호출 | util 경유 또는 Host 전용 래퍼로 통일 |
+| Host-only로 발사체 **비행** 강제 | §9.0.1 위반 — Client 로컬 비행으로 |
 
-### 9A.5 Phase 1 — 데미지 · 함정 · HP (이동은 레거시 유지)
+### 9A.5 Phase 1 — 데미지 · 함정 · HP (**이동은 Owner+CNT 확정 유지**)
 
-**목표:** 데미지·피격·즉사·낙사를 Host 단일 파이프라인으로 통일. Owner 신고 RPC 전부 제거.
+**목표:** 데미지·피격·즉사·낙사를 Host 최종 파이프라인으로 통일. 플레이어 본체 Owner 신고 RPC 제거.  
+**발사체:** §9.0.1 B안.
 
-**⚠️ 중간 상태:** Phase 1 완료 시점에는 **이동이 아직 Owner(`ClientNetworkTransform`)** 일 수 있음.  
-→ 원격 플레이어 함정 판정이 **일시적으로 더 억울해질 수 있음** (서버 위치 vs Owner 위치). **감수.** Phase 2에서 해소.
+**이동:** Owner + `ClientNetworkTransform` **확정 유지**. Host가 보는 좌표와 Owner 좌표가 어긋날 수 있음 → 원격 함정 체감은 **감수** (이동 모델 바꾸지 않음).
 
 #### 9A.5.1 작업 순서 (에이전트 실행용)
 
@@ -641,7 +691,8 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 |---|------|-----------|
 | 1 | `NetworkDamageUtil` 정리 | `ApplyDamageWithOwnerReport` 삭제. `ApplyInstantKill` 서버 직접만 (`ReportInstantKill` 분기 제거) |
 | 2 | Owner RPC 삭제 | `NetworkPlayerSetup`: `ReportHitServerRpc`, `ReportInstantKillServerRpc`, `ReportFallDeathServerRpc` |
-| 3 | 함정 → `ApplyDamage` + 서버 가드 | `ContactDamage.cs`, `SpikeTrap.cs`, `TrapProjectile.cs` |
+| 3 | 함정 → `ApplyDamage` + 서버 가드 | `ContactDamage`, `SpikeTrap` 등 **본체** 함정. `TrapProjectile`은 §9.0.1 |
+| 3b | 발사체 §9.0.1 | `ArrowTrap` / `TrapProjectile` — velocity Rpc, Client 비행, 피격 ServerRpc, Host 검증·데미지·Despawn |
 | 4 | 문 즉사 | `DoorController.cs` — `ApplyInstantKill` 유지, 서버 충돌만 |
 | 5 | 낙사 | `Player.cs` — Owner Y 체크 + RPC 제거 → **Host**가 전 플레이어 Y 판정 (`NetworkPlayerSetup` 또는 서버 전용 컴포넌트) |
 | 6 | 깨진 경로 수정 | `Stage5ChaserHitbox.cs` → `ApplyDamage` + 피격 시 `_chaser.NotifyHitFromHitbox()` (서버에서) |
@@ -649,7 +700,7 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 | 8 | 이미 Host 경로 (확인만) | `Enemy.cs`, `EnemyHitbox.cs`, `OXQuizManager.cs`, `Player.OnTriggerEnter`(EnemyBullet) |
 | 9 | EnemyBullet | 서버에서 플레이어 `Rigidbody` 동적 유지, Trigger 판정 **서버만** 유효한지 프리팹·레이어 점검 |
 | 10 | `WindTrap` | Owner 힘 예외 제거 → **Host**가 힘/속도 적용 (Should) |
-| 11 | 주석·문서 문자열 | `NetworkPlayerSetup`, `Player`, `PlayerSpawnManager` 툴팁에서 `ClientNetworkTransform` 전제 문구 정리 (Phase 2 전 임시 주석 가능) |
+| 11 | 주석 | Owner+CNT · §9.0.1 B안과 맞게. CNT 삭제/Host 이동 문구 **넣지 말 것** |
 
 #### 9A.5.2 Phase 1 완료 판정
 
@@ -657,9 +708,13 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 - [ ] ParrelSync **2인**: 화살·가시·ContactDamage·문즉사·낙사·Enemy·Chaser 각 **1회 이상** — HP·리로드 정상
 - [ ] Host·Client **동일 HP** (`heart` UI = `_hp`). 이중 데미지 없음
 
-### 9A.6 Phase 2 — 이동 Host화
+### 9A.6 Phase 2 — 이동 Host화 (**폐기**)
 
-**목표:** `ClientNetworkTransform` 제거. 전 플레이어 물리·위치·충돌이 Host 단일 좌표계.
+> **채택하지 않음.** Owner + CNT를 **계속 유지**.  
+> Host Authority 이동 · Client Prediction · CNT 제거 관련 설계/구현 **하지 말 것**.  
+> 아래 절은 역사적 참고용으로만 남기며, 에이전트는 **실행하지 않는다**.
+
+~~(구 목표: ClientNetworkTransform 제거, Host 단일 좌표계)~~ — **무효.**
 
 #### 9A.6.1 Prefab · 컴포넌트
 
@@ -721,14 +776,19 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 [All Clients]   보간된 위치 표시 · Owner 애니 isRun 등
 ```
 
-**데미지:**
+**데미지 (일반 함정·문 — Host Trigger):**
 
 ```
-[Host Server]   함정/발사체 OnTrigger (IsServer) → NetworkDamageUtil.ApplyDamage
+[Host Server]   OnTrigger (IsServer) → NetworkDamageUtil.ApplyDamage
                 → ApplyDamageFromServer → _hp NV
                 → NotifyHitClientRpc → Owner TakeDamageVisualOnly
-       ↓
-[All Clients]   OnHpChanged → heart UI · RaiseDamaged
+```
+
+**데미지 (발사체 — §9.0.1):**
+
+```
+[Clients]  로컬 비행 · OnTrigger → ServerRpc(피격자, 발사체 id 등)
+[Host]     검증 → ApplyDamage → NV / ClientRpc 연출 · 발사체 Despawn
 ```
 
 **즉사 (문):**
@@ -742,7 +802,7 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 | 컴포넌트 | 역할 |
 |----------|------|
 | `NetworkObject` | 스폰·소유권 |
-| `NetworkTransform` | **서버 권한** 위치·회전 (Phase 2) |
+| `NetworkTransform` / CNT | **`ClientNetworkTransform` (Owner) 확정 유지** |
 | `NetworkVariable` | `_hp`, `_shield`, `_colorIndex` (Server write), `_isBlack` / `_isUniqueColor` (Owner write), **`_moveInput`** (Owner write, Phase 2) |
 | `Animator` | **별도 NetworkAnimator 필수 아님** — Owner 로컬 트리거 + Host `ClientRpc` 로 피격·사망 연출 |
 
@@ -755,29 +815,31 @@ Owner = 키 입력 · 카메라 · (Host 확정 후) 애니·SFX 연출 · 로�
 
 ### 9A.11 §16 구현 순서에 끼워 넣을 위치
 
-**데모 Must — §9A 마이그레이션 (§0.5 Phase 2~4와 병행):**
+**데모 진행 — §9A:**
 
 ```
-A. Phase 1 — 데미지 Host 통일 (§9A.5)     ← ParrelSync 2인 검증
-B. Phase 2 — 이동 Host화 (§9A.6)         ← ParrelSync → Dev Build → Steam 2인
-C. (선택) 입력 예측 (§9A.7)              ← Steam 2인 체감 후
+A. Phase 1 — 데미지 Host + 발사체 §9.0.1 B안   ← ParrelSync / Dev Build 2인 검증  (Must)
+B. Phase 2 — 이동 Host화                         ← **폐기** (Owner+CNT 유지)
 ```
 
-기존 §16.1 항목 4「Must 동기화」**앞**에 A·B를 넣거나, 항목 4를 A+B로 대체한다.
+Phase 1 + 발사체 B가 Must. 이동 모델은 바꾸지 않음.
 
-### 9A.12 FAQ (Host Authority)
+### 9A.12 FAQ (Authority)
 
 **Q. 키 입력도 Host인가?**  
-A. **아니오.** 키는 **Owner PC**에서 읽고, **이동 결과**만 Host가 확정한다.
+A. **아니오.** Owner PC.
 
-**Q. 애니메이션은 Owner인가 Host인가?**  
-A. **재생은 Owner**, **맞았다/죽었다 확정은 Host**. Host가 `ClientRpc`로 연출 트리거.
+**Q. 이동은?**  
+A. **Owner + CNT 확정.** Host 이동화·Client Prediction **안 함**.
 
-**Q. Phase 1만 하고 데모 내면?**  
-A. 규칙·버그는 나아지나 **원격 함정 체감**이 Phase 2 전까지 나빠질 수 있음. **Phase 2를 데모 전에 붙이는 것**이 합의.
+**Q. 화살이 Client에서 끊기면?**  
+A. §9.0.1 B안 — Host는 Spawn+초기속도, **비행은 Client**, 피격 보고→Host 데미지.
+
+**Q. Phase 2 없이 데모?**  
+A. **의도된 방침.** 이동은 Owner+CNT 유지. Phase 1+발사체 B만 Must.
 
 **Q. 2인 OK면 4인도 OK?**  
-A. §0.2.1과 동일 — 연결·파이프라인은 2인, **4인 Gate·보이스**는 데모 직전 1회.
+A. §0.2.1과 동일.
 
 ---
 
@@ -815,13 +877,15 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 | **재접속** | **미지원** (유예·스냅샷·슬롯 복귀 없음) |
 | **호스트 마이그레이션** | **없음** (Host 나가면 방 폭파) |
 | **Late Join** | **없음** |
-| **Kick** | 필요 시 Host가 대상 Client 연결 종료 → **동일하게 방 종료** 흐름. 별도 Kick UI는 후순위 |
+| **Kick (인게임)** | 로비 Start **이후**에 Host가 대상을 끊으면 → **방 종료** (전원 타이틀). 별도 Kick UI는 후순위 |
+| **Kick (로비)** | §6 — **슬롯만 비움**, 방 유지. §12와 **다름** |
 
 ### 12.1 구현 시 주의
 
-- 이탈 감지 후 **남은 인원으로 스테이지 계속**, 씬 리로드로 인원만 줄이기, 재입장 UI **금지**.
-- Host/`DisconnectManager` 경로는 **세션 정리 → 전원 타이틀**로 수렴할 것.
-- AI·구현 시 “60초 유예 / 스냅샷 복원 / 3인 계속” 등 **구 스펙을 되살리지 말 것**.
+- **로비 Kick(§6)** = 슬롯만 비움. **인게임 이탈/Kick(§12)** = 방 전체 종료. 섞지 말 것.
+- 인게임 이탈 후 **남은 인원으로 스테이지 계속**·인원만 줄이는 리로드·재입장 UI **금지**.
+- Host/`DisconnectManager` (인게임) → **세션 정리 → 전원 타이틀**.
+- “60초 유예 / 스냅샷 / 3인 계속” 구 스펙 **되살리지 말 것**.
 
 ---
 
@@ -860,22 +924,21 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 ### 16.1 네트워크 · 응원 · Steam (데모)
 
 > **현재 실행 체크리스트:** §0.5 (음성 시스템 완료 이후 기준). 아래는 초기 구현 단계 요약.  
-> **Host Authority 마이그레이션 (데모 Must):** §9A — **Phase 1 → Phase 2** 를 Must 동기화 **전·중**에 완료.
+> **Authority:** §9.0 확정 (**이동=Owner+CNT**, 발사체=B안). Phase 2 이동 Host화 **폐기**.
 
 1. NGO + `UnityTransport` + Title `NetworkManager`
 2. 로비 Ready / 캐릭터 / Start 동기화
-3. Player Network Prefab + 존 스폰 + Owner 입력·카메라
-4. **§9A Phase 1** — 데미지·함정 Host 단일 파이프라인 (ParrelSync 2인 검증)
-5. **§9A Phase 2** — 이동 Host화 (`ClientNetworkTransform` 제거, 입력 NV)
+3. Player Network Prefab + 존 스폰 + Owner 입력·카메라·**Owner 이동(CNT)**
+4. **§9A Phase 1** — 데미지·함정 Host 파이프라인 (ParrelSync / Dev Build 2인)
+5. **§9.0.1 발사체 B안** — Host Spawn+velocity / Client 비행 / Client 보고→Host 피격
 6. **Must 동기화** (§9 표) — WindTrap Host 힘 포함
-7. **ParrelSync ①** — §9A 완료 상태 기준
+7. **ParrelSync ①**
 8. **Development Build ②** — localhost **2인** (중간 게이트)
 9. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
 9.5. **텔레메트리** — §0.5.1 (Sheet → `TelemetryService`, Steam 원격 테스트 전)
 10. **Steamworks** — P2P transport, Lobby, Depot
 11. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Steam 데모 출시**
-12. (선택) **§9A.7** 입력 예측 — Steam 2인 체감 후
-13. `End.Demo` + 솔로 경로 + Should 항목 (여유분)
+12. `End.Demo` + 솔로 경로 + Should 항목 (여유분)
 
 ### 16.2 데모 후
 
@@ -898,7 +961,6 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 ## 17. Post-Launch (참고)
 
 - 컷씬, 캐릭터 이모트 (sit, dance)
-- `PostMVP_Multiplayer_Backlog.md` (세이브 슬롯 등 — **Late Join/재접속 제외**)
 - 재접속·호스트 마이그레이션·Late Join: **미지원** (§12)
 
 ---
@@ -912,10 +974,10 @@ A. **아니오.** Title 오프라인 패널에서 색 선택 후 바로 `M.Stage
 A. **Title 오프라인 패널** 드롭다운 1개. 로비 안 거침.
 
 **Q. 다른 플레이어를 내 PC에서 조종하나?**  
-A. **아니오.** Owner는 자기 캐릭터 **입력·카메라·연출**만. **이동·피격 판정**은 Host (§9A).
+A. **아니오.** Owner는 자기 캐릭터 **이동·입력·카메라·연출**. **HP·함정·피격 최종**은 Host (§9.0).
 
-**Q. Host Authority로 바꾸면 뭐가 Owner인가?**  
-A. **키 입력, 카메라, 애니 연출**, 로컬 마이크·Vosk. 나머지는 Host.
+**Q. Host Authority면 이동도 Host?**  
+A. **아니오.** 이동=**Owner+CNT 확정**. Host는 HP·함정·피격 등 판정.
 
 **Q. Host 판정이면 Client 화면에 안 보이나?**  
 A. **보인다.** Host가 판정한 **결과**를 동기화해 전원이 같은 상태를 봄.
@@ -935,8 +997,11 @@ A. 일상 = **Steam 2인** (§0.2.1). 데모 직전 **4인 1회** — 친구/플
 **Q. 2인 OK면 4인도 OK?**  
 A. **연결·Transport·응원 골격**은 2인에서 대부분 검증. **4인 전용** (3표 집계, 4보이스, 4Gate)은 4인 1회 필요.
 
-**Q. LAN discovery 없이 테스트하나?**  
-A. ② localhost. **플레이어 멀티 = Steam P2P** (LAN 데모 아님).
+**Q. discovery / 원격 IP로 테스트하나?**  
+A. **안 함.** ParrelSync · localhost 빌드 · (데모) Steam P2P만.
+
+**Q. 로비 Kick이면 방이 터지나?**  
+A. **아니오.** 로비 Kick=슬롯만 비움(§6). **인게임** 이탈/Kick=방 종료(§12).
 
 **Q. 2주 안에 컷씬·이모트·재접속 풀스펙을 넣어야 하나?**
 A. **아니오.** 재접속·호스트 마이그레이션·Late Join은 **미지원 확정**(§12). 정식 Must는 Tutorial·밸런싱·옵션 UI·QA. Steam P2P는 **데모에서 이미 Must**.

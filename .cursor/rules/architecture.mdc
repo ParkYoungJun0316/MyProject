@@ -1,0 +1,33 @@
+---
+description: No guessing — do not invent APIs/classes; respect Docs and domain boundaries
+alwaysApply: true
+---
+
+# Architecture
+
+## Core
+
+- **Do not invent** missing classes, methods, or package APIs. Search the repo first; if unclear, **ask**.
+- Prefer extending existing systems over parallel new frameworks.
+- Damage pipeline: **NetworkDamageUtil** is the single entry point — do not bypass
+- Docs SSOT: `NetworkDesign.md`, `CheerAndTutorialDesign.md`, `GameArchitectureBoundaries.md`
+- Do **not** auto-promote Docs into new Rules/Skills without user approval
+
+## Boundaries (respect)
+
+- **Player:** input, movement, stamina, dodge, own lifecycle events — **no** Vosk / mic / cheer-submit logic
+- **Enemy:** detect/chase/attack — local combat state
+- **Stage systems:** win/fail, flow, save I/O — keep responsibilities split (no UI owning gameplay state)
+- **UI:** display/subscribe only (e.g. Cheer HUD listens to replicated buff/state) — **no** mic ownership or Vosk
+- **Camera:** follow/view only (`TopDownCamera`)
+- **Cheer/Voice:** independent subsystem  
+  - Detect: **Owner** `CheerKeywordEngine` (Vosk on **worker thread**; match/submit on **main**)  
+  - Submit: `SubmitCheerServerRpc` → **Host** `CheerService` apply buff  
+  - Mic: Dissonance owns capture in multi; **no double** `Microphone.Start`  
+  - Do not stuff Cheer/Vosk into `Player` / random UI; extend `CheerKeywordEngine` / `CheerService` (ask before new entry points)
+
+## Don't
+
+- Don't add reconnect / late-join / host-migration designs (unsupported)
+- Don't create duplicate damage pipelines alongside `NetworkDamageUtil`
+- Don't run Vosk `AcceptWaveform` on the main thread

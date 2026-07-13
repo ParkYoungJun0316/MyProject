@@ -1,0 +1,27 @@
+---
+description: Unity 6 C# coding standards — URP, Input System, uGUI, TopDownCamera
+alwaysApply: true
+---
+
+# Unity Coding
+
+## Stack
+
+- **Unity 6.3 LTS**, C#, URP, **Input System**, **uGUI**
+- Camera SSOT: **TopDownCamera** — do not treat Cinemachine as camera authority
+- Prefer existing project patterns over generic Unity tutorials (Unity 4/old Input Manager style)
+
+## Do
+
+- Cache references; avoid per-frame `Find` / `FindObjectOfType` / string `GameObject.Find`
+- Prefer **events** for gameplay signals / cross-system notify; **coroutines OK** for timed sequences / waits
+- Prefer injected refs over polling by name
+- Keep `Update` lean; move heavy work off hot paths
+- Inspector-driven tuning for combat/traps (no hardcoded balance magic without reason)
+- Match existing naming and folder layout when adding scripts
+
+## Don't
+
+- Don't swap stack: UI Toolkit, DOTS/ECS, Cinemachine-as-SSOT, old Input Manager (unless user asks)
+- Don't assume missing classes or APIs exist — check the repo or ask
+- Don't wholesale-replace files when a small edit works

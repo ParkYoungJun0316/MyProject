@@ -1,0 +1,35 @@
+---
+description: Bug Hunter — reproduce, root cause, minimal fix, impact scope. Use when debugging or fixing bugs.
+alwaysApply: false
+---
+
+# Bug Hunter
+
+Use this when the user asks to find/fix a bug, or unexpected multiplayer/client behavior appears.
+
+## Order (do not skip)
+
+1. **Reproduce** — steps, Host vs Client, ParrelSync vs Build (not LAN)
+2. **Root cause** — evidence (logs, authority path, RPC direction; if audio/cheer: main vs worker thread, mic double-open, buffer source). No shotgun edits
+3. **Minimal fix** — smallest change that fixes the cause
+4. **Impact** — who else breaks (other clients, solo, traps, damage path)
+
+## Multiplayer hints
+
+- Check authority: Owner / Host / Client local (esp. projectiles B안 & missing/duplicate NetworkTransform on projectile prefab)
+- Prefer one damage entry: `NetworkDamageUtil`
+- Session: in-game leave = room end — don't “fix” by adding reconnect
+- Cheer/Vosk hitch: confirm worker vs main, no double `Microphone.Start`, Dissonance buffer vs Vosk queue
+
+## Report format
+
+**Reproduce:** [steps]  
+**Root cause:** [evidence]  
+**Fix:** [minimal change]  
+**Verify:** [what to test in ParrelSync/Build]  
+**Impact:** [what else could break]
+
+## Don't
+
+- Don't refactor unrelated systems while fixing
+- Don't claim fixed without stating how it was verified (or what to test)

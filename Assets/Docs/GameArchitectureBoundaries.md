@@ -1,44 +1,35 @@
 # Game Architecture Boundaries
 
-## Scope
-- Vertical slice target: `Stage1 -> SavePoint -> Stage2 -> Transition`
-- Multiplayer implementation is postponed, but interfaces and ownership boundaries are prepared now.
+> Domain ownership only. Network / session / authority SSOT: `NetworkDesign.md`.  
+> Cheer / voice SSOT: `CheerAndTutorialDesign.md`.
+
+## Scope (current demo)
+
+- Play path: **Title → Lobby → `M.Stage1` → `T.Stage1` → `End.Demo`** (solo skips Lobby NGO)
+- Multiplayer is **in progress** (NGO 2.9) — not “postponed”
+- No persistent cross-run checkpoint save in MVP (`NetworkDesign` §13) — respawn via **`ColoredStartZone`**
 
 ## Domain Ownership
-- `Player`: input, movement, stamina, dodge, respawn lifecycle, own state events.
-- `Enemy`: detection/chase/attack and local combat state only.
-- `StageObjective` + `StageManager`: stage-local win/fail conditions.
-- `ColorSavePoint` + `ColorSaveZone`: checkpoint activation from zone occupancy.
-- `StageFlowManager` (new): cross-stage progression, scene loading, global stage state, save/load orchestration.
-- `StageSaveService` (new): persistent save I/O (JSON), no scene logic.
-- `StageCheckpoint` (new): binds in-scene checkpoint trigger to stage-flow save API.
-- `UI`: subscribes to player/stage events and displays state only.
-- `TopDownCamera`/Cinemachine rigs: camera follow/view only, no gameplay ownership.
+
+- **Player:** input, movement, stamina, dodge, respawn lifecycle, own state events. **No** Vosk / mic / cheer-submit.
+- **Enemy:** detection / chase / attack and local combat state only.
+- **Stage:** `StageObjective` + `StageManager` — stage-local win/fail.
+- **Spawn / respawn (MVP):** `ColoredStartZone` + `spawnPoint` (not ColorSavePoint / StageCheckpoint save pipeline).
+- **Flow:** `SceneFlowManager` — scene progression (`M` → `T` → `End.Demo`); stage-local systems do not load scenes directly.
+- **Damage:** `NetworkDamageUtil` — single networked damage entry (Host).
+- **Cheer/Voice:** `CheerKeywordEngine` (Owner detect) + `CheerService` (Host apply). See Cheer doc.
+- **Session leave (in-game):** `DisconnectManager` → `TitleReturnFlow` → `NetworkManagerSetup.Shutdown`.
+- **UI:** subscribe / display only — no gameplay ownership, no mic/Vosk ownership.
+- **Camera:** `TopDownCamera` follow/view only — not Cinemachine-as-SSOT.
 
 ## Dependency Rules
-- Stage-local systems do not directly load scenes.
-- Save I/O is isolated from gameplay logic.
+
+- Stage-local systems do not directly load scenes (`SceneFlowManager` owns transitions).
 - UI does not own gameplay state and should not poll scene objects by name.
-- Checkpoint activation reports to stage flow through a dedicated API.
-- Hardcoded stage progress flags are forbidden; use enum state and data objects.
+- Do not invent parallel damage, cheer, or leave/shutdown paths.
+- Do not add reconnect / late-join / host-migration designs (`NetworkDesign` §12).
 
-## Stage Progress State
-- `Locked`: cannot be entered from flow.
-- `Unlocked`: selectable/enterable.
-- `Cleared`: objective completed once.
+## Out of scope here
 
-## Persistence Contract
-- Save payload stores:
-  - current stage id
-  - last checkpoint id
-  - stage clear states
-  - total play time
-- Save writes occur on:
-  - checkpoint activation
-  - stage clear
-- Save restore occurs at boot and before first playable scene starts.
-
-## Multiplayer Preparation (Post-MVP hooks)
-- Damage contract is interface-ready (`IDamageReceiver`).
-- Player identity/context is interface-ready (`IPlayerContext`).
-- Stage flow does not assume exactly one human player in save schema.
+- Authority matrix, projectile B안, Steam/telemetry → `NetworkDesign.md`
+- Vosk worker / Dissonance mic → `CheerAndTutorialDesign.md`

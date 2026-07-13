@@ -1,0 +1,52 @@
+---
+description: NGO multiplayer locks — Host authority, Owner+CNT, projectile B안, session, ParrelSync/build
+alwaysApply: true
+---
+
+# Multiplayer (NGO)
+
+SSOT detail: `Assets/Docs/NetworkDesign.md`. Cheer/voice: `Assets/Docs/CheerAndTutorialDesign.md`.
+
+## Stack
+
+- **Netcode for GameObjects 2.9**, Listen-Server (Host + Clients)
+- Do **not** propose Mirror / Photon / FishNet / Relay as current stack
+- Steamworks **not integrated yet** — ask before Facepunch / Steamworks.NET choices
+
+## Authority (approved)
+
+| Area | Authority |
+|------|-----------|
+| Movement | **Owner + ClientNetworkTransform** (no Host-move / client prediction) |
+| HP / damage / trap schedule / game rules | **Host** |
+| Projectile **flight** | **Client local** (B안) |
+| Projectile **hit → damage** | Client report ServerRpc → **Host** via `NetworkDamageUtil` |
+
+**Projectile B안 (one line):** Host spawn + initial velocity → Client self-flight → Client hit ServerRpc → Host damage. **A안 rejected.**
+
+## Sync
+
+- Continuous state (HP, floor color, ready): **NetworkVariable**
+- One-time events (VFX, chat, game-over): **ClientRpc**
+- Client → Host one-shot requests (e.g. projectile hit report): **ServerRpc** (Host validates)
+- Never write NV from Client — request → Host validates → NV / Rpc
+
+## Session (approved)
+
+- No reconnect / late-join / host migration
+- Anyone leaves **in-game** → **room ends** (all to title)
+- Lobby kick = clear slot only; in-game kick/leave = room end
+- Solo (offline): no NGO session — DisconnectManager N/A; title return still via TitleReturnFlow
+- In-game room end: **DisconnectManager** → **TitleReturnFlow** → **NetworkManagerSetup.Shutdown()** → title
+- Do not call `NetworkManager.Shutdown()` directly — go through TitleReturnFlow / NetworkManagerSetup
+
+## Test (approved)
+
+- **ParrelSync** and/or **Build + Editor/Build** on one PC
+- **No LAN / discovery** testing assumptions
+
+## Don't
+
+- Don't revive Host-only movement or projectile A안
+- Don't invent missing network APIs — search repo or ask
+- Don't invent a parallel leave/shutdown path around DisconnectManager / TitleReturnFlow
