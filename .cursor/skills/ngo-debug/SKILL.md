@@ -40,6 +40,7 @@ Prefix logs with role: `[Host]` / `[Client]` / `[Owner]`.
 | Authority | Who runs the code path (Host / Owner / Client local) |
 | RPC direction | ServerRpc vs ClientRpc; who calls |
 | NV writes | Client must not write gameplay NV — Host after validate |
+| NV vs RPC race | NV initial/sync may arrive after RPC — check spawn / Ready / first-frame order dependence |
 | Damage | Through `NetworkDamageUtil` only? |
 | Projectile B안 | Prefab: no follow-NT for flight; Client flight + hit ServerRpc → Host damage |
 | Session | Accidental reconnect/late-join “fix”? Forbidden |
