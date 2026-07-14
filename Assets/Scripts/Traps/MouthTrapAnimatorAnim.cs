@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -26,7 +27,7 @@ using UnityEngine;
 ///   MouthExitTrigger 컴포넌트 부착 → mouthAnim 연결
 ///   콜라이더 두께 얇게 (0.1~0.3), 입 출구 바로 앞에 배치
 /// </summary>
-public class MouthTrapAnimatorAnim : MonoBehaviour
+public class MouthTrapAnimatorAnim : NetworkBehaviour
 {
     [Header("참조")]
     [Tooltip("입 메시의 Animator. 비워두면 자식에서 자동 탐색")]
@@ -116,8 +117,9 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
 
     void HandlePreFireCharge()
     {
-        // 발사 전: 진행 중인 복귀 코루틴 취소 후 Open 시작
-        // 연속 발사 시 Close/Idle 도중에도 바로 Open으로 자연스럽게 전환됨
+        // 온라인: Host만 실행. Client는 TriggerOpenClientRpc로 수신.
+        if (IsSpawned && !IsServer) return;
+
         if (_idleReturnCoroutine != null)
         {
             StopCoroutine(_idleReturnCoroutine);
@@ -125,13 +127,16 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
         }
 
         TriggerOpen();
+        if (IsSpawned) TriggerOpenClientRpc();
     }
 
     void HandleFiring()
     {
-        // 발사 순간 → Hold 진입 (입 완전히 열린 채 유지)
-        // Close는 발사체가 입 밖으로 나간 뒤 NotifyProjectileExited()에서 발동
+        // 온라인: Host만 실행. Client는 TriggerHoldClientRpc로 수신.
+        if (IsSpawned && !IsServer) return;
+
         TriggerHold();
+        if (IsSpawned) TriggerHoldClientRpc();
     }
 
     /// <summary>
@@ -139,6 +144,34 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
     /// Hold → Close → Idle 순서로 진행.
     /// </summary>
     public void NotifyProjectileExited()
+    {
+        // 온라인: Host만 실행. Client는 TriggerCloseClientRpc로 수신.
+        if (IsSpawned && !IsServer) return;
+
+        if (_idleReturnCoroutine != null) StopCoroutine(_idleReturnCoroutine);
+        TriggerClose();
+        if (IsSpawned) TriggerCloseClientRpc();
+        _idleReturnCoroutine = StartCoroutine(ReturnToIdleAfterClose());
+    }
+
+    // ── ClientRpc (Host → Client 애니메이션 트리거) ────────────────────────
+
+    [Rpc(SendTo.NotServer)]
+    void TriggerOpenClientRpc()
+    {
+        if (_idleReturnCoroutine != null)
+        {
+            StopCoroutine(_idleReturnCoroutine);
+            _idleReturnCoroutine = null;
+        }
+        TriggerOpen();
+    }
+
+    [Rpc(SendTo.NotServer)]
+    void TriggerHoldClientRpc() => TriggerHold();
+
+    [Rpc(SendTo.NotServer)]
+    void TriggerCloseClientRpc()
     {
         if (_idleReturnCoroutine != null) StopCoroutine(_idleReturnCoroutine);
         TriggerClose();
@@ -164,13 +197,26 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
     {
         while (true)
         {
-            TriggerOpen();
+            // 온라인: Host만 트리거 발행 + Rpc로 Client 전파
+            if (!IsSpawned || IsServer)
+            {
+                TriggerOpen();
+                if (IsSpawned) TriggerOpenClientRpc();
+            }
             yield return new WaitForSeconds(Mathf.Max(0f, openClipLength));
 
-            TriggerHold();
+            if (!IsSpawned || IsServer)
+            {
+                TriggerHold();
+                if (IsSpawned) TriggerHoldClientRpc();
+            }
             yield return new WaitForSeconds(Mathf.Max(0f, loopHoldDuration));
 
-            TriggerClose();
+            if (!IsSpawned || IsServer)
+            {
+                TriggerClose();
+                if (IsSpawned) TriggerCloseClientRpc();
+            }
             yield return new WaitForSeconds(Mathf.Max(0f, closeClipLength + loopInterval));
         }
     }

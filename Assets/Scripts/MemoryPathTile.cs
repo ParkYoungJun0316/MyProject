@@ -63,7 +63,7 @@ public class MemoryPathTile : MonoBehaviour
         {
             _isDisabled = true;
             ApplyColor(dangerColor);
-            player.KillInstantly();          // 무적/쿨다운 무시하고 즉사
+            NetworkDamageUtil.ApplyInstantKill(player);
             memoryPath.OnTrapStepped(this);  // 스테이지 실패 처리
         }
         else if (!_isSafeTriggered)

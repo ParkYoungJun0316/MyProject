@@ -11,24 +11,26 @@ using UnityEngine;
 /// Set3: Antidisestablishmentarianism / Floccinaucinihilipilification / Pneumonoultramicroscopicsilicovolcanoconiosis  (3종)
 ///
 /// [확정 키워드 후 원상복구]
-/// BuildDemoGrammarJson() 의 배열을 berry/guma/ssuk대체어/danho대체어 로 교체.
+/// BuildDemoGrammarJson() 의 배열을 berry/guma/sook/hobak 으로 유지.
 /// CheerService.CheerNames 도 동일하게 맞출 것.
 /// </summary>
 public static class CheerLexiconBuilder
 {
     /// <summary>
-    /// 데모 고정 4종 grammar JSON.
-    /// 결과 예: ["berry","guma","sook","tango","[unk]"]
+    /// 데모 기본 4종 grammar JSON (커스텀 미설정 시 폴백용).
+    /// 결과 예: ["berry","guma","sook","hobak","[unk]"]
     ///
     /// [발음 참고]
     ///   berry : B EH R IY        (영어 사전 포함)
     ///   guma  : G UW M AH        (사전 미포함 → 근사 처리)
-    ///   sook  : S UH K           (사전 미포함 → 근사 처리, ssuk 대체)
-    ///   tango : T AE NG G OW     (영어 사전 포함, 단호 /dan.ho/ 근사 대체)
+    ///   sook  : S UH K           (사전 미포함 → 근사 처리)
+    ///   hobak : HH OW B AE K     (사전 미포함 → 근사 처리)
+    ///
+    /// 커스텀 이름이 있을 때는 BuildGrammarJson(세션이름[]) 을 사용할 것.
     /// </summary>
     public static string BuildDemoGrammarJson()
     {
-        return BuildGrammarJson(new[] { "berry", "guma", "sook", "tango" });
+        return BuildGrammarJson(new[] { "berry", "guma", "sook", "hobak" });
     }
 
     /// <summary>

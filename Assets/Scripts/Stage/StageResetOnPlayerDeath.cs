@@ -1,12 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 플레이어 사망 시 현재 씬을 재로드하는 오케스트레이터.
-/// 사망 → SceneFlowManager.ReloadCurrentScene() → 씬 전체 재초기화.
-/// SceneFlowManager 가 없는 씬에서는 SceneManager.LoadScene 직접 호출로 폴백.
+/// 플레이어 사망 시 씬 재로드를 StageNetworkState에 위임하는 오케스트레이터.
+/// 사망 → StageNetworkState.NotifyPlayerDeathServerRpc() → Host가 씬 전체 재로드.
 ///
 /// [사용법]
 /// 씬에 빈 GameObject 추가 → 이 컴포넌트 부착. 설정 없음.
@@ -67,21 +64,10 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void DoReset()
     {
-        // 온라인: StageNetworkState를 통해 Host가 전원 리로드 처리
-        if (LobbyContext.IsOnline)
-        {
-            if (StageNetworkState.Instance != null)
-                StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
-            else
-                Debug.LogWarning("[StageResetOnPlayerDeath] StageNetworkState를 찾을 수 없습니다.");
-            return;
-        }
-
-        // 오프라인: 기존 SceneFlowManager/SceneManager 처리
-        if (SceneFlowManager.Instance != null)
-            SceneFlowManager.Instance.ReloadCurrentScene();
+        if (StageNetworkState.Instance != null)
+            StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
         else
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            Debug.LogWarning("[StageResetOnPlayerDeath] StageNetworkState를 찾을 수 없습니다.");
     }
 
     void OnDisable()

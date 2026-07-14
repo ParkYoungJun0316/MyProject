@@ -104,10 +104,7 @@ public class ColoredStartZone : MonoBehaviour
     /// </summary>
     void RefreshActiveStateConfirmed()
     {
-        bool active = LobbyContext.IsOnline
-            ? PlayerSpawnCoordinator.IsColorInSession(colorType)
-            : (GameSession.Instance == null || GameSession.Instance.IsColorActive(colorType));
-
+        bool active = PlayerSpawnCoordinator.IsColorInSession(colorType);
         gameObject.SetActive(active);
     }
 

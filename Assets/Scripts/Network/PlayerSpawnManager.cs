@@ -166,40 +166,10 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         // 같은 씬 사망 리로드도 다시 처리되도록 허용
         _lastHandledScene = null;
 
-        if (LobbyContext.IsOffline)
-        {
-            if (_entries == null)
-            {
-                var colors = GameSession.Instance?.GetActiveColors();
-                if (colors == null || colors.Count == 0)
-                {
-                    Debug.LogWarning("[PlayerSpawnManager] 오프라인: GameSession 활성 색 없음 — 스킵");
-                    return;
-                }
-
-                _entries = new PlayerEntry[colors.Count];
-                for (int i = 0; i < colors.Count; i++)
-                    _entries[i] = new PlayerEntry
-                    {
-                        ColorType = colors[i],
-                        SpawnPos  = GetFixedSpawnPos(colors[i]),
-                    };
-            }
-
-            StartCoroutine(HandleStageLoadedNextFrame());
-            return;
-        }
-
         // 온라인 + 이미 1회 스폰됨: LoadEventCompleted를 놓쳐도 플레이어는 유지되므로
         // 2프레임 뒤에도 이 씬을 처리 안 했으면 Reset fallback.
         if (_networkPlayersSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             StartCoroutine(OnlineResetFallback(scene.name));
-    }
-
-    IEnumerator HandleStageLoadedNextFrame()
-    {
-        yield return null;
-        HandleStageLoaded(SceneManager.GetActiveScene().name);
     }
 
     IEnumerator OnlineResetFallback(string sceneName)
@@ -253,13 +223,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
 
         PlayerSpawnCoordinator.ResetReady();
         _lastHandledScene = sceneName;
-
-        if (LobbyContext.IsOffline)
-        {
-            SpawnOfflinePlayers();
-            PlayerSpawnCoordinator.NotifyOffline();
-            return;
-        }
 
         if (!_networkPlayersSpawned)
         {
@@ -360,49 +323,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
                 Destroy(setup.gameObject);
         }
         _spawnedSetups.Clear();
-    }
-
-    // ── 오프라인 스폰 ─────────────────────────────────────────────────
-
-    void SpawnOfflinePlayers()
-    {
-        if (playerPrefab == null)
-        {
-            Debug.LogError("[PlayerSpawnManager] playerPrefab 미설정");
-            return;
-        }
-
-        var  topDownCam = FindAnyObjectByType<TopDownCamera>();
-        bool first      = true;
-
-        for (int i = 0; i < _entries.Length; i++)
-        {
-            ref var e  = ref _entries[i];
-            var go     = Instantiate(playerPrefab, e.SpawnPos, Quaternion.identity);
-            var player = go.GetComponent<Player>();
-
-            if (player != null)
-            {
-                PlayerColorUtil.ApplyToPlayer(player, e.ColorType);
-                player.isOwnerControlled = true;
-                player.isUniqueColor     = true;
-                player.ForceSetSpawnPoint(e.SpawnPos, Quaternion.identity);
-            }
-
-            if (first)
-            {
-                first = false;
-                if (topDownCam != null && player != null)
-                {
-                    topDownCam.target   = go.transform;
-                    player.followCamera = topDownCam.GetComponent<Camera>();
-                }
-                var cheer = go.GetComponent<CheerKeywordEngine>();
-                if (cheer != null) cheer.enabled = true;
-            }
-
-            Debug.Log($"[PlayerSpawnManager] 오프라인 스폰 — {e.ColorType} at {e.SpawnPos}");
-        }
     }
 
     // ── 공개 유틸 ─────────────────────────────────────────────────────

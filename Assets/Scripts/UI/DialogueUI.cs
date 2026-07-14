@@ -132,15 +132,12 @@ public class DialogueUI : MonoBehaviour
 
     // ── 내부 ──────────────────────────────────────────────────────
 
-    /// <summary>
-    /// hostOnlyHint를 Host일 때만 활성화.
-    /// 네트워크 미연결(오프라인·솔로) 상태면 Host로 간주.
-    /// </summary>
+    /// <summary>hostOnlyHint를 Host일 때만 활성화.</summary>
     void ApplyHostHint()
     {
         if (hostOnlyHint == null) return;
         var nm = NetworkManager.Singleton;
-        bool isHost = nm == null || !nm.IsListening || nm.IsHost;
+        bool isHost = nm != null && nm.IsHost;
         hostOnlyHint.SetActive(isHost);
     }
 

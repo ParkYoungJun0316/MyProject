@@ -47,14 +47,7 @@ public class StagePressurePadSetup : MonoBehaviour
         Collect();
         BuildPadToDoorMap();
 
-        if (LobbyContext.IsOffline)
-        {
-            // 오프라인: 즉시 초기화 (시드 동기화 불필요)
-            ApplySeedAndColors();
-            return;
-        }
-
-        // 온라인: 사망 리로드 시 시드 RPC(BroadcastNewSeedClientRpc)가
+        // 사망 리로드 시 시드 RPC(BroadcastNewSeedClientRpc)가
         // StagePressurePadSetup.Start()보다 먼저 도착한다는 보장이 없으므로,
         // LoadEventCompleted → SpawnAllPlayers → OnPlayersReady 이후로 색 배정을 지연.
         // 이 시점은 씬 로드 + 플레이어 스폰 완료 이후로, 시드 RPC가 반드시 선행 처리됨.

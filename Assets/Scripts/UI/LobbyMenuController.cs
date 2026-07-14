@@ -1,14 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
 /// 로비 씬 메인 컨트롤러.
-/// LobbyContext.Mode 에 따라 Offline / OnlineHost / OnlineClient 동작을 분기한다.
+/// LobbyContext.Mode(OnlineHost / OnlineClient)에 따라 동작을 분기한다.
 ///
 /// [배치 방법]
 /// 로비 씬의 Canvas 또는 빈 GameObject에 부착.
@@ -31,6 +28,12 @@ using UnityEngine.UI;
 /// - startButton        : Start 버튼 (CanStart() 기반 interactable 제어)
 /// - startButtonRoot    : Start 버튼 부모 (Host만 표시)
 ///
+/// [로비 Cheer Say Test (Vosk)]
+/// - lobbyCheerEngine  : 로비 씬에 배치한 CheerKeywordEngine (_lobbyTestMode=true)
+/// Vosk가 CheerName 감지 → OnKeywordDetected(targetColorIndex) → 타겟 슬롯 ShowHeardBy(myColor)
+/// 말풍선 + 색별 떡 2.5초 표시. 버프·ServerRpc 미발생.
+/// 슬롯 이름 변경 시 RebuildLobbyGrammarIfNeeded() 로 grammar 자동 갱신.
+///
 /// [버튼 OnClick 연결]
 /// Btn_Start       → OnClickStart()
 /// Btn_Ready       → OnClickReady()
@@ -42,11 +45,6 @@ using UnityEngine.UI;
 /// </summary>
 public class LobbyMenuController : MonoBehaviour
 {
-    [Header("씬 전환")]
-    [SerializeField] private string stageSceneName = "M.Stage1";
-    [Tooltip("TitleReturnFlow 도입 후 미사용. Inspector 기존 값 보존용.")]
-    [SerializeField] private string titleSceneName  = "0.Title";
-
     [Header("캐릭터 초상화")]
     [Tooltip("드롭다운 인덱스 순: [0]Blue [1]Purple [2]Green [3]Yellow")]
     [SerializeField] private Sprite[] characterPortraits = new Sprite[4];
@@ -57,7 +55,7 @@ public class LobbyMenuController : MonoBehaviour
     [Tooltip("Slot0 내 TMP_Dropdown")]
     [SerializeField] private TMP_Dropdown characterDropdown;
 
-    [Header("온라인 전용 UI (오프라인 시 숨김)")]
+    [Header("온라인 전용 UI")]
     [SerializeField] private GameObject onlineOnlyRoot;
     [SerializeField] private GameObject readyRoot;
     [SerializeField] private TMP_Text   roomCodeText;
@@ -83,9 +81,11 @@ public class LobbyMenuController : MonoBehaviour
              "예) TMP_Text: '같은 색을 선택한 플레이어가 있습니다. 다른 색을 선택해주세요.'")]
     [SerializeField] private GameObject duplicateColorWarning;
 
-    [Header("페이드 (선택)")]
-    [SerializeField] private ScreenFader screenFader;
-    [SerializeField] private float       fadeOutDuration = 0f;
+    [Header("로비 Cheer Say Test (Vosk)")]
+    [Tooltip("로비 씬에 배치한 CheerKeywordEngine. _lobbyTestMode=true로 설정할 것.\n" +
+             "null이면 Vosk 피드백 비활성 (이름 편집은 영향 없음).")]
+    [SerializeField] private CheerKeywordEngine lobbyCheerEngine;
+
 
     // ── 색상 매핑 ────────────────────────────────────────────────
 
@@ -99,17 +99,16 @@ public class LobbyMenuController : MonoBehaviour
 
     // ── 런타임 상태 ──────────────────────────────────────────────
 
-    bool _isReady;
-    bool _isNetworkSubscribed;
+    bool         _isReady;
+    bool         _isNetworkSubscribed;
+    LobbySlotUI  _localSlotUI;       // 로컬 플레이어 슬롯 캐시 — CheerName 결과 전달용
+    string       _lastLobbyGrammar;  // grammar 중복 재빌드 방지 캐시
 
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
     {
-        // 오프라인 모드: LobbySlotUI 없이 직접 dropdown 사용
-        // 온라인 모드: LobbySlotUI가 드롭다운 이벤트를 담당하므로 여기서는 오프라인만 구독
-        if (characterDropdown != null && LobbyContext.IsOffline)
-            characterDropdown.onValueChanged.AddListener(OnCharacterChanged);
+        // LobbySlotUI가 드롭다운 이벤트를 담당.
     }
 
     void OnDestroy()
@@ -118,6 +117,10 @@ public class LobbyMenuController : MonoBehaviour
             characterDropdown.onValueChanged.RemoveListener(OnCharacterChanged);
 
         UnsubscribeNetworkEvents();
+
+        // 솔로 모드에서도 해제 (이중 해제는 무해함)
+        if (lobbyCheerEngine != null)
+            lobbyCheerEngine.OnKeywordDetected -= OnLobbyCheerDetected;
     }
 
     void Start()
@@ -132,8 +135,7 @@ public class LobbyMenuController : MonoBehaviour
         int initial = characterDropdown != null ? characterDropdown.value : 0;
         RefreshPortrait(initial);
 
-        if (LobbyContext.IsOnline)
-            SubscribeNetworkEvents();
+        SubscribeNetworkEvents();
     }
 
     // ── 네트워크 이벤트 구독 ──────────────────────────────────────
@@ -142,7 +144,9 @@ public class LobbyMenuController : MonoBehaviour
     {
         if (LobbyNetworkManager.Instance != null)
         {
-            LobbyNetworkManager.Instance.OnSlotsChanged += RefreshAllSlots;
+            LobbyNetworkManager.Instance.OnSlotsChanged       += RefreshAllSlots;
+            LobbyNetworkManager.Instance.OnCheerNameResult    += OnCheerNameResult;
+            LobbyNetworkManager.Instance.OnLobbyHeardBroadcast += OnLobbyHeardBroadcast;
             _isNetworkSubscribed = true;
             RefreshAllSlots();
         }
@@ -150,6 +154,10 @@ public class LobbyMenuController : MonoBehaviour
 
         if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientDisconnectCallback += OnNetworkDisconnected;
+
+        // Vosk 로비 테스트 — CheerEngine 이벤트 구독
+        if (lobbyCheerEngine != null)
+            lobbyCheerEngine.OnKeywordDetected += OnLobbyCheerDetected;
     }
 
     // Instance가 나중에 생기는 경우 대비 (Client 타이밍 이슈)
@@ -157,7 +165,9 @@ public class LobbyMenuController : MonoBehaviour
     {
         if (!_isNetworkSubscribed && LobbyContext.IsOnline && LobbyNetworkManager.Instance != null)
         {
-            LobbyNetworkManager.Instance.OnSlotsChanged += RefreshAllSlots;
+            LobbyNetworkManager.Instance.OnSlotsChanged       += RefreshAllSlots;
+            LobbyNetworkManager.Instance.OnCheerNameResult    += OnCheerNameResult;
+            LobbyNetworkManager.Instance.OnLobbyHeardBroadcast += OnLobbyHeardBroadcast;
             _isNetworkSubscribed = true;
             RefreshAllSlots();
         }
@@ -166,46 +176,113 @@ public class LobbyMenuController : MonoBehaviour
     void UnsubscribeNetworkEvents()
     {
         if (LobbyNetworkManager.Instance != null)
-            LobbyNetworkManager.Instance.OnSlotsChanged -= RefreshAllSlots;
+        {
+            LobbyNetworkManager.Instance.OnSlotsChanged       -= RefreshAllSlots;
+            LobbyNetworkManager.Instance.OnCheerNameResult    -= OnCheerNameResult;
+            LobbyNetworkManager.Instance.OnLobbyHeardBroadcast -= OnLobbyHeardBroadcast;
+        }
 
         if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnNetworkDisconnected;
+
+        if (lobbyCheerEngine != null)
+            lobbyCheerEngine.OnKeywordDetected -= OnLobbyCheerDetected;
+    }
+
+    /// <summary>CheerName 설정 결과 — 로컬 슬롯 UI에 전달.</summary>
+    void OnCheerNameResult(bool success, string errorKey)
+    {
+        _localSlotUI?.ShowCheerNameResult(success, errorKey);
+    }
+
+    /// <summary>
+    /// Vosk가 CheerName 감지.
+    /// Host에 ServerRpc 보고 → 전원 ClientRpc로 말풍선 공유.
+    /// </summary>
+    void OnLobbyCheerDetected(int targetColorIndex)
+    {
+        LobbyNetworkManager.Instance?.ReportLobbyHeardServerRpc(targetColorIndex);
+    }
+
+    /// <summary>
+    /// Host → 전원 Heard 브로드캐스트 수신.
+    /// LobbyNetworkManager.OnLobbyHeardBroadcast 이벤트 핸들러.
+    /// </summary>
+    void OnLobbyHeardBroadcast(int targetColorIndex, int speakerColorIndex)
+    {
+        ShowHeardOnSlot(targetColorIndex, speakerColorIndex);
+    }
+
+    /// <summary>targetColorIndex 슬롯의 말풍선에 speakerColorIndex 떡 표시.</summary>
+    void ShowHeardOnSlot(int targetColorIndex, int speakerColorIndex)
+    {
+        if (LobbyNetworkManager.Instance == null) return;
+
+        for (int i = 0; i < allSlotUIs.Length; i++)
+        {
+            if (allSlotUIs[i] == null) continue;
+            if (i >= LobbyNetworkManager.Instance.SlotCount) break;
+
+            var s = LobbyNetworkManager.Instance.GetSlot(i);
+            if (s.ColorIndex == targetColorIndex)
+            {
+                allSlotUIs[i].ShowHeardBy(speakerColorIndex);
+                Debug.Log($"[LobbyMenuController] Heard UI: target={targetColorIndex} speaker={speakerColorIndex}");
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 슬롯 이름이 바뀔 때 Vosk grammar 갱신.
+    /// grammar 문자열이 동일하면 워커에 신호를 보내지 않는다.
+    /// </summary>
+    void RebuildLobbyGrammarIfNeeded()
+    {
+        if (lobbyCheerEngine == null || LobbyNetworkManager.Instance == null) return;
+
+        int count = LobbyNetworkManager.Instance.SlotCount;
+        var names = new string[count];
+        for (int i = 0; i < count; i++)
+            names[i] = LobbyNetworkManager.GetEffectiveCheerName(LobbyNetworkManager.Instance.GetSlot(i));
+
+        string newJson = CheerLexiconBuilder.BuildGrammarJson(names);
+        if (newJson == _lastLobbyGrammar) return;
+
+        _lastLobbyGrammar = newJson;
+        lobbyCheerEngine.ApplySessionGrammar(names);
+    }
+
+    int GetLocalColorIndex()
+    {
+        if (LobbyNetworkManager.Instance == null || NetworkManager.Singleton == null) return 0;
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        for (int i = 0; i < LobbyNetworkManager.Instance.SlotCount; i++)
+        {
+            var s = LobbyNetworkManager.Instance.GetSlot(i);
+            if (s.ClientId == localId) return s.ColorIndex;
+        }
+        return 0;
     }
 
     // ── 모드 분기 ─────────────────────────────────────────────────
 
     void ApplyModeUI()
     {
-        bool isOffline = LobbyContext.IsOffline;
-
-        if (onlineOnlyRoot != null) onlineOnlyRoot.SetActive(!isOffline);
-        // 호스트는 Ready 없음 — 클라이언트(팀원)만 Ready 버튼 표시
+        if (onlineOnlyRoot != null) onlineOnlyRoot.SetActive(true);
         if (readyRoot != null) readyRoot.SetActive(LobbyContext.IsOnlineClient);
-
-        // Start 버튼은 Host만 표시
-        if (startButtonRoot != null)
-            startButtonRoot.SetActive(LobbyContext.IsOnlineHost || isOffline);
-
-        if (!isOffline)
-            RefreshReadyVisual();
+        if (startButtonRoot != null) startButtonRoot.SetActive(LobbyContext.IsOnlineHost);
+        RefreshReadyVisual();
     }
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
     /// <summary>
     /// Start 버튼.
-    /// 오프라인: 색 1개 적용 후 씬 전환.
-    /// 온라인 Host: LobbyNetworkManager.StartGameServerRpc() — NGO가 씬 전환 처리.
+    /// Host: LobbyNetworkManager.StartGameServerRpc() — NGO가 씬 전환 처리.
     /// </summary>
     public void OnClickStart()
     {
-        if (LobbyContext.IsOffline)
-        {
-            ApplySoloColor();
-            StartCoroutine(LoadSceneWithFade(stageSceneName));
-            return;
-        }
-
         if (!LobbyContext.IsOnlineHost) return;
 
         if (LobbyNetworkManager.Instance == null)
@@ -220,8 +297,6 @@ public class LobbyMenuController : MonoBehaviour
     /// <summary>Ready 버튼 — 토글 후 ServerRpc로 동기화.</summary>
     public void OnClickReady()
     {
-        if (LobbyContext.IsOffline) return;
-
         _isReady = !_isReady;
         RefreshReadyVisual();
 
@@ -244,8 +319,6 @@ public class LobbyMenuController : MonoBehaviour
     /// </summary>
     public void OnClickCopy()
     {
-        if (LobbyContext.IsOffline) return;
-
         // SharedRoomCode: NetworkVariable이므로 Host·Client 모두 동일 값
         string code = LobbyNetworkManager.Instance != null
             ? LobbyNetworkManager.Instance.SharedRoomCode
@@ -268,13 +341,11 @@ public class LobbyMenuController : MonoBehaviour
         Debug.Log("[LobbyMenuController] Steam 초대는 Post-MVP에서 지원합니다.");
     }
 
-    /// <summary>Dropdown OnValueChanged — 초상화 갱신 + 온라인이면 색 동기화.</summary>
+    /// <summary>Dropdown OnValueChanged — 초상화 갱신 + 색 동기화.</summary>
     public void OnCharacterChanged(int index)
     {
         RefreshPortrait(index);
-
-        if (LobbyContext.IsOnline)
-            LobbyNetworkManager.Instance?.SetColorServerRpc(index);
+        LobbyNetworkManager.Instance?.SetColorServerRpc(index);
     }
 
     // ── UI 갱신 ───────────────────────────────────────────────────
@@ -296,6 +367,7 @@ public class LobbyMenuController : MonoBehaviour
         bool  isHost = LobbyContext.IsOnlineHost;
 
         // _slots 순서대로 UI 갱신 (Host=0번, 이후 접속 순)
+        _localSlotUI = null;
         for (int i = 0; i < allSlotUIs.Length; i++)
         {
             if (allSlotUIs[i] == null) continue;
@@ -308,6 +380,7 @@ public class LobbyMenuController : MonoBehaviour
                 bool canKick     = isHost && !isLocalSlot;
 
                 allSlotUIs[i].Refresh(s, GetPortrait(s.ColorIndex), canKick, isHostSlot, isLocalSlot);
+                if (isLocalSlot) _localSlotUI = allSlotUIs[i];
             }
             else
             {
@@ -327,6 +400,9 @@ public class LobbyMenuController : MonoBehaviour
 
         // 룸코드 갱신 (NetworkVariable이므로 Host·Client 모두 동일)
         RefreshRoomCode();
+
+        // 이름 변경 시 Vosk grammar 갱신
+        RebuildLobbyGrammarIfNeeded();
     }
 
     void RefreshRoomCode()
@@ -361,18 +437,6 @@ public class LobbyMenuController : MonoBehaviour
         return characterPortraits[i];
     }
 
-    // ── 솔로 전용 ─────────────────────────────────────────────────
-
-    void ApplySoloColor()
-    {
-        if (GameSession.Instance == null) return;
-
-        int index = characterDropdown != null ? characterDropdown.value : 0;
-        int safe  = Mathf.Clamp(index, 0, IndexToColor.Length - 1);
-        GameSession.Instance.SetActiveColors(new[] { IndexToColor[safe] });
-        Debug.Log($"[LobbyMenuController] 솔로 색상 적용: {IndexToColor[safe]}");
-    }
-
     // ── 네트워크 이벤트 핸들러 ────────────────────────────────────
 
     /// <summary>
@@ -396,42 +460,13 @@ public class LobbyMenuController : MonoBehaviour
         });
     }
 
-    // ── 씬 전환 ───────────────────────────────────────────────────
-
-    IEnumerator LoadSceneWithFade(string sceneName)
-    {
-        if (screenFader != null && fadeOutDuration > 0f)
-        {
-            screenFader.FadeOut(fadeOutDuration);
-            yield return new WaitForSeconds(fadeOutDuration);
-        }
-
-        SceneManager.LoadScene(sceneName);
-    }
-
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR
-    [ContextMenu("테스트: 솔로 Start")]
-    void Debug_SoloStart()
-    {
-        LobbyContext.Mode = LobbyMode.Offline;
-        ApplyModeUI();
-        ApplySoloColor();
-        Debug.Log("[LobbyMenuController] 솔로 색상 적용 완료");
-    }
-
     [ContextMenu("테스트: 온라인 UI 적용")]
     void Debug_OnlineUI()
     {
         LobbyContext.Mode = LobbyMode.OnlineHost;
-        ApplyModeUI();
-    }
-
-    [ContextMenu("테스트: 오프라인 UI 적용")]
-    void Debug_OfflineUI()
-    {
-        LobbyContext.Mode = LobbyMode.Offline;
         ApplyModeUI();
     }
 

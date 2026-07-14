@@ -40,6 +40,11 @@ public class WaypointMover : MonoBehaviour
     [Tooltip("true: 씬 시작 시 자동으로 이동 시작 / false: Activate() 호출 전까지 대기")]
     [SerializeField] bool autoStart = true;
 
+    // B안: NetworkTransform 없이 Client 로컬 시뮬 시 사용.
+    // SetWaypointPositions()로 설정하면 Transform[] waypoints 대신 이 배열을 사용.
+    Vector3[] _positionWaypoints;
+    bool      _usePositionWaypoints;
+
     Rigidbody rb;
     int _waypointIndex;
     bool _waypointFinished;
@@ -71,10 +76,24 @@ public class WaypointMover : MonoBehaviour
 
     public void SetWaypoints(Transform[] newWaypoints)
     {
-        waypoints      = newWaypoints;
-        _waypointIndex = 0;
-        _waypointFinished = false;
-        _pingPongDir   = 1;
+        waypoints             = newWaypoints;
+        _usePositionWaypoints = false;
+        _waypointIndex        = 0;
+        _waypointFinished     = false;
+        _pingPongDir          = 1;
+    }
+
+    /// <summary>
+    /// B안 전용. ClientRpc로 받은 Vector3 위치 배열로 경로를 설정.
+    /// Transform 참조 없이 Client 로컬 시뮬레이션에 사용.
+    /// </summary>
+    public void SetWaypointPositions(Vector3[] positions)
+    {
+        _positionWaypoints    = positions;
+        _usePositionWaypoints = true;
+        _waypointIndex        = 0;
+        _waypointFinished     = false;
+        _pingPongDir          = 1;
     }
 
     void ApplyInitialVelocity()
@@ -85,17 +104,27 @@ public class WaypointMover : MonoBehaviour
             rb.linearVelocity = dir * initialSpeed;
     }
 
-    bool HasWaypoints => waypoints != null && waypoints.Length > 0;
+    bool HasWaypoints => _usePositionWaypoints
+        ? (_positionWaypoints != null && _positionWaypoints.Length > 0)
+        : (waypoints != null && waypoints.Length > 0);
+
+    int WaypointCount => _usePositionWaypoints
+        ? (_positionWaypoints?.Length ?? 0)
+        : (waypoints?.Length ?? 0);
+
+    Vector3 GetWaypointPos(int index)
+    {
+        if (_usePositionWaypoints) return _positionWaypoints[index];
+        Transform wp = waypoints[index];
+        return wp != null ? wp.position : transform.position;
+    }
 
     Vector3 GetMoveDir()
     {
         if (!HasWaypoints) return transform.forward;
         if (_waypointFinished) return Vector3.zero;
 
-        Transform wp = waypoints[_waypointIndex];
-        if (wp == null) return transform.forward;
-
-        Vector3 toWp = wp.position - transform.position;
+        Vector3 toWp = GetWaypointPos(_waypointIndex) - transform.position;
         toWp.y = 0f;
 
         float threshold = waypointReachDistance > 0f
@@ -107,7 +136,7 @@ public class WaypointMover : MonoBehaviour
             AdvanceWaypoint();
             if (_waypointFinished) return Vector3.zero;
 
-            toWp = waypoints[_waypointIndex].position - transform.position;
+            toWp = GetWaypointPos(_waypointIndex) - transform.position;
             toWp.y = 0f;
         }
 
@@ -116,26 +145,27 @@ public class WaypointMover : MonoBehaviour
 
     void AdvanceWaypoint()
     {
+        int count = WaypointCount;
         switch (endMode)
         {
             case WaypointEndMode.Stop:
                 _waypointIndex++;
-                if (_waypointIndex >= waypoints.Length)
+                if (_waypointIndex >= count)
                 {
-                    _waypointIndex = waypoints.Length - 1;
+                    _waypointIndex = count - 1;
                     _waypointFinished = true;
                 }
                 break;
 
             case WaypointEndMode.Loop:
-                _waypointIndex = (_waypointIndex + 1) % waypoints.Length;
+                _waypointIndex = (_waypointIndex + 1) % count;
                 break;
 
             case WaypointEndMode.PingPong:
                 _waypointIndex += _pingPongDir;
-                if (_waypointIndex >= waypoints.Length)
+                if (_waypointIndex >= count)
                 {
-                    _waypointIndex = waypoints.Length - 2;
+                    _waypointIndex = count - 2;
                     _pingPongDir = -1;
                 }
                 else if (_waypointIndex < 0)

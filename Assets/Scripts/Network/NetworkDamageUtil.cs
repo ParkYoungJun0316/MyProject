@@ -7,7 +7,7 @@ using UnityEngine;
 /// [메서드 구분]
 /// ApplyDamage      — 서버 판정 전용. 함정·적·씬 이벤트 등 모든 데미지 진입점.
 ///                    서버에서만 실제 동작. 클라이언트 호출 시 즉시 반환.
-/// ApplyInstantKill — 문 즉사 전용. 서버에서만 판정.
+/// ApplyInstantKill — 즉사 전용. 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
 /// </summary>
 public static class NetworkDamageUtil
 {
@@ -17,24 +17,17 @@ public static class NetworkDamageUtil
         if (p == null || amount <= 0) return;
 
         var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening)
-        {
-            if (!nm.IsServer) return;
+        if (nm == null || !nm.IsListening || !nm.IsServer) return;
 
-            var netSetup = p.GetComponent<NetworkPlayerSetup>();
-            if (netSetup != null)
-                netSetup.ApplyDamageFromServer(amount, knockback);
-            else
-                p.TakeDamage(amount, knockback);
-        }
+        var netSetup = p.GetComponent<NetworkPlayerSetup>();
+        if (netSetup != null)
+            netSetup.ApplyDamageFromServer(amount, knockback);
         else
-        {
             p.TakeDamage(amount, knockback);
-        }
     }
 
     /// <summary>
-    /// 문 닫힘 즉사 전용. Jammed 애니메이션 포함.
+    /// 즉사 판정. Jammed 애니메이션 포함(NetworkPlayerSetup 있을 때).
     /// 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
     /// </summary>
     public static void ApplyInstantKill(Player p)
@@ -42,22 +35,15 @@ public static class NetworkDamageUtil
         if (p == null) return;
 
         var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening)
-        {
-            if (!nm.IsServer) return;
+        if (nm == null || !nm.IsListening || !nm.IsServer) return;
 
-            var netSetup = p.GetComponent<NetworkPlayerSetup>();
-            if (netSetup == null)
-            {
-                p.KillInstantly();
-                return;
-            }
-
-            netSetup.ApplyInstantKillFromServer();
-        }
-        else
+        var netSetup = p.GetComponent<NetworkPlayerSetup>();
+        if (netSetup == null)
         {
             p.KillInstantly();
+            return;
         }
+
+        netSetup.ApplyInstantKillFromServer();
     }
 }

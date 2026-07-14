@@ -33,11 +33,10 @@ public class BoulderSpawner : MonoBehaviour
     {
         if (boulderPrefab == null) return;
 
-        var  nm            = NetworkManager.Singleton;
-        bool isMultiplayer = nm != null && nm.IsListening;
+        var nm = NetworkManager.Singleton;
 
         // 멀티: Host만 스폰. NGO가 Client에 자동 전파하므로 Client는 아무것도 하지 않음.
-        if (isMultiplayer && !nm.IsServer) return;
+        if (nm == null || !nm.IsServer) return;
 
         Vector3    pos = spawnPoint != null ? spawnPoint.position : transform.position;
         Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
@@ -58,17 +57,38 @@ public class BoulderSpawner : MonoBehaviour
         mover.Deactivate();
         mover.Activate();
 
-        // 멀티: NetworkObject.Spawn()으로 Client에 전파.
+        // NetworkObject.Spawn()으로 Client에 전파.
         // Host의 Destroy(lifetime 만료 등) → 전원 Despawn 자동 처리.
-        if (isMultiplayer)
+        var netObj = instance.GetComponent<NetworkObject>();
+        if (netObj != null)
         {
-            var netObj = instance.GetComponent<NetworkObject>();
-            if (netObj != null)
-                netObj.Spawn(destroyWithScene: true);
-            else
-                Debug.LogWarning("[BoulderSpawner] boulderPrefab에 NetworkObject가 없습니다. " +
-                                 "BreakableBoulder.prefab에 NetworkObject 컴포넌트를 추가하세요.");
+            netObj.Spawn(destroyWithScene: true);
+
+            // B안: NetworkTransform 없이 Client 로컬 WaypointMover 시뮬.
+            // runtimeWaypoints의 현재 씬 위치를 Vector3[]로 전달.
+            // positions가 비어 있으면 Client는 프리팹 기본 웨이포인트 사용.
+            var proj = instance.GetComponent<TrapProjectile>();
+            if (proj != null)
+            {
+                Vector3[] positions;
+                if (runtimeWaypoints != null && runtimeWaypoints.Length > 0)
+                {
+                    positions = new Vector3[runtimeWaypoints.Length];
+                    for (int i = 0; i < runtimeWaypoints.Length; i++)
+                        positions[i] = runtimeWaypoints[i] != null
+                            ? runtimeWaypoints[i].position
+                            : Vector3.zero;
+                }
+                else
+                {
+                    positions = new Vector3[0];
+                }
+                proj.InitializeWaypointsClientRpc(positions);
+            }
         }
+        else
+            Debug.LogWarning("[BoulderSpawner] boulderPrefab에 NetworkObject가 없습니다. " +
+                             "BreakableBoulder.prefab에 NetworkObject 컴포넌트를 추가하세요.");
 
         onBoulderSpawned?.Invoke();
     }

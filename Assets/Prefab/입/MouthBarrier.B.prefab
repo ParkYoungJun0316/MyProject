@@ -140,7 +140,6 @@ GameObject:
   - component: {fileID: 1516552640387865485}
   - component: {fileID: 3540288586612993968}
   - component: {fileID: -6614113928670445064}
-  - component: {fileID: -2226656620784036710}
   m_Layer: 28
   m_Name: MouthBarrier.B
   m_TagString: Untagged
@@ -281,42 +280,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &-2226656620784036710
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5313554011524875045}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
-  ShowTopMostFoldoutHeaderGroup: 1
-  NetworkAnimatorExpanded: 0
-  AuthorityMode: 0
-  m_Animator: {fileID: 5872183704464137494}
-  TransitionStateInfoList: []
-  AnimatorParameterEntries:
-    ParameterEntries:
-    - name: doOpen
-      NameHash: 482607093
-      Synchronize: 1
-      ParameterType: 9
-    - name: doClose
-      NameHash: 265638874
-      Synchronize: 1
-      ParameterType: 9
-    - name: doIdle
-      NameHash: 1687669060
-      Synchronize: 1
-      ParameterType: 9
-    - name: doHold
-      NameHash: -1485213354
-      Synchronize: 1
-      ParameterType: 9
-  AnimatorParametersExpanded: 0
 --- !u!1 &5318057597481593028
 GameObject:
   m_ObjectHideFlags: 0

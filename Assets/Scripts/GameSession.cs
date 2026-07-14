@@ -9,7 +9,6 @@ using UnityEngine.SceneManagement;
 /// [배치 방법]
 /// 1. 0.Title 씬에 배치. DontDestroyOnLoad로 모든 씬에서 유지됨.
 /// 2. activeColorSlots[]: Inspector 기본값은 참고용. 실제 적용은 아래 방법으로.
-///    - 솔로  : LobbyMenuController.ApplySoloColor() → SetActiveColors(1색)
 ///    - 멀티  : 로비 Ready 완료 후 NGO 스폰 전 → SetActiveColors(접속 색 목록)
 /// 3. allPlayers[]: 비워둘 것. 씬 로드 시 자동 수집.
 ///
@@ -61,6 +60,12 @@ public class GameSession : MonoBehaviour
     // 씬 인트로 대화를 이미 본 키 목록 (사망 리로드 후 재표시 방지)
     private readonly HashSet<string> _seenIntroKeys = new HashSet<string>();
 
+    // 이번 판 확정 CheerName. 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
+    // 미설정 시 기본값(berry/guma/sook/hobak) 반환.
+    private string[] _sessionCheerNames;
+
+    static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
+
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
     public int ActivePlayerCount => _activePlayers.Count;
@@ -100,14 +105,6 @@ public class GameSession : MonoBehaviour
         // 활성 플레이어 참조가 유효하면 재수집 불필요
         if (_activePlayers.Count > 0 && _activePlayers[0] != null) return;
 
-        if (LobbyContext.IsOffline)
-        {
-            // 오프라인: 씬에 배치된 플레이어 즉시 수집
-            Player[] found = FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            Apply(found);
-            return;
-        }
-
         // 온라인: 색 목록만 즉시 갱신하고, 플레이어 목록은 스폰 완료 후 재수집
         Apply(new Player[0]);
         PlayerSpawnCoordinator.OnPlayersReady += RefreshPlayersOnReady;
@@ -140,6 +137,41 @@ public class GameSession : MonoBehaviour
     /// <summary>활성 색 여부 확인.</summary>
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
 
+    // ── 세션 CheerName ─────────────────────────────────────────────
+
+    /// <summary>
+    /// 이번 판 확정 CheerName 배열 저장.
+    /// 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
+    /// StartGame 직전 Host 로컬·Client 양쪽에서 동일하게 호출.
+    /// </summary>
+    public void SetSessionCheerNames(string[] names)
+    {
+        _sessionCheerNames = names;
+        Debug.Log($"[GameSession] 세션 CheerName 적용: {string.Join(", ", names)}");
+    }
+
+    /// <summary>colorIndex → 이번 판 CheerName. 세션 미설정 시 기본값.</summary>
+    public string GetSessionCheerName(int colorIndex)
+    {
+        if (_sessionCheerNames != null && colorIndex >= 0 && colorIndex < _sessionCheerNames.Length)
+            return _sessionCheerNames[colorIndex];
+        if (colorIndex >= 0 && colorIndex < DefaultCheerNames.Length)
+            return DefaultCheerNames[colorIndex];
+        return string.Empty;
+    }
+
+    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 기본값. 미매칭 시 -1.</summary>
+    public int GetSessionColorIndex(string cheerName)
+    {
+        string lower = cheerName.Trim().ToLower();
+        if (_sessionCheerNames != null)
+        {
+            for (int i = 0; i < _sessionCheerNames.Length; i++)
+                if (_sessionCheerNames[i] == lower) return i;
+        }
+        return System.Array.IndexOf(DefaultCheerNames, lower);
+    }
+
     // ── 인트로 대화 본 여부 ───────────────────────────────────────
 
     /// <summary>해당 씬 키의 인트로 대화를 이미 봤는지 확인.</summary>
@@ -158,6 +190,7 @@ public class GameSession : MonoBehaviour
         _activePlayers.Clear();
         _activeColors.Clear();
         _seenIntroKeys.Clear();
+        _sessionCheerNames = null;
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }
@@ -170,11 +203,7 @@ public class GameSession : MonoBehaviour
     {
         activeColorSlots = colors;
 
-        // 오프라인: 씬에 미리 배치된 비활성 플레이어 포함 탐색
-        // 온라인 : 활성 플레이어만 (NetworkObject로 동적 스폰된 것만)
-        Player[] found = LobbyContext.IsOffline
-            ? FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            : FindObjectsByType<Player>(FindObjectsSortMode.None);
+        Player[] found = FindObjectsByType<Player>(FindObjectsSortMode.None);
 
         Apply(found);
     }

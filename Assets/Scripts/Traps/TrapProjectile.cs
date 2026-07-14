@@ -8,9 +8,14 @@ using UnityEngine;
 /// - 속도(rb.linearVelocity)는 ArrowTrap/DropTrap이 발사 시 직접 설정
 /// - 회전은 SpinRoller가 담당
 /// - 경로 이동은 WaypointMover가 담당
+///
+/// [B안 네트워크 흐름]
+/// Host: Spawn + 초기 velocity 설정 → InitializeVelocityClientRpc로 전파
+/// 각 Client/Host: 받은 velocity로 로컬 비행 (NetworkTransform 위치 동기화 없음)
+/// 피격: 누구든 OnTrigger → ServerRpc → Host 검증·데미지·Despawn
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
-public class TrapProjectile : MonoBehaviour
+public class TrapProjectile : NetworkBehaviour
 {
     [Header("Stats")]
     [Tooltip("플레이어에게 입히는 데미지")]
@@ -36,24 +41,63 @@ public class TrapProjectile : MonoBehaviour
     [Tooltip("충돌 파괴 시 스폰할 파티클 프리팹")]
     [SerializeField] private GameObject hitEffectPrefab = null;
 
-    bool      isDestroyed;
-    Vector3   _lastHitPoint  = Vector3.zero;
-    Vector3   _lastHitNormal = Vector3.up;
+    bool    _isDestroyed;
+    Vector3 _lastHitPoint  = Vector3.zero;
+    Vector3 _lastHitNormal = Vector3.up;
+    Rigidbody _rb;
 
-    void Start()
+    void Awake() => _rb = GetComponent<Rigidbody>();
+
+    // ── 온라인 초기화 ────────────────────────────────────────────────────
+    public override void OnNetworkSpawn()
     {
-        if (lifetime <= 0f) return;
-
-        // 네트워크 모드: Host만 수명 파괴 담당 (Destroy → 전원 자동 Despawn)
-        var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening && !nm.IsServer) return;
-
-        Destroy(gameObject, lifetime);
+        // Host만 수명 만료 후 Despawn
+        if (IsServer && lifetime > 0f)
+            StartCoroutine(LifetimeRoutine());
     }
 
+    System.Collections.IEnumerator LifetimeRoutine()
+    {
+        yield return new WaitForSeconds(lifetime);
+        DestroyProjectileOnServer();
+    }
+
+    // ── B안: Host → 전 Client 초기 velocity 주입 ─────────────────────────
+    /// <summary>
+    /// ArrowTrap/DropTrap이 Host에서 NetworkObject.Spawn() 직후 호출.
+    /// SendTo.NotServer → Host는 수신하지 않음 (이미 velocity 설정됨).
+    /// Client는 이 velocity로 로컬 비행 시작.
+    /// </summary>
+    [Rpc(SendTo.NotServer)]
+    public void InitializeVelocityClientRpc(Vector3 velocity)
+    {
+        if (_rb == null) _rb = GetComponent<Rigidbody>();
+        _rb.linearVelocity = velocity;
+    }
+
+    // ── B안: Host → 전 Client 웨이포인트 경로 주입 (Boulder 등 경로 이동 투사체) ────
+    /// <summary>
+    /// BoulderSpawner가 Host에서 NetworkObject.Spawn() 직후 호출.
+    /// positions가 비어 있으면 프리팹 기본 웨이포인트 사용.
+    /// Client는 NetworkTransform 없이 이 경로로 WaypointMover를 로컬 시뮬.
+    /// </summary>
+    [Rpc(SendTo.NotServer)]
+    public void InitializeWaypointsClientRpc(Vector3[] positions)
+    {
+        WaypointMover mover = GetComponent<WaypointMover>()
+                           ?? GetComponentInChildren<WaypointMover>(true);
+        if (mover == null) return;
+
+        mover.Deactivate();
+        if (positions != null && positions.Length > 0)
+            mover.SetWaypointPositions(positions);
+        mover.Activate();
+    }
+
+    // ── 충돌 ─────────────────────────────────────────────────────────────
     void OnCollisionEnter(Collision collision)
     {
-        if (isDestroyed) return;
+        if (_isDestroyed) return;
         if (collision.contactCount > 0)
         {
             ContactPoint cp = collision.GetContact(0);
@@ -65,7 +109,7 @@ public class TrapProjectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (isDestroyed) return;
+        if (_isDestroyed) return;
         _lastHitPoint  = transform.position;
         _lastHitNormal = -transform.forward;
         HandleContact(other.gameObject);
@@ -73,49 +117,82 @@ public class TrapProjectile : MonoBehaviour
 
     void HandleContact(GameObject other)
     {
-        var nm = NetworkManager.Singleton;
-        bool isNetworked = nm != null && nm.IsListening;
-
+        // ── Player ──────────────────────────────────────────────────────
         if (other.CompareTag("Player"))
         {
-            if (damage > 0)
-            {
-                Player p = other.GetComponent<Player>()
-                           ?? other.GetComponentInParent<Player>();
-                if (p != null)
-                    ApplyDamageToPlayer(p, damage);
-            }
+            // 온라인(B안): ServerRpc 경로만. Host·Client 모두 동일.
+            Player p = other.GetComponent<Player>() ?? other.GetComponentInParent<Player>();
+            if (p == null) return;
 
-            // 파괴: 서버만 Destroy(→ 전원 Despawn). 비오너 클라이언트는 건드리지 않음.
-            if (destroyOnPlayer)
-            {
-                if (!isNetworked || nm.IsServer) DestroyProjectile();
-            }
+            // 로컬에서 즉시 숨김: Despawn RTT 동안 화살이 플레이어를 통과하며
+            // 중간에서 사라지는 것을 방지. rb는 건드리지 않아 비행 방향 유지.
+            if (destroyOnPlayer) HideLocal();
+
+            var pNetObj = p.GetComponent<NetworkObject>();
+            if (pNetObj != null)
+                ReportHitServerRpc(pNetObj.NetworkObjectId);
+            else if (destroyOnPlayer)
+                RequestDestroyServerRpc();
             return;
         }
 
-        // 벽·바닥 충돌 파괴도 서버만 담당 (NetworkObject Despawn 흐름)
-        if (destroyOnWall && other.CompareTag("Wall"))
-        {
-            if (!isNetworked || nm.IsServer) DestroyProjectile();
-            return;
-        }
+        // ── Wall / Floor ─────────────────────────────────────────────────
+        bool hitWall  = destroyOnWall  && other.CompareTag("Wall");
+        bool hitFloor = destroyOnFloor && other.CompareTag("Floor");
+        if (!hitWall && !hitFloor) return;
 
-        if (destroyOnFloor && other.CompareTag("Floor"))
-        {
-            if (!isNetworked || nm.IsServer) DestroyProjectile();
-        }
+        RequestDestroyServerRpc();
     }
 
-    static void ApplyDamageToPlayer(Player p, int amount)
-        => NetworkDamageUtil.ApplyDamage(p, amount, false);
-
-    void DestroyProjectile()
+    // ── ServerRpc: 피격 보고 → Host 데미지 + Despawn ─────────────────────
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void ReportHitServerRpc(ulong playerNetId)
     {
-        if (isDestroyed) return;
-        isDestroyed = true;
+        if (_isDestroyed) return;
+
+        if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerNetId, out var netObj))
+        {
+            Player p = netObj.GetComponent<Player>();
+            if (p != null && damage > 0)
+                NetworkDamageUtil.ApplyDamage(p, damage, false);
+        }
+
+        if (destroyOnPlayer) DestroyProjectileOnServer();
+    }
+
+    // ── ServerRpc: 벽·바닥·수명 파괴 요청 → Host Despawn ─────────────────
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void RequestDestroyServerRpc()
+    {
+        if (!_isDestroyed) DestroyProjectileOnServer();
+    }
+
+    // ── 내부 파괴 ────────────────────────────────────────────────────────
+
+    /// <summary>온라인: 반드시 Host에서만 호출. 전원 Despawn.</summary>
+    void DestroyProjectileOnServer()
+    {
+        if (_isDestroyed) return;
+        _isDestroyed = true;
         SpawnHitEffect();
-        Destroy(gameObject);
+        var netObj = GetComponent<NetworkObject>();
+        if (netObj != null && netObj.IsSpawned)
+            netObj.Despawn(true);
+        else
+            Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// 온라인 전용. 플레이어 충돌 즉시 로컬에서 숨김.
+    /// Rigidbody는 건드리지 않음(비행 유지). 콜라이더·렌더러만 끔.
+    /// 실제 Despawn은 Host ReportHitServerRpc가 처리.
+    /// </summary>
+    void HideLocal()
+    {
+        foreach (var col in GetComponentsInChildren<Collider>())
+            col.enabled = false;
+        foreach (var rend in GetComponentsInChildren<Renderer>())
+            rend.enabled = false;
     }
 
     void SpawnHitEffect()

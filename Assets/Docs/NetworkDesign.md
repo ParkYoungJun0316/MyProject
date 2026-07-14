@@ -68,7 +68,7 @@
 #### 데모 출시 (Must Have) — Steam 홍보 데모
 
 - **플레이 경로:** Title → Lobby → `M.Stage1` → `T.Stage1` → `End.Demo` (멀티 **2~4인**)
-- **솔로:** Title 오프라인 패널 → 동일 스테이지 (NGO 없음)
+- **솔로:** Title → Lobby → 동일 스테이지 (**NGO Host 1인**, `partySize=1`)
 - **네트워크:** §9 Must 동기화 + **§0.2 ④ Steam P2P + Steam Lobby**
 - **응원·보이스:** 인게임 **Dissonance 4인 보이스** + **Vosk 응원** + `/cheer` (→ `CheerAndTutorialDesign.md`)
 - **배포:** **Steam** (Depot 업로드). 원격 멀티 = **Steam P2P 필수** (localhost/IP Join 데모 아님)
@@ -85,7 +85,8 @@
 |------|------|
 | §12 재접속·유예·스냅샷·호스트 마이그레이션 | **미지원.** 인게임 이탈 = **방 종료**(전원 타이틀). 재접속 일절 없음 |
 | 원격 IP Join / UDP discovery | **미사용.** 개발=ParrelSync·localhost 빌드, 데모=**Steam** |
-| Tutorial·CheerName 커스텀 | 정식 (CheerAndTutorialDesign.md) |
+| Tutorial 씬(조작 연습) | 정식 (CheerAndTutorialDesign.md §9) |
+| *(참고)* CheerName 로비 커스텀 + 불러보기 | **데모 Must** — `CheerAndTutorialDesign.md` §3.2 |
 | 관전(Spectator) 모드 | 내부 QA용. Discord 화면공유로 대체 |
 | sit / dance 등 이모트 애니 | 정식 이후 |
 | 컷씬 | 정식 이후 |
@@ -95,7 +96,7 @@
 
 - Steam P2P·Lobby **유지·안정화** (데모에서 이미 구현 — Invite UX polish)
 - **난이도 밸런싱** (데모 피드백)
-- **Tutorial** + CheerName 커스텀 + lexicon G2P
+- **Tutorial** (연습·말해보기) + CheerName **발음 유사/G2P polish** (`CheerAndTutorialDesign.md` §3 — 로비 커스텀은 데모에 포함)
 - **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면
 - **출시 QA** 체크리스트
 - (선택) Dissonance **Steam P2P** 음성 transport 분리
@@ -133,7 +134,7 @@
 | # | 작업 | 비고 |
 |---|------|------|
 | 0-1 | Vosk zip 정합 | `VoskModelLoader` 기대 zip ↔ `StreamingAssets` 실제 파일 일치 |
-| 0-2 | CheerName 최종화 | `berry` / `guma` / `ssuk` / `danho` — `CheerLexiconBuilder`·`CheerService`·`/cheer` 통일 |
+| 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `hobak` — `CheerLexiconBuilder`·`CheerService`·`/cheer` 통일 |
 | 0-3 | AudioListener 중복 제거 | 스테이지·타이틀 씬당 **1개** (보통 `TopDownCamera` 자식) |
 
 #### Phase 1 — 폴리시
@@ -278,9 +279,9 @@ timestamp | sessionId | buildVersion | playMode | partySize | run_complete | qui
 | 컬럼 | +1 조건 (구현 참고) |
 |------|---------------------|
 | `reject_self_cheer` | `CheerService.ValidateCheer` — 자기 색 응원 (`myIdx == targetColorIndex`) |
-| `reject_target_buffed` | `ValidateCheer` — `_buffEnd`에 target 존재 (멀티 Host) / `_localBuffEnd` (솔로) |
+| `reject_target_buffed` | `ValidateCheer` — `_buffEnd`에 target 존재 |
 | `reject_timeout` | `CheerService.CheckTimeouts` → `ResetVotes` (표 부족). **별도 timeout 이벤트 없음 — 여기만.** |
-| `reject_chat_rate_limit` | `ValidateCheer` — `!isVoice` && rate limit (`_chatRateEnd` / `_localRateLimitEnd`) |
+| `reject_chat_rate_limit` | `ValidateCheer` — `!isVoice` && rate limit (`_chatRateEnd`) |
 | `reject_voice_no_match` | `CheerKeywordEngine` — Vosk 미매칭 시 **Client → Host RPC** |
 | `chat_used_count` | `InGameChatUI` — `/cheer` 파싱 성공 1회마다 +1 (Host 집계) |
 
@@ -324,7 +325,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | | |
 |--|--|
 | **멀티** | **Host만** `TelemetryService` 전송. Client → Host `TelemetryReportServerRpc(reason)` 등으로 reject/chat +1만. |
-| **솔로** | NGO 미사용. **로컬 PC = Host 역할** — 동일 컬럼, `playMode=Solo`, `partySize=1`. |
+| **솔로** | NGO Host 1인. `playMode=Solo`, `partySize=1`. 멀티와 동일 코드 경로. |
 | **멀티 1인** | `playMode=Multi`, `partySize=1`. |
 
 ##### 게임 연동 훅 (구현 체크리스트)
@@ -335,7 +336,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | 2 | **씬 unload / 다음 씬 로드 직전** | 떠나는 스테이지 dwell 확정 |
 | 3 | **`End.Demo` sceneLoaded** (Host·솔로) | `run_complete = true` |
 | 4 | **`TitleReturnFlow.ExecuteReturn()`** (Host·솔로) | `quitAt` = 현재 씬(`M`/`T`/`End`), **세션 끝 upsert**, 세션 상태 리셋 |
-| 5 | **`CheerService`** (Host·솔로) | reject reason별 +1, `ApplyBuff` / `ApplyLocalBuff` 시 해당 스테이지 `buff_count +1`, timeout +1 |
+| 5 | **`CheerService`** (Host·솔로) | reject reason별 +1, `ApplyBuff` 시 해당 스테이지 `buff_count +1`, timeout +1 |
 | 6 | **`CheerKeywordEngine`** (Client) | 미인식 → Host RPC |
 | 7 | **`InGameChatUI`** | `/cheer` 성공 시 `chat_used_count +1` |
 | 8 | **`TelemetryService.Update`** | 30초 주기 flush |
@@ -396,16 +397,17 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | `T.Stage1` | 패드·문·Boulder·함정 퍼즐 |
 | `End.Demo` | 검은 화면 + 종료 UI → 타이틀 복귀 |
 
-### 2.2 솔로 (오프라인)
+### 2.2 솔로 (1인 Host)
 
 ```
-0.Title (오프라인 패널에서 색 1개 선택)  →  M.Stage1  →  T.Stage1  →  End.Demo  →  0.Title
+0.Title → 1.Lobby (Host 1인, 즉시 CanStart) → M.Stage1 → T.Stage1 → End.Demo → 0.Title
 ```
 
-- **NGO 사용 안 함.** `1.Lobby` **거치지 않음**.
-- **별도 솔로 로비 씬 없음.** Title에 **오프라인/Solo 패널**만 추가.
-  - 구성: 캐릭터 **드롭다운 1개** + 시작 버튼
-  - 선택 색 → `GameSession.SetActiveColors(1색)` → `M.Stage1` 직행
+- **NGO 사용.** `LobbyMode.OnlineHost` + `partySize=1`. 멀티와 동일 코드 경로.
+- 로비에서 Start 즉시 가능 (`LobbyNetworkManager.CanStart()` — Host 1인이면 즉시 true).
+- 1인 전용 규칙: `GameSession.ActivePlayerCount == 1`
+  - `CheerService.ValidateCheer`: self-cheer 허용
+  - `GetRequiredVotes()`: `max(1, 0) = 1` → 1표로 버프 발동
 
 ---
 
@@ -415,7 +417,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 
 | 오브젝트 | 비고 |
 |----------|------|
-| `NetworkManager` | 멀티만 활성. 솔로는 미사용 |
+| `NetworkManager` | 멀티·솔로 공통 활성 (솔로 = Host 1인) |
 | `GameSession` | 인원·활성 색. 에디터에서 Title로 이동 (수동) |
 | `SceneFlowManager` | 씬 시퀀스. 에디터에서 Title로 이동 (수동) |
 
@@ -452,7 +454,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 |------|------|
 | 게임 만들기 | Host → `1.Lobby` |
 | 게임 참여 | Client, 룸코드 입력 → `1.Lobby` |
-| **오프라인 / Solo** | 패널 열기 → 드롭다운 1개 → `M.Stage1` (NGO 없음) |
+| **게임 만들기 (솔로 포함)** | Host 시작 → `1.Lobby` (NGO OnlineHost) |
 
 ---
 
@@ -519,7 +521,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 | 모드 | 동작 |
 |------|------|
 | **멀티** | `NetworkManager.Shutdown()` + 세션·로비 상태 리셋 |
-| **솔로** | NGO 없음, `GameSession` 등 런타임 상태 리셋 |
+| **솔로** | NGO Shutdown + `GameSession` 등 런타임 상태 리셋 (멀티와 동일 경로) |
 
 ---
 
@@ -652,9 +654,9 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 
-**오프라인 / 솔로 (NGO 없음):**
+**솔로 (NGO Host 1인):**
 
-- 위 util이 내부적으로 `Player.TakeDamage` / `KillInstantly` 로 위임 — **멀티와 동일 진입점** 사용 (솔로도 `NetworkDamageUtil` 경유).
+- 멀티와 동일 진입점. `NetworkDamageUtil.ApplyDamage` / `ApplyInstantKill` 사용. 별도 경로 없음.
 
 **서버 내부 전용 (함정에서 직접 호출 금지):**
 
@@ -808,10 +810,10 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 
 복잡도는 NGO 컴포넌트 수가 아니라 **진실을 Host 한 곳에 모았는지**에 달림.
 
-### 9A.10 솔로 / 오프라인
+### 9A.10 솔로 (1인 Host)
 
-- NGO 미사용 시에도 **`NetworkDamageUtil.ApplyDamage` / `ApplyInstantKill`** 동일 진입점.
-- `Player.TakeDamage` 는 **오프라인에서만** util 내부·로컬 HP용.
+- 멀티와 완전히 동일한 코드 경로. **`NetworkDamageUtil.ApplyDamage` / `ApplyInstantKill`** 동일 진입점.
+- `Player.TakeDamage` 직접 호출은 온라인 시 no-op (early-return). 반드시 `NetworkDamageUtil` 경유.
 
 ### 9A.11 §16 구현 순서에 끼워 넣을 위치
 
@@ -945,7 +947,7 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 > 범위·일정은 데모 출시 후 별도 확정.
 
 1. 난이도 밸런싱 (데모 피드백)
-2. Tutorial + CheerName 커스텀
+2. Tutorial (연습·말해보기) + CheerName 발음/G2P polish (로비 커스텀은 데모 §Cheer §3)
 3. UI 옵션 (볼륨·해상도)
 4. Steam Invite UX polish
 5. 출시 QA

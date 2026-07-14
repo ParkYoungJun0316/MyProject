@@ -226,10 +226,7 @@ public class InGameChatUI : NetworkBehaviour
     {
         TrySubmitCheer(trimmed);
 
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            SendMessageServerRpc(trimmed);
-        else
-            AddMessageLocal(trimmed, GetMyColorIndex());
+        SendMessageServerRpc(trimmed);
 
         if (inputField != null) inputField.text = string.Empty;
         StartCoroutine(RefocusNextFrame());
@@ -256,10 +253,7 @@ public class InGameChatUI : NetworkBehaviour
         int targetIdx = CheerService.GetColorIndex(parts[1]);
         if (targetIdx < 0) return;
 
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            CheerService.Instance?.SubmitCheerServerRpc(targetIdx, false);
-        else
-            CheerService.Instance?.SubmitCheerLocal(targetIdx);
+        CheerService.Instance?.SubmitCheerServerRpc(targetIdx, false);
     }
 
     // ── 네트워크 ──────────────────────────────────────────────────

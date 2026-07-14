@@ -152,12 +152,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
         MoveToSpawnZone();
 
         // TopDownCamera → 이 오브젝트를 follow 타겟으로 설정
-        var cam = FindAnyObjectByType<TopDownCamera>();
-        if (cam != null)
+        if (!TryConnectCamera())
         {
-            cam.target = transform;
-            if (_player != null)
-                _player.followCamera = cam.GetComponent<Camera>();
+            Debug.LogWarning("[NetworkPlayerSetup] TopDownCamera 미발견 — 코루틴으로 재시도");
+            StartCoroutine(ConnectCameraCoroutine());
         }
 
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
@@ -167,6 +165,35 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_cheerKeyword != null) _cheerKeyword.enabled = true;
 
         Debug.Log($"[NetworkPlayerSetup] Owner 설정 완료 — clientId={OwnerClientId}");
+    }
+
+    /// <summary>TopDownCamera를 찾아 follow 타겟으로 연결. 성공 시 true.</summary>
+    bool TryConnectCamera()
+    {
+        var cam = FindAnyObjectByType<TopDownCamera>();
+        if (cam == null) return false;
+        cam.target = transform;
+        if (_player != null) _player.followCamera = cam.GetComponent<Camera>();
+        Debug.Log($"[NetworkPlayerSetup] 카메라 연결 완료 — {cam.name} (clientId={OwnerClientId})");
+        return true;
+    }
+
+    /// <summary>
+    /// OnNetworkSpawn 시점에 TopDownCamera가 없을 경우(씬 타이밍)
+    /// 최대 30프레임 동안 매 프레임 재탐색.
+    /// </summary>
+    System.Collections.IEnumerator ConnectCameraCoroutine()
+    {
+        for (int i = 0; i < 30; i++)
+        {
+            yield return null;
+            if (TryConnectCamera())
+            {
+                Debug.Log($"[NetworkPlayerSetup] 카메라 재시도 성공 ({i + 1}프레임)");
+                yield break;
+            }
+        }
+        Debug.LogError("[NetworkPlayerSetup] 카메라 30프레임 내 연결 실패 — TopDownCamera 없음");
     }
 
     /// <summary>
@@ -241,8 +268,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // Host 측: 위치 이동 + 스폰 앵커 갱신 + 사망 상태 해제 (Host 비오너 플레이어 포함)
         transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
         _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
-        if (_player != null && _player.IsDead)
-            _player.Respawn();
+        _player?.Respawn();
 
         // Owner 클라이언트에도 전달 (위치 확정 + 색 상태 초기화 + Respawn)
         ResetStageClientRpc(spawnPos);
@@ -268,20 +294,14 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _events?.RaiseBlackWhiteChanged(false);
         _events?.RaiseUniqueColorChanged(0);
 
-        // 위치 + 리스폰 (IsDead일 때만 — 서버 경로에서 이미 Respawn 호출된 Host 플레이어 중복 방지)
+        // 위치 + 리스폰 (IsDead 여부와 관계없이 항상 — fallAnimTriggered 등 잔존 플래그 보장 클리어)
         transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
         _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
-        if (_player != null && _player.IsDead)
-            _player.Respawn();
+        _player?.Respawn();
 
         // 씬 전환 후 새 TopDownCamera에 재연결 (destroyWithScene:false 유지 시 OnNetworkSpawn 미재실행)
-        var cam = FindAnyObjectByType<TopDownCamera>();
-        if (cam != null)
-        {
-            cam.target = transform;
-            if (_player != null)
-                _player.followCamera = cam.GetComponent<Camera>();
-        }
+        if (!TryConnectCamera())
+            StartCoroutine(ConnectCameraCoroutine());
 
         EnablePhysics();
 
@@ -407,6 +427,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         if (!IsServer) return;
         if (_player == null || _player.IsDead) return;
+        // HP가 이미 0이면(사망 처리 중 Respawn 전 재충돌 등) 중복 사망 방지
+        if (_hp.Value <= 0) return;
 
         // 비오너 플레이어는 isDamage가 서버에서 갱신되지 않으므로
         // 서버 자체 무적 타이머로 연속 피격을 차단

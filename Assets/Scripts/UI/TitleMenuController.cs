@@ -22,7 +22,6 @@ using UnityEngine.SceneManagement;
 /// - discoveryTimeoutSeconds: 타임아웃 (기본 5초)
 ///
 /// [버튼 OnClick 연결]
-/// 솔로           → OnClickSolo()
 /// 게임 만들기    → OnClickCreateGame()
 /// 게임 참여      → OnClickJoinGame()
 /// Join 확인      → OnClickConfirmJoin()
@@ -35,7 +34,7 @@ using UnityEngine.SceneManagement;
 public class TitleMenuController : MonoBehaviour
 {
     [Header("씬 전환")]
-    [Tooltip("솔로·멀티 공통으로 로드할 로비 씬 이름.")]
+    [Tooltip("로드할 로비 씬 이름.")]
     [SerializeField] private string lobbySceneName = "1.Lobby";
 
     [Header("Discord")]
@@ -68,13 +67,6 @@ public class TitleMenuController : MonoBehaviour
     private Coroutine _discoveryTimeoutCoroutine;
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
-
-    /// <summary>솔로 버튼 — NGO 없이 로비(Offline 모드)로 이동.</summary>
-    public void OnClickSolo()
-    {
-        LobbyContext.Mode = LobbyMode.Offline;
-        StartCoroutine(LoadSceneWithFade(lobbySceneName));
-    }
 
     /// <summary>게임 만들기 버튼 — 룸코드 생성 후 NetworkManager.StartHost() → 로비 이동.</summary>
     public void OnClickCreateGame()
@@ -256,9 +248,6 @@ public class TitleMenuController : MonoBehaviour
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR
-    [ContextMenu("테스트: 솔로")]
-    void Debug_Solo() => OnClickSolo();
-
     [ContextMenu("테스트: 게임 만들기 (Host)")]
     void Debug_CreateGame() => OnClickCreateGame();
 

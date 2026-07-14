@@ -35,6 +35,13 @@ public class LobbyNetworkManager : NetworkBehaviour
         PlayerColorType.Yellow,
     };
 
+    // ColorIndex 순 기본 CheerName — CheerService.DefaultCheerNames 와 동일하게 유지
+    static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
+
+    // 예약어 (Host 검증)
+    static readonly string[] ReservedNames =
+        { "cheer", "admin", "host", "server", "system", "bot", "null" };
+
     [Header("DontDestroyOnLoad 시스템 Prefab")]
     [Tooltip("PlayerSpawnCoordinator prefab (NetworkObject 포함).\n" +
              "게임 시작 시 Host가 destroyWithScene:false로 스폰 → 세션 내 씬 간 유지.\n" +
@@ -53,6 +60,12 @@ public class LobbyNetworkManager : NetworkBehaviour
 
     /// <summary>슬롯 상태가 바뀔 때마다 발행. LobbyMenuController에서 구독해 UI 갱신.</summary>
     public event Action OnSlotsChanged;
+
+    /// <summary>
+    /// SetCheerNameServerRpc 결과 통보 (요청 Client 전용).
+    /// (success, errorKey). errorKey: "" / "ready" / "format" / "taken" / "reserved"
+    /// </summary>
+    public event Action<bool, string> OnCheerNameResult;
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -162,6 +175,111 @@ public class LobbyNetworkManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// CheerName 설정 요청.
+    /// - 빈 문자열 → 커스텀 해제 (기본값 취급).
+    /// - 비어 있지 않으면 Host가 형식·예약어·중복을 검증 후 반영 또는 거절.
+    /// - Ready 중에는 변경 불가.
+    /// 결과는 SetCheerNameResultClientRpc 로 요청 Client에만 통보.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SetCheerNameServerRpc(FixedString32Bytes name, RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId != sender) continue;
+            var s = _slots[i];
+
+            if (s.IsReady) { SendCheerNameResult(sender, false, "ready"); return; }
+
+            string lower = name.ToString().Trim().ToLower();
+
+            // 빈 문자열 = 커스텀 해제
+            if (lower.Length == 0)
+            {
+                s.CheerName = default;
+                _slots[i] = s;
+                SendCheerNameResult(sender, true, "");
+                return;
+            }
+
+            // 형식 검사
+            if (!IsValidCheerNameFormat(lower, out string reason))
+            {
+                SendCheerNameResult(sender, false, reason);
+                return;
+            }
+
+            // 중복 검사 — 해석 후 유일 (빈 슬롯의 유효 이름 포함)
+            for (int j = 0; j < _slots.Count; j++)
+            {
+                if (j == i) continue;
+                if (GetEffectiveCheerName(_slots[j]) == lower)
+                {
+                    SendCheerNameResult(sender, false, "taken");
+                    return;
+                }
+            }
+
+            s.CheerName = new FixedString32Bytes(lower);
+            _slots[i] = s;
+            SendCheerNameResult(sender, true, "");
+            return;
+        }
+    }
+
+    void SendCheerNameResult(ulong targetClientId, bool success, string errorKey)
+    {
+        SetCheerNameResultClientRpc(
+            success,
+            new FixedString32Bytes(errorKey),
+            new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { targetClientId } }
+            });
+    }
+
+    /// <summary>CheerName 설정 결과를 요청 Client에만 전송.</summary>
+    [ClientRpc]
+    void SetCheerNameResultClientRpc(bool success, FixedString32Bytes errorKey,
+                                     ClientRpcParams rpcParams = default)
+    {
+        OnCheerNameResult?.Invoke(success, errorKey.ToString());
+    }
+
+    // ── CheerName 유틸 ────────────────────────────────────────────
+
+    /// <summary>
+    /// 슬롯의 유효 CheerName 반환.
+    /// CheerName 이 빈 문자열이면 현재 ColorIndex 기본값 반환.
+    /// </summary>
+    public static string GetEffectiveCheerName(LobbyPlayerState s)
+    {
+        string custom = s.CheerName.ToString();
+        if (string.IsNullOrEmpty(custom))
+        {
+            int ci = Mathf.Clamp(s.ColorIndex, 0, DefaultCheerNames.Length - 1);
+            return DefaultCheerNames[ci];
+        }
+        return custom;
+    }
+
+    static bool IsValidCheerNameFormat(string lower, out string reason)
+    {
+        reason = "";
+        if (lower.Length < 2 || lower.Length > 12) { reason = "format"; return false; }
+        foreach (char c in lower)
+        {
+            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'))
+            { reason = "format"; return false; }
+        }
+        foreach (string reserved in ReservedNames)
+            if (lower == reserved) { reason = "reserved"; return false; }
+        return true;
+    }
+
     /// <summary>Kick. 호스트만 호출. 즉시 슬롯 비움.</summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void KickPlayerServerRpc(ulong targetClientId, RpcParams rpcParams = default)
@@ -237,6 +355,22 @@ public class LobbyNetworkManager : NetworkBehaviour
         for (int i = 0; i < colorList.Length; i++) colorIndices[i] = (int)colorList[i];
         SyncActiveColorsClientRpc(colorIndices);
 
+        // ── 세션 CheerName 확정 후 전원에 배포 ──────────────────────────
+        var sessionNames = new FixedString32Bytes[4];
+        for (int i = 0; i < 4; i++) sessionNames[i] = new FixedString32Bytes(DefaultCheerNames[i]);
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            int ci = _slots[i].ColorIndex;
+            if (ci >= 0 && ci < 4)
+                sessionNames[ci] = new FixedString32Bytes(GetEffectiveCheerName(_slots[i]));
+        }
+        // Host 로컬 적용
+        var namesForSession = new string[4];
+        for (int i = 0; i < 4; i++) namesForSession[i] = sessionNames[i].ToString();
+        GameSession.Instance?.SetSessionCheerNames(namesForSession);
+        // Client에 배포
+        SyncCheerNamesClientRpc(sessionNames[0], sessionNames[1], sessionNames[2], sessionNames[3]);
+
         NetworkManager.SceneManager.LoadScene("M.Stage1", LoadSceneMode.Single);
     }
 
@@ -274,17 +408,16 @@ public class LobbyNetworkManager : NetworkBehaviour
     {
         if (_slots == null || _slots.Count == 0) return false;
 
-        // HostClientId = _slots[0].ClientId (모든 화면에서 동일)
-        // LocalClientId는 각자 다르므로 사용 금지
         ulong hostId = HostClientId;
 
         var usedColors = new HashSet<int>();
+        var usedNames  = new HashSet<string>();
         foreach (var s in _slots)
         {
-            if (!usedColors.Add(s.ColorIndex)) return false; // 색 중복 검사는 호스트 포함
+            if (!usedColors.Add(s.ColorIndex)) return false; // 색 중복 (호스트 포함)
+            if (!usedNames.Add(GetEffectiveCheerName(s))) return false; // 해석 후 이름 유일
 
             if (s.ClientId == hostId) continue; // 호스트는 Ready 체크 제외
-
             if (!s.IsReady) return false;
         }
         return true;
@@ -326,6 +459,53 @@ public class LobbyNetworkManager : NetworkBehaviour
         Debug.Log($"[LobbyNetworkManager] Client 활성 색 동기화(초기값): {string.Join(", ", colorList)}");
     }
 
+    /// <summary>
+    /// 세션 CheerName을 Client에 동기화.
+    /// 4색(Blue/Purple/Green/Yellow) 순서 고정 — colorIndex 0~3.
+    /// </summary>
+    [ClientRpc]
+    void SyncCheerNamesClientRpc(
+        FixedString32Bytes n0, FixedString32Bytes n1,
+        FixedString32Bytes n2, FixedString32Bytes n3)
+    {
+        if (IsHost) return; // Host는 이미 적용됨
+        var names = new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() };
+        GameSession.Instance?.SetSessionCheerNames(names);
+        Debug.Log($"[LobbyNetworkManager] Client 세션 CheerName 수신: {string.Join(", ", names)}");
+    }
+
+    // ── 로비 Heard 공유 ────────────────────────────────────────────
+
+    /// <summary>로비 Heard 이벤트를 전원에게 브로드캐스트할 때 발행.</summary>
+    public event Action<int, int> OnLobbyHeardBroadcast; // (targetColorIndex, speakerColorIndex)
+
+    /// <summary>
+    /// 로비 Vosk 감지 → Host에 보고.
+    /// Host: speaker 슬롯·target 슬롯 확인 후 전원에 BroadcastLobbyHeardClientRpc.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReportLobbyHeardServerRpc(int targetColorIndex, RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        int speakerColor = -1;
+        bool targetOccupied = false;
+
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId == sender)        speakerColor   = _slots[i].ColorIndex;
+            if (_slots[i].ColorIndex == targetColorIndex && _slots[i].IsOccupied) targetOccupied = true;
+        }
+
+        if (speakerColor < 0 || !targetOccupied) return;
+        BroadcastLobbyHeardClientRpc(targetColorIndex, speakerColor);
+    }
+
+    [ClientRpc]
+    void BroadcastLobbyHeardClientRpc(int targetColorIndex, int speakerColorIndex)
+    {
+        OnLobbyHeardBroadcast?.Invoke(targetColorIndex, speakerColorIndex);
+    }
+
     void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>
         OnSlotsChanged?.Invoke();
 
@@ -349,7 +529,8 @@ public class LobbyNetworkManager : NetworkBehaviour
         for (int i = 0; i < _slots.Count; i++)
         {
             var s = _slots[i];
-            Debug.Log($"  [{i}] clientId={s.ClientId} color={ColorOrder[s.ColorIndex]} ready={s.IsReady}");
+            Debug.Log($"  [{i}] clientId={s.ClientId} color={ColorOrder[s.ColorIndex]} " +
+                      $"name={GetEffectiveCheerName(s)} (custom={s.CheerName}) ready={s.IsReady}");
         }
     }
 #endif

@@ -22,12 +22,6 @@ using UnityEngine;
 /// </summary>
 public class EndDemoController : MonoBehaviour
 {
-    // Inspector 직렬화 값 보존용 (TitleReturnFlow 도입 전 설정 유지)
-    [Header("미사용 (TitleReturnFlow로 이전됨)")]
-    [SerializeField] private string titleSceneName  = "0.Title";
-    [SerializeField] private ScreenFader screenFader;
-    [SerializeField] private float fadeOutDuration  = 0f;
-
     [Header("외부 링크")]
     [Tooltip("Discord 초대 링크")]
     [SerializeField] private string discordUrl      = "https://discord.gg/";

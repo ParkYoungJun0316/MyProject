@@ -169,8 +169,6 @@ public class WallMover : MonoBehaviour
         {
             _scheduleStartTime = (float)nm.ServerTime.Time;
         }
-        // 오프라인은 _scheduleStartTime이 이미 Time.time으로 설정돼 있음
-
         float cycleOffset = 0f;
 
         do
@@ -179,19 +177,13 @@ public class WallMover : MonoBehaviour
             {
                 float targetTime = _scheduleStartTime + cycleOffset + t;
 
-                if (isOnline)
-                {
-                    while ((float)nm.ServerTime.Time < targetTime)
-                        yield return null;
-                }
-                else
-                {
-                    float waitTime = targetTime - Time.time;
-                    if (waitTime > 0f)
-                        yield return new WaitForSeconds(waitTime);
-                }
+            if (isOnline)
+            {
+                while ((float)nm.ServerTime.Time < targetTime)
+                    yield return null;
+            }
 
-                Activate();
+            Activate();
             }
 
             cycleOffset += schedulePeriod;

@@ -31,11 +31,11 @@ public class SurviveTimeObjective : StageObjective
     {
         if (IsCompleted || IsFailed) return;
 
-        var  nm              = NetworkManager.Singleton;
-        bool isHostOrOffline = nm == null || !nm.IsListening || nm.IsServer;
+        var  nm     = NetworkManager.Singleton;
+        bool isHost = nm != null && nm.IsServer;
 
-        // ── Host / 오프라인: 타이머 진행 및 완료 판정 ────────────
-        if (isHostOrOffline)
+        // ── Host: 타이머 진행 및 완료 판정 ───────────────────────
+        if (isHost)
         {
             _elapsed += Time.deltaTime;
 

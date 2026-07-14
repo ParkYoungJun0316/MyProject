@@ -20,7 +20,7 @@ using UnityEngine;
 /// 씬 시작 시 자동으로 동작. 사망 씬 리로드 시 자동 초기화됨.
 ///
 /// [CheerName ↔ colorIndex]
-/// 0=berry(Blue), 1=guma(Purple), 2=ssuk(Green), 3=danho(Yellow)
+/// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=hobak(Yellow)
 /// </summary>
 public class CheerService : NetworkBehaviour
 {
@@ -48,9 +48,9 @@ public class CheerService : NetworkBehaviour
 
     // ── CheerName 매핑 ────────────────────────────────────────────
 
-    // CheerLexiconBuilder.BuildDemoGrammarJson() 와 순서 동일하게 유지.
-    // 0=berry(Blue), 1=guma(Purple), 2=sook(Green/ssuk대체), 3=tango(Yellow/단호대체)
-    static readonly string[] CheerNames = { "berry", "guma", "sook", "tango" };
+    // LobbyNetworkManager.DefaultCheerNames 및 CheerLexiconBuilder 와 순서 동일하게 유지.
+    // 0=berry(Blue) 1=guma(Purple) 2=sook(Green) 3=hobak(Yellow)
+    static readonly string[] CheerNames = { "berry", "guma", "sook", "hobak" };
 
     // ── Host 내부 상태 ─────────────────────────────────────────────
 
@@ -157,88 +157,6 @@ public class CheerService : NetworkBehaviour
             ApplyBuff(targetColorIndex, now);
     }
 
-    // ── 솔로 모드 (NGO 없을 때) ───────────────────────────────────
-
-    // 솔로 전용 로컬 타이머 (Time.time 기준)
-    float _localBuffEnd      = -1f;
-    float _localCooldownEnd  = -1f;
-    float _localRateLimitEnd = -1f;
-
-    /// <summary>
-    /// 솔로 플레이 시 직접 호출. NGO가 활성이면 무시됨.
-    /// 온라인 경로와 동일한 UI 이벤트 흐름을 로컬에서 재현:
-    ///   VoteChanged → CheerersChanged → (즉시) VoteReset → BuffActivated → CooldownStart
-    /// 솔로에서는 자기 자신 응원 포함, 1표로 즉시 발동.
-    /// </summary>
-    public void SubmitCheerLocal(int targetColorIndex)
-    {
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening) return;
-        if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return;
-
-        // 버프 활성 중 → 차단
-        if (_localBuffEnd > Time.time) return;
-
-        // 쿨타임 중 → 차단
-        if (_localCooldownEnd > Time.time) return;
-
-        // 채팅 rate limit
-        if (_localRateLimitEnd > Time.time) return;
-        _localRateLimitEnd = Time.time + chatRateLimitSeconds;
-
-        int myColorIndex = GetLocalPlayerColorIndex();
-
-        // UI: 슬롯 1/1 채우기 → 응원자 표시
-        OnVoteChanged?.Invoke(targetColorIndex, 1, 1);
-        OnCheerersChanged?.Invoke(targetColorIndex, new[] { myColorIndex });
-
-        ApplyLocalBuff(targetColorIndex);
-    }
-
-    void ApplyLocalBuff(int targetColorIndex)
-    {
-        // 해당 colorIndex 플레이어에게 버프 적용
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (var p in players)
-        {
-            int idx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
-            if (idx != targetColorIndex) continue;
-
-            var buff = p.GetComponent<PlayerBuffSystem>();
-            if (buff != null)
-            {
-                var setting = buff.GetSetting(stageBuffType);
-                float dur = setting != null ? setting.duration : buffDuration;
-                buff.ApplyBuff(stageBuffType, dur, setting?.value ?? 0f);
-            }
-            break;
-        }
-
-        _localBuffEnd = Time.time + buffDuration;
-
-        // UI: 표 초기화 + 버프 활성 발행
-        OnVoteReset?.Invoke(targetColorIndex);
-        OnBuffActivated?.Invoke(targetColorIndex);
-
-        // 버프 종료 후 쿨타임 시작
-        StartCoroutine(LocalCooldownRoutine(targetColorIndex));
-    }
-
-    IEnumerator LocalCooldownRoutine(int targetColorIndex)
-    {
-        yield return new WaitForSeconds(buffDuration);
-        _localCooldownEnd = Time.time + cheerCooldownSeconds;
-        OnCooldownStart?.Invoke(targetColorIndex, cheerCooldownSeconds);
-    }
-
-    static int GetLocalPlayerColorIndex()
-    {
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (var p in players)
-            if (p.isOwnerControlled)
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
-        return 0;
-    }
-
     // ── 버프 적용 (Host 전용) ──────────────────────────────────────
 
     void ApplyBuff(int targetColorIndex, double now)
@@ -315,11 +233,16 @@ public class CheerService : NetworkBehaviour
     {
         if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return false;
 
-        // 자기 자신 응원 불가
+        // 자기 자신 응원 불가 (단, 1인 세션에서는 허용)
         if (PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor))
         {
             int myIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, myColor);
-            if (myIdx == targetColorIndex) return false;
+            if (myIdx == targetColorIndex)
+            {
+                // 1인 세션에서는 자기 자신 응원 허용 (partySize==1 규칙)
+                bool isSolo = GameSession.Instance != null && GameSession.Instance.ActivePlayerCount == 1;
+                if (!isSolo) return false;
+            }
         }
 
         // 수혜자 버프 중 → 표 차단
@@ -408,16 +331,26 @@ public class CheerService : NetworkBehaviour
 
     // ── 공개 유틸 (CheerChatInput / CheerProgressUI 사용) ─────────
 
-    /// <summary>"berry" → 0, "guma" → 1, 매칭 없으면 -1</summary>
+    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 기본값. 미매칭 시 -1.</summary>
     public static int GetColorIndex(string cheerName)
     {
         string lower = cheerName.Trim().ToLower();
+        if (GameSession.Instance != null)
+        {
+            int idx = GameSession.Instance.GetSessionColorIndex(lower);
+            if (idx >= 0) return idx;
+        }
         return System.Array.IndexOf(CheerNames, lower);
     }
 
-    /// <summary>colorIndex → "berry" 등. 범위 밖이면 빈 문자열.</summary>
+    /// <summary>colorIndex → CheerName. 세션 이름 우선, 없으면 기본값. 범위 밖이면 빈 문자열.</summary>
     public static string GetCheerName(int colorIndex)
     {
+        if (GameSession.Instance != null)
+        {
+            string name = GameSession.Instance.GetSessionCheerName(colorIndex);
+            if (!string.IsNullOrEmpty(name)) return name;
+        }
         if (colorIndex < 0 || colorIndex >= CheerNames.Length) return string.Empty;
         return CheerNames[colorIndex];
     }

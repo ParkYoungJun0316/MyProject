@@ -69,7 +69,7 @@ public class ColoredMemoryPathTile : MonoBehaviour
         if (!safe)
         {
             _isDisabled = true;
-            player.KillInstantly();
+            NetworkDamageUtil.ApplyInstantKill(player);
             coloredMemoryPath?.OnWrongTileStepped(this, player);
         }
         else if (!_isSafeTriggered)

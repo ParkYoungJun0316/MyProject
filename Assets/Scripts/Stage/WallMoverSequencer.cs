@@ -84,10 +84,6 @@ public class WallMoverSequencer : NetworkBehaviour
             StartSequenceClientRpc(startTime);
             StartCoroutine(SequenceRoutine(startTime, useServerTime: true));
         }
-        else
-        {
-            StartCoroutine(SequenceRoutine(0, useServerTime: false));
-        }
     }
 
     /// <summary>모든 벽을 시작 위치로 리셋하고 재사용 가능 상태로 복귀.</summary>

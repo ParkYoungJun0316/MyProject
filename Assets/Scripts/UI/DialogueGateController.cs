@@ -36,17 +36,9 @@ public class DialogueGateController : NetworkBehaviour
 
     // ── 진입점 ────────────────────────────────────────────────────
 
-    /// <summary>오프라인 진입점 (NGO 없음).</summary>
-    void Start()
-    {
-        if (!LobbyContext.IsOffline) return;
-        Init(isHost: true);
-    }
-
-    /// <summary>온라인 진입점. NetworkObject 스폰 후 호출.</summary>
+    /// <summary>NetworkObject 스폰 후 호출.</summary>
     public override void OnNetworkSpawn()
     {
-        if (LobbyContext.IsOffline) return;
         Init(isHost: IsServer);
     }
 
@@ -55,8 +47,9 @@ public class DialogueGateController : NetworkBehaviour
         UnsubscribeComplete();
     }
 
-    void OnDestroy()
+    public override void OnDestroy()
     {
+        base.OnDestroy();
         UnsubscribeComplete();
     }
 
@@ -75,8 +68,7 @@ public class DialogueGateController : NetworkBehaviour
             if (isHost)
             {
                 stageStartGate?.Arm();
-                if (!LobbyContext.IsOffline)
-                    ArmGateClientRpc();
+                ArmGateClientRpc();
             }
             return;
         }
@@ -87,21 +79,19 @@ public class DialogueGateController : NetworkBehaviour
             GameSession.Instance?.MarkIntroSeen(showOnceKey);
             SubscribeComplete();
             dialogueUI?.StartSequence();
-            if (!LobbyContext.IsOffline)
-                OpenDialogueClientRpc();
+            OpenDialogueClientRpc();
         }
         // Client: OpenDialogueClientRpc 수신 대기
     }
 
-    // ── 입력 (Host / 오프라인 전용) ──────────────────────────────
+    // ── 입력 (Host 전용) ──────────────────────────────────────────
 
     void Update()
     {
         if (dialogueUI == null || !dialogueUI.IsPlaying) return;
 
-        bool isHostOrOffline = LobbyContext.IsOffline
-            || (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
-        if (!isHostOrOffline) return;
+        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        if (!isHost) return;
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             AdvanceLine();
@@ -118,18 +108,13 @@ public class DialogueGateController : NetworkBehaviour
             UnsubscribeComplete();
 
             stageStartGate?.Arm();
-
-            if (!LobbyContext.IsOffline)
-            {
-                CompleteDialogueClientRpc();
-                ArmGateClientRpc();
-            }
+            CompleteDialogueClientRpc();
+            ArmGateClientRpc();
         }
         else
         {
             dialogueUI.ShowLine(next);
-            if (!LobbyContext.IsOffline)
-                SyncLineClientRpc(next);
+            SyncLineClientRpc(next);
         }
     }
 
@@ -154,8 +139,7 @@ public class DialogueGateController : NetworkBehaviour
         stageStartGate?.Arm();
         UnsubscribeComplete();
 
-        if (!LobbyContext.IsOffline)
-            ArmGateClientRpc();
+        ArmGateClientRpc();
     }
 
     // ── ClientRpc ────────────────────────────────────────────────

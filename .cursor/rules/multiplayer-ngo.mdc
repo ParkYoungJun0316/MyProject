@@ -36,7 +36,9 @@ SSOT detail: `Assets/Docs/NetworkDesign.md`. Cheer/voice: `Assets/Docs/CheerAndT
 - No reconnect / late-join / host migration
 - Anyone leaves **in-game** → **room ends** (all to title)
 - Lobby kick = clear slot only; in-game kick/leave = room end
-- Solo (offline): no NGO session — DisconnectManager N/A; title return still via TitleReturnFlow
+- **Solo = `OnlineHost` + `partySize 1`** — same NGO path as multi. No offline mode.
+  - 1인 자기 응원 허용: `ValidateCheer` → `ActivePlayerCount == 1` 예외
+  - 인원 스케일: `GameSession.ActivePlayerCount` 기준 (`ActivePlayerCount == 1` = 솔로)
 - In-game room end: **DisconnectManager** → **TitleReturnFlow** → **NetworkManagerSetup.Shutdown()** → title
 - Do not call `NetworkManager.Shutdown()` directly — go through TitleReturnFlow / NetworkManagerSetup
 

@@ -66,7 +66,11 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: a9b366721b5e51c41ab2bf68893756a8, type: 2}
     - target: {fileID: 919132149155446097, guid: 838ff65180813744884de698aff2ac54, type: 3}
       propertyPath: m_Name
-      value: Door 1
+      value: Door
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 838ff65180813744884de698aff2ac54, type: 3}
+      propertyPath: m_Layer
+      value: 27
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -105,6 +109,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   OnClosed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFullyClosed:
     m_PersistentCalls:
       m_Calls: []
 --- !u!65 &-4172869999298323951

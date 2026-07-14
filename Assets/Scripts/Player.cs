@@ -149,13 +149,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
                 anim?.SetTrigger("doFall");
                 events?.RaiseFallDeath();
             }
-            // 오프라인(NGO 미사용)에서만 직접 사망 처리. 온라인은 Host가 NetworkPlayerSetup.Update에서 판정.
-            if (y < fallDeathY)
-            {
-                var nm = NetworkManager.Singleton;
-                if (nm == null || !nm.IsListening)
-                    Die();
-            }
         }
 
         if (IsDead)
@@ -329,32 +322,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         // (TakeDamage 직접 호출 시 heart와 _hp NetworkVariable이 어긋나는 버그 방지)
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening) return;
-
-        // 오프라인 Shield 선차감 — 남은 데미지만 HP에 적용
-        if (playerBuffSystem != null)
-        {
-            int shieldCharges = (int)playerBuffSystem.GetValue(PlayerBuffSystem.BuffType.Shield);
-            if (shieldCharges > 0)
-            {
-                int absorbed = Mathf.Min(shieldCharges, amount);
-                playerBuffSystem.SetShieldCharges(shieldCharges - absorbed);
-                amount -= absorbed;
-            }
-        }
-
-        // Shield만 깎인 경우에도 피격 연출은 동일하게 재생
-        if (amount > 0)
-        {
-            isInstantKill = instantKillThreshold > 0 && amount >= instantKillThreshold;
-            heart -= amount;
-        }
-
-        events?.RaiseDamaged(knockback);
-        playerStealth?.RevealTemporarily();
-
-        if (amount > 0 && heart <= 0) { Die(); return; }
-        anim?.SetTrigger("doHit");
-        StartCoroutine(OnDamage(knockback));
     }
 
     public void ReceiveDamage(int amount, object source)
@@ -424,6 +391,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         isKnockback = false; isDamage = false;
         moveSpeedMultiplier  = 1f;
+        fallAnimTriggered    = false;
 
         if (playerStealth != null)
             playerStealth.ForceLayer(deadLayer);

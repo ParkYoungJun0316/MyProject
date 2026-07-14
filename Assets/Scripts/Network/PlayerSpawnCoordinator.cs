@@ -13,9 +13,6 @@ using UnityEngine;
 ///   → NotifyPlayersReady() → Host OnPlayersReady 발행
 ///   → BroadcastPlayersReadyClientRpc() → Client OnPlayersReady 발행
 ///
-/// [흐름 — 오프라인]
-/// PlayerSpawnManager.SpawnOfflinePlayers()
-///   → NotifyPlayersReady() → OnPlayersReady 로컬 발행
 ///
 /// [구독 방법 (모든 구독자 공통)]
 /// void Start() {
@@ -90,8 +87,9 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
         if (Instance == this) Instance = null;
     }
 
-    void OnDestroy()
+    public override void OnDestroy()
     {
+        base.OnDestroy();
         IsReady = false;
         if (Instance == this) Instance = null;
     }
@@ -168,29 +166,10 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
     public static void ResetReady() => IsReady = false;
 
     /// <summary>
-    /// 오프라인 모드 전용. Instance(NetworkObject) 없이 OnPlayersReady를 로컬 발행.
-    /// PlayerSpawnManager.HandleStageLoaded()에서 IsOffline일 때 호출.
-    /// </summary>
-    public static void NotifyOffline()
-    {
-        IsReady = true;
-        OnPlayersReady?.Invoke();
-    }
-
-    /// <summary>
     /// Host: SpawnAllPlayers() 완료 후 PlayerSpawnManager가 호출.
-    /// 오프라인: SpawnOfflinePlayers() 완료 후 호출.
     /// </summary>
     public void NotifyPlayersReady()
     {
-        // 오프라인: NGO 없이 로컬에서만 발행
-        if (LobbyContext.IsOffline)
-        {
-            IsReady = true;
-            OnPlayersReady?.Invoke();
-            return;
-        }
-
         if (!IsServer) return;
 
         IsReady = true;

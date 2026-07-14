@@ -67,7 +67,7 @@ public class PioneerPathTile : MonoBehaviour
             if (_isDisabled) return;
             _isDisabled = true;
             ApplyColor(trapColor);
-            player.KillInstantly();
+            NetworkDamageUtil.ApplyInstantKill(player);
             return;
         }
 
@@ -78,7 +78,7 @@ public class PioneerPathTile : MonoBehaviour
         {
             if (_isDisabled) return;
             _isDisabled = true;
-            player.KillInstantly();
+            NetworkDamageUtil.ApplyInstantKill(player);
             return;
         }
 
@@ -94,7 +94,7 @@ public class PioneerPathTile : MonoBehaviour
         {
             if (_isDisabled) return;
             _isDisabled = true;
-            player.KillInstantly();
+            NetworkDamageUtil.ApplyInstantKill(player);
         }
     }
 

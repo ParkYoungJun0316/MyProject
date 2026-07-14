@@ -42,6 +42,11 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 {
     // ── Inspector ─────────────────────────────────────────────────
 
+    [Header("로비 테스트 모드")]
+    [Tooltip("true: ServerRpc 미제출, OnKeywordDetected 이벤트만 발행.\n" +
+             "로비 씬에 직접 배치할 때 체크. 인게임 플레이어 프리팹은 false.")]
+    [SerializeField] bool _lobbyTestMode = false;
+
     [Header("솔로 마이크 게인")]
     [Tooltip("autoNormalizeMic=true 이면 이 값은 무시되고 자동 보정만 사용됨.\n" +
              "Dissonance 경로에서는 무시됨.")]
@@ -59,7 +64,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     const int   VoskFeedHz             = 16000;
     const int   SoloMicCaptureHz       = 48000;
     const int   SoloMicBufSec          = 30;
-    const int   MinFeedSamples         = 3200;   // 16kHz × 200ms
+    const int   MinFeedSamples         = 1600;   // 16kHz × 100ms
     const int   PartialInterval        = 10;
     const float DissonanceWaitSec      = 5f;
     const float SoloMicWarmupSec       = 0.5f;
@@ -88,6 +93,14 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     float[] _dissonanceResample;
     float[] _accumBuf;
     int     _accumCount;
+
+    // ── 이벤트 (로비 테스트 모드 전용) ───────────────────────────
+    /// <summary>
+    /// 로비 테스트 모드(_lobbyTestMode=true)에서 키워드 감지 시 발행.
+    /// arg = targetColorIndex (해당 CheerName 소유자의 ColorIndex).
+    /// ServerRpc 미제출. LobbyMenuController 에서 구독.
+    /// </summary>
+    public event System.Action<int> OnKeywordDetected;
 
     // 중복 제출 방지 (keyword → 마지막 감지 Time.time)
     readonly Dictionary<string, float> _lastDetected = new();
@@ -133,7 +146,9 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             yield break;
         }
 
-        _grammarJson = CheerLexiconBuilder.BuildDemoGrammarJson();
+        _grammarJson = _lobbyTestMode
+            ? BuildLobbyGrammarJson()
+            : BuildInGameGrammarJson();
 
         DissonanceComms comms = null;
         while (comms == null) { comms = DissonanceComms.GetSingleton(); yield return null; }
@@ -250,7 +265,18 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             offset = 0;
         }
 
-        EnqueuePcmChunk(src, offset, count);
+        // 솔로 경로와 동일하게 누적 후 MinFeedSamples 단위로 분할 Enqueue
+        EnsureAccumCapacity(_accumCount + count);
+        Array.Copy(src, offset, _accumBuf, _accumCount, count);
+        _accumCount += count;
+
+        while (_accumCount >= MinFeedSamples)
+        {
+            EnqueuePcmChunk(_accumBuf, 0, MinFeedSamples);
+            _accumCount -= MinFeedSamples;
+            if (_accumCount > 0)
+                Array.Copy(_accumBuf, MinFeedSamples, _accumBuf, 0, _accumCount);
+        }
     }
 
     // ── Update ────────────────────────────────────────────────────
@@ -464,6 +490,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
                 continue;
             }
 
+            // 청크는 항상 MinFeedSamples(800) 단위 — EnqueuePcmChunk에서 고정 크기 보장
             bool isFinal = rec.AcceptWaveform(chunk, chunk.Length);
 
             if (isFinal)
@@ -537,7 +564,10 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
                 Time.time - lastTime < KeywordCooldown)
                 continue;
 
-            int colorIndex = CheerService.GetColorIndex(word);
+            int colorIndex = _lobbyTestMode
+                ? GetLobbyColorIndex(word)
+                : CheerService.GetColorIndex(word);
+
             if (colorIndex < 0)
             {
                 Debug.Log($"[CheerKeywordEngine] 인식됐으나 CheerName 불일치: '{word}'");
@@ -547,13 +577,79 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             _lastDetected[word] = Time.time;
             Debug.Log($"[CheerKeywordEngine] 키워드 감지: '{word}' → colorIndex={colorIndex}");
 
-            if (CheerService.Instance == null) continue;
+            // 로비 테스트 모드: 이벤트만 발행, ServerRpc 미제출
+            if (_lobbyTestMode)
+            {
+                OnKeywordDetected?.Invoke(colorIndex);
+                continue;
+            }
 
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            if (CheerService.Instance != null)
                 CheerService.Instance.SubmitCheerServerRpc(colorIndex, isVoice: true);
-            else
-                CheerService.Instance.SubmitCheerLocal(colorIndex);
         }
+    }
+
+    // ── 로비 모드 헬퍼 ───────────────────────────────────────────
+
+    /// <summary>
+    /// 세션 슬롯의 유효 CheerName으로 colorIndex 역탐색.
+    /// CheerService 없이 로비에서 사용.
+    /// </summary>
+    static int GetLobbyColorIndex(string lower)
+    {
+        var lnm = LobbyNetworkManager.Instance;
+        if (lnm != null)
+        {
+            for (int i = 0; i < lnm.SlotCount; i++)
+            {
+                var s = lnm.GetSlot(i);
+                if (!s.IsOccupied) continue;
+                if (LobbyNetworkManager.GetEffectiveCheerName(s) == lower)
+                    return s.ColorIndex;
+            }
+            return -1;
+        }
+        // 솔로(LNM 없음): GameSession 세션 이름 → 기본값 순 fallback
+        return CheerService.GetColorIndex(lower);
+    }
+
+    /// <summary>
+    /// 세션 이름 배열로 Vosk grammar를 갱신.
+    /// LobbyMenuController.RefreshAllSlots 에서 이름 확정 후 호출.
+    /// 모델 로드 전이면 무시 (InitCoroutine에서 세션 이름으로 이미 빌드됨).
+    /// </summary>
+    public void ApplySessionGrammar(string[] names)
+    {
+        if (_model == null) return;
+        string newJson = CheerLexiconBuilder.BuildGrammarJson(names);
+        _workerNextModel   = _model;
+        _workerNextGrammar = newJson;
+        Interlocked.Exchange(ref _resetSignal, 1);
+        Debug.Log($"[CheerKeywordEngine] 로비 grammar 갱신: {newJson}");
+    }
+
+    static string BuildLobbyGrammarJson()
+    {
+        var lnm = LobbyNetworkManager.Instance;
+        if (lnm == null) return CheerLexiconBuilder.BuildDemoGrammarJson();
+        int count = lnm.SlotCount;
+        var names = new string[count];
+        for (int i = 0; i < count; i++)
+            names[i] = LobbyNetworkManager.GetEffectiveCheerName(lnm.GetSlot(i));
+        return CheerLexiconBuilder.BuildGrammarJson(names);
+    }
+
+    /// <summary>인게임 Vosk grammar — GameSession 세션 이름 우선, 없으면 기본값.</summary>
+    static string BuildInGameGrammarJson()
+    {
+        if (GameSession.Instance != null)
+        {
+            var names = new string[4];
+            for (int i = 0; i < 4; i++)
+                names[i] = GameSession.Instance.GetSessionCheerName(i);
+            return CheerLexiconBuilder.BuildGrammarJson(names);
+        }
+        return CheerLexiconBuilder.BuildDemoGrammarJson();
     }
 
     // ── 버퍼 용량 보장 ────────────────────────────────────────────

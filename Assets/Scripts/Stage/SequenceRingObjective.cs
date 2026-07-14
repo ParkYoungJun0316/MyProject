@@ -121,7 +121,7 @@ public class SequenceRingObjective : StageObjective
         foreach (Player p in players)
         {
             if (p == null || p.IsDead) continue;
-            p.KillInstantly();
+            NetworkDamageUtil.ApplyInstantKill(p);
         }
     }
 

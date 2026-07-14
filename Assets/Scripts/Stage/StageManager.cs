@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -130,9 +131,19 @@ public class StageManager : MonoBehaviour
     /// </summary>
     public void DestroyAllProjectiles()
     {
+        var  nm         = NetworkManager.Singleton;
+        bool isNetworked = nm != null && nm.IsListening;
+
+        // 온라인: Host만 Despawn (NGO가 전원에 자동 전파)
+        if (isNetworked && !nm.IsServer) return;
+
         TrapProjectile[] projectiles = FindObjectsByType<TrapProjectile>(FindObjectsSortMode.None);
         foreach (TrapProjectile p in projectiles)
-            if (p != null) Destroy(p.gameObject);
+        {
+            if (p == null) continue;
+            var netObj = p.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsSpawned) netObj.Despawn(true);
+        }
     }
 
     /// <summary>

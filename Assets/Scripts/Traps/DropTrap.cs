@@ -118,7 +118,7 @@ public class DropTrap : TrapBase
         }
         else
         {
-            _scheduleStartTime = isOnline ? (float)nm.ServerTime.Time : Time.time;
+            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
             if (initialDelay > 0f)
                 yield return new WaitForSeconds(initialDelay);
         }
@@ -163,7 +163,7 @@ public class DropTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = _scheduleStartTime + cycleOffset + t;
-                float now        = isOnline ? (float)nm.ServerTime.Time : Time.time;
+                float now        = nm != null ? (float)nm.ServerTime.Time : Time.time;
                 float waitTime   = Mathf.Max(0f, targetTime - now - preFireChargeTime);
                 yield return new WaitForSeconds(waitTime);
 
@@ -185,7 +185,7 @@ public class DropTrap : TrapBase
         if (baseDropSpeed <= 0f) return 0f;
 
         var   nm      = NetworkManager.Singleton;
-        float now     = (nm != null && nm.IsListening) ? (float)nm.ServerTime.Time : Time.time;
+        float now     = nm != null ? (float)nm.ServerTime.Time : Time.time;
         float elapsed = now - _scheduleStartTime;
         float mult    = 1f;
 
@@ -201,6 +201,11 @@ public class DropTrap : TrapBase
     protected override void OnTrapTrigger()
     {
         if (dropPrefab == null) return;
+
+        // 온라인: Host만 낙하체 스폰. Client는 NetworkObject 수신으로 자동 생성.
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         StartCoroutine(DropCycle(GetNextTargetPos()));
     }
 
@@ -254,12 +259,25 @@ public class DropTrap : TrapBase
         proj.moveDirection = Vector3.down;
         if (damage > 0) proj.damage = damage;
 
-        float speed = GetCurrentSpeed();
+        float   speed    = GetCurrentSpeed();
+        Vector3 velocity = speed > 0f ? Vector3.down * speed : Vector3.zero;
         if (speed > 0f)
         {
             Rigidbody dropRb = drop.GetComponent<Rigidbody>();
-            if (dropRb != null)
-                dropRb.linearVelocity = Vector3.down * speed;
+            if (dropRb != null) dropRb.linearVelocity = velocity;
+        }
+
+        // 온라인(B안): Spawn 후 Client에 velocity 전파. warn 마커는 Host만 표시(추후 ClientRpc 업그레이드).
+        var nm2 = NetworkManager.Singleton;
+        if (nm2 != null && nm2.IsListening)
+        {
+            NetworkObject netObj = drop.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                netObj.Spawn(destroyWithScene: true);
+                if (speed > 0f)
+                    proj.InitializeVelocityClientRpc(velocity);
+            }
         }
     }
 

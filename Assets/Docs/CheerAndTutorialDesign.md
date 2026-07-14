@@ -21,16 +21,17 @@
 | 씬 흐름 | Title → Lobby → M.Stage1 → T.Stage1 → End.Demo | Title → Lobby → **Tutorial** → M.Stage1 → … |
 | Tutorial 씬 | **없음** | **필수 경로** (연습 구간은 경험자 생략 가능) |
 | **인게임 보이스챗** | **Dissonance + NGO** (4인 Global, Voice Activation) | 동일. Steam 직전 **Dissonance Steam P2P** transport 검토 |
-| CheerName | **고정** berry / guma / ssuk / danho (소문자) | Tutorial에서 설정, 미입력 = 색상 기본값 |
-| 이름 커스텀 | **없음** | Tutorial UI + `PlayerPrefs` + Network 동기화 |
-| **키워드 인식** | **Vosk grammar** (고정 4종 lexicon) | Vosk + **CheerLexiconBuilder** (커스텀 G2P) |
+| CheerName | **로비 커스텀** (§3). 빈칸 = 색 기본값 | 동일 + Tutorial 연습 |
+| 이름 커스텀 | **Lobby 슬롯 인라인** + Host 확정 + `LobbyPlayerState` | Lobby 유지. `PlayerPrefs` 기억 |
+| **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시 (Start 강제 아님, §3.2) | Tutorial 말해보기로 확장 가능 |
+| **키워드 인식** | **Vosk grammar** (세션 3~4 CheerName lexicon) | Vosk + **CheerLexiconBuilder** (커스텀 G2P) |
 | 채팅 응원 | `/cheer {name}` **필수 폴백** | 동일 |
 | 스테이지 버프 | M.Stage1 = **Shield** (`Invincibility`), T.Stage1 = **SpeedUp** | 동일 |
 | 인게임 설명 | **DialogueUI** (M/T 구역별) | Tutorial(핵심 메카) + DialogueUI |
 | **멀티 연결** | **Steam P2P + Lobby** (§NetworkDesign ④) | 유지·Invite polish |
 | **데모 목표** | Steam **원격 협동 + 보이스 + 응원** (홍보) | Tutorial·커스텀·밸런싱 |
 | **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 | — |
-| 음성 인식 정확도 | 100% 불필요. 플레이테스트로 튜닝 | 커스텀 이름 + **말해보기 테스트 UI** |
+| 음성 인식 정확도 | 100% 불필요. **로비 불러보기로** 사전 확인 | Tutorial 말해보기 polish |
 
 > **데모 = Steam 홍보.** 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost 빌드, 데모=Steam (`NetworkDesign.md` §0.2).
 
@@ -88,7 +89,7 @@
 | 규칙 | 내용 |
 |------|------|
 | 수혜자 | **자기 자신**. 자기 자신에게 응원 불가 |
-| 필요 응원 수 | `ActivePlayerCount - 1` (솔로 제외, §2.6) |
+| 필요 응원 수 | `max(1, ActivePlayerCount - 1)`. 1인(`ActivePlayerCount==1`)이면 자기 자신 응원 허용 |
 | 응원자 동시 타겟 | **1명만**. 타겟 변경 시 **이전 타겟 집계 -1** |
 | 동시 수혜 | **가능**. 수혜자별 독립 |
 | 갱신 | **없음**. 버프 중 시간·수치 연장 불가 |
@@ -97,7 +98,7 @@
 
 | 접속 인원 | 수혜자 1명당 필요 응원 |
 |-----------|------------------------|
-| 1 (솔로) | §2.6 |
+| 1 (솔로) | 1 (자기 자신 응원 허용 — `ValidateCheer` 예외) |
 | 2 | 1 |
 | 3 | 2 |
 | 4 | 3 |
@@ -129,12 +130,13 @@
 - **없음.** 타겟 1명 + 타임아웃 + (채팅) rate limit으로 충분.
 - 채팅 **rate limit:** 0.5~1초, Host (스팸 방지).
 
-### 2.6 솔로 (오프라인)
+### 2.6 솔로 (1인 Host, `ActivePlayerCount == 1`)
 
-- NGO 미사용.
-- **음성:** 자기 CheerName 감지 → 1회 발동 (데모: `/cheer berry`와 동일 규칙).
-- **채팅:** `/cheer {자기 CheerName}`.
-- **인게임 보이스:** 솔로 시 **비활성** (팀원 없음).
+- **NGO Host 1인.** 멀티와 동일 코드 경로.
+- **응원:** `CheerService.ValidateCheer` — `ActivePlayerCount==1`이면 self-cheer 허용. `GetRequiredVotes()=1` → 즉시 발동.
+- **음성:** `CheerKeywordEngine` → `SubmitCheerServerRpc` (멀티와 동일).
+- **채팅:** `/cheer {자기 CheerName}` → `InGameChatUI` → `SubmitCheerServerRpc`.
+- **인게임 보이스:** 솔로 시 **비활성** 권장 (팀원 없음). Dissonance mute는 별도 구현.
 
 ---
 
@@ -146,40 +148,112 @@
 |-----------------|----------------|
 | Blue | berry |
 | Purple | guma |
-| Green | ssuk |
-| Yellow | danho |
+| Green | sook |
+| Yellow | hobak |
 
 저장·비교 시 **소문자 통일**.
 
-### 3.2 **[데모 Must]**
+**빈칸 = 기본값 취급 (확정):**  
+`LobbyPlayerState.CheerName`이 **빈 문자열**이면 저장값으로 기본명을 넣지 않는다.  
+표시·`/cheer`·Vosk grammar·버프 대상은 **현재 `ColorIndex`의 기본 CheerName**으로 해석한다.
 
-- **커스텀 불가.** 위 4종 고정.
-- 채팅: `/cheer berry`, `/cheer guma`, `/cheer ssuk`, `/cheer danho` (대소문자 무시).
+### 3.2 어디에 설정하나 **[데모 Must]**
 
-### 3.3 **[정식]**
+- **씬:** Tutorial 신설 없이 **`1.Lobby` 슬롯 UI**.
+- **UI:** 기존 슬롯 `nameText`(BERRY 등) 자리 — **로컬 슬롯만** `TMP_InputField`(또는 클릭 시 편집). 타인 슬롯은 읽기 전용.
+- **채팅 UI로 닉네임 설정하지 않음.** 인게임 `/cheer` 폴백만 채팅.
+- **타이틀에서 입력하지 않음.** (로컬 기억용 `PlayerPrefs`는 정식에서 검토)
 
-- **Tutorial**에서 1회 설정. 미입력 = 색상 기본값.
-- **저장:** `PlayerPrefs` (로컬) + 세션 **NetworkVariable / LobbyPlayerState** 동기화.
-- **변경 시점 (MVP):** Tutorial 연습 구간만. 로비·인게임 변경 = Post-Launch.
-- **경험자 Tutorial UI 생략:** `PlayerPrefs`에 CheerName 있으면 이름 UI 생략 (§9.3).  
-  ⚠️ 이건 **네트워크 재접속이 아님.** 세션 이탈·재입장 정책은 `NetworkDesign.md` §12 (재접속 미지원).
+#### 로비 불러보기 (Say Test) **[데모 Must]**
 
-### 3.4 검증 규칙 **[정식]**
+인게임 첫 실패 고통을 줄이기 위해, **로비에서 CheerName 인식이 되는지** 확인한다.
 
-| 항목 | 값 |
-|------|-----|
-| 길이 | **2 ~ 12자** |
-| 허용 문자 | `a-z`, `0-9`, `_` |
-| 대소문자 | 구분 없음 (저장 소문자) |
-| 금칙어 | blocklist + 예약어 (`cheer`, `admin`, `host` 등) |
-| 중복 | **같은 로비 세션 내 불가** |
-| 발음 유사 **[정식·권장]** | 같은 로비에 `bac` / `bek` 동시 존재 **경고 또는 차단** |
-| 검증 | 클라 1차 → **Host 최종** |
+| 항목 | 규칙 |
+|------|------|
+| 시점 | CheerName **Host 확정 후** (빈칸이면 현재 색 기본값으로 테스트) |
+| UI | 로컬 슬롯 옆 **TEST** / “불러보세요” — Heard ✓ / Try again |
+| 인식 | 로컬 Vosk + 유효 CheerName grammar. 가능하면 **팀원 슬롯 이름**도 같은 엔진으로 불러보기 |
+| 강제 | **Ready/Start 강제 통과 아님.** 실패해도 진행 가능. 안내만 (“안 되면 이름 고쳐라”) |
+| 저장 | **녹음·lexicon 학습 없음.** 검증 UI만 |
+| 숫자 테스트 | `b_4nana` 등 §3.5 잠정 숫자 — 이 불러보기로 인식률 판단 |
 
-### 3.5 발음·인식 정책 (확정)
+### 3.3 소유·색 변경 (확정)
+
+- CheerName은 **색/캐릭터가 아니라 플레이어(슬롯)** 에 붙는다.
+- 색을 Blue → Purple로 바꿔도 **커스텀 문자열은 플레이어를 따라간다.**
+- Blue 슬롯이 “berry를 회수”하지 않는다. Blue인 **다른** 플레이어가 빈칸이면 그때만 `berry`.
+- 커스텀을 지우고 확정(또는 빈칸 유지) → 다시 **현재 색 기본값** 취급.
+
+### 3.4 확정·동시성 · Ready · Start (확정)
+
+| 단계 | 규칙 |
+|------|------|
+| 타이핑 중 | **로컬만.** 남에게 중간 글자 동기화 안 함. 슬롯에는 **직전 Host 확정값**(또는 빈칸→기본값 표시) |
+| Enter / 확정 | Client → **ServerRpc** → **Host 최종 검증** 후 `LobbyPlayerState` 반영 |
+| 동시 확정 | **먼저 처리된 Rpc 승.** 나중 동일/위반 이름은 **거절**. UI: 치던 글자 유지 + 에러(테두리/짧은 문구) |
+| Ready 중 | **색·이름 변경 불가** (기존 색 Ready 잠금과 동일) |
+| Ready + 빈칸 | **자동으로 `berry` 등을 문자열로 넣지 않음.** 빈칸 = §3.1 기본값 취급 |
+| `CanStart` | 색 유일 **AND** (해석 후) CheerName 유일 **AND** 클라이언트 Ready. Host Start만 |
+
+해석 후 유일: 빈칸 플레이어의 유효 이름은 `ColorIndex` 기본값.  
+예: A가 Blue+빈칸(`berry`), B가 `berry` 커스텀 확정 시도 → Host 거절.
+
+### 3.5 검증·차단 리스트
+
+클라 1차 → **Host 최종**. 실패 시 슬롯값 변경 없음.
+
+#### 형식 **[데모 Must]**
+
+| # | 규칙 | 값 / 비고 |
+|---|------|-----------|
+| 1 | 길이 | **2 ~ 12** (확정 시에만). 빈칸은 길이 검사 생략 → 기본값 취급 |
+| 2 | 대소문자 | 구분 없음. **저장·비교는 소문자** |
+| 3 | 허용 문자 | **`a-z`, `0-9`, `_`** — 한글·공백·이모지·기타 기호 **불가** |
+| 4 | 공백 | trim 후 빈칸이면 커스텀 없음(기본값 취급) |
+
+**숫자 (`0-9`) — 잠정 허용:**  
+`b_4nana` 등이 Vosk grammar/G2P에서 인식되는지 **플레이테스트 후** 숫자 금지로  Tight할 수 있다.  
+테스트 전제: 숫자 포함 이름 2~3종을 Dev Build 2인에서 외쳐 보기 → 실패율 높으면 §3.5에서 `0-9` 제거로 Docs 갱신.
+
+#### 세션·시스템 **[데모 Must]**
+
+| # | 규칙 |
+|---|------|
+| 5 | 같은 로비 세션에서 **해석 후 CheerName 중복 불가** |
+| 6 | Ready 중 이름 변경 불가 |
+| 7 | `CanStart`에 이름 유일 포함 (§3.4) |
+| 8 | 예약어 불가: `cheer`, `admin`, `host`, `server`, `system`, `bot`, `null` 등 |
+
+#### 금칙어 **[데모 Must]**
+
+| # | 규칙 | 범위 |
+|---|------|------|
+| 9 | 욕설 | 영문 공통 비속어 blocklist |
+| 10 | 성·체 관련 | sexual / body slur |
+| 11 | 혐오·차별 | 최소 목록 |
+| 12 | 초간단 우회 | `f4ck`, `a$$` 등 — 완벽 필터 불필요 |
+
+공개 영문 blocklist 파일 + Host 재검증. AI 필터 없음.
+
+#### 정식에서 강화 **[정식]**
+
+| # | 규칙 |
+|---|------|
+| 13 | 발음 유사 (`bac` / `bek`) 경고 또는 차단 |
+| 14 | Tutorial 연습 맵 + 말해보기 polish (로비 불러보기는 데모에 이미 있음) |
+| 15 | `PlayerPrefs`로 로컬 이름 기억 · 경험자 Tutorial 이름 UI 생략 (§9.3) |
+
+### 3.6 **[정식]** Tutorial과의 관계
+
+- 데모: Lobby에서 커스텀 완료. Tutorial 씬 **불필요**.
+- 정식: `2.Tutorial`은 **조작 연습 + 말해보기** 중심. CheerName 입력은 Lobby 유지 또는 Tutorial 병행(구현 시 택1, Docs 갱신).
+- 인게임 이름 변경 = **Post-Launch**.
+- ⚠️ `PlayerPrefs` / TutorialCompleted는 **네트워크 재접속이 아님.** 세션 정책은 `NetworkDesign.md` §12.
+
+### 3.7 발음·인식 정책 (확정)
 
 - **100% 정확 발음 강제 아님.** `back` / `bac` / `bek` / `bec` 등 **비슷한 소리**면 같은 CheerName으로 잡혀도 OK.
-- **정확한 `bec` 발음만** 허용하는 구조 **아님** — grammar 4택1 + lexicon **발음 변형 여러 개**.
+- **정확한 철자 발음만** 허용하는 구조 **아님** — grammar + lexicon **발음 변형 여러 개**.
 - 한국어 STT = Post-Launch. MVP = **로마字 CheerName + 영어 Vosk 모델**.
 - **음성으로 lexicon “학습·저장”하지 않음.** UI 텍스트 → G2P → 런타임 lexicon. Tutorial **말해보기** = **검증**만.
 
@@ -321,14 +395,15 @@ Each Client: 자기 마이크 → 감지 → SubmitCheerServerRpc
 
 lexicon **파일을 서버 DB에 모을 필요 없음**.
 
-### 5.4 Tutorial 말해보기 **[정식]**
+### 5.4 로비 불러보기 **[데모 Must]**
 
-1. CheerName 텍스트 입력 (`bec`)
-2. `[테스트]` — 이름을 크게 불러보세요
-3. Vosk가 해당 토큰으로 잡히면 ✅ 확정
-4. 실패 → 철자 변경 안내 또는 G2P 변형 추가 (개발 튜닝)
-
+§3.2 동일. 로비에서 이름 확정 → `[TEST]` → Vosk 토큰 ✓/다시.  
 **녹음 파일을 lexicon에 저장하지 않음.**
+
+### 5.5 Tutorial 말해보기 **[정식]**
+
+Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만으로 충분하면 생략 가능(구현 시 Docs 갱신).  
+실패 시 철자 변경 안내·G2P 변형 추가(개발 튜닝).
 
 ---
 
@@ -575,26 +650,29 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 ### **[데모 Must]**
 
 - [ ] `CheerService` + `SubmitCheerServerRpc`
-- [ ] `/cheer {고정4종}`
-- [ ] **Dissonance + NGO** (4인 Global 보이스)
-- [ ] **Vosk** grammar (고정 4종) + `CheerKeywordEngine`
-- [ ] `CheerLexiconBuilder` (데모 고정 lexicon)
+- [ ] `/cheer {세션 CheerName}` (빈칸→색 기본값)
+- [ ] **Lobby CheerName 인라인 편집** + Host `SetCheerNameServerRpc`
+- [ ] `LobbyPlayerState.CheerName` (빈칸 = 기본값 취급) + 슬롯 UI 동기화
+- [ ] CheerName 검증 (§3.5) + `CanStart` 이름 유일
+- [ ] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님)
+- [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
+- [ ] **Vosk** grammar (세션 3~4명) + `CheerKeywordEngine`
+- [ ] `CheerLexiconBuilder` (세션 lexicon / G2P)
 - [ ] Dissonance ↔ Vosk 마이크 공유
 - [ ] M=Invincibility, T=SpeedUp + NetworkPlayerSetup 버프 미러링
 - [ ] `CheerProgressUI` + `TeamStatusUI`
 - [ ] 채팅 입력 UI
 - [ ] 솔로 `/cheer` + 로컬 CheerService
-- [ ] Dev Build ② **2인** (중간)
+- [ ] **숫자 포함 이름** — 로비 불러보기로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
+- [ ] Dev Build ② **2인** (중간) — 로비 이름+불러보기+인게임 응원
 - [ ] **Steam P2P ④ 2인** (2PC — **데모 출시 게이트**)
 - [ ] Steam **4인 1회** (권장)
-- [ ] CheerName 커스텀·Tutorial **없음**
 
 ### **[정식]**
 
-- [ ] `2.Tutorial` + Lobby → Tutorial
-- [ ] CheerName UI + PlayerPrefs + Network
-- [ ] `CheerLexiconBuilder` G2P + 발음 변형 + 말해보기
-- [ ] 발음 유사 이름 검증
+- [ ] `2.Tutorial` + Lobby → Tutorial (조작 연습; 말해보기는 로비와 중복 시 간소화)
+- [ ] CheerName `PlayerPrefs` 기억 + 경험자 이름 UI 생략
+- [ ] `CheerLexiconBuilder` G2P polish + 발음 유사 검증
 - [ ] TutorialCompleted 스킵 + Gate → M.Stage1
 - [ ] 연습 구역 (Stealth / Pad / Cheer)
 - [ ] (선택) Dissonance Steam P2P 음성 transport **[정식]**
@@ -656,7 +734,19 @@ A. **Transport·연결·1표 응원**은 2인에서 검증. **3표 집계·4보�
 A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P2P **2인** → (권장) Steam 4인 → 데모 출시.
 
 **Q. 솔로 `/cheer`?**  
-A. `/cheer {자기 CheerName}`. 데모: `/cheer berry` 등.
+A. `/cheer {자기 CheerName}`. 빈칸이면 색 기본값 (`berry` 등).
+
+**Q. CheerName은 로비에서? Tutorial에서?**  
+A. **데모 = 로비 슬롯 인라인 + 불러보기 Must.** Tutorial 조작 연습은 정식. §3.2·§3.6.
+
+**Q. 로비 불러보기 실패하면 Start 막나?**  
+A. **아니오.** 강제 아님. 이름 수정 안내만. §3.2.
+
+**Q. 빈 이름에 Ready하면 berry가 저장되나?**  
+A. **아니오.** 빈칸 유지·기본값 **취급**만. §3.1·§3.4.
+
+**Q. 숫자가 들어간 이름?**  
+A. **잠정 허용.** Vosk 테스트 후 막을 수 있음. §3.5.
 
 **Q. 버프 중 응원?**  
 A. **표 안 쌓임**, 발동 불가.

@@ -163,7 +163,7 @@ public class WindTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = _scheduleStartTime + cycleOffset + t;
-                float now        = isOnline ? (float)nm.ServerTime.Time : Time.time;
+                float now        = nm != null ? (float)nm.ServerTime.Time : Time.time;
                 float waitTime   = targetTime - now;
 
                 if (waitTime > 0f)
@@ -279,7 +279,7 @@ public class WindTrap : TrapBase
         if (baseForce <= 0f) return 0f;
 
         var   nm      = NetworkManager.Singleton;
-        float now     = (nm != null && nm.IsListening) ? (float)nm.ServerTime.Time : Time.time;
+        float now     = nm != null ? (float)nm.ServerTime.Time : Time.time;
         float elapsed = now - _scheduleStartTime;
         float mult    = 1f;
 

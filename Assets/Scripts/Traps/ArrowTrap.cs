@@ -84,7 +84,7 @@ public class ArrowTrap : TrapBase
         {
             if (initialDelay > 0f)
                 yield return new WaitForSeconds(initialDelay);
-            scheduleStartTime = isOnline ? (float)nm.ServerTime.Time : Time.time;
+            scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
         }
 
         float cycleOffset = 0f;
@@ -96,7 +96,7 @@ public class ArrowTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = scheduleStartTime + cycleOffset + t;
-                float now        = isOnline ? (float)nm.ServerTime.Time : Time.time;
+                float now        = nm != null ? (float)nm.ServerTime.Time : Time.time;
                 // preFireChargeTime 만큼 앞당겨 대기 → 충전 시작 → 정확한 targetTime에 발사
                 float waitTime   = Mathf.Max(0f, targetTime - now - preFireChargeTime);
                 yield return new WaitForSeconds(waitTime);
@@ -121,7 +121,7 @@ public class ArrowTrap : TrapBase
         if (baseSpeed <= 0f) return 0f;
 
         var   nm      = NetworkManager.Singleton;
-        float now     = (nm != null && nm.IsListening) ? (float)nm.ServerTime.Time : Time.time;
+        float now     = nm != null ? (float)nm.ServerTime.Time : Time.time;
         float elapsed = now - scheduleStartTime;
         float mult    = 1f;
 
@@ -165,13 +165,19 @@ public class ArrowTrap : TrapBase
                 firedRb.linearVelocity = flatFwd * speed;
         }
 
-        // 네트워크 모드: NetworkObject.Spawn()으로 클라이언트에 복제
-        // Spawn 호출 전에 velocity를 미리 설정해야 Host의 물리가 즉시 시작됨
+        // 네트워크(B안): Spawn 후 InitializeVelocityClientRpc로 초기 velocity 전파.
+        // Client는 NT 위치 동기화 없이 이 velocity로 로컬 비행.
         if (isNetworked)
         {
             NetworkObject netObj = fired.GetComponent<NetworkObject>();
-            // destroyWithScene: true → 씬 리로드 시 자동 Despawn (잔존 화살 방지)
-            if (netObj != null) netObj.Spawn(destroyWithScene: true);
+            if (netObj != null)
+            {
+                // destroyWithScene: true → 씬 리로드 시 자동 Despawn (잔존 화살 방지)
+                netObj.Spawn(destroyWithScene: true);
+                // Host velocity는 위에서 이미 설정됨. Client에만 주입.
+                if (speed > 0f)
+                    proj.InitializeVelocityClientRpc(flatFwd * speed);
+            }
         }
     }
 }

@@ -196,19 +196,8 @@ public class SceneFlowManager : MonoBehaviour
         }
 
         var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening)
-        {
-            // 온라인 Host만 씬 전환 요청 — Client는 NGO가 자동으로 처리하므로 아무것도 하지 않음
-            if (nm.IsHost)
-                nm.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
-            _isTransitioning = false;
-            yield break;
-        }
-
-        // 오프라인: 기존 SceneManager 사용
-        yield return SceneManager.LoadSceneAsync(sceneName);
-
-        // OnSceneLoaded → SyncCurrentIndex + FadeIn 자동 처리됨
+        if (nm != null && nm.IsListening && nm.IsHost)
+            nm.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         _isTransitioning = false;
     }
 

@@ -13,10 +13,9 @@ using UnityEngine.SceneManagement;
 /// ① UI·입력 복원  (Cursor, timeScale, 채팅 플래그)
 /// ② 네트워크 종료 (NetworkManagerSetup.Shutdown)
 /// ③ 세션 초기화   (GameSession.ResetSession, TimerUI.ResetTimer)
-/// ④ LobbyContext = Offline
-/// ⑤ 진행도 리셋   (FullRunReset 시만 — SceneFlowManager.ResetRunProgress)
-/// ⑥ ISessionResettable 구독자 알림
-/// ⑦ LoadScene("0.Title")
+/// ④ 진행도 리셋   (FullRunReset 시만 — SceneFlowManager.ResetRunProgress)
+/// ⑤ ISessionResettable 구독자 알림
+/// ⑥ LoadScene("0.Title")
 ///
 /// [배치 방법]
 /// 0.Title 씬의 빈 GameObject에 추가 (GameSession 오브젝트와 같은 계층 권장).
@@ -106,9 +105,6 @@ public class TitleReturnFlow : MonoBehaviour
         // ③ 세션 데이터 초기화
         GameSession.Instance?.ResetSession();
         TimerUI.ResetTimer();
-
-        // ④ 로비 모드 초기화
-        LobbyContext.Mode = LobbyMode.Offline;
 
         // ⑤ FullRunReset 시 스테이지 진행도 초기화
         if (options.Scope == TitleReturnScope.FullRunReset)
