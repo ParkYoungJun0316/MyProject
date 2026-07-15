@@ -22,8 +22,11 @@ using UnityEngine;
 public class MemoryPathIntroController : MonoBehaviour
 {
     [Header("카메라")]
-    [Tooltip("씬에 배치된 TopDownCamera. 탑다운 전환에 사용.")]
+    [Tooltip("비워두면 LocalPlayerCamera.Instance를 자동 사용 (C안 표준).")]
     [SerializeField] TopDownCamera topDownCamera;
+
+    /// <summary>Inspector 값 우선, 없으면 로컬 카메라 싱글턴 사용.</summary>
+    TopDownCamera ActiveCamera => topDownCamera != null ? topDownCamera : LocalPlayerCamera.Instance?.TopDownCam;
 
     [Tooltip("프리뷰 동안 카메라가 고정될 지점. 경로 발판들의 중앙에 배치.")]
     [SerializeField] Transform previewPivot;
@@ -109,11 +112,12 @@ public class MemoryPathIntroController : MonoBehaviour
         }
 
         // 2. 카메라 탑다운으로 전환 (pivot 고정)
-        if (topDownCamera != null && previewPivot != null)
-            topDownCamera.EnterPreviewView(previewPivot);
+        var cam = ActiveCamera;
+        if (cam != null && previewPivot != null)
+            cam.EnterPreviewView(previewPivot);
 
         // 3. 카메라 블렌드 + 리드인 대기
-        float blendTime = topDownCamera != null ? topDownCamera.PreviewBlendTime : 0f;
+        float blendTime = cam != null ? cam.PreviewBlendTime : 0f;
         yield return new WaitForSeconds(blendTime + cameraLeadInTime);
 
         // 4. 모든 경로 미리보기 동시 시작
@@ -136,7 +140,7 @@ public class MemoryPathIntroController : MonoBehaviour
             door?.Open();
 
         // 7. 카메라 게임플레이 시점 복귀
-        topDownCamera?.ExitPreviewView();
+        ActiveCamera?.ExitPreviewView();
 
         // 8. 스테이지 시작 (함정·목표 활성화)
         stageManager?.StartStage();

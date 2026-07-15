@@ -54,6 +54,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableWritePermission.Owner
     );
 
+    [SerializeField] LocalPlayerCamera _localCameraPrefab;
+
     private Player                  _player;
     private Rigidbody               _rb;
     private PlayerInput             _playerInput;
@@ -151,12 +153,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // 위치로 즉시 이동. OnNetworkSpawn() 내에서 위치를 확정해 (0,0,0) 스폰 문제를 방지.
         MoveToSpawnZone();
 
-        // TopDownCamera → 이 오브젝트를 follow 타겟으로 설정
-        if (!TryConnectCamera())
-        {
-            Debug.LogWarning("[NetworkPlayerSetup] TopDownCamera 미발견 — 코루틴으로 재시도");
-            StartCoroutine(ConnectCameraCoroutine());
-        }
+        // 로컬 카메라 생성 및 타겟 설정 (Owner 1회, DDOL)
+        LocalPlayerCamera.EnsureForOwner(_localCameraPrefab, transform, _player);
 
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
@@ -165,35 +163,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_cheerKeyword != null) _cheerKeyword.enabled = true;
 
         Debug.Log($"[NetworkPlayerSetup] Owner 설정 완료 — clientId={OwnerClientId}");
-    }
-
-    /// <summary>TopDownCamera를 찾아 follow 타겟으로 연결. 성공 시 true.</summary>
-    bool TryConnectCamera()
-    {
-        var cam = FindAnyObjectByType<TopDownCamera>();
-        if (cam == null) return false;
-        cam.target = transform;
-        if (_player != null) _player.followCamera = cam.GetComponent<Camera>();
-        Debug.Log($"[NetworkPlayerSetup] 카메라 연결 완료 — {cam.name} (clientId={OwnerClientId})");
-        return true;
-    }
-
-    /// <summary>
-    /// OnNetworkSpawn 시점에 TopDownCamera가 없을 경우(씬 타이밍)
-    /// 최대 30프레임 동안 매 프레임 재탐색.
-    /// </summary>
-    System.Collections.IEnumerator ConnectCameraCoroutine()
-    {
-        for (int i = 0; i < 30; i++)
-        {
-            yield return null;
-            if (TryConnectCamera())
-            {
-                Debug.Log($"[NetworkPlayerSetup] 카메라 재시도 성공 ({i + 1}프레임)");
-                yield break;
-            }
-        }
-        Debug.LogError("[NetworkPlayerSetup] 카메라 30프레임 내 연결 실패 — TopDownCamera 없음");
     }
 
     /// <summary>
@@ -298,10 +267,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
         _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
         _player?.Respawn();
-
-        // 씬 전환 후 새 TopDownCamera에 재연결 (destroyWithScene:false 유지 시 OnNetworkSpawn 미재실행)
-        if (!TryConnectCamera())
-            StartCoroutine(ConnectCameraCoroutine());
 
         EnablePhysics();
 

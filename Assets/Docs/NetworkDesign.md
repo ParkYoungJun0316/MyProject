@@ -135,14 +135,14 @@
 |---|------|------|
 | 0-1 | Vosk zip 정합 | `VoskModelLoader` 기대 zip ↔ `StreamingAssets` 실제 파일 일치 |
 | 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `hobak` — `CheerLexiconBuilder`·`CheerService`·`/cheer` 통일 |
-| 0-3 | AudioListener 중복 제거 | 스테이지·타이틀 씬당 **1개** (보통 `TopDownCamera` 자식) |
+| 0-3 | AudioListener | `LocalPlayerCamera` 프리팹에 1개. 씬 Main Camera 비활성 → 클라이언트당 1개 보장 |
 
 #### Phase 1 — 폴리시
 
 | # | 작업 | 비고 |
 |---|------|------|
 | 1 | 오디오 | SFX/BGM 볼륨, `SFXManager.masterVolume`, Listener 배치 |
-| 2 | 카메라 | **프리팹 X** — 씬 `TopDownCamera` 유지, Inspector 수치 튜닝 |
+| 2 | 카메라 | **C안 확정** — `LocalPlayerCamera` DDOL 프리팹. Owner 첫 스폰 시 1회 생성, 씬 Main Camera 비활성 |
 | 3 | DialogueUI | `M.Stage1` / `T.Stage1` 구역별 규칙·응원 설명 (`DialogueUI.cs`) |
 | 4 | End.Demo 꾸미기 | 클리어 연출, 타이틀 복귀, **Discord 피드백 버튼** |
 | 5 | 빌드 메타 | `Player Settings`: Product Name, Default Icon, `bundleVersion` (예: `0.1.0-demo`) |
@@ -497,7 +497,7 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 |------|----------------|
 | **이동** | **Owner** — `ClientNetworkTransform` (Owner Authority). 로컬 `Rigidbody` 이동 |
 | **키 입력** | **Owner** — 로컬 `PlayerInput`만 활성 |
-| **카메라** | **Owner** — `TopDownCamera`가 **로컬 플레이어만** follow |
+| **카메라** | **Owner** — `LocalPlayerCamera`(DDOL 프리팹) 1대. Owner 스폰 시 생성, target = Owner Transform. 씬 Main Camera 비활성 |
 | **애니메이션** | **Owner 연출** — 달리기 등 로컬. **맞음/사망 확정은 Host** (`ClientRpc`) |
 | **마우스 시점** | **본인만** |
 | **원격 플레이어 표시** | Owner 위치 복제 + 보간 |
