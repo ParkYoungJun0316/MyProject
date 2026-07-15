@@ -45,7 +45,7 @@ public class LobbySlotUI : MonoBehaviour
     [SerializeField] private TMP_Text       nameText;
 
     [Header("CheerName 편집 (로컬 슬롯 전용)")]
-    [Tooltip("CheerName 입력창. 로컬 슬롯에서만 표시. placeholder = 유효 이름, text = 커스텀값(빈칸=기본값).")]
+    [Tooltip("CheerName 입력창. 로컬 슬롯에서만 표시. placeholder는 인스펙터에서 설정. text = 커스텀값(빈칸=기본값).")]
     [SerializeField] private TMP_InputField cheerNameInput;
 
     [Tooltip("이름 거절 시 표시. 3초 후 자동 숨김.")]
@@ -96,6 +96,7 @@ public class LobbySlotUI : MonoBehaviour
     private bool       _inputListening     = false;
     private string     _confirmedCheerName = "";
     private Coroutine  _errorHideCoroutine = null;
+    private int        _pendingColorIndex  = -1;  // 서버 확인 전 클라이언트 선택값 (-1=없음)
 
     // 말풍선 — ColorIndex 4슬롯 미리 생성
     private Image[]    _heardDots;
@@ -161,9 +162,6 @@ public class LobbySlotUI : MonoBehaviour
             cheerNameInput.gameObject.SetActive(useInput);
             if (useInput)
             {
-                if (cheerNameInput.placeholder is TMP_Text ph)
-                    ph.text = effectiveName.ToUpper();
-
                 string custom = state.CheerName.ToString();
                 SetInputSilent(custom);
 
@@ -180,7 +178,12 @@ public class LobbySlotUI : MonoBehaviour
         if (characterDropdown != null)
         {
             characterDropdown.gameObject.SetActive(isLocalSlot);
-            if (isLocalSlot) { SetDropdownSilent(state.ColorIndex); SubscribeDropdown(); }
+            if (isLocalSlot)
+            {
+                SetDropdownSilent(state.ColorIndex);
+                characterDropdown.interactable = !state.IsReady;
+                SubscribeDropdown();
+            }
             else              { UnsubscribeDropdown(); }
         }
 
@@ -255,7 +258,7 @@ public class LobbySlotUI : MonoBehaviour
 
         if (_dotTimers[speakerColorIndex] != null)
             StopCoroutine(_dotTimers[speakerColorIndex]);
-        _dotTimers[speakerColorIndex] = StartCoroutine(HideHeardDotAfterDelay(speakerColorIndex, 3f));
+        _dotTimers[speakerColorIndex] = StartCoroutine(HideHeardDotAfterDelay(speakerColorIndex, 2f));
     }
 
     // ── 버튼 OnClick ──────────────────────────────────────────────
@@ -350,16 +353,27 @@ public class LobbySlotUI : MonoBehaviour
         if (!_dropdownListening || characterDropdown == null) return;
         characterDropdown.onValueChanged.RemoveListener(OnDropdownChanged);
         _dropdownListening = false;
+        _pendingColorIndex = -1;
     }
 
     void OnDropdownChanged(int index)
     {
+        _pendingColorIndex = index;
         LobbyNetworkManager.Instance?.SetColorServerRpc(index);
     }
 
     void SetDropdownSilent(int value)
     {
         if (characterDropdown == null) return;
+
+        if (_pendingColorIndex >= 0)
+        {
+            if (value == _pendingColorIndex)
+                _pendingColorIndex = -1;   // 서버가 확인 → pending 해제 후 정상 진행
+            else
+                return;                    // 서버 응답 전 스냅백 차단
+        }
+
         characterDropdown.onValueChanged.RemoveListener(OnDropdownChanged);
         characterDropdown.value = value;
         if (_dropdownListening)

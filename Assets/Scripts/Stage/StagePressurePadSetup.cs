@@ -75,8 +75,22 @@ public class StagePressurePadSetup : MonoBehaviour
             Debug.Log($"[StagePressurePadSetup] 시드 적용 — seed={NetworkSessionData.Seed}");
         }
 
-        DistributeColors();
-        ApplyTopologyScaling();
+        // PlayerSpawnCoordinator(NetworkList)가 SSOT — OnPlayersReady 시점에 레이스 없음.
+        // GameSession 경유를 없애고 activeColors를 한 번만 결정해 하위에 주입한다.
+        PlayerColorType[] activeColors = PlayerSpawnCoordinator.GetActiveColors();
+        if (activeColors.Length == 0)
+        {
+            activeColors = new[]
+            {
+                PlayerColorType.Blue, PlayerColorType.Purple,
+                PlayerColorType.Green, PlayerColorType.Yellow,
+            };
+            Debug.LogWarning("[StagePressurePadSetup] PlayerSpawnCoordinator 색 없음 — 4색 fallback");
+        }
+        Debug.Log($"[StagePressurePadSetup] activeColors({activeColors.Length}): {string.Join(", ", activeColors)}");
+
+        DistributeColors(activeColors);
+        ApplyTopologyScaling(activeColors.Length);
         SyncDoorVisuals();
         SyncPadVisuals();
         SyncPadCountUIs();
@@ -120,7 +134,7 @@ public class StagePressurePadSetup : MonoBehaviour
     /// designColor != Common인 패드에 활성 색을 균등 분배하고 effectiveColor를 설정한다.
     /// 같은 문에 묶인 패드끼리는 서로 다른 색이 배정되도록 보정한다.
     /// </summary>
-    void DistributeColors()
+    void DistributeColors(PlayerColorType[] activeColors)
     {
         // colored 패드 목록
         var coloredPads = new List<PressurePad>();
@@ -134,8 +148,8 @@ public class StagePressurePadSetup : MonoBehaviour
         coloredPads.Sort((a, b) =>
             string.Compare(a.gameObject.name, b.gameObject.name, System.StringComparison.Ordinal));
 
-        // 색 분배 + 셔플
-        PlayerColorType[] distributed = GameSessionColorDistribution.Distribute(coloredPads.Count);
+        // 색 분배 + 셔플 — activeColors를 직접 주입해 GameSession 경유를 없앤다
+        PlayerColorType[] distributed = GameSessionColorDistribution.Distribute(activeColors, coloredPads.Count);
         Shuffle(distributed);
 
         // 같은 문에 묶인 패드끼리 다른 색 강제
@@ -148,18 +162,11 @@ public class StagePressurePadSetup : MonoBehaviour
 
     /// <summary>
     /// 각 DoorPuzzleGroup의 ApplyScaling을 호출해 latch / requiredCount 를 스케일한다.
-    /// DistributeColors 이후에 실행하므로 Simultaneous 축소 시 effectiveColor가 덮어써질 수 있다.
+    /// activeCount는 ApplySeedAndColors()에서 PlayerSpawnCoordinator 기준으로 확정된 값을 받는다.
     /// </summary>
-    void ApplyTopologyScaling()
+    void ApplyTopologyScaling(int activeCount)
     {
         if (puzzleGroups == null || puzzleGroups.Length == 0) return;
-
-        // ActivePlayerCount는 Player 오브젝트 기반 → Start() 시점에 아직 스폰 전일 수 있음.
-        // GetActiveColors().Count는 씬 로드 전 LobbyNetworkManager.SyncActiveColorsClientRpc로
-        // 전 Client에 보장되므로 타이밍 문제 없음.
-        int activeCount = GameSession.Instance != null
-            ? GameSession.Instance.GetActiveColors().Count
-            : 4;
 
         foreach (DoorPuzzleGroup group in puzzleGroups)
             group?.ApplyScaling(activeCount);
@@ -281,8 +288,17 @@ public class StagePressurePadSetup : MonoBehaviour
     {
         Collect();
         BuildPadToDoorMap();
-        DistributeColors();
-        ApplyTopologyScaling();
+
+        PlayerColorType[] activeColors = PlayerSpawnCoordinator.GetActiveColors();
+        if (activeColors.Length == 0)
+            activeColors = new[]
+            {
+                PlayerColorType.Blue, PlayerColorType.Purple,
+                PlayerColorType.Green, PlayerColorType.Yellow,
+            };
+
+        DistributeColors(activeColors);
+        ApplyTopologyScaling(activeColors.Length);
         SyncDoorVisuals();
         SyncPadVisuals();
         SyncPadCountUIs();

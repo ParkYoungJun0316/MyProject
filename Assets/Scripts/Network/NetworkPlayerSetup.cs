@@ -96,6 +96,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (IsServer && _player != null)
             _hp.Value = _player.maxHeart;
 
+        // Client: NV 초기값은 OnValueChanged로 전달되지 않으므로 즉시 적용
+        if (!IsServer && _player != null)
+            _player.heart = _hp.Value;
+
         // Owner / 비오너 분기
         if (IsOwner)
         {
@@ -426,12 +430,14 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _player?.TakeDamageVisualOnly(knockback);
     }
 
-    /// <summary>오너 클라이언트에 사망을 확정.</summary>
+    /// <summary>오너 클라이언트에 사망을 확정. 비오너 클라이언트에는 UI 이벤트만 전달.</summary>
     [ClientRpc]
     void ForceKillClientRpc()
     {
-        if (!IsOwner) return;
-        _player?.ForceKill();
+        if (IsOwner)
+            _player?.ForceKill();
+        else
+            _events?.RaiseDied();
     }
 
     void OnHpChanged(int prev, int next)
@@ -442,7 +448,11 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // HP가 실제로 줄었을 때만 피격 이벤트 발행.
         // HP 증가(스폰·리스폰 회복)에서 Hit SFX·연출이 울리는 버그 방지.
         if (next > 0 && next < prev)
-            _player.GetComponent<PlayerEvents>()?.RaiseDamaged(false);
+            _events?.RaiseDamaged(false);
+        // 0 → 양수: 스테이지 리셋 후 HP 복구 = 리스폰 신호.
+        // Owner는 ResetStageClientRpc → Respawn()에서 이미 RaiseRespawned() 발화 — 중복 방지.
+        else if (prev == 0 && next > 0 && !IsOwner)
+            _events?.RaiseRespawned();
     }
 
     // ── 문 즉사 (Jammed 애니) ──────────────────────────────────────
@@ -459,12 +469,14 @@ public class NetworkPlayerSetup : NetworkBehaviour
         ForceInstantKillClientRpc();
     }
 
-    /// <summary>Owner에게 Jammed 애니 즉사 전달.</summary>
+    /// <summary>오너 클라이언트에 Jammed 즉사 전달. 비오너 클라이언트에는 UI 이벤트만 전달.</summary>
     [ClientRpc]
     void ForceInstantKillClientRpc()
     {
-        if (!IsOwner) return;
-        _player?.KillInstantly();
+        if (IsOwner)
+            _player?.KillInstantly();
+        else
+            _events?.RaiseDied();
     }
 
     // ── 응원 버프 동기화 ──────────────────────────────────────────

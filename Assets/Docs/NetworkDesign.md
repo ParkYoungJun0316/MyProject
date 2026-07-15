@@ -77,7 +77,7 @@
 - **사운드:** BGM 1~2 + 핵심 SFX
 - **파티클:** 피격·Break만 (선택)
 - **난이도:** “클리어 가능” 수준. 본격 밸런싱은 데모 후
-- **텔레메트리:** §0.5.1 — Steam 데모 전용, Google Sheets upsert (이탈·체류·사망·응원 거부 합계)
+- **피드백:** End.Demo **Discord 피드백 버튼** (수치 텔레메트리는 데모 범위 밖 → 정식 §0.5.1)
 
 #### 데모에서 **의도적으로 빼는 것** (버그·일정 방어)
 
@@ -85,6 +85,7 @@
 |------|------|
 | §12 재접속·유예·스냅샷·호스트 마이그레이션 | **미지원.** 인게임 이탈 = **방 종료**(전원 타이틀). 재접속 일절 없음 |
 | 원격 IP Join / UDP discovery | **미사용.** 개발=ParrelSync·localhost 빌드, 데모=**Steam** |
+| **텔레메트리** (§0.5.1) | **정식 Must.** 데모는 Discord 피드백·플레이테스트로 대체 (네트워크·데모 일정 방어) |
 | Tutorial 씬(조작 연습) | 정식 (CheerAndTutorialDesign.md §9) |
 | *(참고)* CheerName 로비 커스텀 + 불러보기 | **데모 Must** — `CheerAndTutorialDesign.md` §3.2 |
 | 관전(Spectator) 모드 | 내부 QA용. Discord 화면공유로 대체 |
@@ -98,6 +99,7 @@
 - **난이도 밸런싱** (데모 피드백)
 - **Tutorial** (연습·말해보기) + CheerName **발음 유사/G2P polish** (`CheerAndTutorialDesign.md` §3 — 로비 커스텀은 데모에 포함)
 - **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면
+- **텔레메트리:** §0.5.1 — Steam **정식** 빌드, Google Sheets upsert (이탈·체류·사망·응원 거부 합계)
 - **출시 QA** 체크리스트
 - (선택) Dissonance **Steam P2P** 음성 transport 분리
 
@@ -117,11 +119,11 @@
 0. 테스트 전 블로커 (Vosk, CheerName, AudioListener)
 1. 폴리시 (오디오, 카메라, DialogueUI, End.Demo, 빌드 메타)
 2. 로컬 테스트 (1인 → 2인 Dev Build → 스크린샷 1차)
-3. 텔레메트리 MVP (§0.5.1 — Sheet 선행) + Steamworks
+3. Steamworks (App ID · Transport · Lobby · Depot)
 4. Steam 테스트 (2인 Must → 4인 권장) → 스토어 → 데모 출시
 
-[데모 후]
-→ 별도 논의 (정식 출시 범위)
+[데모 후 — 정식]
+→ 텔레메트리 MVP (§0.5.1) + Tutorial · 밸런싱 · 옵션 UI 등 (§0.3 정식)
 ```
 
 ### 0.5 데모 출시 전 체크리스트 (실행 순서)
@@ -157,13 +159,13 @@
 | 9 | 버그 수정 | Phase 2 이슈 정리 |
 | 10 | 스크린샷 1차 | Steam 스토어 초안용 (§0.5.2) |
 
-#### Phase 3 — Steam + 텔레메트리
+#### Phase 3 — Steamworks
 
 | # | 작업 | 비고 |
 |---|------|------|
 | 11 | Steam App ID + Steamworks | Transport → Steam Networking, Lobby, Depot 파이프라인 |
-| 12 | 텔레메트리 MVP | §0.5.1 — **① Sheet·Apps Script → ② TelemetryService** — Steam 원격 테스트 **전** 전송 확인 |
-| 13 | 스토어 페이지 초안 | App ID 필요. 스크린샷·설명은 §0.5.2 참고 |
+| 12 | 스토어 페이지 초안 | App ID 필요. 스크린샷·설명은 §0.5.2 참고 |
+| — | *(제외)* 텔레메트리 | **정식 Must** — §0.5.1. 데모 Phase에서 구현·전송 **안 함** |
 
 #### Phase 4 — Steam 테스트 → 출시
 
@@ -176,14 +178,16 @@
 | 18 | 스크린샷 최종 + 스토어 마무리 | 실플레이·안정 빌드 기준 (§0.5.2) |
 | 19 | Steam 데모 출시 | Depot 업로드 |
 
-#### 0.5.1 텔레메트리 MVP (데모 Must)
+#### 0.5.1 텔레메트리 MVP (정식 Must · 데모 제외)
 
-> **구현 에이전트:** 이 절만 읽고 구현 가능. Steamworks **전**에 Sheet·Apps Script → `TelemetryService` 순.
+> **범위:** **정식 출시 Must.** 데모에서는 구현·전송하지 않음 (Discord 피드백·플레이테스트로 대체).  
+> **구현 에이전트:** 이 절만 읽고 구현 가능. 착수 시점 = **데모 출시 이후·정식 작업**.  
+> 순서: ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동 (Steamworks 데모 연동과 **독립** — 정식 Steam 빌드에서 전송).
 
 ##### 목적 · 시점
 
-- **목적:** Steam **공개 데모** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 스테이지 체류·사망, 응원 거부·채팅 **합계**.
-- **시점:** §0.5 Phase 4(Steam 원격 테스트) **전**에 켜야 초반 유저 데이터를 잃지 않음.
+- **목적:** Steam **정식** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 스테이지 체류·사망, 응원 거부·채팅 **합계**.
+- **시점:** **데모 출시 후** 정식 구간에서 구현. 정식 Steam 빌드·원격 QA **전**에 전송 경로를 켜 초반 정식 유저 데이터를 잃지 않음.
 - **구현 순서:** ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
 
 ##### 아키텍처
@@ -203,12 +207,13 @@
 | Unity **에디터** Play | ❌ |
 | **ParrelSync** (에디터 클론) | ❌ |
 | **Development Build** localhost | ❌ |
-| **Steam Depot 데모**, Steam 클라이언트로 실행 | ✅ |
+| **Steam Depot 데모** | ❌ (데모 범위 밖) |
+| **Steam Depot 정식**, Steam 클라이언트로 실행 | ✅ |
 
 **권장 게이트 (둘 다 만족 시 전송):**
 
 1. `#if !UNITY_EDITOR`
-2. Steamworks 초기화 성공 (`SteamAPI` 등 — Steam 연동 후). 연동 전 임시: Scripting Define `TELEMETRY_DEMO` + **Steam 빌드 파이프라인에서만** define.
+2. Steamworks 초기화 성공 (`SteamAPI` 등). 정식 빌드 파이프라인에서만 Scripting Define `TELEMETRY_RELEASE` (또는 동등한 출시 게이트).
 
 Inspector `enabled` 토글은 **로컬 디버그용**. 위 게이트가 **출시 판정** 기준.
 
@@ -316,7 +321,7 @@ public enum TelemetryRejectReason
 | `Application.quitting` | ✅ 가능한 범위 동기 전송 (보조) |
 
 **Apps Script upsert:** POST body JSON → `token` 검증 → `sessionId` 검색 → 있으면 **Update**, 없으면 **Append**.  
-Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 empty).
+Web App URL은 **Steam 정식 빌드 설정**에만 (에디터·데모 빌드 Inspector 기본 empty).
 
 실패 시 **1~2회 재시도** 후 포기 (영구 로컬 큐는 MVP 범위 밖).
 
@@ -348,13 +353,13 @@ Web App URL은 **Steam 데모 빌드 설정**에만 (에디터 Inspector 기본 
 1. Sheet 생성 → **헤더 1행** §컬럼 표와 **동일**하게 입력.
 2. **Apps Script** `doPost(e)`: JSON 파싱 → `token` 검증 → `sessionId` upsert.
 3. **Deploy → Web app** → URL 확보.
-4. Unity: `GoogleSheetsSink`에 URL + token (**Steam 데모 빌드** ScriptableObject 또는 `Resources` — 에디터 기본 empty).
+4. Unity: `GoogleSheetsSink`에 URL + token (**Steam 정식 빌드** ScriptableObject 또는 `Resources` — 에디터·데모 빌드 기본 empty).
 
 ##### MVP 완료 판정
 
-- [ ] Steam 데모 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
+- [ ] Steam **정식** 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
 - [ ] 멀티 Host: Client reject/chat 합산 **1행**에 반영.
-- [ ] 에디터 Play / Dev Build localhost: **행 추가 없음**.
+- [ ] 에디터 Play / Dev Build localhost / **데모 빌드**: **행 추가 없음**.
 - [ ] payload에 **금지 필드** 없음.
 
 #### 0.5.2 스크린샷
@@ -937,20 +942,20 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 7. **ParrelSync ①**
 8. **Development Build ②** — localhost **2인** (중간 게이트)
 9. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
-9.5. **텔레메트리** — §0.5.1 (Sheet → `TelemetryService`, Steam 원격 테스트 전)
 10. **Steamworks** — P2P transport, Lobby, Depot
 11. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Steam 데모 출시**
 12. `End.Demo` + 솔로 경로 + Should 항목 (여유분)
 
-### 16.2 데모 후
+### 16.2 데모 후 (정식)
 
 > 범위·일정은 데모 출시 후 별도 확정.
 
-1. 난이도 밸런싱 (데모 피드백)
-2. Tutorial (연습·말해보기) + CheerName 발음/G2P polish (로비 커스텀은 데모 §Cheer §3)
-3. UI 옵션 (볼륨·해상도)
-4. Steam Invite UX polish
-5. 출시 QA
+1. **텔레메트리** — §0.5.1 (Sheet → `TelemetryService`, 정식 Steam 빌드 전송)
+2. 난이도 밸런싱 (데모 피드백)
+3. Tutorial (연습·말해보기) + CheerName 발음/G2P polish (로비 커스텀은 데모 §Cheer §3)
+4. UI 옵션 (볼륨·해상도)
+5. Steam Invite UX polish
+6. 출시 QA
 
 ### 16.3 Post-Launch
 

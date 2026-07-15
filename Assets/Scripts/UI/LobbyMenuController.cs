@@ -113,9 +113,6 @@ public class LobbyMenuController : MonoBehaviour
 
     void OnDestroy()
     {
-        if (characterDropdown != null)
-            characterDropdown.onValueChanged.RemoveListener(OnCharacterChanged);
-
         UnsubscribeNetworkEvents();
 
         // 솔로 모드에서도 해제 (이중 해제는 무해함)
@@ -341,11 +338,10 @@ public class LobbyMenuController : MonoBehaviour
         Debug.Log("[LobbyMenuController] Steam 초대는 Post-MVP에서 지원합니다.");
     }
 
-    /// <summary>Dropdown OnValueChanged — 초상화 갱신 + 색 동기화.</summary>
+    /// <summary>Dropdown OnValueChanged — 초상화 갱신만 담당. RPC는 LobbySlotUI.OnDropdownChanged 단일 경로.</summary>
     public void OnCharacterChanged(int index)
     {
         RefreshPortrait(index);
-        LobbyNetworkManager.Instance?.SetColorServerRpc(index);
     }
 
     // ── UI 갱신 ───────────────────────────────────────────────────
@@ -403,6 +399,9 @@ public class LobbyMenuController : MonoBehaviour
 
         // 이름 변경 시 Vosk grammar 갱신
         RebuildLobbyGrammarIfNeeded();
+
+        // 로컬 플레이어의 실제 색 인덱스로 portraitImage 동기화
+        RefreshPortrait(GetLocalColorIndex());
     }
 
     void RefreshRoomCode()

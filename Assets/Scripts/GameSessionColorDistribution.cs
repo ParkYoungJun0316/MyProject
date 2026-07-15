@@ -25,11 +25,19 @@ public static class GameSessionColorDistribution
     };
 
     /// <summary>
-    /// GameSession.GetActiveColors()를 가져와 totalSlots칸에 균등 분배한 배열을 반환한다.
-    /// GameSession이 없으면 PlayableColors 4색으로 fallback.
+    /// 활성 색을 totalSlots칸에 균등 분배한 배열을 반환한다.
+    ///
+    /// 색 소스 우선순위:
+    ///  1. PlayerSpawnCoordinator.GetActiveColors() — NetworkList SSOT, 레이스 없음
+    ///  2. GameSession.GetActiveColors()            — Editor 직접 Play 등 PSC 없을 때 fallback
+    ///  3. PlayableColors 4색                       — 둘 다 없을 때 최종 fallback
     /// </summary>
     public static PlayerColorType[] Distribute(int totalSlots)
     {
+        PlayerColorType[] psColors = PlayerSpawnCoordinator.GetActiveColors();
+        if (psColors.Length > 0)
+            return Distribute(psColors, totalSlots);
+
         IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
             ? GameSession.Instance.GetActiveColors()
             : (IReadOnlyList<PlayerColorType>)PlayableColors;

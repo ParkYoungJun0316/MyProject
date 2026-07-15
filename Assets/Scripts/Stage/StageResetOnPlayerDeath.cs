@@ -1,21 +1,25 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// 플레이어 사망 시 씬 재로드를 StageNetworkState에 위임하는 오케스트레이터.
 /// 사망 → StageNetworkState.NotifyPlayerDeathServerRpc() → Host가 씬 전체 재로드.
 ///
+/// [Fix A 대응]
+/// ForceKillClientRpc 수정 이후 RaiseDied()가 모든 클라이언트에서 발화됨.
+/// 죽은 플레이어의 Owner 머신에서만 NotifyPlayerDeathServerRpc()를 전송해
+/// 중복 ServerRpc를 방지한다.
+/// 구독 핸들러를 플레이어별 람다로 저장 (Dictionary) → 정확한 언구독 보장.
+///
 /// [사용법]
 /// 씬에 빈 GameObject 추가 → 이 컴포넌트 부착. 설정 없음.
 /// </summary>
 public class StageResetOnPlayerDeath : MonoBehaviour
 {
-    // 이미 구독한 Player Set — 중복 구독 방지
-    readonly HashSet<Player> _subscribed = new();
+    // Player → 해당 플레이어의 OnDied 핸들러 (람다). Dictionary로 언구독 정확하게 처리.
+    readonly Dictionary<Player, System.Action> _subscribed = new();
     bool _resetPending;
-
-    // Player[] _players는 하위 호환을 위해 유지 (UnsubscribePlayers에서 사용)
-    Player[] _players;
 
     void Start()
     {
@@ -36,22 +40,27 @@ public class StageResetOnPlayerDeath : MonoBehaviour
         // 씬 내 모든 Player 보조 탐색 (네트워크 스폰 포함)
         var all = FindObjectsByType<Player>(FindObjectsSortMode.None);
         foreach (Player p in all) Subscribe(p);
-
-        // 레거시 배열 갱신 (UnsubscribePlayers에서 사용)
-        if (_subscribed.Count > 0)
-        {
-            _players = new Player[_subscribed.Count];
-            _subscribed.CopyTo(_players);
-        }
     }
 
     void Subscribe(Player p)
     {
-        if (p == null || _subscribed.Contains(p)) return;
+        if (p == null || _subscribed.ContainsKey(p)) return;
         PlayerEvents ev = p.GetComponent<PlayerEvents>();
         if (ev == null) return;
-        ev.OnDied += OnAnyPlayerDied;
-        _subscribed.Add(p);
+
+        // 람다에 플레이어 레퍼런스를 캡처해 Owner 여부를 판단한다.
+        // Fix A 이후 비Owner 머신에서도 RaiseDied()가 발화되므로,
+        // 죽은 플레이어의 Owner 머신에서만 ServerRpc를 전송해 중복을 방지한다.
+        Player captured = p;
+        System.Action handler = () =>
+        {
+            var net = captured.GetComponent<NetworkObject>();
+            if (net != null && !net.IsOwner) return;
+            OnAnyPlayerDied();
+        };
+
+        ev.OnDied += handler;
+        _subscribed[p] = handler;
         Debug.Log($"[StageResetOnPlayerDeath] 플레이어 구독: {p.name}");
     }
 
@@ -83,11 +92,11 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void UnsubscribePlayers()
     {
-        foreach (Player p in _subscribed)
+        foreach (var kvp in _subscribed)
         {
-            if (p == null) continue;
-            PlayerEvents ev = p.GetComponent<PlayerEvents>();
-            if (ev != null) ev.OnDied -= OnAnyPlayerDied;
+            if (kvp.Key == null) continue;
+            PlayerEvents ev = kvp.Key.GetComponent<PlayerEvents>();
+            if (ev != null) ev.OnDied -= kvp.Value;
         }
         _subscribed.Clear();
     }

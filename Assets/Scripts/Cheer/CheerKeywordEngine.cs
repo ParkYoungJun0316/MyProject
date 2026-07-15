@@ -69,7 +69,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     const float DissonanceWaitSec      = 5f;
     const float SoloMicWarmupSec       = 0.5f;
     const float SoloMicPositionWaitSec = 1f;
-    const float KeywordCooldown        = 2f;
+    const float KeywordCooldown        = 0.5f;
     const float NormNoiseFloor         = 0.0001f;
     const float NormMaxGain            = 20f;
     const int   PcmQueueMax            = 60;     // 큐 최대 청크 수 (~2초분)
@@ -622,6 +622,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     {
         if (_model == null) return;
         string newJson = CheerLexiconBuilder.BuildGrammarJson(names);
+        if (newJson == _workerNextGrammar) return;
         _workerNextModel   = _model;
         _workerNextGrammar = newJson;
         Interlocked.Exchange(ref _resetSignal, 1);
