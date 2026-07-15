@@ -43,15 +43,6 @@ public class GameSession : MonoBehaviour
              "에디터에서 M.Stage1 직접 Play할 때만 임시로 등록 가능.")]
     [SerializeField] private Player[] allPlayers;
 
-    // 정렬 기준 (로그·UI 표시용)
-    private static readonly PlayerColorType[] ColorOrder =
-    {
-        PlayerColorType.Blue,
-        PlayerColorType.Purple,
-        PlayerColorType.Green,
-        PlayerColorType.Yellow,
-    };
-
     // ── 런타임 상태 ───────────────────────────────────────────────
 
     private readonly List<Player>             _activePlayers  = new List<Player>();
@@ -61,10 +52,8 @@ public class GameSession : MonoBehaviour
     private readonly HashSet<string> _seenIntroKeys = new HashSet<string>();
 
     // 이번 판 확정 CheerName. 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
-    // 미설정 시 기본값(berry/guma/sook/hobak) 반환.
+    // 미설정 시 LobbyNetworkManager.DefaultCheerNames 기본값 반환.
     private string[] _sessionCheerNames;
-
-    static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
 
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
@@ -99,14 +88,25 @@ public class GameSession : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // DontDestroyOnLoad 씬이면 무시
         if (scene.name == "DontDestroyOnLoad") return;
 
-        // 활성 플레이어 참조가 유효하면 재수집 불필요
-        if (_activePlayers.Count > 0 && _activePlayers[0] != null) return;
+        // 스테이지 씬에서만 플레이어 재수집. 타이틀·로비는 플레이어 참조 불필요.
+        if (!scene.name.Contains("Stage")) return;
 
-        // 온라인: 색 목록만 즉시 갱신하고, 플레이어 목록은 스폰 완료 후 재수집
-        Apply(new Player[0]);
+        // Coordinator(DDOL)는 StartGameServerRpc에서 LoadScene보다 먼저 스폰되므로
+        // 씬 로드 시점에 이미 올바른 색 데이터를 보유한다 (NGO FIFO 보장).
+        // 즉시 읽어서 _activeColors를 확정 → Start()에서 IsColorActive()를 호출하는
+        // 모든 UI가 씬 로드 직후부터 올바른 값을 얻을 수 있다.
+        var coordColors = PlayerSpawnCoordinator.GetActiveColors();
+        if (coordColors.Length > 0)
+            SetActiveColors(coordColors);   // activeColorSlots + _activeColors 즉시 확정
+        else
+        {
+            _activePlayers.Clear();
+            _activeColors.Clear();
+        }
+
+        PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayersOnReady;
         PlayerSpawnCoordinator.OnPlayersReady += RefreshPlayersOnReady;
     }
 
@@ -114,9 +114,7 @@ public class GameSession : MonoBehaviour
     {
         PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayersOnReady;
 
-        // 이 콜백은 온라인 모드에서만 구독됨(OnSceneLoaded 참고).
-        // activeColorSlots는 로비 RPC로 채워진 "초기값"이라 레이스가 남아있을 수 있으므로,
-        // 스폰이 완전히 끝난 이 시점엔 PlayerSpawnCoordinator(NetworkList)에서 확정값을 다시 읽는다.
+        // OnPlayersReady 시점에 PlayerSpawnCoordinator(NetworkList)에서 확정 색을 읽어 재적용.
         var confirmedColors = PlayerSpawnCoordinator.GetActiveColors();
         SetActiveColors(confirmedColors.Length > 0 ? confirmedColors : activeColorSlots);
     }
@@ -150,17 +148,18 @@ public class GameSession : MonoBehaviour
         Debug.Log($"[GameSession] 세션 CheerName 적용: {string.Join(", ", names)}");
     }
 
-    /// <summary>colorIndex → 이번 판 CheerName. 세션 미설정 시 기본값.</summary>
+    /// <summary>colorIndex → 이번 판 CheerName. 세션 미설정 시 LobbyNetworkManager.DefaultCheerNames 기본값.</summary>
     public string GetSessionCheerName(int colorIndex)
     {
         if (_sessionCheerNames != null && colorIndex >= 0 && colorIndex < _sessionCheerNames.Length)
             return _sessionCheerNames[colorIndex];
-        if (colorIndex >= 0 && colorIndex < DefaultCheerNames.Length)
-            return DefaultCheerNames[colorIndex];
+        var defaults = LobbyNetworkManager.DefaultCheerNames;
+        if (colorIndex >= 0 && colorIndex < defaults.Length)
+            return defaults[colorIndex];
         return string.Empty;
     }
 
-    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 기본값. 미매칭 시 -1.</summary>
+    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 LobbyNetworkManager.DefaultCheerNames 기본값. 미매칭 시 -1.</summary>
     public int GetSessionColorIndex(string cheerName)
     {
         string lower = cheerName.Trim().ToLower();
@@ -169,7 +168,7 @@ public class GameSession : MonoBehaviour
             for (int i = 0; i < _sessionCheerNames.Length; i++)
                 if (_sessionCheerNames[i] == lower) return i;
         }
-        return System.Array.IndexOf(DefaultCheerNames, lower);
+        return System.Array.IndexOf(LobbyNetworkManager.DefaultCheerNames, lower);
     }
 
     // ── 인트로 대화 본 여부 ───────────────────────────────────────
@@ -249,9 +248,8 @@ public class GameSession : MonoBehaviour
 
     static int ColorIndex(PlayerColorType type)
     {
-        for (int i = 0; i < ColorOrder.Length; i++)
-            if (ColorOrder[i] == type) return i;
-        return int.MaxValue;
+        int i = LobbyNetworkManager.ColorTypeToIndex(type);
+        return i >= 0 ? i : int.MaxValue;
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

@@ -35,8 +35,16 @@ public class LobbyNetworkManager : NetworkBehaviour
         PlayerColorType.Yellow,
     };
 
-    // ColorIndex 순 기본 CheerName — CheerService.DefaultCheerNames 와 동일하게 유지
-    static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
+    /// <summary>PlayerColorType → ColorOrder 인덱스 변환. 미매칭 시 -1 반환.</summary>
+    public static int ColorTypeToIndex(PlayerColorType colorType)
+    {
+        for (int i = 0; i < ColorOrder.Length; i++)
+            if (ColorOrder[i] == colorType) return i;
+        return -1;
+    }
+
+    // ColorIndex 순 기본 CheerName — GameSession.GetSessionCheerName 등 전 시스템의 단일 소스.
+    public static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
 
     // 예약어 (Host 검증)
     static readonly string[] ReservedNames =
@@ -88,7 +96,7 @@ public class LobbyNetworkManager : NetworkBehaviour
             if (NetworkManagerSetup.Instance != null)
                 _sharedRoomCode.Value = NetworkManagerSetup.Instance.RoomCode;
 
-            // Host 자신을 Slot0에 추가
+            // Host 자신을 Slot0에 추가 → OnListChanged 발행 → OnSlotsChanged 1회 발행
             _slots.Add(new LobbyPlayerState
             {
                 ClientId   = NetworkManager.LocalClientId,
@@ -96,8 +104,11 @@ public class LobbyNetworkManager : NetworkBehaviour
                 IsReady    = false,
             });
         }
-
-        OnSlotsChanged?.Invoke();
+        else
+        {
+            // Client: 서버에서 리스트가 이미 동기화됐을 수 있으므로 초기 UI 갱신
+            OnSlotsChanged?.Invoke();
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -306,25 +317,23 @@ public class LobbyNetworkManager : NetworkBehaviour
         }
 
         // ── clientId → color 매핑 확정 ──────────────────────────────────
-        // NetworkSessionData : PlayerSpawnCoordinator.OnNetworkSpawn에서 1회 읽는 브릿지
-        // clientColorDict    : PlayerSpawnManager.InitializeOnline에 직접 전달 (재조회 없음)
-        NetworkSessionData.ClientColors.Clear();
         var clientColorDict = new Dictionary<ulong, PlayerColorType>(_slots.Count);
         var colorList       = new PlayerColorType[_slots.Count];
         for (int i = 0; i < _slots.Count; i++)
         {
-            ulong          id    = _slots[i].ClientId;
+            ulong           id    = _slots[i].ClientId;
             PlayerColorType color = ColorOrder[_slots[i].ColorIndex];
-            NetworkSessionData.ClientColors[id] = color;
-            clientColorDict[id]                 = color;
-            colorList[i]                        = color;
+            clientColorDict[id] = color;
+            colorList[i]        = color;
         }
 
         // ── PlayerSpawnCoordinator 스폰 (DontDestroyOnLoad NetworkObject) ──
-        // OnNetworkSpawn → PopulateClientColorsFromSession → 전 클라이언트 NetworkList 동기화
+        // PrepareColors → OnNetworkSpawn에서 NetworkList 채움 → 전 클라이언트 동기화
         if (coordinatorPrefab != null)
         {
-            var coordGo = Instantiate(coordinatorPrefab.gameObject);
+            var coordGo     = Instantiate(coordinatorPrefab.gameObject);
+            var coordinator = coordGo.GetComponent<PlayerSpawnCoordinator>();
+            coordinator.PrepareColors(clientColorDict);
             coordGo.GetComponent<NetworkObject>().Spawn(destroyWithScene: false);
         }
         else
@@ -347,13 +356,9 @@ public class LobbyNetworkManager : NetworkBehaviour
         NetworkSessionData.Seed = seed;
         BroadcastSeedClientRpc(seed);
 
-        // ── GameSession 활성 색 적용 ─────────────────────────────────────
+        // ── GameSession 활성 색 적용 (Host 로컬) ─────────────────────────
+        // Client는 OnPlayersReady 이후 PlayerSpawnCoordinator에서 확정값을 읽음
         GameSession.Instance?.SetActiveColors(colorList);
-
-        // 활성 색을 Client에도 동기화 (ColoredStartZone.Start() 선결 조건)
-        var colorIndices = new int[colorList.Length];
-        for (int i = 0; i < colorList.Length; i++) colorIndices[i] = (int)colorList[i];
-        SyncActiveColorsClientRpc(colorIndices);
 
         // ── 세션 CheerName 확정 후 전원에 배포 ──────────────────────────
         var sessionNames = new FixedString32Bytes[4];
@@ -431,32 +436,6 @@ public class LobbyNetworkManager : NetworkBehaviour
     {
         NetworkSessionData.Seed = seed;
         Debug.Log($"[LobbyNetworkManager] 세션 시드 수신: {seed}");
-    }
-
-    /// <summary>
-    /// 활성 색(PlayerColorType[])을 Client에 동기화하는 "초기값 힌트"용 RPC.
-    /// StartGameServerRpc → LoadScene 직전에 호출되므로
-    /// 씬 로드 시 ColoredStartZone.Start()에서 이 값을 우선 사용할 수 있음.
-    /// 단, RPC 도착이 씬 로드보다 늦을 수 있으므로 최종 확정은 항상
-    /// PlayerSpawnCoordinator(NetworkList)를 거친다 — 이 RPC는 clientId→color를
-    /// 저장/재구성하지 않는다(단일 소스 원칙, 죽은 코드 방지).
-    /// </summary>
-    [ClientRpc]
-    void SyncActiveColorsClientRpc(int[] colorIndices)
-    {
-        if (IsHost) return; // Host는 이미 적용됨
-
-        if (GameSession.Instance == null) return;
-
-        var colorList = new PlayerColorType[colorIndices.Length];
-        for (int i = 0; i < colorIndices.Length; i++)
-            colorList[i] = (PlayerColorType)colorIndices[i];
-
-        // 씬 로드 전 ColoredStartZone.Start()가 쓸 초기값일 뿐 — 확정값은
-        // PlayerSpawnCoordinator(NetworkList)가 스폰 시 별도로 보장한다(단일 소스 원칙).
-        GameSession.Instance.SetActiveColors(colorList);
-
-        Debug.Log($"[LobbyNetworkManager] Client 활성 색 동기화(초기값): {string.Join(", ", colorList)}");
     }
 
     /// <summary>

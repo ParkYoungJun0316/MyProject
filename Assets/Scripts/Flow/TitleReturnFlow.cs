@@ -10,11 +10,11 @@ using UnityEngine.SceneManagement;
 /// 자동 파괴되므로 이 클래스에서 별도 처리하지 않는다.
 ///
 /// [실행 순서]
-/// ① UI·입력 복원  (Cursor, timeScale, 채팅 플래그)
-/// ② 네트워크 종료 (NetworkManagerSetup.Shutdown)
-/// ③ 세션 초기화   (GameSession.ResetSession, TimerUI.ResetTimer)
-/// ④ 진행도 리셋   (FullRunReset 시만 — SceneFlowManager.ResetRunProgress)
-/// ⑤ ISessionResettable 구독자 알림
+/// ① UI·입력 복원       (Cursor, timeScale, 채팅 플래그)
+/// ② 네트워크 종료      (NetworkManagerSetup.Shutdown → NGO Shutdown, 플레이어 Despawn)
+/// ③ 세션 데이터 초기화 (GameSession.ResetSession, TimerUI.ResetTimer)
+/// ④ 진행도 리셋        (FullRunReset 시만 — SceneFlowManager.ResetRunProgress)
+/// ⑤ ISessionResettable 구독자 알림 (PlayerSpawnManager, LocalPlayerCamera 등)
 /// ⑥ LoadScene("0.Title")
 ///
 /// [배치 방법]
@@ -37,6 +37,15 @@ public class TitleReturnFlow : MonoBehaviour
     [SerializeField] private string titleSceneName = "0.Title";
 
     bool _isReturning;
+
+    void OnEnable()  => SceneManager.sceneLoaded += OnSceneLoaded;
+    void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == titleSceneName)
+            _isReturning = false;
+    }
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -106,18 +115,18 @@ public class TitleReturnFlow : MonoBehaviour
         GameSession.Instance?.ResetSession();
         TimerUI.ResetTimer();
 
-        // ⑤ FullRunReset 시 스테이지 진행도 초기화
+        // ④ FullRunReset 시 스테이지 진행도 초기화
         if (options.Scope == TitleReturnScope.FullRunReset)
             SceneFlowManager.Instance?.ResetRunProgress();
 
-        // ⑥ ISessionResettable 구독자 알림 (나중에 추가될 시스템용)
+        // ⑤ ISessionResettable 구독자 알림 (PlayerSpawnManager, LocalPlayerCamera 등)
         foreach (ISessionResettable r in _resettables)
             r.OnSessionReset(options.Scope);
 
-        // ⑦ 씬 전환 (이전 씬 오브젝트 전부 파괴)
+        // ⑥ 씬 전환 (LoadScene(Single) → 이전 씬 오브젝트 전부 파괴)
+        // _isReturning은 OnSceneLoaded(titleSceneName)에서 리셋 — LoadScene 직후 리셋 시
+        // NGO Shutdown 콜백이 다음 프레임에 지연 도착하면 이중 복귀 경로가 열리는 버그 방지.
         SceneManager.LoadScene(titleSceneName);
-
-        _isReturning = false;
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

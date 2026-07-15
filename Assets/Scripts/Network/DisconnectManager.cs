@@ -13,6 +13,10 @@ using UnityEngine;
 /// </summary>
 public class DisconnectManager : NetworkBehaviour
 {
+    // 자발적 퇴장 플래그 — OnClickLeaveRoom 호출 후 NGO 콜백 지연 도착으로
+    // OnClientLeft가 재진입해 NotifyAllReturnClientRpc + ReturnToTitle 이중 발행 방지.
+    bool _isQuitting;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     public override void OnNetworkSpawn()
@@ -29,6 +33,8 @@ public class DisconnectManager : NetworkBehaviour
 
     void OnClientLeft(ulong clientId)
     {
+        if (_isQuitting) return; // 자발적 퇴장 중 — 이미 처리됨
+
         bool isSelf = clientId == NetworkManager.LocalClientId
                    || !NetworkManager.IsListening;
 
@@ -58,6 +64,9 @@ public class DisconnectManager : NetworkBehaviour
     /// </summary>
     public void OnClickLeaveRoom()
     {
+        if (_isQuitting) return;
+        _isQuitting = true;
+
         if (IsHost)
             NotifyAllReturnClientRpc();
 

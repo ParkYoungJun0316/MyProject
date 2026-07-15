@@ -73,6 +73,7 @@ public class TeamStatusUI : MonoBehaviour
     {
         public Player           player;
         public PlayerBuffSystem buffSystem;
+        public PlayerEvents     events;
         public int              colorIndex;   // LobbyNetworkManager.ColorOrder 기준
         public Image            slotBg;
         public TextMeshProUGUI  nameText;
@@ -80,6 +81,12 @@ public class TeamStatusUI : MonoBehaviour
         public Dictionary<PlayerBuffSystem.BuffType, Image> buffIcons
             = new Dictionary<PlayerBuffSystem.BuffType, Image>();
         public GameObject cheeringPanel;     // "Cheering" 배경 패널 (자식에 텍스트 포함)
+
+        // BuildSlots 재호출 시 언구독용 (람다 캡처 해제 필수)
+        public System.Action<bool>             onDamaged;
+        public System.Action                   onDied;
+        public System.Action                   onRespawned;
+        public System.Action<PlayerColorType>  onColorTypeChanged;
     }
 
     readonly List<PlayerSlot> slots = new();
@@ -99,6 +106,7 @@ public class TeamStatusUI : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= BuildSlots;
+        UnsubscribeAllSlots();
         UnsubscribeCheerService();
     }
 
@@ -151,6 +159,11 @@ public class TeamStatusUI : MonoBehaviour
         if (excludePlayer == null)
             excludePlayer = FindLocalOwnerPlayer();
 
+        // 플레이어는 destroyWithScene:false(DDOL). 씬 리로드/BuildSlots 재호출 시
+        // UI만 Destroy하고 OnDied를 남기면 RaiseDied → destroyed Image 접근으로
+        // ForceKillClientRpc가 예외 중단 → Owner ForceKill/씬 리로드가 깨진다.
+        UnsubscribeAllSlots();
+
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
         slots.Clear();
@@ -172,6 +185,18 @@ public class TeamStatusUI : MonoBehaviour
         _myCheerersColorIndices.Clear();
         UnsubscribeCheerService();
         SubscribeCheerService();
+    }
+
+    void UnsubscribeAllSlots()
+    {
+        foreach (var slot in slots)
+        {
+            if (slot?.events == null) continue;
+            if (slot.onDamaged != null)         slot.events.OnDamaged          -= slot.onDamaged;
+            if (slot.onDied != null)            slot.events.OnDied             -= slot.onDied;
+            if (slot.onRespawned != null)       slot.events.OnRespawned        -= slot.onRespawned;
+            if (slot.onColorTypeChanged != null) slot.events.OnColorTypeChanged -= slot.onColorTypeChanged;
+        }
     }
 
     // ── CheerService 구독 ─────────────────────────────────────────
@@ -352,13 +377,17 @@ public class TeamStatusUI : MonoBehaviour
         slot.cheeringPanel = cheerBg;
 
         // ── PlayerEvents 구독 ─────────────────────────────────────
-        var events = player.GetComponent<PlayerEvents>();
-        if (events != null)
+        slot.events = player.GetComponent<PlayerEvents>();
+        if (slot.events != null)
         {
-            events.OnDamaged          += _ => RefreshSlot(slot);
-            events.OnDied             +=  () => SetDead(slot, true);
-            events.OnRespawned        +=  () => SetDead(slot, false);
-            events.OnColorTypeChanged += _ => RefreshSlot(slot);
+            slot.onDamaged         = _ => RefreshSlot(slot);
+            slot.onDied            = () => SetDead(slot, true);
+            slot.onRespawned       = () => SetDead(slot, false);
+            slot.onColorTypeChanged = _ => RefreshSlot(slot);
+            slot.events.OnDamaged          += slot.onDamaged;
+            slot.events.OnDied             += slot.onDied;
+            slot.events.OnRespawned        += slot.onRespawned;
+            slot.events.OnColorTypeChanged += slot.onColorTypeChanged;
         }
 
         RefreshSlot(slot);
@@ -370,6 +399,7 @@ public class TeamStatusUI : MonoBehaviour
     void RefreshSlot(PlayerSlot slot)
     {
         if (slot == null || slot.player == null) return;
+        if (slot.slotBg == null) return; // Destroy된 슬롯 잔존 핸들러 방어
 
         slot.colorIndex = ResolveColorIndex(slot.player);
         if (slot.nameText != null)
@@ -386,9 +416,10 @@ public class TeamStatusUI : MonoBehaviour
 
     void SetDead(PlayerSlot slot, bool isDead)
     {
-        if (slot == null) return;
-        slot.slotBg.color   = isDead ? deadBgColor  : slotBgColor;
-        slot.nameText.color = isDead ? deadTextColor : Color.white;
+        if (slot == null || slot.slotBg == null) return;
+        slot.slotBg.color = isDead ? deadBgColor : slotBgColor;
+        if (slot.nameText != null)
+            slot.nameText.color = isDead ? deadTextColor : Color.white;
 
         if (isDead && slot.heartImages != null)
             foreach (var h in slot.heartImages)
@@ -405,7 +436,10 @@ public class TeamStatusUI : MonoBehaviour
         {
             if (slot?.buffSystem == null) continue;
             foreach (var kv in slot.buffIcons)
+            {
+                if (kv.Value == null) continue;
                 kv.Value.gameObject.SetActive(slot.buffSystem.IsActive(kv.Key));
+            }
         }
     }
 }

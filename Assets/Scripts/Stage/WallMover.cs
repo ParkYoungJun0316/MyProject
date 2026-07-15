@@ -152,22 +152,20 @@ public class WallMover : MonoBehaviour
     {
         if (moveAtSeconds == null || moveAtSeconds.Length == 0) yield break;
 
-        var  nm       = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
+        var nm = NetworkManager.Singleton;
 
-        // ── 기준 시각 결정 (ArrowTrap 패턴) ─────────────────────────────
-        // 온라인: StageStartServerTime 기준 → Host/Client 동일 타이밍 보장
-        // 오프라인: StartSchedule()이 설정한 Time.time 기준 유지
-        if (isOnline && StageNetworkState.Instance != null
+        // ── 기준 시각 결정 ─────────────────────────────────────────────
+        // StageStartServerTime 기준 → Host/Client 동일 타이밍 보장
+        if (StageNetworkState.Instance != null
                      && StageNetworkState.Instance.StageStartServerTime > 0)
         {
             _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
             while ((float)nm.ServerTime.Time < _scheduleStartTime)
                 yield return null;
         }
-        else if (isOnline)
+        else
         {
-            _scheduleStartTime = (float)nm.ServerTime.Time;
+            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : _scheduleStartTime;
         }
         float cycleOffset = 0f;
 
@@ -177,13 +175,12 @@ public class WallMover : MonoBehaviour
             {
                 float targetTime = _scheduleStartTime + cycleOffset + t;
 
-            if (isOnline)
-            {
+                if (ScheduleTimeUtil.IsPastEvent(targetTime, nm)) continue;
+
                 while ((float)nm.ServerTime.Time < targetTime)
                     yield return null;
-            }
 
-            Activate();
+                Activate();
             }
 
             cycleOffset += schedulePeriod;

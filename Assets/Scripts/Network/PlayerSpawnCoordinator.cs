@@ -6,7 +6,10 @@ using UnityEngine;
 /// <summary>
 /// 플레이어 스폰 완료 신호를 씬 내 모든 구독자에게 1회 전달하는 코디네이터이자,
 /// clientId → 색 매핑의 <b>단일 진실 공급원(Single Source of Truth)</b>.
-/// M.Stage1 · T.Stage1 씬 내 빈 GameObject에 NetworkObject + 이 컴포넌트를 추가.
+///
+/// [배치] 씬에 직접 두지 않는다.
+/// LobbyNetworkManager.StartGameServerRpc()에서 coordinatorPrefab을 destroyWithScene:false로 스폰.
+/// 이후 씬 리로드(사망)에도 같은 오브젝트가 유지되어 _clientColors NetworkList를 재사용한다.
 ///
 /// [흐름 — 온라인]
 /// LoadEventCompleted → PlayerSpawnManager.SpawnAllPlayers()
@@ -26,13 +29,12 @@ using UnityEngine;
 /// 씬이 리로드되면 새 Coordinator 인스턴스가 Awake에서 Instance를 덮어씀.
 ///
 /// [clientId → 색 데이터 흐름 — 단일 소스 원칙]
-/// NetworkSessionData.ClientColors(static Dictionary)는 로비→스테이지 전환 시
-/// 딱 1번 쓰이는 "브릿지 입력값"일 뿐이다(LobbyNetworkManager.StartGameServerRpc가
-/// 씬 로드 직전 서버에서만 채움). 실제 런타임 조회는 전부 이 클래스의 NetworkList를
-/// 거쳐야 한다 — NetworkList는 이 오브젝트가 스폰될 때 초기값이 함께 복제되므로
-/// OnNetworkSpawn 이후 어디서 읽어도(서버든 클라이언트든) 레이스가 없다.
+/// LobbyNetworkManager.StartGameServerRpc()가 PrepareColors(dict)로 초기 색 매핑을 예약하면
+/// OnNetworkSpawn에서 NetworkList에 기록되어 스폰 메시지와 함께 전 클라이언트에 복제된다.
+/// 이후 런타임 조회는 전부 이 클래스의 NetworkList를 거쳐야 한다 — OnNetworkSpawn 이후
+/// 어디서 읽어도(서버든 클라이언트든) 레이스가 없다.
 /// 서버 코드(CheerService, PlayerSpawnManager 등)도 예외 없이 TryGetColor/GetAllEntries를
-/// 통해서만 색을 조회한다 — "어느 게 진짜 소스인지" 코드마다 다르게 보이는 문제를 없앤다.
+/// 통해서만 색을 조회한다.
 /// </summary>
 public class PlayerSpawnCoordinator : NetworkBehaviour
 {
@@ -69,16 +71,32 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
     // NetworkList는 Awake 전에 초기화해야 함 (필드 초기화 or Awake)
     readonly NetworkList<ClientColorEntry> _clientColors = new();
 
+    // Spawn() 전에 PrepareColors()로 설정 → OnNetworkSpawn에서 NetworkList에 기록
+    System.Collections.Generic.Dictionary<ulong, PlayerColorType> _initColors;
+
     void Awake()
     {
         Instance = this;
     }
 
+    /// <summary>
+    /// Host: Spawn() 직전에 호출해 초기 색 매핑을 예약.
+    /// OnNetworkSpawn에서 NetworkList에 기록되어 전 클라이언트에 스폰 메시지와 함께 복제된다.
+    /// </summary>
+    public void PrepareColors(System.Collections.Generic.Dictionary<ulong, PlayerColorType> dict)
+    {
+        _initColors = dict;
+    }
+
     public override void OnNetworkSpawn()
     {
-        // 서버(Host): NetworkSessionData.ClientColors(항상 신뢰 가능한 서버 측 원본)를
-        // NetworkList에 옮겨 담아 전 클라이언트에 스폰과 동시에 복제한다.
-        if (IsServer) PopulateClientColorsFromSession();
+        if (IsServer && _initColors != null)
+        {
+            _clientColors.Clear();
+            foreach (var kv in _initColors)
+                _clientColors.Add(new ClientColorEntry { ClientId = kv.Key, Color = kv.Value });
+            _initColors = null;
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -92,13 +110,6 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
         base.OnDestroy();
         IsReady = false;
         if (Instance == this) Instance = null;
-    }
-
-    void PopulateClientColorsFromSession()
-    {
-        _clientColors.Clear();
-        foreach (var kv in NetworkSessionData.ClientColors)
-            _clientColors.Add(new ClientColorEntry { ClientId = kv.Key, Color = kv.Value });
     }
 
     // ── 공개 조회 API (레이스 없음 — OnNetworkSpawn 이후 항상 최신값) ──

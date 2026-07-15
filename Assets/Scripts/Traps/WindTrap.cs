@@ -134,13 +134,11 @@ public class WindTrap : TrapBase
             yield break;
         }
 
-        var  nm       = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
+        var nm = NetworkManager.Singleton;
 
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
-        // 온라인: StageStartServerTime(활성화 시각 기준) → Host/Client 동일한 절대 기준점
-        // 오프라인: 기존 방식 (Time.time)
-        if (isOnline && StageNetworkState.Instance != null
+        // StageStartServerTime 기준 → Host/Client 동일한 절대 기준점
+        if (StageNetworkState.Instance != null
                      && StageNetworkState.Instance.StageStartServerTime > 0)
         {
             _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
@@ -149,7 +147,7 @@ public class WindTrap : TrapBase
         }
         else
         {
-            _scheduleStartTime = isOnline ? (float)nm.ServerTime.Time : Time.time;
+            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
             if (initialDelay > 0f)
                 yield return new WaitForSeconds(initialDelay);
         }
@@ -163,7 +161,8 @@ public class WindTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = _scheduleStartTime + cycleOffset + t;
-                float now        = nm != null ? (float)nm.ServerTime.Time : Time.time;
+                if (ScheduleTimeUtil.IsPastEvent(targetTime, nm)) continue;
+                float now        = nm != null ? (float)nm.ServerTime.Time : 0f;
                 float waitTime   = targetTime - now;
 
                 if (waitTime > 0f)

@@ -26,8 +26,20 @@ alwaysApply: true
   - Mic: Dissonance owns capture in multi; **no double** `Microphone.Start`  
   - Do not stuff Cheer/Vosk into `Player` / random UI; extend `CheerKeywordEngine` / `CheerService` (ask before new entry points)
 
+## Online-only (permanent lock)
+
+- **Offline / solo-offline mode does not exist.** Solo 1-player uses `OnlineHost` (NGO). Any code, comment, or branch that references "offline", "isOnline == false", or "solo offline" must be **deleted**, not kept dormant.
+- `LobbyContext.IsOnline` is always `true` — keep as constant, remove dead branches.
+- Every gameplay feature is designed for 1–4 player **online** sessions. No parallel offline path.
+
+## Scope lock (permanent)
+
+- Work targets **full release**, not just demo. Do not scope-limit fixes or features to demo-only.
+- Demo and release share the same codebase — no demo-fork logic.
+
 ## Don't
 
 - Don't add reconnect / late-join / host-migration designs (unsupported)
 - Don't create duplicate damage pipelines alongside `NetworkDamageUtil`
 - Don't run Vosk `AcceptWaveform` on the main thread
+- Don't add offline fallback branches — NGO is always running (solo = Host 1-player)

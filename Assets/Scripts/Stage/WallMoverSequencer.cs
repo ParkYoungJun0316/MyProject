@@ -62,6 +62,16 @@ public class WallMoverSequencer : NetworkBehaviour
     bool _isRunning;
     bool _hasActivated;
 
+    // ── 라이프사이클 ─────────────────────────────────────────────
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        // 씬 리로드 시 모든 관리 벽을 시작 위치로 강제 복귀.
+        // _hasActivated는 새 인스턴스 기본값(false)이므로 ResetAll이 건드리지 않아도 무관.
+        ResetAll();
+    }
+
     // ── 외부 호출 ────────────────────────────────────────────────
 
     /// <summary>시퀀스 시작. 온라인에서는 Host에서만 유효. 이미 실행 중이면 무시.</summary>
@@ -70,20 +80,15 @@ public class WallMoverSequencer : NetworkBehaviour
         if (_isRunning) return;
         if (activateOnce && _hasActivated) return;
 
-        var  nm       = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
-
-        // 온라인: Host만 시작 가능 (Client는 ClientRpc로 수신)
-        if (isOnline && !nm.IsServer) return;
+        var nm = NetworkManager.Singleton;
+        // Host만 시작 가능 (Client는 ClientRpc로 수신)
+        if (nm == null || !nm.IsServer) return;
 
         _hasActivated = true;
 
-        if (isOnline)
-        {
-            double startTime = nm.ServerTime.Time;
-            StartSequenceClientRpc(startTime);
-            StartCoroutine(SequenceRoutine(startTime, useServerTime: true));
-        }
+        double startTime = nm.ServerTime.Time;
+        StartSequenceClientRpc(startTime);
+        StartCoroutine(SequenceRoutine(startTime, useServerTime: true));
     }
 
     /// <summary>모든 벽을 시작 위치로 리셋하고 재사용 가능 상태로 복귀.</summary>
@@ -106,11 +111,9 @@ public class WallMoverSequencer : NetworkBehaviour
     {
         if (!activateOnPlayerTrigger) return;
 
-        var  nm       = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
-
-        // 온라인: Host만 처리. Client 트리거 무시.
-        if (isOnline && !nm.IsServer) return;
+        var nm = NetworkManager.Singleton;
+        // Host만 처리. Client 트리거 무시.
+        if (nm == null || !nm.IsServer) return;
 
         Player player = other.GetComponentInParent<Player>();
         if (player == null || player.IsDead) return;

@@ -85,17 +85,16 @@ public class StageStartGate : MonoBehaviour
     {
         if (!_isArmed) return;
 
-        var  nm       = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
+        var nm = NetworkManager.Singleton;
 
         // ── Client: ServerTime 기반 카운트다운 표시 ───────────────
-        if (isOnline && !nm.IsServer)
+        if (nm != null && !nm.IsServer)
         {
             UpdateCountdownOnClient(nm);
             return;
         }
 
-        // ── Host / 오프라인: 기존 카운트다운 로직 ────────────────
+        // ── Host: 카운트다운 로직 ─────────────────────────────────
         if (!AllZonesOccupied())
         {
             if (_isCounting) ResetCountdown();
@@ -109,7 +108,7 @@ public class StageStartGate : MonoBehaviour
             _countdown  = countdownDuration;
             SetZoneCountdownVisual(true);
             OnCountdownTick?.Invoke(_countdown);
-            if (isOnline) StageNetworkState.Instance?.MarkCountdownStart();
+            StageNetworkState.Instance?.MarkCountdownStart();
         }
 
         _countdown -= Time.deltaTime;

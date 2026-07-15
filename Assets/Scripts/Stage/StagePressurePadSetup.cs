@@ -68,12 +68,9 @@ public class StagePressurePadSetup : MonoBehaviour
 
     void ApplySeedAndColors()
     {
-        if (LobbyContext.IsOnline)
-        {
-            const int salt = 0x050AD5E7;
-            UnityEngine.Random.InitState(NetworkSessionData.Seed ^ salt);
-            Debug.Log($"[StagePressurePadSetup] 시드 적용 — seed={NetworkSessionData.Seed}");
-        }
+        const int salt = 0x050AD5E7;
+        UnityEngine.Random.InitState(NetworkSessionData.Seed ^ salt);
+        Debug.Log($"[StagePressurePadSetup] 시드 적용 — seed={NetworkSessionData.Seed}");
 
         // PlayerSpawnCoordinator(NetworkList)가 SSOT — OnPlayersReady 시점에 레이스 없음.
         // GameSession 경유를 없애고 activeColors를 한 번만 결정해 하위에 주입한다.

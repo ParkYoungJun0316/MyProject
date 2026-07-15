@@ -103,13 +103,11 @@ public class DropTrap : TrapBase
 
     protected override System.Collections.IEnumerator TrapLoop()
     {
-        var  nm       = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
+        var nm = NetworkManager.Singleton;
 
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
-        // 온라인: StageStartServerTime(활성화 시각 기준) → Host/Client 동일한 절대 기준점
-        // 오프라인: 기존 방식 (Time.time)
-        if (isOnline && StageNetworkState.Instance != null
+        // StageStartServerTime 기준 → Host/Client 동일한 절대 기준점
+        if (StageNetworkState.Instance != null
                      && StageNetworkState.Instance.StageStartServerTime > 0)
         {
             _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
@@ -163,6 +161,7 @@ public class DropTrap : TrapBase
                 if (!isRunning) yield break;
 
                 float targetTime = _scheduleStartTime + cycleOffset + t;
+                if (ScheduleTimeUtil.IsPastEvent(targetTime, nm)) continue;
                 float now        = nm != null ? (float)nm.ServerTime.Time : Time.time;
                 float waitTime   = Mathf.Max(0f, targetTime - now - preFireChargeTime);
                 yield return new WaitForSeconds(waitTime);

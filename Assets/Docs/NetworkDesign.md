@@ -468,14 +468,14 @@ Web App URL은 **Steam 정식 빌드 설정**에만 (에디터·데모 빌드 In
 | 규칙 | 내용 |
 |------|------|
 | 인원 | **1~4인 가변** (빈 슬롯 허용. 2인이면 2슬롯만 사용 가능) |
-| Ready | **접속한 인원 전원** Ready |
+| Ready | **클라이언트 전원** Ready. **호스트는 Ready 불필요** (Start 조건에서 제외) |
 | Ready 취소 | 가능 |
-| Start | **호스트만**, 전원 Ready + **4색 중복 없음** |
-| 캐릭터 | **선착순** 점유, **Ready 후 변경 불가** |
+| Start | **호스트만**. 클라이언트 전원 Ready + **4색 중복 없음** + **CheerName 중복 없음** |
+| 캐릭터 | 자유 선택 (중복 허용). **Start 시 색·CheerName 중복 없어야 활성화**. **Ready 후 변경 불가** |
 | 빈 슬롯 UI | `Empty` |
 | Kick (**로비 전용**) | **호스트만**, Ready 전/후 모두. **즉시 해당 슬롯만 비움** — **방은 유지**, 남은 인원 계속 Ready |
 | (참고) 인게임 이탈 | 로비 Start **이후** 누구든 끊기면 §12 — **방 전체 종료**. 로비 Kick과 다름 |
-| 호스트 | 드롭다운으로 캐릭터 선택 |
+| 호스트 | Host는 readyRoot 숨김. 드롭다운으로 캐릭터·색 자유 선택 |
 
 ---
 
@@ -658,6 +658,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 | 즉사 (문 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
+| 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
 
 **솔로 (NGO Host 1인):**
 
@@ -679,7 +680,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 | `NetworkDamageUtil.ApplyDamageWithOwnerReport` | 삭제. 호출처 → `ApplyDamage` |
 | `NetworkPlayerSetup.ReportHitServerRpc` | 삭제 |
 | `NetworkPlayerSetup.ReportInstantKillServerRpc` | 삭제. `ApplyInstantKill` → 서버 직접만 |
-| `NetworkPlayerSetup.ReportFallDeathServerRpc` | 삭제. 낙사 Host `Update`/서버 루프 |
+| `NetworkPlayerSetup.ReportFallDeathServerRpc` | ~~삭제~~ → **낙사 한정 복원 (2026-07-16).** Owner+CNT에서 Host 비오너 프록시가 바닥 콜라이더에 걸려 void 낙하를 못 보는 문제 → Owner 실좌표 Y 신고 → Host `ApplyFallDeathFromServer` 확정. **HP write는 여전히 Host만.** 피격·즉사 신고 RPC 복원은 계속 금지 |
 | `ClientNetworkTransform` | **유지 (확정).** Owner 이동. 제거·Host NT 교체 **금지** |
 | 함정/스크립트의 `Player.TakeDamage` / `TryTakeDamage` (온라인) | `NetworkDamageUtil` 로 교체 |
 | `Breakable`의 `ApplyDamageFromServer` 직접 호출 | util 경유 또는 Host 전용 래퍼로 통일 |
@@ -701,7 +702,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 | 3 | 함정 → `ApplyDamage` + 서버 가드 | `ContactDamage`, `SpikeTrap` 등 **본체** 함정. `TrapProjectile`은 §9.0.1 |
 | 3b | 발사체 §9.0.1 | `ArrowTrap` / `TrapProjectile` — velocity Rpc, Client 비행, 피격 ServerRpc, Host 검증·데미지·Despawn |
 | 4 | 문 즉사 | `DoorController.cs` — `ApplyInstantKill` 유지, 서버 충돌만 |
-| 5 | 낙사 | `Player.cs` — Owner Y 체크 + RPC 제거 → **Host**가 전 플레이어 Y 판정 (`NetworkPlayerSetup` 또는 서버 전용 컴포넌트) |
+| 5 | 낙사 | `Player.cs` — Owner Y 1회 신고 `ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y는 폴백 유지 (2026-07-16: Host 단독 Y 판정은 Client void 낙사를 놓쳐 폐기) |
 | 6 | 깨진 경로 수정 | `Stage5ChaserHitbox.cs` → `ApplyDamage` + 피격 시 `_chaser.NotifyHitFromHitbox()` (서버에서) |
 | 7 | Breakable | `Breakable.cs` — `ApplyDamageFromServer` 직접 호출 → util/Host 규칙 통일 |
 | 8 | 이미 Host 경로 (확인만) | `Enemy.cs`, `EnemyHitbox.cs`, `OXQuizManager.cs`, `Player.OnTriggerEnter`(EnemyBullet) |
@@ -711,7 +712,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 
 #### 9A.5.2 Phase 1 완료 판정
 
-- [ ] `grep ApplyDamageWithOwnerReport` / `ReportHitServerRpc` / `ReportInstantKillServerRpc` / `ReportFallDeathServerRpc` — **프로젝트 0건**
+- [ ] `grep ApplyDamageWithOwnerReport` / `ReportHitServerRpc` / `ReportInstantKillServerRpc` — **프로젝트 0건** (`ReportFallDeathServerRpc`는 낙사 한정 허용 — §9A.3)
 - [ ] ParrelSync **2인**: 화살·가시·ContactDamage·문즉사·낙사·Enemy·Chaser 각 **1회 이상** — HP·리로드 정상
 - [ ] Host·Client **동일 HP** (`heart` UI = `_hp`). 이중 데미지 없음
 
@@ -868,6 +869,8 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 - 멀티에서도 **`StageResetOnPlayerDeath`**: **1명 사망 = 전원 씬 리로드**.
 - 리로드 후: 존 위 재스폰, `StageStartGate` 재진행, **새 시드**로 퍼즐 재배치.
+- 낙사 확정: **Owner** Y 신고 (`ReportFallDeathServerRpc`) → **Host** HP 0 확정 (§9A.3). Host 단독 Y 판정은 Client void 낙사를 놓치므로 사용하지 않음.
+- 리로드 리셋: `ResetForNewStage` → `ResetStageClientRpc` — 색 NV write는 **Owner만**, `Respawn`(위치·Idle·`RaiseRespawned`)은 **전원 로컬 적용**. 플레이어는 `destroyWithScene: false`(DDOL)라 비오너도 로컬 Respawn 없이는 doDie 포즈가 리로드를 넘어 잔존 (2026-07-16 수정).
 
 ---
 

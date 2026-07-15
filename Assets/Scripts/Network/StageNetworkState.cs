@@ -51,6 +51,9 @@ public class StageNetworkState : NetworkBehaviour
 
     private bool _resetPending;
 
+    // Client-side 캐시 — SyncSurvivalRemainingClientRpc 매 틱 Find 방지
+    private SurviveTimeObjective _surviveObjective;
+
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
     public int    CurrentPhase            => _currentPhase.Value;
@@ -69,6 +72,7 @@ public class StageNetworkState : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         _currentPhase.OnValueChanged += OnPhaseChanged;
+        _surviveObjective = FindFirstObjectByType<SurviveTimeObjective>();
     }
 
     public override void OnNetworkDespawn()
@@ -143,7 +147,7 @@ public class StageNetworkState : NetworkBehaviour
     public void SyncSurvivalRemainingClientRpc(float remaining)
     {
         if (IsServer) return;
-        FindFirstObjectByType<SurviveTimeObjective>()?.NotifyRemainingTime(remaining);
+        _surviveObjective?.NotifyRemainingTime(remaining);
     }
 
     // ── 시간 동기화 (NetworkTime 기반) ───────────────────────────

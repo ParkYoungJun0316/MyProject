@@ -30,9 +30,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     [Tooltip("isBlack = false일 때 적용되는 색")]
     public Color whiteColor = Color.white;
 
-    [Header("Respawn")]
-    public float respawnDelay = 0f;
-
     [Header("즉사 판정")]
     [Tooltip("이 수치 이상의 데미지를 받으면 Jammed 애니메이션 재생. 0이면 비활성")]
     public int instantKillThreshold = 0;
@@ -80,6 +77,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     bool bwDown, altDown;
 
     // 낙사 Fall 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
+    // Owner→Host 낙사 신고 1회 가드 (ReportFallDeathServerRpc 스팸 방지)
+    bool fallDeathReported;
     bool fallAnimTriggered = false;
     // 즉사 판정 시 Die()에서 doJammed 재생 여부 결정
     bool isInstantKill = false;
@@ -137,7 +136,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void Update()
     {
-        // Fall 애니: Owner 로컬 재생. 사망 판정: Host(NetworkPlayerSetup.Update)가 Y 체크 후 확정.
+        // Fall 애니: Owner 로컬. 낙사 확정: Owner Y → ReportFallDeathServerRpc → Host ApplyFallDeath.
+        // (Host-only Y는 Owner+CNT void에서 Client를 놓칠 수 있음 — Host Update는 Host-as-Owner 폴백)
         if (!IsDead && enableFallDeath && isOwnerControlled)
         {
             float y = transform.position.y;
@@ -148,6 +148,16 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
                 moveInput = Vector2.zero;
                 anim?.SetTrigger("doFall");
                 events?.RaiseFallDeath();
+            }
+
+            if (!fallDeathReported && y < fallDeathY)
+            {
+                var nm = NetworkManager.Singleton;
+                if (nm != null && nm.IsListening)
+                {
+                    fallDeathReported = true;
+                    GetComponent<NetworkPlayerSetup>()?.ReportFallDeathServerRpc();
+                }
             }
         }
 
@@ -336,20 +346,12 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (other.CompareTag("EnemyBullet"))
         {
             var nm = NetworkManager.Singleton;
-            bool isOnline = nm != null && nm.IsListening;
-
-            if (!isOnline || nm.IsServer)
+            // Host만 데미지 확정. Despawn은 NGO가 담당.
+            if (nm != null && nm.IsServer)
             {
                 Bullet enemyBullet = other.GetComponent<Bullet>();
                 if (enemyBullet != null)
                     NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage, false);
-            }
-
-            // 발사체 파괴: 서버만 Destroy(→ 전원 Despawn). 오프라인: 그대로 Destroy
-            if (!isOnline)
-            {
-                if (other.GetComponent<Rigidbody>() != null)
-                    Destroy(other.gameObject);
             }
         }
     }
@@ -392,6 +394,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         isKnockback = false; isDamage = false;
         moveSpeedMultiplier  = 1f;
         fallAnimTriggered    = false;
+        fallDeathReported    = false;
 
         if (playerStealth != null)
             playerStealth.ForceLayer(deadLayer);
@@ -421,13 +424,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (isInstantKill) events?.RaiseInstantKilled();
         isInstantKill = false;
         events?.RaiseDied();
-        StartCoroutine(RespawnAfter(respawnDelay));
-    }
 
-    IEnumerator RespawnAfter(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        Respawn();
+        // 온라인: 씬 리로드(destroyWithScene:true)가 리스폰을 담당하므로 코루틴 불필요.
+        // 로컬 자동 리스폰은 사용하지 않음.
     }
 
     public int CurrentSaveOrder => _currentSaveOrder;
@@ -461,10 +460,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         transform.SetPositionAndRotation(spawnPos, spawnRot);
         heart = maxHeart;
 
-        // Owner Authority: Owner·Host = dynamic, 비오너 Client = kinematic.
+        // Owner·Host = dynamic, 비오너 Client = kinematic.
         var nm = NetworkManager.Singleton;
-        bool isOnline = nm != null && nm.IsListening;
-        rigid.isKinematic = isOnline && !isOwnerControlled && !nm.IsServer;
+        rigid.isKinematic = nm != null && nm.IsListening && !isOwnerControlled && !nm.IsServer;
         if (!rigid.isKinematic)
         {
             rigid.linearVelocity  = Vector3.zero;
@@ -475,6 +473,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         isDamage = false; isKnockback = false;
         moveSpeedMultiplier  = 1f;
         fallAnimTriggered    = false;
+        fallDeathReported    = false;
         isInstantKill        = false;
 
         if (playerStealth == null)

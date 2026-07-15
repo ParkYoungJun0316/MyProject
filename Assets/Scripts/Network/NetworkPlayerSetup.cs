@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 /// - OnNetworkSpawn: Owner / 비오너 분기 설정
 ///   Owner   : PlayerInput 활성, TopDownCamera 타겟, VoiceBroadcastTrigger 활성, 입력→NV 기록
 ///   비오너  : PlayerInput 비활성, Rigidbody kinematic, VoiceBroadcastTrigger 비활성
-///   Host    : 전 플레이어 물리·HP·함정·낙사 판정 (Update에서 Y 체크)
+///   Host    : HP·함정·낙사 확정 (Owner ReportFallDeath + Host Y 폴백)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
 ///
 /// [배치]
@@ -105,12 +105,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
         {
             SetupOwner();
             // 오너: 로컬 색 상태 변경 → NetworkVariable에 반영
-            if (_events == null) _events = GetComponent<PlayerEvents>();
             if (_events != null)
             {
                 _events.OnBlackWhiteChanged  += PushIsBlack;
                 _events.OnUniqueColorChanged += PushIsUniqueColor;
             }
+
+            // 카메라 바인드: OnPlayersReady 이후로 타이밍 확정
+            // (destroyWithScene:true로 씬마다 새 플레이어가 스폰되므로 매번 re-bind 필요)
+            PlayerSpawnCoordinator.OnPlayersReady += BindCameraOnPlayersReady;
+            if (PlayerSpawnCoordinator.IsReady) BindCameraOnPlayersReady(); // 늦은 구독 대비
         }
         else
         {
@@ -120,7 +124,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
             ApplyIsUniqueColor(_isUniqueColor.Value);
         }
 
-        // Phase 2: Owner/비오너 설정 이후 Rigidbody 권한을 서버 기준으로 확정
+        // Owner/비오너 설정 이후 Rigidbody 권한을 서버 기준으로 확정
         ApplyPhysicsAuthority();
     }
 
@@ -132,10 +136,14 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _isBlack.OnValueChanged       -= OnIsBlackChanged;
         _isUniqueColor.OnValueChanged -= OnIsUniqueColorChanged;
 
-        if (IsOwner && _events != null)
+        if (IsOwner)
         {
-            _events.OnBlackWhiteChanged  -= PushIsBlack;
-            _events.OnUniqueColorChanged -= PushIsUniqueColor;
+            if (_events != null)
+            {
+                _events.OnBlackWhiteChanged  -= PushIsBlack;
+                _events.OnUniqueColorChanged -= PushIsUniqueColor;
+            }
+            PlayerSpawnCoordinator.OnPlayersReady -= BindCameraOnPlayersReady;
         }
     }
 
@@ -156,9 +164,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // PlayerSpawnCoordinator(NetworkList)에서 자신의 색을 조회해 해당 ColoredStartZone
         // 위치로 즉시 이동. OnNetworkSpawn() 내에서 위치를 확정해 (0,0,0) 스폰 문제를 방지.
         MoveToSpawnZone();
-
-        // 로컬 카메라 생성 및 타겟 설정 (Owner 1회, DDOL)
-        LocalPlayerCamera.EnsureForOwner(_localCameraPrefab, transform, _player);
 
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
@@ -214,68 +219,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         EnablePhysics();
     }
 
-    // ── 씬 전환 / 사망 리로드 리셋 ───────────────────────────────
-
-    /// <summary>
-    /// Host가 씬 전환 또는 사망 리로드 시 호출.
-    /// HP 풀피 복구 · 쉴드 초기화 · 위치 고정좌표 이동 · 사망 상태 해제.
-    /// Owner에게 ResetStageClientRpc를 통해 위치·상태를 전달한다.
-    /// </summary>
-    public void ResetForNewStage(Vector3 spawnPos)
-    {
-        if (!IsServer) return;
-
-        // HP 풀피 복구
-        if (_player != null)
-            _hp.Value = _player.maxHeart;
-
-        // 쉴드 초기화
-        _shield.Value = 0;
-        if (_shieldExpireCoroutine != null)
-        {
-            StopCoroutine(_shieldExpireCoroutine);
-            _shieldExpireCoroutine = null;
-        }
-        _damageInvulnEndTime = -1f;
-
-        // Host 측: 위치 이동 + 스폰 앵커 갱신 + 사망 상태 해제 (Host 비오너 플레이어 포함)
-        transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
-        _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
-        _player?.Respawn();
-
-        // Owner 클라이언트에도 전달 (위치 확정 + 색 상태 초기화 + Respawn)
-        ResetStageClientRpc(spawnPos);
-
-        Debug.Log($"[NetworkPlayerSetup] Host 리셋 완료 — clientId={OwnerClientId} pos={spawnPos}");
-    }
-
-    /// <summary>Owner 클라이언트에서 씬 리셋 처리. 색 상태·위치·사망 상태를 초기 고유색 스폰 상태로 되돌린다.</summary>
-    [ClientRpc]
-    void ResetStageClientRpc(Vector3 spawnPos)
-    {
-        if (!IsOwner) return;
-
-        // 색 상태 초기화 (isBlack 해제, 고유색 복원)
-        _isBlack.Value       = false;
-        _isUniqueColor.Value = true;
-        if (_player != null)
-        {
-            _player.isBlack      = false;
-            _player.isUniqueColor = true;
-        }
-        if (_events == null) _events = GetComponent<PlayerEvents>();
-        _events?.RaiseBlackWhiteChanged(false);
-        _events?.RaiseUniqueColorChanged(0);
-
-        // 위치 + 리스폰 (IsDead 여부와 관계없이 항상 — fallAnimTriggered 등 잔존 플래그 보장 클리어)
-        transform.SetPositionAndRotation(spawnPos, Quaternion.identity);
-        _player?.ForceSetSpawnPoint(spawnPos, Quaternion.identity);
-        _player?.Respawn();
-
-        EnablePhysics();
-
-        Debug.Log($"[NetworkPlayerSetup] Owner 리셋 완료 — pos={spawnPos}");
-    }
 
     void EnablePhysics()
     {
@@ -283,6 +226,17 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _rb.linearVelocity  = Vector3.zero;
         _rb.angularVelocity = Vector3.zero;
         // isKinematic는 ApplyPhysicsAuthority()에서 IsServer 기준으로 설정
+    }
+
+    /// <summary>
+    /// OnPlayersReady 이후 카메라 바인드.
+    /// destroyWithScene:true로 씬마다 플레이어가 새로 스폰되므로 매 씬마다 re-bind.
+    /// </summary>
+    void BindCameraOnPlayersReady()
+    {
+        PlayerSpawnCoordinator.OnPlayersReady -= BindCameraOnPlayersReady;
+        LocalPlayerCamera.EnsureForOwner(_localCameraPrefab, transform, _player);
+        Debug.Log($"[NetworkPlayerSetup] 카메라 바인드 완료 (OnPlayersReady) — clientId={OwnerClientId}");
     }
 
     // ── 비오너 설정 ───────────────────────────────────────────────
@@ -449,8 +403,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // HP 증가(스폰·리스폰 회복)에서 Hit SFX·연출이 울리는 버그 방지.
         if (next > 0 && next < prev)
             _events?.RaiseDamaged(false);
-        // 0 → 양수: 스테이지 리셋 후 HP 복구 = 리스폰 신호.
-        // Owner는 ResetStageClientRpc → Respawn()에서 이미 RaiseRespawned() 발화 — 중복 방지.
+        // 0 → 양수: 씬 리로드 후 HP 복구 = 리스폰 신호 (비오너만 — Owner는 OnNetworkSpawn에서 처리).
         else if (prev == 0 && next > 0 && !IsOwner)
             _events?.RaiseRespawned();
     }
@@ -529,6 +482,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
     // ── 추락 사망 ─────────────────────────────────────────────────
 
     /// <summary>
+    /// Owner: 로컬 Y가 fallDeathY 미만일 때 1회 호출.
+    /// Owner+CNT에서 Host 프록시 Y는 void 낙사를 놓칠 수 있으므로 Owner 실좌표 보고 → Host 확정.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    public void ReportFallDeathServerRpc()
+    {
+        ApplyFallDeathFromServer();
+    }
+
+    /// <summary>
     /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doDie 애니).
     /// doFall 애니는 Owner Update에서 이미 재생됐으므로 여기서는 기본 사망 처리만.
     /// </summary>
@@ -541,7 +504,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>
-    /// Server: 낙사 Y 판정.
+    /// Server: Host-as-Owner 등 Host 실좌표가 신뢰될 때의 폴백 Y 판정.
+    /// Client Owner void 낙사의 주경로는 ReportFallDeathServerRpc.
     /// </summary>
     void Update()
     {

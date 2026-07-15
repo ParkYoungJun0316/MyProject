@@ -41,7 +41,7 @@ public class LobbySlotUI : MonoBehaviour
 
     [SerializeField] private Image          portrait;
 
-    [Tooltip("타인 슬롯 이름 TMP_Text. 로컬 슬롯은 cheerNameInput으로 대체됨.")]
+    [Tooltip("나중에 Steam ID 등 계정 ID를 표시할 필드. CheerName 표시 안 함.")]
     [SerializeField] private TMP_Text       nameText;
 
     [Header("CheerName 편집 (로컬 슬롯 전용)")]
@@ -147,30 +147,27 @@ public class LobbySlotUI : MonoBehaviour
             if (portraitSprite != null) portrait.sprite = portraitSprite;
         }
 
-        // 이름 표시: 로컬=입력창, 타인=텍스트
-        string effectiveName = LobbyNetworkManager.GetEffectiveCheerName(state);
-        bool   useInput      = isLocalSlot && cheerNameInput != null;
-
+        // ID 칸 — Steam ID용, CheerName 표시 안 함 (구현 전까지 숨김)
         if (nameText != null)
-        {
-            nameText.gameObject.SetActive(!useInput);
-            if (!useInput) nameText.text = effectiveName.ToUpper();
-        }
+            nameText.gameObject.SetActive(false);
+
+        // CheerName: 로컬=편집 가능, 타인=읽기 전용 표시 (별도 Text 불필요)
+        string effectiveName = LobbyNetworkManager.GetEffectiveCheerName(state);
 
         if (cheerNameInput != null)
         {
-            cheerNameInput.gameObject.SetActive(useInput);
-            if (useInput)
+            cheerNameInput.gameObject.SetActive(true);
+            if (isLocalSlot)
             {
-                string custom = state.CheerName.ToString();
-                SetInputSilent(custom);
-
+                SetInputSilent(state.CheerName.ToString());
                 cheerNameInput.interactable = !state.IsReady;
                 SubscribeInput();
             }
             else
             {
                 UnsubscribeInput();
+                cheerNameInput.text = effectiveName.ToUpper();
+                cheerNameInput.interactable = false;
             }
         }
 

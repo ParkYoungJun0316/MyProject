@@ -4,9 +4,9 @@ using UnityEngine;
 /// Owner 로컬 전용 카메라 래퍼. DontDestroyOnLoad 싱글턴.
 ///
 /// [역할]
-/// - Owner 플레이어 첫 스폰 시 1회 Instantiate (NetworkPlayerSetup.SetupOwner)
-/// - target = Owner 플레이어 Transform
-///   → destroyWithScene:false 유지라 씬 전환·사망 리셋 후에도 target이 끊기지 않음
+/// - Owner 플레이어 첫 스폰 시 1회 Instantiate
+/// - PlayerSpawnCoordinator.OnPlayersReady 이후 target = Owner 플레이어 Transform으로 바인드
+///   → destroyWithScene:true로 씬마다 플레이어가 새로 생성되므로, 씬마다 re-bind 발생
 /// - TitleReturnFlow 세션 종료 시 Destroy
 ///
 /// [씬 카메라]

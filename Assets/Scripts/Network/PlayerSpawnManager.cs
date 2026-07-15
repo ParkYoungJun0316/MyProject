@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,17 +6,16 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// 플레이어 스폰 관리자. DontDestroyOnLoad 싱글턴 (MonoBehaviour).
 ///
-/// [핵심 원칙 — B+C]
+/// [핵심 원칙 — A안]
 /// 로비에서 확정된 _entries[] 를 1회 캐시.
-/// 온라인: M.Stage1에서 1회 스폰(destroyWithScene: false) 후 씬 전환 시 유지.
-///         이후 스테이지 진입은 ResetForNewStage(위치·HP 리셋)만 수행.
-/// 오프라인: 씬마다 재생성 (DontDestroyOnLoad 없음).
+/// 온라인: 스테이지 씬 진입마다 새로 SpawnWithOwnership(destroyWithScene: true).
+///         씬 리로드(사망) → 이전 플레이어 자동 Despawn → 새 씬에서 클린 스폰.
+///         ResetForNewStage 땜질 불필요 — OnNetworkSpawn이 항상 초기 상태로 시작.
 ///
 /// [온라인 흐름]
 /// LobbyNetworkManager.StartGameServerRpc
-///   → InitializeOnline(clientColors) : _entries 1회 확정 + NGO SceneEvent 구독
-///   → M.Stage1 LoadEventCompleted → SpawnNetworkPlayers (1회)
-///   → T.Stage1 / 사망 리로드 LoadEventCompleted → ResetNetworkPlayersForStage
+///   → InitializeOnline(clientColors) : _entries 확정 + NGO SceneEvent 구독
+///   → 스테이지 씬 LoadEventCompleted → SpawnNetworkPlayers (씬마다)
 ///
 /// [배치]
 /// 0.Title 씬의 빈 GameObject에 이 컴포넌트 추가.
@@ -53,7 +51,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
 
     PlayerEntry[] _entries;
     readonly List<NetworkPlayerSetup> _spawnedSetups = new();
-    bool   _networkPlayersSpawned;
     string _lastHandledScene;
 
     // ── 초기화 ────────────────────────────────────────────────────────
@@ -83,8 +80,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         if (Instance == this) Instance = null;
     }
 
-    void OnEnable()  => SceneManager.sceneLoaded += OnSceneLoaded;
-    void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
 
     // ── 온라인 초기화 ─────────────────────────────────────────────────
 
@@ -112,8 +107,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
             };
         }
 
-        _networkPlayersSpawned = false;
-        _lastHandledScene      = null;
+        _lastHandledScene = null;
         _spawnedSetups.Clear();
 
         var nm = NetworkManager.Singleton;
@@ -143,9 +137,8 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     public void OnSessionReset(TitleReturnScope scope)
     {
         DespawnNetworkPlayers();
-        _entries               = null;
-        _networkPlayersSpawned = false;
-        _lastHandledScene      = null;
+        _entries          = null;
+        _lastHandledScene = null;
         UnsubscribeNgoSceneEvent();
         Debug.Log("[PlayerSpawnManager] 세션 리셋 완료");
     }
@@ -156,32 +149,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
             NetworkManager.Singleton.SceneManager.OnSceneEvent -= OnNgoSceneEvent;
     }
 
-    // ── 오프라인: sceneLoaded / 온라인: 이미 스폰된 경우 fallback ─────
-
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (!IsStageScene(scene.name)) return;
-
-        PlayerSpawnCoordinator.ResetReady();
-        // 같은 씬 사망 리로드도 다시 처리되도록 허용
-        _lastHandledScene = null;
-
-        // 온라인 + 이미 1회 스폰됨: LoadEventCompleted를 놓쳐도 플레이어는 유지되므로
-        // 2프레임 뒤에도 이 씬을 처리 안 했으면 Reset fallback.
-        if (_networkPlayersSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
-            StartCoroutine(OnlineResetFallback(scene.name));
-    }
-
-    IEnumerator OnlineResetFallback(string sceneName)
-    {
-        yield return null;
-        yield return null;
-        if (_lastHandledScene == sceneName) yield break;
-
-        Debug.LogWarning($"[PlayerSpawnManager] LoadEventCompleted 미수신 — sceneLoaded fallback ({sceneName})");
-        HandleStageLoaded(sceneName);
-    }
-
     // ── 온라인: NGO LoadEventCompleted ────────────────────────────────
 
     void OnNgoSceneEvent(SceneEvent e)
@@ -189,7 +156,10 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         if (e.SceneEventType == SceneEventType.Load)
         {
             if (IsStageScene(e.SceneName))
+            {
                 _lastHandledScene = null;
+                PlayerSpawnCoordinator.ResetReady();
+            }
             return;
         }
 
@@ -224,15 +194,8 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         PlayerSpawnCoordinator.ResetReady();
         _lastHandledScene = sceneName;
 
-        if (!_networkPlayersSpawned)
-        {
-            SpawnNetworkPlayers();
-            _networkPlayersSpawned = true;
-        }
-        else
-        {
-            ResetNetworkPlayersForStage();
-        }
+        // A안: 씬마다 새로 스폰. destroyWithScene:true이므로 이전 플레이어는 이미 자동 Despawn됨.
+        SpawnNetworkPlayers();
 
         if (PlayerSpawnCoordinator.Instance == null)
             Debug.LogWarning("[PlayerSpawnManager] PlayerSpawnCoordinator.Instance null — OnPlayersReady 미발행");
@@ -240,7 +203,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
             PlayerSpawnCoordinator.Instance.NotifyPlayersReady();
     }
 
-    // ── 온라인 스폰 (1회, 씬 전환 후에도 유지) ────────────────────────
+    // ── 온라인 스폰 (씬마다 클린 스폰 — A안) ─────────────────────────
 
     void SpawnNetworkPlayers()
     {
@@ -264,48 +227,14 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
                 continue;
             }
 
-            // destroyWithScene: false → M→T·사망 리로드에서도 유지 (B안)
-            netObj.SpawnWithOwnership(e.ClientId, destroyWithScene: false);
+            // destroyWithScene: true → 씬 언로드 시 자동 Despawn (A안: 씬 리로드 = 클린 스폰)
+            netObj.SpawnWithOwnership(e.ClientId, destroyWithScene: true);
 
             var setup = go.GetComponent<NetworkPlayerSetup>();
-            setup?.SetColorIndex(ColorTypeToIndex(e.ColorType));
+            setup?.SetColorIndex(LobbyNetworkManager.ColorTypeToIndex(e.ColorType));
             if (setup != null) _spawnedSetups.Add(setup);
 
-            Debug.Log($"[PlayerSpawnManager] 스폰(유지) — clientId={e.ClientId} color={e.ColorType} pos={e.SpawnPos}");
-        }
-    }
-
-    void ResetNetworkPlayersForStage()
-    {
-        Debug.Log($"[PlayerSpawnManager] 스테이지 리셋 — {_spawnedSetups.Count}명");
-
-        for (int i = 0; i < _entries.Length; i++)
-        {
-            NetworkPlayerSetup setup = null;
-            if (i < _spawnedSetups.Count) setup = _spawnedSetups[i];
-
-            // 리스트 슬롯이 비었으면 OwnerClientId로 재탐색
-            if (setup == null)
-            {
-                ulong targetId = _entries[i].ClientId;
-                var all = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
-                for (int j = 0; j < all.Length; j++)
-                {
-                    if (all[j] != null && all[j].OwnerClientId == targetId)
-                    {
-                        setup = all[j];
-                        break;
-                    }
-                }
-            }
-
-            if (setup == null)
-            {
-                Debug.LogError($"[PlayerSpawnManager] 리셋 대상 없음 — clientId={_entries[i].ClientId}");
-                continue;
-            }
-
-            setup.ResetForNewStage(_entries[i].SpawnPos);
+            Debug.Log($"[PlayerSpawnManager] 스폰 — clientId={e.ClientId} color={e.ColorType} pos={e.SpawnPos}");
         }
     }
 
@@ -329,7 +258,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
 
     public Vector3 GetFixedSpawnPos(PlayerColorType colorType)
     {
-        int idx = ColorTypeToIndex(colorType);
+        int idx = LobbyNetworkManager.ColorTypeToIndex(colorType);
         if (fixedSpawnPositions != null && idx >= 0 && idx < fixedSpawnPositions.Length)
         {
             Vector3 pos = fixedSpawnPositions[idx];
@@ -340,14 +269,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         return new Vector3(0f, spawnHeightOffset, 0f);
     }
 
-    static int ColorTypeToIndex(PlayerColorType colorType)
-    {
-        var order = LobbyNetworkManager.ColorOrder;
-        for (int i = 0; i < order.Length; i++)
-            if (order[i] == colorType) return i;
-        return 0;
-    }
-
     static bool IsStageScene(string name) =>
         !string.IsNullOrEmpty(name) && name.Contains("Stage");
 
@@ -356,7 +277,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     void Debug_Entries()
     {
         if (_entries == null) { Debug.Log("[PlayerSpawnManager] 엔트리 없음 (미초기화)"); return; }
-        Debug.Log($"[PlayerSpawnManager] 엔트리 {_entries.Length}개 / spawned={_networkPlayersSpawned}");
+        Debug.Log($"[PlayerSpawnManager] 엔트리 {_entries.Length}개");
         foreach (var e in _entries)
             Debug.Log($"  clientId={e.ClientId} color={e.ColorType} pos={e.SpawnPos}");
     }
@@ -364,9 +285,8 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     [ContextMenu("테스트: 고정 좌표 출력")]
     void Debug_SpawnPositions()
     {
-        var order = LobbyNetworkManager.ColorOrder;
-        for (int i = 0; i < order.Length; i++)
-            Debug.Log($"  {order[i]} → {GetFixedSpawnPos(order[i])}");
+        foreach (var color in LobbyNetworkManager.ColorOrder)
+            Debug.Log($"  {color} → {GetFixedSpawnPos(color)}");
     }
 #endif
 }
