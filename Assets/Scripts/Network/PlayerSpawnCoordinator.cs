@@ -171,10 +171,20 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
 
     /// <summary>
     /// PlayerSpawnManager가 새 씬 스폰 직전에 호출.
-    /// 씬 오브젝트들이 OnPlayersReady 구독 후 IsReady를 확인했을 때 오래된 값을 읽지 않도록 초기화.
-    /// Instance 없이도 동작하도록 static.
+    /// Host/Client 모두 IsReady = false 로 초기화.
     /// </summary>
-    public static void ResetReady() => IsReady = false;
+    public static void ResetReady()
+    {
+        IsReady = false;
+        Instance?.BroadcastResetReadyClientRpc();
+    }
+
+    [ClientRpc]
+    void BroadcastResetReadyClientRpc()
+    {
+        if (IsServer) return;
+        IsReady = false;
+    }
 
     /// <summary>
     /// Host: SpawnAllPlayers() 완료 후 PlayerSpawnManager가 호출.

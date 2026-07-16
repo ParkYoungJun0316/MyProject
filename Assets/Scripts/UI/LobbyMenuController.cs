@@ -95,7 +95,8 @@ public class LobbyMenuController : MonoBehaviour
     {
         ApplyModeUI();
         RefreshRoomCode();
-        VoskModelLoader.LoadSync();
+        try { VoskModelLoader.LoadSync(); }
+        catch (System.Exception e) { Debug.LogWarning($"[LobbyMenuController] VoskModelLoader 로드 실패 — {e.Message}"); }
         SubscribeAll();
 
         if (!_lnmSubscribed)

@@ -3,10 +3,12 @@
 > Domain ownership only. Network / session / authority SSOT: `NetworkDesign.md`.  
 > Cheer / voice SSOT: `CheerAndTutorialDesign.md`.
 
-## Scope (current demo)
+## Scope (full release)
 
-- Play path: **Title → Lobby → `M.Stage1` → `T.Stage1` → `End.Demo`** (solo skips Lobby NGO)
-- Multiplayer is **in progress** (NGO 2.9) — not “postponed”
+- Play path: **Title → Lobby → [Release: Tutorial] → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**
+- Solo = **NGO Host 1인** (`partySize=1`) — same path as multi. No offline mode.
+- **No Steam demo.** Coming Soon + Playtest → full release (`NetworkDesign.md` §0).
+- Multiplayer: NGO 2.9 Listen-Server
 - No persistent cross-run checkpoint save in MVP (`NetworkDesign` §13) — respawn via **`ColoredStartZone`**
 
 ## Domain Ownership
@@ -15,12 +17,13 @@
 - **Enemy:** detection / chase / attack and local combat state only.
 - **Stage:** `StageObjective` + `StageManager` — stage-local win/fail.
 - **Spawn / respawn (MVP):** `ColoredStartZone` + `spawnPoint` (not ColorSavePoint / StageCheckpoint save pipeline).
-- **Flow:** `SceneFlowManager` — scene progression (`M` → `T` → `End.Demo`); stage-local systems do not load scenes directly.
+- **Flow:** `SceneFlowManager` — scene progression (M stages → M.Boss → T stages → T.Boss → `End.Demo`); stage-local systems do not load scenes directly.
 - **Damage:** `NetworkDamageUtil` — single networked damage entry (Host).
 - **Cheer/Voice:** `CheerKeywordEngine` (Owner detect) + `CheerService` (Host apply). See Cheer doc.
 - **Session leave (in-game):** `DisconnectManager` → `TitleReturnFlow` → `NetworkManagerSetup.Shutdown`.
 - **UI:** subscribe / display only — no gameplay ownership, no mic/Vosk ownership.
 - **Camera:** `TopDownCamera` follow/view only — not Cinemachine-as-SSOT.
+- **Telemetry:** `TelemetryService` (Host) — Open Must; see `NetworkDesign.md` §0.5.1.
 
 ## Dependency Rules
 
@@ -28,6 +31,7 @@
 - UI does not own gameplay state and should not poll scene objects by name.
 - Do not invent parallel damage, cheer, or leave/shutdown paths.
 - Do not add reconnect / late-join / host-migration designs (`NetworkDesign` §12).
+- Do not add spectator (pre-release) or cutscenes (permanently out of scope).
 
 ## Out of scope here
 
