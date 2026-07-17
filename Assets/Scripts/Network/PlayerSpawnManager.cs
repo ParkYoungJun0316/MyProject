@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 /// 로비에서 확정된 _entries[] 를 1회 캐시.
 /// 온라인: 스테이지 씬 진입마다 새로 SpawnWithOwnership(destroyWithScene: true).
 ///         씬 리로드(사망) → 이전 플레이어 자동 Despawn → 새 씬에서 클린 스폰.
-///         ResetForNewStage 땜질 불필요 — OnNetworkSpawn이 항상 초기 상태로 시작.
+///         별도 리셋 코드 불필요 — OnNetworkSpawn이 항상 초기 상태로 시작 (NetworkDesign §11).
 ///
 /// [온라인 흐름]
 /// LobbyNetworkManager.StartGameServerRpc

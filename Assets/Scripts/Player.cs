@@ -88,10 +88,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     Rigidbody rigid;
     Animator anim;
 
-    Vector3 spawnPos;
-    Quaternion spawnRot;
-    int _currentSaveOrder = int.MinValue; // 현재 활성화된 세이브 포인트의 순서
-
     int normalLayer;
     int deadLayer;
     Collider[] cols;
@@ -114,9 +110,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         rigid = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
-
-        spawnPos = transform.position;
-        spawnRot = transform.rotation;
 
         normalLayer = LayerMask.NameToLayer("Player");
         deadLayer = LayerMask.NameToLayer("PlayerDead");
@@ -301,6 +294,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         Die();
     }
 
+    /// <summary>
+    /// 비오너 클라이언트(Host의 원격 플레이어 로컬 복사본 포함) 사망 플래그만 동기화.
+    /// 애니메이션·콜라이더·물리 정지는 Die()를 통해 Owner 머신에서만 처리(의도된 설계).
+    /// 이걸 안 하면 Host가 시뮬레이션하는 원격 플레이어의 Rigidbody/Collider가
+    /// IsDead=false로 남아 트랩·피격 판정(OnTriggerEnter)에서 사망 상태를 놓칠 수 있음 —
+    /// 실제로는 HP NetworkVariable 가드가 이중 방어하지만, 이 플래그도 맞춰 둔다.
+    /// </summary>
+    public void SyncDeadFlag() => IsDead = true;
+
     /// <summary>고유색 모드면 uniqueColor, 아니면 blackColor/whiteColor.</summary>
     public Color GetCurrentBaseColor()
     {
@@ -427,76 +429,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         // 온라인: 씬 리로드(destroyWithScene:true)가 리스폰을 담당하므로 코루틴 불필요.
         // 로컬 자동 리스폰은 사용하지 않음.
-    }
-
-    public int CurrentSaveOrder => _currentSaveOrder;
-
-    /// <summary>order가 CurrentSaveOrder보다 작으면 무시.</summary>
-    public bool SetSpawnPoint(Vector3 pos, Quaternion rot, int order)
-    {
-        if (order < _currentSaveOrder) return false;
-        _currentSaveOrder = order;
-        spawnPos = pos;
-        spawnRot = rot;
-        return true;
-    }
-
-    public void ForceSetSpawnPoint(Vector3 pos, Quaternion rot)
-    {
-        _currentSaveOrder = int.MinValue;
-        spawnPos = pos;
-        spawnRot = rot;
-    }
-
-    public void ForceRespawn(Vector3 pos, Quaternion rot)
-    {
-        ForceSetSpawnPoint(pos, rot);
-        if (!IsDead) Respawn();
-    }
-
-    public void Respawn()
-    {
-        CancelInvoke();
-        transform.SetPositionAndRotation(spawnPos, spawnRot);
-        heart = maxHeart;
-
-        // Owner·Host = dynamic, 비오너 Client = kinematic.
-        var nm = NetworkManager.Singleton;
-        rigid.isKinematic = nm != null && nm.IsListening && !isOwnerControlled && !nm.IsServer;
-        if (!rigid.isKinematic)
-        {
-            rigid.linearVelocity  = Vector3.zero;
-            rigid.angularVelocity = Vector3.zero;
-        }
-
-        IsDead = false;
-        isDamage = false; isKnockback = false;
-        moveSpeedMultiplier  = 1f;
-        fallAnimTriggered    = false;
-        fallDeathReported    = false;
-        isInstantKill        = false;
-
-        if (playerStealth == null)
-            SetLayerRecursively(gameObject, normalLayer);
-
-        if (cols != null)
-            for (int i = 0; i < cols.Length; i++)
-                if (cols[i] != null) cols[i].enabled = true;
-
-        if (anim != null)
-        {
-            anim.ResetTrigger("doDie");
-            anim.ResetTrigger("doFall");
-            anim.ResetTrigger("doJammed");
-            anim.SetBool("isRun", false);
-            anim.Play("Idle", 0, 0f);
-            anim.Update(0f);
-        }
-
-        // 리스폰 시 고유색 상태 유지 (초기 스폰 상태 보존)
-        events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
-        events?.RaiseRespawned();
-        events?.RaiseBlackWhiteChanged(isBlack);
     }
 
     void SetLayerRecursively(GameObject obj, int layer)

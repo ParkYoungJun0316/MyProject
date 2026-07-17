@@ -161,9 +161,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_events == null) _events = GetComponent<PlayerEvents>();
         _events?.RaiseUniqueColorChanged(0);
 
-        // PlayerSpawnCoordinator(NetworkList)에서 자신의 색을 조회해 해당 ColoredStartZone
-        // 위치로 즉시 이동. OnNetworkSpawn() 내에서 위치를 확정해 (0,0,0) 스폰 문제를 방지.
-        MoveToSpawnZone();
+        // 스폰 위치 Writer는 PlayerSpawnManager.SpawnNetworkPlayers()(Host)가 유일하다.
+        // Instantiate(prefab, e.SpawnPos, ...) → Spawn() 메시지에 초기 Transform이 포함되어
+        // Owner에게도 동일 위치로 복제됨 (NGO 기본 동작). 여기서 재조정하지 않고 검증만 한다.
+        VerifySpawnPosition();
 
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
         if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
@@ -175,48 +176,24 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>
-    /// PlayerSpawnManager의 고정 좌표표에서 자신의 색에 해당하는 좌표를 읽어 즉시 이동.
-    /// PlayerSpawnManager.Instance가 없으면 현재 위치를 스폰 앵커로 확정 (안전 폴백).
-    /// ColoredStartZone 탐색 불필요 — 씬 원점(0,0,0) 기준 고정 좌표 사용.
+    /// 진단용 검증만 — 위치를 다시 쓰지 않는다 (Writer 유일 원칙, NetworkDesign §11).
+    /// Host의 Instantiate(e.SpawnPos)와 실제 스폰 위치가 크게 다르면 경고 로그만 남긴다.
+    /// 색/PlayerSpawnManager 조회 실패 시에도 위치는 건드리지 않고 조용히 반환.
     /// </summary>
-    void MoveToSpawnZone()
+    void VerifySpawnPosition()
     {
-        if (NetworkManager.Singleton == null) { EnablePhysics(); return; }
+        EnablePhysics();
+
+        if (NetworkManager.Singleton == null || PlayerSpawnManager.Instance == null) return;
 
         ulong myId = NetworkManager.Singleton.LocalClientId;
-        if (!PlayerSpawnCoordinator.TryGetColor(myId, out var myColor))
-        {
-            Debug.LogWarning($"[NetworkPlayerSetup] 색 정보 없음 — clientId={myId} 현재 위치를 스폰 앵커로 확정");
-            UseCurrentPositionAsSpawnAnchor();
-            return;
-        }
+        if (!PlayerSpawnCoordinator.TryGetColor(myId, out var myColor)) return;
 
-        // PlayerSpawnManager에서 고정 좌표 조회
-        if (PlayerSpawnManager.Instance == null)
-        {
-            Debug.LogWarning("[NetworkPlayerSetup] PlayerSpawnManager.Instance 없음 — 현재 위치를 스폰 앵커로 확정");
-            UseCurrentPositionAsSpawnAnchor();
-            return;
-        }
-
-        Vector3    pos = PlayerSpawnManager.Instance.GetFixedSpawnPos(myColor);
-        Quaternion rot = Quaternion.identity;
-
-        transform.SetPositionAndRotation(pos, rot);
-        _player?.ForceSetSpawnPoint(pos, rot);
-        EnablePhysics();
-
-        Debug.Log($"[NetworkPlayerSetup] 스폰 위치 결정 (고정좌표) — clientId={OwnerClientId} color={myColor} pos={pos}");
-    }
-
-    /// <summary>
-    /// 고정 좌표 조회에 실패했을 때의 폴백.
-    /// Netcode가 이미 서버 스폰 좌표로 보정해 둔 현재 위치를 리스폰 앵커로 확정.
-    /// </summary>
-    void UseCurrentPositionAsSpawnAnchor()
-    {
-        _player?.ForceSetSpawnPoint(transform.position, transform.rotation);
-        EnablePhysics();
+        Vector3 expected = PlayerSpawnManager.Instance.GetFixedSpawnPos(myColor);
+        if ((transform.position - expected).sqrMagnitude > 0.25f)
+            Debug.LogWarning($"[NetworkPlayerSetup] 스폰 위치 불일치 감지 — clientId={OwnerClientId} " +
+                              $"color={myColor} expected={expected} actual={transform.position} " +
+                              "(Writer=PlayerSpawnManager만 허용 — 재조정하지 않음)");
     }
 
 
@@ -384,14 +361,17 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _player?.TakeDamageVisualOnly(knockback);
     }
 
-    /// <summary>오너 클라이언트에 사망을 확정. 비오너 클라이언트에는 UI 이벤트만 전달.</summary>
+    /// <summary>오너 클라이언트에 사망을 확정. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
     [ClientRpc]
     void ForceKillClientRpc()
     {
         if (IsOwner)
             _player?.ForceKill();
         else
+        {
+            _player?.SyncDeadFlag();
             _events?.RaiseDied();
+        }
     }
 
     void OnHpChanged(int prev, int next)
@@ -422,14 +402,17 @@ public class NetworkPlayerSetup : NetworkBehaviour
         ForceInstantKillClientRpc();
     }
 
-    /// <summary>오너 클라이언트에 Jammed 즉사 전달. 비오너 클라이언트에는 UI 이벤트만 전달.</summary>
+    /// <summary>오너 클라이언트에 Jammed 즉사 전달. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
     [ClientRpc]
     void ForceInstantKillClientRpc()
     {
         if (IsOwner)
             _player?.KillInstantly();
         else
+        {
+            _player?.SyncDeadFlag();
             _events?.RaiseDied();
+        }
     }
 
     // ── 응원 버프 동기화 ──────────────────────────────────────────

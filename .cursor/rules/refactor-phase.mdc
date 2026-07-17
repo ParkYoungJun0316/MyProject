@@ -41,9 +41,12 @@ alwaysApply: true
 
 ## Current refactor state (A안 locked)
 
+> Player lifecycle A안 was here — now superseded by `NetworkDesign.md` §11 (SSOT)
+> + skill `lifecycle-fix`. Removed to avoid a third copy of the same lock
+> (2026-07-18).
+
 | Decision | Lock |
 |----------|------|
-| Player lifecycle | **A안**: `destroyWithScene:true` — scene reload = clean despawn + fresh spawn |
 | Online-only | Confirmed. No offline path. |
 | Camera | Bind after `OnPlayersReady`. DDOL camera is a symptom patch — evaluate removal. |
 | Death path | `Die → NotifyDeath → LoadScene → SpawnWithOwnership`. `RespawnAfter` disabled online. |

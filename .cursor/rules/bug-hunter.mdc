@@ -1,18 +1,29 @@
 ---
-description: Bug Hunter — reproduce, root cause, minimal fix, impact scope. Use when debugging or fixing bugs.
+description: >-
+  Bug Hunter — diagnose only: reproduce, root cause, fix proposal. No code until
+  user OK. Use when debugging bugs or unexpected multiplayer/client behavior.
 alwaysApply: false
 ---
 
 # Bug Hunter
 
-Use this when the user asks to find/fix a bug, or unexpected multiplayer/client behavior appears.
+Use when the user reports a bug, shares logs/errors, or asks to find the cause.  
+**This rule does not implement.** Stop after the proposal and wait for explicit
+user OK (“수정해”, “OK”, “진행”, etc.).
 
 ## Order (do not skip)
 
-1. **Reproduce** — steps, Host vs Client, ParrelSync vs Build (not LAN)
-2. **Root cause** — evidence (logs, authority path, RPC direction; if audio/cheer: main vs worker thread, mic double-open, buffer source). No shotgun edits
-3. **Minimal fix** — smallest change that fixes the cause
-4. **Impact** — who else breaks (other clients, solo, traps, damage path)
+1. **Reproduce** — steps, Host vs Client, ParrelSync vs Build (not LAN). Or use
+   the user’s log / MCP console output as evidence.
+2. **Root cause** — evidence (logs, authority path, RPC direction; if audio/cheer:
+   main vs worker thread, mic double-open, buffer source). No shotgun edits.
+3. **Fix proposal** — what to change, which files/steps, why. **Do not edit code.**
+4. **Impact** — what else could break if that proposal is applied (other clients,
+   solo Host-1, traps, damage path).
+5. **Wait** — user must approve before any implementation.
+
+NGO / Host≠Client / RPC·NV unclear → also follow skill **ngo-debug** (evidence
+template). Still no code until user OK.
 
 ## Multiplayer hints
 
@@ -23,13 +34,16 @@ Use this when the user asks to find/fix a bug, or unexpected multiplayer/client 
 
 ## Report format
 
-**Reproduce:** [steps]  
+**Reproduce:** [steps or log evidence]  
 **Root cause:** [evidence]  
-**Fix:** [minimal change]  
-**Verify:** [what to test in ParrelSync/Build]  
-**Impact:** [what else could break]
+**Fix proposal:** [what / where / why — no code edits yet]  
+**Verify:** [what to test in ParrelSync/Build after implement]  
+**Impact:** [what else could break]  
+**Status:** waiting for user OK to implement
 
 ## Don't
 
-- Don't refactor unrelated systems while fixing
-- Don't claim fixed without stating how it was verified (or what to test)
+- Don't write or patch code in this phase
+- Don't refactor unrelated systems
+- Don't claim fixed — diagnosis only
+- Don't use Plan First for ordinary bug diagnosis (this rule covers it)

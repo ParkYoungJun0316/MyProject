@@ -1,20 +1,25 @@
 ---
-description: Diff only — change only what was requested. Use with Plan First on implementation tasks.
+description: >-
+  Cause-site only — after user OK to implement, change only the failing cause
+  site (and same-assumption consumers). No drive-by edits.
 alwaysApply: false
 ---
 
-# Diff Only
+# Cause-Site Only (ex Diff Only)
 
-Use on implementation / fix tasks together with Plan First when scope discipline matters.
+Use **only after** the user explicitly asks to implement (“수정해”, “OK”, “진행”).  
+Diagnosis phase = **Bug Hunter** (no code). This rule = implementation scope.
 
 ## Do
 
-- Change **only** what the user asked
-- Prefer surgical edits over file rewrites
-- Match existing style; no drive-by cleanup
+- Change **only** the cause site identified in the approved proposal
+- Same-assumption consumers may be updated in **one pass** if required to keep a single path (no parallel old/new)
+- Match existing style
 
 ## Don't
 
-- Don't refactor unrelated code “while here”
+- Don't edit outside the cause site “while here”
+- Don't add recovery / workaround branches at symptom sites
 - Don't replace whole files unless necessary
 - Don't add unsolicited docs, TODOs spam, or extra systems
+- Don't implement before user OK (use Bug Hunter first)

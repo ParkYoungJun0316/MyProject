@@ -12,10 +12,9 @@ using UnityEngine;
 /// 이후 씬 리로드(사망)에도 같은 오브젝트가 유지되어 _clientColors NetworkList를 재사용한다.
 ///
 /// [흐름 — 온라인]
-/// LoadEventCompleted → PlayerSpawnManager.SpawnAllPlayers()
+/// LoadEventCompleted → PlayerSpawnManager.SpawnNetworkPlayers()
 ///   → NotifyPlayersReady() → Host OnPlayersReady 발행
 ///   → BroadcastPlayersReadyClientRpc() → Client OnPlayersReady 발행
-///
 ///
 /// [구독 방법 (모든 구독자 공통)]
 /// void Start() {

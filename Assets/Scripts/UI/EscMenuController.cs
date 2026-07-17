@@ -104,10 +104,16 @@ public class EscMenuController : MonoBehaviour
         }
     }
 
-    /// <summary>Reset 버튼 OnClick에 연결. 현재 씬을 처음부터 다시 로드합니다.</summary>
+    /// <summary>
+    /// Reset 버튼 OnClick에 연결 (Host 전용 버튼).
+    /// 사망과 동일 문으로 리로드 — 새 시드 배포 + 전원 씬 리로드 (NetworkDesign §11.1).
+    /// </summary>
     public void OnClickReset()
     {
-        SceneFlowManager.Instance?.ReloadCurrentScene();
+        if (StageNetworkState.Instance != null)
+            StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
+        else
+            Debug.LogWarning("[EscMenuController] StageNetworkState가 없어 Reset을 수행할 수 없습니다.");
     }
 
     // Setting 버튼: 미구현. 추후 OnClickSetting() 추가.

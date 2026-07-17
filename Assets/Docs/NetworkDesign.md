@@ -525,7 +525,7 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 ### 7.2 스폰 위치
 
 - **`ColoredStartZone.spawnPoint`** (존 **위**)에 배치.
-- 스폰 직후 `ForceSetSpawnPoint` 동일 좌표 설정.
+- 리스폰 좌표는 `PlayerSpawnManager.fixedSpawnPositions`가 전담 (§11). Zone은 시작 게이트 판정만.
 - 존 트리거 진입 → 점유 → `StageStartGate` 카운트다운 (전원 점유 시 진행).
 - **씬 지형(T.Stage) 이동 불필요.** 존·spawnPoint는 씬마다 에디터 배치.
 
@@ -652,6 +652,42 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 |------|----------|
 | 플레이어 HP·색·사망·리로드 | Must |
 | `StageResetOnPlayerDeath` | Must |
+
+### 9.1 스테이지 컨텐츠 패턴 (A–F) · M 우선
+
+> **30일 로드맵 — 인게임 최우선:** **`M.Stage1`…`M.Stage5` → `M.Boss` 네트워크 완료.**  
+> T·Cheer 확장·Steam·텔레메트리는 M 골격 이후.  
+> 작업 보드(미확정 파이프라인): [`MStageNetworkBoard.md`](MStageNetworkBoard.md) → 확정 시 본 절·§9로 **승급**(발사체 B안과 동일).
+
+#### 9.1.1 패턴 A–F (네트워크 진실 기준)
+
+게임 느낌(“함정 같아 보임”)이 아니라 **무엇을 동기화해야 하는가**로 분류한다.
+
+| 패턴 | 이름 | 네트워크 진실 | Host / Client |
+|------|------|---------------|---------------|
+| **A** | 연출·타일 껍데기 | 없음 (표시만) | C/D 결과를 따라 그림. 타일마다 RPC 금지 |
+| **B** | 함정·피격 | 스폰·스케줄·데미지 | Host 판정 + `NetworkDamageUtil` (발사체=§9.0.1 B안) |
+| **C** | 챌린지·라운드 | 시드·라운드·정답·타이머 | **Host 상태머신** → 상태만 복제. 오답 데미지는 B API 호출 |
+| **D** | 목표·게이트·클리어 | 시작·클리어·리로드 | Host만 Gate / Complete / 씬 리로드 (`StageNetworkState` 등) |
+| **E** | 월드 모션 | 위치·이동 스케줄 | Host 타임라인(또는 ServerTime) + 위상/위치 동기화 |
+| **F** | 플로우 인프라 | 씬 시퀀스 | `SceneFlowManager` / Relay — 컨텐츠별 설계 금지 |
+
+**판별:** 데미지 코드?→B · 정답/라운드?→C · 클리어/게이트?→D · Transform 스케줄?→E · 표시만?→A · 씬 파이프?→F.
+
+#### 9.1.2 M 씬 작업 순서 (확정)
+
+F·D 공통은 **검증 완료** 전제. 이후 **씬 단위**로 C(·필요 시 B/E)만 붙인다.
+
+| 순 | 씬 | C (챌린지) | B / E (같이 볼 것) |
+|----|-----|------------|-------------------|
+| 1 | `M.Stage2` | **OXQuiz** ← **현재 보드** | Drop |
+| 2 | `M.Stage3` | ColorTile | Drop, Contact, **E: AdvancingWall** |
+| 3 | `M.Stage4` | SequenceRing | Drop |
+| 4 | `M.Stage5` | GridColor + GridBW | Drop, Wind(Should), Mouth |
+| 5 | `M.Boss` | SequenceRing, GridBW, DirectionalBarrier, PhaseSurvive | Drop, Wind · **D: BossFight** |
+| — | `M.Stage1` | (챌린지 없음) | F·D·Survive — 공통 검증용 |
+
+**C 파이프라인**은 OX에서 먼저 잠그고, ColorTile·Grid·Ring에 **동일 계약**을 복제한다. 챌린지마다 새 RPC 체계를 만들지 않는다.
 
 ---
 
@@ -901,12 +937,91 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 ---
 
-## 11. 사망 · 리셋
+## 11. 플레이어 수명주기 축 (A안 · SSOT)
 
-- 멀티에서도 **`StageResetOnPlayerDeath`**: **1명 사망 = 전원 씬 리로드**.
-- 리로드 후: 존 위 재스폰, `StageStartGate` 재진행, **새 시드**로 퍼즐 재배치.
+> **한 줄:** 씬 로드 → 씬 스폰(`destroyWithScene:true`) → Owner 입력 → Ready 1회 → Play 소비.
+> 사망·클리어·리셋 전부 **같은 축으로 재진입**한다. 평행 리스폰 경로 없음. 분기 없음.
+> 버그 = 어느 칸의 불변식이 깨졌는가. 칸을 한 칸씩 거슬러 올라가 확인하고, **그 칸의 Writer만** 고친다.
+
+### 11.0 축 (5칸 · 일방통행)
+
+```
+① Load → ② Spawn → ③ Owner → ④ Ready → ⑤ Play
+                                            │
+        사망/클리어/Reset ── Host LoadScene ─┘ (①로 재진입)
+```
+
+| 칸 | 불변식 (칸이 끝나면 참) | Writer (여기만 진실) |
+|----|------------------------|----------------------|
+| ① Load | Host/Client 동일 씬 로드 완료 | NGO SceneEvent (Host만 LoadScene — 아래 문 4개) |
+| ② Spawn | 인원수만큼 `SpawnWithOwnership(destroyWithScene:true)`. 이전 씬 플레이어 없음. Host가 HP 등 서버 NV 초기화 | `PlayerSpawnManager.SpawnNetworkPlayers` **유일** |
+| ③ Owner | Owner만 `PlayerInput` 활성. 비오너 Input off + kinematic. **위치 재조정 금지** — ②가 이미 `e.SpawnPos`로 Instantiate, Spawn 메시지가 그대로 복제됨. Owner는 검증 로그만(`VerifySpawnPosition`, 불일치 시 Warning만) | `NetworkPlayerSetup.OnNetworkSpawn` |
+| ④ Ready | `OnPlayersReady` **씬당 1회**. 이후 `FindObjects`로 전원 조회 가능 | `PlayerSpawnCoordinator.NotifyPlayersReady` **유일** |
+| ⑤ Play | Consumer는 Ready 이후에만 초기화. Consumer끼리 순서·의존 없음 | 없음 (아래 Consumer 목록) |
+
+### 11.1 ① Load 로 들어오는 문 — 3개 (전부 Host만)
+
+| 문 | 경로 | 비고 |
+|----|------|------|
+| 로비 Start | `LobbyNetworkManager.StartGameServerRpc` → `LoadScene("M.Stage1")` | Coordinator 스폰(DDOL) 포함 |
+| **사망 · ESC Reset** | Owner `RaiseDied` → `StageResetOnPlayerDeath` → `StageNetworkState.NotifyPlayerDeathServerRpc` → Host `LoadScene(현재씬)` | **1명 사망 = 전원 리로드** + **새 시드** 배포. ESC Reset(`EscMenuController.OnClickReset`, Host 버튼)도 **같은 문** 사용 (2026-07-17 통일) |
+| 클리어 | `StageManager.OnStageClear` / `PhaseManager.onAllPhasesComplete` → **`SceneFlowRelay.LoadNextScene`** → `SceneFlowManager` | **확정 배선: Relay 경유** (씬에서 SceneFlowManager 직결 금지 — DDOL이라 Inspector 연결 불가) |
+
+이 3곳 **외의** 스테이지 `LoadScene` 호출 금지. Client가 씬 로드 금지.
+
+### 11.2 사망 루프 상세 (잠금 유지 항목)
+
+- **1명 사망 = 전원 씬 리로드** (`StageResetOnPlayerDeath`). 리로드 후: 존 위 재스폰, `StageStartGate` 재진행, **새 시드** 퍼즐 재배치 (§10).
 - 낙사 확정: **Owner** Y 신고 (`ReportFallDeathServerRpc`) → **Host** HP 0 확정 (§9A.3). Host 단독 Y 판정은 Client void 낙사를 놓치므로 사용하지 않음.
-- 리로드 리셋: `ResetForNewStage` → `ResetStageClientRpc` — 색 NV write는 **Owner만**, `Respawn`(위치·Idle·`RaiseRespawned`)은 **전원 로컬 적용**. 플레이어는 `destroyWithScene: false`(DDOL)라 비오너도 로컬 Respawn 없이는 doDie 포즈가 리로드를 넘어 잔존 (2026-07-16 수정).
+- 리스폰 = **씬 리로드가 전부**. `destroyWithScene:true`로 옛 플레이어 자동 Despawn → ②에서 클린 스폰 → HP/포즈/색이 초기 상태. 별도 리셋 코드 불필요.
+- `Player.IsDead`: 애니메이션·콜라이더·물리 정지는 `Die()`를 통해 **Owner 머신에서만** (Fix A, 의도된 설계). 단 Host는 원격 플레이어 Rigidbody도 직접 시뮬레이션(§9A)하므로, 비오너 머신에서도 `IsDead` 플래그만 별도 동기화(`Player.SyncDeadFlag()`, 2026-07-17) — 트랩·피격 판정이 사망 상태를 인지하도록. HP NetworkVariable이 실질 가드라 지금까지 증상은 없었음, 방어 차원.
+
+### 11.3 ⑤ Play Consumers (Ready 구독만 — 나열은 목록, **실행 순서 아님**)
+
+`NetworkPlayerSetup`(카메라 bind) · `GameSession` · `StageResetOnPlayerDeath` · `ColoredStartZone` · `StagePressurePadSetup` · `TrapPlayerTracker` · `PlayerHPUI` · `TeamStatusUI` · `CheerProgressUI` · `ChangeColorCooldownUI`
+
+공통 패턴 (전 Consumer 동일):
+
+```csharp
+PlayerSpawnCoordinator.OnPlayersReady += Handler;
+if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
+// OnDestroy: -= Handler
+```
+
+- Consumer ↔ Consumer 대기·순서 강제 금지.
+- Ready 전 실패(플레이어 못 찾음 등)를 복구 분기로 메우지 말 것 → ①~④ 불변식부터 확인.
+
+### 11.4 금지 (평행 축 — 발견 즉시 삭제)
+
+| 항목 | 이유 |
+|------|------|
+| `Player.Respawn()` / `ForceRespawn()` | 리스폰 = 씬 리로드. **삭제 완료 (2026-07-17)** — 부활 금지 |
+| `PlayerSpawnManager` 외 플레이어 Spawn / 응급 `Instantiate` | ② Writer 유일 |
+| `SceneFlowManager.ReloadCurrentScene` / `SceneFlowRelay.ReloadCurrentScene` | 리로드 Writer = `StageNetworkState` 유일. **둘 다 삭제 완료 (2026-07-17)** — 부활 금지 |
+| 다른 클래스에서 `OnPlayersReady` 수동 Invoke | ④ Writer 유일 |
+| “카메라 없으면 다시 찾기” 류 복구 if | 칸 불변식 위반을 우회 — 원인 칸을 고칠 것 |
+| DDOL 플레이어 가정 (구 §11 `destroyWithScene:false` + `ResetForNewStage`/`ResetStageClientRpc`) | **폐기.** 플레이어는 씬 스폰. DDOL은 Coordinator·매니저·`LocalPlayerCamera`만 |
+
+### 11.5 증상 → 볼 칸 (진단 사다리)
+
+| 증상 | 먼저 볼 칸 | 그다음 |
+|------|-----------|--------|
+| 플레이어 실종 | ② 스폰 수 | ① 씬 로드 여부 |
+| HP 안 참 / 옛 상태 잔존 | ② Host NV 초기화 | 레거시 `Respawn` 잔재 |
+| 입력 안 됨 / 이중 입력 | ③ Owner 분기 | Instantiate 직후 Input 선점 옆길 |
+| 카메라 안 붙음 | ④ Ready 발행 | ⑤ bind 구독 타이밍 |
+| UI/패드 일부만 깨짐 | ⑤ 해당 Consumer만 | ④ OK 확인 |
+| 죽어도 리로드 없음 | 사망 문 (Owner 가드 → ServerRpc → Host) | — |
+
+규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer(+같은 가정 Consumer)만 고침. 칸에 복구 if 추가 금지. 코드 수정 전 Broken step/근거/Fix plan 제시.
+
+### 11.6 검증 (Foundation — ParrelSync 2인)
+
+1. Title → Lobby → M.Stage 진입: 이동·카메라·HP UI
+2. Host 사망 1회 → 리로드 → 인원수 스폰 → Ready → 카메라/HP 정상
+3. Client 사망 1회 → 동일
+4. 클리어 1회 → 다음 씬 → 같은 축 재통과
+5. `grep`: `Player.Respawn` / `ForceRespawn` / `ReloadCurrentScene` — 프로젝트 정의·호출 **0건** (삭제 완료 상태 유지)
 
 ---
 
@@ -938,9 +1053,9 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 ## 13. 체크포인트 · 스폰 (MVP)
 
 - 각 스테이지/보스 씬에는 **별도 체크포인트 세이브 없음** (MVP).
-- 스폰/리스폰 기준: **`ColoredStartZone.spawnPoint`**.
-- `ColoredStartZone` 점유 시 해당 존이 **그 스테이지 내 리스폰 위치** (`ForceSetSpawnPoint`).
-- 추후 체크포인트 추가 시: 있으면 체크포인트, 없으면 존 스폰.
+- 스폰/리스폰 좌표 = **`PlayerSpawnManager.fixedSpawnPositions`** 고정 좌표 (§11 ② Spawn Writer 유일).
+- `ColoredStartZone`은 리스폰 위치를 갖지 않는다 — `StageStartGate` 점유 판정 전용.
+- 체크포인트는 아직 없음. 추가 시에도 리스폰 Writer는 `PlayerSpawnManager` 하나로 유지 (좌표 소스만 교체).
 
 ---
 

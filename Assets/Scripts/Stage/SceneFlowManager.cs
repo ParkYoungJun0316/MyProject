@@ -14,12 +14,14 @@ using UnityEngine.SceneManagement;
 /// 3. (선택) screenFader: 이 GameObject의 자식 Canvas에 ScreenFader를 붙이고 연결
 ///    → 없으면 암전 없이 즉시 전환
 ///
-/// [이벤트 연결]
-/// - PhaseManager.onAllPhasesComplete → SceneFlowManager.LoadNextScene
-/// - StageManager.OnStageClear (PhaseManager 없는 씬) → SceneFlowManager.LoadNextScene
+/// [이벤트 연결 — 확정 배선 (NetworkDesign §11.1)]
+/// StageManager.OnStageClear / PhaseManager.onAllPhasesComplete
+///   → SceneFlowRelay.LoadNextScene (씬 배치) → 여기 LoadNextScene
+/// DDOL이라 씬 Inspector에서 직접 연결 불가 — 반드시 Relay 경유.
 ///
-/// [사망 리셋]
-/// StageResetOnPlayerDeath가 ReloadCurrentScene() 자동 호출.
+/// [사망·Reset 리로드]
+/// 사망·ESC Reset 모두 StageNetworkState.NotifyPlayerDeathServerRpc 담당 (§11.1).
+/// 이 클래스는 클리어 → 다음 씬 전환만 처리한다.
 /// </summary>
 public class SceneFlowManager : MonoBehaviour
 {
@@ -114,16 +116,6 @@ public class SceneFlowManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 현재 씬을 처음부터 다시 로드 (사망·리셋).
-    /// StageResetOnPlayerDeath 에서 자동 호출.
-    /// </summary>
-    public void ReloadCurrentScene()
-    {
-        if (_isTransitioning) return;
-        StartCoroutine(TransitionTo(SceneManager.GetActiveScene().name));
-    }
-
-    /// <summary>
     /// sceneSequence 내 특정 인덱스의 씬으로 직접 이동.
     /// 메인 메뉴 복귀, 챕터 선택 등에 사용.
     /// </summary>
@@ -206,9 +198,6 @@ public class SceneFlowManager : MonoBehaviour
 #if UNITY_EDITOR
     [ContextMenu("테스트: 다음 씬으로")]
     void Debug_LoadNext() => LoadNextScene();
-
-    [ContextMenu("테스트: 현재 씬 리로드")]
-    void Debug_Reload() => ReloadCurrentScene();
 
     [ContextMenu("테스트: 씬 순서 콘솔 출력")]
     void Debug_PrintSequence()

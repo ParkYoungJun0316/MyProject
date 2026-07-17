@@ -159,9 +159,9 @@ public class TeamStatusUI : MonoBehaviour
         if (excludePlayer == null)
             excludePlayer = FindLocalOwnerPlayer();
 
-        // 플레이어는 destroyWithScene:false(DDOL). 씬 리로드/BuildSlots 재호출 시
-        // UI만 Destroy하고 OnDied를 남기면 RaiseDied → destroyed Image 접근으로
-        // ForceKillClientRpc가 예외 중단 → Owner ForceKill/씬 리로드가 깨진다.
+        // BuildSlots 재호출 시 UI만 Destroy하고 OnDied 구독을 남기면
+        // RaiseDied → destroyed Image 접근으로 ForceKillClientRpc가 예외 중단
+        // → Owner ForceKill/씬 리로드가 깨진다. 반드시 전부 언구독 후 재구성.
         UnsubscribeAllSlots();
 
         for (int i = transform.childCount - 1; i >= 0; i--)
