@@ -388,6 +388,29 @@ public class NetworkPlayerSetup : NetworkBehaviour
             _events?.RaiseRespawned();
     }
 
+    // ── 넉백 (순수, HP 미변경) ────────────────────────────────────
+
+    /// <summary>
+    /// Host에서 직접 호출해 순수 넉백만 적용. HP·쉴드는 건드리지 않으며,
+    /// 기존 피격 무적(_damageInvulnEndTime, isDamage)과도 완전히 분리되어 항상 적용된다.
+    /// Punch / Breakable 등 넉백 전용 이벤트에서 사용 (NetworkDamageUtil.ApplyKnockback).
+    /// </summary>
+    public void ApplyKnockbackFromServer(Vector3 direction, float force)
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead) return;
+
+        ApplyKnockbackClientRpc(direction, force);
+    }
+
+    /// <summary>Owner 클라이언트에서만 실제 AddForce 적용.</summary>
+    [ClientRpc]
+    void ApplyKnockbackClientRpc(Vector3 direction, float force)
+    {
+        if (!IsOwner) return;
+        _rb?.AddForce(direction * force, ForceMode.Impulse);
+    }
+
     // ── 문 즉사 (Jammed 애니) ──────────────────────────────────────
 
     /// <summary>

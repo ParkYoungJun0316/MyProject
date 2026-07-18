@@ -8,6 +8,10 @@ using UnityEngine.Events;
 /// objectives[] 의 목표가 전부 완료되면 OnStageClear 발동.
 /// 하나라도 실패하면 OnStageFailed 발동.
 ///
+/// [축 SSOT: NetworkDesign.md §11A]
+/// Clear/Fail 확정(Resolve)은 Host 레인에서만 판정한다 (Update() 하단 IsServer 가드).
+/// Fail은 별도 소프트 리셋을 두지 않고 전원 즉사 → §11 사망 문(전원 씬 리로드)으로 재진입시킨다.
+///
 /// [설정]
 ///  1. 이 오브젝트 또는 자식에 원하는 Objective 스크립트를 붙임
 ///  2. objectives[] 에 등록 (비우면 자식에서 자동 수집)
@@ -66,17 +70,25 @@ public class StageManager : MonoBehaviour
     {
         if (!_isStarted || _isCleared || _isFailed) return;
 
+        // Tick()은 전 머신에서 로컬 실행 (진행률 표시 등 Consumer 용도).
+        // Complete()/Fail() 자체는 각 Objective가 스스로 Host 가드하는 것과 별개로,
+        // 클리어/실패 "확정"은 아래에서 Host 레인 하나로만 판정한다 (§11A.0 Progress/Resolve).
+        for (int i = 0; i < objectives.Length; i++)
+            if (objectives[i] != null) objectives[i].Tick();
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         _completedCount = 0;
         for (int i = 0; i < objectives.Length; i++)
         {
             if (objectives[i] == null) continue;
 
-            objectives[i].Tick();
-
             if (objectives[i].IsFailed)
             {
                 _isFailed = true;
                 OnStageFailed?.Invoke();
+                KillAllPlayersOnFail();
                 return;
             }
 
@@ -92,6 +104,21 @@ public class StageManager : MonoBehaviour
             DeactivateAllTraps();
             DestroyAllProjectiles();
             OnStageClear?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// 스테이지 실패 → §11 사망 문으로 병합 (NetworkDesign.md §11A.3).
+    /// 별도 리셋 경로를 만들지 않고 전원 즉사시켜 기존 사망 리로드(전원 씬 리로드)로 재진입시킨다.
+    /// Update()가 이미 Host 레인으로 가드한 뒤 호출하므로 여기서 다시 가드하지 않음.
+    /// </summary>
+    void KillAllPlayersOnFail()
+    {
+        Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        foreach (Player p in players)
+        {
+            if (p == null || p.IsDead) continue;
+            NetworkDamageUtil.ApplyInstantKill(p);
         }
     }
 
@@ -146,24 +173,6 @@ public class StageManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 스테이지 상태 초기화 후 모든 Objective 재시작.
-    /// PhaseManager.RestartCurrentPhase() 또는 StageResetOnPlayerDeath에서 자동 호출됨.
-    /// </summary>
-    public void ResetStage()
-    {
-        _isStarted      = false;
-        _isCleared      = false;
-        _isFailed       = false;
-        _completedCount = 0;
-
-        DeactivateAllTraps();
-        DestroyAllProjectiles();
-
-        foreach (var obj in objectives)
-            if (obj != null) obj.ResetObjective();
-    }
-
     // ── 에디터 지원 ──────────────────────────────────────────────
     [ContextMenu("테스트: 스테이지 시작")]
     void Debug_Start() => StartStage();
@@ -184,5 +193,6 @@ public class StageManager : MonoBehaviour
         _isStarted = true;
         _isFailed  = true;
         OnStageFailed?.Invoke();
+        KillAllPlayersOnFail();
     }
 }

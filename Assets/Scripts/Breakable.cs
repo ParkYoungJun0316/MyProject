@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 충돌 시 파괴되는 오브젝트 컴포넌트.
 /// breakTriggerLayers에 해당하는 오브젝트가 닿으면 파괴 + 파편 이펙트.
-/// breakDelay가 0보다 크면 지연 후 렌더/콜라이더 비활성 및 즉사 처리.
+/// breakDelay가 0보다 크면 지연 후 렌더/콜라이더 비활성 및 데미지+넉백 처리.
 ///
 /// [네트워크 동기화]
 /// syncBreakOverNetwork = true (기본): Host만 충돌 판정 → SyncBreakClientRpc로 Client에 동기화.
@@ -68,15 +69,26 @@ public class Breakable : MonoBehaviour
     [Tooltip("파괴 사운드 볼륨 (0~1)")]
     [SerializeField] [Range(0f, 1f)] private float breakSoundVolume = 1f;
 
-    [Header("범위 즉사 (선택)")]
-    [Tooltip("최종 파괴 시점에 반경 내 플레이어를 즉사시킬지 여부.\n" +
+    [Header("범위 데미지 + 넉백 (선택)")]
+    [Tooltip("최종 파괴 시점에 반경 내 플레이어에게 데미지+넉백을 적용할지 여부.\n" +
              "지연 시간이 있으면 지연이 끝난 뒤에만 판정.")]
-    [SerializeField] private bool killPlayerOnBreak = false;
+    [FormerlySerializedAs("killPlayerOnBreak")]
+    [SerializeField] private bool damagePlayerOnBreak = false;
 
-    [Tooltip("즉사 반경(m). killPlayerOnBreak=true일 때만 사용.")]
-    [SerializeField] private float killRadius = 0f;
+    [Tooltip("데미지량. damagePlayerOnBreak=true일 때만 사용.")]
+    [SerializeField] private int breakDamage = 1;
 
-    [Tooltip("플레이어 감지 레이어. killPlayerOnBreak=true일 때 사용.")]
+    [Tooltip("넉백 힘 최소값. damagePlayerOnBreak=true일 때만 사용 (세기만 매번 랜덤).")]
+    [SerializeField] private float knockbackForceMin = 5f;
+
+    [Tooltip("넉백 힘 최대값. damagePlayerOnBreak=true일 때만 사용.")]
+    [SerializeField] private float knockbackForceMax = 10f;
+
+    [Tooltip("판정 반경(m). damagePlayerOnBreak=true일 때만 사용.")]
+    [FormerlySerializedAs("killRadius")]
+    [SerializeField] private float damageRadius = 0f;
+
+    [Tooltip("플레이어 감지 레이어. damagePlayerOnBreak=true일 때 사용.")]
     [SerializeField] private LayerMask playerLayer;
 
     [Header("네트워크")]
@@ -211,21 +223,27 @@ public class Breakable : MonoBehaviour
 
         DoBreakVisuals();
 
-        // 즉사 판정: Host(또는 오프라인)에서만
-        if (killPlayerOnBreak && killRadius > 0f)
+        // 데미지 + 넉백 판정: Host에서만
+        if (damagePlayerOnBreak && damageRadius > 0f)
         {
             var nm = NetworkManager.Singleton;
-            bool isNetworkActive = nm != null && nm.IsListening;
-            if (!isNetworkActive || nm.IsServer)
+            if (nm == null || !nm.IsListening || nm.IsServer)
             {
-                Collider[] hits = Physics.OverlapSphere(transform.position, killRadius, playerLayer);
+                Collider[] hits = Physics.OverlapSphere(transform.position, damageRadius, playerLayer);
                 for (int i = 0; i < hits.Length; i++)
                 {
                     Player p = hits[i].GetComponent<Player>()
                                ?? hits[i].GetComponentInParent<Player>();
                     if (p == null) continue;
 
-                    NetworkDamageUtil.ApplyDamage(p, 9999);
+                    NetworkDamageUtil.ApplyDamage(p, breakDamage, false);
+
+                    Vector3 dir = p.transform.position - transform.position;
+                    dir.y = 0f;
+                    if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
+                    dir.Normalize();
+                    float force = Random.Range(knockbackForceMin, knockbackForceMax);
+                    NetworkDamageUtil.ApplyKnockback(p, dir, force);
                 }
             }
         }
@@ -243,7 +261,7 @@ public class Breakable : MonoBehaviour
         _broken = true;
         DoBreakVisuals();
         SetVisible(false);
-        // killPlayerOnBreak: Host 전용. Client에서는 실행하지 않음.
+        // damagePlayerOnBreak: Host 전용. Client에서는 실행하지 않음.
     }
 
     void DoBreakVisuals()
@@ -287,13 +305,13 @@ public class Breakable : MonoBehaviour
 #if UNITY_EDITOR
     void OnDrawGizmos()
     {
-        if (!killPlayerOnBreak || killRadius <= 0f) return;
+        if (!damagePlayerOnBreak || damageRadius <= 0f) return;
 
         Gizmos.color = new Color(1f, 0.2f, 0f, 0.15f);
-        Gizmos.DrawSphere(transform.position, killRadius);
+        Gizmos.DrawSphere(transform.position, damageRadius);
 
         Gizmos.color = new Color(1f, 0.2f, 0f, 0.9f);
-        Gizmos.DrawWireSphere(transform.position, killRadius);
+        Gizmos.DrawWireSphere(transform.position, damageRadius);
     }
 #endif
 }

@@ -8,6 +8,7 @@ using UnityEngine;
 /// ApplyDamage      — 서버 판정 전용. 함정·적·씬 이벤트 등 모든 데미지 진입점.
 ///                    서버에서만 실제 동작. 클라이언트 호출 시 즉시 반환.
 /// ApplyInstantKill — 즉사 전용. 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
+/// ApplyKnockback   — 순수 넉백 전용(HP·쉴드 미변경). 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
 /// </summary>
 public static class NetworkDamageUtil
 {
@@ -45,5 +46,20 @@ public static class NetworkDamageUtil
         }
 
         netSetup.ApplyInstantKillFromServer();
+    }
+
+    /// <summary>
+    /// 순수 넉백 전용. HP·쉴드는 건드리지 않는다 (Punch / Breakable 등 넉백 전용 이벤트).
+    /// 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
+    /// </summary>
+    public static void ApplyKnockback(Player p, Vector3 direction, float force)
+    {
+        if (p == null) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+        var netSetup = p.GetComponent<NetworkPlayerSetup>();
+        netSetup?.ApplyKnockbackFromServer(direction, force);
     }
 }

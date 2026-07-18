@@ -16,9 +16,11 @@ using System.Collections.Generic;
 /// - 타임아웃 → 남은 타겟 소멸 + Fail()
 ///
 /// [리셋 연동]
-/// PhaseManager.RestartCurrentPhase() → DisableAllPhaseObjects → ResetAllManagedStageManagers
-/// → StageManager.ResetStage() → ResetObjective() → Begin() (비활성 중 → 스폰 스킵)
-/// → EnterPhase(onPhaseEnter) → StageManager.StartStage() → Begin() (활성 → 정상 스폰)
+/// 리셋은 소프트 리셋 경로가 없다 — 사망/실패는 항상 §11 사망 문(전원 씬 리로드)으로 재진입한다
+/// (NetworkDesign.md §11A.3). 이 씬이 재로드되면 Awake/Begin이 전부 새로 실행되므로
+/// 별도 ResetObjective 류 호출은 불필요.
+/// PhaseManager가 objectsToDisable/objectsToEnable로 이 오브젝트를 비활성화한 상태에서
+/// EnterPhase(onPhaseEnter)로 재활성될 수 있음 — 이때 Begin()이 비활성 중이면 스폰을 건너뜀.
 ///
 /// [Inspector 설정]
 /// - spawner: Stage5TargetSpawner 연결 필수

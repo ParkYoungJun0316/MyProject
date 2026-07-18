@@ -213,13 +213,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -315,7 +320,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -492,13 +501,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -671,13 +685,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -755,13 +774,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1151,7 +1175,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -1255,13 +1283,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1348,7 +1381,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -1530,13 +1567,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1570,13 +1612,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1670,13 +1717,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1695,7 +1747,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -2121,7 +2177,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -2294,7 +2354,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -2545,7 +2609,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -2759,13 +2827,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -3160,7 +3233,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -3244,7 +3321,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -3961,7 +4042,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -4128,7 +4213,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -4212,7 +4301,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -4321,13 +4414,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4467,13 +4565,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4662,13 +4765,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4702,13 +4810,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4722,7 +4835,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -4821,13 +4938,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4924,7 +5046,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -5023,13 +5149,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5048,7 +5179,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -5373,13 +5508,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5413,13 +5553,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5458,13 +5603,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5488,7 +5638,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -5704,7 +5858,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -5898,13 +6056,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -6059,7 +6222,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -6163,13 +6330,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -6183,7 +6355,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -6267,7 +6443,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -6436,13 +6616,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -6461,7 +6646,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -6996,7 +7185,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -7120,6 +7313,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   OnFailed:
+    m_PersistentCalls:
+      m_Calls: []
+  startPoint: {fileID: 0}
+  OnProgressChanged:
     m_PersistentCalls:
       m_Calls: []
 --- !u!65 &1417640704
@@ -7514,13 +7711,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -7627,13 +7829,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -7734,7 +7941,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -7915,7 +8126,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -8182,13 +8397,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -8299,13 +8519,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -8324,7 +8549,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -8428,13 +8657,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -8525,13 +8759,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -8565,13 +8804,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -8600,13 +8844,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -8625,7 +8874,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -8719,7 +8972,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -8904,13 +9161,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -9225,7 +9487,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -9401,13 +9667,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 5.5
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 5.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -9426,7 +9697,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -9510,7 +9785,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name
@@ -9594,7 +9873,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Convex
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5632723956341689037, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8644999909112628013, guid: c1b15fdeffb1ffa4783583af4eb2f994, type: 3}
       propertyPath: m_Name

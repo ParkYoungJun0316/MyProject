@@ -8,8 +8,7 @@ using UnityEngine.Events;
 /// SpawnOne()만 외부에서 호출.
 ///
 /// [네트워크]
-/// 멀티: Host만 Instantiate + NetworkObject.Spawn(). Client는 NGO 수신으로 자동 생성.
-/// 오프라인: 기존 방식 그대로 Instantiate.
+/// Host만 Instantiate + NetworkObject.Spawn(). Client는 NGO 수신으로 자동 생성 (nm == null이면 스폰 스킵).
 /// boulderPrefab에 NetworkObject 컴포넌트가 없으면 경고 로그 출력.
 /// </summary>
 public class BoulderSpawner : MonoBehaviour

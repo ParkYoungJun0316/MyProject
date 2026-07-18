@@ -9,7 +9,6 @@ using UnityEngine.Events;
 /// - Begin()                      : OXQuizManager 이벤트 구독, 진행 상황 초기화
 /// - OXQuizManager.OnQuestionReady → OnProgressChanged 발동 (UI 갱신)
 /// - OXQuizManager.OnAllCleared   → Complete() → StageManager 클리어
-/// - ResetObjective()             : 이벤트 재구독 + 카운터 초기화
 ///
 /// [Inspector 설정]
 ///  - quizManager : 감시할 OXQuizManager

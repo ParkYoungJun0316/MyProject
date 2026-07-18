@@ -24,10 +24,14 @@ public abstract class StageObjective : MonoBehaviour
     /// <summary>StageManager가 스테이지 시작 시 호출</summary>
     public abstract void Begin();
 
-    /// <summary>StageManager의 Update에서 호출 (매 프레임)</summary>
+    /// <summary>StageManager.Update()에서 매 프레임 호출 (전 머신 로컬 실행 — 진행률 표시 등)</summary>
     public abstract void Tick();
 
-    /// <summary>목표 완료 처리. 구체 클래스에서 호출</summary>
+    /// <summary>
+    /// 목표 완료 처리. 구체 클래스에서 호출.
+    /// [축 SSOT: NetworkDesign.md §11A.2] 이 호출은 Host 레인에서만 일어나야 한다 —
+    /// 구체 클래스가 Client 트리거로 직접 호출하면 §11A 위반.
+    /// </summary>
     protected void Complete()
     {
         if (IsCompleted || IsFailed) return;
@@ -35,22 +39,14 @@ public abstract class StageObjective : MonoBehaviour
         OnCompleted?.Invoke();
     }
 
-    /// <summary>목표 실패 처리. 구체 클래스에서 호출</summary>
+    /// <summary>
+    /// 목표 실패 처리. 구체 클래스에서 호출.
+    /// [축 SSOT: NetworkDesign.md §11A.2] Complete()와 동일 — Host 레인에서만.
+    /// </summary>
     protected void Fail()
     {
         if (IsCompleted || IsFailed) return;
         IsFailed = true;
         OnFailed?.Invoke();
-    }
-
-    /// <summary>
-    /// 목표 상태 초기화 후 Begin() 재호출.
-    /// StageManager.ResetStage()에서 호출됨.
-    /// </summary>
-    public void ResetObjective()
-    {
-        IsCompleted = false;
-        IsFailed    = false;
-        Begin();
     }
 }

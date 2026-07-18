@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8948739322396964011}
   - component: {fileID: 3496098782117929024}
   - component: {fileID: 3680991133640367868}
+  - component: {fileID: -2229891132012096541}
   - component: {fileID: 1938397086860318252}
   m_Layer: 16
   m_Name: Drop_3.2
@@ -50,7 +51,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -83,6 +84,31 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-2229891132012096541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2353245891846303447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3286330395
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1938397086860318252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -95,6 +121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cfcbda248953c6429767825456e245e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
+  ShowTopMostFoldoutHeaderGroup: 1
   damage: 1
   lifetime: 30
   moveDirection: {x: 0, y: 0, z: 1}
@@ -102,7 +129,6 @@ MonoBehaviour:
   destroyOnWall: 0
   destroyOnFloor: 0
   hitEffectPrefab: {fileID: 0}
-  onHitSfxId: 34
 --- !u!1 &5325139278614309710
 GameObject:
   m_ObjectHideFlags: 0

@@ -23,7 +23,7 @@ public class StageResetOnPlayerDeath : MonoBehaviour
 
     void Start()
     {
-        // 네트워크·오프라인 모두: PlayerSpawnCoordinator 이벤트 기준으로 구독
+        // PlayerSpawnCoordinator 이벤트 기준으로 구독 (멀티·솔로 공통 — NGO Host 1인도 동일 경로)
         PlayerSpawnCoordinator.OnPlayersReady += TrySubscribePlayers;
         if (PlayerSpawnCoordinator.IsReady) TrySubscribePlayers();
     }

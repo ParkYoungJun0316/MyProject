@@ -473,10 +473,12 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 | 용도 | **ParrelSync ①**, **Dev Build ②** (같은 PC Host/Client EXE) |
 | Join | `127.0.0.1:7777` 또는 6자리 룸코드 UI (개발용) |
 
-**※ 원격 IP Join·UDP discovery는 하지 않는다.**  
+**※ 원격 IP Join·실사용 LAN(물리적으로 분리된 2대 PC) 테스트는 하지 않는다.**  
 **※ Steam Playtest·정식 배포·플레이어 멀티에는 사용하지 않음** → §4.2.
 
-**개발자 테스트:** ParrelSync(①) → Dev Build ② (같은 PC 2 exe).
+**개발자 테스트:** ParrelSync(①) → Dev Build ② (같은 PC 2 exe). **실제 테스트 가능한 방법은 이 2가지뿐** — 상세: §6A.3.
+
+> **코드 참고:** `LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 존재하나, 이는 같은 PC/세션 내 편의 기능일 뿐 **물리적으로 분리된 2PC 간 실사용 LAN 연결 테스트 수단이 아니다** (미지원/미검증). Steamworks 연동 전까지 개발자 검증은 ①②로만 한다.
 
 ### 4.2 Steam P2P + Lobby (**Open Must**, §0.2 ④)
 
@@ -514,6 +516,98 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 
 ---
 
+## 6A. 룸·세션 수명주기 축 (SSOT)
+
+> **한 줄:** 진입(Connect) → 로비(Lobby) → 시작 게이트(Start Gate) → 인게임(InGame — 내부에서 §11 플레이어 축이 씬마다 반복 재진입) → 종료(Leave/SessionEnd) → ①로 재진입.
+> 이탈·클리어·Host Quit **전부 같은 종료 문(⑤)**으로 들어간다. 평행 종료 경로 없음.
+> §4·§5·§6·§12는 각 칸의 **세부 규칙**이고, 이 절은 그 위의 **축 골격**이다. 세부는 해당 절 참조, 중복 서술하지 않음.
+
+### 6A.0 축 (5칸 · 일방통행)
+
+```
+① Connect → ② Lobby → ③ Start Gate → ④ InGame → ⑤ Leave/SessionEnd
+                                                        │
+                          (이탈·Host Quit·클리어 전부 여기로 재진입) ── ①로 (0.Title)
+```
+
+| 칸 | 불변식 (칸이 끝나면 참) | Writer (여기만 진실) | 상세 |
+|----|------------------------|----------------------|------|
+| ① Connect | Host 시작 또는 Client 룸코드 접속 완료 | `NetworkManagerSetup` (`StartHost`/`StartClient`) — `TitleMenuController` 경유만 | §4, §5 |
+| ② Lobby | 슬롯 배정, Ready/색/CheerName 반영. 로비 이탈=슬롯만 비움(**방 유지**) | `LobbyNetworkManager` 유일 (`OnClientJoined`/`OnClientLeft`/`SetReadyServerRpc`/`SetColorServerRpc`/`SetCheerNameServerRpc`/`KickPlayerServerRpc`) | §6 |
+| ③ Start Gate | Host만 발동. `CanStart`(클라 전원 Ready + 색·CheerName 중복 없음, 1인이면 즉시 true) 통과해야 진행. 통과 시점부터 인원/색/CheerName **동결** | `LobbyNetworkManager.StartGameServerRpc` 유일 | §6 |
+| ④ InGame | 세션 진행 중(M/T 스테이지+보스). 룸 구성(인원/색) **불변** — 이 구간엔 kick/late join/재접속 없음 | 없음(룸 레벨) — 씬 단위 진실은 §11 플레이어 축이 담당 | §11 |
+| ⑤ Leave/SessionEnd | 이탈(Host/Client 누구든)·Host Quit·클리어 전부 같은 문. `Shutdown` + 세션 리셋 후 ①로 재진입 | `TitleReturnFlow.Request` 유일 (`ExecuteReturn`은 내부) | §12 |
+
+### 6A.1 ⑤로 들어오는 문 — 전부 `TitleReturnFlow.Request` 경유
+
+| 문 | 경로 | Reason |
+|----|------|--------|
+| 클리어 | `EndDemoController` → `End.Demo` 복귀 버튼 | `EndDemo` (`FullRunReset`) |
+| Client 이탈(본인이 끊김을 감지) | `DisconnectManager.OnClientLeft` | `ClientDisconnected` |
+| Host 이탈/Quit | `DisconnectManager.OnClickLeaveRoom` → 타 Client에 `NotifyAllReturnClientRpc` 통지 | `HostQuitRoom` |
+| 로비 Quit | `LobbyMenuController.OnClickQuit` | `LobbyQuit` |
+| 로비 중 연결 끊김 | `LobbyMenuController.OnNetworkDisconnected` | `ClientDisconnected` |
+
+이 문들 **외**에 `NetworkManager.Shutdown()` 직접 호출 금지 — 전부 `NetworkManagerSetup.Shutdown()`을 거치고, 그 호출은 `TitleReturnFlow.ExecuteReturn` 내부 1곳뿐이어야 한다.
+
+### 6A.2 로비 Kick vs 인게임 이탈 — 구분 (혼동 금지)
+
+| | 로비 Kick (②) | 인게임 이탈 (⑤) |
+|--|--|--|
+| 트리거 | **Host가 대상을 지정**해 강퇴 | 누구든 연결 끊김/Quit (본인 의사와 무관해도 발생) |
+| 결과 | 슬롯만 비움, **방 유지**, 남은 인원 계속 Ready | **방 전체 종료** → 전원 타이틀 |
+| API | `LobbyNetworkManager.KickPlayerServerRpc` | `DisconnectManager` → `TitleReturnFlow` |
+| 인게임에 존재하는가 | **아니오** — 로비 전용 | 이게 인게임에서 "누가 빠지는" **유일한** 경로 |
+
+**인게임 Kick(강퇴/Ban)은 존재하지 않고, 앞으로도 추가하지 않는다.** Host가 인게임 중 특정 Client를 강제로 내보내는 기능은 로비에만 있다. 인게임에서 누군가 빠지면(자의든 타의든, 인터넷 문제·개인 사정 등) 이는 **"이탈"**이며, §12 규칙대로 **방 전체가 종료**된다 — "Kick"이라는 별도 기능이 아니다.
+
+### 6A.3 개발 환경 연결 방식 — 실제 가능한 것만 (§4.1 보강)
+
+현재 실제로 검증 가능한 개발자 테스트 방법은 **2가지뿐**이다 (§0.2와 동일):
+
+| 방법 | 실제 동작 |
+|------|----------|
+| ① ParrelSync | 에디터 Host + Clone Client, **같은 PC** |
+| ② Dev Build | Host EXE + Client EXE, **같은 PC** localhost:7777 |
+| 물리적으로 분리된 2PC 간 LAN 연결 | **테스트 안 됨 / 미지원** |
+| ④ Steam P2P | 아직 미구현 |
+
+`LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 코드에 있지만, 이는 같은 PC/세션 안에서의 편의 기능이고 **실사용 LAN 2PC 연결 테스트 수단이 아니다.** Steamworks(§0.2 ④)가 붙기 전까지 개발자 검증은 **①②만** 사용한다.
+
+### 6A.4 금지 (평행 경로 — 발견 즉시 삭제)
+
+| 항목 | 이유 |
+|------|------|
+| 인게임 Kick(강퇴) 기능 추가 | 로비 전용 (§6A.2). 인게임에 만들지 않음 |
+| Late Join / 재접속 / 호스트 마이그레이션 | §12 미지원 정책. 코드에도 없음(확인됨) — 추가 금지 |
+| `NetworkManager.Shutdown()` 직접 호출 | ⑤ Writer(`TitleReturnFlow`) 우회 — 금지 |
+| `LobbyNetworkManager`의 로비 이탈/Kick 경로를 인게임 이탈에 재사용 | ②/⑤ 별도 유지, 섞지 말 것 |
+| 인게임(④) 중 인원/색/CheerName 변경 | ③ Start Gate 통과 후 동결 |
+| 실사용 LAN 2PC 연결을 정식 테스트/배포 수단으로 취급 | §6A.3 — 미지원. ①②만 |
+
+### 6A.5 증상 → 볼 칸 (진단 사다리)
+
+| 증상 | 먼저 볼 칸 |
+|------|-----------|
+| Ready 눌러도 Start 안 됨 | ③ `CanStart` (Ready 전원? 색·CheerName 중복?) |
+| 로비에서 나갔는데 방이 통째로 터짐 | ②/⑤ 혼동 — 지금 로비인지 인게임인지, 호출된 게 `LobbyNetworkManager.OnClientLeft`인지 `DisconnectManager`인지 확인 |
+| 인게임 중 한 명 나갔는데 계속 진행됨 | ⑤ `DisconnectManager.OnClientLeft` 콜백 등록 여부 |
+| 타이틀로 안 돌아가고 멈춤 | ⑤ `TitleReturnFlow.Request` 호출 여부 / `Shutdown` 완료 여부 |
+| "인게임에서 Kick하고 싶다"는 요청 | 의도된 미지원(§6A.2) — 버그 아님, 구현하지 않음 |
+| 재접속/Late Join 요청 | 의도된 미지원(§12) — 버그 아님, 구현하지 않음 |
+| 개발 중 다른 PC로 접속이 안 됨 | §6A.3 — 의도된 제약. ①②만 사용, LAN 실사용 기대하지 말 것 |
+
+### 6A.6 검증 (ParrelSync 2인)
+
+1. Title → Host 생성 → Client 룸코드 접속 → Lobby 슬롯 반영 (①→②)
+2. 색·CheerName 중복 상태에서 Start 시도 → 막힘 확인 → 해소 후 Start (③)
+3. 인게임 중 Client 강제 종료(연결 끊기) → Host 포함 전원 타이틀 복귀 확인 (⑤)
+4. 인게임 중 Host 종료 → Client `NotifyAllReturnClientRpc` 수신 후 타이틀 복귀 확인 (⑤)
+5. 클리어(`End.Demo`) → 타이틀 복귀 버튼 → `GameSession`/`SceneFlowManager` 리셋 확인 (⑤→①)
+6. `grep`: 게임 코드 내 `NetworkManager.Shutdown()` 직접 호출 — `NetworkManagerSetup` 내부 1곳 제외 **0건**
+
+---
+
 ## 7. 플레이어 · 스폰
 
 ### 7.1 Prefab
@@ -546,6 +640,11 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 **Owner 전용:** 키 입력, 카메라, 애니 연출, 로컬 마이크·Vosk 응원 (`CheerKeywordEngine`, `VoiceBroadcastTrigger`).
 
 **데미지 Owner 신고 RPC (`ReportHitServerRpc` 등) / `ApplyDamageWithOwnerReport`:** Phase 1에서 제거 대상 — **플레이어 본체 “내가 맞았다” 신고**와, 발사체 B안 Client 트리거→ServerRpc(§9.0.1)는 구분한다.
+
+### 7.4 Punch (PvP 넉백)
+
+- **Owner** Attack 입력 → `PunchServerRpc`(Host: 쿨다운·생존만 체크) → **Host 로컬 히트박스**(`PlayerPunchHitbox`, Host가 전 플레이어 Rigidbody를 시뮬레이션하므로 유효) 판정 → `NetworkDamageUtil.ApplyKnockback`(§9A.3) → `ClientRpc`로 피격자 Owner에만 `AddForce`.
+- HP 데미지는 0(순수 넉백)이지만 **네트워크 진실(Host 판정 + 데미지 파이프라인 API)이 있는 기능** — §9.1의 Pattern **B(함정·피격)와 동일 권한 구조**. `PlayerPunch`/`PlayerPunchHitbox`는 §9.1의 "스테이지 컨텐츠" 표에는 넣지 않는다 (레벨디자이너가 배치하는 컨텐츠가 아니라 플레이어 대 플레이어 기본 동작이므로) — 여기 §7.4와 §9A.3에만 기재.
 
 ---
 
@@ -663,18 +762,36 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 
 게임 느낌(“함정 같아 보임”)이 아니라 **무엇을 동기화해야 하는가**로 분류한다.
 
-| 패턴 | 이름 | 네트워크 진실 | Host / Client |
-|------|------|---------------|---------------|
-| **A** | 연출·타일 껍데기 | 없음 (표시만) | C/D 결과를 따라 그림. 타일마다 RPC 금지 |
-| **B** | 함정·피격 | 스폰·스케줄·데미지 | Host 판정 + `NetworkDamageUtil` (발사체=§9.0.1 B안) |
-| **C** | 챌린지·라운드 | 시드·라운드·정답·타이머 | **Host 상태머신** → 상태만 복제. 오답 데미지는 B API 호출 |
-| **D** | 목표·게이트·클리어 | 시작·클리어·리로드 | Host만 Gate / Complete / 씬 리로드 (`StageNetworkState` 등) |
-| **E** | 월드 모션 | 위치·이동 스케줄 | Host 타임라인(또는 ServerTime) + 위상/위치 동기화 |
-| **F** | 플로우 인프라 | 씬 시퀀스 | `SceneFlowManager` / Relay — 컨텐츠별 설계 금지 |
+| 패턴 | 이름 | 네트워크 진실 | Host / Client | 정리 상태 |
+|------|------|---------------|---------------|-----------|
+| **A** | 연출·타일 껍데기 | 없음 (표시만) | C/D 결과를 따라 그림. 타일마다 RPC 금지 | 정리 대기 — §9.1.3 그룹 3 |
+| **B** | 함정·피격 | 스폰·스케줄·데미지 | Host 판정 + `NetworkDamageUtil` (발사체=§9.0.1 B안) | 정리 대기 — §9.1.3 그룹 1 |
+| **C** | 챌린지·라운드 | 시드·라운드·정답·타이머 | **Host 상태머신** → 상태만 복제. 오답 데미지는 B API 호출 | **이 문서에서 다루지 않음 — 축 #4(챌린지)에서 별도 진행** |
+| **D** | 목표·게이트·클리어 | 시작·클리어·리로드 | Host만 Gate / Complete / 씬 리로드 (`StageNetworkState` 등) | **완료 — §11A(스테이지 진행 축)로 승격됨.** 이 표는 정의만, 세부는 §11A 참조 |
+| **E** | 월드 모션 | 위치·이동 스케줄 | Host 타임라인(또는 ServerTime) + 위상/위치 동기화 | 정리 대기 — §9.1.3 그룹 2 |
+| **F** | 플로우 인프라 | 씬 시퀀스 | `SceneFlowManager` / Relay — 컨텐츠별 설계 금지 | **완료 — §6A(룸·세션 축)/§11(플레이어 축)이 커버.** 이 표는 정의만 |
 
 **판별:** 데미지 코드?→B · 정답/라운드?→C · 클리어/게이트?→D · Transform 스케줄?→E · 표시만?→A · 씬 파이프?→F.
 
-#### 9.1.2 M 씬 작업 순서 (확정)
+> **PvP 동작(Punch 등):** 스테이지가 배치하는 컨텐츠가 아니므로 이 표에 넣지 않음. 권한 구조는 B와 동일 — §7.4 / §9A.3 참조.
+
+#### 9.1.3 정리 작업 순서 (그룹 분할 · 미완료 패턴 A/B/E)
+
+> D·F는 §11A/§6A로 이미 승격 완료. C는 축 #4(챌린지)로 완전히 이관 — 이 절에서 다루지 않음.
+> 남은 A/B/E를 파일 규모 순으로 그룹화. **그룹 1(B) → 그룹 2(E) → 그룹 3(A)** 순서 권장 (B가 가장 사용 빈도 높고 급함, A는 네트워크 진실이 없다는 것만 확인하면 되는 가벼운 감사).
+
+> **스코프 원칙 (확정):** 이번 정리 라운드는 **`M.Stage1`…`M.Stage5` → `M.Boss` 인스턴스로 한정**한다. T 전용 클래스(아래 표에 표시)는 **별도 T 라운드**로 미룬다. 이는 "데모 스코프 축소"가 아니라 — 같은 클래스를 M에서 먼저 검증/고정하고 T 인스턴스에 그대로 재사용하는 순서일 뿐, T도 결국 동일 라운드 방식으로 전부 다룬다(§9.1.4 "C 파이프라인은 OX에서 먼저 잠그고 복제" 원칙과 동일).
+> 각 파일이 실제로 어느 씬에서 쓰이는지는 스크립트 `.meta` guid를 씬 파일에서 직접 대조해 확인한 것 — 추정 아님.
+
+| 그룹 | 패턴 | 이번 라운드(M) 대상 | T 전용 — 별도 라운드로 미룸 |
+|------|------|-------------------|---------------------------|
+| **1** | B 함정·피격 | `ArrowTrap`, `DropTrap`, `TrapProjectile`, `WindTrap`, `ContactDamage`(M.Stage3에도 있음), `TrapBase`, `TrapPlayerTracker`, `Breakable`, `Stage5ChaserHitbox` (+ `CeilingTrap`/`TrapSpeedPhase`/`SpikeTrap`은 현재 씬 배치 미확인 — 작업 중 재확인) | `SpikeLane`/`SpikeLaneField` (`T.Stage3`, `T.Boss`만 확인됨) |
+| **2** | E 월드 모션 | `AdvancingWall` (**`M.Stage3` 사용, `T.Boss`에서도 재사용되므로 여기서 검증해두면 T 쪽도 절반 커버됨**) | `WallMover`, `WallMoverSequencer`, `BoulderSpawner`, `BoulderSpawnManager`, `WaypointMover`(Boulder 프리팹에 내장), `WallWaveController`, `WallLineRandomizer`, `MovingCorridor`, `AdvancingWallTelegraph` — 전부 `T.Stage1`/`T.Stage3`/`T.Stage4`/`T.Boss`에서만 확인됨 |
+| **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse` 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
+
+**그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.
+
+#### 9.1.4 M 씬 작업 순서 (확정)
 
 F·D 공통은 **검증 완료** 전제. 이후 **씬 단위**로 C(·필요 시 B/E)만 붙인다.
 
@@ -728,6 +845,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 |------|-----|
 | 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount, knockback)` |
 | 즉사 (문 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
+| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force)` — Breakable 범위 넉백, `PlayerPunch` PvP 넉백 등 (§7.4) |
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 | 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
@@ -1025,6 +1143,97 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 
 ---
 
+## 11A. 스테이지 진행 축 (SSOT)
+
+> **한 줄:** 존 점유 → 카운트다운 → `StartStage` → **Host 레인 하나**만의 판정(Tick/Complete/Fail) → Resolve(Clear 또는 Fail) → **Clear는 §11 ①Load(다음 씬)로, Fail은 §11 사망 문으로** 재진입한다.
+> 이 축은 §11(플레이어 수명주기)의 **"⑤ Play" 구간** 안에서 스테이지 콘텐츠가 실제로 어떻게 진행·종료되는지를 다룬다. 챌린지(OX퀴즈 등) 내부 판정 로직은 별도 축(§9.1 패턴 C) — 여기선 `StageObjective.Begin/Tick/Complete/Fail` **계약 경계까지만** 다룬다.
+> 버그 = 어느 칸의 불변식이 깨졌는가. §11과 동일하게, 칸을 한 칸씩 거슬러 올라가 확인하고 **그 칸의 Writer만** 고친다.
+
+### 11A.0 축 (5칸 · 일방통행)
+
+```
+① Gate → ② Start → ③ Progress → ④ Resolve → ⑤ Exit
+                                                 ├─ Clear → §11 ①Load 재진입 (다음 씬)
+                                                 └─ Fail  → §11 사망 문 재진입 (전원 리로드, 같은 씬)
+```
+
+| 칸 | 불변식 (칸이 끝나면 참) | Writer (여기만 진실) |
+|----|------------------------|----------------------|
+| ① Gate | 활성 색 전원 `ColoredStartZone` 점유해야 카운트다운 시작. Host `ServerTime` 기준 전원 동일 타이머 | `StageStartGate`(Host `Update`) → `StageNetworkState`(`countdownStartServerTime`/`isCountdownActive` NV) |
+| ② Start | `StageManager.StartStage()`는 **Host 레인에서만** 의미를 가진다 — objectives `Begin()`, traps `Activate()`, floor `Start()` | `StageManager.StartStage()` — Host 레인 |
+| ③ Progress | `Tick()`/`Complete()`/`Fail()` 판정은 **Host 레인 하나만** 존재한다. Client는 이 판정 루프의 "결과"를 진실로 취급하지 않는다 (필요한 표시는 Host 브로드캐스트로만 관찰) | `StageManager.Update()` — Host 레인 |
+| ④ Resolve | Cleared/Failed는 Host가 **한 번만** 확정 | `StageManager` (`_isCleared`/`_isFailed`) — Host 레인 |
+| ⑤ Exit | 확정된 결과에 따라 **기존 문을 재사용** — 새 리로드/전환 경로 금지 | Clear: `SceneFlowRelay → SceneFlowManager.LoadNextScene`(Host만 `LoadScene`). Fail: `NetworkDamageUtil.ApplyInstantKill`(전원, Host) → §11 사망 문 |
+
+**"Host 레인"이 의미하는 것:** 가드(`IsServer` 등)는 나중에 Client가 끼어들어서 막는 패치가 아니다. **StageManager 판정 자체가 원래 Host 하나에서만 존재하는 개념**이고, 코드에서 Client 인스턴스가 같은 계산을 중복 수행하지 않게 만드는 것은 그 진실을 코드로 그대로 옮기는 것뿐이다. Host 1벌 + Client 1벌, 이중 계산이 남아있다면 그 자체가 이 축 위반.
+
+### 11A.1 ① Gate 상세
+
+- `ColoredStartZone.OnTriggerEnter/Stay` — 로컬 점유 판정(색 매칭 + 생존). 네트워크 가드 없음 — **판정 자체는 표시/조회용**, 카운트다운 시작 여부는 Host만 사용.
+- `StageStartGate` (Host `Update`): `AllZonesOccupied()` → `MarkCountdownStart()`(NV) → 타이머 → `CompleteCountdown()` → `stageManager.StartStage()` + Host가 `_stageStartServerTime` NV 기록.
+- Client는 `_stageStartServerTime` NV 감지로 자기 화면에서도 `StartStage()`를 부른다 — **이건 ②Start 진입 트리거 전파일 뿐, ③Progress 판정에는 관여하지 않는다.** ②의 `objectives.Begin()`이 Client 로컬에서도 돌아가더라도, 그 이후 Complete/Fail 판정의 진실은 오직 Host.
+
+### 11A.2 ③ Progress — Host 레인과 챌린지 축(#4)의 경계
+
+- `StageObjective` 계약(`Begin/Tick/Complete/Fail/ResetObjective`)은 **Stage 축이 소유**한다.
+- 계약 "안"에서 "무엇을 판정 기준으로 삼는가"(정답, 시퀀스, 그리드, 타이밍 등)는 **챌린지 축**(리스트 4번, §9.1 패턴 C) 소관 — 이 문서 §11A는 그 내부 규칙을 정의하지 않는다.
+- Stage 축이 요구하는 것은 딱 하나: **`Complete()`/`Fail()` 호출은 Host 레인에서만 일어난다.** 챌린지 구현이 Client 트리거로 직접 `Complete()`/`Fail()`을 호출하면 챌린지 축이 아니라 **이 §11A 위반**.
+
+### 11A.3 ④→⑤ Resolve → Exit
+
+**Clear:**
+```
+[Host] 전 objective Completed
+  → StageManager: _isCleared = true, traps/projectile 정리
+  → OnStageClear (Host 레인에서만 유효한 신호)
+  → SceneFlowRelay.LoadNextScene → SceneFlowManager.LoadNextScene
+  → Host만 NetworkSceneManager.LoadScene (§11 ①Load 재진입, 다음 씬)
+```
+Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "Cleared" NetworkVariable을 새로 만들지 않는다** — 씬 전환 자체가 이미 브로드캐스트. 새 동기화 프리미티브 발명 금지(§9 Sync 규칙과 동일 원칙).
+
+**Fail:**
+```
+[Host] objective.IsFailed 감지
+  → StageManager: _isFailed = true
+  → OnStageFailed (Host 레인) → NetworkDamageUtil.ApplyInstantKill(전원)
+  → 각 플레이어 HP NV → 0 → PlayerEvents.OnDied
+  → §11 사망 문 (StageResetOnPlayerDeath → StageNetworkState.NotifyPlayerDeathServerRpc → 전원 씬 리로드)
+```
+**Fail은 사망과 다른 리로드 경로를 만들지 않는다.** `StageManager.ResetStage()`(부분 리셋)는 이 축에서 쓰지 않음 — §11A.4 금지 목록.
+
+### 11A.4 금지 (평행 축 — 발견 즉시 삭제 대상)
+
+| 항목 | 이유 |
+|---|---|
+| `StageManager.ResetStage()` | 호출처 0. "부분 리셋" 평행 경로 — 리셋 = 씬 리로드(§11)가 유일 |
+| `PhaseManager.RestartCurrentPhase()` | 코드에 존재하지 않음, 주석에서만 참조되는 유령 메서드 — 만들지 않음 |
+| `StageManager.OnStageFailed`를 사망 문 이외 경로(부분 리셋 등)에 연결 | §11A.3 Fail 규칙 위반 |
+| Client가 ③ Progress 판정(Tick/Complete/Fail) 결과를 독자적으로 신뢰 | Host 레인 단일 진실 위반 |
+| `BroadcastStartStageClientRpc` + `_stageStartServerTime` NV — ②Start 이중 시작 신호 | 트리거 전파는 **하나의 메커니즘**만 (현재 NV 감지가 실질 경로 — no-op RPC는 정리 대상) |
+| `StageStartGate`/`StageResetOnPlayerDeath`/`ReachZoneObjective`/`BoulderSpawner`의 "오프라인" 분기·주석 | 프로젝트 온라인 전용 확정(`architecture.mdc`) — 삭제 대상 |
+
+### 11A.5 증상 → 볼 칸 (진단 사다리)
+
+| 증상 | 먼저 볼 칸 | 그다음 |
+|------|-----------|--------|
+| 게이트 카운트다운 안 뜨거나 씹힘 | ① Gate (Host `AllZonesOccupied`/NV) | `ColoredStartZone` 점유 판정 |
+| 트랩 안 움직임 / 스테이지가 시작이 안 됨 | ② Start (`StartStage` 호출 여부) | ① Gate 완료 여부 |
+| Client 화면에서만 먼저 클리어/실패로 보임 | ③ Progress Host 레인 위반 (Client 로컬 계산 여부) | ④ Resolve 중복 판정 |
+| 클리어했는데 다음 씬으로 안 넘어감 | ⑤ Exit-Clear (Host `LoadScene` 가드) | ④ Resolve `_isCleared` 확정 여부 |
+| 실패 판정 났는데 아무 일도 안 일어남 | ⑤ Exit-Fail (`ApplyInstantKill` 연결 여부) | ④ Resolve `_isFailed` 확정 여부 |
+| 리로드 후에도 이전 스테이지 상태 잔존(트랩 계속 날아다님 등) | §11 ①Load 재진입 정합성 | ② Start 재초기화 |
+
+규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer만 고침. 칸에 복구 if 추가 금지.
+
+### 11A.6 §11(플레이어 축)과의 관계
+
+- 이 축은 §11 **"⑤ Play"** 구간의 스테이지 콘텐츠 세부 축이다. §11의 ①~④(Load/Spawn/Owner/Ready)는 그대로 선행 조건.
+- **Fail Exit은 §11 사망 문을 그대로 재사용** — 새 사망/리로드 정의 금지.
+- **Clear Exit은 §11 ①Load에 재진입**(다음 씬) — 새 씬 전환 정의 금지.
+- 즉 §11A는 §11에 새 문을 추가하지 않는다. 기존 두 문(사망 문 / ①Load 문)에 스테이지 콘텐츠가 **어떻게 도달하는지**만 정의한다.
+
+---
+
 ## 12. 이탈 · 세션 종료
 
 > **확정 정책:** 재접속·Late Join·호스트 마이그레이션 **전부 미지원**. 구현·제안하지 않음.
@@ -1038,8 +1247,8 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 | **재접속** | **미지원** (유예·스냅샷·슬롯 복귀 없음) |
 | **호스트 마이그레이션** | **없음** (Host 나가면 방 폭파) |
 | **Late Join** | **없음** |
-| **Kick (인게임)** | 로비 Start **이후**에 Host가 대상을 끊으면 → **방 종료** (전원 타이틀). 별도 Kick UI는 후순위 |
-| **Kick (로비)** | §6 — **슬롯만 비움**, 방 유지. §12와 **다름** |
+| **Kick (인게임)** | **기능 자체가 없음** (§6A.2). Host가 인게임 중 특정 Client를 강제로 내보내는 UI/API 없음 — 앞으로도 추가 안 함. 있는 건 **이탈**(연결 끊김/Quit)뿐이며 발생 시 §12 규칙대로 **방 종료** |
+| **Kick (로비)** | §6 — **슬롯만 비움**, 방 유지. §12(인게임 이탈)와 **다름** |
 
 ### 12.1 구현 시 주의
 
@@ -1158,10 +1367,10 @@ A. 일상 = **Steam 2인** (§0.2.1). 오픈·M주 중 **4인 1회** — 친구 
 A. **연결·Transport·응원 골격**은 2인에서 대부분 검증. **4인 전용** (3표 집계, 4보이스, 4Gate)은 4인 1회 필요.
 
 **Q. discovery / 원격 IP로 테스트하나?**  
-A. **안 함.** ParrelSync · localhost 빌드 · Steam P2P만.
+A. **안 함.** 실제 검증 가능한 건 **ParrelSync · Dev Build(같은 PC) 뿐** (§6A.3). 물리적으로 분리된 2PC 간 LAN 연결은 미지원·미검증. Steamworks 붙으면 그때부터 ④ Steam P2P.
 
 **Q. 로비 Kick이면 방이 터지나?**  
-A. **아니오.** 로비 Kick=슬롯만 비움(§6). **인게임** 이탈/Kick=방 종료(§12).
+A. **아니오.** 로비 Kick=슬롯만 비움(§6), 방 유지. **인게임에는 Kick 기능 자체가 없다** (§6A.2) — 있는 건 이탈뿐이고, 발생 시 방 종료(§12).
 
 **Q. 컷씬·관전·이모트를 출시 전에 넣나?**  
 A. **컷씬: 안 넣음(영구).** 관전·이모트: **Post-Launch**. 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). 정식 Must는 Tutorial·밸런싱·옵션 UI·QA. Steam P2P·텔레메트리는 **Open Must**.

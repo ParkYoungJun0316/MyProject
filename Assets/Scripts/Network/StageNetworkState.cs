@@ -109,20 +109,6 @@ public class StageNetworkState : NetworkBehaviour
         NetworkSessionData.Seed = seed;
     }
 
-    // ── StartStage 동기화 ─────────────────────────────────────────
-
-    /// <summary>
-    /// Host의 StageStartGate 카운트다운이 완료되면 호출.
-    /// Client 측 StartStage는 StageStartGate.UpdateCountdownOnClient()가
-    /// _stageStartServerTime NetworkVariable을 감지해 inspector 참조로 직접 호출.
-    /// </summary>
-    [ClientRpc]
-    public void BroadcastStartStageClientRpc()
-    {
-        if (IsServer) return;
-        Debug.Log("[StageNetworkState] Client StartStage 동기화 완료");
-    }
-
     // ── Breakable 파괴 동기화 ─────────────────────────────────────
 
     /// <summary>

@@ -93,8 +93,9 @@ public class ReachZoneObjective : StageObjective
         if (IsCompleted) return;
 
         // Host-only 판정: NetworkTransform이 Host에 플레이어 위치를 전달하므로 신뢰 가능
-        // Client에서 Complete()가 불리면 StageManager가 로컬에서 OnStageClear를 발동해
-        // SceneFlowManager가 오프라인 경로(LoadSceneAsync)로 씬을 로드하는 버그 발생
+        // Client에서 Complete()가 불리면 그 머신의 IsCompleted가 로컬로 true가 되어
+        // §11A(스테이지 진행 축) Host 레인 위반 — StageManager.Update()도 Host 가드로
+        // 이중 방어하지만, 여기서도 애초에 Client가 판정을 내리지 않도록 막는다.
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 

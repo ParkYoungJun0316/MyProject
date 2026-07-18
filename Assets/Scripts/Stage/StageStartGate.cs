@@ -206,25 +206,13 @@ public class StageStartGate : MonoBehaviour
         OnCountdownComplete?.Invoke();
         Disarm();
 
+        // Host만 StartStage 호출. Client의 StartStage는 UpdateCountdownOnClient()가
+        // _stageStartServerTime NetworkVariable을 감지해 트리거한다 (§11A.1 — 단일 시작 신호).
         var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening)
-        {
-            // 네트워크 모드: Host만 StartStage를 호출하고 ClientRpc로 전파
-            if (nm.IsServer)
-            {
-                // MarkStageStart() 먼저: NetworkVariable이 ClientRpc보다 빠르게 전파되어
-                // Client가 TimerUI 기준 시각을 RPC 도달 전에 확보할 수 있음
-                StageNetworkState.Instance?.MarkStageStart();
-                stageManager?.StartStage();
-                StageNetworkState.Instance?.BroadcastStartStageClientRpc();
-            }
-            // Client: BroadcastStartStageClientRpc 수신 시 StartStage 실행. 여기서는 스킵.
-        }
-        else
-        {
-            // 오프라인
-            stageManager?.StartStage();
-        }
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
+        StageNetworkState.Instance?.MarkStageStart();
+        stageManager?.StartStage();
     }
 
     bool AllZonesOccupied()
