@@ -353,8 +353,11 @@ public class GridColorChallenge : MonoBehaviour
                        && p.isUniqueColor
                        && tile.RequiredColorType == p.playerColorType;
 
+            // NetworkDamageUtil이 데미지 파이프라인 단일 진입점 — Player.ReceiveDamage() 직접 호출은
+            // 온라인 모드에서 Player.TakeDamage()가 즉시 반환(no-op)해 데미지가 전혀 적용되지 않는
+            // 버그였음 (architecture.mdc: NetworkDamageUtil 단일 진입점 규칙 위반, 2026-07-19 수정).
             if (!passed)
-                p.ReceiveDamage(individualDamageOnFail, null);
+                NetworkDamageUtil.ApplyDamage(p, individualDamageOnFail);
         }
     }
 

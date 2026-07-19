@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -54,18 +55,24 @@ public class AnswerRevealEvent : UnityEvent<bool, string> { }
 /// <summary>
 /// 제자리형 OX 퀴즈 매니저. 자체 Trigger를 통해 퀴즈를 시작합니다.
 ///
+/// [축 SSOT: MStageNetworkBoard.md §1/§2 — 축 #4(챌린지) 확정안]
+/// Trigger→RoundStart(Seed)→Generate→Judge→Resolve. Host 레인만 진행을 확정하고,
+/// Client는 StageNetworkState의 NV/RPC를 관찰해 동일한 로컬 코드를 재실행할 뿐
+/// 독자적으로 판정·진행을 결정하지 않는다 (§11A "Host 레인 하나만" 규칙과 동일).
+///
 /// [동작 흐름]
-///  1. 플레이어가 이 오브젝트의 Trigger 안으로 진입 → 퀴즈 시작 (배리어 닫힘)
-///  2. 문제 제시 + 타이머 시작 (OnQuestionReady)
-///  3. 타이머 종료 시 물리 오버랩으로 O/X 발판 위치 개별 판정
+///  1. 플레이어가 이 오브젝트의 Trigger 안으로 진입 → Host만 퀴즈 시작 확정 (배리어 열림)
+///     Host가 라운드 시드를 생성해 StageNetworkState로 배포
+///  2. 문제 제시 + 타이머 시작 (OnQuestionReady) — 전 머신이 동일 시드로 셔플을 재생성하므로
+///     Host/Client가 항상 같은 문제를 봄
+///  3. 타이머 종료 시(ServerTime 기준, 전 머신 동일 시점) 정답 공개는 로컬에서 각자 재생.
+///     실제 물리 오버랩 판정(O/X 발판 위치)은 Host만 수행
 ///     - 정답 위치 플레이어: 생존
-///     - 오답 위치 또는 무응답: wrongDamage 피해 (인스펙터)
-///  4. 정답 공개 및 해설 (OnAnswerRevealed)
-///  5. correctAnswerDelay 후 다음 문제로 진행
-///     - 오답/무응답 플레이어는 wrongDamage 피해
-///     - 사망자는 리스폰 이벤트로 ResetQuiz
-///  6. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 클리어
-///     - AllCleared → barrierDoor Close
+///     - 오답 위치 또는 무응답: wrongDamage 피해 (NetworkDamageUtil, Host만)
+///  4. 정답 공개 및 해설 (OnAnswerRevealed) — 문제 데이터에서 로컬 도출, RPC 불필요
+///  5. correctAnswerDelay 후 다음 문제로 Host가 진행 확정(StageNetworkState.ChallengeStepBegin)
+///  6. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 Host가 클리어 확정
+///     - AllCleared → barrierDoor Close(DoorNetworkSync로 전파) + StageNetworkState.ChallengeCleared
 /// </summary>
 public class OXQuizManager : MonoBehaviour
 {
@@ -123,8 +130,8 @@ public class OXQuizManager : MonoBehaviour
     bool  _quizStarted; // 트리거 중복 시작 방지
     int[] _questionOrder;
 
-    Coroutine    _timerCoroutine;
-    PlayerEvents _playerEvents;
+    Coroutine        _timerCoroutine;
+    StageNetworkState _netState; // 구독 해제 시 동일 인스턴스 참조 보장용 캐시
 
     int QuestionsToWin
     {
@@ -163,55 +170,78 @@ public class OXQuizManager : MonoBehaviour
         Inject(row?.oTile, 0);
         Inject(row?.xTile, 0);
 
-        Player p = FindFirstObjectByType<Player>();
-        if (p != null)
-        {
-            _playerEvents = p.GetComponent<PlayerEvents>();
-            if (_playerEvents != null)
-                _playerEvents.OnRespawned += ResetQuiz;
-        }
-
         // 초기 상태: 발판 Danger, 배리어 내려간 상태
         row?.SetState(OXQuizTile.TileState.Danger);
-        ShuffleQuestions();
+
+        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
+        // Unity 전역 Awake→Start 순서로 보장받음 (같은 프레임 배치).
+        _netState = StageNetworkState.Instance;
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
+            _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
+            _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+        }
     }
 
     void OnDestroy()
     {
-        if (_playerEvents != null)
-            _playerEvents.OnRespawned -= ResetQuiz;
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged    -= HandleChallengeStepChanged;
+            _netState.OnChallengeClearedChanged -= HandleChallengeClearedChanged;
+            _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
+        }
+    }
+
+    /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급.</summary>
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     // ── 공개 API ──────────────────────────────────────────────────
 
     /// <summary>
     /// 외부에서 강제 시작할 때 사용하거나, 자체 트리거에서 호출.
+    /// Host 레인만 실제로 진행 — Client의 로컬 트리거 호출은 무시된다 (축 #4 Q2).
     /// 배리어를 솟아오르게 하고 퀴즈를 시작.
     /// </summary>
     public void StartQuiz()
     {
-        _quizStarted = true;
-        barrierDoor?.Open();
+        if (IsClientOnly()) return;
+
+        barrierDoor?.Open(); // DoorNetworkSync가 NV로 전 클라이언트에 전파
+
+        int seed = Random.Range(int.MinValue, int.MaxValue);
+        _netState?.ChallengeStart(seed);
+
         ResetQuiz();
     }
 
-    /// <summary>퀴즈 상태만 리셋. 리스폰 시 자동 호출 (배리어는 건드리지 않음).</summary>
+    /// <summary>퀴즈 라운드 재시작. Host 레인만 확정 (§11 사망 리로드로도 도달 가능하나 그 경로는 씬 전체 재생성이라 여기 도달 안 함).</summary>
     public void ResetQuiz()
     {
+        if (IsClientOnly()) return;
+        if (_netState == null) return;
+
         StopTimer();
         _questionIndex = 0;
-
-        row?.SetState(OXQuizTile.TileState.Danger);
-
-        ShuffleQuestions();
-        StartNextQuestion();
+        _netState.ChallengeStepBegin(0);
     }
 
-    // ── 내부: 문제 진행 ───────────────────────────────────────────
+    // ── 내부: 문제 진행 (전 머신 공통 — StageNetworkState NV 구독) ─────
 
-    void StartNextQuestion()
+    /// <summary>StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 문제를 표시한다.</summary>
+    void HandleChallengeStepChanged(int stepIndex)
     {
-        if (row == null || questions.Length == 0) return;
+        if (stepIndex < 0 || row == null || questions.Length == 0) return;
+
+        _quizStarted   = true; // Host/Client 공통 — IsStarted는 이 신호로만 true가 됨 (§ OXQuizObjective.Begin 참조)
+        _questionIndex = stepIndex;
+        RegenerateQuestionOrder();
+        if (_questionIndex >= _questionOrder.Length) return; // 안전장치
 
         row.SetState(OXQuizTile.TileState.Pending);
         _quizActive = true;
@@ -219,26 +249,42 @@ public class OXQuizManager : MonoBehaviour
         string text = questions[_questionOrder[_questionIndex]].questionText;
         OnQuestionReady?.Invoke(text);
 
+        StopTimer();
         if (answerTimeLimit > 0f)
             _timerCoroutine = StartCoroutine(TimerRoutine());
     }
 
+    /// <summary>
+    /// ServerTime 기준 공통 타이머. 전 머신이 같은 시점에 타임업을 감지해 정답 공개를 동시 재생하고,
+    /// Host만 이어서 실제 물리 판정(JudgeByPosition)을 수행한다.
+    /// </summary>
     IEnumerator TimerRoutine()
     {
-        float remaining = answerTimeLimit;
+        var nm = NetworkManager.Singleton;
 
-        while (remaining > 0f && _quizActive)
+        while (_quizActive)
         {
+            double startTime = _netState != null ? _netState.ChallengeStepStartServerTime : 0.0;
+            double elapsed    = (nm != null ? nm.ServerTime.Time : 0.0) - startTime;
+            float  remaining  = Mathf.Max(0f, answerTimeLimit - (float)elapsed);
+
             OnTimerTick?.Invoke(remaining);
-            float wait = Mathf.Min(0.1f, remaining);
-            yield return new WaitForSeconds(wait);
-            remaining -= wait;
+            if (remaining <= 0f) break;
+
+            yield return new WaitForSeconds(0.1f);
         }
 
         if (!_quizActive) yield break;
-
         _quizActive = false;
-        JudgeByPosition();
+
+        // 정답 공개는 문제 데이터에서 로컬로 도출 가능 — 전 머신 동시 재생 (RPC 불필요)
+        OXQuestion current = questions[_questionOrder[_questionIndex]];
+        ApplyAnswerRevealColors(current.correctAnswerIsO);
+        OnAnswerRevealed?.Invoke(current.correctAnswerIsO, current.explanationText);
+
+        if (IsClientOnly()) yield break; // 실제 판정·데미지·진행 확정은 Host만
+
+        JudgeByPosition(current);
     }
 
     IEnumerator NextQuestionAfterDelay()
@@ -246,22 +292,23 @@ public class OXQuizManager : MonoBehaviour
         if (correctAnswerDelay > 0f)
             yield return new WaitForSeconds(correctAnswerDelay);
 
-        StartNextQuestion();
+        _netState?.ChallengeStepBegin(_questionIndex);
     }
 
     // ── 판정 ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// 타이머 종료 시 호출. O/X 발판 점유 위치로 개별 판정.
+    /// 타이머 종료 시 Host만 호출. O/X 발판 점유 위치로 개별 판정.
     ///  - 정답 위치: 생존
     ///  - 오답 위치 / 무응답: wrongDamage 피해
     /// 전원 정답이면 다음 문제, 한 명이라도 오답이면 오답 처리.
+    /// [축 #4 Q4] 이 메서드는 TimerRoutine의 IsClientOnly 가드 뒤에서만 호출된다 — Host 레인 전용.
     /// </summary>
-    void JudgeByPosition()
+    void JudgeByPosition(OXQuestion current)
     {
         if (row == null) return;
 
-        bool correctIsO = questions[_questionOrder[_questionIndex]].correctAnswerIsO;
+        bool correctIsO = current.correctAnswerIsO;
 
         List<Player> inO = row.oTile?.GetPlayersInVolume(playerOverlapLayers) ?? new List<Player>();
         List<Player> inX = row.xTile?.GetPlayersInVolume(playerOverlapLayers) ?? new List<Player>();
@@ -301,10 +348,9 @@ public class OXQuizManager : MonoBehaviour
             }
         }
 
-        OXQuestion current = questions[_questionOrder[_questionIndex]];
-
         bool anyWrong = wrongOccupants.Count > 0 || nowhereList.Count > 0;
-        ApplyAnswerRevealColors(correctIsO);
+        // 정답 공개 연출(ApplyAnswerRevealColors/OnAnswerRevealed)은 TimerRoutine에서
+        // 전 머신이 이미 동시 재생 — 여기서 중복 호출하지 않음 (§11A "이중 계산" 금지와 동일 원칙).
 
         if (!anyWrong)
         {
@@ -328,10 +374,11 @@ public class OXQuizManager : MonoBehaviour
             }
         }
 
-        OnAnswerRevealed?.Invoke(current.correctAnswerIsO, current.explanationText);
+        // Host는 방금 직접 호출했으니 Client에만 같은 연출을 전파 (RPC 내부에서 IsServer 스킵)
+        _netState?.NotifyChallengeOutcomeClientRpc(!anyWrong);
 
         // 문제 결과와 관계없이 다음 문제로 진행.
-        // 단, 전원 사망이면 리스폰 이벤트를 통해 ResetQuiz가 호출되므로 여기서 추가 진행하지 않음.
+        // 단, 전원 사망이면 §11 사망 문(전원 씬 리로드)으로 넘어가므로 여기서 추가 진행 불필요.
         bool anyAlive = false;
         for (int i = 0; i < allPlayers.Length; i++)
         {
@@ -347,12 +394,30 @@ public class OXQuizManager : MonoBehaviour
         _questionIndex++;
         if (_questionIndex >= QuestionsToWin)
         {
-            barrierDoor?.Close();
-            OnAllCleared?.Invoke();
+            barrierDoor?.Close(); // DoorNetworkSync가 NV로 전파
+            // OnAllCleared 발동은 아래 HandleChallengeClearedChanged 하나로만 — 이 NV 쓰기가
+            // Host 자신에게도 즉시 OnValueChanged를 발생시키므로(§ StageNetworkState.OnPhaseChanged와
+            // 동일 동작) 여기서 직접 Invoke하면 Host에서 이중 발동된다.
+            _netState?.ChallengeCleared(true);
             return;
         }
 
         StartCoroutine(NextQuestionAfterDelay());
+    }
+
+    // ── StageNetworkState 구독 핸들러 (Host/Client 공통 단일 경로) ──
+
+    /// <summary>Host는 JudgeByPosition에서 직접 호출하므로 이 핸들러는 Client에서만 의미 있음.</summary>
+    void HandleChallengeOutcome(bool success)
+    {
+        if (success) OnCorrectAnswer?.Invoke();
+        else         OnWrongAnswer?.Invoke();
+    }
+
+    /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnAllCleared를 1회 재생.</summary>
+    void HandleChallengeClearedChanged(bool cleared)
+    {
+        if (cleared) OnAllCleared?.Invoke();
     }
 
     // ── 유틸 ──────────────────────────────────────────────────────
@@ -375,16 +440,24 @@ public class OXQuizManager : MonoBehaviour
         }
     }
 
-    /// <summary>questions[] 셔플 후 이번 판 출제 개수(QuestionsToWin)만 _questionOrder에 담음.</summary>
-    void ShuffleQuestions()
+    /// <summary>
+    /// StageNetworkState.ChallengeSeed로 questions[]를 셔플해 이번 판 출제 순서(_questionOrder)를
+    /// 다시 계산한다. [축 #4 Q3] 전 머신이 같은 시드로 호출하므로 항상 동일한 결과가 나온다 —
+    /// 결과 자체를 네트워크로 보내지 않고 "언제든 다시 계산해도 같은 답이 나온다"는 점을 이용.
+    /// UnityEngine.Random(전역 상태)을 건드리지 않도록 로컬 System.Random만 사용.
+    /// </summary>
+    void RegenerateQuestionOrder()
     {
+        int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        var rng  = new System.Random(seed);
+
         int poolSize = questions.Length;
         int[] pool   = new int[poolSize];
         for (int i = 0; i < poolSize; i++) pool[i] = i;
 
         for (int i = poolSize - 1; i > 0; i--)
         {
-            int j   = Random.Range(0, i + 1);
+            int j   = rng.Next(0, i + 1);
             int tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
         }
 

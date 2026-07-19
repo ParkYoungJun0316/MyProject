@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -72,6 +73,12 @@ public class OXQuizObjective : StageObjective
     {
         _currentQuestion = _totalQuestions;
         OnProgressChanged?.Invoke(_currentQuestion, _totalQuestions);
+
+        // [축 SSOT: NetworkDesign.md §11A.2] Complete() 확정은 Host 레인에서만.
+        // OXQuizManager.OnAllCleared는 Host/Client 전 머신에서 공통으로 발동되므로 여기서 가드.
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         Complete();
     }
 

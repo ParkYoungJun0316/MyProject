@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 로비 씬 네트워크 매니저. NetworkBehaviour.
@@ -13,8 +12,9 @@ using UnityEngine.SceneManagement;
 /// - NetworkList로 슬롯(색·Ready) 상태를 전원에 동기화
 /// - 접속 순으로 슬롯 할당 (Host = Slot0)
 /// - Ready·색 변경 ServerRpc
-/// - Host: Kick / StartGame (NetworkSceneManager.LoadScene)
-/// - GameSession.SetActiveColors() 적용 후 M.Stage1 로드
+/// - Host: Kick / StartGame (SceneFlowManager.LoadNextScene 경유)
+/// - GameSession.SetActiveColors() 적용 후 SceneFlowManager.sceneSequence의
+///   "1.Lobby" 다음 씬으로 이동 — 어떤 씬이 첫 스테이지인지는 이 클래스가 정하지 않음
 ///
 /// [배치]
 /// 1.Lobby 씬 빈 GameObject → NetworkObject + LobbyNetworkManager 추가
@@ -303,7 +303,9 @@ public class LobbyNetworkManager : NetworkBehaviour
     /// <summary>
     /// 게임 시작. Host만 호출.
     /// 조건: 전원 Ready + 색 중복 없음.
-    /// GameSession에 활성 색 적용 후 NetworkSceneManager로 M.Stage1 로드.
+    /// GameSession에 활성 색 적용 후 SceneFlowManager.LoadNextScene()으로 전환.
+    /// 어떤 씬이 로드되는지는 SceneFlowManager.sceneSequence(Inspector, 0.Title에 배치) 순서를 따른다 —
+    /// 여기서 씬 이름을 직접 정하지 않는다 (단일 SSOT: SceneFlowManager).
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void StartGameServerRpc(RpcParams rpcParams = default)
@@ -376,7 +378,14 @@ public class LobbyNetworkManager : NetworkBehaviour
         // Client에 배포
         SyncCheerNamesClientRpc(sessionNames[0], sessionNames[1], sessionNames[2], sessionNames[3]);
 
-        NetworkManager.SceneManager.LoadScene("M.Stage1", LoadSceneMode.Single);
+        // 씬 전환은 SceneFlowManager 단일 SSOT로 위임 — sceneSequence 상 "1.Lobby" 다음 항목이 로드된다.
+        if (SceneFlowManager.Instance == null)
+        {
+            Debug.LogError("[LobbyNetworkManager] SceneFlowManager.Instance null — " +
+                           "0.Title에 SceneFlowManager가 없거나 DontDestroyOnLoad 실패. 게임 시작 중단.");
+            return;
+        }
+        SceneFlowManager.Instance.LoadNextScene();
     }
 
     // ── 공개 읽기 API ─────────────────────────────────────────────

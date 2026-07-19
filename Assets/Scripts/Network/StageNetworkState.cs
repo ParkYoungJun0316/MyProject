@@ -1,6 +1,36 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+/// <summary>
+/// 챌린지 라운드 상태 3종(시드·스텝 인덱스·스텝 시작 서버 시간)을 하나로 묶은 값.
+/// [버그 수정 2026-07-20] 세 값을 별도 NetworkVariable로 나눠두면, Client 쪽에 도착하는
+/// 순서가 보장되지 않아 "스텝 인덱스는 갱신됐지만 시드는 아직 이전 값"인 순간에
+/// OnValueChanged가 발동해 Host와 다른 셔플 결과가 나올 수 있었다(Host/Client 문제 불일치).
+/// 하나의 NetworkVariable로 합쳐 항상 원자적으로 같이 도착하게 만든다.
+/// </summary>
+public struct ChallengeStepState : INetworkSerializable, IEquatable<ChallengeStepState>
+{
+    public int    seed;
+    public int    stepIndex;
+    public double stepStartServerTime;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref seed);
+        serializer.SerializeValue(ref stepIndex);
+        serializer.SerializeValue(ref stepStartServerTime);
+    }
+
+    public bool Equals(ChallengeStepState other) =>
+        seed == other.seed &&
+        stepIndex == other.stepIndex &&
+        stepStartServerTime.Equals(other.stepStartServerTime);
+
+    public override bool Equals(object obj) => obj is ChallengeStepState other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(seed, stepIndex, stepStartServerTime);
+}
 
 /// <summary>
 /// 스테이지 네트워크 상태 중앙 허브. NetworkBehaviour.
@@ -49,6 +79,24 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── 챌린지 라운드 동기화 (축 #4 공통 — OX/ColorTile/GridColor/SequenceRing) ──
+    // [축 SSOT: MStageNetworkBoard.md §1] Trigger→RoundStart(Seed)→Generate→Judge→Resolve
+    // 씬당 챌린지는 한 번에 하나만 진행되므로 이 필드들을 공유 슬롯으로 재사용한다.
+
+    // 시드·스텝 인덱스·스텝 시작 서버 시간을 한 NV로 묶어 원자적으로 배포 (위 ChallengeStepState 참조).
+    private readonly NetworkVariable<ChallengeStepState> _challengeStep = new(
+        new ChallengeStepState { seed = 0, stepIndex = -1, stepStartServerTime = -1.0 },
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    // 챌린지 클리어 확정 여부 (Host만 true로 전환)
+    private readonly NetworkVariable<bool> _challengeCleared = new(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     private bool _resetPending;
 
     // Client-side 캐시 — SyncSurvivalRemainingClientRpc 매 틱 Find 방지
@@ -61,6 +109,18 @@ public class StageNetworkState : NetworkBehaviour
     public double CountdownStartServerTime => _countdownStartServerTime.Value;
     public double StageStartServerTime     => _stageStartServerTime.Value;
 
+    public int    ChallengeSeed               => _challengeStep.Value.seed;
+    public int    ChallengeStepIndex           => _challengeStep.Value.stepIndex;
+    public double ChallengeStepStartServerTime => _challengeStep.Value.stepStartServerTime;
+    public bool   IsChallengeCleared           => _challengeCleared.Value;
+
+    /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
+    public event Action<int> OnChallengeStepChanged;
+    /// <summary>챌린지 클리어 확정 상태가 바뀔 때 발동.</summary>
+    public event Action<bool> OnChallengeClearedChanged;
+    /// <summary>Host 판정 결과(성공/실패) 1회성 연출 신호 — Client 전용(Host는 로컬에서 직접 처리).</summary>
+    public event Action<bool> OnChallengeOutcome;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -72,12 +132,16 @@ public class StageNetworkState : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         _currentPhase.OnValueChanged += OnPhaseChanged;
+        _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
+        _challengeCleared.OnValueChanged += OnChallengeClearedNvChanged;
         _surviveObjective = FindFirstObjectByType<SurviveTimeObjective>();
     }
 
     public override void OnNetworkDespawn()
     {
         _currentPhase.OnValueChanged -= OnPhaseChanged;
+        _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
+        _challengeCleared.OnValueChanged -= OnChallengeClearedNvChanged;
         if (Instance == this) Instance = null;
     }
 
@@ -184,6 +248,57 @@ public class StageNetworkState : NetworkBehaviour
 
         Debug.Log($"[StageNetworkState] Phase 변경: {prev} → {next}");
     }
+
+    // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
+
+    /// <summary>
+    /// Host: 챌린지 새 라운드 시작(트리거 진입 등). 시드를 배포해 전 머신이
+    /// 동일한 로컬 생성 코드(셔플·배치)를 재실행하게 한다 — 결과 자체는 전송하지 않음.
+    /// seed·stepIndex를 한 NV 쓰기로 같이 보내 Client에서 항상 원자적으로 도착하게 한다.
+    /// </summary>
+    public void ChallengeStart(int seed)
+    {
+        if (!IsServer) return;
+        _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0 };
+        _challengeCleared.Value = false;
+    }
+
+    /// <summary>
+    /// Host: 문제/라운드 스텝 시작. stepIndex 변경이 전 머신에 전파되어
+    /// OnChallengeStepChanged 구독자가 동일한 표시·타이머 로직을 실행한다.
+    /// 시드는 그대로 들고 있던 값을 유지 — 이 쓰기에서도 seed+stepIndex+time이 한 번에 같이 간다.
+    /// </summary>
+    public void ChallengeStepBegin(int stepIndex)
+    {
+        if (!IsServer) return;
+        _challengeStep.Value = new ChallengeStepState
+        {
+            seed                 = _challengeStep.Value.seed,
+            stepIndex            = stepIndex,
+            stepStartServerTime  = NetworkManager.Singleton.ServerTime.Time,
+        };
+    }
+
+    /// <summary>Host: 챌린지 클리어 확정. Complete() 자체는 각 Objective가 자체 Host 가드로 처리 — 이 신호는 연출용.</summary>
+    public void ChallengeCleared(bool cleared)
+    {
+        if (!IsServer) return;
+        _challengeCleared.Value = cleared;
+    }
+
+    /// <summary>
+    /// Host: 판정 결과(성공/실패) 1회성 연출 신호. 진행 상태(NV)와 별개로
+    /// Client 쪽 UnityEvent(정답/오답 연출 등)만 재생한다 — Host는 로컬에서 직접 처리하므로 스킵.
+    /// </summary>
+    [ClientRpc]
+    public void NotifyChallengeOutcomeClientRpc(bool success)
+    {
+        if (IsServer) return;
+        OnChallengeOutcome?.Invoke(success);
+    }
+
+    void OnChallengeStepChangedNv(ChallengeStepState prev, ChallengeStepState next) => OnChallengeStepChanged?.Invoke(next.stepIndex);
+    void OnChallengeClearedNvChanged(bool prev, bool next) => OnChallengeClearedChanged?.Invoke(next);
 
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
