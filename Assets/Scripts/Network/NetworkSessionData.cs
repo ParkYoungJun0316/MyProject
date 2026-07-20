@@ -15,9 +15,18 @@ public static class NetworkSessionData
     /// </summary>
     public static int Seed { get; set; } = 0;
 
+    /// <summary>
+    /// 게임 시작(로비 → 첫 씬 로드) 시점의 서버 시각.
+    /// LobbyNetworkManager.StartGameServerRpc()에서 기록하고 모든 클라이언트에 브로드캐스트됨.
+    /// TimerUI(PlayTime 모드)가 이 값 기준으로 Host/Client 동일한 경과 시간을 계산.
+    /// -1이면 아직 세션이 시작되지 않음.
+    /// </summary>
+    public static double SessionStartServerTime { get; set; } = -1.0;
+
     /// <summary>데이터를 비움. 타이틀 복귀·새 게임 시 호출.</summary>
     public static void Clear()
     {
         Seed = 0;
+        SessionStartServerTime = -1.0;
     }
 }

@@ -137,20 +137,12 @@ public class WindTrap : TrapBase
         var nm = NetworkManager.Singleton;
 
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
-        // StageStartServerTime 기준 → Host/Client 동일한 절대 기준점
-        if (StageNetworkState.Instance != null
-                     && StageNetworkState.Instance.StageStartServerTime > 0)
-        {
-            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
-            while ((float)nm.ServerTime.Time < _scheduleStartTime + initialDelay)
-                yield return null;
-        }
-        else
-        {
-            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
-            if (initialDelay > 0f)
-                yield return new WaitForSeconds(initialDelay);
-        }
+        // 이 트랩이 실제로 Activate()된(방/Phase가 시작된) 순간을 기준으로 잡는다.
+        // [버그 수정 2026-07-21] ArrowTrap과 동일한 이유로 StageStartServerTime 앵커 제거
+        // (앞 Phase가 길어지면 fireAtSeconds가 이미 과거가 되어 한 번도 발동 안 하는 버그).
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+        _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
 
         float cycleOffset = 0f;
 

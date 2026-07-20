@@ -106,19 +106,21 @@ public class DropTrap : TrapBase
         var nm = NetworkManager.Singleton;
 
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
-        // StageStartServerTime 기준 → Host/Client 동일한 절대 기준점
-        if (StageNetworkState.Instance != null
-                     && StageNetworkState.Instance.StageStartServerTime > 0)
+        // ArrowTrap과 동일한 이유로 StageStartServerTime(Host가 이 Phase 진입 직전에 기록한
+        // 절대 ServerTime) 을 앵커로 복원. PhaseManager.EnterPhase()가 Phase마다 다시
+        // MarkStageStart()를 찍으므로 앞 Phase가 길어져도 과거로 밀리는 문제는 없다.
+        // StageNetworkState가 없는 씬에서는 로컬 Activate() 시각으로 폴백.
+        if (StageNetworkState.Instance != null && StageNetworkState.Instance.StageStartServerTime > 0)
         {
-            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
-            while ((float)nm.ServerTime.Time < _scheduleStartTime + initialDelay)
+            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime + initialDelay;
+            while (nm != null && (float)nm.ServerTime.Time < _scheduleStartTime)
                 yield return null;
         }
         else
         {
-            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
             if (initialDelay > 0f)
                 yield return new WaitForSeconds(initialDelay);
+            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
         }
 
         if (scheduleMode == DropTrapScheduleMode.RandomInterval)
@@ -212,6 +214,13 @@ public class DropTrap : TrapBase
     public void FireAt(Vector3 targetPos)
     {
         if (dropPrefab == null) return;
+
+        // 온라인: Host만 낙하체 스폰 (OnTrapTrigger와 동일 가드).
+        // TrapPlayerTracker.DropLoop()가 Host/Client 양쪽에서 로컬로 돌기 때문에
+        // 여기서 막지 않으면 Client가 NetworkObject.Spawn()을 호출해 NotServerException 발생.
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         StartCoroutine(DropCycle(targetPos));
     }
 

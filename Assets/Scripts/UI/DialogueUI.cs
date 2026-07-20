@@ -1,12 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using TMPro;
-using Unity.Netcode;
 
 /// <summary>
 /// Dialogue_Panel에 붙이는 순수 표시 전용 스크립트.
-/// 줄 표시·숨김·열기·닫기만 담당. 입력과 네트워크 제어는 DialogueGateController가 전담.
+/// 줄 표시·숨김·열기·닫기만 담당.
+///
+/// [진행 방식 — 각자 로컬 진행]
+/// 각 피어(Host/Client)가 자기 화면의 Space 입력으로 자기 줄만 넘긴다(handleInputLocally=true).
+/// 줄 넘김 자체는 네트워크 동기화하지 않는다 — 읽는 속도는 순수 로컬 UI 상태.
+/// "전원이 다 읽었는지"는 DialogueGateController가 완료 이벤트(OnSequenceComplete)를
+/// 모아서 판단한다 (Gate Arm 타이밍 결정용).
 ///
 /// [설정법]
 /// 1. Dialogue_Panel에 이 스크립트 부착
@@ -14,7 +20,8 @@ using Unity.Netcode;
 /// 3. 각 Text(TMP)에 문구 입력 (Rich Text 태그 사용 가능)
 ///    예) 각자 <color=#3B82F6><b>색</b></color> 존에 서세요.
 /// 4. dialogueLines 배열에 순서대로 연결
-/// 5. DialogueGateController.dialogueUI 에 이 컴포넌트 연결
+/// 5. handleInputLocally = true
+/// 6. DialogueGateController.dialogueUI 에 이 컴포넌트 연결
 /// </summary>
 public class DialogueUI : MonoBehaviour
 {
@@ -23,19 +30,18 @@ public class DialogueUI : MonoBehaviour
     [SerializeField] Sprite bgSprite;
     [SerializeField] Color  bgColor = new Color(0f, 0f, 0f, 0.6f);
 
-    [Header("Host 전용")]
-    [Tooltip("Host에게만 보이는 오브젝트 (예: Space 스킵 안내 이미지).\n" +
-             "Client 또는 오프라인 솔로 플레이어에게는 자동으로 숨겨짐.")]
-    [SerializeField] GameObject hostOnlyHint;
+    [Header("스킵 안내")]
+    [FormerlySerializedAs("hostOnlyHint")]
+    [Tooltip("Space 스킵 안내 이미지. 이제 전원이 각자 Space로 넘기므로 모든 플레이어에게 표시됨.")]
+    [SerializeField] GameObject skipHint;
 
     [Header("대화 내용")]
     [Tooltip("순서대로 표시할 Text(TMP) 오브젝트 목록")]
     [SerializeField] TextMeshProUGUI[] dialogueLines;
 
-    [Header("입력 (단독 사용 시)")]
-    [Tooltip("true: 이 컴포넌트가 직접 Space 입력 처리.\n" +
-             "DialogueGateController 없이 단독 사용할 때만 체크.\n" +
-             "DialogueGateController와 함께 쓸 때는 반드시 false.")]
+    [Header("입력")]
+    [Tooltip("true: 이 컴포넌트가 직접 Space 입력 처리해 자기 화면의 줄만 넘김.\n" +
+             "DialogueGateController와 함께 쓸 때도 true로 설정 (각자 로컬 진행 방식).")]
     [SerializeField] bool handleInputLocally = false;
 
     [Header("이벤트")]
@@ -82,27 +88,13 @@ public class DialogueUI : MonoBehaviour
         _isPlaying = true;
         HideAllLines();
         gameObject.SetActive(true);
-        ApplyHostHint();
+        ApplySkipHint();
         ShowCurrentLine();
     }
 
     /// <summary>
-    /// 특정 줄을 직접 표시. DialogueGateController가 Host 줄 번호를 Client에 동기화할 때 사용.
-    /// </summary>
-    public void ShowLine(int index)
-    {
-        if (dialogueLines == null || index < 0 || index >= dialogueLines.Length) return;
-        HideAllLines();
-        _lineIndex = index;
-        _isPlaying = true;
-        gameObject.SetActive(true);
-        ApplyHostHint();
-        dialogueLines[index].gameObject.SetActive(true);
-    }
-
-    /// <summary>
-    /// 다음 줄로 넘어감. DialogueGateController가 Host Space 입력 시 호출.
-    /// 마지막 줄 이후엔 Hide() + OnSequenceComplete 발동.
+    /// 다음 줄로 넘어감. handleInputLocally=true 일 때 각 피어의 Space 입력으로 호출됨.
+    /// 마지막 줄 이후엔 Hide() + OnSequenceComplete 발동 (이 피어만의 완료 — 다른 피어와 무관).
     /// </summary>
     public void NextLine()
     {
@@ -126,19 +118,16 @@ public class DialogueUI : MonoBehaviour
     {
         _isPlaying = false;
         HideAllLines();
-        if (hostOnlyHint != null) hostOnlyHint.SetActive(false);
+        if (skipHint != null) skipHint.SetActive(false);
         gameObject.SetActive(false);
     }
 
     // ── 내부 ──────────────────────────────────────────────────────
 
-    /// <summary>hostOnlyHint를 Host일 때만 활성화.</summary>
-    void ApplyHostHint()
+    /// <summary>스킵 안내 표시. 이제 전원이 각자 Space로 넘기므로 항상 켬.</summary>
+    void ApplySkipHint()
     {
-        if (hostOnlyHint == null) return;
-        var nm = NetworkManager.Singleton;
-        bool isHost = nm != null && nm.IsHost;
-        hostOnlyHint.SetActive(isHost);
+        if (skipHint != null) skipHint.SetActive(true);
     }
 
     void SetupBackground()

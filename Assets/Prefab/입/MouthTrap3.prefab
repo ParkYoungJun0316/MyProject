@@ -84,9 +84,6 @@ PrefabInstance:
       addedObject: {fileID: 8634138851781379457}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 77744e6afe43d0349b61c67221e6118f, type: 3}
       insertIndex: -1
-      addedObject: {fileID: -7948861970665669449}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 77744e6afe43d0349b61c67221e6118f, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 2131903544780276806}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 77744e6afe43d0349b61c67221e6118f, type: 3}
       insertIndex: -1
@@ -151,31 +148,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &-7948861970665669449
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8840536894517479822}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2706002345
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!114 &2131903544780276806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -188,7 +160,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51ad2a27773636443a90072690ea25ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MouthTrapAnimatorAnim
-  ShowTopMostFoldoutHeaderGroup: 1
   mouthAnimator: {fileID: 8634138851781379457}
   openTrigger: doOpen
   holdTrigger: doHold

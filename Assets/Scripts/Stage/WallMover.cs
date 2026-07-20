@@ -155,18 +155,10 @@ public class WallMover : MonoBehaviour
         var nm = NetworkManager.Singleton;
 
         // ── 기준 시각 결정 ─────────────────────────────────────────────
-        // StageStartServerTime 기준 → Host/Client 동일 타이밍 보장
-        if (StageNetworkState.Instance != null
-                     && StageNetworkState.Instance.StageStartServerTime > 0)
-        {
-            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime;
-            while ((float)nm.ServerTime.Time < _scheduleStartTime)
-                yield return null;
-        }
-        else
-        {
-            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : _scheduleStartTime;
-        }
+        // 스케줄이 실제로 시작된(StartSchedule 호출된) 이 순간을 기준으로 잡는다.
+        // [버그 수정 2026-07-21] ArrowTrap과 동일한 이유로 StageStartServerTime 앵커 제거
+        // (앞 Phase가 길어지면 moveAtSeconds가 이미 과거가 되어 한 번도 발동 안 하는 버그).
+        _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
         float cycleOffset = 0f;
 
         do

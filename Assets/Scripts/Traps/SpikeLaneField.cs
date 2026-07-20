@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -51,6 +53,10 @@ public class SpikeLaneField : TrapBase
 
     int[] _lastSelected;
 
+    // Host/Client가 같은 레인을 뽑도록 OnTrapTrigger 발동 횟수를 시드 salt로 사용.
+    // TrapLoop()가 ServerTime에 앵커링돼 있어 이 값은 Host/Client에서 항상 같은 시점에 같은 값으로 증가함.
+    int _fireCount;
+
     protected override void Awake()
     {
         base.Awake();
@@ -58,9 +64,48 @@ public class SpikeLaneField : TrapBase
             lanes = GetComponentsInChildren<SpikeLane>(true);
     }
 
+    // 이 트랩이 실제로 Activate()된(방/Phase가 시작된) 순간을 ServerTime 기준으로 앵커링.
+    // [버그 수정 2026-07-21] 예전엔 StageStartServerTime(스테이지 전체 시작 시각)에 고정했는데,
+    // 앞 Phase(퀴즈 등 길이가 가변적인 구간)가 길어지면 이 방이 열릴 때 스케줄이 이미 과거가 되어
+    // 한 번도 발동하지 않는 버그가 있었다. ArrowTrap/DropTrap/WindTrap과 동일한 수정.
+    // 아래 OnTrapTrigger()의 시드 동기화(Host/Client 발동 횟수 일치)는 이 앵커 교체와 무관하게 유지됨.
+    protected override IEnumerator TrapLoop()
+    {
+        var nm = NetworkManager.Singleton;
+        float scheduleStartTime;
+
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+        scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+
+        int cycle = 0;
+        while (isRunning)
+        {
+            yield return StartCoroutine(FireWithCharge());
+
+            if (activateInterval <= 0f)
+            {
+                isRunning = false;
+                yield break;
+            }
+
+            cycle++;
+            float targetTime = scheduleStartTime + cycle * activateInterval;
+            float now         = nm != null ? (float)nm.ServerTime.Time : Time.time;
+            yield return new WaitForSeconds(Mathf.Max(0f, targetTime - now));
+        }
+    }
+
     protected override void OnTrapTrigger()
     {
         if (lanes == null || lanes.Length == 0) return;
+
+        // Host/Client가 동일한 레인을 뽑도록 공유 세션 시드 + 발동 횟수로 로컬 RNG를 동기화.
+        // StagePressurePadSetup.ApplySeedAndColors()와 동일한 "Seed ^ salt" 관례를 따름.
+        const int seedSalt = 0x5B1DE000;
+        int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (_fireCount * 0x2545F491);
+        UnityEngine.Random.InitState(mixedSeed);
+        _fireCount++;
 
         int count = Mathf.Clamp(activeLaneCount, 1, lanes.Length);
         int[] selected = PickRandomIndices(count);
@@ -111,8 +156,16 @@ public class SpikeLaneField : TrapBase
 
     protected override void OnDeactivated()
     {
+        _fireCount = 0;
         if (lanes == null) return;
         for (int i = 0; i < lanes.Length; i++)
             if (lanes[i] != null) lanes[i].ForceDeactivate();
+    }
+
+    // SetActive(false) 경로: OnDisable()만 불리고 OnDeactivated()는 안 불림 (DropTrap.OnDisable과 동일 이유)
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        _fireCount = 0;
     }
 }

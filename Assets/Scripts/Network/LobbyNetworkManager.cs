@@ -358,6 +358,11 @@ public class LobbyNetworkManager : NetworkBehaviour
         NetworkSessionData.Seed = seed;
         BroadcastSeedClientRpc(seed);
 
+        // ── 세션 시작 서버 시각 (TimerUI가 Host/Client 공통 경과 시간 계산에 사용) ──────
+        double sessionStart = NetworkManager.ServerTime.Time;
+        NetworkSessionData.SessionStartServerTime = sessionStart;
+        BroadcastSessionStartClientRpc(sessionStart);
+
         // ── GameSession 활성 색 적용 (Host 로컬) ─────────────────────────
         // Client는 OnPlayersReady 이후 PlayerSpawnCoordinator에서 확정값을 읽음
         GameSession.Instance?.SetActiveColors(colorList);
@@ -445,6 +450,13 @@ public class LobbyNetworkManager : NetworkBehaviour
     {
         NetworkSessionData.Seed = seed;
         Debug.Log($"[LobbyNetworkManager] 세션 시드 수신: {seed}");
+    }
+
+    /// <summary>세션 시작 서버 시각을 모든 클라이언트에 배포. StartGameServerRpc 에서 호출.</summary>
+    [ClientRpc]
+    void BroadcastSessionStartClientRpc(double serverTime)
+    {
+        NetworkSessionData.SessionStartServerTime = serverTime;
     }
 
     /// <summary>

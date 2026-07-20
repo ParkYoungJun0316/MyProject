@@ -1,15 +1,25 @@
 using System.Collections;
-using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// Animator 기반 입 열기/닫기 연출 컴포넌트 (ArrowTrap 발사 동기화).
+///
+/// [동기화 방식]
+/// NetworkBehaviour가 아닌 순수 MonoBehaviour. Host/Client 모두 각자 로컬에서
+/// TrapBase 이벤트를 직접 트리거한다 (RPC/NetworkObject 불필요).
+/// ArrowTrap/DropTrap의 발사 스케줄은 이미 StageNetworkState.StageStartServerTime
+/// (NetworkVariable, ServerTime 기준) 절대 시각으로 계산되어 모든 피어가 동일한
+/// 순간에 OnPreFireCharge/OnFiring을 로컬로 받는다. 실제 발사체 스폰·데미지는
+/// ArrowTrap.OnTrapTrigger / TrapProjectile 쪽에서 별도로 IsServer로 보호된다 —
+/// 이 컴포넌트는 순수 연출이라 Host 권위가 필요 없다.
 ///
 /// [일반 모드 동작 흐름]
 ///   OnPreFireCharge → doOpen  (입 벌리기 시작)
 ///   openClipLength 후 → 발사 → doHold (입 완전히 열린 채 유지)
 ///   발사체가 입 탈출 트리거 통과 → NotifyProjectileExited() → doClose
 ///   closeClipLength 후 → doIdle
+///   (발사체 flight도 B안에 따라 client local이므로 MouthExitTrigger 판정도
+///    각 피어가 자기 로컬 발사체 기준으로 독립 판정한다.)
 ///
 /// [루프 모드 (loopOpenClose = true)]
 ///   Open → Hold(loopHoldDuration) → Close → (loopInterval) → Open ... 무한 반복
@@ -27,7 +37,7 @@ using UnityEngine;
 ///   MouthExitTrigger 컴포넌트 부착 → mouthAnim 연결
 ///   콜라이더 두께 얇게 (0.1~0.3), 입 출구 바로 앞에 배치
 /// </summary>
-public class MouthTrapAnimatorAnim : NetworkBehaviour
+public class MouthTrapAnimatorAnim : MonoBehaviour
 {
     [Header("참조")]
     [Tooltip("입 메시의 Animator. 비워두면 자식에서 자동 탐색")]
@@ -117,9 +127,6 @@ public class MouthTrapAnimatorAnim : NetworkBehaviour
 
     void HandlePreFireCharge()
     {
-        // 온라인: Host만 실행. Client는 TriggerOpenClientRpc로 수신.
-        if (IsSpawned && !IsServer) return;
-
         if (_idleReturnCoroutine != null)
         {
             StopCoroutine(_idleReturnCoroutine);
@@ -127,16 +134,11 @@ public class MouthTrapAnimatorAnim : NetworkBehaviour
         }
 
         TriggerOpen();
-        if (IsSpawned) TriggerOpenClientRpc();
     }
 
     void HandleFiring()
     {
-        // 온라인: Host만 실행. Client는 TriggerHoldClientRpc로 수신.
-        if (IsSpawned && !IsServer) return;
-
         TriggerHold();
-        if (IsSpawned) TriggerHoldClientRpc();
     }
 
     /// <summary>
@@ -144,34 +146,6 @@ public class MouthTrapAnimatorAnim : NetworkBehaviour
     /// Hold → Close → Idle 순서로 진행.
     /// </summary>
     public void NotifyProjectileExited()
-    {
-        // 온라인: Host만 실행. Client는 TriggerCloseClientRpc로 수신.
-        if (IsSpawned && !IsServer) return;
-
-        if (_idleReturnCoroutine != null) StopCoroutine(_idleReturnCoroutine);
-        TriggerClose();
-        if (IsSpawned) TriggerCloseClientRpc();
-        _idleReturnCoroutine = StartCoroutine(ReturnToIdleAfterClose());
-    }
-
-    // ── ClientRpc (Host → Client 애니메이션 트리거) ────────────────────────
-
-    [Rpc(SendTo.NotServer)]
-    void TriggerOpenClientRpc()
-    {
-        if (_idleReturnCoroutine != null)
-        {
-            StopCoroutine(_idleReturnCoroutine);
-            _idleReturnCoroutine = null;
-        }
-        TriggerOpen();
-    }
-
-    [Rpc(SendTo.NotServer)]
-    void TriggerHoldClientRpc() => TriggerHold();
-
-    [Rpc(SendTo.NotServer)]
-    void TriggerCloseClientRpc()
     {
         if (_idleReturnCoroutine != null) StopCoroutine(_idleReturnCoroutine);
         TriggerClose();
@@ -197,26 +171,14 @@ public class MouthTrapAnimatorAnim : NetworkBehaviour
     {
         while (true)
         {
-            // 온라인: Host만 트리거 발행 + Rpc로 Client 전파
-            if (!IsSpawned || IsServer)
-            {
-                TriggerOpen();
-                if (IsSpawned) TriggerOpenClientRpc();
-            }
+            // 각 피어가 로컬로 직접 트리거 (RPC relay 없음, NetworkObject Spawn 시점 자체가 동기화 기준)
+            TriggerOpen();
             yield return new WaitForSeconds(Mathf.Max(0f, openClipLength));
 
-            if (!IsSpawned || IsServer)
-            {
-                TriggerHold();
-                if (IsSpawned) TriggerHoldClientRpc();
-            }
+            TriggerHold();
             yield return new WaitForSeconds(Mathf.Max(0f, loopHoldDuration));
 
-            if (!IsSpawned || IsServer)
-            {
-                TriggerClose();
-                if (IsSpawned) TriggerCloseClientRpc();
-            }
+            TriggerClose();
             yield return new WaitForSeconds(Mathf.Max(0f, closeClipLength + loopInterval));
         }
     }

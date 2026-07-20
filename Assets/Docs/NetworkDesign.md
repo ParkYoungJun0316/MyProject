@@ -766,7 +766,7 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 |------|------|---------------|---------------|-----------|
 | **A** | 연출·타일 껍데기 | 없음 (표시만) | C/D 결과를 따라 그림. 타일마다 RPC 금지 | 정리 대기 — §9.1.3 그룹 3 |
 | **B** | 함정·피격 | 스폰·스케줄·데미지 | Host 판정 + `NetworkDamageUtil` (발사체=§9.0.1 B안) | 정리 대기 — §9.1.3 그룹 1 |
-| **C** | 챌린지·라운드 | 시드·라운드·정답·타이머 | **Host 상태머신** → 상태만 복제. 오답 데미지는 B API 호출 | **이 문서에서 다루지 않음 — 축 #4(챌린지)에서 별도 진행** |
+| **C** | 챌린지·라운드 | 시드·라운드·정답·타이머 | **Host 상태머신** → 상태만 복제. 오답 데미지는 B API 호출 | **완료 — §11B(챌린지 축)로 승격됨.** 이 표는 정의만, 세부는 §11B 참조 |
 | **D** | 목표·게이트·클리어 | 시작·클리어·리로드 | Host만 Gate / Complete / 씬 리로드 (`StageNetworkState` 등) | **완료 — §11A(스테이지 진행 축)로 승격됨.** 이 표는 정의만, 세부는 §11A 참조 |
 | **E** | 월드 모션 | 위치·이동 스케줄 | Host 타임라인(또는 ServerTime) + 위상/위치 동기화 | 정리 대기 — §9.1.3 그룹 2 |
 | **F** | 플로우 인프라 | 씬 시퀀스 | `SceneFlowManager` / Relay — 컨텐츠별 설계 금지 | **완료 — §6A(룸·세션 축)/§11(플레이어 축)이 커버.** 이 표는 정의만 |
@@ -783,6 +783,8 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 > **스코프 원칙 (확정):** 이번 정리 라운드는 **`M.Stage1`…`M.Stage5` → `M.Boss` 인스턴스로 한정**한다. T 전용 클래스(아래 표에 표시)는 **별도 T 라운드**로 미룬다. 이는 "데모 스코프 축소"가 아니라 — 같은 클래스를 M에서 먼저 검증/고정하고 T 인스턴스에 그대로 재사용하는 순서일 뿐, T도 결국 동일 라운드 방식으로 전부 다룬다(§9.1.4 "C 파이프라인은 OX에서 먼저 잠그고 복제" 원칙과 동일).
 > 각 파일이 실제로 어느 씬에서 쓰이는지는 스크립트 `.meta` guid를 씬 파일에서 직접 대조해 확인한 것 — 추정 아님.
 
+> 그룹 1(B) 파일별 네트워크/로컬 분류·진단 로그: [`TrapNetworkBoard.md`](TrapNetworkBoard.md) (`SpikeLane`/`SpikeLaneField`는 T 전용이지만 체감 버그로 스코프 순서보다 먼저 수정 완료 — 2026-07-21, 보드 §2 참조).
+
 | 그룹 | 패턴 | 이번 라운드(M) 대상 | T 전용 — 별도 라운드로 미룸 |
 |------|------|-------------------|---------------------------|
 | **1** | B 함정·피격 | `ArrowTrap`, `DropTrap`, `TrapProjectile`, `WindTrap`, `ContactDamage`(M.Stage3에도 있음), `TrapBase`, `TrapPlayerTracker`, `Breakable`, `Stage5ChaserHitbox` (+ `CeilingTrap`/`TrapSpeedPhase`/`SpikeTrap`은 현재 씬 배치 미확인 — 작업 중 재확인) | `SpikeLane`/`SpikeLaneField` (`T.Stage3`, `T.Boss`만 확인됨) |
@@ -797,7 +799,7 @@ F·D 공통은 **검증 완료** 전제. 이후 **씬 단위**로 C(·필요 시
 
 | 순 | 씬 | C (챌린지) | B / E (같이 볼 것) |
 |----|-----|------------|-------------------|
-| 1 | `M.Stage2` | **OXQuiz** ← **현재 보드** | Drop |
+| 1 | `M.Stage2` | **OXQuiz** — **완료 (§11B로 승격)** | Drop |
 | 2 | `M.Stage3` | ColorTile | Drop, Contact, **E: AdvancingWall** |
 | 3 | `M.Stage4` | SequenceRing | Drop |
 | 4 | `M.Stage5` | GridColor + GridBW | Drop, Wind(Should), Mouth |
@@ -1176,7 +1178,7 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 ### 11A.2 ③ Progress — Host 레인과 챌린지 축(#4)의 경계
 
 - `StageObjective` 계약(`Begin/Tick/Complete/Fail/ResetObjective`)은 **Stage 축이 소유**한다.
-- 계약 "안"에서 "무엇을 판정 기준으로 삼는가"(정답, 시퀀스, 그리드, 타이밍 등)는 **챌린지 축**(리스트 4번, §9.1 패턴 C) 소관 — 이 문서 §11A는 그 내부 규칙을 정의하지 않는다.
+- 계약 "안"에서 "무엇을 판정 기준으로 삼는가"(정답, 시퀀스, 그리드, 타이밍 등)는 **챌린지 축**(§11B, §9.1 패턴 C) 소관 — 이 문서 §11A는 그 내부 규칙을 정의하지 않는다.
 - Stage 축이 요구하는 것은 딱 하나: **`Complete()`/`Fail()` 호출은 Host 레인에서만 일어난다.** 챌린지 구현이 Client 트리거로 직접 `Complete()`/`Fail()`을 호출하면 챌린지 축이 아니라 **이 §11A 위반**.
 
 ### 11A.3 ④→⑤ Resolve → Exit
@@ -1231,6 +1233,92 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 - **Fail Exit은 §11 사망 문을 그대로 재사용** — 새 사망/리로드 정의 금지.
 - **Clear Exit은 §11 ①Load에 재진입**(다음 씬) — 새 씬 전환 정의 금지.
 - 즉 §11A는 §11에 새 문을 추가하지 않는다. 기존 두 문(사망 문 / ①Load 문)에 스테이지 콘텐츠가 **어떻게 도달하는지**만 정의한다.
+
+---
+
+## 11B. 챌린지 축 (C 패턴 — SSOT)
+
+> **한 줄:** Trigger(Host 감지) → RoundStart(Host가 시드 NV 배포) → Generate(전 머신 로컬 재생성) → Judge(Host 레인만) → Resolve(Complete/Fail → §11A ③Progress로 반환).
+> 이 축은 §11A(스테이지 진행 축) **"③ Progress"** 안에서, C 패턴(챌린지: OX/ColorTile/GridColor/SequenceRing 등)이 시드·라운드를 실제로 어떻게 동기화하는지 정의한다. §9.1 패턴 C("네트워크 진실 = 시드·라운드·정답·타이머")의 구현 계약.
+> **최초 잠금·검증 완료:** `OXQuizManager`(`M.Stage2`) — ParrelSync 2인 재테스트 통과. 이후 챌린지(ColorTile/GridColor/SequenceRing)는 새 설계를 발명하지 않고 이 축을 그대로 재사용한다(§9.1.3 "OX에서 먼저 잠그고 복제" 원칙 실행 완료). 보드 원문: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
+
+### 11B.0 축 (5칸 · 일방통행)
+
+```
+① Trigger → ② RoundStart(Seed) → ③ Generate → ④ Judge → ⑤ Resolve
+                                                              │
+                                          Complete → §11A ④Resolve(Clear)로 반환
+                                          Fail     → §11A ④Resolve(Fail)로 반환
+```
+
+| 칸 | 불변식 (칸이 끝나면 참) | Writer (여기만 진실) | 재사용하는 기존 패턴 (발명 아님) |
+|----|------------------------|----------------------|--------------------------------|
+| ① Trigger | Host만 시작 판정 확정. Client의 로컬 트리거 호출은 무시된다(Host도 리모트 플레이어 Rigidbody를 직접 시뮬레이션하므로 자기 화면에서 트리거가 그대로 발생 — §9A) | 각 챌린지 매니저의 Host 가드(`IsClientOnly()` 등) | `StageStartGate.Update()` — `if (!IsServer) { Display(); return; }` |
+| ② RoundStart | 라운드 시작마다 Host가 새 `int` 시드를 생성해 NV로 배포. 세션 시드(`NetworkSessionData.Seed`)와 별개 — 라운드 전용이라 타이밍 레이스 없음. **시드+스텝 인덱스+시작시간은 하나의 NV로 원자적 전달** (2026-07-20 버그 수정 — 별도 NV 2개로 나누면 도착 순서 레이스로 Host/Client가 다른 문제를 보는 증상 발생) | `StageNetworkState.ChallengeStart(seed)` / `ChallengeStepBegin(stepIndex)` — `_challengeStep : NetworkVariable<ChallengeStepState>` 하나 |
+| ③ Generate | Host/Client 전부 동일 시드로 로컬 생성 코드(셔플·배치 등)를 재실행 → 결과 자체는 네트워크로 보내지 않음 | 각 챌린지 매니저 로컬 (읽기 전부, 쓰기 없음 — 시드만 진실) | `StagePressurePadSetup.ApplySeedAndColors()`(`Random.InitState(seed^salt)`) 패턴. OX는 `System.Random(seed)`로 `UnityEngine.Random` 전역 상태 오염 방지 |
+| ④ Judge | 타이머 종료·정답/조건 판정은 **Host 레인에서만**. Client는 결과를 관찰만(연출용 ClientRpc) | 각 챌린지 매니저의 Host 전용 판정 메서드(예: `OXQuizManager.JudgeByPosition()`) | §11A ③ Progress "Host 레인 하나만" 규칙 그대로 |
+| ⑤ Resolve | 데미지는 `NetworkDamageUtil`만 경유. 챌린지 전체 클리어/실패는 `StageObjective.Complete()/Fail()`로 §11A Progress에 반환 — 새 리로드/전환 경로 금지 | `NetworkDamageUtil.ApplyDamage`, 각 `*Objective.Complete()`(Host 가드) | `NetworkDamageUtil.ApplyDamage`, §11A ④→⑤ |
+
+### 11B.1 Client → Host 입력 제출이 필요한 챌린지 (예: SequenceRing)
+
+포지션 판정형(OX/GridColor/ColorTile)은 Host가 리모트 플레이어 위치를 직접 갖고 있어 별도 제출이 필요 없다. 반면 **키 입력형(SequenceRing)**은 어느 플레이어가 어떤 키를 눌렀는지 자체가 Host에 없는 정보이므로 별도 제출 경로가 필요하다:
+
+```
+Client: 자기 키 입력 감지 → SubmitStepServerRpc(stepColor)
+Host  : TrySubmit() 판정 (④ Judge, Host 레인) → 결과 ClientRpc 연출
+```
+
+새 메커니즘이 아니라 기존 **"Client → Host 한 방향 요청: ServerRpc, Host 검증"** 규칙(`multiplayer-ngo.mdc` Sync 절, Cheer 제출·발사체 히트 리포트와 동일 패턴)의 재적용이다.
+
+### 11B.2 공통 API (`StageNetworkState` 확장 — 챌린지 공용 슬롯)
+
+씬당 챌린지는 한 번에 하나만 진행되므로, 아래 필드를 **모든 C 패턴 챌린지가 공유 슬롯으로 재사용**한다. 챌린지마다 새 `NetworkBehaviour`를 만들지 않는다(`architecture.mdc`: "Prefer extending existing systems over parallel new frameworks").
+
+| 멤버 | 종류 | 역할 |
+|------|------|------|
+| `ChallengeStepState { seed, stepIndex, stepStartServerTime }` | `NetworkVariable` (Server write, 1개로 통합) | ②RoundStart 원자적 배포 |
+| `ChallengeSeed` / `ChallengeStepIndex` / `ChallengeStepStartServerTime` | 읽기 프로퍼티 | ③Generate·④Judge 타이머 기준 |
+| `IsChallengeCleared`(`_challengeCleared` NV) | `NetworkVariable<bool>` (Server write) | ⑤Resolve 클리어 연출 신호 |
+| `ChallengeStart(seed)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)` | Host 전용 메서드 | Writer |
+| `OnChallengeStepChanged` / `OnChallengeClearedChanged` / `OnChallengeOutcome` | 이벤트 | 전 챌린지 매니저 공통 구독점 |
+| `NotifyChallengeOutcomeClientRpc(bool success)` | `[ClientRpc]` | ④Judge 결과 1회성 연출(Client만 재생 — Host는 로컬에서 직접 처리하므로 스킵) |
+
+### 11B.3 4개 챌린지 → 이 축 매핑
+
+| 챌린지 | ①Trigger | ②RoundStart 시드로 대체할 것 | ④Judge | 상태 |
+|--------|----------|------------------------------|--------|------|
+| **OX Quiz** | 배리어 진입 트리거 | `RegenerateQuestionOrder()`(`System.Random(seed)`) | `JudgeByPosition()`(물리 오버랩) | **잠김·검증 완료** (`OXQuizManager`, `M.Stage2`) |
+| ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | 다음 대상 (`M.Stage3`) |
+| GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()` | `EvaluateRound()` | 대상 (`M.Stage5`). 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19) |
+| SequenceRing | `StartMinigame()` 호출 시점 | `GenerateSteps()` | `TrySubmit()` | 대상 (`M.Stage4`/`M.Boss`). §11B.1 ServerRpc 제출 추가 필요 |
+
+### 11B.4 금지 (평행 축 — 발견 즉시 삭제)
+
+| 항목 | 이유 |
+|---|---|
+| 챌린지별로 새 `NetworkBehaviour`/새 NV 세트 발명 | `StageNetworkState._challengeStep` 공유 슬롯 재사용 — 씬당 챌린지 1개 동시 진행 전제 |
+| 시드·스텝 인덱스·시작시간을 별도 NV로 분리 | 도착 순서 레이스 재발(2026-07-20에 이미 겪은 버그) — 반드시 한 NV(구조체)로 원자적 전달 |
+| Client가 ④ Judge 판정을 독자 수행 | §11A "Host 레인 하나만" 위반. Client는 Host 판정 결과만 관찰 |
+| 챌린지 데미지가 `Player.TakeDamage`/`ReceiveDamage` 직접 호출 | 온라인 no-op. `NetworkDamageUtil.ApplyDamage` 경유 필수 (GridColor에서 이미 1건 발견·수정) |
+| 챌린지 Objective의 `Complete()`를 Host 가드 없이 호출 | §11A.2 계약 위반 — Client 독자 클리어 확정 금지 |
+
+### 11B.5 증상 → 볼 칸 (진단 사다리)
+
+| 증상 | 먼저 볼 칸 | 그다음 |
+|------|-----------|--------|
+| Host/Client가 다른 문제·다른 배치를 봄 | ② RoundStart (시드/인덱스 원자적 도착 여부) | ③ Generate 시드 소스 확인 |
+| Client 화면에서만 먼저 클리어/오답으로 보임 | ④ Judge Host 레인 위반 | ⑤ Resolve 중복 판정 |
+| 오답인데 데미지 없음(온라인) | ⑤ Resolve — `NetworkDamageUtil` 경유 여부 | ④ Judge 호출 여부 |
+| 전원 클리어했는데 다음 Phase로 안 넘어감 | ⑤ Resolve `Complete()` Host 가드 | §11A ③Progress 연결 여부 |
+| SequenceRing류에서 다른 사람이 누른 입력이 반영 안 됨 | §11B.1 ServerRpc 제출 누락 | ④ Judge `TrySubmit()` |
+
+규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer만 고침. 칸에 복구 if 추가 금지.
+
+### 11B.6 검증 완료 (OX — ParrelSync 2인)
+
+1. Trigger→클리어 1회: Host/Client 동일 문제 순서·동일 판정 확인
+2. Client만의 데미지/셔플/`Complete()` 없음(`IsServer` 가드 누락 그레핑으로 확인)
+3. 결과: **통과** — 이 절(§11B)로 승급. `MStageNetworkBoard.md` 포커스는 `M.Stage3` ColorTile로 이동(§11B.3 매핑표대로 동일 축 복제)
 
 ---
 

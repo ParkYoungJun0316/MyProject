@@ -56,6 +56,37 @@ public class SpikeTrap : TrapBase
         base.Start();
     }
 
+    // 이 트랩이 실제로 Activate()된(방/Phase가 시작된) 순간을 ServerTime 기준으로 앵커링.
+    // [버그 수정 2026-07-21] 예전엔 StageStartServerTime(스테이지 전체 시작 시각)에 고정했는데,
+    // 앞 Phase(퀴즈 등 길이가 가변적인 구간)가 길어지면 이 방이 열릴 때 스케줄이 이미 과거가 되어
+    // 한 번도 발동하지 않는 버그가 있었다. ArrowTrap/DropTrap/WindTrap과 동일한 수정.
+    protected override IEnumerator TrapLoop()
+    {
+        var nm = NetworkManager.Singleton;
+        float scheduleStartTime;
+
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+        scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+
+        int cycle = 0;
+        while (isRunning)
+        {
+            yield return StartCoroutine(FireWithCharge());
+
+            if (activateInterval <= 0f)
+            {
+                isRunning = false;
+                yield break;
+            }
+
+            cycle++;
+            float targetTime = scheduleStartTime + cycle * activateInterval;
+            float now         = nm != null ? (float)nm.ServerTime.Time : Time.time;
+            yield return new WaitForSeconds(Mathf.Max(0f, targetTime - now));
+        }
+    }
+
     protected override void OnTrapTrigger()
     {
         if (!isRaised) StartCoroutine(RaiseCycle());

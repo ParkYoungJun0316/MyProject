@@ -5,13 +5,15 @@
 > **빈 체크리스트 전용이 아님.** 큰 틀을 정하기 위한 작업 md.
 
 **현재 인게임 최우선:** M.Stage 네트워크 완료 (`NetworkDesign` §9.1).  
-**현재 보드 포커스:** `M.Stage2` · **C 패턴 · OX Quiz** (이후 챌린지 공통 템플릿) — **코드 구현 완료, 실기 검증 진행 중 (2026-07-20).**
+**현재 보드 포커스:** `M.Stage3` · **C 패턴 · ColorTile** — **OX Quiz는 검증 통과 후 [`NetworkDesign.md`](NetworkDesign.md) §11B(챌린지 축 SSOT)로 승급 완료.** 이 보드의 §1(축 골격)·§2(OX 개별 잠금 규칙)는 이제 §11B가 SSOT이며, 아래 §1~§4는 **승급 완료 기록**으로만 남긴다 — 앞으로 축 골격 자체를 바꿀 일이 있으면 여기 말고 §11B를 고칠 것.
 
 ---
 
 ## 현재 상태 (다음 세션 시작점 — 여기부터 읽을 것)
 
-**요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트 1차 진행 중, 문제 동기화 버그 1건 발견·수정함. **재테스트 결과 대기 중.**
+**요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트에서 문제 동기화 버그 1건 발견·수정 → **재테스트 통과 (2026-07-21) → `NetworkDesign.md` §11B로 승급 완료.**
+
+**다음 세션 시작점:** `M.Stage3` **ColorTile**을 §11B.3 매핑표대로 동일 축(①Trigger→②RoundStart→③Generate→④Judge→⑤Resolve)에 복제. ColorTile은 ①Trigger가 "스케줄(시간 기반)"이라 Host `Update()` 자체가 이미 단일 소스여야 한다는 점만 OX와 다르다 — §11B.3 참고.
 
 ### 지금까지 실제로 한 일 (코드, 전부 완료)
 
@@ -38,19 +40,19 @@
 
 **수정:** 위 1번 항목의 `ChallengeStepState` 구조체로 통합 — 시드+인덱스+시작시간이 항상 한 번에 원자적으로 도착하도록 변경. `OXQuizManager.cs`는 프로퍼티 이름(`ChallengeSeed`/`ChallengeStepIndex`/`ChallengeStepStartServerTime`)이 그대로라 손대지 않음.
 
-**→ 다음 세션 첫 번째 할 일: 이 수정이 실제로 문제를 고쳤는지 ParrelSync 2인 재테스트로 확인.** 아직 미확인 상태.
+**→ 재테스트 결과 (2026-07-21): 통과.** Host/Client 동일 문제 순서·동일 판정 확인됨. 이 수정으로 버그 해소 확정.
 
 ### 씬 조사로 확정된 것 (재확인 불필요)
 
 - `M.Stage2`의 `OXQuizManager.barrierDoor`는 **`{fileID: 0}`(null)** — 이 씬엔 배리어 자체가 없음. **`DoorNetworkSync`/문 관련 `NetworkObject` 작업은 필요 없음.**
-- `M.Stage2`엔 **`NetworkObject`가 아직 하나도 없었음** (grep 0건, `M.Stage1`엔 있음). 사용자가 `StageNetworkState` NetworkObject를 씬에 배치했는지 **다음 세션에서 먼저 확인**할 것 — 안 되어 있으면 퀴즈 자체가 시작을 안 함(`ResetQuiz()`가 `_netState == null`이면 조기 리턴).
+- `M.Stage2`엔 조사 시점(2026-07-19)엔 **`NetworkObject`가 하나도 없었음** (grep 0건, `M.Stage1`엔 있음) — **이후 배치 완료 확인됨** (2026-07-21 재테스트가 통과했다는 것 자체가 `StageNetworkState` NetworkObject가 정상 배치돼 있다는 증거).
 
 ### 다음 액션 (순서대로)
 
-1. **재테스트** — Host/Client가 같은 문제 순서를 보는지, 판정/데미지/AllCleared까지 정상인지 ParrelSync 2인으로 확인 (Board §4 "검증" 체크리스트)
-2. 문제 없으면 → §1 골격 문구를 `NetworkDesign.md` §9.1(축 #4 신규 절)로 승급
-3. 승급 후 → 보드 포커스를 `M.Stage3` ColorTile로 이동, §1.2 매핑표대로 동일 패턴 복제 (그다음 GridColor, SequenceRing — SequenceRing은 §1.1의 ServerRpc 입력 제출 추가 필요)
-4. 만약 재테스트에서 또 다른 증상이 나오면: 이번처럼 "어느 NV/RPC가 언제 도착하는가" 관점으로 먼저 의심할 것 — Host 쪽 코드 로직 자체보다 **동기화 타이밍 레이스**가 실제 원인이었던 사례가 이미 1건 있음.
+1. ~~재테스트~~ — **완료 (2026-07-21, 통과).**
+2. ~~§1 골격 문구를 `NetworkDesign.md`로 승급~~ — **완료.** [`NetworkDesign.md`](NetworkDesign.md) §11B에 승급됨 (아래 §1~§4는 이제 승급 완료 기록).
+3. **다음:** 보드 포커스를 `M.Stage3` **ColorTile**로 이동, §11B.3 매핑표대로 동일 축 복제 (그다음 GridColor, SequenceRing — SequenceRing은 §11B.1의 ServerRpc 입력 제출 추가 필요).
+4. 향후 다른 챌린지에서 또 동기화 증상이 나오면: 이번처럼 "어느 NV/RPC가 언제 도착하는가" 관점으로 먼저 의심할 것 — Host 쪽 코드 로직 자체보다 **동기화 타이밍 레이스**가 실제 원인이었던 사례가 이미 1건 있음 (§11B.4 금지 목록에도 반영됨).
 
 ---
 
@@ -66,8 +68,10 @@
 
 ---
 
-## 1. C 패턴 — 축 #4(챌린지) 공통 골격 (확정)
+## 1. C 패턴 — 축 #4(챌린지) 공통 골격 (확정 → **승급 완료, 기록용**)
 
+> **승급 완료:** 이 절의 골격은 [`NetworkDesign.md` §11B](NetworkDesign.md)로 그대로 승급됐다. 앞으로 축 골격 자체를 바꿀 필요가 있으면 여기가 아니라 §11B를 고칠 것 — 이 절은 "왜 이렇게 정했는가"의 기록으로만 남긴다.
+>
 > 코드 조사 결과: `OXQuizManager` / `ColorTileChallenge` / `GridColorChallenge` / `SequenceRingMinigame` **넷 다 순수 로컬 `MonoBehaviour`**, Host 가드 없음, 시드 없는 로컬 `Random`으로 각 머신이 독립 계산 — §11A가 금지하는 "Host 1벌 + Client 1벌 이중 계산" 상태였음. 아래 골격은 **새로 발명하지 않고, 이미 이 프로젝트에 잠긴 패턴만 재사용**해서 이 문제를 없앤다.
 
 ```
@@ -173,15 +177,15 @@ Player Trigger (영역 진입, Host 로컬 감지만 유효)
 
 **남은 것 (유니티 에디터·씬 작업 — 코드 아님):**
 
-- [ ] `M.Stage2` 씬에 `StageNetworkState` NetworkObject 배치 확인 (`M.Stage1` 구성 그대로 복제 — 2026-07-19 조사 시점엔 M.Stage2에 `NetworkObject`가 하나도 없었음, grep 확인됨. 사용자가 이미 추가했는지 다음 세션에서 재확인 필요)
+- [x] `M.Stage2` 씬에 `StageNetworkState` NetworkObject 배치 확인 (`M.Stage1` 구성 그대로 복제) — 2026-07-21 재테스트 통과로 배치 확인됨
 - [x] ~~OX 배리어 `NetworkObject`+`DoorNetworkSync`~~ — 불필요로 정정: `M.Stage2`의 `OXQuizManager.barrierDoor`가 null(`{fileID: 0}`)이라 이 씬엔 배리어가 없음
 
-**검증 (Editor 배치 후):**
+**검증 (완료, 2026-07-21):**
 
-- [ ] 2인: Trigger→클리어 1회, Client도 같은 문제·같은 판정 체감 (문제 순서까지 동일한지 확인)
-- [ ] Client만의 데미지/셔플/Complete 없음 (그레핑으로 `IsServer` 가드 누락 확인)
-- [ ] C 공통 파이프라인(§1) 문구 Docs §9.1(축 #4 신규 절)에 반영 — 검증 통과 후
-- [ ] 다음 보드 포커스 → `M.Stage3` ColorTile (동일 C 파이프 복제)
+- [x] 2인: Trigger→클리어 1회, Client도 같은 문제·같은 판정 체감 (문제 순서까지 동일한지 확인) — 통과
+- [x] Client만의 데미지/셔플/Complete 없음 (그레핑으로 `IsServer` 가드 누락 확인) — 이상 없음
+- [x] C 공통 파이프라인(§1) 문구 Docs §11B(챌린지 축 신규 절)에 반영 — **승급 완료**
+- [ ] 다음 보드 포커스 → `M.Stage3` ColorTile (동일 C 파이프 복제) — **진행 중 (현재 보드 포커스)**
 
 ---
 

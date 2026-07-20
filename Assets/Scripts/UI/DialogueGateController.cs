@@ -1,28 +1,30 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// 씬 인트로 대화 UI → StageStartGate Arm 흐름을 제어하는 네트워크 컨트롤러.
 ///
-/// [동작]
+/// [동작 — 각자 로컬로 읽기]
 /// 1. 씬 최초 진입: Host가 DialogueUI StartSequence → ClientRpc로 Client도 열기
-/// 2. Host만 Space로 줄 넘김 → SyncLineClientRpc → Client 동일 줄 표시
-/// 3. 마지막 줄 완료 → StageStartGate.Arm() (Host + ArmGateClientRpc)
+/// 2. 각 피어(Host/Client)는 자기 화면에서 각자 Space로 줄을 넘김 (DialogueUI.handleInputLocally=true).
+///    줄 넘김 자체는 동기화하지 않음 — 읽는 속도는 순수 로컬.
+/// 3. 각 피어가 자기 대화를 끝까지 읽으면 완료를 Host에 보고(Client는 ServerRpc, Host는 로컬 직접 집계).
+///    Host가 전원 완료를 확인하면 StageStartGate.Arm() (Host + ArmGateClientRpc)
 /// 4. 씬 리로드(사망): GameSession.IsIntroSeen = true → 대화 스킵 → Gate 바로 Arm
 ///
 /// [배치]
 /// - M.Stage1 씬 내 StageNetworkState GameObject (NetworkObject) 에 컴포넌트 추가
 /// - StageStartGate1.armOnStart = false 로 변경
 /// - PhaseManager.onPhaseEnter 에서 기존 StageStartGate.Arm 연결 제거
-/// - dialogueUI : UI 프리팹 인스턴스 내 Dialogue_Panel 의 DialogueUI 연결
+/// - dialogueUI : UI 프리팹 인스턴스 내 Dialogue_Panel 의 DialogueUI 연결 (handleInputLocally=true 필수)
 /// - stageStartGate : StageStartGate1 연결
 /// - showOnceKey : 씬별 고유 문자열 (예: "M.Stage1")
 /// </summary>
 public class DialogueGateController : NetworkBehaviour
 {
     [Header("연결")]
-    [Tooltip("씬 내 Dialogue_Panel 의 DialogueUI 컴포넌트")]
+    [Tooltip("씬 내 Dialogue_Panel 의 DialogueUI 컴포넌트 (handleInputLocally=true 필수)")]
     [SerializeField] DialogueUI dialogueUI;
 
     [Tooltip("대화 완료 후 Arm 할 StageStartGate")]
@@ -33,6 +35,9 @@ public class DialogueGateController : NetworkBehaviour
     [SerializeField] string showOnceKey = "M.Stage1";
 
     bool _initDone;
+
+    /// <summary>Host: 자기 자신 포함 완료 보고한 clientId 집합. 중복 집계 방지.</summary>
+    readonly HashSet<ulong> _doneClientIds = new();
 
     // ── 진입점 ────────────────────────────────────────────────────
 
@@ -84,91 +89,70 @@ public class DialogueGateController : NetworkBehaviour
         // Client: OpenDialogueClientRpc 수신 대기
     }
 
-    // ── 입력 (Host 전용) ──────────────────────────────────────────
+    // ── 완료 집계 (전원이 각자 다 읽어야 Arm) ─────────────────────
 
-    void Update()
+    /// <summary>
+    /// 이 피어(Host 또는 Client)의 DialogueUI가 마지막 줄까지 완료됐을 때 호출됨.
+    /// Host는 직접 집계, Client는 ServerRpc로 Host에 보고.
+    /// </summary>
+    void OnLocalDialogueComplete()
     {
-        if (dialogueUI == null || !dialogueUI.IsPlaying) return;
+        UnsubscribeComplete();
 
-        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-        if (!isHost) return;
-
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-            AdvanceLine();
-    }
-
-    void AdvanceLine()
-    {
-        int next = dialogueUI.CurrentLineIndex + 1;
-
-        if (next >= dialogueUI.LineCount)
-        {
-            // 마지막 줄 완료
-            dialogueUI.Hide();
-            UnsubscribeComplete();
-
-            stageStartGate?.Arm();
-            CompleteDialogueClientRpc();
-            ArmGateClientRpc();
-        }
+        if (IsServer)
+            MarkDone(NetworkManager.Singleton.LocalClientId);
         else
-        {
-            dialogueUI.ShowLine(next);
-            SyncLineClientRpc(next);
-        }
+            ReportDialogueDoneServerRpc();
     }
 
-    // ── OnSequenceComplete 구독 (handleInputLocally 경로 안전망) ──
+    /// <summary>Client → Host: 자기 대화 완료 보고.</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void ReportDialogueDoneServerRpc(RpcParams rpcParams = default)
+    {
+        MarkDone(rpcParams.Receive.SenderClientId);
+    }
+
+    /// <summary>Host: 완료 집계. 참가 인원 전원 완료 시 Gate Arm.</summary>
+    void MarkDone(ulong clientId)
+    {
+        _doneClientIds.Add(clientId);
+
+        int expected = GameSession.Instance != null
+            ? GameSession.Instance.ActivePlayerCount
+            : NetworkManager.Singleton.ConnectedClientsList.Count;
+
+        if (_doneClientIds.Count < expected) return;
+
+        stageStartGate?.Arm();
+        ArmGateClientRpc();
+    }
+
+    // ── OnSequenceComplete 구독 ────────────────────────────────────
 
     void SubscribeComplete()
     {
         if (dialogueUI != null)
-            dialogueUI.OnSequenceComplete.AddListener(OnDialogueComplete);
+            dialogueUI.OnSequenceComplete.AddListener(OnLocalDialogueComplete);
     }
 
     void UnsubscribeComplete()
     {
         if (dialogueUI != null)
-            dialogueUI.OnSequenceComplete.RemoveListener(OnDialogueComplete);
-    }
-
-    void OnDialogueComplete()
-    {
-        // AdvanceLine 에서 이미 처리하므로 중복 방지
-        // handleInputLocally=true 경로로 완료됐을 경우 Gate Arm 안전망
-        stageStartGate?.Arm();
-        UnsubscribeComplete();
-
-        ArmGateClientRpc();
+            dialogueUI.OnSequenceComplete.RemoveListener(OnLocalDialogueComplete);
     }
 
     // ── ClientRpc ────────────────────────────────────────────────
 
-    /// <summary>Host: 최초 진입 시 Client의 DialogueUI를 열어줌.</summary>
+    /// <summary>Host: 최초 진입 시 Client의 DialogueUI를 열어줌. Client는 자기 완료를 스스로 구독.</summary>
     [ClientRpc]
     void OpenDialogueClientRpc()
     {
         if (IsServer) return;
+        SubscribeComplete();
         dialogueUI?.StartSequence();
     }
 
-    /// <summary>Host: Space로 줄 넘길 때 Client 동기화.</summary>
-    [ClientRpc]
-    void SyncLineClientRpc(int index)
-    {
-        if (IsServer) return;
-        dialogueUI?.ShowLine(index);
-    }
-
-    /// <summary>Host: 대화 완료 시 Client DialogueUI 숨김.</summary>
-    [ClientRpc]
-    void CompleteDialogueClientRpc()
-    {
-        if (IsServer) return;
-        dialogueUI?.Hide();
-    }
-
-    /// <summary>Host: Gate Arm 을 Client에 브로드캐스트.</summary>
+    /// <summary>Host: 전원 완료 확인 후 Gate Arm 을 Client에 브로드캐스트.</summary>
     [ClientRpc]
     void ArmGateClientRpc()
     {

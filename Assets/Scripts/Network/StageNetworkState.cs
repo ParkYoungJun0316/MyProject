@@ -134,7 +134,11 @@ public class StageNetworkState : NetworkBehaviour
         _currentPhase.OnValueChanged += OnPhaseChanged;
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _challengeCleared.OnValueChanged += OnChallengeClearedNvChanged;
-        _surviveObjective = FindFirstObjectByType<SurviveTimeObjective>();
+        // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
+        // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
+        // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
+        // 비활성 포함 검색으로 Phase 활성화 여부와 무관하게 항상 찾도록 수정.
+        _surviveObjective = FindFirstObjectByType<SurviveTimeObjective>(FindObjectsInactive.Include);
     }
 
     public override void OnNetworkDespawn()

@@ -145,6 +145,12 @@ public class PhaseManager : MonoBehaviour
             foreach (GameObject obj in phase.objectsToEnable)
                 if (obj != null) obj.SetActive(true);
 
+        // 이 Phase가 발동하는 함정(ArrowTrap/DropTrap 등)의 스케줄 기준 시각을 여기서 기록.
+        // onPhaseEnter가 StageManager.StartStage() → trap.Activate()를 호출하므로 그 직전에 찍어야
+        // Host/Client가 같은 절대 시각을 앵커로 쓴다 (StageStartGate.CompleteCountdown()과 동일 순서).
+        // Phase마다 다시 찍으므로 앞 Phase가 길어져도 스케줄이 과거로 밀리지 않는다.
+        StageNetworkState.Instance?.MarkStageStart();
+
         phase.onPhaseEnter?.Invoke();
 
         // 온라인 Host → Phase 변경을 다른 클라이언트에 동기화

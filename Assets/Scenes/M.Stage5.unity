@@ -149,13 +149,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -618,13 +623,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -718,16 +728,92 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &207975599
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 207975602}
+  - component: {fileID: 207975601}
+  - component: {fileID: 207975600}
+  m_Layer: 0
+  m_Name: DisconnectManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &207975600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207975599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 158aa2dc9bd425644b964dcf94528546, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DisconnectManager
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &207975601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207975599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2458938448
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!4 &207975602
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207975599}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &286591584
 GameObject:
   m_ObjectHideFlags: 0
@@ -931,13 +1017,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -989,6 +1080,82 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1438379755}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &441189594
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 441189597}
+  - component: {fileID: 441189596}
+  - component: {fileID: 441189595}
+  m_Layer: 0
+  m_Name: CheerService
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &441189595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441189594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c753f1237f80334fa8592649637cbe7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheerService
+  ShowTopMostFoldoutHeaderGroup: 1
+  stageBuffType: 1
+  buffDuration: 5
+  cheerCooldownSeconds: 10
+  cheerTimeoutSeconds: 10
+  chatRateLimitSeconds: 0.5
+--- !u!114 &441189596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441189594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3471780858
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!4 &441189597
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441189594}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &447780244
 PrefabInstance:
@@ -1080,13 +1247,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1240,13 +1412,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1648,13 +1825,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1688,13 +1870,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -1848,13 +2035,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -2863,6 +3055,8 @@ MonoBehaviour:
   schedulePeriod: 0
   baseDropSpeed: 10
   speedPhases: []
+  warnSfxId: 40
+  fireSfxId: 40
 --- !u!1 &1097796926
 GameObject:
   m_ObjectHideFlags: 0
@@ -2950,13 +3144,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -3538,16 +3737,100 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1283662749
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1283662752}
+  - component: {fileID: 1283662751}
+  - component: {fileID: 1283662750}
+  m_Layer: 0
+  m_Name: EventSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1283662750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283662749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
+  m_SendPointerHoverToParent: 1
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
+--- !u!114 &1283662751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283662749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
+  m_FirstSelected: {fileID: 0}
+  m_sendNavigationEvents: 1
+  m_DragThreshold: 10
+--- !u!4 &1283662752
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283662749}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1293583613
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3680,6 +3963,77 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+--- !u!1 &1299028743
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1299028746}
+  - component: {fileID: 1299028745}
+  - component: {fileID: 1299028744}
+  m_Layer: 0
+  m_Name: StageNetworkState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1299028744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299028743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8937ef38873af141985bff9ef382959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageNetworkState
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1299028745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299028743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 429492848
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!4 &1299028746
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299028743}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1374012274 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -3710,13 +4064,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -3750,13 +4109,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -3790,13 +4154,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -3830,13 +4199,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4217,13 +4591,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4317,13 +4696,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4417,13 +4801,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4562,13 +4951,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4694,13 +5088,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4734,13 +5133,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4911,13 +5315,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5207,6 +5616,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c2d5f09fb9718a4880bccc9cdcf67fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorManager
+  ShowTopMostFoldoutHeaderGroup: 1
   changeInterval: 10
   keepBWRatio: 1
   phases:
@@ -5246,13 +5656,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5605,13 +6020,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -5806,13 +6226,18 @@ MonoBehaviour:
   breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
+  useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -12422,3 +12847,7 @@ SceneRoots:
   - {fileID: 1097796927}
   - {fileID: 939064727}
   - {fileID: 93245189}
+  - {fileID: 1283662752}
+  - {fileID: 441189597}
+  - {fileID: 1299028746}
+  - {fileID: 207975602}

@@ -1,10 +1,14 @@
+using Unity.Netcode;
 using UnityEngine;
 using TMPro;
 
 /// <summary>
 /// Timer_Panel에 붙이는 스크립트.
 /// TimerMode.PlayTime  : 게임 시작부터 실제 경과 시간 표시.
-///                       씬 재로드·전환에 무관하게 누적. Disconnect Pause(timeScale=0)에만 멈춤.
+///                       NetworkSessionData.SessionStartServerTime(Host가 게임 시작 시 기록,
+///                       전 클라이언트에 배포) 기준으로 ServerTime 경과를 계산 — Host/Client가
+///                       항상 같은 값을 보여준다. 로컬 Time.deltaTime 누적이 아니므로
+///                       씬 재로드·전환·프레임레이트 차이에 영향받지 않음.
 /// TimerMode.Survival  : SurviveTimeObjective 남은 시간 표시 (Objective 연결 필요)
 ///
 /// [리셋 타이밍]
@@ -33,11 +37,6 @@ public class TimerUI : MonoBehaviour
     [Tooltip("이 초 이하로 남으면 경고 색으로 변경")]
     [SerializeField] float warningThreshold = 30f;
 
-    // 씬 재로드·전환에도 유지되는 누적 플레이 시간
-    static float s_accumulatedTime = 0f;
-
-    float _playTime;
-
     void Start()
     {
         if (mode == TimerMode.Survival)
@@ -52,27 +51,31 @@ public class TimerUI : MonoBehaviour
         }
         else
         {
-            // 이전 씬에서 누적된 시간 이어받기
-            _playTime = s_accumulatedTime;
             if (timerText != null) timerText.color = normalColor;
-            UpdateDisplay(_playTime, isSurvival: false);
+            UpdateDisplay(GetPlayTime(), isSurvival: false);
         }
     }
 
     void Update()
     {
         if (mode != TimerMode.PlayTime) return;
-
-        // Time.deltaTime: timeScale=0(Disconnect Pause)이면 자동으로 0 → 멈춤
-        // 씬 전환·Phase 전환·컷씬 등 다른 요소의 영향 없음
-        _playTime += Time.deltaTime;
-
-        s_accumulatedTime = _playTime;
-        UpdateDisplay(_playTime, isSurvival: false);
+        UpdateDisplay(GetPlayTime(), isSurvival: false);
     }
 
-    /// <summary>타이틀 복귀 등 새 게임 시작 시 누적 타이머 초기화.</summary>
-    public static void ResetTimer() => s_accumulatedTime = 0f;
+    /// <summary>
+    /// ServerTime - SessionStartServerTime 기준 경과 시간. 세션이 아직 시작 전(-1)이거나
+    /// NetworkManager가 없으면(온라인 시작 전 화면 등) 0 반환.
+    /// </summary>
+    float GetPlayTime()
+    {
+        var nm = NetworkManager.Singleton;
+        double start = NetworkSessionData.SessionStartServerTime;
+        if (nm == null || !nm.IsListening || start < 0) return 0f;
+        return Mathf.Max(0f, (float)(nm.ServerTime.Time - start));
+    }
+
+    /// <summary>타이틀 복귀 등 새 게임 시작 시 세션 시작 시각 초기화.</summary>
+    public static void ResetTimer() => NetworkSessionData.SessionStartServerTime = -1.0;
 
     void OnSurvivalTimeChanged(float remaining) => UpdateDisplay(remaining, isSurvival: true);
 
