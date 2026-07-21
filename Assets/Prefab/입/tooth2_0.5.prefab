@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6375470369683575676}
   - component: {fileID: -6847089531584651250}
+  - component: {fileID: 3739955347560868799}
   - component: {fileID: 8485926564054477293}
   - component: {fileID: 8010234829467193693}
   - component: {fileID: -6776919644280396002}
@@ -63,6 +64,31 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &3739955347560868799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5552744629662109250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 4259903161
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &8485926564054477293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,6 +101,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cfcbda248953c6429767825456e245e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
+  ShowTopMostFoldoutHeaderGroup: 1
   damage: 0
   lifetime: 20
   moveDirection: {x: 0, y: 0, z: 1}
@@ -82,7 +109,6 @@ MonoBehaviour:
   destroyOnWall: 0
   destroyOnFloor: 0
   hitEffectPrefab: {fileID: 0}
-  onHitSfxId: 14
 --- !u!65 &8010234829467193693
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -127,11 +153,15 @@ MonoBehaviour:
   useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 11
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 11
   playerLayer:
     serializedVersion: 2
     m_Bits: 384
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []

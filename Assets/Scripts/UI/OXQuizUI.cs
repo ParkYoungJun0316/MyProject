@@ -129,11 +129,12 @@ public class OXQuizUI : MonoBehaviour
         _sequence = StartCoroutine(ClearSequence());
     }
 
-    /// <summary>OXQuizObjective.OnProgressChanged</summary>
-    void SetProgress(int current, int total)
+    /// <summary>OXQuizObjective(RoundProgressObjective).OnProgressChanged.
+    /// ObjectiveUI의 Count 표시와 동일하게 "정산 완료 수/전체"로 통일.</summary>
+    void SetProgress()
     {
-        if (progressText == null) return;
-        progressText.text = $"{current}/{total}";
+        if (progressText == null || quizObjective == null) return;
+        progressText.text = $"{quizObjective.PlayedRounds}/{quizObjective.TotalRounds}";
     }
 
     // ── 내부 시퀀스 ───────────────────────────────────────────────

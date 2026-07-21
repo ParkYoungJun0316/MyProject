@@ -1,15 +1,13 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 /// <summary>
-/// ColorTileChallenge의 스케줄 결과를 기록하고,
-/// 성공 횟수가 requiredSuccesses에 도달하면 스테이지를 클리어하는 Objective.
+/// ColorTileChallenge의 스케줄 결과를 성공 횟수 기준으로 판정하는 Objective.
+/// UI에는 성공/실패 구분 없이 진행 라운드 수만 노출한다 (Grid/MemoryRound와 동일한 Count 표시 규칙 — ObjectiveUI SSOT).
 ///
 /// [동작 흐름]
 /// - Challenge.activateAtSeconds 길이 = 총 라운드 수 (Inspector 별도 설정 불필요)
 /// - Challenge.autoStart = true + 스케줄 그대로 → Challenge가 직접 Activate()
-/// - OnSuccess → 성공 +1, requiredSuccesses 도달 시 Complete()
-/// - OnFail    → X 기록 (패널티 벽은 Challenge가 처리)
+/// - OnSuccess/OnFail 둘 다 "라운드 1회 진행"으로 집계 (성공/실패 여부는 클리어 판정에만 사용, UI에는 노출 안 함)
 /// - Objective는 Activate()를 호출하지 않음 (스케줄에 관여 X)
 ///
 /// [클리어 조건]
@@ -20,9 +18,9 @@ using UnityEngine.Events;
 ///  - challenge         : 감시할 ColorTileChallenge
 ///  - requiredSuccesses : 클리어에 필요한 성공 횟수 (예: 5)
 /// </summary>
-public class ColorTileRoundObjective : StageObjective
+public class ColorTileRoundObjective : RoundProgressObjective
 {
-    [Header("컬러 타일 찰린지")]
+    [Header("컬러 타일 챌린지")]
     [Tooltip("감시할 ColorTileChallenge.\n" +
              "이 Objective는 Activate()를 호출하지 않습니다.\n" +
              "Challenge의 autoStart/스케줄 설정을 그대로 사용하세요.")]
@@ -33,37 +31,22 @@ public class ColorTileRoundObjective : StageObjective
              "예: 총 7라운드 중 5번 성공하면 클리어.")]
     [SerializeField] int requiredSuccesses = 0;
 
-    [Header("이벤트 (UI 연결용)")]
-    [Tooltip("라운드 결과(O/X) 기록 시. History / SuccessCount / FailCount 프로퍼티를 읽어서 UI 갱신.")]
-    public UnityEvent OnHistoryUpdated;
-
     // ── 상태 ──────────────────────────────────────────────────────
 
-    int    _playedRounds;
-    int    _successCount;
-    int    _failCount;
-    bool[] _history;
+    int _playedRounds;
+    int _successCount;
 
-    /// <summary>지금까지 완료된 라운드 수.</summary>
-    public int PlayedRounds  => _playedRounds;
+    /// <summary>정산 완료된 라운드 수(성공/실패 무관).</summary>
+    public override int PlayedRounds      => _playedRounds;
 
-    /// <summary>누적 성공(O) 횟수.</summary>
-    public int SuccessCount  => _successCount;
+    /// <summary>Challenge의 스케줄 개수 = 총 라운드 수.</summary>
+    public override int TotalRounds       => challenge != null ? challenge.ScheduledRoundCount : 0;
 
-    /// <summary>누적 실패(X) 횟수.</summary>
-    public int FailCount     => _failCount;
-
-    /// <summary>Challenge의 스케줄 개수 = 총 라운드 수. UI 표시용.</summary>
-    public int TotalRounds   => challenge != null ? challenge.ScheduledRoundCount : 0;
+    /// <summary>현재 진행 중인 라운드 인덱스(0부터). 전부 끝났으면 -1.</summary>
+    public override int CurrentRoundIndex => _playedRounds < TotalRounds ? _playedRounds : -1;
 
     /// <summary>클리어에 필요한 성공 횟수.</summary>
     public int RequiredSuccesses => requiredSuccesses;
-
-    /// <summary>
-    /// 라운드별 결과 배열. true = 성공(O), false = 실패(X).
-    /// [0 .. PlayedRounds-1] 까지만 유효.
-    /// </summary>
-    public bool[] History => _history;
 
     // ── StageObjective 구현 ──────────────────────────────────────
 
@@ -73,10 +56,6 @@ public class ColorTileRoundObjective : StageObjective
 
         _playedRounds = 0;
         _successCount = 0;
-        _failCount    = 0;
-
-        int total = TotalRounds;
-        _history = total > 0 ? new bool[total] : new bool[0];
 
         if (challenge == null)
         {
@@ -87,7 +66,7 @@ public class ColorTileRoundObjective : StageObjective
         challenge.OnSuccess.AddListener(HandleSuccess);
         challenge.OnFail.AddListener(HandleFail);
 
-        OnHistoryUpdated?.Invoke();
+        OnProgressChanged?.Invoke();
     }
 
     public override void Tick() { }
@@ -98,8 +77,9 @@ public class ColorTileRoundObjective : StageObjective
     {
         if (IsCompleted || IsFailed) return;
 
-        RecordResult(true);
         _successCount++;
+        _playedRounds++;
+        OnProgressChanged?.Invoke();
 
         if (_successCount >= requiredSuccesses)
             Complete();
@@ -109,17 +89,8 @@ public class ColorTileRoundObjective : StageObjective
     {
         if (IsCompleted || IsFailed) return;
 
-        RecordResult(false);
-        _failCount++;
-    }
-
-    void RecordResult(bool success)
-    {
-        if (_history != null && _playedRounds < _history.Length)
-            _history[_playedRounds] = success;
-
         _playedRounds++;
-        OnHistoryUpdated?.Invoke();
+        OnProgressChanged?.Invoke();
     }
 
     // ── 구독 해제 ─────────────────────────────────────────────────

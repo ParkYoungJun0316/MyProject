@@ -39,7 +39,7 @@
 |------|--------|
 | Docs (Network / Cheer) | Approved locks above |
 | Old project skills/rules | Deleted (rebuild) |
-| `.cursor/rules` | **6 rules present** (3 always / 3 on-demand) |
+| `.cursor/rules` | **7 rules present** (4 always / 3 on-demand) — Unity MCP read-only lock included |
 | `.cursor/skills` | **ngo-debug** present (ParrelSync/commit skills deferred) |
 | Import filter | `.cursor/docs/import-filter.md` |
 | Customization spec | Phase **3-A** when customizing imports |

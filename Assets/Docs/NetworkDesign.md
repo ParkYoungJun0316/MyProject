@@ -710,6 +710,33 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 3. Client 충돌 → ServerRpc → Host 데미지 (발사체 전용; 구 플레이어 `ReportHitServerRpc`와 혼동 금지)
 4. Host Despawn/파괴 동기화
 
+#### 9.0.1-a 알려진 테스트 아티팩트 — ParrelSync 포커스 스로틀 (2026-07-21, 재조사 불필요)
+
+**증상:** ParrelSync에서 **Client 창에 포커스**하면(= Host 창이 언포커스) `ArrowTrap` 등 함정 발사 스케줄이
+Host 포커스 때보다 크게 어긋남 (예: 일자로 나가야 할 화살 5발이 흩어짐). Host 포커스 시엔 정확.
+
+**원인:** `ArrowTrap`/`DropTrap`/`WindTrap`은 `targetTime`/`now` 계산엔 `NetworkManager.ServerTime`을
+쓰지만, 실제 대기는 `yield return new WaitForSeconds(waitTime)` — **Unity 프레임 타이머** 기반.
+Unity **에디터**는 포커스를 잃은 Play 창의 Update 틱 레이트를 낮춘다 (빌드 전용 설정인
+`runInBackground`와 무관, 에디터 고유 동작). Host 창이 언포커스되면 이 코루틴 대기만 늘어지고,
+그 사이에도 `ServerTime`은 그대로 흐르므로 다음 Spawn 타이밍이 흔들린다.
+
+**결론 — 코드 수정 대상 아님:**
+
+- ParrelSync는 같은 PC에서 에디터 두 창을 띄우는 **테스트 도구 특유 구조**. 실제 별도 프로세스(빌드
+  끼리, 또는 Editor+Build) 테스트에서는 포커스와 무관하게 정상 프레임으로 돌아 재현되지 않을 것으로
+  판단.
+- B안(Host Spawn+velocity, Client 로컬 비행) 자체의 결함이 아니다. 스폰 권한을 Client 로컬로
+  바꿔도 해결되지 않음 — 오히려 각 머신이 서로 다른 화살을 스폰해 새로운 불일치가 생길 수 있음.
+- `WallMover`(§ Stage 이동 오브젝트)는 이미 `while (ServerTime < target) yield return null;` 형태의
+  ServerTime 폴링을 쓰고 있어 이 스로틀에 강함. `ArrowTrap`/`DropTrap`/`WindTrap`은 `WaitForSeconds`
+  기반이라 상대적으로 약하지만, **ParrelSync 테스트 아티팩트로 재확인된 이상 지금 고칠 필요 없음.**
+  실기기 빌드에서 Host가 실제로 큰 프레임드랍(랙스파이크 등)을 겪을 때만 재검토 대상.
+
+**AI 주의:** 이후 대화에서 "Client 포커스 시 함정 발사 스케줄이 어긋난다"는 보고가 다시 나오면,
+재조사하지 말고 이 절을 먼저 인용해 "ParrelSync 에디터 포커스 스로틀 — 알려진 테스트 아티팩트,
+코드 정상"이라고 답할 것. 실제 빌드/2PC에서도 재현된다는 새 증거가 있을 때만 재오픈.
+
 - **게임 규칙**(패드, 문, 함정 **스케줄/상태**, Phase, 데미지, 클리어)은 **Host에서만** 최종 판정.
 - 결과는 **`StageNetworkState` (중앙 매니저)** 등 `NetworkVariable` / RPC로 **전원에 공유**.
 - Client도 **동일한 연출·상태**를 봄.

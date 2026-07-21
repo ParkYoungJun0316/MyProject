@@ -149,7 +149,11 @@ public class PhaseManager : MonoBehaviour
         // onPhaseEnter가 StageManager.StartStage() → trap.Activate()를 호출하므로 그 직전에 찍어야
         // Host/Client가 같은 절대 시각을 앵커로 쓴다 (StageStartGate.CompleteCountdown()과 동일 순서).
         // Phase마다 다시 찍으므로 앞 Phase가 길어져도 스케줄이 과거로 밀리지 않는다.
-        StageNetworkState.Instance?.MarkStageStart();
+        // [버그 수정 2026-07-21] MarkStageStart()(StageStartServerTime)를 여기서 같이 쓰면
+        // StageStartGate가 그 값을 "이 방 게이트 완료" 1회성 신호로 쓰는 것과 충돌해서
+        // Phase 0이 씬 로드 즉시 그 값을 건드려버리는 문제가 있었다. 완전히 별개인
+        // MarkPhaseStart()(PhaseStartServerTime)로 분리.
+        StageNetworkState.Instance?.MarkPhaseStart();
 
         phase.onPhaseEnter?.Invoke();
 

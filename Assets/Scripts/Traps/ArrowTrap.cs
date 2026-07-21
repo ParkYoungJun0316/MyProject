@@ -70,18 +70,21 @@ public class ArrowTrap : TrapBase
         var nm = NetworkManager.Singleton;
 
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
-        // StageNetworkState.StageStartServerTime(Host가 이 Phase 진입 직전에 기록한 절대
+        // StageNetworkState.PhaseStartServerTime(Host가 이 Phase 진입 직전에 기록한 절대
         // ServerTime) 을 기준으로 잡는다 — Host/Client가 동일한 절대 시각을 앵커로 쓰게 되어
         // Client의 Activate() 호출이 Phase NV 전파 지연만큼 늦게 와도 스케줄이 밀리지 않는다.
+        // StageStartServerTime이 아니라 별도 슬롯인 PhaseStartServerTime을 쓴다 —
+        // StageStartServerTime은 StageStartGate가 "이 방 게이트 완료" 1회성 신호로 배타적으로
+        // 쓰므로 같이 쓰면 안 된다 (2026-07-21 회귀 버그).
         // [버그 수정 2026-07-21] 예전엔 이 앵커를 자기 로컬 Activate() 시각으로 대체했었는데,
         // Client의 Activate()가 Host보다 항상 늦게(Phase NV 도착 후) 실행되는 걸 반영하지
         // 못해 입 벌림 애니메이션 등 코스메틱 타이밍이 Host와 계속 어긋나는 문제가 있었다.
-        // PhaseManager.EnterPhase()가 Phase마다 MarkStageStart()를 다시 찍으므로, 앞 Phase가
+        // PhaseManager.EnterPhase()가 Phase마다 MarkPhaseStart()를 다시 찍으므로, 앞 Phase가
         // 길어져도 스케줄이 과거로 밀려 한 번도 발사 안 되는 예전 버그는 재발하지 않는다.
         // StageNetworkState가 없는 씬(테스트 등)에서는 로컬 Activate() 시각으로 폴백.
-        if (StageNetworkState.Instance != null && StageNetworkState.Instance.StageStartServerTime > 0)
+        if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
         {
-            scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime + initialDelay;
+            scheduleStartTime = (float)StageNetworkState.Instance.PhaseStartServerTime + initialDelay;
             while (nm != null && (float)nm.ServerTime.Time < scheduleStartTime)
                 yield return null;
         }

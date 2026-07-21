@@ -1,0 +1,71 @@
+---
+description: >-
+  Unity MCP와 씬/프리팹 에셋은 에이전트 읽기 전용. Inspector/씬 배선은 사용자만;
+  에이전트는 워크스페이스 C#·Docs만 편집. MCP 조회도 필요 최소한으로 제한해 토큰 절약.
+alwaysApply: true
+---
+
+# Unity MCP / Editor — Read Only (Agent)
+
+## Lock
+
+- **User** owns all Unity Editor mutations: Inspector 값 설정, 씬 배치, Prefab 인스펙터, 컴포넌트 부착·참조 연결, Play Mode 조작.
+- **Agent** may **read** Editor/씬 상태 — MCP 읽기 조회, `.unity` / `.prefab` 텍스트 열람만.
+- **Agent** may **write** via workspace file tools only: `Assets/Scripts/**/*.cs`, Docs 등. 그 외 에셋·씬 파일은 에이전트가 쓰지 말 것.
+
+## 예외 (MCP / 에디터 쓰기)
+
+- **기본: MCP·에디터 쓰기·수정 절대 금지.**
+- **유일한 예외:** 사용자가 이 대화에서 **"MCP로 수정해줘"** (또는 동등하게 명시적인 MCP/에디터 수정 요청)라고 말한 경우만, **그 요청 범위**에서 MCP 쓰기 허용.
+- 암묵적 해석·추측으로 예외를 만들지 말 것. 말이 없으면 체크리스트만 주고 사용자가 에디터에서 한다.
+
+---
+
+## Token 절약 원칙 (최우선)
+
+- MCP 읽기 조회도 **코드 컨텍스트만으로 불충분할 때만** 수행. 코드로 판단 가능하면 MCP 조회 생략.
+- `find_gameobjects` 등으로 씬 전체 dump 금지. 조회할 GO 이름을 특정해서 핀포인트 조회.
+- 불필요한 반복 조회 금지. 같은 정보를 이미 받았으면 재조회하지 말 것.
+
+---
+
+## Unity MCP — 허용 (읽기·조회만)
+
+아래 용도에 한해 MCP 읽기를 허용. **action 이름이 read/get/search/list/ping/query 계열인 경우만.**
+
+- **Hierarchy·컴포넌트·콘솔 조회**: `find_gameobjects`, `manage_gameobject` / `manage_components` / `manage_scene`의 get·read·search·ping 계열, `read_console`
+- **에디터 리소스 조회**: `editor_state`, `project_info` 등 resources (읽기)
+- **에셋 검색·정보 조회**: `manage_asset`의 search·get 계열 읽기 action만
+- **API 확인**: `unity_reflect`, `unity_docs` (읽기)
+- **`execute_code`**: 씬 상태 조회 목적 읽기 전용 코드만 허용. 인스펙터·씬·에셋을 수정하는 `execute_code` 사용 금지.
+
+---
+
+## Unity MCP — 금지 (쓰기·변경)
+
+위 **예외**에 해당하지 않으면 전부 금지:
+
+- 컴포넌트 add / remove / `set_property`, GO create / modify / delete
+- 씬 create / load / save, Prefab modify / save
+- Play / Pause / Stop, 태그·레이어·빌드·패키지 설치 등 Editor 상태 변경
+- Material / Physics / UI / VFX / Animation / ScriptableObject 생성·수정
+- `manage_script` / `apply_text_edits` / `create_script` / `delete_script` — **C# 스크립트도 MCP로 쓰지 말 것** (워크스페이스 편집만)
+
+---
+
+## 씬 / 프리팹 파일
+
+- `Assets/**/*.unity`, `Assets/**/*.prefab` (및 동반 `.meta`): **읽기만.**
+- 에이전트가 YAML·직렬화 파일을 직접 패치·저장하지 말 것.
+- 에디터 작업이 필요하면 **체크리스트만** 한국어로 짧게 제시하고 사용자가 적용.
+
+---
+
+## Do / Don't
+
+| Do | Don't |
+|---|---|
+| `.cs` / Docs 수정 → "인스펙터에서 이 필드 연결하세요" 안내 | 명시 요청 없이 MCP로 인스펙터·씬 수정 |
+| 코드 컨텍스트로 충분하면 MCP 조회 생략 | 습관적으로 Hierarchy dump 또는 console 긁기 |
+| 조회 필요 시 GO 이름 특정해서 핀포인트 조회 | `find_gameobjects` 등으로 씬 전체 탐색 |
+| 에디터 작업은 체크리스트로 사용자에게 위임 | "해 달라"로 암묵 해석해 MCP 쓰기 실행 |

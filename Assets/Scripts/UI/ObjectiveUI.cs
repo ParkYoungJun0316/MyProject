@@ -5,17 +5,20 @@ using TMPro;
 
 /// <summary>
 /// Objective_Panel에 붙이는 스크립트.
-/// StageManager의 objectives[] 를 읽어 목표 이름 슬롯을 자동 생성.
+/// StageManager의 objectives[] 를 읽어 목표 슬롯을 자동 생성.
 ///
 /// [Stage Clear 표시 흐름]
 /// - 중간 스테이지 클리어(OnStageClear) → 슬롯 갱신 없음 (문구 X)
 /// - 씬 전체 클리어(onAllPhasesComplete) → ShowSceneClear() 연결 → 문구 표시
 /// - 다음 스테이지 전환(onPhaseEnter)    → Refresh() 연결 → 슬롯 재생성
 ///
-/// [타입별 표시]
-/// - SurviveTimeObjective : "275s" 형태로 남은 시간 표시. OnTimeChanged 구독.
-/// - ReachZoneObjective   : 가로 트랙 바 + 마커. OnProgressChanged 구독.
-/// - 그 외                : objectiveName 표시 (기존 동작 유지)
+/// [표시 모드 SSOT — 타입 분기 대신 모드로 통일. 새 Objective 추가 시 아래 4개 중 하나로 분류할 것]
+/// - Time        : "275s"       — SurviveTimeObjective
+/// - Count       : "3/5"        — RoundProgressObjective 전부 (OXQuiz/Grid/ColorTile/MemoryRound). 성공·실패 구분 없이 진행 라운드 수만 표시
+/// - Count+Timer : "2/5 · 18s"  — SequenceRingObjective, Stage5TargetObjective
+/// - Ratio       : 가로 트랙 바 + 마커 (0~1) — ReachZoneObjective만
+/// 그 외(분류 안 된 StageObjective)는 지원하지 않음 — objectiveName 텍스트로 대체하지 않는다.
+/// Boss(BossFightObjective)는 StageObjective가 아니며 이 UI가 다루지 않음 — BossHealthBarUI 별도 유지.
 /// </summary>
 public class ObjectiveUI : MonoBehaviour
 {
@@ -38,7 +41,7 @@ public class ObjectiveUI : MonoBehaviour
     [SerializeField] Sprite slotBgSprite;
     [SerializeField] Color  slotBgColor = new Color(0f, 0f, 0f, 0.45f);
 
-    [Header("ReachZone 바")]
+    [Header("ReachZone 바 (Ratio 모드)")]
     [Tooltip("트랙 배경 색")]
     [SerializeField] Color trackBgColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
     [Tooltip("마커에 사용할 Sprite. 비우면 기본 사각형.")]
@@ -57,14 +60,25 @@ public class ObjectiveUI : MonoBehaviour
     [SerializeField] Color  clearTextColor = Color.white;
 
     // ── 슬롯 데이터 ──────────────────────────────────────────────
+
     class ObjSlot
     {
-        public StageObjective     objective;
-        public Image              bgImage;
-        public TextMeshProUGUI    titleText;      // Survive 등 텍스트 슬롯
-        public RectTransform      markerRect;     // ReachZone 전용
-        public UnityAction<float> surviveListener;
-        public UnityAction<float> reachListener;
+        public StageObjective  objective;
+        public Image           bgImage;
+        public TextMeshProUGUI titleText;   // Time / Count / Count+Timer 공용
+        public RectTransform   markerRect;  // Ratio(ReachZone) 전용
+
+        public UnityAction<float>   surviveListener;
+        public UnityAction<float>   reachListener;
+        public UnityAction          roundListener;          // RoundProgressObjective (Count)
+        public UnityAction          seqListener;             // SequenceRingObjective (Count+Timer)
+        public UnityAction<int,int> stage5CaptureListener;   // Stage5TargetObjective (Count+Timer)
+        public UnityAction<float>   stage5TimerListener;
+
+        // Stage5는 캡처/타이머 이벤트가 서로 독립 발동 — 조합 표시를 위해 최신값 캐시
+        public int   stage5Captured;
+        public int   stage5Required;
+        public float stage5Remaining;
     }
 
     ObjSlot[] slots;
@@ -129,18 +143,44 @@ public class ObjectiveUI : MonoBehaviour
         if (slotBgSprite != null)
             slot.bgImage.type = Image.Type.Sliced;
 
-        // ── 타입별 콘텐츠 ─────────────────────────────────────────
-        if (obj is ReachZoneObjective reach)
+        // ── 모드별 콘텐츠 ─────────────────────────────────────────
+        if (obj is SurviveTimeObjective survive)
+        {
+            BuildTextContent(root, slot, FormatSeconds(survive.Remaining));
+        }
+        else if (obj is ReachZoneObjective reach)
+        {
             BuildReachZoneContent(root, slot, reach);
+        }
+        else if (obj is SequenceRingObjective seq)
+        {
+            int done = Mathf.Max(0, seq.TotalSteps - seq.RemainingSteps);
+            BuildTextContent(root, slot, FormatCountTimer(done, seq.TotalSteps, seq.TimeRemaining));
+        }
+        else if (obj is Stage5TargetObjective stage5)
+        {
+            slot.stage5Captured  = stage5.CapturedCount;
+            slot.stage5Required  = stage5.requiredCaptures;
+            slot.stage5Remaining = stage5.Remaining;
+            BuildTextContent(root, slot, FormatCountTimer(slot.stage5Captured, slot.stage5Required, slot.stage5Remaining));
+        }
+        else if (obj is RoundProgressObjective round)
+        {
+            BuildTextContent(root, slot, FormatCount(round.PlayedRounds, round.TotalRounds));
+        }
         else
-            BuildTextContent(root, slot, obj);
+        {
+            Debug.LogWarning($"[ObjectiveUI] 지원하지 않는 Objective 타입: {obj.GetType().Name} ({obj.gameObject.name}) — " +
+                              "Time/Count/Count+Timer/Ratio 중 하나로 분류해야 합니다.");
+            BuildTextContent(root, slot, string.Empty);
+        }
 
         return slot;
     }
 
-    // ── 텍스트 슬롯 (Survive / 기본) ──────────────────────────────
+    // ── 텍스트 슬롯 (Time / Count / Count+Timer 공용) ─────────────
 
-    void BuildTextContent(GameObject root, ObjSlot slot, StageObjective obj)
+    void BuildTextContent(GameObject root, ObjSlot slot, string initialText)
     {
         GameObject titleObj = new GameObject("Title");
         titleObj.transform.SetParent(root.transform, false);
@@ -156,13 +196,10 @@ public class ObjectiveUI : MonoBehaviour
         rt.offsetMin = new Vector2(8f,  4f);
         rt.offsetMax = new Vector2(-8f, -4f);
 
-        if (obj is SurviveTimeObjective survive)
-            slot.titleText.text = FormatSeconds(survive.Remaining);
-        else
-            slot.titleText.text = obj.objectiveName;
+        slot.titleText.text = initialText;
     }
 
-    // ── ReachZone 슬롯 (트랙 바 + 마커) ─────────────────────────
+    // ── Ratio 슬롯 (트랙 바 + 마커, ReachZone 전용) ───────────────
 
     void BuildReachZoneContent(GameObject root, ObjSlot slot, ReachZoneObjective reach)
     {
@@ -217,6 +254,29 @@ public class ObjectiveUI : MonoBehaviour
                 reach.OnProgressChanged.RemoveListener(slot.reachListener);
                 slot.reachListener = null;
             }
+            if (slot.objective is SequenceRingObjective seq && slot.seqListener != null)
+            {
+                seq.OnProgressChanged.RemoveListener(slot.seqListener);
+                slot.seqListener = null;
+            }
+            if (slot.objective is Stage5TargetObjective stage5)
+            {
+                if (slot.stage5CaptureListener != null)
+                {
+                    stage5.OnCaptureCountChanged.RemoveListener(slot.stage5CaptureListener);
+                    slot.stage5CaptureListener = null;
+                }
+                if (slot.stage5TimerListener != null)
+                {
+                    stage5.OnTimerChanged.RemoveListener(slot.stage5TimerListener);
+                    slot.stage5TimerListener = null;
+                }
+            }
+            if (slot.objective is RoundProgressObjective round && slot.roundListener != null)
+            {
+                round.OnProgressChanged.RemoveListener(slot.roundListener);
+                slot.roundListener = null;
+            }
         }
         slots = null;
     }
@@ -248,7 +308,51 @@ public class ObjectiveUI : MonoBehaviour
                 };
                 reach.OnProgressChanged.AddListener(captured.reachListener);
             }
+            else if (slot.objective is SequenceRingObjective seq)
+            {
+                var captured = slot;
+                captured.seqListener = () =>
+                {
+                    if (captured.titleText == null) return;
+                    int done = Mathf.Max(0, seq.TotalSteps - seq.RemainingSteps);
+                    captured.titleText.text = FormatCountTimer(done, seq.TotalSteps, seq.TimeRemaining);
+                };
+                seq.OnProgressChanged.AddListener(captured.seqListener);
+            }
+            else if (slot.objective is Stage5TargetObjective stage5)
+            {
+                var captured = slot;
+                captured.stage5CaptureListener = (capturedCount, required) =>
+                {
+                    captured.stage5Captured = capturedCount;
+                    captured.stage5Required = required;
+                    RefreshStage5Text(captured);
+                };
+                captured.stage5TimerListener = remaining =>
+                {
+                    captured.stage5Remaining = remaining;
+                    RefreshStage5Text(captured);
+                };
+                stage5.OnCaptureCountChanged.AddListener(captured.stage5CaptureListener);
+                stage5.OnTimerChanged.AddListener(captured.stage5TimerListener);
+            }
+            else if (slot.objective is RoundProgressObjective round)
+            {
+                var captured = slot;
+                captured.roundListener = () =>
+                {
+                    if (captured.titleText != null)
+                        captured.titleText.text = FormatCount(round.PlayedRounds, round.TotalRounds);
+                };
+                round.OnProgressChanged.AddListener(captured.roundListener);
+            }
         }
+    }
+
+    static void RefreshStage5Text(ObjSlot slot)
+    {
+        if (slot.titleText != null)
+            slot.titleText.text = FormatCountTimer(slot.stage5Captured, slot.stage5Required, slot.stage5Remaining);
     }
 
     // ── 씬 전체 클리어 ───────────────────────────────────────────
@@ -272,9 +376,14 @@ public class ObjectiveUI : MonoBehaviour
         }
     }
 
-    // ── 유틸 ─────────────────────────────────────────────────────
+    // ── 표시 포맷 (모드별 SSOT — 여기서만 문자열을 만든다) ─────────
 
     static string FormatSeconds(float seconds) => Mathf.CeilToInt(seconds) + "s";
+
+    static string FormatCount(int played, int total) => $"{played}/{total}";
+
+    static string FormatCountTimer(int played, int total, float secondsRemaining) =>
+        $"{played}/{total} · {Mathf.CeilToInt(secondsRemaining)}s";
 
     static void SetMarkerProgress(RectTransform markerRect, float progress01)
     {

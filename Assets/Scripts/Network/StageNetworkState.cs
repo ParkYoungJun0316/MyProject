@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -45,7 +46,8 @@ public struct ChallengeStepState : INetworkSerializable, IEquatable<ChallengeSte
 ///
 /// [연결]
 /// - StageResetOnPlayerDeath.DoReset() → NotifyPlayerDeathServerRpc()
-/// - PhaseManager.EnterPhase() → SyncPhase(index) (Host에서만 호출)
+/// - PhaseManager.EnterPhase() → MarkPhaseStart() + SyncPhase(index) (Host에서만 호출)
+/// - StageStartGate.CompleteCountdown() → MarkStageStart() (PhaseManager와 별개 슬롯)
 /// </summary>
 public class StageNetworkState : NetworkBehaviour
 {
@@ -72,8 +74,21 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // 스테이지 시작 서버 시간 (StartStage() 직전 Host 기록 — TimerUI 동기화)
+    // 스테이지 시작 서버 시간 (StartStage() 직전 Host 기록).
+    // StageStartGate / MemoryPathIntroController 전용 — "이 방의 시작 게이트가 완료됐다"는
+    // 1회성 배타적 신호로 쓰인다. 다른 시스템이 여기에 같이 쓰면 그 배타성이 깨지므로
+    // (예: 2026-07-21 PhaseManager 오공유 버그) 절대 다른 곳에서 같이 쓰지 말 것.
     private readonly NetworkVariable<double> _stageStartServerTime = new(
+        -1.0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    // Phase 시작 서버 시간 (PhaseManager.EnterPhase() 직전 Host 기록).
+    // PhaseManager가 발동하는 함정(ArrowTrap/DropTrap 등)의 스케줄 앵커 전용.
+    // StageStartServerTime과 별개 슬롯 — Phase마다 다시 찍혀도 StageStartGate 쪽 로직에
+    // 영향 없음.
+    private readonly NetworkVariable<double> _phaseStartServerTime = new(
         -1.0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
@@ -99,6 +114,13 @@ public class StageNetworkState : NetworkBehaviour
 
     private bool _resetPending;
 
+    // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
+    // SequenceRing 전원 즉사 루프, Breakable 데미지+넉백)은 전부 yield 없는 동기 코드라
+    // 같은 프레임 안에서 이미 끝난다 — 1프레임만 미뤄도 그 뒤에야 Despawn이 일어나
+    // RpcException이 해소됨. 프레임 지연은 fps에 반비례해 체감 시간이 늘어나므로(예:
+    // ParrelSync 2인 동시 구동 시 fps 저하) 필요한 최소치만 유지.
+    const int DeathReloadDelayFrames = 1;
+
     // Client-side 캐시 — SyncSurvivalRemainingClientRpc 매 틱 Find 방지
     private SurviveTimeObjective _surviveObjective;
 
@@ -108,6 +130,7 @@ public class StageNetworkState : NetworkBehaviour
     public bool   IsCountdownActive        => _isCountdownActive.Value;
     public double CountdownStartServerTime => _countdownStartServerTime.Value;
     public double StageStartServerTime     => _stageStartServerTime.Value;
+    public double PhaseStartServerTime     => _phaseStartServerTime.Value;
 
     public int    ChallengeSeed               => _challengeStep.Value.seed;
     public int    ChallengeStepIndex           => _challengeStep.Value.stepIndex;
@@ -166,8 +189,16 @@ public class StageNetworkState : NetworkBehaviour
         NetworkSessionData.Seed = newSeed;
         BroadcastNewSeedClientRpc(newSeed);
 
+        StartCoroutine(ReloadAfterDeathAnim());
+    }
+
+    IEnumerator ReloadAfterDeathAnim()
+    {
+        for (int i = 0; i < DeathReloadDelayFrames; i++)
+            yield return null;
+
         string sceneName = SceneManager.GetActiveScene().name;
-        Debug.Log($"[StageNetworkState] 사망 감지 — '{sceneName}' 리로드 (새 시드: {newSeed})");
+        Debug.Log($"[StageNetworkState] 사망 감지 — '{sceneName}' 리로드 (새 시드: {NetworkSessionData.Seed})");
         NetworkManager.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
     }
 
@@ -230,6 +261,17 @@ public class StageNetworkState : NetworkBehaviour
         if (!IsServer) return;
         _stageStartServerTime.Value = NetworkManager.Singleton.ServerTime.Time;
         _isCountdownActive.Value    = false;
+    }
+
+    /// <summary>
+    /// Host: PhaseManager.EnterPhase() 진입 직전 서버 시간 기록.
+    /// ArrowTrap/DropTrap 등이 이 Phase에서 Activate()될 때 스케줄 앵커로 사용.
+    /// StageStartServerTime과 별개 — StageStartGate의 1회성 신호를 건드리지 않는다.
+    /// </summary>
+    public void MarkPhaseStart()
+    {
+        if (!IsServer) return;
+        _phaseStartServerTime.Value = NetworkManager.Singleton.ServerTime.Time;
     }
 
     // ── Phase 동기화 ──────────────────────────────────────────────

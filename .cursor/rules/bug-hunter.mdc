@@ -17,10 +17,13 @@ user OK (“수정해”, “OK”, “진행”, etc.).
    the user’s log / MCP console output as evidence.
 2. **Root cause** — evidence (logs, authority path, RPC direction; if audio/cheer:
    main vs worker thread, mic double-open, buffer source). No shotgun edits.
-3. **Fix proposal** — what to change, which files/steps, why. **Do not edit code.**
-4. **Impact** — what else could break if that proposal is applied (other clients,
+3. **Files read** — list every file opened/searched while diagnosing (path). Always.
+4. **Cause site** — for the root cause, name the file **and** the exact spot
+   (method / symbol / line range). Always. “Somewhere in X” is not enough.
+5. **Fix proposal** — what to change, which files/steps, why. **Do not edit code.**
+6. **Impact** — what else could break if that proposal is applied (other clients,
    solo Host-1, traps, damage path).
-5. **Wait** — user must approve before any implementation.
+7. **Wait** — user must approve before any implementation.
 
 NGO / Host≠Client / RPC·NV unclear → also follow skill **ngo-debug** (evidence
 template). Still no code until user OK.
@@ -36,6 +39,8 @@ template). Still no code until user OK.
 
 **Reproduce:** [steps or log evidence]  
 **Root cause:** [evidence]  
+**Files read:** [paths opened/searched during diagnosis — always list]  
+**Cause site:** [`path` — method/symbol + line range where the cause sits — always]  
 **Fix proposal:** [what / where / why — no code edits yet]  
 **Verify:** [what to test in ParrelSync/Build after implement]  
 **Impact:** [what else could break]  
@@ -46,4 +51,5 @@ template). Still no code until user OK.
 - Don't write or patch code in this phase
 - Don't refactor unrelated systems
 - Don't claim fixed — diagnosis only
+- Don't omit **Files read** or **Cause site** — both are mandatory every report
 - Don't use Plan First for ordinary bug diagnosis (this rule covers it)

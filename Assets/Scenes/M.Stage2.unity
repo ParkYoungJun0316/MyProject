@@ -369,7 +369,19 @@ MonoBehaviour:
   autoStart: 0
   OnStageClear:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1871857762}
+        m_TargetAssemblyTypeName: PhaseManager, Assembly-CSharp
+        m_MethodName: AdvancePhase
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnStageFailed:
     m_PersistentCalls:
       m_Calls: []
@@ -894,7 +906,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
-  dropInterval: 3
+  dropInterval: 1
   rotateToTarget: 0
   rotateSpeed: 0
   rotateYAxisOnly: 1
@@ -3930,7 +3942,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1751779496
 Transform:
   m_ObjectHideFlags: 0
@@ -4469,7 +4481,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls: []
   - phaseName: Delay_Stage2.1
-    surviveDuration: 10
+    surviveDuration: 5
     objectsToDisable:
     - {fileID: 523270669}
     objectsToEnable:
