@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -105,6 +106,13 @@ public class GridRoundObjective : RoundProgressObjective
         _playedRounds      = _totalRounds;
         _currentRoundIndex = -1;
         OnProgressChanged?.Invoke();
+
+        // [축 SSOT: NetworkDesign.md §11A.2] Complete() 확정은 Host 레인에서만.
+        // OnChallengeComplete는 챌린지의 HandleChallengeClearedChanged를 통해 Host/Client 전 머신에서
+        // 공통으로 발동되므로 여기서 가드 (ColorTileRoundObjective.HandleSuccess와 동일 패턴).
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
         Complete();
     }
 

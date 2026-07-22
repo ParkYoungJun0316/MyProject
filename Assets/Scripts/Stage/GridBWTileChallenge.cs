@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -21,6 +22,14 @@ public class SafeCountPhase
 
 /// <summary>
 /// 5×5 흑/백 보드 챌린지 (모드 A).
+///
+/// [축 SSOT: NetworkDesign.md §11B — 챌린지 축(C 패턴), ColorTileChallenge/OXQuizManager와 동일 골격 복제]
+/// Trigger(Activate, Host만) → RoundStart(Host가 라운드마다 새 시드 NV 배포) → Generate(전 머신 각자
+/// 동일 시드로 로컬 재생성) → Judge(Host 레인만) → Resolve(성공/실패 전파 → 다음 라운드/완료 결정).
+/// GridBW는 totalRounds회 반복 라운드라 OX/ColorTile(1샷)과 달리 스텝 인덱스 자체를 라운드 번호로
+/// 사용한다 — 라운드마다 Host가 ChallengeStart(newSeed) 뒤 곧바로 ChallengeStepBegin(round)를 같은
+/// 프레임에 호출해(Activate()의 최초 호출과 동일한 원자적 2단 쓰기 — NV는 마지막 값만 전송되므로
+/// 중간 상태가 Client에 노출되지 않는다) 다음 라운드로 진행한다(OX의 NextQuestionAfterDelay와 동일 구조).
 ///
 /// [라운드]
 ///  - 25칸 중 safeCount개가 Safe(Black/White 랜덤 혼합), 나머지 Default
@@ -100,11 +109,12 @@ public class GridBWTileChallenge : MonoBehaviour
 
     bool _isRunning;
     readonly List<SafeTileEntry> _currentSafeTiles = new List<SafeTileEntry>();
-    Coroutine _routine;
+    Coroutine _judgeCoroutine;
+    StageNetworkState _netState;
 
     public bool IsRunning => _isRunning;
     public int TotalRounds => totalRounds;
-    public int CurrentRoundIndex { get; private set; }
+    public int CurrentRoundIndex { get; private set; } = -1;
 
     void Awake()
     {
@@ -114,7 +124,17 @@ public class GridBWTileChallenge : MonoBehaviour
 
     void Start()
     {
-        if (!autoStart) return;
+        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
+        // Unity 전역 Awake→Start 순서로 보장받음 (ColorTileChallenge/OXQuizManager와 동일 전제).
+        _netState = StageNetworkState.Instance;
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
+            _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
+            _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+        }
+
+        if (!autoStart || IsClientOnly()) return;
 
         if (autoStartDelay > 0f)
             StartCoroutine(AutoStartRoutine());
@@ -122,10 +142,27 @@ public class GridBWTileChallenge : MonoBehaviour
             Activate();
     }
 
+    void OnDestroy()
+    {
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged    -= HandleChallengeStepChanged;
+            _netState.OnChallengeClearedChanged -= HandleChallengeClearedChanged;
+            _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
+        }
+    }
+
     IEnumerator AutoStartRoutine()
     {
         yield return new WaitForSeconds(autoStartDelay);
         Activate();
+    }
+
+    /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급 (OXQuizManager와 동일).</summary>
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     void CollectTilesFromChildren()
@@ -139,37 +176,23 @@ public class GridBWTileChallenge : MonoBehaviour
         tiles = found;
     }
 
-    /// <summary>챌린지 시작 (totalRounds회). 이미 실행 중이면 무시.</summary>
+    /// <summary>
+    /// 챌린지 시작 (totalRounds회). 이미 실행 중이면 무시.
+    /// Host 레인만 실제로 진행 — Client의 직접 호출은 무시된다 (§11B ①Trigger).
+    /// </summary>
     public void Activate()
     {
+        if (IsClientOnly()) return;
         if (_isRunning) return;
-        if (_routine != null) StopCoroutine(_routine);
-        _routine = StartCoroutine(ChallengeRoutine());
-    }
+        if (_netState == null) return;
 
-    /// <summary>진행 중단 + 모든 칸 Default.</summary>
-    public void Cancel()
-    {
-        if (_routine != null)
-        {
-            StopCoroutine(_routine);
-            _routine = null;
-        }
-
-        _isRunning = false;
-        SetAllTilesDefault();
-        OnChallengeCancelled?.Invoke();
-    }
-
-    IEnumerator ChallengeRoutine()
-    {
         if (tiles == null || tiles.Length == 0)
             CollectTilesFromChildren();
 
         if (tiles.Length == 0)
         {
             Debug.LogWarning("[GridBWTileChallenge] GridBWTile이 없습니다.", this);
-            yield break;
+            return;
         }
 
         if (tiles.Length != ExpectedTileCount)
@@ -178,42 +201,122 @@ public class GridBWTileChallenge : MonoBehaviour
         if (totalRounds <= 0)
         {
             Debug.LogWarning("[GridBWTileChallenge] totalRounds는 1 이상이어야 합니다.", this);
-            yield break;
+            return;
         }
 
         if (roundDuration <= 0f)
         {
             Debug.LogWarning("[GridBWTileChallenge] roundDuration은 0보다 커야 합니다.", this);
-            yield break;
+            return;
         }
 
-        _isRunning = true;
-        OnChallengeStarted?.Invoke();
+        StartRound(0);
+    }
 
-        for (int round = 0; round < totalRounds; round++)
-        {
-            CurrentRoundIndex = round;
-            PickRandomSafeTiles(GetCurrentSafeCount());
-            ApplyTileStates();
-            OnRoundStarted?.Invoke(round);
-
-            yield return new WaitForSeconds(roundDuration);
-
-            List<Player> aliveAtSettlement = GatherAlivePlayers();
-            EvaluateRound(aliveAtSettlement, out bool roundSuccess);
-            ApplyIndividualDamage(aliveAtSettlement);
-            OnRoundSettled?.Invoke(round, roundSuccess);
-
-            SetAllTilesDefault();
-
-            if (round < totalRounds - 1 && cooldownBetweenRounds > 0f)
-                yield return new WaitForSeconds(cooldownBetweenRounds);
-        }
+    /// <summary>진행 중단 + 모든 칸 Default. Host 전용 (§11B ①Trigger와 동일 권한).</summary>
+    public void Cancel()
+    {
+        if (IsClientOnly()) return;
+        if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
 
         _isRunning = false;
+        CurrentRoundIndex = -1;
+        _currentSafeTiles.Clear();
+        SetAllTilesDefault();
+        OnChallengeCancelled?.Invoke();
+    }
+
+    /// <summary>
+    /// Host: 라운드 시작. 새 라운드 시드를 생성해 배포한다 — Activate()의 최초 호출과 동일한
+    /// 원자적 2단 쓰기(ChallengeStart 뒤 곧바로 ChallengeStepBegin)이므로 Client는 항상 최종
+    /// 커밋된 값(새 시드 + 이번 라운드 인덱스)만 관찰한다 (§11B ②RoundStart).
+    /// </summary>
+    void StartRound(int round)
+    {
+        int seed = Random.Range(int.MinValue, int.MaxValue);
+        _netState.ChallengeStart(seed);
+        _netState.ChallengeStepBegin(round);
+    }
+
+    // ── 라운드 생성 (전 머신 공통 — StageNetworkState NV 구독, §11B ③Generate) ──
+
+    /// <summary>
+    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 라운드를 생성한다.
+    /// GridBW는 stepIndex 자체를 라운드 번호로 사용 — 라운드마다 새로 배포된 시드로 안전 칸 위치+색을
+    /// 재생성한다. 판정(JudgeRoutine)은 이 메서드 끝에서 Host만 시작한다 (§11B ④Judge).
+    /// </summary>
+    void HandleChallengeStepChanged(int stepIndex)
+    {
+        if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
+        if (tiles == null || tiles.Length == 0) return;
+
+        if (!_isRunning)
+        {
+            _isRunning = true;
+            OnChallengeStarted?.Invoke();
+        }
+
+        CurrentRoundIndex = stepIndex;
+
+        int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        var rng  = new System.Random(seed);
+        PickRandomSafeTiles(GetCurrentSafeCount(), rng);
+        ApplyTileStates();
+        OnRoundStarted?.Invoke(stepIndex);
+
+        // 판정은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 ClientRpc로만 관찰
+        if (IsClientOnly()) return;
+
+        if (_judgeCoroutine != null) StopCoroutine(_judgeCoroutine);
+        _judgeCoroutine = StartCoroutine(JudgeRoutine(stepIndex));
+    }
+
+    // ── 판정 (Host 전용, §11B ④Judge) ─────────────────────────────
+
+    IEnumerator JudgeRoutine(int round)
+    {
+        yield return new WaitForSeconds(roundDuration);
+
+        List<Player> alive = GatherAlivePlayers();
+        EvaluateRound(alive, out bool roundSuccess);
+        ApplyIndividualDamage(alive);
+
+        HandleRoundOutcome(round, roundSuccess);
+        _netState?.NotifyChallengeOutcomeClientRpc(roundSuccess);
+
+        if (round < totalRounds - 1)
+        {
+            if (cooldownBetweenRounds > 0f)
+                yield return new WaitForSeconds(cooldownBetweenRounds);
+
+            StartRound(round + 1);
+        }
+        else
+        {
+            _netState?.ChallengeCleared(true);
+        }
+    }
+
+    // ── 결과 반영 (전 머신 공통 — Host는 직접 호출, Client는 ClientRpc로 수신) ──
+
+    /// <summary>Host는 JudgeRoutine에서 직접 호출하므로 이 핸들러는 Client에서만 의미 있음.</summary>
+    void HandleChallengeOutcome(bool success) => HandleRoundOutcome(CurrentRoundIndex, success);
+
+    void HandleRoundOutcome(int round, bool success)
+    {
+        OnRoundSettled?.Invoke(round, success);
+        SetAllTilesDefault();
+    }
+
+    /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnChallengeComplete를 1회 재생 (OX의 OnAllCleared와 동일 패턴).</summary>
+    void HandleChallengeClearedChanged(bool cleared)
+    {
+        if (!cleared) return;
+
+        _isRunning = false;
+        CurrentRoundIndex = -1;
         _currentSafeTiles.Clear();
         OnChallengeComplete?.Invoke();
-        _routine = null;
     }
 
     /// <summary>현재 라운드에 적용할 안전 칸 수를 safeTilePhases에서 읽어 반환.</summary>
@@ -227,10 +330,11 @@ public class GridBWTileChallenge : MonoBehaviour
     }
 
     /// <summary>
-    /// tiles 중 count개를 서로 겹치지 않게 랜덤 선택.
-    /// 각 칸의 Black/White 색은 독립적으로 랜덤 결정.
+    /// tiles 중 count개를 서로 겹치지 않게 선택. 각 칸의 Black/White 색도 함께 결정.
+    /// rng는 ChallengeSeed 기반 System.Random — 전 머신이 동일 시드로 호출하면 항상
+    /// 같은 결과가 나온다 (UnityEngine.Random 전역 상태 오염 방지 — OXQuizManager와 동일 원칙).
     /// </summary>
-    void PickRandomSafeTiles(int count)
+    void PickRandomSafeTiles(int count, System.Random rng)
     {
         _currentSafeTiles.Clear();
 
@@ -239,11 +343,11 @@ public class GridBWTileChallenge : MonoBehaviour
 
         for (int i = 0; i < count && pool.Count > 0; i++)
         {
-            int pick = Random.Range(0, pool.Count);
+            int pick = rng.Next(0, pool.Count);
             _currentSafeTiles.Add(new SafeTileEntry
             {
                 tileIndex = pool[pick],
-                isBlack   = Random.value >= 0.5f,
+                isBlack   = rng.NextDouble() >= 0.5,
             });
             pool.RemoveAt(pick);
         }
@@ -373,8 +477,10 @@ public class GridBWTileChallenge : MonoBehaviour
                        && tile.IsSafe
                        && p.isBlack == tile.RequiresBlack;
 
+            // NetworkDamageUtil이 데미지 파이프라인 단일 진입점 — Player.ReceiveDamage() 직접 호출은
+            // 온라인 모드에서 no-op이던 버그였음 (GridColorChallenge와 동일 수정, 2026-07-19 원 사례).
             if (!passed)
-                p.ReceiveDamage(individualDamageOnFail, null);
+                NetworkDamageUtil.ApplyDamage(p, individualDamageOnFail);
         }
     }
 

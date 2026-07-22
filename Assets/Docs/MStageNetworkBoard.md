@@ -5,15 +5,48 @@
 > **빈 체크리스트 전용이 아님.** 큰 틀을 정하기 위한 작업 md.
 
 **현재 인게임 최우선:** M.Stage 네트워크 완료 (`NetworkDesign` §9.1).  
-**현재 보드 포커스:** `M.Stage3` · **C 패턴 · ColorTile** — **OX Quiz는 검증 통과 후 [`NetworkDesign.md`](NetworkDesign.md) §11B(챌린지 축 SSOT)로 승급 완료.** 이 보드의 §1(축 골격)·§2(OX 개별 잠금 규칙)는 이제 §11B가 SSOT이며, 아래 §1~§4는 **승급 완료 기록**으로만 남긴다 — 앞으로 축 골격 자체를 바꿀 일이 있으면 여기 말고 §11B를 고칠 것.
+**현재 보드 포커스:** `GridBWTileChallenge` / `GridColorChallenge` / `SequenceRingMinigame` **셋 다 코드 반영 완료(2026-07-22), ParrelSync 2인 검증 전부 대기.** 다음은 이 3개를 ColorTile과 동일한 체크리스트로 검증 → Floor 마이그레이션. **OX Quiz/ColorTile은 검증 통과 후 [`NetworkDesign.md`](NetworkDesign.md) §11B(챌린지 축 SSOT)로 승급 완료.** 이 보드의 §1(축 골격)·§2(OX 개별 잠금 규칙)는 이제 §11B가 SSOT이며, 아래 §1~§4는 **승급 완료 기록**으로만 남긴다 — 앞으로 축 골격 자체를 바꿀 일이 있으면 여기 말고 §11B를 고칠 것.
 
 ---
 
 ## 현재 상태 (다음 세션 시작점 — 여기부터 읽을 것)
 
-**요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트에서 문제 동기화 버그 1건 발견·수정 → **재테스트 통과 (2026-07-21) → `NetworkDesign.md` §11B로 승급 완료.**
+**요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트에서 문제 동기화 버그 1건 발견·수정 → **재테스트 통과 (2026-07-21) → `NetworkDesign.md` §11B로 승급 완료.** → `ColorTileChallenge` 동일 축 복제 코드 반영 (2026-07-22) → **ParrelSync 2인 재테스트 통과 (2026-07-22)**: 동일 스폰 위치/색, 성공·실패 동시 판정, 실패 시 벽 전진 동기화 전부 확인됨. → `GridBWTileChallenge`/`GridColorChallenge`/`SequenceRingMinigame` 동일 축 복제 코드 반영 (2026-07-22, 아래 상세) — **ParrelSync 2인 검증은 셋 다 아직 미실행.**
 
-**다음 세션 시작점:** `M.Stage3` **ColorTile**을 §11B.3 매핑표대로 동일 축(①Trigger→②RoundStart→③Generate→④Judge→⑤Resolve)에 복제. ColorTile은 ①Trigger가 "스케줄(시간 기반)"이라 Host `Update()` 자체가 이미 단일 소스여야 한다는 점만 OX와 다르다 — §11B.3 참고.
+**다음 세션 시작점 (바로 이어서 할 일 — 순서대로):**
+
+1. **`GridBWTileChallenge.cs` / `GridColorChallenge.cs` / `SequenceRingMinigame.cs` ParrelSync 2인 검증** — ColorTile과 동일 체크리스트: 동일 라운드/스텝 위치·배치, 동일 성공·실패 판정, 개인 데미지 동기화, 라운드·스텝 반복 진행(다음 라운드/스텝으로 정상 이행) 확인. SequenceRing은 추가로: (a) 어느 플레이어가 눌러도 다른 클라이언트에서 동일하게 스텝 진행되는지, (b) 남은 시간 표시가 오답 페널티 포함해서 양쪽 화면에 거의 동시에 반영되는지(0.1초 브로드캐스트 주기) 확인
+2. **Floor 마이그레이션** (합의된 설계, 아직 미착수): `Floormanager.cs`를 `NetworkBehaviour`(자체 NetworkObject) → 일반 `MonoBehaviour` + `StageNetworkState` 시드 재생 구독으로 전환. 챌린지 슬롯(`_challengeStep`)과는 별도로 `StageNetworkState`에 Floor 전용 시드 슬롯 신설 필요(스테이지당 챌린지와 Floor가 동시 진행되는 경우는 없음이 확인됨 — 2026-07-22 — 이지만 의미상 별도 슬롯 유지 권장). 완료 후 각 `M.Stage*.unity`/`T.*.unity`의 Floor GameObject에서 `NetworkObject` 컴포넌트 제거는 **사용자가 에디터에서 직접** (에이전트 씬 파일 쓰기 금지 — `unity-mcp-readonly.mdc`)
+
+### `SequenceRingMinigame` 반영 내용 (코드, 2026-07-22)
+
+- `Activate()` 격의 `StartMinigame()`에 Host 가드, `SequenceRingMinigame.Instance` 싱글턴 신설(`StageNetworkState`의 새 ServerRpc가 Host에서 참조)
+- 기존에는 Host/Client가 각자 로컬로 `TickTimer`/`TickDangerStep`/`PollSimInput→TrySubmit` 전부를 독자 실행 — **§11A "이중 계산" 위반이 실제로 존재했음** (Client도 자기 화면에서 독자적으로 시간 초과·Danger 자동 통과를 판정하고 있었음). `Update()`를 Host 전용 판정 블록(`TickTimer`/`TickDangerStep`)과 전 머신 공통 입력 감지(`PollSimInput`)로 분리해 수정
+- `PollSimInput()`이 로컬 `TrySubmit`/`TrySubmitAnyKey()`를 직접 호출하던 것을, Client는 신설된 `StageNetworkState.SubmitStepServerRpc(color)`/`SubmitAnyKeyStepServerRpc()`로 요청만 보내고 Host만 실제 판정하도록 교체 (§11B.1). Host에서는 여전히 로컬 직접 호출(자기 자신에게 RPC 왕복할 필요 없음)
+- `GenerateSteps()`가 매 프레임 새 `System.Random()`(비결정적)을 쓰던 것을 `StageNetworkState.ChallengeSeed` 기반으로 교체 — `HandleChallengeStepChanged`에서 매 스텝마다 재계산하지만 시드가 같으므로 항상 같은 결과(OX `RegenerateQuestionOrder`와 동일 원칙)
+- `AdvanceStep()`이 로컬로 직접 `_currentStepIndex++`+타일 갱신을 하던 것을, `StageNetworkState.ChallengeStepBegin(nextIndex)` NV 쓰기로 바꾸고 화면 반영(`OnEnterStep`/`RefreshTileColors`)은 `HandleChallengeStepChanged`(전 머신 공통)로 이동
+- 성공은 `ChallengeCleared(true)` → `OnChallengeClearedChanged` 공통 발동(OX `OnAllCleared`와 동일), 실패는 `NotifyChallengeOutcomeClientRpc(false)`로 전파
+- **신규 추가**: 남은 시간이 오답 페널티 등 이벤트 기반으로 변하기 때문에(OX처럼 `ChallengeStepStartServerTime` 역산 불가) `StageNetworkState`에 `SyncChallengeTimeClientRpc(float)` + `OnChallengeTimeSync` 이벤트를 신설, Host가 0.1초 주기로 브로드캐스트(`SurviveTimeObjective.SyncSurvivalRemainingClientRpc`와 동일 패턴 재사용 — 이 사실을 명시적으로 알려드립니다, 보드에 사전 기재되지 않았던 항목)
+- `SequenceRingObjective.HandleSuccess()`/`HandleFail()`에 Host 가드 추가 — `Complete()`/`Fail()` 확정은 Host 레인에서만 (`KillAllPlayers()`의 `NetworkDamageUtil.ApplyInstantKill`은 이미 내부적으로 Server 가드가 있어 그대로 유지)
+- **범위 밖으로 남긴 것**: 오답(`OnWrongInput`) 시각 효과 자체는 아직 Client에 전파되지 않음(누른 사람 화면에만 즉시 보임, 다른 머신은 다음 상태 갱신 때까지 반영 안 됨) — 폴리싱 항목으로 남김, 필요하면 추후 별도 요청
+
+### `GridBWTileChallenge` / `GridColorChallenge` 반영 내용 (코드, 2026-07-22)
+
+- 공통: `Activate()`/`Cancel()`에 Host 가드(`IsClientOnly()`) 추가. `StartRound(round)` 신설 — 라운드마다 새 시드를 생성해 `ChallengeStart(seed)` 직후 같은 프레임에 `ChallengeStepBegin(round)` 호출(원자적 2단 쓰기, `Activate()`의 최초 진입과 동일 패턴이라 Client는 항상 최종 커밋값만 관찰)
+- 기존 `ChallengeRoutine()` 반복 코루틴(라운드 루프 전체를 로컬로 순회)을 폐기하고, 라운드별 로직을 `HandleChallengeStepChanged(int stepIndex)`(전 머신 공통, `StageNetworkState.OnChallengeStepChanged` 구독)로 이동. **GridBW/GridColor 둘 다 `stepIndex`를 라운드 번호로 사용** — OX/ColorTile(1샷)과 달리 매 라운드 새 시드가 배포되므로 `System.Random(ChallengeSeed)`를 매 라운드 새로 생성해도 라운드마다 다른 결과가 나온다
+- `PickRandomSafeTiles()`(GridBW) / `PickRandomColorTiles()`(GridColor) — `UnityEngine.Random` 대신 `System.Random(ChallengeSeed)`를 인자로 받도록 시그니처 변경 (안전 칸 위치 + GridBW의 Black/White 색까지 전부 시드로 결정)
+- 판정은 `HandleChallengeStepChanged` 끝에서 Host만 `JudgeRoutine(round)` 코루틴 시작(§11B ④Judge) — `roundDuration` 대기 후 `EvaluateRound()`+개인 데미지 적용, `HandleRoundOutcome()`(로컬, `OnRoundSettled` 발동 + 타일 Default화) 직접 호출 + `NotifyChallengeOutcomeClientRpc`로 Client에 동일 연출 전파
+- 라운드 종료 후 진행 결정도 `JudgeRoutine` 안에서 Host만: 다음 라운드가 있으면 쿨다운 대기 후 `StartRound(round+1)`, 마지막 라운드면 `StageNetworkState.ChallengeCleared(true)` 기록 → `OnChallengeClearedChanged` 구독(`HandleChallengeClearedChanged`)이 전 머신 공통으로 `OnChallengeComplete` 1회 발동 (OX의 `OnAllCleared`와 동일 패턴, Host 이중 발동 없음)
+- **버그 수정**: `GridBWTileChallenge.ApplyIndividualDamage()`의 `p.ReceiveDamage()` 직접 호출 → `NetworkDamageUtil.ApplyDamage()`로 교체 (GridColor는 2026-07-19에 이미 고쳐져 있었음, 이번에 GridBW도 동일하게 맞춤)
+- `GridRoundObjective.HandleChallengeComplete()`에 Host 가드 추가 — `OnChallengeComplete`가 이제 전 머신 공통으로 발동되므로 `Complete()` 확정은 Host 레인에서만 (`ColorTileRoundObjective.HandleSuccess`와 동일 패턴, §11A.2 계약 위반이었던 것을 이번에 같이 수정)
+
+### `ColorTileChallenge` 반영 내용 (코드, 2026-07-22)
+
+- `Activate()`/`StartSchedule()`/`Cancel()`에 Host 가드 추가 — Client는 스케줄 코루틴 자체를 실행하지 않음(스케줄=시간 기반 Trigger라 Host가 단일 소스)
+- 타일 생성 로직을 `ChallengeRoutine()`(로컬 전용 코루틴)에서 `HandleChallengeStepChanged(int)`(StageNetworkState NV 구독, 전 머신 공통)로 이동 — `System.Random(ChallengeSeed)`로 스폰 포인트 셔플(전역 `UnityEngine.Random` 오염 없음)
+- 판정(`JudgeRoutine`)은 `HandleChallengeStepChanged` 끝에서 Host만 시작 — `ResolveRound()`가 Host 로컬 반영 + `NotifyChallengeOutcomeClientRpc`로 Client 전파
+- 실패 패널티(`AdvancingWall.PermanentAdvance`)는 네트워크 동기화가 없는 로컬 컴포넌트라, Host/Client가 `HandleChallengeOutcome`을 통해 동일한 고정값으로 각자 호출해 위치를 맞춤(별도 NV 불필요)
+- `ColorTileRoundObjective.HandleSuccess()`에 Host 가드 추가 — `Complete()` 확정은 Host 레인에서만(`OXQuizObjective.HandleAllCleared`와 동일 패턴)
 
 ### 지금까지 실제로 한 일 (코드, 전부 완료)
 

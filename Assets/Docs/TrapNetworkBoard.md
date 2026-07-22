@@ -22,8 +22,8 @@
 | `TrapPlayerTracker.cs` | MonoBehaviour | 로컬 | — |
 | `TrapProjectile.cs` | `NetworkBehaviour` | **네트워크 필요** | 데미지 + Despawn 복제 필수 |
 | `MouthTrapAnimator.cs` | MonoBehaviour | 로컬 | — |
-| `MouthTrapAnimatorAnim.cs` | MonoBehaviour (2026-07-21 NetworkBehaviour→전환 완료) | 로컬 | Host→Client RPC relay 3개 제거, 각 피어가 `TrapBase`/`MouthExitTrigger` 이벤트를 로컬로 직접 트리거 |
-| `MouthExitTrigger.cs` | MonoBehaviour | 로컬 | — |
+| `MouthTrapAnimatorAnim.cs` | MonoBehaviour (2026-07-21 NetworkBehaviour→전환 완료 / 2026-07-22 Close 고정 타이머화) | 로컬 | Host→Client RPC relay 3개 제거, 각 피어가 `TrapBase` 이벤트를 로컬로 직접 트리거. Close는 `holdDuration` 고정 로컬 타이머 — `MouthExitTrigger`(발사체 탈출 이벤트) 의존 제거, Client Hold 과다 지연 버그 수정 |
+| `MouthExitTrigger.cs` | — | — | **삭제됨 (2026-07-22)** — Close를 발사체 탈출 이벤트에 묶으면 Host만 Spawn하는 B안 구조상 Client Hold가 Spawn/RPC RTT만큼 길어지는 문제 → `MouthTrapAnimatorAnim`의 고정 타이머로 대체 |
 | `MouthWindAnimator.cs` | MonoBehaviour | 로컬 | — |
 | `TrapSpeedPhase.cs` (`SpeedPhase`) | 데이터 구조체 | 해당없음 | `ArrowTrap`/`DropTrap`/`WindTrap` 공용 파라미터 |
 

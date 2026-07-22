@@ -91,8 +91,15 @@ public class DropTrap : TrapBase
     float _phaseSpeedMultiplier = 1f;
     int   _targetIndex;
 
-    // warnDuration 대기 중 Deactivate 시 고아 오브젝트가 남지 않도록 추적
+    // warnDuration + 낙하 채움 애니메이션 동안 Deactivate 시 고아 오브젝트가 남지 않도록 추적
     readonly List<GameObject> _pendingObjects = new List<GameObject>();
+
+    // ── 경고 마커 네트워크 동기화 (stable ID 레지스트리, Breakable과 동일 패턴) ──
+    // ID는 씬 로드마다 0부터 순서대로 부여. Host/Client 모두 씬 로드 시 동일 순서로
+    // Awake가 실행되므로 ID가 일치. StageNetworkState.SyncDropWarnClientRpc에서 사용.
+    static readonly Dictionary<int, DropTrap> _registry = new Dictionary<int, DropTrap>();
+    static int _nextId = 0;
+    int _netIndex = -1;
 
     /// <summary>
     /// PhaseManager가 Phase 전환 시 호출.
@@ -100,6 +107,34 @@ public class DropTrap : TrapBase
     /// 1.0 = 기본 속도, 2.0 = 2배 빠르게
     /// </summary>
     public void SetPhaseSpeedMultiplier(float mult) => _phaseSpeedMultiplier = mult;
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        // 씬 리로드 시 첫 DropTrap이 Awake되는 시점에 레지스트리 초기화 (stale 항목 방지)
+        if (_registry.Count == 0) _nextId = 0;
+
+        _netIndex = _nextId++;
+        _registry[_netIndex] = this;
+    }
+
+    void OnDestroy()
+    {
+        _registry.Remove(_netIndex);
+    }
+
+    /// <summary>StageNetworkState.SyncDropWarnClientRpc 수신 시 Client에서 호출. 마커 연출만 재생(낙하체 스폰 없음).</summary>
+    public static void PlayWarnById(int id, Vector3 targetPos, float warnDuration, float fallDuration)
+    {
+        if (_registry.TryGetValue(id, out DropTrap t))
+            t?.ApplyWarnFromNetwork(targetPos, warnDuration, fallDuration);
+    }
+
+    void ApplyWarnFromNetwork(Vector3 targetPos, float warnDuration, float fallDuration)
+    {
+        StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, fallDuration));
+    }
 
     protected override System.Collections.IEnumerator TrapLoop()
     {
@@ -242,20 +277,23 @@ public class DropTrap : TrapBase
     {
         Vector3 spawnPos = targetPos + Vector3.up * spawnHeight;
 
-        // 바닥 경고 마커
-        GameObject warn = null;
+        // 실제 낙하 속도를 마커 채움 애니메이션 계산에도 그대로 재사용.
+        // fallDuration = 낙하 소요 시간. 위치·충돌 감지 없이 순수 타이머로 마커를 채운다.
+        float speed        = GetCurrentSpeed();
+        float fallDuration = (speed > 0f && spawnHeight > 0f) ? spawnHeight / speed : 0f;
+
+        // 바닥 경고 마커 — Host 로컬 표시 + 전 Client에 동일 연출 브로드캐스트.
+        // DropCycle은 이 지점까지 Host만 도달(OnTrapTrigger/FireAt의 Host 가드).
+        // RandomInterval/FireAt(TrapPlayerTracker) 등 실시간 결정 스케줄이어도
+        // Host가 유일한 트리거이므로 Client는 항상 정확히 같은 타이밍을 따라간다.
         if (warnPrefab != null)
         {
-            warn = Instantiate(warnPrefab, targetPos, Quaternion.identity);
-            _pendingObjects.Add(warn);
-            if (warnSfxId != SFXId.None)
-                SFXManager.Instance?.Play(warnSfxId, targetPos);
+            StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, fallDuration));
+            StageNetworkState.Instance?.SyncDropWarnClientRpc(_netIndex, targetPos, warnDuration, fallDuration);
         }
 
         if (warnDuration > 0f)
             yield return new WaitForSeconds(warnDuration);
-
-        DestroyAndUntrack(warn);
 
         if (fireSfxId != SFXId.None)
             SFXManager.Instance?.Play(fireSfxId, spawnPos);
@@ -268,7 +306,6 @@ public class DropTrap : TrapBase
         proj.moveDirection = Vector3.down;
         if (damage > 0) proj.damage = damage;
 
-        float   speed    = GetCurrentSpeed();
         Vector3 velocity = speed > 0f ? Vector3.down * speed : Vector3.zero;
         if (speed > 0f)
         {
@@ -276,7 +313,7 @@ public class DropTrap : TrapBase
             if (dropRb != null) dropRb.linearVelocity = velocity;
         }
 
-        // 온라인(B안): Spawn 후 Client에 velocity 전파. warn 마커는 Host만 표시(추후 ClientRpc 업그레이드).
+        // 온라인(B안): Spawn 후 Client에 velocity 전파.
         var nm2 = NetworkManager.Singleton;
         if (nm2 != null && nm2.IsListening)
         {
@@ -288,6 +325,32 @@ public class DropTrap : TrapBase
                     proj.InitializeVelocityClientRpc(velocity);
             }
         }
+    }
+
+    /// <summary>
+    /// 경고 마커 표시 → warnDuration 유지 → fallDuration에 걸쳐 채움 → 파괴.
+    /// Host 로컬 호출(DropCycle)과 Client RPC 수신(ApplyWarnFromNetwork) 양쪽에서 공용.
+    /// </summary>
+    IEnumerator WarnMarkerRoutine(Vector3 targetPos, float warnDuration, float fallDuration)
+    {
+        if (warnPrefab == null) yield break;
+
+        GameObject warn = Instantiate(warnPrefab, targetPos, Quaternion.identity);
+        _pendingObjects.Add(warn);
+        if (warnSfxId != SFXId.None)
+            SFXManager.Instance?.Play(warnSfxId, targetPos);
+
+        DropWarnMarker marker = warn.GetComponent<DropWarnMarker>();
+
+        if (warnDuration > 0f)
+            yield return new WaitForSeconds(warnDuration);
+
+        if (marker != null)
+            yield return StartCoroutine(marker.FillOverTime(fallDuration));
+        else if (fallDuration > 0f)
+            yield return new WaitForSeconds(fallDuration);
+
+        DestroyAndUntrack(warn);
     }
 
     void DestroyAndUntrack(GameObject obj)

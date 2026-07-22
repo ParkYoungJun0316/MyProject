@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -105,14 +106,31 @@ public class SequenceRingObjective : StageObjective
     void HandleSuccess()
     {
         OnProgressChanged?.Invoke();
+
+        // [축 SSOT: NetworkDesign.md §11A.2] Complete() 확정은 Host 레인에서만.
+        // OnMinigameSuccess는 SequenceRingMinigame.HandleChallengeClearedChanged를 통해 Host/Client 전
+        // 머신에서 공통으로 발동되므로 여기서 가드 (ColorTileRoundObjective.HandleSuccess와 동일 패턴).
+        if (IsClientOnly()) return;
+
         Complete();
     }
 
     void HandleFail()
     {
         OnProgressChanged?.Invoke();
-        Fail();
+
+        // Fail() 확정도 동일하게 Host 레인에서만. KillAllPlayers()의 NetworkDamageUtil.ApplyInstantKill은
+        // 이미 내부적으로 Server 가드가 있어 전 머신에서 호출해도 안전 — 그대로 둔다.
         KillAllPlayers();
+        if (IsClientOnly()) return;
+
+        Fail();
+    }
+
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     void KillAllPlayers()

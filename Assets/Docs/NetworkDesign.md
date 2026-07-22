@@ -1291,11 +1291,13 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 포지션 판정형(OX/GridColor/ColorTile)은 Host가 리모트 플레이어 위치를 직접 갖고 있어 별도 제출이 필요 없다. 반면 **키 입력형(SequenceRing)**은 어느 플레이어가 어떤 키를 눌렀는지 자체가 Host에 없는 정보이므로 별도 제출 경로가 필요하다:
 
 ```
-Client: 자기 키 입력 감지 → SubmitStepServerRpc(stepColor)
-Host  : TrySubmit() 판정 (④ Judge, Host 레인) → 결과 ClientRpc 연출
+Client: 자기 키 입력 감지 → SubmitStepServerRpc(color) / SubmitAnyKeyStepServerRpc()
+Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과 ClientRpc 연출
 ```
 
-새 메커니즘이 아니라 기존 **"Client → Host 한 방향 요청: ServerRpc, Host 검증"** 규칙(`multiplayer-ngo.mdc` Sync 절, Cheer 제출·발사체 히트 리포트와 동일 패턴)의 재적용이다.
+새 메커니즘이 아니라 기존 **"Client → Host 한 방향 요청: ServerRpc, Host 검증"** 규칙(`multiplayer-ngo.mdc` Sync 절, Cheer 제출·발사체 히트 리포트와 동일 패턴)의 재적용이다. **코드 반영 완료(2026-07-22)** — `StageNetworkState`에 두 ServerRpc 신설, Host에서 `SequenceRingMinigame.Instance`를 통해 판정 메서드 호출.
+
+**남은 시간 동기화 (SequenceRing 전용 추가):** SequenceRing의 남은 시간은 오답 페널티 등 이벤트 기반 변동이 있어 OX처럼 `ChallengeStepStartServerTime` 역산만으로는 재현할 수 없다. `SurviveTimeObjective`가 이미 쓰는 "Host가 직접 tick + 주기 ClientRpc 브로드캐스트" 패턴(`SyncSurvivalRemainingClientRpc`)을 그대로 재사용해 `StageNetworkState.SyncChallengeTimeClientRpc(float remaining)` + `OnChallengeTimeSync` 이벤트를 추가했다(0.1초 주기, §11B.2에 반영).
 
 ### 11B.2 공통 API (`StageNetworkState` 확장 — 챌린지 공용 슬롯)
 
@@ -1309,15 +1311,18 @@ Host  : TrySubmit() 판정 (④ Judge, Host 레인) → 결과 ClientRpc 연출
 | `ChallengeStart(seed)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)` | Host 전용 메서드 | Writer |
 | `OnChallengeStepChanged` / `OnChallengeClearedChanged` / `OnChallengeOutcome` | 이벤트 | 전 챌린지 매니저 공통 구독점 |
 | `NotifyChallengeOutcomeClientRpc(bool success)` | `[ClientRpc]` | ④Judge 결과 1회성 연출(Client만 재생 — Host는 로컬에서 직접 처리하므로 스킵) |
+| `SubmitStepServerRpc(PlayerColorType color)` / `SubmitAnyKeyStepServerRpc()` | `[Rpc(SendTo.Server)]` | §11B.1 — Client 입력 제출 → Host가 `SequenceRingMinigame.Instance.TrySubmit()`/`TrySubmitAnyKey()` 호출 |
+| `OnChallengeTimeSync` / `SyncChallengeTimeClientRpc(float remaining)` | 이벤트 / `[ClientRpc]` | §11B.1 — 이벤트 기반 변동(페널티)이 있어 ServerTime 역산이 불가능한 연속 타이머 전용(SequenceRing). Host가 직접 tick + 주기 브로드캐스트 |
 
 ### 11B.3 4개 챌린지 → 이 축 매핑
 
 | 챌린지 | ①Trigger | ②RoundStart 시드로 대체할 것 | ④Judge | 상태 |
 |--------|----------|------------------------------|--------|------|
 | **OX Quiz** | 배리어 진입 트리거 | `RegenerateQuestionOrder()`(`System.Random(seed)`) | `JudgeByPosition()`(물리 오버랩) | **잠김·검증 완료** (`OXQuizManager`, `M.Stage2`) |
-| ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | 다음 대상 (`M.Stage3`) |
-| GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()` | `EvaluateRound()` | 대상 (`M.Stage5`). 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19) |
-| SequenceRing | `StartMinigame()` 호출 시점 | `GenerateSteps()` | `TrySubmit()` | 대상 (`M.Stage4`/`M.Boss`). §11B.1 ServerRpc 제출 추가 필요 |
+| ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | **완료 — ParrelSync 2인 검증 통과(2026-07-22, `M.Stage3`)**. 동일 위치/색, 성공·실패 동시, 실패 시 벽 전진 동기화 확인 |
+| GridBW | `Activate()` 호출 시점 | `PickRandomSafeTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **코드 반영 완료(2026-07-22, `M.Boss`/`M.Stage5`)** — stepIndex=라운드 번호, 데미지 버그(`ReceiveDamage` 직접 호출) 수정 포함. ParrelSync 2인 검증 대기 |
+| GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **코드 반영 완료(2026-07-22, `M.Stage5`)** — 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19). ParrelSync 2인 검증 대기 |
+| SequenceRing | `StartMinigame()` 호출 시점 | `GenerateSteps()` | `TrySubmit()`/`TrySubmitAnyKey()` | **코드 반영 완료(2026-07-22, `M.Stage4`/`M.Boss`)** — §11B.1 `SubmitStepServerRpc`/`SubmitAnyKeyStepServerRpc` 신설 포함. 남은 시간은 페널티로 ServerTime 역산이 불가능해 신규 `SyncChallengeTimeClientRpc`로 Host가 주기 브로드캐스트(§11B.2 확장). ParrelSync 2인 검증 대기 |
 
 ### 11B.4 금지 (평행 축 — 발견 즉시 삭제)
 

@@ -60,6 +60,11 @@ public class WindTrap : TrapBase
     bool _windActive;
     Collider _zone;
 
+    // Host/Client가 같은 Push/Pull(Random)을 뽑도록 OnTrapTrigger 발동 횟수를 시드 salt로 사용.
+    // TrapLoop()가 PhaseStartServerTime에 앵커링돼 있어 이 값은 Host/Client에서 항상 같은
+    // 시점에 같은 값으로 증가함 (SpikeLaneField와 동일 관례).
+    int _fireCount;
+
     float _windChargeTime = 0f;
     bool  _forceActive = false;    // charge 완료 후 FixedUpdate 힘 적용 허용 플래그
     float _windForceElapsed = 0f;
@@ -123,6 +128,7 @@ public class WindTrap : TrapBase
         _forceActive = false;
         _windForceElapsed = 0f;
         _targetsInZone.Clear();
+        _fireCount = 0;
         if (windParticle != null) windParticle.Stop();
     }
 
@@ -137,12 +143,24 @@ public class WindTrap : TrapBase
         var nm = NetworkManager.Singleton;
 
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
-        // 이 트랩이 실제로 Activate()된(방/Phase가 시작된) 순간을 기준으로 잡는다.
-        // [버그 수정 2026-07-21] ArrowTrap과 동일한 이유로 StageStartServerTime 앵커 제거
-        // (앞 Phase가 길어지면 fireAtSeconds가 이미 과거가 되어 한 번도 발동 안 하는 버그).
-        if (initialDelay > 0f)
-            yield return new WaitForSeconds(initialDelay);
-        _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+        // ArrowTrap/DropTrap과 동일한 이유로 PhaseStartServerTime(Host가 이 Phase 진입 직전에
+        // 기록한 절대 ServerTime)을 앵커로 사용 — Host/Client가 동일한 절대 시각을 기준으로 삼아,
+        // Client의 Activate() 호출이 Phase NV 전파 지연만큼 늦게 와도 스케줄이 밀리지 않는다.
+        // StageStartServerTime이 아니라 별도 슬롯인 PhaseStartServerTime을 쓴다 — StageStartGate가
+        // 그 값을 "이 방 게이트 완료" 1회성 신호로 배타적으로 쓰므로 같이 쓰면 안 된다.
+        // StageNetworkState가 없는 씬(테스트 등)에서는 로컬 Activate() 시각으로 폴백.
+        if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
+        {
+            _scheduleStartTime = (float)StageNetworkState.Instance.PhaseStartServerTime + initialDelay;
+            while (nm != null && (float)nm.ServerTime.Time < _scheduleStartTime)
+                yield return null;
+        }
+        else
+        {
+            if (initialDelay > 0f)
+                yield return new WaitForSeconds(initialDelay);
+            _scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+        }
 
         float cycleOffset = 0f;
 
@@ -183,10 +201,21 @@ public class WindTrap : TrapBase
     {
         _windActive = true;
 
-        // Random 모드: 이번 사이클의 Push/Pull을 먼저 확정 → MouthWindAnimator가 읽기 전에 설정
-        _activeWindMode = windMode == WindMode.Random
-            ? (UnityEngine.Random.value < 0.5f ? WindMode.Push : WindMode.Pull)
-            : windMode;
+        // Random 모드: 이번 사이클의 Push/Pull을 먼저 확정 → MouthWindAnimator가 읽기 전에 설정.
+        // 전 머신이 같은 모드를 뽑도록 공유 세션 시드 + 발동 횟수로 로컬 RNG를 동기화
+        // (SpikeLaneField.OnTrapTrigger()와 동일 관례 — Host가 RPC로 모드를 뿌릴 필요 없음).
+        if (windMode == WindMode.Random)
+        {
+            const int seedSalt = 0x5716D000;
+            int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (_fireCount * 0x2545F491);
+            UnityEngine.Random.InitState(mixedSeed);
+            _activeWindMode = UnityEngine.Random.value < 0.5f ? WindMode.Push : WindMode.Pull;
+        }
+        else
+        {
+            _activeWindMode = windMode;
+        }
+        _fireCount++;
 
         // 선택적 선행 대기: MouthController 애니메이션이 끝날 때까지 대기 (MouthWindAnimator가 등록)
         if (PreChargeHook != null)
@@ -290,8 +319,27 @@ public class WindTrap : TrapBase
         Rigidbody rb = other.GetComponent<Rigidbody>()
                     ?? other.GetComponentInParent<Rigidbody>();
 
-        if (rb != null && !_targetsInZone.Contains(rb))
+        if (rb == null) return;
+        if (!IsLocalOwnerRigidbody(rb)) return;
+
+        if (!_targetsInZone.Contains(rb))
             _targetsInZone.Add(rb);
+    }
+
+    /// <summary>
+    /// 이동은 Owner + ClientNetworkTransform이 진실이므로, 바람 힘도 각 머신이 자기 Owner
+    /// 캐릭터에만 적용한다. Host가 원격 플레이어의 물리 복사본(§9A — 함정 판정용으로 동적 유지)에
+    /// 힘을 넣으면 Owner가 CNT로 보내는 실제 위치와 어긋나므로 여기서 걸러낸다.
+    /// NetworkManager가 없는 씬(테스트 등)에서는 필터 없이 통과.
+    /// </summary>
+    bool IsLocalOwnerRigidbody(Rigidbody rb)
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsListening) return true;
+
+        NetworkObject netObj = rb.GetComponent<NetworkObject>()
+                             ?? rb.GetComponentInParent<NetworkObject>();
+        return netObj != null && netObj.IsOwner;
     }
 
     void OnTriggerExit(Collider other)
@@ -312,6 +360,7 @@ public class WindTrap : TrapBase
         _forceActive = false;
         _windForceElapsed = 0f;
         _targetsInZone.Clear();
+        _fireCount = 0;
         if (windParticle != null) windParticle.Stop();
 
         // Wind 발동 중 Deactivate() 직접 호출 시(SetActive 사이클 없이 소프트 중단)

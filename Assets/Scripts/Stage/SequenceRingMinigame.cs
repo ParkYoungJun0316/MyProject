@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -11,7 +12,15 @@ public class SequenceFloatEvent : UnityEvent<float> { }
 
 /// <summary>
 /// 5×5 링 16칸 순서 협동 미니게임 (1인: 키 1~4 / Space 시뮬).
-/// 서버 권한 구조를 위해 판정·시퀀스 생성은 이 매니저 한 곳에서 처리합니다.
+///
+/// [축 SSOT: NetworkDesign.md §11B — 챌린지 축(C 패턴) + §11B.1(Client→Host 입력 제출)]
+/// Trigger(StartMinigame, Host만) → RoundStart(Host가 시드 NV 배포) → Generate(전 머신 각자 동일
+/// 시드로 스텝 시퀀스 재생성) → Judge(Host 레인만, `TrySubmit`/`TrySubmitAnyKey`) → Resolve(성공은
+/// ChallengeCleared, 실패는 outcome ClientRpc로 전파). 포지션 판정형(OX/GridColor/ColorTile)과 달리
+/// 키 입력형이라 "누가 눌렀는가"는 Host가 알 수 없으므로 Client는 `StageNetworkState.SubmitStepServerRpc`
+/// / `SubmitAnyKeyStepServerRpc`로 요청만 보내고, Host가 `TrySubmit`/`TrySubmitAnyKey`로 실제 판정한다.
+/// 남은 시간은 오답 페널티 등 이벤트 기반 변동이 있어 ServerTime 역산이 불가능해 별도
+/// `SyncChallengeTimeClientRpc`로 Host가 주기적으로 브로드캐스트한다.
 /// </summary>
 public class SequenceRingMinigame : MonoBehaviour
 {
@@ -110,6 +119,8 @@ public class SequenceRingMinigame : MonoBehaviour
     [FormerlySerializedAs("OnTimerTick")]
     public SequenceFloatEvent OnTimeRemainingChanged;
 
+    const float TimeSyncInterval = 0.1f;
+
     MinigameState _state = MinigameState.Idle;
     StepData[] _steps = Array.Empty<StepData>();
     SequenceRingTile[] _sortedTiles = Array.Empty<SequenceRingTile>();
@@ -118,7 +129,12 @@ public class SequenceRingMinigame : MonoBehaviour
     int _successCount;
     float _timeRemaining;
     float _dangerStepTimer;
-    System.Random _rng;
+    float _timeSyncTimer;
+
+    StageNetworkState _netState;
+
+    /// <summary>씬당 1개 전제 — StageNetworkState.SubmitStepServerRpc가 Host에서 참조 (§11B.1).</summary>
+    public static SequenceRingMinigame Instance { get; private set; }
 
     public MinigameState State => _state;
     public int CurrentStepIndex => _currentStepIndex;
@@ -130,31 +146,85 @@ public class SequenceRingMinigame : MonoBehaviour
 
     void Awake()
     {
-        _rng = new System.Random();
+        // 타일 세팅은 생애 1회만 하면 되므로 Awake에 둔다.
+        // Instance 점유/해제는 OnEnable/OnDisable로 옮김 — 씬당 1개가 아니라
+        // "Phase 전환으로 지금 활성화된 것 1개"가 진짜 불변식이기 때문 (아래 OnEnable 참고).
         CollectAndSortTiles();
         ApplyDefaultColors();
     }
 
+    void OnEnable()
+    {
+        // Phase가 objectsToEnable로 이 컨테이너를 켜는 시점 = 이 미니게임이 "현재 활성" Phase가 됨.
+        // StageNetworkState는 씬 로드 시 Awake로 이미 떠 있는 영구 싱글턴이라 Phase 중간에
+        // OnEnable이 늦게 호출돼도 항상 준비돼 있음 (기존 Start() 전제와 동일하게 안전).
+        Instance = this;
+
+        _netState = StageNetworkState.Instance;
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
+            _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
+            _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+            _netState.OnChallengeTimeSync       += HandleChallengeTimeSync;
+        }
+    }
+
     void Start()
     {
-        if (startOnAwake)
+        if (startOnAwake && !IsClientOnly())
             StartMinigame();
+    }
+
+    void OnDisable()
+    {
+        // Phase가 objectsToDisable로 이 컨테이너를 끌 때 구독 해제 + Instance 소유권 반납.
+        // Destroy가 아니라 비활성화이므로 여기서 반납해야 다음 Phase의 OnEnable이 Instance를
+        // 정상적으로 가져갈 수 있다 (2026-07-22 버그: 반납 없이 Awake에서 중복 Destroy하던 문제 수정).
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged    -= HandleChallengeStepChanged;
+            _netState.OnChallengeClearedChanged -= HandleChallengeClearedChanged;
+            _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
+            _netState.OnChallengeTimeSync       -= HandleChallengeTimeSync;
+        }
+        if (Instance == this) Instance = null;
+    }
+
+    /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급 (OXQuizManager와 동일).</summary>
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     void Update()
     {
         if (_state != MinigameState.Playing) return;
 
-        TickTimer(Time.deltaTime);
-        TickDangerStep(Time.deltaTime);
+        // 판정·타이머 진행은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 관찰만
+        if (!IsClientOnly())
+        {
+            TickTimer(Time.deltaTime);
+            TickDangerStep(Time.deltaTime);
+        }
+
+        // 로컬 키 입력 감지는 전 머신 공통 — Host는 즉시 판정, Client는 제출만(§11B.1)
         PollSimInput();
     }
 
     // ── 공개 API ─────────────────────────────────────────────────
 
+    /// <summary>
+    /// 미니게임 시작. Host 레인만 실제로 진행 — Client의 직접 호출은 무시된다 (§11B ①Trigger).
+    /// 시드를 생성해 배포하면, 전 머신이 HandleChallengeStepChanged에서 동일한 시드로 스텝
+    /// 시퀀스를 재생성한다 (§11B ②RoundStart, OX의 StartQuiz와 동일 구조).
+    /// </summary>
     public void StartMinigame()
     {
+        if (IsClientOnly()) return;
         if (_state == MinigameState.Playing) return;
+        if (_netState == null) return;
 
         CollectAndSortTiles();
         if (_sortedTiles.Length == 0)
@@ -169,17 +239,12 @@ public class SequenceRingMinigame : MonoBehaviour
             return;
         }
 
-        GenerateSteps();
-        _currentStepIndex = 0;
-        _successCount     = 0;
-        _timeRemaining    = timeLimit > 0f ? timeLimit : float.MaxValue;
-        _dangerStepTimer  = 0f;
-        _state            = MinigameState.Playing;
+        _timeRemaining = timeLimit > 0f ? timeLimit : float.MaxValue;
+        _timeSyncTimer = TimeSyncInterval;
 
-        OnEnterStep(_currentStepIndex);
-        RefreshTileColors();
-        OnMinigameStarted?.Invoke();
-        BroadcastTime();
+        int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+        _netState.ChallengeStart(seed);
+        _netState.ChallengeStepBegin(0);
     }
 
     public void StopMinigame()
@@ -196,7 +261,71 @@ public class SequenceRingMinigame : MonoBehaviour
         _successCount     = 0;
     }
 
-    /// <summary>네트워크 연동용: 플레이어 색으로 입력 제출.</summary>
+    // ── 라운드 생성·결과 반영 (전 머신 공통 — StageNetworkState NV/RPC 구독) ────
+
+    /// <summary>
+    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 스텝을 표시한다.
+    /// 시퀀스 자체는 캐싱하지 않고 매 스텝마다 시드로 재생성한다(§11B ③Generate).
+    /// </summary>
+    void HandleChallengeStepChanged(int stepIndex)
+    {
+        if (stepIndex < 0 || _sortedTiles.Length == 0) return;
+
+        bool firstEntry = _state != MinigameState.Playing;
+        _state = MinigameState.Playing;
+
+        _currentStepIndex = stepIndex;
+        _successCount     = stepIndex;
+
+        GenerateSteps();
+        if (_currentStepIndex >= _steps.Length)
+        {
+            Debug.LogWarning("[SequenceRingMinigame] 스텝 배열이 targetStepCount보다 짧습니다.", this);
+            return;
+        }
+
+        OnEnterStep(_currentStepIndex);
+        RefreshTileColors();
+
+        if (firstEntry)
+        {
+            OnMinigameStarted?.Invoke();
+            BroadcastTime();
+        }
+    }
+
+    /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnMinigameSuccess를 1회 재생 (OX의 OnAllCleared와 동일 패턴).</summary>
+    void HandleChallengeClearedChanged(bool cleared)
+    {
+        if (!cleared) return;
+
+        _state = MinigameState.Success;
+        ApplyDefaultColors();
+        OnMinigameSuccess?.Invoke();
+    }
+
+    /// <summary>Host는 FailMinigame()에서 직접 호출하므로 이 핸들러는 Client에서만 의미 있음.</summary>
+    void HandleChallengeOutcome(bool success)
+    {
+        if (!success) HandleFailedOutcome();
+    }
+
+    void HandleFailedOutcome()
+    {
+        _state = MinigameState.Failed;
+        ApplyDefaultColors();
+        OnMinigameFailed?.Invoke();
+    }
+
+    /// <summary>Client 전용 — Host가 주기적으로 브로드캐스트하는 남은 시간을 그대로 표시에 반영.</summary>
+    void HandleChallengeTimeSync(float remaining)
+    {
+        _timeRemaining = remaining;
+        BroadcastTime();
+    }
+
+    /// <summary>네트워크 연동용: 플레이어 색으로 입력 제출. Host 전용 호출 경로(§11B ④Judge) — Client는
+    /// SubmitColorInput()을 통해 ServerRpc로만 도달한다.</summary>
     public void TrySubmit(PlayerColorType color)
     {
         if (_state != MinigameState.Playing) return;
@@ -245,7 +374,7 @@ public class SequenceRingMinigame : MonoBehaviour
         }
     }
 
-    // ── 입력 (1인 시뮬) ──────────────────────────────────────────
+    // ── 입력 (1인 시뮬 + 네트워크 제출, §11B.1) ────────────────────
 
     void PollSimInput()
     {
@@ -253,7 +382,7 @@ public class SequenceRingMinigame : MonoBehaviour
 
         if (spaceActsAsAnyKey && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            TrySubmitAnyKey();
+            SubmitAnyKeyInput();
             return;
         }
 
@@ -264,8 +393,26 @@ public class SequenceRingMinigame : MonoBehaviour
             Key key = simPlayers[i].submitKey;
             if (!WasKeyPressed(key)) continue;
 
-            TrySubmit(simPlayers[i].colorType);
+            SubmitColorInput(simPlayers[i].colorType);
         }
+    }
+
+    /// <summary>Host는 TrySubmit()으로 즉시 판정, Client는 SubmitStepServerRpc로 요청만 (§11B.1).</summary>
+    void SubmitColorInput(PlayerColorType color)
+    {
+        if (IsClientOnly())
+            _netState?.SubmitStepServerRpc(color);
+        else
+            TrySubmit(color);
+    }
+
+    /// <summary>Host는 TrySubmitAnyKey()으로 즉시 판정, Client는 SubmitAnyKeyStepServerRpc로 요청만.</summary>
+    void SubmitAnyKeyInput()
+    {
+        if (IsClientOnly())
+            _netState?.SubmitAnyKeyStepServerRpc();
+        else
+            TrySubmitAnyKey();
     }
 
     static bool WasKeyPressed(Key key)
@@ -277,12 +424,21 @@ public class SequenceRingMinigame : MonoBehaviour
 
     // ── 타이머·Danger ────────────────────────────────────────────
 
+    /// <summary>Host 전용(§11B ④Judge). 남은 시간은 페널티 등 이벤트 기반 변동이 있어 ServerTime
+    /// 역산이 불가능 — 직접 tick하며 주기적으로 SyncChallengeTimeClientRpc로 브로드캐스트한다.</summary>
     void TickTimer(float dt)
     {
         if (timeLimit <= 0f) return;
 
         _timeRemaining -= dt;
         BroadcastTime();
+
+        _timeSyncTimer -= dt;
+        if (_timeSyncTimer <= 0f)
+        {
+            _timeSyncTimer = TimeSyncInterval;
+            _netState?.SyncChallengeTimeClientRpc(Mathf.Max(0f, _timeRemaining));
+        }
 
         if (_timeRemaining <= 0f)
             FailMinigame();
@@ -312,12 +468,17 @@ public class SequenceRingMinigame : MonoBehaviour
             : 0f;
     }
 
-    // ── 진행·판정 ────────────────────────────────────────────────
+    // ── 진행·판정 (Host 전용 호출 경로 — TrySubmit/TrySubmitAnyKey/TickDangerStep은 항상
+    //    Host에서만 실행된다: Client 입력은 ServerRpc로만 들어오고, TickDangerStep은 Update()에서
+    //    이미 Host 가드 뒤에 있다. §11B ④Judge) ─────────────────────
 
+    /// <summary>
+    /// Host: 다음 스텝으로 진행 확정. 실제 스텝 인덱스 전파는 ChallengeStepBegin(NV)로 하고,
+    /// 화면 반영(OnEnterStep/RefreshTileColors)은 전 머신 공통 HandleChallengeStepChanged가 담당한다.
+    /// </summary>
     void AdvanceStep()
     {
         _successCount++;
-        _currentStepIndex++;
 
         if (_successCount >= targetStepCount)
         {
@@ -325,15 +486,15 @@ public class SequenceRingMinigame : MonoBehaviour
             return;
         }
 
-        if (_currentStepIndex >= _steps.Length)
+        int nextIndex = _currentStepIndex + 1;
+        if (nextIndex >= _steps.Length)
         {
             Debug.LogWarning("[SequenceRingMinigame] 스텝 배열이 targetStepCount보다 짧습니다.", this);
             SucceedMinigame();
             return;
         }
 
-        OnEnterStep(_currentStepIndex);
-        RefreshTileColors();
+        _netState?.ChallengeStepBegin(nextIndex);
     }
 
     void ApplyWrongPenalty()
@@ -352,18 +513,15 @@ public class SequenceRingMinigame : MonoBehaviour
         OnWrongInput?.Invoke();
     }
 
-    void SucceedMinigame()
-    {
-        _state = MinigameState.Success;
-        ApplyDefaultColors();
-        OnMinigameSuccess?.Invoke();
-    }
+    /// <summary>Host: 클리어 확정. ChallengeCleared NV가 전 머신 공통으로 HandleChallengeClearedChanged를
+    /// 발동시키므로 여기서 직접 OnMinigameSuccess를 Invoke하지 않는다(Host 이중 발동 금지, OX와 동일 원칙).</summary>
+    void SucceedMinigame() => _netState?.ChallengeCleared(true);
 
+    /// <summary>Host: 실패 확정. 로컬 반영 + Client에는 outcome(false)로 전파 (§11B ⑤Resolve).</summary>
     void FailMinigame()
     {
-        _state = MinigameState.Failed;
-        ApplyDefaultColors();
-        OnMinigameFailed?.Invoke();
+        HandleFailedOutcome();
+        _netState?.NotifyChallengeOutcomeClientRpc(false);
     }
 
     void BroadcastTime()
@@ -373,16 +531,24 @@ public class SequenceRingMinigame : MonoBehaviour
         OnTimeRemainingChanged?.Invoke(Mathf.Max(0f, _timeRemaining));
     }
 
-    // ── 시퀀스 생성 ──────────────────────────────────────────────
+    // ── 시퀀스 생성 (전 머신 공통, §11B ③Generate) ─────────────────
 
+    /// <summary>
+    /// ChallengeSeed 기반 System.Random으로 전체 스텝 시퀀스를 재생성한다. 매 스텝 변경 시 다시
+    /// 호출되지만(캐싱 없음) 항상 같은 시드 → 같은 결과이므로 결과 자체를 네트워크로 보내지 않는다
+    /// (OX의 RegenerateQuestionOrder와 동일 원칙 — UnityEngine.Random 전역 상태 오염 없음).
+    /// </summary>
     void GenerateSteps()
     {
         _steps = new StepData[targetStepCount];
         PlayerColorType[] pool = GetUniqueColorPool();
 
+        int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        var rng  = new System.Random(seed);
+
         for (int i = 0; i < targetStepCount; i++)
         {
-            float roll = (float)_rng.NextDouble();
+            float roll = (float)rng.NextDouble();
             float dChance = Mathf.Clamp01(dangerSpawnChance);
             float cChance = Mathf.Clamp01(commonSpawnChance);
 
@@ -397,7 +563,7 @@ public class SequenceRingMinigame : MonoBehaviour
             else
             {
                 PlayerColorType c = pool.Length > 0
-                    ? pool[_rng.Next(pool.Length)]
+                    ? pool[rng.Next(pool.Length)]
                     : PlayerColorType.Blue;
                 _steps[i] = new StepData { kind = StepKind.Normal, color = c };
             }

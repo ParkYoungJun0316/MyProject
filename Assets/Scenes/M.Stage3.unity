@@ -553,7 +553,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageManager
   objectives:
   - {fileID: 843514284}
-  autoStart: 1
+  autoStart: 0
   OnStageClear:
     m_PersistentCalls:
       m_Calls:
@@ -1216,7 +1216,7 @@ MonoBehaviour:
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 0}
-  warnDuration: 3
+  warnDuration: 2
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -1369,7 +1369,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   challenge: {fileID: 433914000}
-  requiredSuccesses: 5
+  requiredSuccesses: 1
 --- !u!1 &468527017
 GameObject:
   m_ObjectHideFlags: 0
@@ -2483,20 +2483,56 @@ MonoBehaviour:
   - {fileID: 780667904}
   - {fileID: 1486609019}
   stageManager: {fileID: 1590687362}
-  countdownDuration: 1
+  countdownDuration: 3
   armOnStart: 1
   OnCountdownTick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1293583615}
+        m_TargetAssemblyTypeName: StartCountdownUI, Assembly-CSharp
+        m_MethodName: SetRemaining
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnCountdownReset:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1293583615}
+        m_TargetAssemblyTypeName: StartCountdownUI, Assembly-CSharp
+        m_MethodName: Hide
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnCountdownComplete:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 433914000}
         m_TargetAssemblyTypeName: ColorTileChallenge, Assembly-CSharp
         m_MethodName: StartSchedule
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1293583615}
+        m_TargetAssemblyTypeName: StartCountdownUI, Assembly-CSharp
+        m_MethodName: Hide
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2676,6 +2712,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52d78b25a2f7fc342ba851f047050149, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectiveUI
+--- !u!114 &1293583615 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5024605831709525535, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1293583613}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3bcff797d999a348955d953c9aa7845, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StartCountdownUI
 --- !u!1001 &1298299819
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2934,7 +2981,7 @@ MonoBehaviour:
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 0}
-  warnDuration: 3
+  warnDuration: 2
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -3283,7 +3330,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1508568970}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1741703222}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -3444,7 +3491,7 @@ MonoBehaviour:
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 0}
-  warnDuration: 3
+  warnDuration: 2
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -3522,53 +3569,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
---- !u!1 &1582591389
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1582591391}
-  - component: {fileID: 1582591390}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &1582591390
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1582591389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2dfdc66ffd714824c9e1c6547e3e5b4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXManager
-  library: {fileID: 11400000, guid: aceec9b3ff4446340b4113fa52f49e03, type: 2}
-  source2D: {fileID: 0}
-  masterVolume: 1
---- !u!4 &1582591391
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1582591389}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.00133, y: 0.25, z: -0.23024}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1590687360
 GameObject:
   m_ObjectHideFlags: 0
@@ -3705,6 +3705,19 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+--- !u!134 &1741703222
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1001 &1779397886
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3892,7 +3905,7 @@ MonoBehaviour:
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 0}
-  warnDuration: 3
+  warnDuration: 2
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -3964,7 +3977,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls: []
   - phaseName: Delay_Stage3.1
-    surviveDuration: 5
+    surviveDuration: 3
     objectsToDisable:
     - {fileID: 513131638}
     objectsToEnable:
@@ -4162,7 +4175,7 @@ MonoBehaviour:
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 0}
-  warnDuration: 3
+  warnDuration: 2
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -5200,7 +5213,6 @@ SceneRoots:
   - {fileID: 750318819}
   - {fileID: 925126200}
   - {fileID: 46640598}
-  - {fileID: 1582591391}
   - {fileID: 262236992}
   - {fileID: 81951522}
   - {fileID: 271734374}

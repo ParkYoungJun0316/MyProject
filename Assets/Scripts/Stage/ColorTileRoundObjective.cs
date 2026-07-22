@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -81,8 +82,15 @@ public class ColorTileRoundObjective : RoundProgressObjective
         _playedRounds++;
         OnProgressChanged?.Invoke();
 
-        if (_successCount >= requiredSuccesses)
-            Complete();
+        if (_successCount < requiredSuccesses) return;
+
+        // [축 SSOT: NetworkDesign.md §11A.2] Complete() 확정은 Host 레인에서만.
+        // ColorTileChallenge.OnSuccess는 Host/Client 전 머신에서 공통으로 발동되므로 여기서 가드
+        // (OXQuizObjective.HandleAllCleared와 동일 패턴).
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
+        Complete();
     }
 
     void HandleFail()

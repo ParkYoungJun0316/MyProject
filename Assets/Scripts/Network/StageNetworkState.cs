@@ -144,6 +144,13 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host 판정 결과(성공/실패) 1회성 연출 신호 — Client 전용(Host는 로컬에서 직접 처리).</summary>
     public event Action<bool> OnChallengeOutcome;
 
+    /// <summary>
+    /// 연속 진행형 챌린지(SequenceRing 등)의 남은 시간 동기화 이벤트 — Client 전용(Host는 로컬 tick으로 직접 갱신).
+    /// 오답 페널티 등 이벤트 기반 변동이 있어 ServerTime 역산(OX의 ChallengeStepStartServerTime 방식)이
+    /// 불가능한 타이머 전용. Host가 직접 tick하며 주기적으로 브로드캐스트한다.
+    /// </summary>
+    public event Action<float> OnChallengeTimeSync;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -220,6 +227,21 @@ public class StageNetworkState : NetworkBehaviour
         if (IsServer) return;
         Breakable.BreakById(breakableId);
         Debug.Log($"[StageNetworkState] Breakable(id={breakableId}) 파괴 동기화");
+    }
+
+    // ── DropTrap 경고 마커 동기화 ─────────────────────────────────
+
+    /// <summary>
+    /// Host: DropTrap이 경고 마커를 표시하는 시점에 호출(trapId = DropTrap stable ID).
+    /// Client: 동일 DropTrap 인스턴스를 찾아 로컬로 마커 연출만 재생.
+    /// 낙하체 스폰은 TrapProjectile B안(Host Spawn+velocity)으로 별도 동기화되므로
+    /// 여기서는 순수 비주얼(경고 원 표시 + 채움 애니메이션)만 다룬다.
+    /// </summary>
+    [ClientRpc]
+    public void SyncDropWarnClientRpc(int trapId, Vector3 targetPos, float warnDuration, float fallDuration)
+    {
+        if (IsServer) return;
+        DropTrap.PlayWarnById(trapId, targetPos, warnDuration, fallDuration);
     }
 
     // ── 생존 타이머 동기화 ───────────────────────────────────────
@@ -345,6 +367,37 @@ public class StageNetworkState : NetworkBehaviour
 
     void OnChallengeStepChangedNv(ChallengeStepState prev, ChallengeStepState next) => OnChallengeStepChanged?.Invoke(next.stepIndex);
     void OnChallengeClearedNvChanged(bool prev, bool next) => OnChallengeClearedChanged?.Invoke(next);
+
+    /// <summary>
+    /// Host: 연속 진행형 챌린지의 남은 시간을 Client에 브로드캐스트 (§11B ④Judge 부속 — 시간 표시 전용,
+    /// 판정 자체는 Host만 수행). SyncSurvivalRemainingClientRpc와 동일한 "Host tick + 주기 RPC" 패턴.
+    /// </summary>
+    [ClientRpc]
+    public void SyncChallengeTimeClientRpc(float remaining)
+    {
+        if (IsServer) return;
+        OnChallengeTimeSync?.Invoke(remaining);
+    }
+
+    // ── 챌린지 입력 제출 (Client → Host, §11B.1) ───────────────────
+
+    /// <summary>
+    /// Client: 자기 색으로 챌린지 스텝 제출 요청(예: SequenceRing 키 입력). Host만 위치·색 등 실제
+    /// 상태를 갖고 있는 포지션 판정형과 달리, 키 입력형은 "누가 눌렀는가" 자체가 Host에 없는 정보라
+    /// 별도 제출 경로가 필요하다 — Host가 SequenceRingMinigame.TrySubmit()으로 판정한다.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SubmitStepServerRpc(PlayerColorType color)
+    {
+        SequenceRingMinigame.Instance?.TrySubmit(color);
+    }
+
+    /// <summary>Client: Common/Danger 스텝 등 색 구분 없는 "아무 키" 제출 요청.</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SubmitAnyKeyStepServerRpc()
+    {
+        SequenceRingMinigame.Instance?.TrySubmitAnyKey();
+    }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────
 

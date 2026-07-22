@@ -16,10 +16,11 @@ using UnityEngine;
 /// [일반 모드 동작 흐름]
 ///   OnPreFireCharge → doOpen  (입 벌리기 시작)
 ///   openClipLength 후 → 발사 → doHold (입 완전히 열린 채 유지)
-///   발사체가 입 탈출 트리거 통과 → NotifyProjectileExited() → doClose
+///   holdDuration 후 → doClose (고정 타이머 — 발사체 도착/탈출 이벤트에 의존하지 않음)
 ///   closeClipLength 후 → doIdle
-///   (발사체 flight도 B안에 따라 client local이므로 MouthExitTrigger 판정도
-///    각 피어가 자기 로컬 발사체 기준으로 독립 판정한다.)
+///   (Host만 발사체를 Spawn하고 Client는 복제 수신 후 로컬 비행을 시작하므로,
+///    Close를 발사체 탈출 이벤트에 묶으면 Client의 Hold가 Spawn/RPC 왕복 시간만큼
+///    Host보다 길어진다 — 그래서 Close는 순수 로컬 타이머로 분리한다.)
 ///
 /// [루프 모드 (loopOpenClose = true)]
 ///   Open → Hold(loopHoldDuration) → Close → (loopInterval) → Open ... 무한 반복
@@ -31,11 +32,6 @@ using UnityEngine;
 ///   Triggers : doOpen / doHold / doClose / doIdle
 ///   (모든 Transition: Has Exit Time = false, Duration = 0, Can Transition to Self = false)
 ///   Hold 클립: Loop Time = true
-///
-/// [입 탈출 트리거 설정]
-///   입 앞에 빈 오브젝트 생성 → BoxCollider (Is Trigger = true) 추가
-///   MouthExitTrigger 컴포넌트 부착 → mouthAnim 연결
-///   콜라이더 두께 얇게 (0.1~0.3), 입 출구 바로 앞에 배치
 /// </summary>
 public class MouthTrapAnimatorAnim : MonoBehaviour
 {
@@ -63,6 +59,11 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
              "이 시간 후 doIdle 자동 발행.\n" +
              "예) 24fps 7프레임 = 0.292s / 30fps 7프레임 = 0.233s")]
     [SerializeField] private float closeClipLength = 0f;
+
+    [Header("일반 모드 Hold 유지 시간")]
+    [Tooltip("발사(doHold) 후 doClose까지 대기하는 고정 시간(초).\n" +
+             "Host/Client 모두 로컬 타이머로 동일하게 적용 — 발사체 탈출 이벤트에 의존하지 않음.")]
+    [SerializeField] private float holdDuration = 0f;
 
     [Header("루프 모드 (발사체로 사용 시)")]
     [Tooltip("true: Open→Hold→Close 무한 반복. TrapBase 이벤트 무시.")]
@@ -138,25 +139,28 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
 
     void HandleFiring()
     {
-        TriggerHold();
-    }
+        if (_idleReturnCoroutine != null)
+        {
+            StopCoroutine(_idleReturnCoroutine);
+            _idleReturnCoroutine = null;
+        }
 
-    /// <summary>
-    /// 입 앞 탈출 트리거에서 발사체가 나갔을 때 MouthExitTrigger가 호출.
-    /// Hold → Close → Idle 순서로 진행.
-    /// </summary>
-    public void NotifyProjectileExited()
-    {
-        if (_idleReturnCoroutine != null) StopCoroutine(_idleReturnCoroutine);
-        TriggerClose();
-        _idleReturnCoroutine = StartCoroutine(ReturnToIdleAfterClose());
+        TriggerHold();
+        _idleReturnCoroutine = StartCoroutine(HoldThenCloseRoutine());
     }
 
     // ── 코루틴 ─────────────────────────────────────────────────────────────
 
-    IEnumerator ReturnToIdleAfterClose()
+    /// <summary>
+    /// doHold 후 holdDuration → doClose → closeClipLength → doIdle.
+    /// 발사체 탈출 이벤트에 의존하지 않는 고정 로컬 타이머 (Host/Client 동일 적용).
+    /// </summary>
+    IEnumerator HoldThenCloseRoutine()
     {
-        yield return new WaitForSeconds(closeClipLength);
+        yield return new WaitForSeconds(Mathf.Max(0f, holdDuration));
+        TriggerClose();
+
+        yield return new WaitForSeconds(Mathf.Max(0f, closeClipLength));
         TriggerIdle();
         _idleReturnCoroutine = null;
     }
