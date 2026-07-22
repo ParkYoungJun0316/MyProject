@@ -144,6 +144,11 @@ public class SequenceRingMinigame : MonoBehaviour
     /// <summary>Inspector에 설정된 제한 시간. 0 이하면 무제한 설정. SequenceRingObjective가 읽음.</summary>
     public float TimeLimit => timeLimit;
 
+    /// <summary>현재 스텝이 위치한 링 칸(0~15)이 바뀔 때 발동. SequenceRingCurrentStepMarker 등
+    /// 표시용 컴포넌트가 구독 — Host/Client 전 머신 공통으로 HandleChallengeStepChanged에서 발동되므로
+    /// 별도 네트워크 처리 없이 항상 동일한 값을 받는다.</summary>
+    public event Action<int> OnCurrentTileRingChanged;
+
     void Awake()
     {
         // 타일 세팅은 생애 1회만 하면 되므로 Awake에 둔다.
@@ -286,6 +291,7 @@ public class SequenceRingMinigame : MonoBehaviour
 
         OnEnterStep(_currentStepIndex);
         RefreshTileColors();
+        OnCurrentTileRingChanged?.Invoke(_currentStepIndex % RingTileCount);
 
         if (firstEntry)
         {
@@ -637,6 +643,18 @@ public class SequenceRingMinigame : MonoBehaviour
         }
 
         return set;
+    }
+
+    // ── 외부 조회 (마커 등 표시용) ───────────────────────────────
+
+    /// <summary>ringIndex(0~15) 칸의 Transform. SequenceRingCurrentStepMarker 등이 위치 추적에 사용.
+    /// 해당 링 칸 타일을 못 찾으면 null.</summary>
+    public Transform GetTileTransform(int ringIndex)
+    {
+        for (int i = 0; i < _sortedTiles.Length; i++)
+            if (_sortedTiles[i] != null && _sortedTiles[i].RingIndex == ringIndex)
+                return _sortedTiles[i].transform;
+        return null;
     }
 
     // ── 타일 색 갱신 ─────────────────────────────────────────────
