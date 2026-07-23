@@ -619,7 +619,7 @@ MonoBehaviour:
   - {fileID: 775436341}
   stageManager: {fileID: 628739176}
   countdownDuration: 3
-  armOnStart: 1
+  armOnStart: 0
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls:
@@ -2292,7 +2292,7 @@ MonoBehaviour:
     correctAnswerIsO: 1
     explanationText: The tongue heals quickly because it has strong blood flow and
       fast cell repair.
-  questionsPerRun: 1
+  questionsPerRun: 5
   answerTimeLimit: 10
   correctAnswerDelay: 6
   wrongDamage: 1
@@ -2686,6 +2686,7 @@ GameObject:
   - component: {fileID: 1133977673}
   - component: {fileID: 1133977672}
   - component: {fileID: 1133977671}
+  - component: {fileID: 1133977674}
   m_Layer: 0
   m_Name: StageNetworkState
   m_TagString: Untagged
@@ -2746,6 +2747,36 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1133977674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1133977669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0c8d35c0d4b42f4c97943e76a25f6ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhaseDialogueGate
+  ShowTopMostFoldoutHeaderGroup: 1
+  dialogueUI: {fileID: 1293583614}
+  showOnceKey: Stage2.0
+  OnAllReady:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 315001972}
+        m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+        m_MethodName: Arm
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &1150381451 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -3136,6 +3167,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+--- !u!114 &1293583614 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2879022694852666727, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1293583613}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08555c6247b416469d2179667b3e5a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueUI
 --- !u!4 &1333653021 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -4468,7 +4510,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseManager
   phases:
-  - phaseName: Stage2.0
+  - phaseName: Stage2.1
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
@@ -4476,7 +4518,19 @@ MonoBehaviour:
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 1133977674}
+          m_TargetAssemblyTypeName: PhaseDialogueGate, Assembly-CSharp
+          m_MethodName: Begin
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -4888,7 +4942,7 @@ GameObject:
   - component: {fileID: 2029791695}
   - component: {fileID: 2029791696}
   m_Layer: 0
-  m_Name: Objective
+  m_Name: Objective70
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

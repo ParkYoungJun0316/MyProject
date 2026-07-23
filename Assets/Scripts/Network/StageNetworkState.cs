@@ -151,6 +151,18 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public event Action<float> OnChallengeTimeSync;
 
+    /// <summary>
+    /// §11 사망 문으로 재진입이 확정된 순간(Host 레인, NotifyPlayerDeathServerRpc 진입 시) 1회 발동.
+    /// 각 챌린지 매니저(OXQuizManager/ColorTileChallenge/GridColorChallenge/GridBWTileChallenge/
+    /// SequenceRingMinigame)의 Host 레인 Progress 루프(Update Tick 또는 판정 코루틴)가 이 신호를
+    /// OnChallengeStepChanged 등과 동일한 방식으로 구독해 즉시 자기 상태를 Idle로 되돌린다.
+    /// 사망은 챌린지 축(§11A ③Progress) 밖에서 일어나는 사건이라, 챌린지 자신의 Resolve로는
+    /// 절대 감지할 수 없다 — 이 이벤트가 그 경계를 넘어 알려주는 유일한 Writer다. 이게 없으면
+    /// Progress 루프가 리로드로 이 NetworkObject가 Despawn될 때까지 한두 프레임 더 돌면서
+    /// ClientRpc를 계속 쏘아 RpcException(NetworkBehaviour must be spawned...)이 난다.
+    /// </summary>
+    public event Action OnDeathReloadStarted;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -190,6 +202,10 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (_resetPending) return;
         _resetPending = true;
+
+        // §11 사망 문 진입 확정 — 챌린지 Progress 루프를 도는 모든 매니저에 즉시 통지해서
+        // 리로드 코루틴(아래)이 실제로 씬을 갈아엎기 전에 각자 자기 루프를 멈추게 한다.
+        OnDeathReloadStarted?.Invoke();
 
         // 사망 리로드 시 새 시드 생성 + 전체 클라이언트에 배포
         int newSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);

@@ -7,28 +7,24 @@ using UnityEngine.Events;
 /// Phase 진입 시 대화(DialogueUI)를 띄우고, 전원이 다 읽으면(또는 스킵되면) OnAllReady를
 /// 발동하는 범용 게이트.
 ///
-/// [DialogueGateController와의 관계]
-/// 골격(각자 로컬로 Space 넘김 → Host가 완료 집계 → 전원 완료 시 다음 단계)은
-/// `DialogueGateController`(씬 인트로 1회 전용, StageStartGate.Arm 하드코딩)와 동일하다.
-/// 다른 점 2가지 때문에 별도 컴포넌트로 분리했다:
-///  1. 트리거가 OnNetworkSpawn 1회가 아니라 PhaseManager.onPhaseEnter에서 Phase마다 Begin() 호출
-///  2. 완료 동작이 Arm() 하드코딩이 아니라 Inspector에서 배선하는 OnAllReady UnityEvent
-///     (Stage4.0은 StageStartGate.Arm, Stage4.1+는 StageManager.StartStage 등 Phase마다 다름)
-/// 기존 씬 인트로(M.Stage1 등)는 DialogueGateController를 그대로 쓰고, Phase별 중간 대화만
-/// 이 컴포넌트를 쓴다 — 서로 다른 트리거를 하나로 억지로 합치지 않는다.
+/// [범용 대화 게이트 — 씬 인트로 / Phase 중간 대화 공용 SSOT]
+/// 트리거를 OnNetworkSpawn 1회로 고정하지 않고 **`Begin()`을 호출하는 시점**을 자유롭게 둬서,
+/// 씬 최초 진입(예: Phase0 onPhaseEnter에서 1회) / Phase 중간 전환(각 Phase onPhaseEnter마다)
+/// 양쪽 모두를 이 컴포넌트 하나로 커버한다. 완료 동작도 하드코딩하지 않고 Inspector에서
+/// 배선하는 OnAllReady UnityEvent로 둬서, Phase마다 다음 단계(Gate Arm / StageManager.StartStage
+/// 등)를 다르게 연결할 수 있다.
 ///
 /// [권한]
-/// "이미 봤는가" 판정은 Host의 GameSession 상태만 신뢰한다 (Client 로컬 상태는 사용하지 않음 —
-/// DialogueGateController와 동일 원칙). Host가 열지/스킵할지 결정해 ClientRpc로 알린다.
-/// 완료 집계도 Host에서만: Client는 ServerRpc로 보고, Host가 전원 완료 확인 후
-/// ClientRpc로 OnAllReady를 전파한다. Host 자신은 로컬에서 직접 발동.
+/// "이미 봤는가" 판정은 Host의 GameSession 상태만 신뢰한다 (Client 로컬 상태는 사용하지 않음).
+/// Host가 열지/스킵할지 결정해 ClientRpc로 알린다. 완료 집계도 Host에서만: Client는 ServerRpc로
+/// 보고, Host가 전원 완료 확인 후 ClientRpc로 OnAllReady를 전파한다. Host 자신은 로컬에서 직접 발동.
 ///
 /// [씬 설정]
-/// 1. 스폰된 NetworkObject(예: StageNetworkState가 붙은 오브젝트)에 Phase별로 하나씩 부착
-/// 2. dialogueUI : 이 Phase 전용 Dialogue_Panel (handleInputLocally=true 필수). 비우면 대화 없이 즉시 OnAllReady
-/// 3. showOnceKey : Phase별 고유 키 (예: "M.Stage4.1") — 사망 리로드 후 재관람 방지. 비우면 매번 다시 표시
-/// 4. PhaseManager의 해당 Phase onPhaseEnter → 이 컴포넌트의 Begin() 연결
-/// 5. OnAllReady → StageStartGate.Arm 또는 StageManager.StartStage 등 이 Phase의 다음 단계 연결
+/// 1. 스폰된 NetworkObject(예: StageNetworkState가 붙은 오브젝트)에 씬 인트로/Phase별로 하나씩 부착
+/// 2. dialogueUI : 이 대화 전용 Dialogue_Panel (handleInputLocally=true 필수). 비우면 대화 없이 즉시 OnAllReady
+/// 3. showOnceKey : 고유 키 (예: "M.Stage4" 씬 인트로, "M.Stage4.1" Phase별) — 사망 리로드 후 재관람 방지. 비우면 매번 다시 표시
+/// 4. 씬 최초 진입이면 Phase0 onPhaseEnter / Phase 중간이면 해당 Phase onPhaseEnter → 이 컴포넌트의 Begin() 연결
+/// 5. OnAllReady → StageStartGate.Arm 또는 StageManager.StartStage 등 다음 단계 연결
 /// </summary>
 public class PhaseDialogueGate : NetworkBehaviour
 {

@@ -3001,7 +3001,7 @@ MonoBehaviour:
   - {fileID: 568925417}
   stageManager: {fileID: 152795068}
   countdownDuration: 3
-  armOnStart: 1
+  armOnStart: 0
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls:
@@ -9100,6 +9100,7 @@ GameObject:
   - component: {fileID: 780759109}
   - component: {fileID: 780759107}
   - component: {fileID: 780759108}
+  - component: {fileID: 780759110}
   m_Layer: 0
   m_Name: StageNetworkState
   m_TagString: Untagged
@@ -9160,6 +9161,36 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &780759110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780759106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0c8d35c0d4b42f4c97943e76a25f6ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhaseDialogueGate
+  ShowTopMostFoldoutHeaderGroup: 1
+  dialogueUI: {fileID: 1965931425}
+  showOnceKey: Stage1
+  OnAllReady:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 289451423}
+        m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+        m_MethodName: Arm
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &789291031
 GameObject:
   m_ObjectHideFlags: 0
@@ -16649,8 +16680,11 @@ MonoBehaviour:
   useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -20448,6 +20482,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3bcff797d999a348955d953c9aa7845, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StartCountdownUI
+--- !u!114 &1965931424 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3019099503679744905, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1965931422}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52d78b25a2f7fc342ba851f047050149, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectiveUI
+--- !u!114 &1965931425 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2879022694852666727, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1965931422}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08555c6247b416469d2179667b3e5a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueUI
 --- !u!1001 &1966417303
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20548,13 +20604,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03e53efbfacd02e46b672461cb0a87d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseManager
-  phases: []
+  phases:
+  - phaseName: Stage1
+    surviveDuration: 0
+    objectsToDisable:
+    - {fileID: 883898712}
+    objectsToEnable: []
+    manualAdvanceOnly: 1
+    onPhaseEnter:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 780759110}
+          m_TargetAssemblyTypeName: PhaseDialogueGate, Assembly-CSharp
+          m_MethodName: Begin
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+    onPhaseComplete:
+      m_PersistentCalls:
+        m_Calls: []
   onAllPhasesComplete:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 189310062}
         m_TargetAssemblyTypeName: SceneFlowRelay, Assembly-CSharp
         m_MethodName: LoadNextScene
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1965931424}
+        m_TargetAssemblyTypeName: ObjectiveUI, Assembly-CSharp
+        m_MethodName: ShowSceneClear
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -21549,8 +21641,11 @@ MonoBehaviour:
   useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -22108,8 +22203,11 @@ MonoBehaviour:
   useMouthTeethBreakSfx: 0
   breakSound: {fileID: 0}
   breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0

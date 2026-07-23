@@ -11,8 +11,8 @@ using TMPro;
 /// [진행 방식 — 각자 로컬 진행]
 /// 각 피어(Host/Client)가 자기 화면의 Space 입력으로 자기 줄만 넘긴다(handleInputLocally=true).
 /// 줄 넘김 자체는 네트워크 동기화하지 않는다 — 읽는 속도는 순수 로컬 UI 상태.
-/// "전원이 다 읽었는지"는 DialogueGateController가 완료 이벤트(OnSequenceComplete)를
-/// 모아서 판단한다 (Gate Arm 타이밍 결정용).
+/// "전원이 다 읽었는지"는 PhaseDialogueGate가 완료 이벤트(OnSequenceComplete)를
+/// 모아서 판단한다 (OnAllReady 발동 타이밍 결정용).
 ///
 /// [설정법]
 /// 1. Dialogue_Panel에 이 스크립트 부착
@@ -21,7 +21,7 @@ using TMPro;
 ///    예) 각자 <color=#3B82F6><b>색</b></color> 존에 서세요.
 /// 4. dialogueLines 배열에 순서대로 연결
 /// 5. handleInputLocally = true
-/// 6. DialogueGateController.dialogueUI 에 이 컴포넌트 연결
+/// 6. PhaseDialogueGate.dialogueUI 에 이 컴포넌트 연결
 /// </summary>
 public class DialogueUI : MonoBehaviour
 {
@@ -41,7 +41,7 @@ public class DialogueUI : MonoBehaviour
 
     [Header("입력")]
     [Tooltip("true: 이 컴포넌트가 직접 Space 입력 처리해 자기 화면의 줄만 넘김.\n" +
-             "DialogueGateController와 함께 쓸 때도 true로 설정 (각자 로컬 진행 방식).")]
+             "PhaseDialogueGate와 함께 쓸 때도 true로 설정 (각자 로컬 진행 방식).")]
     [SerializeField] bool handleInputLocally = false;
 
     [Header("이벤트")]

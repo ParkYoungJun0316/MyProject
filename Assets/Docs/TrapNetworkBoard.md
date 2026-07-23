@@ -13,10 +13,10 @@
 | `TrapBase.cs` | MonoBehaviour | 로컬 | 하위 클래스가 `TrapLoop()` 오버라이드 안 하면 로컬 프레임 타이머(`WaitForSeconds`) 그대로 씀 — ServerTime 앵커 없음 |
 | `ArrowTrap.cs` | `TrapBase` | 로컬 | `TrapLoop` 오버라이드해서 `StageStartServerTime` 앵커드 — 발사체(`arrowPrefab`)만 `NetworkObject` 필요 |
 | `DropTrap.cs` | `TrapBase` | 로컬 | 동일하게 `StageStartServerTime` 앵커드 — `dropPrefab`만 `NetworkObject` 필요 |
-| `WindTrap.cs` | `TrapBase` | 로컬 | `StageStartServerTime` 앵커드, 데미지 없음(포스만) — 문제 없음 |
-| `SpikeTrap.cs` | `TrapBase` | 로컬 | 데미지는 `nm.IsServer` 가드로 보호(OK). **2026-07-21 수정 완료** — `TrapLoop()`를 `StageStartServerTime` 앵커 방식으로 오버라이드 (§2 참조) |
+| `WindTrap.cs` | `TrapBase` | 로컬 | **2026-07-23 수정 완료** — 스케줄 앵커를 로컬 `Activate()` 시각 → `PhaseStartServerTime`으로 교체(ArrowTrap/DropTrap과 동일 패턴), Random 모드는 `NetworkSessionData.Seed ^ salt ^ fireCount` 결정적 시드로 동기화(RPC 없음), `AddForce`는 `IsLocalOwnerRigidbody()` 필터로 자기 Owner 캐릭터에만 적용. **실기 검증 완료(ParrelSync 2인)** |
+| `SpikeTrap.cs` | `TrapBase` | 로컬 | 데미지는 `nm.IsServer` 가드로 보호(OK). **2026-07-21 수정은 불완전** — `TrapLoop()`가 `PhaseStartServerTime`이 아니라 **로컬 `Activate()` 시각**을 앵커로 씀(주석은 "StageStartServerTime 앵커링"이라 적었지만 실제 구현은 아님). §5 참조 — WindTrap과 동일한 결함, 동일 수정 필요 |
 | `ContactDamage.cs` | MonoBehaviour | 로컬 | 데미지는 `nm.IsServer` 가드로 보호(OK) |
-| `SpikeLaneField.cs` | `TrapBase` | 로컬 | **2026-07-21 수정 완료** — `TrapLoop()` 앵커링 + `NetworkSessionData.Seed` 기반 `Random.InitState`로 레인 선택 동기화 (§2 참조). **실기 테스트 아직 안 함** |
+| `SpikeLaneField.cs` | `TrapBase` | 로컬 | 레인 선택 시드(`NetworkSessionData.Seed ^ salt ^ fireCount`)는 정상. **`TrapLoop()` 앵커는 SpikeTrap과 동일한 결함** — 로컬 `Activate()` 시각 기준이라 `PhaseStartServerTime`으로 교체 필요. §5 참조. **실기 테스트 아직 안 함** |
 | `SpikeLane.cs` | MonoBehaviour | 로컬 | 단순 Activate/Deactivate 릴레이 |
 | `CeilingTrap.cs` | MonoBehaviour | 로컬 | `TrapBase` 아님, `Update()` 감지형. 데미지는 별도 컴포넌트(`ContactDamage` 등)가 처리할 것으로 **추정 — 미확인, §3 논의 필요** |
 | `TrapPlayerTracker.cs` | MonoBehaviour | 로컬 | — |
@@ -51,10 +51,58 @@ base의 로컬 상대 타이머(`WaitForSeconds`)를 그대로 써서 Host/Clien
 
 ## 3. 남은 논의 항목 (다음에 계속)
 
-- [ ] §2 수정사항 T 라운드 실기 검증 (ParrelSync 2인)
+- [ ] §5 수정 후 T 라운드 실기 검증 (ParrelSync 2인) — §2의 옛 항목을 대체
 - [ ] `CeilingTrap.cs` 데미지 처리 컴포넌트가 실제로 뭔지 확인 (현재 "추정"만 있음)
 - [ ] `Assets/Scripts/Traps/` 밖의 다른 함정류(`WallMover`/`WallMoverSequencer`/`BoulderSpawner`/`Breakable` 등, `NetworkDesign.md` §9.1.3 그룹 2/미분류)도 같은 3가지 기준으로 분류할지 — 스코프 확대 여부는 사용자 확인 필요
 - [ ] (계속 여기에 추가)
+
+---
+
+## 5. SpikeLaneField / SpikeTrap — WindTrap과 동일한 앵커 결함 (다음 에이전트가 마무리)
+
+**배경:** §2에서 "`StageStartServerTime` 앵커링 완료"라고 적었지만, 실제 코드(`SpikeLaneField.TrapLoop`, `SpikeTrap.TrapLoop`)는 `StageStartServerTime`도 `PhaseStartServerTime`도 안 쓰고 **이 트랩이 로컬로 `Activate()`된 순간의 `ServerTime.Time`**만 스냅샷으로 잡는다. `WindTrap`이 최근까지 똑같은 방식이었고(2026-07-23 수정 완료 · 실기 검증 통과), 이번에 `ArrowTrap`/`DropTrap`과 같은 `PhaseStartServerTime` 앵커로 교체했다. `SpikeLaneField`/`SpikeTrap`은 아직 이 수정을 안 받았다.
+
+**왜 문제인가:** Client의 `Activate()` 호출은 Phase 진입 NetworkVariable 전파 지연만큼 Host보다 늦게 일어날 수 있다. 각자 자기 `Activate()` 시각을 앵커로 잡으면, `scheduleStartTime`이 머신마다 달라져서 발동 "시각"이 서서히 어긋난다. `SpikeLaneField`의 레인 선택 시드(`NetworkSessionData.Seed ^ salt ^ fireCount`)는 값 자체는 맞지만, `fireCount`가 증가하는 **시점**이 머신마다 갈라지면 결국 같은 시드가 다른 시각에 적용될 수 있다.
+
+**증거 (현재 코드):**
+
+```70:79:Assets/Scripts/Traps/SpikeLaneField.cs
+    protected override IEnumerator TrapLoop()
+    {
+        var nm = NetworkManager.Singleton;
+        float scheduleStartTime;
+
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+        scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+```
+
+`SpikeTrap.TrapLoop()`(63~72줄)도 완전히 동일한 패턴.
+
+**해야 할 일 (Cause-Site Only — 이 두 `TrapLoop()`만 교체):**
+
+`WindTrap.TrapLoop()`(수정 완료본, `Assets/Scripts/Traps/WindTrap.cs`)의 앵커 결정 블록을 그대로 이식:
+
+```csharp
+if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
+{
+    scheduleStartTime = (float)StageNetworkState.Instance.PhaseStartServerTime + initialDelay;
+    while (nm != null && (float)nm.ServerTime.Time < scheduleStartTime)
+        yield return null;
+}
+else
+{
+    if (initialDelay > 0f)
+        yield return new WaitForSeconds(initialDelay);
+    scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+}
+```
+
+- `SpikeLaneField`/`SpikeTrap` 둘 다 `scheduleStartTime`이 지역 변수(필드 아님)이므로 그대로 대입만 바꾸면 됨 — `WindTrap`처럼 필드로 승격할 필요 없음(다른 곳에서 재사용 안 함).
+- **손대지 말 것:** `OnTrapTrigger()`의 시드 로직(`fireCount`/`NetworkSessionData.Seed`)은 이미 정상 — 건드리지 않는다. `TrapBase.cs`, `SpikeLane.cs`도 건드리지 않는다.
+- 위 표(§1)의 "실제 구현은 아님" 메모도 수정 완료 후 갱신할 것.
+
+**테스트:** ParrelSync 2인, `T.Stage3`/`T.Boss`에서 여러 사이클 반복 — 매 발동마다 Host/Client 동시에 같은 레인이 올라오는지, 시간이 지나도 드리프트 없는지 확인 (§3 체크박스와 동일).
 
 ---
 

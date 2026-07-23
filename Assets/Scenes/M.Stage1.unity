@@ -1363,7 +1363,7 @@ GameObject:
   - component: {fileID: 656245845}
   - component: {fileID: 656245846}
   m_Layer: 0
-  m_Name: Objective
+  m_Name: Objective60
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3156,13 +3156,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 1472692729}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a27f1254d90bb004b88ab7227080e81d, type: 3}
+  m_Script: {fileID: 11500000, guid: c0c8d35c0d4b42f4c97943e76a25f6ba, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DialogueGateController
+  m_EditorClassIdentifier: Assembly-CSharp::PhaseDialogueGate
   ShowTopMostFoldoutHeaderGroup: 1
   dialogueUI: {fileID: 1293583615}
-  stageStartGate: {fileID: 134850434}
-  showOnceKey: M.Stage1
+  showOnceKey: Stage1
+  OnAllReady:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 134850434}
+        m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
+        m_MethodName: Arm
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1536511839 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5024605831709525535, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
@@ -3744,7 +3758,19 @@ MonoBehaviour:
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 1472692733}
+          m_TargetAssemblyTypeName: PhaseDialogueGate, Assembly-CSharp
+          m_MethodName: Begin
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []

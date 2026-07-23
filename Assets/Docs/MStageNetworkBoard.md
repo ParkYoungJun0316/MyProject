@@ -16,7 +16,57 @@
 **다음 세션 시작점 (바로 이어서 할 일 — 순서대로):**
 
 1. **`GridBWTileChallenge.cs` / `GridColorChallenge.cs` / `SequenceRingMinigame.cs` ParrelSync 2인 검증** — ColorTile과 동일 체크리스트: 동일 라운드/스텝 위치·배치, 동일 성공·실패 판정, 개인 데미지 동기화, 라운드·스텝 반복 진행(다음 라운드/스텝으로 정상 이행) 확인. SequenceRing은 추가로: (a) 어느 플레이어가 눌러도 다른 클라이언트에서 동일하게 스텝 진행되는지, (b) 남은 시간 표시가 오답 페널티 포함해서 양쪽 화면에 거의 동시에 반영되는지(0.1초 브로드캐스트 주기) 확인
-2. **Floor 마이그레이션** (합의된 설계, 아직 미착수): `Floormanager.cs`를 `NetworkBehaviour`(자체 NetworkObject) → 일반 `MonoBehaviour` + `StageNetworkState` 시드 재생 구독으로 전환. 챌린지 슬롯(`_challengeStep`)과는 별도로 `StageNetworkState`에 Floor 전용 시드 슬롯 신설 필요(스테이지당 챌린지와 Floor가 동시 진행되는 경우는 없음이 확인됨 — 2026-07-22 — 이지만 의미상 별도 슬롯 유지 권장). 완료 후 각 `M.Stage*.unity`/`T.*.unity`의 Floor GameObject에서 `NetworkObject` 컴포넌트 제거는 **사용자가 에디터에서 직접** (에이전트 씬 파일 쓰기 금지 — `unity-mcp-readonly.mdc`)
+2. **Floor 마이그레이션** — 상세 설계는 아래 `### Floor 마이그레이션 상세 설계` 참고 (2026-07-24 확정, 아직 미착수)
+
+### Floor 마이그레이션 상세 설계 (2026-07-24 확정 — 다음 세션에서 바로 구현)
+
+**요약**: `Floormanager.cs`를 `NetworkBehaviour`(자체 `NetworkObject`) → 일반 `MonoBehaviour` + `StageNetworkState`의 새 전용 NV 슬롯 구독으로 전환. 기존 `SyncTilesClientRpc(byte[] states)`(타일 상태 배열 전체를 매번 전송)를 폐기하고, **시드 하나만 전송해 전 머신이 로컬로 동일 결과를 재생성**하는 §11B Generate 패턴을 재사용한다 (Floor는 성공/실패 판정이 없는 "무한 반복 Generate"라 ④Judge/⑤Resolve는 필요 없음 — OX/GridBW보다 단순).
+
+**왜 별도 슬롯인가**: `_challengeStep`(챌린지 공유 슬롯)과 `_stageStartServerTime`(StageStartGate 전용, 다른 시스템과 공유 금지 — 2026-07-21 오공유 버그 참고)에 이미 있는 "슬롯 배타성" 원칙과 동일하게, Floor도 **자기 전용 NV 슬롯**을 새로 만든다. 챌린지와 Floor가 씬에서 동시에 도는 경우는 없음이 확인됐지만(2026-07-22), 의미가 다른 시스템이라 슬롯을 공유하면 나중에 또 오공유 버그가 재발할 수 있음.
+
+**1. `StageNetworkState.cs`에 추가**
+```csharp
+public struct FloorRollState : INetworkSerializable, IEquatable<FloorRollState>
+{
+    public int   seed;
+    public float keepBWRatio; // Host가 그 순간의 Phase 값을 같이 실어보냄 — Client는 Phase를 독자 계산하지 않음
+    // NetworkSerialize/Equals는 ChallengeStepState 구현 그대로 복제
+}
+
+private readonly NetworkVariable<FloorRollState> _floorRoll = new(
+    default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+public event Action<FloorRollState> OnFloorRollChanged;
+
+// OnNetworkSpawn에 구독 추가: _floorRoll.OnValueChanged += (_, next) => OnFloorRollChanged?.Invoke(next);
+// OnNetworkDespawn에 구독 해제 추가
+
+/// <summary>Host 전용: 새 타일 롤 배포. keepBWRatio를 실어보내 Client가 Phase를 독자 계산할 필요가 없다.</summary>
+public void FloorRoll(int seed, float keepBWRatio)
+{
+    if (!IsServer) return;
+    _floorRoll.Value = new FloorRollState { seed = seed, keepBWRatio = keepBWRatio };
+}
+```
+- `keepBWRatio`를 NV에 같이 실어보내는 이유: Client가 Phase 진행(`triggerTime`/`changeInterval`)을 독자적으로 계산하게 만들면 OX처럼 ServerTime 역산이 필요해져 복잡해짐 — Host가 이미 계산한 값을 그대로 실어보내는 쪽이 훨씬 단순하고 안전(SequenceRing의 시간 동기화에서 얻은 교훈과 같은 결론).
+- `stepIndex`/`stepStartServerTime` 같은 필드는 Floor에 불필요 — 롤마다 `seed` 값 자체가 바뀌므로 `OnValueChanged`만으로 "새 롤이 왔다"는 신호가 충분하다(중간 롤을 하나 놓쳐도 최종 상태로 스냅되니 무해 — 챌린지처럼 스텝을 건너뛰면 안 되는 판정형이 아니라서 인덱스 불필요).
+
+**2. `Floormanager.cs` 전면 개조**
+- `NetworkBehaviour` → `MonoBehaviour`로 변경, 클래스명은 유지(`FloorManager`) — `StageManager.RegisterFloor(FloorManager)`가 참조하는 타입이라 이름 바꾸면 안 됨
+- `IsServer`(NetworkBehaviour 상속 멤버) 대신 다른 전환 파일들과 동일한 로컬 `IsClientOnly()` 헬퍼 추가(`NetworkManager.Singleton` 기반)
+- `Start()`에서 `StageNetworkState.Instance` 캐시 + `OnFloorRollChanged` 구독, `OnDestroy()`에서 해제 (OX/GridBW/SequenceRing과 동일 전제 — `StageNetworkState.Awake()`가 먼저 실행됨)
+- `StartFloor()`: Host 가드(`IsClientOnly()`) 추가만, 나머지(`_isRunning`/`_elapsedTime`/`nextTime`/`currentPhaseIndex` 리셋)는 그대로
+- `Update()`: `if (!_isRunning) return;` 다음에 `if (IsClientOnly()) return;` 추가 — Client는 타이머 진행을 전혀 하지 않음(§11A 이중 계산 금지, SequenceRing에서 이미 겪은 것과 동일 원칙). `CheckPhase()`는 그대로 Host에서만 실행
+- `RandomizeTiles()`를 `RollTiles()`로 교체: 로컬로 `tiles[i].SetType()` 직접 호출하는 대신 새 시드 하나 뽑아서 `_netState.FloorRoll(seed, keepBWRatio)` 호출만 하고 끝 (`byte[] states` 배열·`SyncTilesClientRpc` 전부 삭제)
+- 신규 `HandleFloorRollChanged(FloorRollState state)` — Host/Client 공통 코드로 실제 타일 색 계산: `var rng = new System.Random(state.seed);` 로 `tiles[]`를 순회하며 원래 `RandomizeTiles()`에 있던 `Random.value < keepBWRatio` 로직을 `rng.NextDouble() < state.keepBWRatio`로 바꿔 그대로 적용 (전역 `UnityEngine.Random` 오염 없음 — OX `RegenerateQuestionOrder`와 동일 원칙)
+- `OnEnable()`/`OnDisable()`/`CheckPhase()`/`FloorPhase` 구조체는 변경 없음
+
+**3. 씬 작업 (에이전트는 씬 파일 쓰기 금지 — `unity-mcp-readonly.mdc`, 사용자가 에디터에서 직접)**
+- `FloorManager`가 있는 씬: `M.Stage1`~`M.Stage5`, `T.Stage5` (2026-07-24 grep 확인 — `T.Stage2`/`T.Stage3`/`T.Stage4`/`T.Boss`/`M.Boss`에는 없음, 코드 수정 전 실제 씬에서 재확인 권장)
+- 위 각 씬의 Floor GameObject에서 `NetworkObject` 컴포넌트 제거
+- `NetworkManager`의 Network Prefabs 리스트에 Floor 프리팹이 등록되어 있다면(씬 배치形이라 등록 안 되어 있을 가능성이 높음, 확인 필요) 같이 제거
+
+**4. 검증**: ParrelSync 2인으로 Host/Client 화면에서 타일 롤 패턴(Black/White/Reveal 배치)이 동일한지, Phase 전환(간격·비율 변화)이 양쪽에서 같은 타이밍에 반영되는지 확인.
 
 ### `SequenceRingMinigame` 반영 내용 (코드, 2026-07-22)
 

@@ -172,6 +172,7 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
             _netState.OnChallengeOutcome        += HandleChallengeOutcome;
             _netState.OnChallengeTimeSync       += HandleChallengeTimeSync;
+            _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
         }
     }
 
@@ -192,6 +193,7 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState.OnChallengeClearedChanged -= HandleChallengeClearedChanged;
             _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
             _netState.OnChallengeTimeSync       -= HandleChallengeTimeSync;
+            _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
         if (Instance == this) Instance = null;
     }
@@ -329,6 +331,14 @@ public class SequenceRingMinigame : MonoBehaviour
         _timeRemaining = remaining;
         BroadcastTime();
     }
+
+    /// <summary>
+    /// §11 사망 문 진입 확정(StageNetworkState.OnDeathReloadStarted) — Host/Client 공통 구독.
+    /// 사망은 이 미니게임의 판정(TrySubmit/TickTimer)이 절대 감지할 수 없는 챌린지 축 밖의 사건이라,
+    /// 여기서 즉시 Idle로 되돌려 Update()의 Playing 가드가 다음 프레임부터 TickTimer/TickDangerStep을
+    /// 아예 실행하지 않게 만든다 — 이게 RpcException(Despawn된 _netState에 뒤늦은 RPC)의 근본 차단.
+    /// </summary>
+    void HandleDeathReloadStarted() => StopMinigame();
 
     /// <summary>네트워크 연동용: 플레이어 색으로 입력 제출. Host 전용 호출 경로(§11B ④Judge) — Client는
     /// SubmitColorInput()을 통해 ServerRpc로만 도달한다.</summary>

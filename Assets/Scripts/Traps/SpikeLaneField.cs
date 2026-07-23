@@ -64,19 +64,31 @@ public class SpikeLaneField : TrapBase
             lanes = GetComponentsInChildren<SpikeLane>(true);
     }
 
-    // 이 트랩이 실제로 Activate()된(방/Phase가 시작된) 순간을 ServerTime 기준으로 앵커링.
-    // [버그 수정 2026-07-21] 예전엔 StageStartServerTime(스테이지 전체 시작 시각)에 고정했는데,
-    // 앞 Phase(퀴즈 등 길이가 가변적인 구간)가 길어지면 이 방이 열릴 때 스케줄이 이미 과거가 되어
-    // 한 번도 발동하지 않는 버그가 있었다. ArrowTrap/DropTrap/WindTrap과 동일한 수정.
+    // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
+    // [버그 수정 2026-07-24] ArrowTrap/DropTrap/WindTrap과 동일한 이유로 PhaseStartServerTime
+    // (Host가 이 Phase 진입 직전에 기록한 절대 ServerTime)을 앵커로 사용 — Host/Client가 동일한
+    // 절대 시각을 기준으로 삼아, Client의 Activate() 호출이 Phase NV 전파 지연만큼 늦게 와도
+    // 스케줄이 밀리지 않는다. StageStartServerTime이 아니라 별도 슬롯인 PhaseStartServerTime을
+    // 쓴다 — StageStartGate가 그 값을 "이 방 게이트 완료" 1회성 신호로 배타적으로 쓰므로 같이
+    // 쓰면 안 된다. StageNetworkState가 없는 씬(테스트 등)에서는 로컬 Activate() 시각으로 폴백.
     // 아래 OnTrapTrigger()의 시드 동기화(Host/Client 발동 횟수 일치)는 이 앵커 교체와 무관하게 유지됨.
     protected override IEnumerator TrapLoop()
     {
         var nm = NetworkManager.Singleton;
         float scheduleStartTime;
 
-        if (initialDelay > 0f)
-            yield return new WaitForSeconds(initialDelay);
-        scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+        if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
+        {
+            scheduleStartTime = (float)StageNetworkState.Instance.PhaseStartServerTime + initialDelay;
+            while (nm != null && (float)nm.ServerTime.Time < scheduleStartTime)
+                yield return null;
+        }
+        else
+        {
+            if (initialDelay > 0f)
+                yield return new WaitForSeconds(initialDelay);
+            scheduleStartTime = nm != null ? (float)nm.ServerTime.Time : Time.time;
+        }
 
         int cycle = 0;
         while (isRunning)

@@ -181,6 +181,7 @@ public class OXQuizManager : MonoBehaviour
             _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
             _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
             _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+            _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
         }
     }
 
@@ -191,6 +192,7 @@ public class OXQuizManager : MonoBehaviour
             _netState.OnChallengeStepChanged    -= HandleChallengeStepChanged;
             _netState.OnChallengeClearedChanged -= HandleChallengeClearedChanged;
             _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
+            _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
     }
 
@@ -418,6 +420,18 @@ public class OXQuizManager : MonoBehaviour
     void HandleChallengeClearedChanged(bool cleared)
     {
         if (cleared) OnAllCleared?.Invoke();
+    }
+
+    /// <summary>
+    /// §11 사망 문 진입 확정(StageNetworkState.OnDeathReloadStarted) — Host/Client 공통 구독.
+    /// 사망은 이 퀴즈의 판정(JudgeByPosition)이 감지할 수 없는 챌린지 축 밖의 사건이라, 여기서 즉시
+    /// 타이머 코루틴을 끊어 TimerRoutine이 뒤이어 Despawn된 _netState에 NotifyChallengeOutcomeClientRpc를
+    /// 쏘는 것을 원천 차단한다 (SequenceRingMinigame.HandleDeathReloadStarted와 동일 원칙).
+    /// </summary>
+    void HandleDeathReloadStarted()
+    {
+        _quizActive = false;
+        StopTimer();
     }
 
     // ── 유틸 ──────────────────────────────────────────────────────

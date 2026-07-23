@@ -119,6 +119,7 @@ public class ColorTileChallenge : MonoBehaviour
         {
             _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
             _netState.OnChallengeOutcome     += HandleChallengeOutcome;
+            _netState.OnDeathReloadStarted   += HandleDeathReloadStarted;
         }
 
         if (autoStart && !IsClientOnly() && activateAtSeconds != null && activateAtSeconds.Length > 0)
@@ -131,6 +132,7 @@ public class ColorTileChallenge : MonoBehaviour
         {
             _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
             _netState.OnChallengeOutcome     -= HandleChallengeOutcome;
+            _netState.OnDeathReloadStarted   -= HandleDeathReloadStarted;
         }
     }
 
@@ -330,6 +332,18 @@ public class ColorTileChallenge : MonoBehaviour
         _judgeCoroutine = null;
         HandleChallengeOutcome(success);
         _netState?.NotifyChallengeOutcomeClientRpc(success);
+    }
+
+    /// <summary>
+    /// §11 사망 문 진입 확정(StageNetworkState.OnDeathReloadStarted) — Host/Client 공통 구독.
+    /// 사망은 이 챌린지의 판정(JudgeRoutine)이 감지할 수 없는 챌린지 축 밖의 사건이라, 여기서 즉시
+    /// 판정 코루틴을 끊어 뒤이어 Despawn된 _netState에 NotifyChallengeOutcomeClientRpc를 쏘는 것을
+    /// 원천 차단한다 (SequenceRingMinigame.HandleDeathReloadStarted와 동일 원칙).
+    /// </summary>
+    void HandleDeathReloadStarted()
+    {
+        if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
+        _isRunning = false;
     }
 
     // ── 결과 반영 (전 머신 공통 — Host는 직접 호출, Client는 ClientRpc로 수신) ──
