@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class FloorManager : NetworkBehaviour
+public class FloorManager : MonoBehaviour
 {
     [System.Serializable]
     public struct FloorPhase
@@ -30,6 +30,8 @@ public class FloorManager : NetworkBehaviour
     float _elapsedTime;
     bool  _hasStageManager;
 
+    StageNetworkState _netState;
+
     void Awake()
     {
         tiles = GetComponentsInChildren<FloorTile>(true);
@@ -40,6 +42,21 @@ public class FloorManager : NetworkBehaviour
             _hasStageManager = true;
             sm.RegisterFloor(this);
         }
+    }
+
+    void Start()
+    {
+        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
+        // Unity 전역 Awake→Start 순서로 보장받음 (OX/GridBW 등 다른 축과 동일 전제).
+        _netState = StageNetworkState.Instance;
+        if (_netState != null)
+            _netState.OnFloorRollChanged += HandleFloorRollChanged;
+    }
+
+    void OnDestroy()
+    {
+        if (_netState != null)
+            _netState.OnFloorRollChanged -= HandleFloorRollChanged;
     }
 
     void OnEnable()
@@ -54,11 +71,17 @@ public class FloorManager : NetworkBehaviour
         _isRunning = false;
     }
 
-    /// <summary>StageManager.StartStage()에서 호출. 타이머를 0부터 시작.</summary>
+    /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급.</summary>
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
+    }
+
+    /// <summary>StageManager.StartStage()에서 호출. 타이머를 0부터 시작. Host 레인만 진행.</summary>
     public void StartFloor()
     {
-        // Client는 타일을 SyncTilesClientRpc로만 수신 — 로컬 타이머 불필요
-        if (IsMultiplayer() && !IsServer) return;
+        if (IsClientOnly()) return;
 
         _isRunning        = true;
         _elapsedTime      = 0f;
@@ -70,8 +93,9 @@ public class FloorManager : NetworkBehaviour
     {
         if (!_isRunning) return;
 
-        // Client는 SyncTilesClientRpc로만 타일 상태를 수신 — 모든 로컬 연산 건너뜀
-        if (IsMultiplayer() && !IsServer) return;
+        // Client는 타이머 진행을 전혀 하지 않음 — 타일 결과는 HandleFloorRollChanged로만
+        // 반영된다(§11A 이중 계산 금지, SequenceRing에서 이미 겪은 것과 동일 원칙).
+        if (IsClientOnly()) return;
 
         _elapsedTime += Time.deltaTime;
         CheckPhase();
@@ -79,7 +103,7 @@ public class FloorManager : NetworkBehaviour
         if (Time.time < nextTime) return;
         nextTime = Time.time + changeInterval;
 
-        RandomizeTiles();
+        RollTiles();
     }
 
     void CheckPhase()
@@ -95,40 +119,35 @@ public class FloorManager : NetworkBehaviour
         }
     }
 
-    void RandomizeTiles()
+    /// <summary>
+    /// Host 전용: 새 시드를 뽑아 StageNetworkState에 배포만 한다(로컬 적용 없음).
+    /// 실제 타일 색 계산은 전 머신 공통인 HandleFloorRollChanged가 담당 —
+    /// Host도 자기 자신의 NV 콜백을 통해 동일하게 적용된다.
+    /// </summary>
+    void RollTiles()
     {
         if (tiles == null || tiles.Length == 0) return;
 
-        byte[] states = new byte[tiles.Length];
-        for (int i = 0; i < tiles.Length; i++)
-        {
-            bool useBW = Random.value < keepBWRatio;
-            FloorTile.ColorType t = useBW
-                ? (Random.value < 0.5f ? FloorTile.ColorType.Black : FloorTile.ColorType.White)
-                : FloorTile.ColorType.Reveal;
-            tiles[i].SetType(t);
-            states[i] = (byte)t;
-        }
-
-        // 멀티 중일 때만 Client에 전파
-        if (IsMultiplayer())
-            SyncTilesClientRpc(states);
+        int seed = Random.Range(int.MinValue, int.MaxValue);
+        _netState?.FloorRoll(seed, keepBWRatio);
     }
 
     /// <summary>
-    /// Host가 결정한 타일 상태 배열을 Client에 전파.
-    /// Host(IsServer)는 RandomizeTiles()에서 이미 적용했으므로 건너뜀.
+    /// Host/Client 공통: 시드로 로컬 재생성. 전역 UnityEngine.Random을 건드리지 않도록
+    /// System.Random만 사용(OX RegenerateQuestionOrder와 동일 원칙).
     /// </summary>
-    [ClientRpc]
-    void SyncTilesClientRpc(byte[] states)
+    void HandleFloorRollChanged(FloorRollState state)
     {
-        if (IsServer) return;
+        if (tiles == null || tiles.Length == 0) return;
 
-        for (int i = 0; i < tiles.Length && i < states.Length; i++)
-            tiles[i].SetType((FloorTile.ColorType)states[i]);
+        var rng = new System.Random(state.seed);
+        for (int i = 0; i < tiles.Length; i++)
+        {
+            bool useBW = rng.NextDouble() < state.keepBWRatio;
+            FloorTile.ColorType t = useBW
+                ? (rng.NextDouble() < 0.5 ? FloorTile.ColorType.Black : FloorTile.ColorType.White)
+                : FloorTile.ColorType.Reveal;
+            tiles[i].SetType(t);
+        }
     }
-
-    /// <summary>NGO가 활성화된 멀티플레이 세션인지 확인. 솔로(오프라인) 모드 구분용.</summary>
-    bool IsMultiplayer() =>
-        NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
 }

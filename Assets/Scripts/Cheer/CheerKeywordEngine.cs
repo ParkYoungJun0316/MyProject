@@ -14,7 +14,9 @@ using Vosk;
 ///
 /// [마이크 이중 오픈 금지]
 /// 멀티: DissonanceComms.SubscribeToRecordedAudio 로 Dissonance 스트림 탭.
-/// 솔로: Dissonance 가 오디오를 주지 않을 때 직접 Microphone.Start fallback.
+/// 솔로(ActivePlayerCount==1): Dissonance 가 오디오를 주지 않을 때만 직접 Microphone.Start fallback.
+/// 멀티에서는 Dissonance가 늦어도 직접 마이크를 열지 않는다 — 동시 오픈 시 메인 스톨로
+/// NGO 스폰 Deferred/유실이 발생한 전례가 있음(CheerAndTutorialDesign.md §4.3, 재발 금지).
 ///
 /// [Owner-only]
 /// NetworkPlayerSetup.SetupOwner → enabled = true
@@ -164,7 +166,19 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
         if (_workerNextModel == null)
         {
-            Debug.LogWarning($"[CheerKeywordEngine] Dissonance 오디오 미수신 ({DissonanceWaitSec}s 초과) → 직접 마이크 fallback");
+            // 마이크 이중 오픈 금지(과거 사고: CheerAndTutorialDesign.md §4.3) — 솔로(1인)일 때만
+            // 직접 마이크 fallback 허용. 멀티(2인 이상)는 Dissonance가 늦어도 직접 마이크를 열지
+            // 않고 구독만 유지한다 — Dissonance + Microphone.Start 동시 오픈 → 메인 스톨 → NGO
+            // 스폰 Deferred/유실 재발 방지.
+            bool isSolo = GameSession.Instance != null && GameSession.Instance.ActivePlayerCount == 1;
+
+            if (!isSolo)
+            {
+                Debug.LogWarning($"[CheerKeywordEngine] Dissonance 오디오 미수신 ({DissonanceWaitSec}s 초과) — 멀티라 마이크 직접 오픈 보류. Dissonance 구독 유지, 늦게라도 오디오 오면 정상 처리됨.");
+                yield break;
+            }
+
+            Debug.LogWarning($"[CheerKeywordEngine] Dissonance 오디오 미수신 ({DissonanceWaitSec}s 초과) → 직접 마이크 fallback (솔로)");
             comms.UnsubscribeFromRecordedAudio(this);
             _subscribed = false;
             StartSoloMic();

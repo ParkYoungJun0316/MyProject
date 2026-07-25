@@ -1267,7 +1267,7 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 
 > **한 줄:** Trigger(Host 감지) → RoundStart(Host가 시드 NV 배포) → Generate(전 머신 로컬 재생성) → Judge(Host 레인만) → Resolve(Complete/Fail → §11A ③Progress로 반환).
 > 이 축은 §11A(스테이지 진행 축) **"③ Progress"** 안에서, C 패턴(챌린지: OX/ColorTile/GridColor/SequenceRing 등)이 시드·라운드를 실제로 어떻게 동기화하는지 정의한다. §9.1 패턴 C("네트워크 진실 = 시드·라운드·정답·타이머")의 구현 계약.
-> **최초 잠금·검증 완료:** `OXQuizManager`(`M.Stage2`) — ParrelSync 2인 재테스트 통과. 이후 챌린지(ColorTile/GridColor/SequenceRing)는 새 설계를 발명하지 않고 이 축을 그대로 재사용한다(§9.1.3 "OX에서 먼저 잠그고 복제" 원칙 실행 완료). 보드 원문: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
+> **최초 잠금·검증 완료:** `OXQuizManager`(`M.Stage2`) — ParrelSync 2인 재테스트 통과. 이후 챌린지(ColorTile/GridBW/GridColor/SequenceRing)는 새 설계를 발명하지 않고 이 축을 그대로 재사용한다(§9.1.3 "OX에서 먼저 잠그고 복제" 원칙 실행 완료). **5개 챌린지 전부 ParrelSync 2인 검증 완료(2026-07-25)** — §11B.7 참고. 보드 원문: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
 
 ### 11B.0 축 (5칸 · 일방통행)
 
@@ -1320,9 +1320,9 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 |--------|----------|------------------------------|--------|------|
 | **OX Quiz** | 배리어 진입 트리거 | `RegenerateQuestionOrder()`(`System.Random(seed)`) | `JudgeByPosition()`(물리 오버랩) | **잠김·검증 완료** (`OXQuizManager`, `M.Stage2`) |
 | ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | **완료 — ParrelSync 2인 검증 통과(2026-07-22, `M.Stage3`)**. 동일 위치/색, 성공·실패 동시, 실패 시 벽 전진 동기화 확인 |
-| GridBW | `Activate()` 호출 시점 | `PickRandomSafeTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **코드 반영 완료(2026-07-22, `M.Boss`/`M.Stage5`)** — stepIndex=라운드 번호, 데미지 버그(`ReceiveDamage` 직접 호출) 수정 포함. ParrelSync 2인 검증 대기 |
-| GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **코드 반영 완료(2026-07-22, `M.Stage5`)** — 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19). ParrelSync 2인 검증 대기 |
-| SequenceRing | `StartMinigame()` 호출 시점 | `GenerateSteps()` | `TrySubmit()`/`TrySubmitAnyKey()` | **코드 반영 완료(2026-07-22, `M.Stage4`/`M.Boss`)** — §11B.1 `SubmitStepServerRpc`/`SubmitAnyKeyStepServerRpc` 신설 포함. 남은 시간은 페널티로 ServerTime 역산이 불가능해 신규 `SyncChallengeTimeClientRpc`로 Host가 주기 브로드캐스트(§11B.2 확장). ParrelSync 2인 검증 대기 |
+| GridBW | `Activate()` 호출 시점 | `PickRandomSafeTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Boss`/`M.Stage5`)**. stepIndex=라운드 번호, 데미지 버그(`ReceiveDamage` 직접 호출) 수정 포함. 동일 라운드 배치·판정·데미지 동기화, 라운드 반복 진행 확인 |
+| GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Stage5`)**. 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19). 동일 라운드 배치·판정·데미지 동기화 확인 |
+| SequenceRing | `StartMinigame()` 호출 시점 | `GenerateSteps()` | `TrySubmit()`/`TrySubmitAnyKey()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Stage4`/`M.Boss`)**. §11B.1 `SubmitStepServerRpc`/`SubmitAnyKeyStepServerRpc` 포함 — 어느 플레이어가 눌러도 양쪽에 동일 반영, 남은 시간(오답 페널티 포함) 동기화 확인 |
 
 ### 11B.4 금지 (평행 축 — 발견 즉시 삭제)
 
@@ -1351,6 +1351,23 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 1. Trigger→클리어 1회: Host/Client 동일 문제 순서·동일 판정 확인
 2. Client만의 데미지/셔플/`Complete()` 없음(`IsServer` 가드 누락 그레핑으로 확인)
 3. 결과: **통과** — 이 절(§11B)로 승급. `MStageNetworkBoard.md` 포커스는 `M.Stage3` ColorTile로 이동(§11B.3 매핑표대로 동일 축 복제)
+
+### 11B.7 검증 완료 — GridBW/GridColor/SequenceRing (ParrelSync 2인, 2026-07-25)
+
+§11B.3 매핑표대로 OX 축을 그대로 복제한 나머지 3개 챌린지(ColorTile은 2026-07-22에 이미 통과)까지 ParrelSync 2인 검증이 전부 통과했다. **이로써 §9.1 패턴 C(챌린지 축) 대상 5개 챌린지(OX/ColorTile/GridBW/GridColor/SequenceRing) 전부 검증 완료** — §11B는 이 5개 실제 구현으로 뒷받침되는 SSOT로 확정된다.
+
+- GridBW/GridColor: 동일 라운드 배치(안전 칸·색 타일), 동일 성공/실패 판정, 개인 데미지 동기화, 라운드 반복 진행(다음 라운드로 정상 이행) 확인
+- SequenceRing: 위 항목 + (a) 어느 플레이어가 눌러도 다른 클라이언트에서 동일하게 스텝 진행, (b) 오답 페널티 포함 남은 시간 표시가 양쪽 화면에 거의 동시 반영(§11B.1/§11B.2 `SyncChallengeTimeClientRpc`) 확인
+- 남은 이슈 없음 — §11B.4 금지 목록 위반 없음 확인됨
+
+### 11B.8 Floor — Generate-only 변형 (§11B 축 재사용, 코드+검증 완료 2026-07-25)
+
+`FloorManager`(`M.Stage1`~`M.Stage5`, `T.Stage5`)는 성공/실패 판정이 없는 "무한 반복 Generate"라 §11B.0의 ④Judge/⑤Resolve 없이 **①Trigger 없음 + ②RoundStart(Seed) + ③Generate만 반복**하는 축 #4의 축소 변형이다. 새 설계가 아니라 §11B.0 ②③칸만 재사용한 것 — 별도 항목 번호(축 #5 등)를 붙이지 않는다.
+
+- `NetworkBehaviour`(자체 `NetworkObject`) → `MonoBehaviour` + `StageNetworkState`의 전용 NV 슬롯(`_floorRoll : NetworkVariable<FloorRollState>`, `_challengeStep`과 별도 슬롯)으로 전환. 기존 `SyncTilesClientRpc(byte[] states)`(타일 상태 배열 전체 매 전송) 폐기 → 시드 하나만 배포해 전 머신이 로컬로 동일 결과 재생성(§11B.0 ③Generate와 동일 원칙)
+- `keepBWRatio`를 시드와 함께 NV에 실어보내 Client가 Phase 진행(`triggerTime`/`changeInterval`)을 독자 계산하지 않게 함(SequenceRing 시간 동기화와 같은 결론)
+- **ParrelSync 2인 검증 통과(2026-07-25)**: Host/Client 화면에서 타일 롤 패턴(Black/White/Reveal 배치)과 Phase 전환(간격·비율 변화) 타이밍 동일 확인
+- 상세 반영 내용: [`MStageNetworkBoard.md`](MStageNetworkBoard.md) "Floor 마이그레이션 반영 내용"
 
 ---
 

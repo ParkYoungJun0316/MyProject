@@ -173,6 +173,13 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState.OnChallengeOutcome        += HandleChallengeOutcome;
             _netState.OnChallengeTimeSync       += HandleChallengeTimeSync;
             _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
+
+            // [버그 수정 2026-07-25] late-subscribe catch-up: 이 Phase 컨테이너가 활성화되는 시점이
+            // Host의 ChallengeStepBegin NV 전파보다 늦으면(구독 전에 이미 지나간 값 변경은 C# 이벤트라
+            // 재생되지 않음) 스텝 변경 자체를 영구히 놓친다. 구독 직후 현재 NV 값으로 1회 강제 재실행해
+            // "지금 막 구독한 쪽도 항상 최신 상태를 본다"를 보장 — 새 경로가 아니라 같은 핸들러 재사용.
+            if (_netState.ChallengeStepIndex >= 0)
+                HandleChallengeStepChanged(_netState.ChallengeStepIndex);
         }
     }
 

@@ -77,8 +77,18 @@ public class SequenceRingObjective : StageObjective
         minigame.OnMinigameSuccess.AddListener(HandleSuccess);
         minigame.OnMinigameFailed.AddListener(HandleFail);
 
-        minigame.ResetMinigame();
-        minigame.StartMinigame();
+        // [버그 수정 2026-07-25] StartMinigame()은 이미 IsClientOnly()면 no-op이지만
+        // ResetMinigame()은 그 가드가 없어 Client에서도 그대로 _state=Idle을 썼다.
+        // Client의 로컬 StartStage()(StageStartGate NV 폴링으로 트리거)가 이 Begin()을
+        // 부르는 시점은 Host의 ChallengeStepBegin(0) NV 도착과 같은 프레임일 수 있어(EarlyUpdate
+        // vs Update 단계 차이), 이미 HandleChallengeStepChanged가 그려놓은 Playing을 바로
+        // 덮어써 버렸다(§11B ①Trigger를 OX/ColorTile처럼 Host 레인에서만 실행 — Client의
+        // 직접 호출은 무시).
+        if (!IsClientOnly())
+        {
+            minigame.ResetMinigame();
+            minigame.StartMinigame();
+        }
 
         OnProgressChanged?.Invoke();
     }

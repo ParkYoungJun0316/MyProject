@@ -34,6 +34,34 @@ public struct ChallengeStepState : INetworkSerializable, IEquatable<ChallengeSte
 }
 
 /// <summary>
+/// Floor 타일 롤 상태(시드 + 그 순간의 keepBWRatio)를 하나로 묶은 값.
+/// [Floor 마이그레이션 — MStageNetworkBoard.md "Floor 마이그레이션 상세 설계"]
+/// Floor는 성공/실패 판정이 없는 "무한 반복 Generate"라 stepIndex/시작시간이 불필요하다 —
+/// 롤마다 seed 자체가 바뀌므로 OnValueChanged만으로 "새 롤이 왔다"는 신호가 충분하다
+/// (중간 롤을 하나 놓쳐도 최종 상태로 스냅되니 무해 — 판정형 챌린지와 달리 스텝을 건너뛰면 안 되는
+/// 제약이 없다). keepBWRatio를 같이 실어보내는 이유는 Client가 Phase 진행을 독자 계산하지
+/// 않게 하기 위함(SequenceRing 시간 동기화에서 얻은 교훈과 동일).
+/// </summary>
+public struct FloorRollState : INetworkSerializable, IEquatable<FloorRollState>
+{
+    public int   seed;
+    public float keepBWRatio;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref seed);
+        serializer.SerializeValue(ref keepBWRatio);
+    }
+
+    public bool Equals(FloorRollState other) =>
+        seed == other.seed &&
+        keepBWRatio.Equals(other.keepBWRatio);
+
+    public override bool Equals(object obj) => obj is FloorRollState other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(seed, keepBWRatio);
+}
+
+/// <summary>
 /// 스테이지 네트워크 상태 중앙 허브. NetworkBehaviour.
 /// M.Stage1 / T.Stage1 씬 내 NetworkObject GameObject에 부착.
 ///
@@ -112,6 +140,16 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── Floor 타일 롤 동기화 (Floor 전용 — 챌린지(_challengeStep)와 슬롯 공유 금지) ──
+    // [Floor 마이그레이션] 챌린지와 Floor가 씬에서 동시에 도는 경우는 없음이 확인됐지만,
+    // 의미가 다른 시스템이라 슬롯을 공유하면 나중에 오공유 버그가 재발할 수 있다
+    // (2026-07-21 PhaseManager 오공유 버그와 동일 이유로 별도 슬롯 유지).
+    private readonly NetworkVariable<FloorRollState> _floorRoll = new(
+        default,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     private bool _resetPending;
 
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
@@ -151,6 +189,9 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public event Action<float> OnChallengeTimeSync;
 
+    /// <summary>Floor 타일 롤(시드+keepBWRatio)이 바뀔 때 발동. 전 머신 공통 구독점 — Generate만 반복(Judge/Resolve 없음).</summary>
+    public event Action<FloorRollState> OnFloorRollChanged;
+
     /// <summary>
     /// §11 사망 문으로 재진입이 확정된 순간(Host 레인, NotifyPlayerDeathServerRpc 진입 시) 1회 발동.
     /// 각 챌린지 매니저(OXQuizManager/ColorTileChallenge/GridColorChallenge/GridBWTileChallenge/
@@ -176,6 +217,7 @@ public class StageNetworkState : NetworkBehaviour
         _currentPhase.OnValueChanged += OnPhaseChanged;
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _challengeCleared.OnValueChanged += OnChallengeClearedNvChanged;
+        _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
@@ -188,6 +230,7 @@ public class StageNetworkState : NetworkBehaviour
         _currentPhase.OnValueChanged -= OnPhaseChanged;
         _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
         _challengeCleared.OnValueChanged -= OnChallengeClearedNvChanged;
+        _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
         if (Instance == this) Instance = null;
     }
 
@@ -254,10 +297,11 @@ public class StageNetworkState : NetworkBehaviour
     /// 여기서는 순수 비주얼(경고 원 표시 + 채움 애니메이션)만 다룬다.
     /// </summary>
     [ClientRpc]
-    public void SyncDropWarnClientRpc(int trapId, Vector3 targetPos, float warnDuration, float fallDuration)
+    public void SyncDropWarnClientRpc(
+        int trapId, Vector3 targetPos, float warnDuration, float startY, float speed, Vector3 markerScale)
     {
         if (IsServer) return;
-        DropTrap.PlayWarnById(trapId, targetPos, warnDuration, fallDuration);
+        DropTrap.PlayWarnById(trapId, targetPos, warnDuration, startY, speed, markerScale);
     }
 
     // ── 생존 타이머 동기화 ───────────────────────────────────────
@@ -394,6 +438,22 @@ public class StageNetworkState : NetworkBehaviour
         if (IsServer) return;
         OnChallengeTimeSync?.Invoke(remaining);
     }
+
+    // ── Floor 타일 롤 동기화 (Floor 전용) ──────────────────────────
+
+    /// <summary>
+    /// Host: 새 타일 롤 배포. 시드 하나만 보내 전 머신이 로컬로 동일 결과를 재생성하게 한다
+    /// (byte[] 상태 배열 전체를 매번 보내던 기존 SyncTilesClientRpc 방식 폐기).
+    /// keepBWRatio를 같이 실어보내 Client가 Phase 진행을 독자 계산할 필요가 없게 한다.
+    /// Floor는 성공/실패 판정이 없으므로 Judge/Resolve 단계 없이 Generate만 반복한다.
+    /// </summary>
+    public void FloorRoll(int seed, float keepBWRatio)
+    {
+        if (!IsServer) return;
+        _floorRoll.Value = new FloorRollState { seed = seed, keepBWRatio = keepBWRatio };
+    }
+
+    void OnFloorRollChangedNv(FloorRollState prev, FloorRollState next) => OnFloorRollChanged?.Invoke(next);
 
     // ── 챌린지 입력 제출 (Client → Host, §11B.1) ───────────────────
 

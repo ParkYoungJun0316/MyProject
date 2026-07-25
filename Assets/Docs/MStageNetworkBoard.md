@@ -5,20 +5,35 @@
 > **빈 체크리스트 전용이 아님.** 큰 틀을 정하기 위한 작업 md.
 
 **현재 인게임 최우선:** M.Stage 네트워크 완료 (`NetworkDesign` §9.1).  
-**현재 보드 포커스:** `GridBWTileChallenge` / `GridColorChallenge` / `SequenceRingMinigame` **셋 다 코드 반영 완료(2026-07-22), ParrelSync 2인 검증 전부 대기.** 다음은 이 3개를 ColorTile과 동일한 체크리스트로 검증 → Floor 마이그레이션. **OX Quiz/ColorTile은 검증 통과 후 [`NetworkDesign.md`](NetworkDesign.md) §11B(챌린지 축 SSOT)로 승급 완료.** 이 보드의 §1(축 골격)·§2(OX 개별 잠금 규칙)는 이제 §11B가 SSOT이며, 아래 §1~§4는 **승급 완료 기록**으로만 남긴다 — 앞으로 축 골격 자체를 바꿀 일이 있으면 여기 말고 §11B를 고칠 것.
+**현재 보드 포커스:** `GridBWTileChallenge` / `GridColorChallenge` / `SequenceRingMinigame` / `Floor` **전부 코드 반영 + ParrelSync 2인 검증까지 완료 (2026-07-25).** OX/ColorTile(2026-07-21·22)에 이어 나머지 챌린지 4개도 전부 통과 → [`NetworkDesign.md`](NetworkDesign.md) §11B.7(챌린지)·§11B.8(Floor)로 승급 완료. **이 보드가 추적하던 M.Stage 네트워크 축 작업은 여기서 종료 — 다음 보드 포커스는 `M.Boss` (2026-07-26 확정, "다음 세션 시작점" 참고).** 이 보드의 §1(축 골격)·§2(OX 개별 잠금 규칙)는 §11B가 SSOT이며, 아래 §1~§4는 **승급 완료 기록**으로만 남긴다.
 
 ---
 
 ## 현재 상태 (다음 세션 시작점 — 여기부터 읽을 것)
 
-**요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트에서 문제 동기화 버그 1건 발견·수정 → **재테스트 통과 (2026-07-21) → `NetworkDesign.md` §11B로 승급 완료.** → `ColorTileChallenge` 동일 축 복제 코드 반영 (2026-07-22) → **ParrelSync 2인 재테스트 통과 (2026-07-22)**: 동일 스폰 위치/색, 성공·실패 동시 판정, 실패 시 벽 전진 동기화 전부 확인됨. → `GridBWTileChallenge`/`GridColorChallenge`/`SequenceRingMinigame` 동일 축 복제 코드 반영 (2026-07-22, 아래 상세) — **ParrelSync 2인 검증은 셋 다 아직 미실행.**
+**요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트에서 문제 동기화 버그 1건 발견·수정 → **재테스트 통과 (2026-07-21) → `NetworkDesign.md` §11B로 승급 완료.** → `ColorTileChallenge` 동일 축 복제 코드 반영 (2026-07-22) → **ParrelSync 2인 재테스트 통과 (2026-07-22)**: 동일 스폰 위치/색, 성공·실패 동시 판정, 실패 시 벽 전진 동기화 전부 확인됨. → `GridBWTileChallenge`/`GridColorChallenge`/`SequenceRingMinigame` 동일 축 복제 코드 반영 (2026-07-22, 아래 상세) → `Floor` 마이그레이션(`NetworkBehaviour`→`MonoBehaviour`, `SyncTilesClientRpc(byte[])` 폐기 → 시드 전용 슬롯) 코드 반영 (2026-07-25, 아래 `### Floor 마이그레이션 반영 내용` 참고) → **이 4개 전부 ParrelSync 2인 검증 통과 (2026-07-25)** → `NetworkDesign.md` §11B.7(챌린지 3개)·§11B.8(Floor)로 승급 완료. **OX/ColorTile/GridBW/GridColor/SequenceRing/Floor 전부 완료 — 이 보드가 추적하던 축 작업은 종료.**
 
-**다음 세션 시작점 (바로 이어서 할 일 — 순서대로):**
+**다음 세션 시작점:**
 
-1. **`GridBWTileChallenge.cs` / `GridColorChallenge.cs` / `SequenceRingMinigame.cs` ParrelSync 2인 검증** — ColorTile과 동일 체크리스트: 동일 라운드/스텝 위치·배치, 동일 성공·실패 판정, 개인 데미지 동기화, 라운드·스텝 반복 진행(다음 라운드/스텝으로 정상 이행) 확인. SequenceRing은 추가로: (a) 어느 플레이어가 눌러도 다른 클라이언트에서 동일하게 스텝 진행되는지, (b) 남은 시간 표시가 오답 페널티 포함해서 양쪽 화면에 거의 동시에 반영되는지(0.1초 브로드캐스트 주기) 확인
-2. **Floor 마이그레이션** — 상세 설계는 아래 `### Floor 마이그레이션 상세 설계` 참고 (2026-07-24 확정, 아직 미착수)
+**M.Stage 챌린지 축(OX/ColorTile/GridBW/GridColor/SequenceRing) + Floor 마이그레이션 — 전부 코드 반영 + ParrelSync 2인 검증 완료 (2026-07-25).** `NetworkDesign.md` §11B.7/§11B.8로 승급 완료. 이 보드가 잡고 있던 미확정 파이프라인은 전부 확정·승급됐으므로, **다음 보드 포커스는 `M.Boss` (2026-07-26 사용자 확정)** — Steam 페이지 개설 지연으로 Steamworks 대기, 그 공백에 오픈 코스(M1–5→M.Boss) 네트워크를 먼저 닫는다. T 라운드는 그다음.
 
-### Floor 마이그레이션 상세 설계 (2026-07-24 확정 — 다음 세션에서 바로 구현)
+### M.Boss 라운드 범위 (2026-07-26 확정)
+
+`M.Boss`의 SequenceRing/GridBW는 챌린지 축에서 이미 검증 완료 — 재작업 금지. 남은 것:
+
+1. **`BossFightObjective` (D — 보스 진행 축):** 현재 일반 MonoBehaviour + 로컬 카운터(`_phasesCleared`)·로컬 `phaseManager.AdvancePhase()` 호출 — Host 판정 + 상태 복제로 전환 필요. `BossHealthBarUI`는 표시 전용(이벤트 구독만)이라 UI 쪽 네트워크 코드는 불필요 (§11A 계약 그대로).
+2. **`DirectionalBarrier` / `PhaseSurviveChallenge`:** C 축(§11B) 복제인지 새 계약인지 판별 후 기존 파이프에 연결.
+3. **Drop / Wind:** 기존 M 패턴 확정분 — 보스 인스턴스 스모크만.
+4. **M 풀코스 ParrelSync 2인:** Stage1→…→Boss 연속 1회.
+
+### T 라운드 이월 체크리스트 (까먹지 말 것 — T 라운드 시작 시 여기부터)
+
+- [ ] **`T.Boss` 보스 objective UI 재확인:** `BossFightObjective`/`BossHealthBarUI`는 M.Boss와 **같은 클래스 공유** — M.Boss 라운드에서 코드 계약을 잠그면 코드 작업은 자동 커버. T.Boss에 남는 것은 **씬 인스턴스 확인만**: 인스펙터 이벤트 연결(`OnPhaseCleared`→`BossHealthBarUI`, 각 챌린지 `OnChallengeComplete`→`NotifyPhaseCleared`), `totalPhases`↔`PhaseManager.phases` 수 일치, ParrelSync 2인 검증.
+- [ ] `SpikeTrap`/`SpikeLaneField` 앵커 수정 후 실기 검증 (`TrapNetworkBoard.md` §5 — `T.Stage3`/`T.Boss`)
+- [ ] T 전용 E 패턴 (`WallMover`/`BoulderSpawner` 등 — `NetworkDesign.md` §9.1.3 그룹 2)
+- [ ] `T.Stage1` Must (패드·문·볼더 — `NetworkDesign.md` §9 표)
+
+### Floor 마이그레이션 상세 설계 (2026-07-24 확정 — **코드 반영 완료 2026-07-25**, 아래 `### Floor 마이그레이션 반영 내용` 참고)
 
 **요약**: `Floormanager.cs`를 `NetworkBehaviour`(자체 `NetworkObject`) → 일반 `MonoBehaviour` + `StageNetworkState`의 새 전용 NV 슬롯 구독으로 전환. 기존 `SyncTilesClientRpc(byte[] states)`(타일 상태 배열 전체를 매번 전송)를 폐기하고, **시드 하나만 전송해 전 머신이 로컬로 동일 결과를 재생성**하는 §11B Generate 패턴을 재사용한다 (Floor는 성공/실패 판정이 없는 "무한 반복 Generate"라 ④Judge/⑤Resolve는 필요 없음 — OX/GridBW보다 단순).
 
@@ -68,6 +83,15 @@ public void FloorRoll(int seed, float keepBWRatio)
 
 **4. 검증**: ParrelSync 2인으로 Host/Client 화면에서 타일 롤 패턴(Black/White/Reveal 배치)이 동일한지, Phase 전환(간격·비율 변화)이 양쪽에서 같은 타이밍에 반영되는지 확인.
 
+### Floor 마이그레이션 반영 내용 (코드, 2026-07-25)
+
+- `Assets/Scripts/Network/StageNetworkState.cs` — `FloorRollState` 구조체(`seed`+`keepBWRatio`, `ChallengeStepState`와 동일한 `INetworkSerializable`/`IEquatable` 패턴 복제) + `_floorRoll` NV 신설(`_challengeStep`과 **별도 슬롯** — 슬롯 배타성 원칙 유지) + `OnFloorRollChanged` 이벤트(`OnNetworkSpawn`/`OnNetworkDespawn` 구독·해제 포함) + Host 전용 `FloorRoll(int seed, float keepBWRatio)` 메서드 추가
+- `Assets/Scripts/Floormanager.cs` — `NetworkBehaviour` → `MonoBehaviour`로 전면 개조(클래스명 `FloorManager` 유지, `StageManager.RegisterFloor(FloorManager)` 참조 무영향). 다른 축 매니저와 동일한 `IsClientOnly()` 헬퍼 추가, `StartFloor()`/`Update()`에 Host 가드(Client는 타이머 진행 자체를 안 함). `RandomizeTiles()` → `RollTiles()`로 교체: 로컬 적용 없이 새 시드만 뽑아 `StageNetworkState.FloorRoll()` 호출. 신규 `HandleFloorRollChanged(FloorRollState)`가 Host/Client 공통으로 `System.Random(state.seed)` 기반 재생성(전역 `UnityEngine.Random` 오염 없음) — `SyncTilesClientRpc(byte[] states)`·`IsMultiplayer()` 전부 삭제
+- `Assets/Scripts/Stage/StageManager.cs` — 타입 참조만 있어 무수정 확인
+- Judge/Resolve 단계 없음(설계대로) — Floor는 성공/실패 판정이 없는 "무한 반복 Generate"라 시드 배포만으로 끝
+- 린트 확인 완료(에러 없음), Unity 콘솔 확인 결과 컴파일 에러 없음(`MouthBarrier`/`MouthTrap` 프리팹 경고는 기존 이슈로 무관)
+- **ParrelSync 2인 검증 통과 (2026-07-25):** 씬 작업(Floor GameObject `NetworkObject` 제거) 완료 후 Host/Client 화면에서 타일 롤 패턴(Black/White/Reveal 배치)·Phase 전환 타이밍 동일 확인. `NetworkDesign.md` §11B.8로 승급 완료
+
 ### `SequenceRingMinigame` 반영 내용 (코드, 2026-07-22)
 
 - `Activate()` 격의 `StartMinigame()`에 Host 가드, `SequenceRingMinigame.Instance` 싱글턴 신설(`StageNetworkState`의 새 ServerRpc가 Host에서 참조)
@@ -79,6 +103,7 @@ public void FloorRoll(int seed, float keepBWRatio)
 - **신규 추가**: 남은 시간이 오답 페널티 등 이벤트 기반으로 변하기 때문에(OX처럼 `ChallengeStepStartServerTime` 역산 불가) `StageNetworkState`에 `SyncChallengeTimeClientRpc(float)` + `OnChallengeTimeSync` 이벤트를 신설, Host가 0.1초 주기로 브로드캐스트(`SurviveTimeObjective.SyncSurvivalRemainingClientRpc`와 동일 패턴 재사용 — 이 사실을 명시적으로 알려드립니다, 보드에 사전 기재되지 않았던 항목)
 - `SequenceRingObjective.HandleSuccess()`/`HandleFail()`에 Host 가드 추가 — `Complete()`/`Fail()` 확정은 Host 레인에서만 (`KillAllPlayers()`의 `NetworkDamageUtil.ApplyInstantKill`은 이미 내부적으로 Server 가드가 있어 그대로 유지)
 - **범위 밖으로 남긴 것**: 오답(`OnWrongInput`) 시각 효과 자체는 아직 Client에 전파되지 않음(누른 사람 화면에만 즉시 보임, 다른 머신은 다음 상태 갱신 때까지 반영 안 됨) — 폴리싱 항목으로 남김, 필요하면 추후 별도 요청
+- **ParrelSync 2인 검증 통과 (2026-07-25)**: 어느 플레이어가 눌러도 다른 클라이언트에서 동일하게 스텝 진행, 오답 페널티 포함 남은 시간 표시가 양쪽 화면에 거의 동시 반영 확인. `NetworkDesign.md` §11B.7로 승급 완료
 
 ### `GridBWTileChallenge` / `GridColorChallenge` 반영 내용 (코드, 2026-07-22)
 
@@ -89,6 +114,7 @@ public void FloorRoll(int seed, float keepBWRatio)
 - 라운드 종료 후 진행 결정도 `JudgeRoutine` 안에서 Host만: 다음 라운드가 있으면 쿨다운 대기 후 `StartRound(round+1)`, 마지막 라운드면 `StageNetworkState.ChallengeCleared(true)` 기록 → `OnChallengeClearedChanged` 구독(`HandleChallengeClearedChanged`)이 전 머신 공통으로 `OnChallengeComplete` 1회 발동 (OX의 `OnAllCleared`와 동일 패턴, Host 이중 발동 없음)
 - **버그 수정**: `GridBWTileChallenge.ApplyIndividualDamage()`의 `p.ReceiveDamage()` 직접 호출 → `NetworkDamageUtil.ApplyDamage()`로 교체 (GridColor는 2026-07-19에 이미 고쳐져 있었음, 이번에 GridBW도 동일하게 맞춤)
 - `GridRoundObjective.HandleChallengeComplete()`에 Host 가드 추가 — `OnChallengeComplete`가 이제 전 머신 공통으로 발동되므로 `Complete()` 확정은 Host 레인에서만 (`ColorTileRoundObjective.HandleSuccess`와 동일 패턴, §11A.2 계약 위반이었던 것을 이번에 같이 수정)
+- **ParrelSync 2인 검증 통과 (2026-07-25, 둘 다)**: 동일 라운드 배치(안전 칸·색 타일), 동일 성공·실패 판정, 개인 데미지 동기화, 라운드 반복 진행 확인. `NetworkDesign.md` §11B.7로 승급 완료
 
 ### `ColorTileChallenge` 반영 내용 (코드, 2026-07-22)
 

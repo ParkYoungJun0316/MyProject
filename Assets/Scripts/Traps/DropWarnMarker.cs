@@ -4,11 +4,8 @@ using UnityEngine;
 /// <summary>
 /// DropTrap 경고 바닥 마커.
 /// - 경고 단계: 얇은 외곽 원만 표시 (progress=0), warnDuration 동안 유지.
-/// - 낙하 단계: 낙하 시작 시점부터 fallDuration에 걸쳐 progress 0→1 (바깥→안 채움).
-///
-/// progress는 낙하체의 실제 위치/충돌을 전혀 참조하지 않는다. DropTrap이 미리
-/// (spawnHeight / speed)로 계산한 낙하 소요 시간을 그대로 타이머로 채우는 방식이라
-/// 트리거 충돌 감지가 필요 없고, 스테이지마다 바닥 높이가 달라도 안전하다.
+/// - 낙하 단계: 월드 Y가 startY→groundY(기본 0)로 내려가는 동안 progress 0→1.
+///   Y=groundY에 도달하는 순간 Fill=1. (등속 낙하 가정: y = startY - speed*t)
 ///
 /// [셰이더 연동]
 /// targetRenderer 머티리얼에 fillProperty(기본 "_Fill", 0~1 float) 프로퍼티가 있으면
@@ -46,22 +43,27 @@ public class DropWarnMarker : MonoBehaviour
     }
 
     /// <summary>
-    /// duration에 걸쳐 progress를 0→1로 채운다. duration&lt;=0이면 즉시 1로 스냅.
-    /// DropTrap이 낙하 시작 시점에 호출.
+    /// 등속 낙하(속도 speed, 시작 높이 startY)가 groundY에 닿을 때까지 Fill 0→1.
+    /// progress = 1 - (y - groundY) / (startY - groundY). y&lt;=groundY이면 1로 종료.
     /// </summary>
-    public IEnumerator FillOverTime(float duration)
+    public IEnumerator FillUntilWorldY(float startY, float speed, float groundY = 0f)
     {
-        if (duration <= 0f)
+        float span = startY - groundY;
+        if (span <= 0f || speed <= 0f)
         {
             SetProgress(1f);
             yield break;
         }
 
         float elapsed = 0f;
-        while (elapsed < duration)
+        while (true)
         {
             elapsed += Time.deltaTime;
-            SetProgress(elapsed / duration);
+            float y = startY - speed * elapsed;
+            float progress = 1f - (y - groundY) / span;
+            SetProgress(progress);
+            if (y <= groundY)
+                break;
             yield return null;
         }
         SetProgress(1f);

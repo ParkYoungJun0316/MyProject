@@ -7747,8 +7747,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 3717695987514568031, guid: 1a5defe7ac92a664bb300ef9c4c8c0b9, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 3
+  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -10458,7 +10459,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1595682647}
-  - component: {fileID: 1595682649}
   - component: {fileID: 1595682648}
   m_Layer: 25
   m_Name: Stage4_Floor
@@ -10511,38 +10511,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c2d5f09fb9718a4880bccc9cdcf67fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorManager
-  ShowTopMostFoldoutHeaderGroup: 1
   changeInterval: 10
   keepBWRatio: 1
   phases:
   - triggerTime: 40
     changeInterval: 7
     keepBWRatio: 0.8
---- !u!114 &1595682649
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1595682646}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2912352080
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!1001 &1600371113
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13942,8 +13916,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 3717695987514568031, guid: 1a5defe7ac92a664bb300ef9c4c8c0b9, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 3
+  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -14390,8 +14365,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 2830416580708150457, guid: 4ef497e7e9f865143ae7d844635afe9a, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 0
+  warnMarkerScale: {x: 9, y: 1, z: 9}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0

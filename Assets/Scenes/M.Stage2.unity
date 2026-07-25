@@ -874,8 +874,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 2779214238289738293, guid: 4f125abf74d1ebb479752f3f063a4a36, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
-  warnDuration: 3
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
+  warnDuration: 2
+  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -4178,7 +4179,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1849020369}
-  - component: {fileID: 1849020371}
   - component: {fileID: 1849020370}
   m_Layer: 0
   m_Name: Stage2_Floor
@@ -4229,38 +4229,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c2d5f09fb9718a4880bccc9cdcf67fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorManager
-  ShowTopMostFoldoutHeaderGroup: 1
   changeInterval: 35
   keepBWRatio: 0
   phases:
   - triggerTime: 35
     changeInterval: 10
     keepBWRatio: 0.5
---- !u!114 &1849020371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1849020368}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1940477030
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!4 &1852587696 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}

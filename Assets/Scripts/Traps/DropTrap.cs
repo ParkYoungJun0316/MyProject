@@ -45,6 +45,9 @@ public class DropTrap : TrapBase
     [Tooltip("경고 표시 시간 (초). 플레이어가 피할 여유 시간")]
     [SerializeField] private float warnDuration = 0f;
 
+    [Tooltip("인스턴스화 시 마커 localScale. 낙하체 크기에 맞춰 DropTrap마다 조절")]
+    [SerializeField] private Vector3 warnMarkerScale = Vector3.one;
+
     [Header("낙하")]
     [Tooltip("낙하체가 생성될 높이 (타겟 위치 기준 Y 오프셋, m)")]
     [SerializeField] private float spawnHeight = 0f;
@@ -125,15 +128,15 @@ public class DropTrap : TrapBase
     }
 
     /// <summary>StageNetworkState.SyncDropWarnClientRpc 수신 시 Client에서 호출. 마커 연출만 재생(낙하체 스폰 없음).</summary>
-    public static void PlayWarnById(int id, Vector3 targetPos, float warnDuration, float fallDuration)
+    public static void PlayWarnById(int id, Vector3 targetPos, float warnDuration, float startY, float speed, Vector3 markerScale)
     {
         if (_registry.TryGetValue(id, out DropTrap t))
-            t?.ApplyWarnFromNetwork(targetPos, warnDuration, fallDuration);
+            t?.ApplyWarnFromNetwork(targetPos, warnDuration, startY, speed, markerScale);
     }
 
-    void ApplyWarnFromNetwork(Vector3 targetPos, float warnDuration, float fallDuration)
+    void ApplyWarnFromNetwork(Vector3 targetPos, float warnDuration, float startY, float speed, Vector3 markerScale)
     {
-        StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, fallDuration));
+        StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, startY, speed, markerScale));
     }
 
     protected override System.Collections.IEnumerator TrapLoop()
@@ -276,20 +279,18 @@ public class DropTrap : TrapBase
     IEnumerator DropCycle(Vector3 targetPos)
     {
         Vector3 spawnPos = targetPos + Vector3.up * spawnHeight;
+        float speed = GetCurrentSpeed();
 
-        // 실제 낙하 속도를 마커 채움 애니메이션 계산에도 그대로 재사용.
-        // fallDuration = 낙하 소요 시간. 위치·충돌 감지 없이 순수 타이머로 마커를 채운다.
-        float speed        = GetCurrentSpeed();
-        float fallDuration = (speed > 0f && spawnHeight > 0f) ? spawnHeight / speed : 0f;
+        // Fill 기준: 월드 Y=0. 스폰 Y에서 0까지 등속 낙하하는 동안 0→1.
+        // (예전 spawnHeight/speed는 targetPos.y≠0이면 착지와 어긋남)
+        float startY = spawnPos.y;
 
         // 바닥 경고 마커 — Host 로컬 표시 + 전 Client에 동일 연출 브로드캐스트.
-        // DropCycle은 이 지점까지 Host만 도달(OnTrapTrigger/FireAt의 Host 가드).
-        // RandomInterval/FireAt(TrapPlayerTracker) 등 실시간 결정 스케줄이어도
-        // Host가 유일한 트리거이므로 Client는 항상 정확히 같은 타이밍을 따라간다.
         if (warnPrefab != null)
         {
-            StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, fallDuration));
-            StageNetworkState.Instance?.SyncDropWarnClientRpc(_netIndex, targetPos, warnDuration, fallDuration);
+            StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, startY, speed, warnMarkerScale));
+            StageNetworkState.Instance?.SyncDropWarnClientRpc(
+                _netIndex, targetPos, warnDuration, startY, speed, warnMarkerScale);
         }
 
         if (warnDuration > 0f)
@@ -328,17 +329,20 @@ public class DropTrap : TrapBase
     }
 
     /// <summary>
-    /// 경고 마커 표시 → warnDuration 유지 → fallDuration에 걸쳐 채움 → 파괴.
+    /// 경고 마커 표시 → warnDuration 유지 → 월드 Y startY→0 채움 → 파괴.
     /// Host 로컬 호출(DropCycle)과 Client RPC 수신(ApplyWarnFromNetwork) 양쪽에서 공용.
     /// </summary>
-    IEnumerator WarnMarkerRoutine(Vector3 targetPos, float warnDuration, float fallDuration)
+    IEnumerator WarnMarkerRoutine(Vector3 targetPos, float warnDuration, float startY, float speed, Vector3 markerScale)
     {
         if (warnPrefab == null) yield break;
 
-        GameObject warn = Instantiate(warnPrefab, targetPos, Quaternion.identity);
+        // 마커는 Y=1에 깔린다 (Y=0은 바닥과 겹쳐 안 보임).
+        Vector3 markerPos = new Vector3(targetPos.x, 1f, targetPos.z);
+        GameObject warn = Instantiate(warnPrefab, markerPos, Quaternion.identity);
+        warn.transform.localScale = markerScale;
         _pendingObjects.Add(warn);
         if (warnSfxId != SFXId.None)
-            SFXManager.Instance?.Play(warnSfxId, targetPos);
+            SFXManager.Instance?.Play(warnSfxId, markerPos);
 
         DropWarnMarker marker = warn.GetComponent<DropWarnMarker>();
 
@@ -346,9 +350,9 @@ public class DropTrap : TrapBase
             yield return new WaitForSeconds(warnDuration);
 
         if (marker != null)
-            yield return StartCoroutine(marker.FillOverTime(fallDuration));
-        else if (fallDuration > 0f)
-            yield return new WaitForSeconds(fallDuration);
+            yield return StartCoroutine(marker.FillUntilWorldY(startY, speed, groundY: 0f));
+        else if (speed > 0f && startY > 0f)
+            yield return new WaitForSeconds(startY / speed);
 
         DestroyAndUntrack(warn);
     }

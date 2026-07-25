@@ -416,6 +416,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.x
+      value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.z
+      value: 1.7
+      objectReference: {fileID: 0}
     - target: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_Name
       value: FloorTile_3
@@ -836,6 +844,14 @@ PrefabInstance:
     - target: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.x
+      value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.z
+      value: 1.7
       objectReference: {fileID: 0}
     - target: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_Name
@@ -1490,8 +1506,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 2353245891846303447, guid: 9ed9b7d742327b74cbf4bfd15191dd88, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 2
+  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -1644,7 +1661,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   challenge: {fileID: 433914000}
-  requiredSuccesses: 1
+  requiredSuccesses: 0
 --- !u!1 &468527017
 GameObject:
   m_ObjectHideFlags: 0
@@ -2338,7 +2355,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 895770919}
-  - component: {fileID: 895770921}
   - component: {fileID: 895770920}
   m_Layer: 25
   m_Name: Stage3_Floor
@@ -2379,7 +2395,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c2d5f09fb9718a4880bccc9cdcf67fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorManager
-  ShowTopMostFoldoutHeaderGroup: 1
   changeInterval: 3
   keepBWRatio: 1
   phases:
@@ -2398,31 +2413,6 @@ MonoBehaviour:
   - triggerTime: 50
     changeInterval: 2
     keepBWRatio: 0.1
---- !u!114 &895770921
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 895770918}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2833064086
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!1 &925126198
 GameObject:
   m_ObjectHideFlags: 0
@@ -3348,6 +3338,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.x
+      value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.z
+      value: 1.7
+      objectReference: {fileID: 0}
     - target: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_Name
       value: FloorTile_3
@@ -3752,8 +3750,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 2353245891846303447, guid: 9ed9b7d742327b74cbf4bfd15191dd88, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 2
+  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -4262,8 +4261,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 2353245891846303447, guid: 9ed9b7d742327b74cbf4bfd15191dd88, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 2
+  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -4331,6 +4331,14 @@ PrefabInstance:
     - target: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.x
+      value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.z
+      value: 1.7
       objectReference: {fileID: 0}
     - target: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_Name
@@ -4467,6 +4475,14 @@ PrefabInstance:
     - target: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.x
+      value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2814932442586006984, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
+      propertyPath: m_Size.z
+      value: 1.7
       objectReference: {fileID: 0}
     - target: {fileID: 3249175177344408397, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
       propertyPath: m_Name
@@ -4676,8 +4692,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 7943903727854716343, guid: ca5b94e33b1d7144189d4c2b91a84ba7, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 2
+  warnMarkerScale: {x: 3.7, y: 1, z: 3.7}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -4971,8 +4988,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 1618694699674194214, guid: 298813ba527f5fb4cb4afa47352eaa56, type: 3}
   targetPoints: []
   randomTarget: 1
-  warnPrefab: {fileID: 0}
+  warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 2
+  warnMarkerScale: {x: 4.3, y: 1, z: 4.3}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
