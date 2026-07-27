@@ -569,6 +569,33 @@ public class StageNetworkState : NetworkBehaviour
         SequenceRingMinigame.Instance?.TrySubmitAnyKey();
     }
 
+    // ── 함정 발사체 피격/파괴 보고 (Client → Host, 상주 릴레이) ───────────
+    // [버그 수정 2026-07-28] TrapProjectile은 짧게 살고 죽는 NetworkObject라, 자기 자신을
+    // Rpc 대상으로 쓰면 Despawn 이후 늦게 도착한 중복 보고가 NGO 라우팅 단계에서 못 찾아져
+    // "Deferred OnSpawn" 대기 → 10초 후 PurgeTrigger 경고로 이어졌다(Arrow/Drop/Boulder
+    // 전부 TrapProjectile 공유라 셋 다 동일 증상). 이 오브젝트는 스테이지 내내 살아있으므로
+    // 라우팅 실패가 구조적으로 없다 — "이미 처리됨"은 아래 TryGetValue 가드 하나로 끝낸다.
+
+    /// <summary>Client(전원): 발사체 피격 보고. Host가 발사체를 찾아 데미지+Despawn을 위임.</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReportTrapHitServerRpc(ulong projectileNetId, ulong playerNetId)
+    {
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(projectileNetId, out var projNetObj))
+            return; // 이미 처리(다른 보고로 Despawn)됨 — 조용히 무시
+
+        projNetObj.GetComponent<TrapProjectile>()?.ApplyHitFromHost(playerNetId);
+    }
+
+    /// <summary>Client(전원): 플레이어 NetworkObject를 못 찾은 예외 케이스의 파괴 요청.</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestTrapDestroyServerRpc(ulong projectileNetId)
+    {
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(projectileNetId, out var projNetObj))
+            return;
+
+        projNetObj.GetComponent<TrapProjectile>()?.ApplyDestroyFromHost();
+    }
+
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR

@@ -106,27 +106,40 @@ public class DirectionalBarrierRound : MonoBehaviour
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
-    void Start()
+    void OnEnable()
     {
-        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
-        // Unity 전역 Awake→Start 순서로 보장받음 (OXQuizManager/ColorTileChallenge와 동일 전제).
+        // [버그 수정 2026-07-28] 구독을 Start/OnDestroy가 아니라 OnEnable/OnDisable로 건다 —
+        // _challengeStep은 씬당 공유 슬롯이라 Phase로 이 GameObject가 비활성화된 뒤에도
+        // Start에서 건 구독이 살아있으면 다른 챌린지(SequenceRing 등)의 ChallengeStepBegin에도
+        // 계속 반응해 "Coroutine couldn't be started because the game object is inactive" 에러가
+        // 났다 (SequenceRingMinigame.OnEnable과 동일 원칙 — Phase 컨테이너 수명에 맞춰야 함).
         _netState = StageNetworkState.Instance;
         if (_netState != null)
+        {
             _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
+
+            // late-subscribe catch-up: Host는 이 GameObject가 켜지자마자 Activate()로 _challengeStep을
+            // 쓰지만, Client는 접속·씬 로드·StageNetworkState replica 스폰을 거쳐야 해서 항상 Host보다
+            // 늦게 이 OnEnable이 돈다. 그 시점엔 이미 stepIndex가 "초기 스폰값"으로 도착해 있어
+            // OnValueChanged(변경 이벤트)가 발동하지 않는 NGO 표준 동작 때문에 HandleChallengeStepChanged가
+            // 영원히 안 불렸다(Client 화면에 베리어·타일이 아예 안 나오던 증상). 구독 직후 현재 NV 값으로
+            // 1회 강제 재실행해 놓친 이벤트를 보정 — Host는 이 시점에 아직 -1이라 중복 발동 없음.
+            if (_netState.ChallengeStepIndex >= 0)
+                HandleChallengeStepChanged(_netState.ChallengeStepIndex);
+        }
 
         // Host 레인만 라운드를 발동(§11B ①Trigger+②RoundStart) — Client는 NV 전파만 관찰.
         if (!IsClientOnly())
             Activate();
     }
 
-    void OnDestroy()
-    {
-        if (_netState != null)
-            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
-    }
-
     void OnDisable()
     {
+        // Phase가 이 GameObject를 끌 때 구독 해제 + 코루틴/스폰 정리 — 다른 챌린지가 그 뒤에
+        // _challengeStep을 쓸 때 이 컴포넌트가 반응하지 않도록 반드시 여기서 해제해야 한다.
+        if (_netState != null)
+            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
+
         StopAllCoroutines();
         ClearBarriers();
         ClearTiles();
@@ -165,6 +178,7 @@ public class DirectionalBarrierRound : MonoBehaviour
     void HandleChallengeStepChanged(int stepIndex)
     {
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
+        if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 
         StopAllCoroutines();
         ClearBarriers();

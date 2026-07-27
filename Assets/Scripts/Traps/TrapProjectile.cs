@@ -13,7 +13,10 @@ using UnityEngine;
 /// Host: Spawn "전" PrepareVelocity()로 예약 → OnNetworkSpawn에서 NetworkVariable에 기록
 ///       → 스폰 메시지에 실려 전파 (Deferred OnSpawn RPC 레이스 없음)
 /// 각 Client/Host: 받은 velocity로 로컬 비행 (NetworkTransform 위치 동기화 없음)
-/// 피격: 누구든 OnTrigger → ServerRpc → Host 검증·데미지·Despawn
+/// 피격: 누구든 OnTrigger → StageNetworkState.ReportTrapHitServerRpc(상주 중계) → Host 검증·
+///       데미지·Despawn. Rpc 대상은 발사체 자신이 아니라 항상 살아있는 StageNetworkState —
+///       발사체 자신을 대상으로 쓰면 Despawn 후 도착한 중복 보고가 "Deferred OnSpawn" 경고로
+///       이어졌다(2026-07-28 수정, ApplyHitFromHost/ApplyDestroyFromHost 참고).
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class TrapProjectile : NetworkBehaviour
@@ -153,25 +156,32 @@ public class TrapProjectile : NetworkBehaviour
             // 중간에서 사라지는 것을 방지. rb는 건드리지 않아 비행 방향 유지.
             if (destroyOnPlayer) HideLocal();
 
+            // 보고 대상 = 상주 StageNetworkState (발사체 자신 X, 2026-07-28 수정).
+            // 발사체는 다른 보고로 먼저 Despawn될 수 있는 짧은 수명 NetworkObject라, 자신을
+            // Rpc 대상으로 쓰면 늦게 도착한 중복 보고가 NGO 라우팅 단계에서 "Deferred OnSpawn"
+            // 대기 → 10초 후 경고로 이어졌다. StageNetworkState는 항상 존재하므로 라우팅은
+            // 항상 성공하고, "이미 처리됨"은 Host 쪽에서 TryGetValue 가드 하나로 걸러진다.
             var pNetObj = p.GetComponent<NetworkObject>();
             if (pNetObj != null)
-                ReportHitServerRpc(pNetObj.NetworkObjectId);
+                StageNetworkState.Instance?.ReportTrapHitServerRpc(NetworkObjectId, pNetObj.NetworkObjectId);
             else if (destroyOnPlayer)
-                RequestDestroyServerRpc();
+                StageNetworkState.Instance?.RequestTrapDestroyServerRpc(NetworkObjectId);
         }
 
         // ── Wall / Floor ─────────────────────────────────────────────────
         // Wall/Floor 태그 파괴 판정 제거(2026-07-27, 티켓 D) — Despawn 후에도
-        // 로컬 콜라이더가 살아있어 재충돌마다 RequestDestroyServerRpc가 중복 전송되고,
-        // 이미 Despawn된 id로 도착한 RPC가 NGO DeferredMessageManager에서
+        // 로컬 콜라이더가 살아있어 재충돌마다 파괴 요청이 중복 전송되고,
+        // 이미 Despawn된 id로 도착한 요청이 NGO DeferredMessageManager에서
         // "Deferred OnSpawn" 대기 → SpawnTimeout(10초) 후 purge 경고로 이어졌다.
         // 정리는 lifetime(수명) 만료 또는 StageManager.DestroyAllProjectiles() 일괄
         // Despawn(둘 다 Host 직접 호출, RPC 아님)에 위임한다.
     }
 
-    // ── ServerRpc: 피격 보고 → Host 데미지 + Despawn ─────────────────────
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    void ReportHitServerRpc(ulong playerNetId)
+    // ── Host 전용: 피격 판정 → 데미지 + Despawn ─────────────────────────
+    // StageNetworkState.ReportTrapHitServerRpc가 Host에서 이 발사체를 SpawnedObjects로
+    // 찾은 뒤 호출한다. [Rpc]가 아니라 일반 메서드 — Rpc 수신 대상은 항상 살아있는
+    // StageNetworkState 쪽에 있으므로 이 오브젝트의 생사와 라우팅이 분리된다.
+    public void ApplyHitFromHost(ulong playerNetId)
     {
         if (_isDestroyed) return;
 
@@ -185,9 +195,9 @@ public class TrapProjectile : NetworkBehaviour
         if (destroyOnPlayer) DestroyProjectileOnServer();
     }
 
-    // ── ServerRpc: 벽·바닥·수명 파괴 요청 → Host Despawn ─────────────────
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    void RequestDestroyServerRpc()
+    // ── Host 전용: 파괴 요청 → Despawn ────────────────────────────────
+    // StageNetworkState.RequestTrapDestroyServerRpc가 Host에서 이 발사체를 찾은 뒤 호출.
+    public void ApplyDestroyFromHost()
     {
         if (!_isDestroyed) DestroyProjectileOnServer();
     }
@@ -210,7 +220,7 @@ public class TrapProjectile : NetworkBehaviour
     /// <summary>
     /// 온라인 전용. 플레이어 충돌 즉시 로컬에서 숨김.
     /// Rigidbody는 건드리지 않음(비행 유지). 콜라이더·렌더러만 끔.
-    /// 실제 Despawn은 Host ReportHitServerRpc가 처리.
+    /// 실제 Despawn은 Host ApplyHitFromHost가 처리.
     /// </summary>
     void HideLocal()
     {

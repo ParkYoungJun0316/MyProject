@@ -110,10 +110,13 @@ public class ColorTileChallenge : MonoBehaviour
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
-    void Start()
+    void OnEnable()
     {
-        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
-        // Unity 전역 Awake→Start 순서로 보장받음 (OXQuizManager와 동일 전제).
+        // [버그 수정] 구독을 Start/OnDestroy가 아니라 OnEnable/OnDisable로 건다 —
+        // _challengeStep은 씬당 공유 슬롯이라 Phase로 이 GameObject가 비활성화된 뒤에도
+        // Start에서 건 구독이 살아있으면 다른 챌린지의 ChallengeStepBegin에도 계속 반응해
+        // "Coroutine couldn't be started because the game object is inactive" 에러가 났다
+        // (DirectionalBarrierRound.OnEnable과 동일 원칙).
         _netState = StageNetworkState.Instance;
         if (_netState != null)
         {
@@ -126,7 +129,7 @@ public class ColorTileChallenge : MonoBehaviour
             StartSchedule();
     }
 
-    void OnDestroy()
+    void OnDisable()
     {
         if (_netState != null)
         {
@@ -134,10 +137,11 @@ public class ColorTileChallenge : MonoBehaviour
             _netState.OnChallengeOutcome     -= HandleChallengeOutcome;
             _netState.OnDeathReloadStarted   -= HandleDeathReloadStarted;
         }
-    }
 
-    void OnDisable()
-    {
+        if (_scheduleCoroutine != null) { StopCoroutine(_scheduleCoroutine); _scheduleCoroutine = null; }
+        if (_judgeCoroutine   != null) { StopCoroutine(_judgeCoroutine);   _judgeCoroutine   = null; }
+        _isRunning = false;
+
         // 오브젝트 비활성화 시 남아있는 타일 강제 정리 (로컬 시각 정리 — 네트워크 불필요)
         ClearTiles();
     }
@@ -229,31 +233,44 @@ public class ColorTileChallenge : MonoBehaviour
     void HandleChallengeStepChanged(int stepIndex)
     {
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
+        if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 
-        // 1. 플레이어 수집 — playerColorType 순으로 결정적(GameSession.Apply() 정렬 보장, 전 머신 동일)
-        var players = new List<Player>();
+        // 1. 생존 색 집합 — 순서는 안 쓰므로 GetActivePlayers()의 스캔 캐시 순서와 무관 (생존 여부만 확인)
+        var aliveColors = new HashSet<PlayerColorType>();
         if (GameSession.Instance != null)
         {
             foreach (Player p in GameSession.Instance.GetActivePlayers())
-                if (p != null && !p.IsDead) players.Add(p);
+                if (p != null && !p.IsDead) aliveColors.Add(p.playerColorType);
         }
         else
         {
             foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
-                if (!p.IsDead) players.Add(p);
+                if (!p.IsDead) aliveColors.Add(p.playerColorType);
         }
 
-        if (players.Count == 0 || spawnPoints.Length == 0 || tilePrefabs.Length == 0)
+        // 2. 색 순서 — GameSession.GetActiveColors()는 Set 기반으로 매 호출 재정렬되어 Host/Client가
+        // 항상 같은 순서를 본다. GetActivePlayers()의 스캔 캐시 순서(FindObjectsByType 결과 순)는
+        // Host/Client가 다를 수 있어 같은 인덱스에 다른 색이 배정되는 버그가 있었다 — GridColorChallenge
+        // 등이 이미 쓰는 SSOT로 통일 (2026-07-28 버그 수정, M.Stage3 색 반전 재현).
+        IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
+            ? GameSession.Instance.GetActiveColors()
+            : (IReadOnlyList<PlayerColorType>)LobbyNetworkManager.ColorOrder;
+
+        var colors = new List<PlayerColorType>();
+        foreach (PlayerColorType color in activeColors)
+            if (aliveColors.Contains(color)) colors.Add(color);
+
+        if (colors.Count == 0 || spawnPoints.Length == 0 || tilePrefabs.Length == 0)
             return;
 
         _isRunning = true;
 
-        // 2. 스폰 포인트 셔플 — ChallengeSeed 기반 System.Random
+        // 3. 스폰 포인트 셔플 — ChallengeSeed 기반 System.Random
         //    (UnityEngine.Random 전역 상태 오염 방지 — OXQuizManager.RegenerateQuestionOrder와 동일 원칙)
         int seed = _netState != null ? _netState.ChallengeSeed : 0;
         var rng  = new System.Random(seed);
 
-        int tileCount = Mathf.Min(players.Count, spawnPoints.Length);
+        int tileCount = Mathf.Min(colors.Count, spawnPoints.Length);
         List<Transform> shuffled = new List<Transform>(spawnPoints);
         for (int i = shuffled.Count - 1; i > 0; i--)
         {
@@ -261,11 +278,11 @@ public class ColorTileChallenge : MonoBehaviour
             (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
         }
 
-        // 3. 색상별 프리팹으로 타일 동시 생성 (전 머신 로컬 — 결과 자체는 네트워크로 안 보냄)
+        // 4. 색상별 프리팹으로 타일 동시 생성 (전 머신 로컬 — 결과 자체는 네트워크로 안 보냄)
         ClearTiles();
         for (int i = 0; i < tileCount; i++)
         {
-            PlayerColorType colorType = players[i].playerColorType;
+            PlayerColorType colorType = colors[i];
             GameObject prefab = GetPrefabForColor(colorType);
 
             if (prefab == null)
@@ -291,7 +308,7 @@ public class ColorTileChallenge : MonoBehaviour
 
         OnChallengeStarted?.Invoke();
 
-        // 4. 판정은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 ClientRpc로만 관찰
+        // 5. 판정은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 ClientRpc로만 관찰
         if (IsClientOnly()) return;
 
         if (_judgeCoroutine != null) StopCoroutine(_judgeCoroutine);

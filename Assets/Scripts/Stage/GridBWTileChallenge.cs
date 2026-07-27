@@ -122,10 +122,13 @@ public class GridBWTileChallenge : MonoBehaviour
             CollectTilesFromChildren();
     }
 
-    void Start()
+    void OnEnable()
     {
-        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
-        // Unity 전역 Awake→Start 순서로 보장받음 (ColorTileChallenge/OXQuizManager와 동일 전제).
+        // [버그 수정] 구독을 Start/OnDestroy가 아니라 OnEnable/OnDisable로 건다 —
+        // _challengeStep은 씬당 공유 슬롯이라 Phase로 이 GameObject가 비활성화된 뒤에도
+        // Start에서 건 구독이 살아있으면 다른 챌린지(GridColorChallenge 등)의 ChallengeStepBegin에도
+        // 계속 반응해 "Coroutine couldn't be started because the game object is inactive" 에러가
+        // 났다 (DirectionalBarrierRound.OnEnable과 동일 원칙).
         _netState = StageNetworkState.Instance;
         if (_netState != null)
         {
@@ -143,7 +146,7 @@ public class GridBWTileChallenge : MonoBehaviour
             Activate();
     }
 
-    void OnDestroy()
+    void OnDisable()
     {
         if (_netState != null)
         {
@@ -152,6 +155,9 @@ public class GridBWTileChallenge : MonoBehaviour
             _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
             _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
+
+        if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
+        _isRunning = false;
     }
 
     IEnumerator AutoStartRoutine()
@@ -250,6 +256,7 @@ public class GridBWTileChallenge : MonoBehaviour
     void HandleChallengeStepChanged(int stepIndex)
     {
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
+        if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
         if (tiles == null || tiles.Length == 0) return;
 
         if (!_isRunning)
