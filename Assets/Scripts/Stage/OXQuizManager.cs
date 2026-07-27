@@ -297,6 +297,24 @@ public class OXQuizManager : MonoBehaviour
         _netState?.ChallengeStepBegin(_questionIndex);
     }
 
+    /// <summary>
+    /// 마지막 문제 클리어 확정을 correctAnswerDelay만큼 늦춘다 — NextQuestionAfterDelay와 동일한
+    /// 이유. 이 대기가 없으면 판정 직후(같은 프레임) ChallengeCleared NV가 곧바로 날아가
+    /// 아직 해설을 재생 중인 OnAnswerRevealed 연출(Host/Client 로컬 재생)을 Clear! 화면이
+    /// 끊어버려 정답/해설이 표시되다 말거나, Client에서 NV·연출 도착 순서가 뒤바뀌면 정답
+    /// 화면이 Clear에 덮이지 못한 채 남는 문제(정답 텍스트 고착)가 있었다.
+    /// </summary>
+    IEnumerator ClearAfterDelay()
+    {
+        if (correctAnswerDelay > 0f)
+            yield return new WaitForSeconds(correctAnswerDelay);
+
+        barrierDoor?.Close(); // DoorNetworkSync가 NV로 전파
+        // OnAllCleared 발동은 HandleChallengeClearedChanged 하나로만 — Host 자신에게도
+        // 즉시 OnValueChanged가 발생하므로 여기서 직접 Invoke하면 Host에서 이중 발동된다.
+        _netState?.ChallengeCleared(true);
+    }
+
     // ── 판정 ──────────────────────────────────────────────────────
 
     /// <summary>
@@ -396,11 +414,8 @@ public class OXQuizManager : MonoBehaviour
         _questionIndex++;
         if (_questionIndex >= QuestionsToWin)
         {
-            barrierDoor?.Close(); // DoorNetworkSync가 NV로 전파
-            // OnAllCleared 발동은 아래 HandleChallengeClearedChanged 하나로만 — 이 NV 쓰기가
-            // Host 자신에게도 즉시 OnValueChanged를 발생시키므로(§ StageNetworkState.OnPhaseChanged와
-            // 동일 동작) 여기서 직접 Invoke하면 Host에서 이중 발동된다.
-            _netState?.ChallengeCleared(true);
+            // 중간 문제(NextQuestionAfterDelay)와 동일하게 해설 재생 시간을 확보한 뒤 클리어 확정.
+            StartCoroutine(ClearAfterDelay());
             return;
         }
 

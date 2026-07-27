@@ -172,15 +172,16 @@ public class ArrowTrap : TrapBase
                 firedRb.linearVelocity = flatFwd * speed;
         }
 
-        // B안: Spawn 후 InitializeVelocityClientRpc로 초기 velocity 전파.
-        // Client는 NT 위치 동기화 없이 이 velocity로 로컬 비행.
+        // B안: velocity를 Spawn "전"에 NetworkVariable로 예약해 두면 스폰 메시지 자체에
+        // 실려 전파된다. Spawn 후 별도 ClientRpc로 보내던 이전 방식은 CreateObject 메시지와
+        // RPC 메시지의 전송 경로가 달라 RPC가 먼저 도착하면 Deferred OnSpawn으로 지연·유실됐다.
         NetworkObject netObj = fired.GetComponent<NetworkObject>();
         if (netObj != null)
         {
+            if (speed > 0f)
+                proj.PrepareVelocity(flatFwd * speed);
             // destroyWithScene: true → 씬 리로드 시 자동 Despawn (잔존 화살 방지)
             netObj.Spawn(destroyWithScene: true);
-            if (speed > 0f)
-                proj.InitializeVelocityClientRpc(flatFwd * speed);
         }
     }
 }

@@ -61,10 +61,9 @@ public class BoulderSpawner : MonoBehaviour
         var netObj = instance.GetComponent<NetworkObject>();
         if (netObj != null)
         {
-            netObj.Spawn(destroyWithScene: true);
-
             // B안: NetworkTransform 없이 Client 로컬 WaypointMover 시뮬.
-            // runtimeWaypoints의 현재 씬 위치를 Vector3[]로 전달.
+            // runtimeWaypoints의 현재 씬 위치를 Vector3[]로 Spawn "전"에 예약해 두면 스폰
+            // 메시지 자체에 실려 전파된다 (Deferred OnSpawn RPC 레이스 방지 — 2026-07-27 수정).
             // positions가 비어 있으면 Client는 프리팹 기본 웨이포인트 사용.
             var proj = instance.GetComponent<TrapProjectile>();
             if (proj != null)
@@ -82,8 +81,10 @@ public class BoulderSpawner : MonoBehaviour
                 {
                     positions = new Vector3[0];
                 }
-                proj.InitializeWaypointsClientRpc(positions);
+                proj.PrepareWaypoints(positions);
             }
+
+            netObj.Spawn(destroyWithScene: true);
         }
         else
             Debug.LogWarning("[BoulderSpawner] boulderPrefab에 NetworkObject가 없습니다. " +

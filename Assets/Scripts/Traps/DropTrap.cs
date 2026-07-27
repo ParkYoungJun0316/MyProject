@@ -314,16 +314,17 @@ public class DropTrap : TrapBase
             if (dropRb != null) dropRb.linearVelocity = velocity;
         }
 
-        // 온라인(B안): Spawn 후 Client에 velocity 전파.
+        // 온라인(B안): velocity를 Spawn "전"에 NetworkVariable로 예약해 두면 스폰 메시지 자체에
+        // 실려 전파된다 (Spawn 후 ClientRpc 방식은 Deferred OnSpawn 레이스 위험 — 2026-07-27 수정).
         var nm2 = NetworkManager.Singleton;
         if (nm2 != null && nm2.IsListening)
         {
             NetworkObject netObj = drop.GetComponent<NetworkObject>();
             if (netObj != null)
             {
-                netObj.Spawn(destroyWithScene: true);
                 if (speed > 0f)
-                    proj.InitializeVelocityClientRpc(velocity);
+                    proj.PrepareVelocity(velocity);
+                netObj.Spawn(destroyWithScene: true);
             }
         }
     }

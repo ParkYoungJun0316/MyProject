@@ -10,7 +10,8 @@ using UnityEngine;
 /// - 경로 이동은 WaypointMover가 담당
 ///
 /// [B안 네트워크 흐름]
-/// Host: Spawn + 초기 velocity 설정 → InitializeVelocityClientRpc로 전파
+/// Host: Spawn "전" PrepareVelocity()로 예약 → OnNetworkSpawn에서 NetworkVariable에 기록
+///       → 스폰 메시지에 실려 전파 (Deferred OnSpawn RPC 레이스 없음)
 /// 각 Client/Host: 받은 velocity로 로컬 비행 (NetworkTransform 위치 동기화 없음)
 /// 피격: 누구든 OnTrigger → ServerRpc → Host 검증·데미지·Despawn
 /// </summary>
@@ -46,11 +47,73 @@ public class TrapProjectile : NetworkBehaviour
     Vector3 _lastHitNormal = Vector3.up;
     Rigidbody _rb;
 
+    // ── B안 Spawn-전 초기화 (Deferred OnSpawn RPC 레이스 방지, 2026-07-27) ──
+    // ArrowTrap/DropTrap/BoulderSpawner가 Host에서 NetworkObject.Spawn() 호출 "전"에
+    // PrepareVelocity()/PrepareWaypoints()로 예약 → OnNetworkSpawn(Host)에서 아래 NV/List에
+    // 기록되면 스폰 메시지 자체에 실려 전파된다 (PlayerSpawnCoordinator._clientColors와 동일
+    // 패턴). Spawn 후 별도 ClientRpc로 보내던 이전 방식은 CreateObject 메시지와 RPC 메시지의
+    // 전송 경로가 달라, RPC가 먼저 도착하면 최대 SpawnTimeout(10초) 지연되거나 유실됐다.
+    readonly NetworkVariable<Vector3> _initialVelocity = new();
+    readonly NetworkList<Vector3>     _initialWaypoints = new();
+    Vector3?  _pendingVelocity;
+    Vector3[] _pendingWaypoints;
+
     void Awake() => _rb = GetComponent<Rigidbody>();
+
+    /// <summary>ArrowTrap/DropTrap이 Host에서 NetworkObject.Spawn() 호출 "전"에 호출.</summary>
+    public void PrepareVelocity(Vector3 velocity) => _pendingVelocity = velocity;
+
+    /// <summary>
+    /// BoulderSpawner가 Host에서 NetworkObject.Spawn() 호출 "전"에 호출.
+    /// positions가 비어 있으면 Client는 프리팹 기본 웨이포인트 사용.
+    /// </summary>
+    public void PrepareWaypoints(Vector3[] positions) => _pendingWaypoints = positions ?? System.Array.Empty<Vector3>();
 
     // ── 온라인 초기화 ────────────────────────────────────────────────────
     public override void OnNetworkSpawn()
     {
+        if (IsServer)
+        {
+            if (_pendingVelocity.HasValue)
+            {
+                _initialVelocity.Value = _pendingVelocity.Value;
+                _pendingVelocity = null;
+            }
+            if (_pendingWaypoints != null)
+            {
+                _initialWaypoints.Clear();
+                foreach (Vector3 p in _pendingWaypoints)
+                    _initialWaypoints.Add(p);
+                _pendingWaypoints = null;
+            }
+        }
+
+        if (_initialVelocity.Value != Vector3.zero)
+        {
+            if (_rb == null) _rb = GetComponent<Rigidbody>();
+            _rb.linearVelocity = _initialVelocity.Value;
+        }
+
+        // B안: 경로 이동 투사체(Boulder 등) — Client만 위치 웨이포인트로 로컬 시뮬 시작.
+        // Host는 BoulderSpawner가 이미 Transform[] 웨이포인트로 WaypointMover를 구동 중이라 제외.
+        if (!IsServer)
+        {
+            WaypointMover mover = GetComponent<WaypointMover>()
+                               ?? GetComponentInChildren<WaypointMover>(true);
+            if (mover != null)
+            {
+                mover.Deactivate();
+                if (_initialWaypoints.Count > 0)
+                {
+                    var positions = new Vector3[_initialWaypoints.Count];
+                    for (int i = 0; i < positions.Length; i++)
+                        positions[i] = _initialWaypoints[i];
+                    mover.SetWaypointPositions(positions);
+                }
+                mover.Activate();
+            }
+        }
+
         // Host만 수명 만료 후 Despawn
         if (IsServer && lifetime > 0f)
             StartCoroutine(LifetimeRoutine());
@@ -60,38 +123,6 @@ public class TrapProjectile : NetworkBehaviour
     {
         yield return new WaitForSeconds(lifetime);
         DestroyProjectileOnServer();
-    }
-
-    // ── B안: Host → 전 Client 초기 velocity 주입 ─────────────────────────
-    /// <summary>
-    /// ArrowTrap/DropTrap이 Host에서 NetworkObject.Spawn() 직후 호출.
-    /// SendTo.NotServer → Host는 수신하지 않음 (이미 velocity 설정됨).
-    /// Client는 이 velocity로 로컬 비행 시작.
-    /// </summary>
-    [Rpc(SendTo.NotServer)]
-    public void InitializeVelocityClientRpc(Vector3 velocity)
-    {
-        if (_rb == null) _rb = GetComponent<Rigidbody>();
-        _rb.linearVelocity = velocity;
-    }
-
-    // ── B안: Host → 전 Client 웨이포인트 경로 주입 (Boulder 등 경로 이동 투사체) ────
-    /// <summary>
-    /// BoulderSpawner가 Host에서 NetworkObject.Spawn() 직후 호출.
-    /// positions가 비어 있으면 프리팹 기본 웨이포인트 사용.
-    /// Client는 NetworkTransform 없이 이 경로로 WaypointMover를 로컬 시뮬.
-    /// </summary>
-    [Rpc(SendTo.NotServer)]
-    public void InitializeWaypointsClientRpc(Vector3[] positions)
-    {
-        WaypointMover mover = GetComponent<WaypointMover>()
-                           ?? GetComponentInChildren<WaypointMover>(true);
-        if (mover == null) return;
-
-        mover.Deactivate();
-        if (positions != null && positions.Length > 0)
-            mover.SetWaypointPositions(positions);
-        mover.Activate();
     }
 
     // ── 충돌 ─────────────────────────────────────────────────────────────

@@ -243,6 +243,10 @@ public class GameSession : MonoBehaviour
                 _activePlayers.Add(p);
         }
 
+        // FindObjectsByType(None)은 순서를 보장하지 않아 Host/Client가 다른 순서로 수집할 수 있다.
+        // ColorTileChallenge 등이 "playerColorType 순 결정적"을 전제로 하므로 여기서 정렬해 보장한다.
+        _activePlayers.Sort((a, b) => ColorIndex(a.playerColorType).CompareTo(ColorIndex(b.playerColorType)));
+
         Debug.Log($"[GameSession] {_activePlayers.Count}인 모드 적용 — 활성 색: {string.Join(", ", _activeColors)}");
     }
 
