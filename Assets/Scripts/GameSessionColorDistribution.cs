@@ -31,39 +31,43 @@ public static class GameSessionColorDistribution
     ///  1. PlayerSpawnCoordinator.GetActiveColors() — NetworkList SSOT, 레이스 없음
     ///  2. GameSession.GetActiveColors()            — Editor 직접 Play 등 PSC 없을 때 fallback
     ///  3. PlayableColors 4색                       — 둘 다 없을 때 최종 fallback
+    ///
+    /// rng를 넘기면(예: System.Random(ChallengeSeed)) 여분 슬롯 배정까지 그 시드로 결정된다 —
+    /// 네트워크 동기화가 필요한 호출자(DirectionalBarrierRound 등)는 반드시 넘길 것.
+    /// null이면 기존 동작 그대로 UnityEngine.Random 사용(로컬 전용 호출자 하위호환).
     /// </summary>
-    public static PlayerColorType[] Distribute(int totalSlots)
+    public static PlayerColorType[] Distribute(int totalSlots, System.Random rng = null)
     {
         PlayerColorType[] psColors = PlayerSpawnCoordinator.GetActiveColors();
         if (psColors.Length > 0)
-            return Distribute(psColors, totalSlots);
+            return Distribute(psColors, totalSlots, rng);
 
         IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
             ? GameSession.Instance.GetActiveColors()
             : (IReadOnlyList<PlayerColorType>)PlayableColors;
 
-        return Distribute(activeColors, totalSlots);
+        return Distribute(activeColors, totalSlots, rng);
     }
 
     /// <summary>
     /// 주어진 activeColors 목록을 totalSlots칸에 균등 분배한 배열을 반환한다.
     /// activeColors가 null이거나 비어 있으면 PlayableColors 4색으로 fallback.
     /// </summary>
-    public static PlayerColorType[] Distribute(IReadOnlyList<PlayerColorType> activeColors, int totalSlots)
+    public static PlayerColorType[] Distribute(IReadOnlyList<PlayerColorType> activeColors, int totalSlots, System.Random rng = null)
     {
         if (activeColors == null || activeColors.Count == 0)
-            return Distribute(PlayableColors, totalSlots);
+            return Distribute(PlayableColors, totalSlots, rng);
 
         int n         = activeColors.Count;
         int baseCount = totalSlots / n;
         int remainder = totalSlots % n;
 
-        // 여분 슬롯을 줄 색을 랜덤으로 결정 (인덱스 피셔-예이츠 셔플)
+        // 여분 슬롯을 줄 색을 결정 (인덱스 피셔-예이츠 셔플) — rng가 있으면 그 시드로, 없으면 UnityEngine.Random으로
         int[] indices = new int[n];
         for (int i = 0; i < n; i++) indices[i] = i;
         for (int i = n - 1; i > 0; i--)
         {
-            int j = Random.Range(0, i + 1);
+            int j = rng != null ? rng.Next(0, i + 1) : Random.Range(0, i + 1);
             (indices[i], indices[j]) = (indices[j], indices[i]);
         }
 

@@ -537,8 +537,15 @@ public class SequenceRingMinigame : MonoBehaviour
     }
 
     /// <summary>Host: 클리어 확정. ChallengeCleared NV가 전 머신 공통으로 HandleChallengeClearedChanged를
-    /// 발동시키므로 여기서 직접 OnMinigameSuccess를 Invoke하지 않는다(Host 이중 발동 금지, OX와 동일 원칙).</summary>
-    void SucceedMinigame() => _netState?.ChallengeCleared(true);
+    /// 발동시키므로 여기서 직접 OnMinigameSuccess를 Invoke하지 않는다(Host 이중 발동 금지, OX와 동일 원칙).
+    /// ChallengeCleared(true) 뒤 곧바로 ResetChallengeStep()으로 stepIndex를 -1로 되돌려, 다음 Phase의
+    /// 동일 챌린지 컴포넌트가 OnEnable catch-up에서 이 값을 "이미 진행 중"으로 오인하지 않게 한다
+    /// (2026-07-27 버그 수정).</summary>
+    void SucceedMinigame()
+    {
+        _netState?.ChallengeCleared(true);
+        _netState?.ResetChallengeStep();
+    }
 
     /// <summary>Host: 실패 확정. 로컬 반영 + Client에는 outcome(false)로 전파 (§11B ⑤Resolve).</summary>
     void FailMinigame()

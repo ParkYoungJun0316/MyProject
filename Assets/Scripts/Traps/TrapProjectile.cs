@@ -32,12 +32,6 @@ public class TrapProjectile : NetworkBehaviour
     [Tooltip("Player와 충돌 시 파괴. 굴림 오브젝트는 false 권장")]
     [SerializeField] private bool destroyOnPlayer = true;
 
-    [Tooltip("Wall 태그 오브젝트와 충돌 시 파괴")]
-    [SerializeField] private bool destroyOnWall = true;
-
-    [Tooltip("Floor 태그 오브젝트와 충돌 시 파괴")]
-    [SerializeField] private bool destroyOnFloor = true;
-
     [Header("충돌 이펙트")]
     [Tooltip("충돌 파괴 시 스폰할 파티클 프리팹")]
     [SerializeField] private GameObject hitEffectPrefab = null;
@@ -164,15 +158,15 @@ public class TrapProjectile : NetworkBehaviour
                 ReportHitServerRpc(pNetObj.NetworkObjectId);
             else if (destroyOnPlayer)
                 RequestDestroyServerRpc();
-            return;
         }
 
         // ── Wall / Floor ─────────────────────────────────────────────────
-        bool hitWall  = destroyOnWall  && other.CompareTag("Wall");
-        bool hitFloor = destroyOnFloor && other.CompareTag("Floor");
-        if (!hitWall && !hitFloor) return;
-
-        RequestDestroyServerRpc();
+        // Wall/Floor 태그 파괴 판정 제거(2026-07-27, 티켓 D) — Despawn 후에도
+        // 로컬 콜라이더가 살아있어 재충돌마다 RequestDestroyServerRpc가 중복 전송되고,
+        // 이미 Despawn된 id로 도착한 RPC가 NGO DeferredMessageManager에서
+        // "Deferred OnSpawn" 대기 → SpawnTimeout(10초) 후 purge 경고로 이어졌다.
+        // 정리는 lifetime(수명) 만료 또는 StageManager.DestroyAllProjectiles() 일괄
+        // Despawn(둘 다 Host 직접 호출, RPC 아님)에 위임한다.
     }
 
     // ── ServerRpc: 피격 보고 → Host 데미지 + Despawn ─────────────────────

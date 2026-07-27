@@ -150,6 +150,16 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── 보스 진행 동기화 (D축 — BossFightObjective 전용 슬롯) ──
+    // [티켓 B] BossFightObjective의 _phasesCleared가 로컬 카운터+UnityEvent뿐이라 Host/Client가
+    // 각자 다른 값을 들고 있었다(세그먼트 lag/Host 끊김). Host만 쓰는 이 슬롯으로 클리어 수를
+    // 복제하고, BossFightObjective는 이 값의 변경 이벤트로 OnPhaseCleared를 발동한다.
+    private readonly NetworkVariable<int> _bossPhasesCleared = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     private bool _resetPending;
 
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
@@ -175,6 +185,8 @@ public class StageNetworkState : NetworkBehaviour
     public double ChallengeStepStartServerTime => _challengeStep.Value.stepStartServerTime;
     public bool   IsChallengeCleared           => _challengeCleared.Value;
 
+    public int    BossPhasesCleared            => _bossPhasesCleared.Value;
+
     /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnChallengeStepChanged;
     /// <summary>챌린지 클리어 확정 상태가 바뀔 때 발동.</summary>
@@ -191,6 +203,9 @@ public class StageNetworkState : NetworkBehaviour
 
     /// <summary>Floor 타일 롤(시드+keepBWRatio)이 바뀔 때 발동. 전 머신 공통 구독점 — Generate만 반복(Judge/Resolve 없음).</summary>
     public event Action<FloorRollState> OnFloorRollChanged;
+
+    /// <summary>보스 페이즈 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점 — BossFightObjective가 구독해 OnPhaseCleared를 발동.</summary>
+    public event Action<int> OnBossPhasesClearedChanged;
 
     /// <summary>
     /// §11 사망 문으로 재진입이 확정된 순간(Host 레인, NotifyPlayerDeathServerRpc 진입 시) 1회 발동.
@@ -218,6 +233,7 @@ public class StageNetworkState : NetworkBehaviour
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _challengeCleared.OnValueChanged += OnChallengeClearedNvChanged;
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
+        _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
@@ -231,6 +247,7 @@ public class StageNetworkState : NetworkBehaviour
         _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
         _challengeCleared.OnValueChanged -= OnChallengeClearedNvChanged;
         _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
+        _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
         if (Instance == this) Instance = null;
     }
 
@@ -302,6 +319,53 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         DropTrap.PlayWarnById(trapId, targetPos, warnDuration, startY, speed, markerScale);
+    }
+
+    // ── ArrowTrap Mouth 연출 동기화 (Open/Hold, DropTrap 경고 마커와 동일 패턴) ──
+
+    /// <summary>
+    /// Host: ArrowTrap.OnPreFireCharge 발행 시점에 호출(trapId = ArrowTrap stable ID).
+    /// Client: 동일 ArrowTrap 인스턴스의 Mouth 연출(Open)만 재생. Client는 자기 로컬 스케줄
+    /// (부정확한 ServerTime 추정)로 이 연출을 트리거하지 않는다 — 이 RPC가 유일한 트리거다
+    /// (Mouth↔Arrow 타이밍 수정).
+    /// </summary>
+    [ClientRpc]
+    public void SyncArrowChargeClientRpc(int trapId)
+    {
+        if (IsServer) return;
+        ArrowTrap.PlayChargeById(trapId);
+    }
+
+    /// <summary>
+    /// Host: ArrowTrap.OnFiring 발행 시점(화살 Spawn 직전)에 호출. Client: Mouth 연출(Hold)만
+    /// 재생. 화살 Spawn과 같은 호출 지점에서 나가므로 같은 네트워크 배치로 도착한다.
+    /// </summary>
+    [ClientRpc]
+    public void SyncArrowFireClientRpc(int trapId)
+    {
+        if (IsServer) return;
+        ArrowTrap.PlayFireById(trapId);
+    }
+
+    // ── WindTrap Mouth 연출 동기화 (Pull/Push Open/Hold/Close, ArrowTrap Mouth와 동일 패턴) ──
+
+    /// <summary>
+    /// Host: WindTrap.OnWindCharge 발행 시점에 호출(trapId = WindTrap stable ID).
+    /// Client: 동일 WindTrap 인스턴스의 Mouth 연출(오므림/벌리기 시작)만 재생.
+    /// </summary>
+    [ClientRpc]
+    public void SyncWindChargeClientRpc(int trapId)
+    {
+        if (IsServer) return;
+        WindTrap.PlayChargeById(trapId);
+    }
+
+    /// <summary>Host: WindTrap.OnWindEnd 발행 시점에 호출. Client: Mouth 연출(복귀)만 재생.</summary>
+    [ClientRpc]
+    public void SyncWindEndClientRpc(int trapId)
+    {
+        if (IsServer) return;
+        WindTrap.PlayEndById(trapId);
     }
 
     // ── 생존 타이머 동기화 ───────────────────────────────────────
@@ -377,6 +441,17 @@ public class StageNetworkState : NetworkBehaviour
         Debug.Log($"[StageNetworkState] Phase 변경: {prev} → {next}");
     }
 
+    // ── 보스 진행 동기화 (D축) ──────────────────────────────────────
+
+    /// <summary>Host: 보스 페이즈 클리어 수 갱신. BossFightObjective.NotifyPhaseCleared()에서 호출.</summary>
+    public void SetBossPhasesCleared(int cleared)
+    {
+        if (!IsServer) return;
+        _bossPhasesCleared.Value = cleared;
+    }
+
+    void OnBossPhasesClearedNv(int prev, int next) => OnBossPhasesClearedChanged?.Invoke(next);
+
     // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
 
     /// <summary>
@@ -404,6 +479,25 @@ public class StageNetworkState : NetworkBehaviour
             seed                 = _challengeStep.Value.seed,
             stepIndex            = stepIndex,
             stepStartServerTime  = NetworkManager.Singleton.ServerTime.Time,
+        };
+    }
+
+    /// <summary>
+    /// Host: 클리어된 챌린지의 stepIndex를 -1로 되돌린다. _challengeStep 슬롯은 씬당 공유이므로
+    /// 클리어 후에도 마지막 stepIndex(≥0)가 그대로 남아있으면, 같은 챌린지 타입이 다음 Phase에서
+    /// 다시 활성화될 때 OnEnable의 late-subscribe catch-up이 그 값을 "이미 진행 중"으로 오인해
+    /// OnMinigameStarted 등 시작 이벤트를 씬 전환 직후(대화/실제 시작 전)에 잘못 재생시킨다
+    /// (2026-07-27 버그 수정 — M.Stage4 Sequence Start 표지판 미표시 원인). _challengeCleared는
+    /// 건드리지 않는다 — 클리어 신호는 이 호출 전에 이미 ChallengeCleared(true)로 전파된 뒤다.
+    /// </summary>
+    public void ResetChallengeStep()
+    {
+        if (!IsServer) return;
+        _challengeStep.Value = new ChallengeStepState
+        {
+            seed                 = _challengeStep.Value.seed,
+            stepIndex            = -1,
+            stepStartServerTime  = -1.0,
         };
     }
 

@@ -17,7 +17,7 @@ using UnityEngine.Serialization;
 /// [권장 사용]
 /// - 돌굴림 맵의 Floor/Wall 피스에 부착
 /// - 돌 프리팹 → "Boulder" 레이어 설정 → breakTriggerLayers에 Boulder 지정
-/// - TrapProjectile.destroyOnWall=false, destroyOnFloor=false 로 설정해야 돌이 계속 굴러감
+/// - TrapProjectile은 Wall/Floor 파괴 판정이 없으므로(2026-07-27 제거) 돌이 항상 계속 굴러감
 ///
 /// [외부 호출]
 /// Break() 를 직접 호출하면 트리거 없이 동일한 지연/즉시 파괴 시퀀스 시작 (연출용 등)

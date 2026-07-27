@@ -1,8 +1,18 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// WindTrap의 바람 흡입/방출에 맞춰 입 오브젝트의 Animator를 제어하는 컴포넌트.
+///
+/// [동기화 방식 — Mouth↔Wind 타이밍 (ArrowTrap Mouth와 동일 패턴, 2026-07-27)]
+/// WindTrap의 바람 판정(WindCycle/FixedUpdate 힘 적용)은 Owner 물리 권한이라 각 피어가
+/// 로컬로 그대로 실행한다(안 건드림). 하지만 이 연출은 Host만 로컬 OnWindCharge/OnWindEnd를
+/// 직접 구독해 재생하고(zero latency, 아래서 IsServer 가드), Client는 이 로컬 이벤트를
+/// 절대 구독하지 않는다 — WindTrap이 Host에서만 StageNetworkState.SyncWindChargeClientRpc/
+/// SyncWindEndClientRpc로 릴레이하고, Client는 그 RPC로 도착한 PlayChargeFromNetwork/
+/// PlayEndFromNetwork를 통해서만 재생한다. 각 피어가 자기 로컬 이벤트로 직접 재생하면
+/// Client의 ServerTime 추정 오차·백그라운드 스로틀링에 따라 Host와 타이밍이 어긋난다.
 ///
 /// [동작 흐름 — Pull(흡입)]
 ///   OnWindCharge  → doPullOpen  (입 벌리기)
@@ -76,6 +86,13 @@ public class MouthWindAnimator : MonoBehaviour
     void OnEnable()
     {
         if (_wind == null) return;
+
+        // Host만 로컬 WindTrap 이벤트를 직접 구독. Client는 자기 로컬 스케줄(부정확한
+        // ServerTime 추정)로 이 이벤트를 받으면 Host가 보낸 RPC(아래 PlayChargeFromNetwork/
+        // PlayEndFromNetwork)와 같은 Animator를 두고 경쟁해 트리거가 뒤섞인다.
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+
         _wind.OnWindCharge += HandleWindCharge;
         _wind.OnWindEnd    += HandleWindEnd;
     }
@@ -91,6 +108,15 @@ public class MouthWindAnimator : MonoBehaviour
         if (_holdCoroutine != null) { StopCoroutine(_holdCoroutine); _holdCoroutine = null; }
         TriggerIdle();
     }
+
+    // ── 재생 진입점 (Host: 로컬 WindTrap 이벤트 직접 구독 / Client: WindTrap.PlayChargeById·
+    // PlayEndById가 StageNetworkState RPC 수신 시 호출) ─────────────────────
+
+    /// <summary>Host는 OnWindCharge 직접 구독, Client는 SyncWindChargeClientRpc 수신으로 호출됨.</summary>
+    public void PlayChargeFromNetwork() => HandleWindCharge();
+
+    /// <summary>Host는 OnWindEnd 직접 구독, Client는 SyncWindEndClientRpc 수신으로 호출됨.</summary>
+    public void PlayEndFromNetwork() => HandleWindEnd();
 
     // ── 이벤트 핸들러 ──────────────────────────────────────────────────────
 

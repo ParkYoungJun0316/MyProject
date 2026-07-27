@@ -26,6 +26,15 @@
 3. **Drop / Wind:** 기존 M 패턴 확정분 — 보스 인스턴스 스모크만.
 4. **M 풀코스 ParrelSync 2인:** Stage1→…→Boss 연속 1회.
 
+### BossHealthBarUI / ObjectiveUI 통합 + 세그먼트 BG (2026-07-27 확정 — M.Boss·T.Boss 동시 적용)
+
+`BossHealthBarUI`/`ObjectiveUI`/`BossFightObjective`는 M.Boss·T.Boss가 **같은 스크립트를 공유**하므로, 아래 UI 개편은 두 씬에 **동일하게** 반영한다 (T.Boss를 별도 이월 항목으로 미루지 않음):
+
+- `ObjectiveUI`는 그대로 유지(스테이지 진행도 슬롯 + `ShowSceneClear` 문구 표시 역할 그대로). 개별로 떠 있던 Mouth Boss(체력바+이름)를 `Objective_Panel` 쪽으로 편입.
+- `ObjectiveUI.BuildSlots()`가 매 `Refresh()`마다 자기 자식을 전부 `Destroy`하므로, 보스 체력바(고정 UI)를 그 슬롯 생성 로직과 분리해야 파괴되지 않음 — 코드 수정 필요.
+- 세그먼트는 기존 color tint(활성/클리어 색)를 그대로 유지 — 스프라이트 스왑 등 추가 연출 불필요, 뒤에 **BG 1장(전체 세그먼트 바 배경)** 만 추가.
+- 씬 작업(계층 이동, BG 스프라이트 배치)은 M.Boss에서 먼저 검증 후, **T.Boss에도 동일하게 반영** — 코드 계약은 공유라 자동 커버되지만 씬 인스턴스는 각각 확인 필요.
+
 ### T 라운드 이월 체크리스트 (까먹지 말 것 — T 라운드 시작 시 여기부터)
 
 - [ ] **`T.Boss` 보스 objective UI 재확인:** `BossFightObjective`/`BossHealthBarUI`는 M.Boss와 **같은 클래스 공유** — M.Boss 라운드에서 코드 계약을 잠그면 코드 작업은 자동 커버. T.Boss에 남는 것은 **씬 인스턴스 확인만**: 인스펙터 이벤트 연결(`OnPhaseCleared`→`BossHealthBarUI`, 각 챌린지 `OnChallengeComplete`→`NotifyPhaseCleared`), `totalPhases`↔`PhaseManager.phases` 수 일치, ParrelSync 2인 검증.

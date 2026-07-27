@@ -3,13 +3,11 @@ using UnityEngine;
 using TMPro;
 
 /// <summary>
-/// OX 퀴즈 전용 UI.
+/// OX 퀴즈 전용 UI. 진행도(3/5)는 ObjectiveUI Count 모드가 담당한다.
 ///
 /// [Inspector 연결]
 ///   quizManager  : OXQuizManager
-///   quizObjective: OXQuizObjective (OnProgressChanged 구독)
 ///   mainText     : 문제 / 정답 / 해설을 교체해 표시하는 TMP
-///   progressText : "3/5" 형식 진행도 TMP
 ///   timerText    : 답 선택 중에만 표시되는 타이머 TMP
 ///
 /// [표시 흐름]
@@ -19,20 +17,16 @@ using TMPro;
 ///   → 해설 (explanationDisplayDuration 초)
 ///   → 다음 문제 or Clear! → 패널 숨김
 ///
-/// [주의] 리스너를 Awake에서 등록하므로 이 오브젝트가
-///        씬 로드 시 비활성이어도 이벤트를 정상 수신합니다.
+/// [주의] 씬 로드 시 이 오브젝트는 활성 상태여야 Awake에서 리스너를 등록할 수 있다.
+///        Awake 끝에서 SetActive(false)로 숨긴다.
 /// </summary>
 public class OXQuizUI : MonoBehaviour
 {
     [Header("연결")]
-    [SerializeField] OXQuizManager   quizManager;
-    [SerializeField] OXQuizObjective quizObjective;
+    [SerializeField] OXQuizManager quizManager;
 
     [Header("메인 텍스트 (문제 / 정답 / 해설 공용)")]
     [SerializeField] TextMeshProUGUI mainText;
-
-    [Header("진행도 (3/5 형식)")]
-    [SerializeField] TextMeshProUGUI progressText;
 
     [Header("타이머")]
     [SerializeField] TextMeshProUGUI timerText;
@@ -70,30 +64,22 @@ public class OXQuizUI : MonoBehaviour
 
     void RegisterListeners()
     {
-        if (quizManager != null)
-        {
-            quizManager.OnQuestionReady.AddListener(ShowQuestion);
-            quizManager.OnTimerTick.AddListener(SetTimer);
-            quizManager.OnAnswerRevealed.AddListener(ShowAnswer);
-            quizManager.OnAllCleared.AddListener(ShowClear);
-        }
+        if (quizManager == null) return;
 
-        if (quizObjective != null)
-            quizObjective.OnProgressChanged.AddListener(SetProgress);
+        quizManager.OnQuestionReady.AddListener(ShowQuestion);
+        quizManager.OnTimerTick.AddListener(SetTimer);
+        quizManager.OnAnswerRevealed.AddListener(ShowAnswer);
+        quizManager.OnAllCleared.AddListener(ShowClear);
     }
 
     void UnregisterListeners()
     {
-        if (quizManager != null)
-        {
-            quizManager.OnQuestionReady.RemoveListener(ShowQuestion);
-            quizManager.OnTimerTick.RemoveListener(SetTimer);
-            quizManager.OnAnswerRevealed.RemoveListener(ShowAnswer);
-            quizManager.OnAllCleared.RemoveListener(ShowClear);
-        }
+        if (quizManager == null) return;
 
-        if (quizObjective != null)
-            quizObjective.OnProgressChanged.RemoveListener(SetProgress);
+        quizManager.OnQuestionReady.RemoveListener(ShowQuestion);
+        quizManager.OnTimerTick.RemoveListener(SetTimer);
+        quizManager.OnAnswerRevealed.RemoveListener(ShowAnswer);
+        quizManager.OnAllCleared.RemoveListener(ShowClear);
     }
 
     // ── 수신 메서드 ───────────────────────────────────────────────
@@ -127,14 +113,6 @@ public class OXQuizUI : MonoBehaviour
     {
         StopSequence();
         _sequence = StartCoroutine(ClearSequence());
-    }
-
-    /// <summary>OXQuizObjective(RoundProgressObjective).OnProgressChanged.
-    /// ObjectiveUI의 Count 표시와 동일하게 "정산 완료 수/전체"로 통일.</summary>
-    void SetProgress()
-    {
-        if (progressText == null || quizObjective == null) return;
-        progressText.text = $"{quizObjective.PlayedRounds}/{quizObjective.TotalRounds}";
     }
 
     // ── 내부 시퀀스 ───────────────────────────────────────────────

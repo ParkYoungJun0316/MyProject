@@ -21,7 +21,7 @@
 | `CeilingTrap.cs` | MonoBehaviour | 로컬 | `TrapBase` 아님, `Update()` 감지형. 데미지는 별도 컴포넌트(`ContactDamage` 등)가 처리할 것으로 **추정 — 미확인, §3 논의 필요** |
 | `TrapPlayerTracker.cs` | MonoBehaviour | 로컬 | — |
 | `TrapProjectile.cs` | `NetworkBehaviour` | **네트워크 필요** | 데미지 + Despawn 복제 필수 |
-| `MouthTrapAnimator.cs` | MonoBehaviour | 로컬 | — |
+| `MouthTrapAnimator.cs` | MonoBehaviour | 로컬 | **2026-07-27 수정** — `PlayChargeById`/`PlayFireById`가 `MouthTrapAnimatorAnim`만 찾아 BlendShape 버전(Boss `ArrowTrap.prefab`)에서 RPC가 no-op이었음(티켓 A). `MouthTrapAnimatorAnim`/`MouthWindAnimator`와 동일 패턴으로 통일: Client 로컬 구독 제거(`IsServer` 가드) + `PlayOpenFromNetwork`/`PlayHoldFromNetwork` RPC 진입점 추가, `ArrowTrap`이 두 컴포넌트를 모두 시도하도록 수정 |
 | `MouthTrapAnimatorAnim.cs` | MonoBehaviour (2026-07-21 NetworkBehaviour→전환 완료 / 2026-07-22 Close 고정 타이머화) | 로컬 | Host→Client RPC relay 3개 제거, 각 피어가 `TrapBase` 이벤트를 로컬로 직접 트리거. Close는 `holdDuration` 고정 로컬 타이머 — `MouthExitTrigger`(발사체 탈출 이벤트) 의존 제거, Client Hold 과다 지연 버그 수정 |
 | `MouthExitTrigger.cs` | — | — | **삭제됨 (2026-07-22)** — Close를 발사체 탈출 이벤트에 묶으면 Host만 Spawn하는 B안 구조상 Client Hold가 Spawn/RPC RTT만큼 길어지는 문제 → `MouthTrapAnimatorAnim`의 고정 타이머로 대체 |
 | `MouthWindAnimator.cs` | MonoBehaviour | 로컬 | — |

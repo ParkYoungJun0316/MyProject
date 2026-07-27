@@ -91,7 +91,7 @@ public class GameSession : MonoBehaviour
         if (scene.name == "DontDestroyOnLoad") return;
 
         // 스테이지 씬에서만 플레이어 재수집. 타이틀·로비는 플레이어 참조 불필요.
-        if (!scene.name.Contains("Stage")) return;
+        if (!scene.name.Contains("Stage") && !scene.name.Contains("Boss")) return;
 
         // Coordinator(DDOL)는 StartGameServerRpc에서 LoadScene보다 먼저 스폰되므로
         // 씬 로드 시점에 이미 올바른 색 데이터를 보유한다 (NGO FIFO 보장).

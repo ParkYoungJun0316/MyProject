@@ -22,7 +22,7 @@ public enum DropTrapScheduleMode
 /// SetPhaseSpeedMultiplier()로 Phase별 속도 배율을 외부에서 적용.
 ///
 /// [낙하체 프리팹 권장 설정]
-/// - TrapProjectile: type=Arrow, destroyOnFloor=true, destroyOnWall=false
+/// - TrapProjectile: Wall/Floor 파괴 판정 없음(2026-07-27 제거) — lifetime으로 수명 관리
 /// - Rigidbody: Use Gravity=false (TrapProjectile이 속도 제어)
 /// - Collider (Trigger)
 /// </summary>
@@ -337,8 +337,8 @@ public class DropTrap : TrapBase
     {
         if (warnPrefab == null) yield break;
 
-        // 마커는 Y=1에 깔린다 (Y=0은 바닥과 겹쳐 안 보임).
-        Vector3 markerPos = new Vector3(targetPos.x, 1f, targetPos.z);
+        // 마커는 Y=0.5에 깔린다 (Y=0은 바닥과 겹쳐 안 보임).
+        Vector3 markerPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
         GameObject warn = Instantiate(warnPrefab, markerPos, Quaternion.identity);
         warn.transform.localScale = markerScale;
         _pendingObjects.Add(warn);

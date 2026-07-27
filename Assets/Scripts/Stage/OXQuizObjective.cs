@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// OX 퀴즈 클리어를 스테이지 목표로 등록하는 Objective.
 /// OXQuizManager.OnAllCleared 시 Complete() → StageManager.OnStageClear → 다음 Phase.
-/// Count 표시 규칙(ObjectiveUI SSOT)에 맞춰 정산 완료된 문제 수 / 전체 문제 수로 노출한다.
+/// Count 표시: 현재 문제 번호(1-based) / 전체 — 첫 문제 1/5 … 다섯 번째 5/5.
 ///
 /// [연동 흐름]
 /// - Begin()                      : OXQuizManager 이벤트 구독, 진행 상황 초기화
@@ -27,7 +27,7 @@ public class OXQuizObjective : RoundProgressObjective
     int _totalRounds;
     int _currentRoundIndex = -1;
 
-    /// <summary>정산 완료된(정답 처리된) 문제 수.</summary>
+    /// <summary>현재 문제 번호(1-based). 시작 전이면 0.</summary>
     public override int PlayedRounds      => _playedRounds;
 
     /// <summary>이번 판 총 출제 문제 수.</summary>
@@ -52,8 +52,16 @@ public class OXQuizObjective : RoundProgressObjective
 
         // StartQuiz()가 Begin()보다 먼저 호출된 경우 이미 진행 중인 문제 번호로 동기화.
         // 순서가 올바르면(Begin 먼저) 진행 전 상태로 시작.
-        _currentRoundIndex = quizManager.IsStarted ? quizManager.CurrentQuestionIndex : -1;
-        _playedRounds      = Mathf.Max(0, _currentRoundIndex);
+        if (quizManager.IsStarted)
+        {
+            _currentRoundIndex = quizManager.CurrentQuestionIndex;
+            _playedRounds      = _currentRoundIndex + 1;
+        }
+        else
+        {
+            _currentRoundIndex = -1;
+            _playedRounds      = 0;
+        }
 
         quizManager.OnQuestionReady.AddListener(HandleQuestionReady);
         quizManager.OnAllCleared.AddListener(HandleAllCleared);
@@ -65,12 +73,12 @@ public class OXQuizObjective : RoundProgressObjective
 
     // ── 내부 핸들러 ───────────────────────────────────────────────
 
-    /// <summary>새 문제가 뜨면 그 이전 문제까지 정산 완료로 집계.</summary>
+    /// <summary>새 문제가 뜨면 현재 문제 번호(1-based)로 Count 갱신.</summary>
     void HandleQuestionReady(string _)
     {
         if (quizManager == null) return;
         _currentRoundIndex = quizManager.CurrentQuestionIndex;
-        _playedRounds      = _currentRoundIndex;
+        _playedRounds      = _currentRoundIndex + 1;
         _totalRounds       = quizManager.TotalQuestions;
         OnProgressChanged?.Invoke();
     }

@@ -1,17 +1,21 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// Animator 기반 입 열기/닫기 연출 컴포넌트 (ArrowTrap 발사 동기화).
 ///
-/// [동기화 방식]
-/// NetworkBehaviour가 아닌 순수 MonoBehaviour. Host/Client 모두 각자 로컬에서
-/// TrapBase 이벤트를 직접 트리거한다 (RPC/NetworkObject 불필요).
-/// ArrowTrap/DropTrap의 발사 스케줄은 이미 StageNetworkState.StageStartServerTime
-/// (NetworkVariable, ServerTime 기준) 절대 시각으로 계산되어 모든 피어가 동일한
-/// 순간에 OnPreFireCharge/OnFiring을 로컬로 받는다. 실제 발사체 스폰·데미지는
-/// ArrowTrap.OnTrapTrigger / TrapProjectile 쪽에서 별도로 IsServer로 보호된다 —
-/// 이 컴포넌트는 순수 연출이라 Host 권위가 필요 없다.
+/// [동기화 방식 — Mouth↔Arrow 타이밍 수정]
+/// NetworkBehaviour가 아닌 순수 MonoBehaviour. Client의 NetworkManager.ServerTime은
+/// Host 시각의 "추정치"라 Host/Client가 각자 로컬 TrapBase 이벤트(OnPreFireCharge/
+/// OnFiring)를 독립적으로 트리거하면 화살 Spawn(Host 발행 신호)과 서로 다른 시계에서
+/// 출발해 어긋난다. 그래서 Host만 로컬 TrapBase 이벤트를 직접 구독해 반응하고(zero
+/// latency, 아래서 IsServer 가드), Client는 이 로컬 이벤트를 절대 구독하지 않는다 —
+/// ArrowTrap이 Host에서만 StageNetworkState.SyncArrowChargeClientRpc/
+/// SyncArrowFireClientRpc로 릴레이하고, Client는 그 RPC로 도착한 PlayOpenFromNetwork/
+/// PlayHoldFromNetwork를 통해서만 재생한다(DropTrap의 SyncDropWarnClientRpc와 동일 패턴).
+/// 실제 발사체 스폰·데미지는 ArrowTrap.OnTrapTrigger / TrapProjectile 쪽에서 별도로
+/// IsServer로 보호된다.
 ///
 /// [일반 모드 동작 흐름]
 ///   OnPreFireCharge → doOpen  (입 벌리기 시작)
@@ -105,8 +109,15 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
         }
 
         if (_trap == null) return;
-        _trap.OnPreFireCharge += HandlePreFireCharge;
-        _trap.OnFiring        += HandleFiring;
+
+        // Host만 로컬 TrapBase 이벤트를 직접 구독. Client는 자기 로컬 스케줄(부정확한
+        // ServerTime 추정)로 이 이벤트를 받으면 Host가 보낸 RPC(아래 PlayOpenFromNetwork/
+        // PlayHoldFromNetwork)와 같은 Animator를 두고 경쟁해 트리거가 뒤섞인다.
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+
+        _trap.OnPreFireCharge += PlayOpenFromNetwork;
+        _trap.OnFiring        += PlayHoldFromNetwork;
     }
 
     void OnDisable()
@@ -117,16 +128,18 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
 
         if (!loopOpenClose && _trap != null)
         {
-            _trap.OnPreFireCharge -= HandlePreFireCharge;
-            _trap.OnFiring        -= HandleFiring;
+            _trap.OnPreFireCharge -= PlayOpenFromNetwork;
+            _trap.OnFiring        -= PlayHoldFromNetwork;
         }
 
         TriggerSafe(idleTrigger, openTrigger, holdTrigger, closeTrigger);
     }
 
-    // ── 이벤트 핸들러 (일반 모드) ──────────────────────────────────────────
+    // ── 재생 진입점 (Host: 로컬 TrapBase 이벤트 직접 구독 / Client: ArrowTrap.PlayChargeById·
+    // PlayFireById가 StageNetworkState RPC 수신 시 호출) ───────────────────
 
-    void HandlePreFireCharge()
+    /// <summary>입 벌리기 시작. Host는 OnPreFireCharge 직접 구독, Client는 SyncArrowChargeClientRpc 수신으로 호출됨.</summary>
+    public void PlayOpenFromNetwork()
     {
         if (_idleReturnCoroutine != null)
         {
@@ -137,7 +150,8 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
         TriggerOpen();
     }
 
-    void HandleFiring()
+    /// <summary>발사(Hold) 확정. Host는 OnFiring 직접 구독, Client는 SyncArrowFireClientRpc 수신으로 호출됨.</summary>
+    public void PlayHoldFromNetwork()
     {
         if (_idleReturnCoroutine != null)
         {
@@ -202,8 +216,8 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
         {
             if (_trap != null)
             {
-                _trap.OnPreFireCharge -= HandlePreFireCharge;
-                _trap.OnFiring        -= HandleFiring;
+                _trap.OnPreFireCharge -= PlayOpenFromNetwork;
+                _trap.OnFiring        -= PlayHoldFromNetwork;
             }
             if (_idleReturnCoroutine != null)
             {
@@ -221,8 +235,17 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
             }
             if (_trap != null)
             {
-                _trap.OnPreFireCharge += HandlePreFireCharge;
-                _trap.OnFiring        += HandleFiring;
+                // Host만 로컬 이벤트 재구독 — OnEnable과 동일한 이유(위 클래스 주석 참조).
+                var nm = NetworkManager.Singleton;
+                if (nm == null || !nm.IsServer)
+                {
+                    Debug.LogWarning($"[MouthTrapAnimatorAnim] {name}: Client에서 loopMode=false 전환 — 로컬 이벤트 구독 안 함(RPC로만 재생).", this);
+                }
+                else
+                {
+                    _trap.OnPreFireCharge += PlayOpenFromNetwork;
+                    _trap.OnFiring        += PlayHoldFromNetwork;
+                }
                 _trap.SetPreFireChargeTime(openClipLength);
             }
             else
@@ -242,7 +265,11 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
 
     void TriggerSafe(string trigger, string reset1 = null, string reset2 = null, string reset3 = null)
     {
-        if (mouthAnimator == null) return;
+        if (mouthAnimator == null)
+        {
+            Debug.LogWarning($"[MouthTrapAnimatorAnim] {name}: mouthAnimator null — {trigger} 재생 스킵", this);
+            return;
+        }
         if (reset1 != null) mouthAnimator.ResetTrigger(reset1);
         if (reset2 != null) mouthAnimator.ResetTrigger(reset2);
         if (reset3 != null) mouthAnimator.ResetTrigger(reset3);

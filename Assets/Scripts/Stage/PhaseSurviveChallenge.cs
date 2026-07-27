@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -44,6 +45,12 @@ public class PhaseSurviveChallenge : MonoBehaviour
     {
         if (!_running) return;
 
+        // [축 SSOT: NetworkDesign.md §11A ③ "Host 레인 하나만"] 이 가드가 없으면 Client도
+        // 자기 화면에서 독자적으로 완료 판정을 내려 이중 계산이 됐다. Host의 SyncPhase NV가
+        // 먼저 도착해 이 오브젝트가 objectsToDisable로 꺼지면 Client의 로컬 타이머는 완료
+        // 전에 멈춰버려 OnChallengeComplete가 영원히 안 떠 세그먼트가 어긋났다(티켓 B #3).
+        if (IsClientOnly()) return;
+
         _elapsed += Time.deltaTime;
 
         if (_elapsed >= targetTime)
@@ -51,6 +58,12 @@ public class PhaseSurviveChallenge : MonoBehaviour
             _running = false;
             OnChallengeComplete?.Invoke();
         }
+    }
+
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
 #if UNITY_EDITOR

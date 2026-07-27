@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -102,12 +104,100 @@ public class WindTrap : TrapBase
     /// </summary>
     public System.Func<IEnumerator> PreChargeHook = null;
 
+    // ── Mouth 연출(Pull/Push Open/Hold/Close) 네트워크 동기화 (stable ID 레지스트리) ──
+    // WindTrap의 바람 판정(WindCycle/FixedUpdate 힘 적용)은 Owner 물리 권한이라 그대로 각
+    // 피어가 로컬로 실행한다(안 건드림). 오직 MouthWindAnimator의 연출 트리거만 Host 로컬
+    // 이벤트 + ClientRpc로 통일한다 — 각 피어가 자기 로컬 OnWindCharge/OnWindEnd로 직접
+    // 재생하면 Client의 ServerTime 추정 오차·백그라운드 스로틀링에 따라 애니메이션 타이밍이
+    // Host와 어긋난다 (ArrowTrap Mouth 동기화와 동일 이유 — 2026-07-27).
+    // ID는 씬 계층 경로(+sibling index tie-break)로 정렬한 결정적 순서로 배정한다 — Awake
+    // 호출 순서로 매기면 PhaseManager.objectsToEnable로 늦게 활성화되는 그룹의 Host/Client
+    // 활성화 순서가 달라져 ID가 뒤바뀔 수 있다 (ArrowTrap에서 실제로 겪은 버그, 동일 예방).
+    static readonly Dictionary<int, WindTrap> _registry = new Dictionary<int, WindTrap>();
+    static bool _registryBuilt = false;
+    int _netIndex = -1;
+
+    static void EnsureRegistryBuilt()
+    {
+        if (_registryBuilt) return;
+        _registryBuilt = true;
+
+        WindTrap[] all = FindObjectsByType<WindTrap>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            .OrderBy(a => GetHierarchyPath(a.transform), StringComparer.Ordinal)
+            .ToArray();
+
+        for (int i = 0; i < all.Length; i++)
+        {
+            all[i]._netIndex = i;
+            _registry[i] = all[i];
+        }
+    }
+
+    static string GetHierarchyPath(Transform t)
+    {
+        string path = t.name + "#" + t.GetSiblingIndex().ToString("D4");
+        while (t.parent != null)
+        {
+            t = t.parent;
+            path = t.name + "#" + t.GetSiblingIndex().ToString("D4") + "/" + path;
+        }
+        return path;
+    }
+
+    /// <summary>StageNetworkState.SyncWindChargeClientRpc 수신 시 Client에서 호출. Mouth 오므림 연출만 재생.</summary>
+    public static void PlayChargeById(int id)
+    {
+        _registry.TryGetValue(id, out WindTrap t);
+        t?.GetComponent<MouthWindAnimator>()?.PlayChargeFromNetwork();
+    }
+
+    /// <summary>StageNetworkState.SyncWindEndClientRpc 수신 시 Client에서 호출. Mouth 복귀 연출만 재생.</summary>
+    public static void PlayEndById(int id)
+    {
+        _registry.TryGetValue(id, out WindTrap t);
+        t?.GetComponent<MouthWindAnimator>()?.PlayEndFromNetwork();
+    }
+
+    void RelayWindChargeToClients()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+        StageNetworkState.Instance?.SyncWindChargeClientRpc(_netIndex);
+    }
+
+    void RelayWindEndToClients()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+        StageNetworkState.Instance?.SyncWindEndClientRpc(_netIndex);
+    }
+
     /// <summary>
     /// PhaseManager가 Phase 전환 시 호출.
     /// 이 배율이 baseForce × timeForceMultiplier 에 추가로 곱해짐.
     /// 1.0 = 기본 힘, 2.0 = 2배 강하게
     /// </summary>
     public void SetPhaseSpeedMultiplier(float mult) => _phaseForceMultiplier = mult;
+
+    protected override void Awake()
+    {
+        base.Awake();
+        EnsureRegistryBuilt();
+    }
+
+    void OnDestroy()
+    {
+        _registry.Remove(_netIndex);
+        // 씬의 마지막 WindTrap이 사라지면 레지스트리를 비워 다음 씬 로드 시 재구성되게 한다.
+        if (_registry.Count == 0) _registryBuilt = false;
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        OnWindCharge += RelayWindChargeToClients;
+        OnWindEnd    += RelayWindEndToClients;
+    }
 
     protected override void Start()
     {
@@ -123,6 +213,8 @@ public class WindTrap : TrapBase
     /// </summary>
     protected override void OnDisable()
     {
+        OnWindCharge -= RelayWindChargeToClients;
+        OnWindEnd    -= RelayWindEndToClients;
         base.OnDisable();
         _windActive = false;
         _forceActive = false;
