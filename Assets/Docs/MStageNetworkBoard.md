@@ -33,7 +33,16 @@
 - **원인**: `_challengeStep`(§11B.2 공유 슬롯)과 `_currentPhase`(`PhaseManager`, 오브젝트 on/off)가 별도 NV라 Client 도착 순서가 보장되지 않음 — 아직 안 꺼진 이전 챌린지가 새 챌린지의 `stepIndex`를 자기 것으로 오인해 반응하는 레이스였다.
 - **수정**: `Assets/Scripts/Network/StageNetworkState.cs`에 `ChallengeOwnerType` enum(`None`/`OX`/`ColorTile`/`GridColor`/`GridBW`/`SequenceRing`/`DirectionalBarrier`) 신설, `ChallengeStepState`에 `owner` 필드 추가, `ChallengeStart(seed)` → `ChallengeStart(seed, owner)`로 시그니처 변경(`ChallengeStepBegin`/`ResetChallengeStep`은 기존 owner 값 유지), `ChallengeOwner` 읽기 프로퍼티 추가.
 - 6개 챌린지 매니저(`OXQuizManager`/`ColorTileChallenge`/`GridColorChallenge`/`GridBWTileChallenge`/`SequenceRingMinigame`/`DirectionalBarrierRound`) 전부: `ChallengeStart` 호출부에 자기 타입 전달 + `HandleChallengeStepChanged`/`HandleChallengeClearedChanged`/`HandleChallengeOutcome`(구독 중인 것만) 맨 앞에 `ChallengeOwner` 불일치 시 즉시 반환하는 가드 추가.
-- 린트 확인 완료(에러 없음). **ParrelSync 재검증 필요** — 아직 미검증.
+- 린트 확인 완료(에러 없음). **ParrelSync 재검증 통과 (2026-07-28)**.
+
+### `GameSession` Ready 늦은 구독 누락 — ColorTile 조용한 미생성 버그 수정 (코드+검증 완료, 2026-07-28)
+
+**증상:** `M.Stage3` `ColorTileChallenge`가 Host는 정상인데 Client 화면엔 타일이 하나도 안 뜸. 에러/경고 없음. `NetworkDesign.md` §11.7에 상세 원인·수정 SSOT로 기록.
+
+- **원인**: `NetworkDesign.md` §11.3이 명시한 표준 Consumer 패턴(`PlayerSpawnCoordinator.OnPlayersReady += Handler; if (IsReady) Handler();`)을 `GameSession.OnSceneLoaded()`만 지키지 않고 `+=`만 걸어놨다. `OnPlayersReady`가 그 구독보다 먼저 도착한 판에는 `_activePlayers`가 씬 내내 빈 채로 남고, `ColorTileChallenge.HandleChallengeStepChanged`가 `GameSession.GetActivePlayers()`로 얻은 빈 목록 때문에 `colors.Count == 0`으로 조용히 return — 콘솔에 흔적이 안 남아 원인 특정이 오래 걸렸다.
+- **수정**: `Assets/Scripts/GameSession.cs` `OnSceneLoaded()`에 `if (PlayerSpawnCoordinator.IsReady) RefreshPlayersOnReady();` 한 줄 추가 — §11.3 표준 패턴대로 통일.
+- **부수 효과**: `GridColorChallenge`/`GridBWTileChallenge`도 동일 의존이라 같은 레이스의 잠재 피해자였음 — 이번 수정으로 함께 해소.
+- 린트 확인 완료(에러 없음). **ParrelSync 2인 재검증 통과 (2026-07-28)** — 콘솔 `[GameSession] N인 모드 적용` 매 스테이지 진입 시 확인, `M.Stage3` Client 화면 타일 정상 생성 확인.
 
 ### BossHealthBarUI / ObjectiveUI 통합 + 세그먼트 BG (2026-07-27 확정 — M.Boss·T.Boss 동시 적용)
 

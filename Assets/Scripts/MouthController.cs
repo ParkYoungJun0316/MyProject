@@ -66,8 +66,13 @@ public class MouthController : MonoBehaviour
     [Tooltip("입 닫힐 때 FadeOut, 열릴 때 FadeIn 을 자동 호출.\n비워두면 암전 없음.")]
     [SerializeField] private ScreenFader screenFader = null;
 
+    [Header("네트워크 시드 (Host/Client 동기화)")]
+    [Tooltip("씬당 배경 입은 1개뿐이라 상수로 고정. 다른 Random 사용처(WindTrap 등)와 값이 겹치지 않게 임의의 값 유지.")]
+    [SerializeField] private int seedSalt = 0x4D4F5554;
+
     Coroutine _cycleCoroutine;
     bool _isBusy;
+    int _cycleCount;
 
     /// <summary>현재 Close/Hold/Open 사이클 진행 중이면 true.</summary>
     public bool IsBusy => _isBusy;
@@ -81,6 +86,7 @@ public class MouthController : MonoBehaviour
     void OnEnable()
     {
         _isBusy = false;
+        _cycleCount = 0;
         TriggerIdle();
         if (startOnAwake)
             StartCycle();
@@ -123,7 +129,13 @@ public class MouthController : MonoBehaviour
 
         while (true)
         {
+            // Host/Client가 같은 간격을 뽑도록 세션 시드 기반으로 InitState 후 뽑는다
+            // (WindTrap.OnWindCharge Random 모드와 동일 관례 — RPC 없이 시드만 동일하면 됨).
+            int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (_cycleCount * 0x2545F491);
+            UnityEngine.Random.InitState(mixedSeed);
             float interval = Random.Range(randomIntervalMin, randomIntervalMax);
+            _cycleCount++;
+
             yield return new WaitForSeconds(interval);
 
             yield return StartCoroutine(CloseOpenCycle());

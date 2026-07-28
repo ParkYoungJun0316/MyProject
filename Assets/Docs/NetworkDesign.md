@@ -1192,6 +1192,7 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 | UI/패드 일부만 깨짐 | ⑤ 해당 Consumer만 | ④ OK 확인 |
 | 죽어도 리로드 없음 | 사망 문 (Owner 가드 → ServerRpc → Host) | — |
 | `Deferred OnSpawn`/`PurgeTrigger` 경고 (Player NetworkObjectId 관련 의심 시) | §9.0.1-b 축 분류표로 Axis A/B 먼저 분류 | Axis B면 사망 문 1프레임 지연(`DeathReloadDelayFrames`) 또는 ② Spawn `destroyWithScene:true` 타이밍 재현 |
+| 챌린지 콘텐츠(타일 등)가 한쪽 머신에서만 조용히 하나도 안 생김(에러/경고 無) | §11.7 — 해당 Consumer가 §11.3 표준 구독 패턴(`IsReady` 늦은 구독 가드) 지키는지 | ④ Ready 발행 자체는 정상인지(다른 Consumer는 정상 동작하는지) |
 
 규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer(+같은 가정 Consumer)만 고침. 칸에 복구 if 추가 금지. 코드 수정 전 Broken step/근거/Fix plan 제시.
 
@@ -1202,6 +1203,18 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 3. Client 사망 1회 → 동일
 4. 클리어 1회 → 다음 씬 → 같은 축 재통과
 5. `grep`: `Player.Respawn` / `ForceRespawn` / `ReloadCurrentScene` — 프로젝트 정의·호출 **0건** (삭제 완료 상태 유지)
+
+### 11.7 `GameSession` Ready 늦은 구독 누락 — 콘텐츠 조용한 실패 버그 수정 (2026-07-28)
+
+**증상:** `M.Stage3` `ColorTileChallenge`가 Host 화면엔 타일이 정상 생성되는데 Client 화면에선 아무 에러·경고 없이 타일이 하나도 안 생김. ParrelSync 재현 시 매판 되거나 안 되거나 하는 **간헐적** 증상.
+
+**원인:** §11.3 표준 Consumer 패턴(`OnPlayersReady += Handler; if (IsReady) Handler();`)을 `GameSession`만 지키지 않고 있었다(`OnSceneLoaded()`에서 `+=`만 걸고 `IsReady` 늦은 구독 체크 누락). `OnPlayersReady`는 네트워크로 오는 신호라 도착 시점이 매판 미세하게 다른데, 이 신호가 `GameSession`의 구독보다 먼저 도착해버리면 그 씬 내내 `_activePlayers`가 빈 채로 굳는다. `ColorTileChallenge.HandleChallengeStepChanged`는 `GameSession.GetActivePlayers()`로 생존 색을 구하고, 결과가 비면 `colors.Count == 0`으로 **로그 한 줄 없이** 조용히 return하기 때문에 콘솔에 아무 흔적도 안 남았다.
+
+**수정:** `Assets/Scripts/GameSession.cs` `OnSceneLoaded()`의 `PlayerSpawnCoordinator.OnPlayersReady += RefreshPlayersOnReady;` 바로 뒤에 `if (PlayerSpawnCoordinator.IsReady) RefreshPlayersOnReady();`를 추가 — §11.3 표준 패턴대로 통일. 다른 신규 로직 없음, 순수 catch-up 1줄.
+
+- `GridColorChallenge`/`GridBWTileChallenge`도 동일하게 `GameSession.GetActivePlayers()`/`GetActiveColors()`에 의존하므로 같은 레이스의 잠재 피해자였다 — 이번 수정으로 함께 해소됨.
+- **ParrelSync 2인 재검증 통과 (2026-07-28)**: 콘솔 `[GameSession] N인 모드 적용` 로그가 스테이지 진입마다 찍히고, `M.Stage3` Client 화면에 타일 정상 생성 확인.
+- 상세 반영 내용: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
 
 ---
 

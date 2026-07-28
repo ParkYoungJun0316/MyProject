@@ -14,10 +14,12 @@ using UnityEngine.Events;
 ///  5. 마지막 페이즈 완료 → OnBossDefeated 발동
 ///
 /// [Inspector 연결]
-///  totalPhases     : 보스 페이즈 총 수 (PhaseManager.phases 수와 동일하게)
-///  phaseManager    : BossFlow의 PhaseManager
-///  OnPhaseCleared  : BossHealthBarUI.OnPhaseCleared 연결
-///  OnBossDefeated  : 비워둬도 됨 (PhaseManager.onAllPhasesComplete로 씬 전환 처리)
+///  totalPhases       : 보스 페이즈 총 수 (PhaseManager.phases 수와 동일하게)
+///  phaseManager      : BossFlow의 PhaseManager
+///  trapCleanupManager: 씬의 StageManager_BossN 중 아무거나 하나 (DestroyAllProjectiles가
+///                      FindObjectsByType로 씬 전역 검색이라 어떤 인스턴스를 연결해도 동일하게 동작)
+///  OnPhaseCleared    : BossHealthBarUI.OnPhaseCleared 연결
+///  OnBossDefeated    : 비워둬도 됨 (PhaseManager.onAllPhasesComplete로 씬 전환 처리)
 ///
 /// [각 챌린지 이벤트 연결 — Inspector에서]
 ///  PhaseSurviveChallenge.OnChallengeComplete    → NotifyPhaseCleared()
@@ -37,6 +39,10 @@ public class BossFightObjective : MonoBehaviour
     [Header("연결")]
     [Tooltip("씬의 PhaseManager (BossFlow 아래)")]
     [SerializeField] PhaseManager phaseManager;
+
+    [Tooltip("발사체 정리용 StageManager 참조. 씬의 StageManager_Boss1~5 중 아무거나 하나 연결.\n" +
+             "DestroyAllProjectiles()는 씬 전역 검색이라 어떤 인스턴스를 연결해도 동일하게 동작함.")]
+    [SerializeField] StageManager trapCleanupManager;
 
     [Header("이벤트")]
     [Tooltip("페이즈 1개 클리어 시 (클리어 수, 전체 수) 전달\n→ BossHealthBarUI.OnPhaseCleared 연결")]
@@ -108,6 +114,15 @@ public class BossFightObjective : MonoBehaviour
         // Host: NV 복제 → 전 머신 HandleBossPhasesClearedChanged가 OnPhaseCleared 발동
         // (Host 자신도 이 콜백을 통해 발동됨 — 여기서 직접 Invoke하지 않음).
         _netState?.SetBossPhasesCleared(_phasesCleared);
+
+        // [버그 수정 2026-07-29] 이전 페이즈에서 발사된 TrapProjectile(ArrowTrap 화살 등)이
+        // Phase GameObject의 자식이 아니라 씬 루트에 생성되므로, PhaseManager의 objectsToDisable
+        // (Phase 계층 SetActive(false))로는 정리되지 않고 다음 페이즈까지 그대로 날아다녔다.
+        // 일반 스테이지는 StageManager.Update()가 자기 objectives 완료를 감지해 자동으로
+        // DeactivateAllTraps+DestroyAllProjectiles를 호출하지만, 보스는 StageManager.objectives가
+        // 비어있고 클리어 판정이 이 메서드(BossFightObjective)로 완전히 분리돼 있어 그 자동 청소를
+        // 한 번도 안 탔다. 페이즈 전환 직전에 여기서 명시적으로 호출해 동일한 청소를 보장한다.
+        trapCleanupManager?.DestroyAllProjectiles();
 
         // 월드 전환 (다음 아레나 enable/disable + onPhaseEnter 발동 → 다음 챌린지 시작)
         phaseManager?.AdvancePhase();

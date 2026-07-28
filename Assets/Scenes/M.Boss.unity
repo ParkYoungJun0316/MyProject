@@ -2344,6 +2344,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1 &551221224
 GameObject:
   m_ObjectHideFlags: 0
@@ -5249,6 +5250,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossFightObjective
   totalPhases: 5
   phaseManager: {fileID: 1180567567}
+  trapCleanupManager: {fileID: 685006829}
   OnPhaseCleared:
     m_PersistentCalls:
       m_Calls:
@@ -5526,6 +5528,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!114 &1330046490
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7615,7 +7618,7 @@ MonoBehaviour:
   - colorType: 4
     prefab: {fileID: 5737466403161622850, guid: efc677193a32adc4ba4a1abb78321ef2, type: 3}
   revealDuration: 4
-  debugAllTiles: 1
+  debugAllTiles: 0
   OnRoundStarted:
     m_PersistentCalls:
       m_Calls: []
