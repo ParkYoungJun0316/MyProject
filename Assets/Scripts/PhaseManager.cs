@@ -181,20 +181,32 @@ public class PhaseManager : MonoBehaviour
     {
         if (phases == null || index < 0 || index >= phases.Length) return;
         if (_currentPhaseIndex == index) return;
+
+        // [버그 수정 2026-07-28] Host가 surviveDuration=0인 중간 Phase(Delay5.2 등)를
+        // 같은 프레임에 연속 통과하면 NetworkVariable은 중간값 없이 최종 index만 전달한다.
+        // 건너뛴 Phase들의 오브젝트 토글을 순서대로 따라잡지 않으면, 그 중간 Phase에서만
+        // on/off되는 오브젝트(예: 이전 구간 바닥 끄기 + 다음 구간 바닥 켜기)가 영구히
+        // 반영되지 않은 채 남는다(M.Stage5 Delay5.2→Stage5.2 Client 미출현 버그).
+        // onPhaseEnter는 최종 목적지 Phase만 호출 — 중간 Phase의 연출 이벤트를 Client에서
+        // 중복 실행하지 않기 위함(토글만 따라잡고 로직은 마지막 Phase 것만 실행).
+        int start = Mathf.Max(_currentPhaseIndex + 1, 0);
         _currentPhaseIndex = index;
         _phaseElapsed      = 0f; // PhaseRemaining 계산 오염 방지
 
-        PhaseData phase = phases[index];
+        for (int i = start; i <= index; i++)
+        {
+            PhaseData phase = phases[i];
 
-        if (phase.objectsToDisable != null)
-            foreach (GameObject obj in phase.objectsToDisable)
-                if (obj != null) obj.SetActive(false);
+            if (phase.objectsToDisable != null)
+                foreach (GameObject obj in phase.objectsToDisable)
+                    if (obj != null) obj.SetActive(false);
 
-        if (phase.objectsToEnable != null)
-            foreach (GameObject obj in phase.objectsToEnable)
-                if (obj != null) obj.SetActive(true);
+            if (phase.objectsToEnable != null)
+                foreach (GameObject obj in phase.objectsToEnable)
+                    if (obj != null) obj.SetActive(true);
+        }
 
-        phase.onPhaseEnter?.Invoke();
+        phases[index].onPhaseEnter?.Invoke();
     }
 
     // ── Phase 완료 ────────────────────────────────────────────────────

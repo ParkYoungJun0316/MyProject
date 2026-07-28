@@ -5,32 +5,57 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 챌린지 라운드 상태 3종(시드·스텝 인덱스·스텝 시작 서버 시간)을 하나로 묶은 값.
+/// ChallengeStepState가 어느 챌린지 매니저 것인지 식별하는 태그.
+/// [버그 수정 2026-07-28] _challengeStep은 씬당 여러 챌린지 종류가 공유하는 슬롯인데(§11B.2),
+/// "이 컴포넌트를 꺼라"(_currentPhase NV)와 "이번 라운드 데이터"(_challengeStep NV)가 서로 다른
+/// NetworkVariable이라 Client 도착 순서가 NGO에서 보장되지 않는다. 순서가 뒤집히면 아직
+/// SetActive(false) 안 된 이전 챌린지가 새 챌린지의 stepIndex를 자기 것으로 오인해 반응했다
+/// (A 챌린지를 고치면 활성화 타이밍이 바뀌어 B가 깨지는 회귀의 실제 원인 — PhaseManager.EnterPhase()가
+/// onPhaseEnter(챌린지 시작)→SyncPhase(오브젝트 on/off) 순서로 별도 NV 2개를 쓰기 때문).
+/// 각 매니저가 이 태그로 "내 것이 아니면 무시"를 판단하면 활성화 타이밍이 완벽히 맞지 않아도 안전하다.
+/// </summary>
+public enum ChallengeOwnerType
+{
+    None,
+    OX,
+    ColorTile,
+    GridColor,
+    GridBW,
+    SequenceRing,
+    DirectionalBarrier,
+}
+
+/// <summary>
+/// 챌린지 라운드 상태(시드·스텝 인덱스·스텝 시작 서버 시간·소유자)를 하나로 묶은 값.
 /// [버그 수정 2026-07-20] 세 값을 별도 NetworkVariable로 나눠두면, Client 쪽에 도착하는
 /// 순서가 보장되지 않아 "스텝 인덱스는 갱신됐지만 시드는 아직 이전 값"인 순간에
 /// OnValueChanged가 발동해 Host와 다른 셔플 결과가 나올 수 있었다(Host/Client 문제 불일치).
 /// 하나의 NetworkVariable로 합쳐 항상 원자적으로 같이 도착하게 만든다.
+/// [버그 수정 2026-07-28] owner 추가 — 위 ChallengeOwnerType 참고.
 /// </summary>
 public struct ChallengeStepState : INetworkSerializable, IEquatable<ChallengeStepState>
 {
     public int    seed;
     public int    stepIndex;
     public double stepStartServerTime;
+    public ChallengeOwnerType owner;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref seed);
         serializer.SerializeValue(ref stepIndex);
         serializer.SerializeValue(ref stepStartServerTime);
+        serializer.SerializeValue(ref owner);
     }
 
     public bool Equals(ChallengeStepState other) =>
         seed == other.seed &&
         stepIndex == other.stepIndex &&
-        stepStartServerTime.Equals(other.stepStartServerTime);
+        stepStartServerTime.Equals(other.stepStartServerTime) &&
+        owner == other.owner;
 
     public override bool Equals(object obj) => obj is ChallengeStepState other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(seed, stepIndex, stepStartServerTime);
+    public override int GetHashCode() => HashCode.Combine(seed, stepIndex, stepStartServerTime, owner);
 }
 
 /// <summary>
@@ -183,6 +208,7 @@ public class StageNetworkState : NetworkBehaviour
     public int    ChallengeSeed               => _challengeStep.Value.seed;
     public int    ChallengeStepIndex           => _challengeStep.Value.stepIndex;
     public double ChallengeStepStartServerTime => _challengeStep.Value.stepStartServerTime;
+    public ChallengeOwnerType ChallengeOwner   => _challengeStep.Value.owner;
     public bool   IsChallengeCleared           => _challengeCleared.Value;
 
     public int    BossPhasesCleared            => _bossPhasesCleared.Value;
@@ -457,19 +483,22 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>
     /// Host: 챌린지 새 라운드 시작(트리거 진입 등). 시드를 배포해 전 머신이
     /// 동일한 로컬 생성 코드(셔플·배치)를 재실행하게 한다 — 결과 자체는 전송하지 않음.
-    /// seed·stepIndex를 한 NV 쓰기로 같이 보내 Client에서 항상 원자적으로 도착하게 한다.
+    /// seed·stepIndex·owner를 한 NV 쓰기로 같이 보내 Client에서 항상 원자적으로 도착하게 한다.
+    /// owner는 호출한 챌린지 자신의 타입 — 각 매니저의 핸들러가 "내 것이 아니면 무시"를
+    /// 판단하는 유일한 근거이므로 반드시 자기 자신의 타입을 넘겨야 한다.
     /// </summary>
-    public void ChallengeStart(int seed)
+    public void ChallengeStart(int seed, ChallengeOwnerType owner)
     {
         if (!IsServer) return;
-        _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0 };
+        _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0, owner = owner };
         _challengeCleared.Value = false;
     }
 
     /// <summary>
     /// Host: 문제/라운드 스텝 시작. stepIndex 변경이 전 머신에 전파되어
     /// OnChallengeStepChanged 구독자가 동일한 표시·타이머 로직을 실행한다.
-    /// 시드는 그대로 들고 있던 값을 유지 — 이 쓰기에서도 seed+stepIndex+time이 한 번에 같이 간다.
+    /// 시드·owner는 그대로 들고 있던 값을 유지 — 이 쓰기에서도 seed+stepIndex+time+owner가
+    /// 한 번에 같이 간다.
     /// </summary>
     public void ChallengeStepBegin(int stepIndex)
     {
@@ -479,6 +508,7 @@ public class StageNetworkState : NetworkBehaviour
             seed                 = _challengeStep.Value.seed,
             stepIndex            = stepIndex,
             stepStartServerTime  = NetworkManager.Singleton.ServerTime.Time,
+            owner                = _challengeStep.Value.owner,
         };
     }
 
@@ -498,6 +528,7 @@ public class StageNetworkState : NetworkBehaviour
             seed                 = _challengeStep.Value.seed,
             stepIndex            = -1,
             stepStartServerTime  = -1.0,
+            owner                = _challengeStep.Value.owner,
         };
     }
 

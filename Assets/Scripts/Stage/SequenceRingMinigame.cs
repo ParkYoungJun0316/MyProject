@@ -257,7 +257,7 @@ public class SequenceRingMinigame : MonoBehaviour
         _timeSyncTimer = TimeSyncInterval;
 
         int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
-        _netState.ChallengeStart(seed);
+        _netState.ChallengeStart(seed, ChallengeOwnerType.SequenceRing);
         _netState.ChallengeStepBegin(0);
     }
 
@@ -283,6 +283,9 @@ public class SequenceRingMinigame : MonoBehaviour
     /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
     {
+        // [버그 수정 2026-07-28] _challengeStep 공유 슬롯 owner 가드 — 내 것(SequenceRing)이 아니면
+        // 무시(ChallengeOwnerType 정의부 참고, A-B-C-A 회귀의 근본 원인).
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.SequenceRing) return;
         if (stepIndex < 0 || _sortedTiles.Length == 0) return;
 
         bool firstEntry = _state != MinigameState.Playing;
@@ -312,6 +315,7 @@ public class SequenceRingMinigame : MonoBehaviour
     /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnMinigameSuccess를 1회 재생 (OX의 OnAllCleared와 동일 패턴).</summary>
     void HandleChallengeClearedChanged(bool cleared)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.SequenceRing) return; // owner 가드 — HandleChallengeStepChanged와 동일 이유
         if (!cleared) return;
 
         _state = MinigameState.Success;
@@ -322,6 +326,7 @@ public class SequenceRingMinigame : MonoBehaviour
     /// <summary>Host는 FailMinigame()에서 직접 호출하므로 이 핸들러는 Client에서만 의미 있음.</summary>
     void HandleChallengeOutcome(bool success)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.SequenceRing) return; // owner 가드 — HandleChallengeStepChanged와 동일 이유
         if (!success) HandleFailedOutcome();
     }
 

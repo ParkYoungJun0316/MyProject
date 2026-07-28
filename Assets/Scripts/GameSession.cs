@@ -108,6 +108,13 @@ public class GameSession : MonoBehaviour
 
         PlayerSpawnCoordinator.OnPlayersReady -= RefreshPlayersOnReady;
         PlayerSpawnCoordinator.OnPlayersReady += RefreshPlayersOnReady;
+
+        // [버그 수정 2026-07-28] PlayerSpawnCoordinator의 표준 구독 패턴(IsReady 늦은 구독 대비)이
+        // 여기만 빠져 있었다. OnPlayersReady가 이 구독보다 먼저 발행돼버리면 _activePlayers가
+        // 그 씬 내내 빈 채로 남아 GetActivePlayers() 의존 로직(ColorTileChallenge 등)이 조용히
+        // 아무것도 안 하는 채로 실패했다 — M.Stage3 ColorTile 미생성 버그의 근본 원인.
+        if (PlayerSpawnCoordinator.IsReady)
+            RefreshPlayersOnReady();
     }
 
     void RefreshPlayersOnReady()

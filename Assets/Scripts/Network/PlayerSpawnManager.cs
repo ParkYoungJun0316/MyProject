@@ -234,7 +234,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
             setup?.SetColorIndex(LobbyNetworkManager.ColorTypeToIndex(e.ColorType));
             if (setup != null) _spawnedSetups.Add(setup);
 
-            Debug.Log($"[PlayerSpawnManager] 스폰 — clientId={e.ClientId} color={e.ColorType} pos={e.SpawnPos}");
+            Debug.Log($"[PlayerSpawnManager] 스폰 — clientId={e.ClientId} color={e.ColorType} pos={e.SpawnPos} netId={netObj.NetworkObjectId}");
         }
     }
 

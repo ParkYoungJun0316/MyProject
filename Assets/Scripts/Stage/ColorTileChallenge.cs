@@ -98,6 +98,7 @@ public class ColorTileChallenge : MonoBehaviour
     float     _scheduleStartTime;
 
     StageNetworkState _netState;
+    bool _subscribed;
 
     /// <summary>
     /// activateAtSeconds에 등록된 총 스케줄 개수 = 총 라운드 수.
@@ -112,31 +113,24 @@ public class ColorTileChallenge : MonoBehaviour
 
     void OnEnable()
     {
-        // [버그 수정] 구독을 Start/OnDestroy가 아니라 OnEnable/OnDisable로 건다 —
-        // _challengeStep은 씬당 공유 슬롯이라 Phase로 이 GameObject가 비활성화된 뒤에도
-        // Start에서 건 구독이 살아있으면 다른 챌린지의 ChallengeStepBegin에도 계속 반응해
-        // "Coroutine couldn't be started because the game object is inactive" 에러가 났다
-        // (DirectionalBarrierRound.OnEnable과 동일 원칙).
-        _netState = StageNetworkState.Instance;
-        if (_netState != null)
-        {
-            _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
-            _netState.OnChallengeOutcome     += HandleChallengeOutcome;
-            _netState.OnDeathReloadStarted   += HandleDeathReloadStarted;
-        }
+        TryBindAndSubscribe();
+    }
 
-        if (autoStart && !IsClientOnly() && activateAtSeconds != null && activateAtSeconds.Length > 0)
-            StartSchedule();
+    /// <summary>
+    /// Unity가 실제로 보장하는 건 "씬의 모든 Awake가 끝난 뒤에야 모든 Start가 실행된다"뿐이고,
+    /// OnEnable은 이 보장 밖이라 다른 오브젝트(StageNetworkState)의 Awake보다 먼저 돌 수 있다.
+    /// 그래서 OnEnable에서만 _netState를 캐시하면 최초 활성화 시점에 null로 굳어버리는 레이스가
+    /// 있었다 (2026-07-28 버그 — GridColorChallenge와 동일 원인·동일 골격). Start()는 전역
+    /// Awake→Start 순서가 보장되므로(OXQuizManager와 동일 원칙) 여기서 최초 바인딩의 안전망을 맡는다.
+    /// </summary>
+    void Start()
+    {
+        TryBindAndSubscribe();
     }
 
     void OnDisable()
     {
-        if (_netState != null)
-        {
-            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
-            _netState.OnChallengeOutcome     -= HandleChallengeOutcome;
-            _netState.OnDeathReloadStarted   -= HandleDeathReloadStarted;
-        }
+        Unsubscribe();
 
         if (_scheduleCoroutine != null) { StopCoroutine(_scheduleCoroutine); _scheduleCoroutine = null; }
         if (_judgeCoroutine   != null) { StopCoroutine(_judgeCoroutine);   _judgeCoroutine   = null; }
@@ -144,6 +138,38 @@ public class ColorTileChallenge : MonoBehaviour
 
         // 오브젝트 비활성화 시 남아있는 타일 강제 정리 (로컬 시각 정리 — 네트워크 불필요)
         ClearTiles();
+    }
+
+    /// <summary>
+    /// _netState 바인딩 + 구독 + autoStart 트리거를 한 곳에 모은 진입점. OnEnable과 Start 양쪽에서
+    /// 호출되지만 _subscribed 가드로 중복 구독을 막는다 (GridColorChallenge.TryBindAndSubscribe와
+    /// 동일 원칙 — 최초 활성화는 Start가 안전망, Phase 재활성화는 OnEnable이 재구독 전담).
+    /// </summary>
+    void TryBindAndSubscribe()
+    {
+        if (_subscribed) return;
+
+        _netState ??= StageNetworkState.Instance;
+        if (_netState == null) return;
+
+        _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
+        _netState.OnChallengeOutcome     += HandleChallengeOutcome;
+        _netState.OnDeathReloadStarted   += HandleDeathReloadStarted;
+        _subscribed = true;
+
+        if (autoStart && !IsClientOnly() && activateAtSeconds != null && activateAtSeconds.Length > 0)
+            StartSchedule();
+    }
+
+    void Unsubscribe()
+    {
+        if (_netState != null)
+        {
+            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
+            _netState.OnChallengeOutcome     -= HandleChallengeOutcome;
+            _netState.OnDeathReloadStarted   -= HandleDeathReloadStarted;
+        }
+        _subscribed = false;
     }
 
     /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급 (OXQuizManager와 동일).</summary>
@@ -167,7 +193,7 @@ public class ColorTileChallenge : MonoBehaviour
         if (_netState == null) return;
 
         int seed = Random.Range(int.MinValue, int.MaxValue);
-        _netState.ChallengeStart(seed);
+        _netState.ChallengeStart(seed, ChallengeOwnerType.ColorTile);
         _netState.ChallengeStepBegin(0);
     }
 
@@ -232,6 +258,9 @@ public class ColorTileChallenge : MonoBehaviour
     /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
     {
+        // [버그 수정 2026-07-28] _challengeStep 공유 슬롯 owner 가드 — 내 것(ColorTile)이 아니면 무시
+        // (ChallengeOwnerType 정의부 참고, A-B-C-A 회귀의 근본 원인).
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.ColorTile) return;
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 
@@ -372,6 +401,8 @@ public class ColorTileChallenge : MonoBehaviour
     /// </summary>
     void HandleChallengeOutcome(bool success)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.ColorTile) return; // owner 가드 — HandleChallengeStepChanged와 동일 이유
+
         ClearTiles();
         _isRunning = false;
 

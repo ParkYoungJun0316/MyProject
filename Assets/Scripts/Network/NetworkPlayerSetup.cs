@@ -83,6 +83,13 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // 버그3(Deferred OnSpawn/PurgeTrigger, NetworkDesign.md §9.0.1-b Axis B) 재현 로그.
+        // 이 로그가 뜨는 씬/시점(스테이지 전환 직후 · 사망 리로드 직후 · 그 외)과
+        // 경고에 찍힌 NetworkObjectId를 대조해 Axis B 발생 지점을 확정하는 용도.
+        Debug.Log($"[NetworkPlayerSetup] OnNetworkSpawn — netId={NetworkObjectId} " +
+                  $"ownerClientId={OwnerClientId} IsServer={IsServer} IsOwner={IsOwner} " +
+                  $"scene={gameObject.scene.name}");
+
         _colorIndex.OnValueChanged    += OnColorIndexChanged;
         _hp.OnValueChanged            += OnHpChanged;
         _shield.OnValueChanged        += OnShieldChanged;
@@ -130,6 +137,13 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        // 버그3(Deferred OnSpawn/PurgeTrigger, NetworkDesign.md §9.0.1-b Axis B) 재현 로그.
+        // OnNetworkSpawn 로그와 netId로 대조 — despawn 시점과 이후 뜨는 PurgeTrigger 경고의
+        // 타이밍(같은 프레임/씬 언로드 직후 등)을 확인하는 용도.
+        Debug.Log($"[NetworkPlayerSetup] OnNetworkDespawn — netId={NetworkObjectId} " +
+                  $"ownerClientId={OwnerClientId} IsServer={IsServer} IsOwner={IsOwner} " +
+                  $"scene={gameObject.scene.name}");
+
         _colorIndex.OnValueChanged    -= OnColorIndexChanged;
         _hp.OnValueChanged            -= OnHpChanged;
         _shield.OnValueChanged        -= OnShieldChanged;

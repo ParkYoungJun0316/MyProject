@@ -132,6 +132,7 @@ public class OXQuizManager : MonoBehaviour
 
     Coroutine        _timerCoroutine;
     StageNetworkState _netState; // 구독 해제 시 동일 인스턴스 참조 보장용 캐시
+    bool _subscribed;
 
     int QuestionsToWin
     {
@@ -173,19 +174,52 @@ public class OXQuizManager : MonoBehaviour
         // 초기 상태: 발판 Danger, 배리어 내려간 상태
         row?.SetState(OXQuizTile.TileState.Danger);
 
-        // StageNetworkState.Awake()가 이 컴포넌트의 Start()보다 먼저 실행되는 것을
-        // Unity 전역 Awake→Start 순서로 보장받음 (같은 프레임 배치).
-        _netState = StageNetworkState.Instance;
-        if (_netState != null)
-        {
-            _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
-            _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
-            _netState.OnChallengeOutcome        += HandleChallengeOutcome;
-            _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
-        }
+        TryBindAndSubscribe();
+    }
+
+    void OnEnable()
+    {
+        TryBindAndSubscribe();
+    }
+
+    void OnDisable()
+    {
+        Unsubscribe();
+        StopTimer();
+        _quizActive = false;
     }
 
     void OnDestroy()
+    {
+        Unsubscribe();
+    }
+
+    /// <summary>
+    /// _netState 바인딩 + 구독을 한 곳에 모은 진입점. OnEnable과 Start 양쪽에서 호출되지만
+    /// _subscribed 가드로 중복 구독을 막는다 (GridColorChallenge.TryBindAndSubscribe와 동일 원칙).
+    /// [버그 수정 2026-07-28] 기존엔 Start/OnDestroy로만 구독을 걸어서, PhaseManager가 다음 Phase에서
+    /// 이 오브젝트를 objectsToDisable로 SetActive(false)하면 OnDestroy가 불리지 않아 구독이 계속
+    /// 살아있었다 — 그 뒤 다른 챌린지(ColorTile/GridBW/GridColor/SequenceRing)가 공유 슬롯
+    /// (_challengeStep)에 쓸 때마다 비활성 상태인 이 오브젝트의 HandleChallengeStepChanged가 깨어나
+    /// StartCoroutine(TimerRoutine())을 호출해 "Coroutine on inactive GameObject" 에러가 날 수 있는
+    /// 잠재 버그였다(GridColorChallenge 등과 동일 버그 계열). OnEnable/OnDisable로 옮겨 Phase
+    /// 비활성화 시 확실히 구독을 끊는다. 바인딩은 그대로 Start()가 맡아 Awake→Start 순서 보장을 쓴다.
+    /// </summary>
+    void TryBindAndSubscribe()
+    {
+        if (_subscribed) return;
+
+        _netState ??= StageNetworkState.Instance;
+        if (_netState == null) return;
+
+        _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
+        _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
+        _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+        _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
+        _subscribed = true;
+    }
+
+    void Unsubscribe()
     {
         if (_netState != null)
         {
@@ -194,6 +228,7 @@ public class OXQuizManager : MonoBehaviour
             _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
             _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
+        _subscribed = false;
     }
 
     /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급.</summary>
@@ -217,7 +252,7 @@ public class OXQuizManager : MonoBehaviour
         barrierDoor?.Open(); // DoorNetworkSync가 NV로 전 클라이언트에 전파
 
         int seed = Random.Range(int.MinValue, int.MaxValue);
-        _netState?.ChallengeStart(seed);
+        _netState?.ChallengeStart(seed, ChallengeOwnerType.OX);
 
         ResetQuiz();
     }
@@ -235,10 +270,16 @@ public class OXQuizManager : MonoBehaviour
 
     // ── 내부: 문제 진행 (전 머신 공통 — StageNetworkState NV 구독) ─────
 
-    /// <summary>StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 문제를 표시한다.</summary>
+    /// <summary>
+    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 문제를 표시한다.
+    /// [버그 수정 2026-07-28] _challengeStep은 공유 슬롯이라 다른 챌린지가 쓴 값에도 이 이벤트가
+    /// 발동한다 — owner 태그가 내 것(OX)이 아니면 즉시 무시(ChallengeOwnerType 정의부 참고).
+    /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.OX) return;
         if (stepIndex < 0 || row == null || questions.Length == 0) return;
+        if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 
         _quizStarted   = true; // Host/Client 공통 — IsStarted는 이 신호로만 true가 됨 (§ OXQuizObjective.Begin 참조)
         _questionIndex = stepIndex;
@@ -427,6 +468,7 @@ public class OXQuizManager : MonoBehaviour
     /// <summary>Host는 JudgeByPosition에서 직접 호출하므로 이 핸들러는 Client에서만 의미 있음.</summary>
     void HandleChallengeOutcome(bool success)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.OX) return; // owner 가드 — 위 HandleChallengeStepChanged와 동일 이유
         if (success) OnCorrectAnswer?.Invoke();
         else         OnWrongAnswer?.Invoke();
     }
@@ -434,6 +476,7 @@ public class OXQuizManager : MonoBehaviour
     /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnAllCleared를 1회 재생.</summary>
     void HandleChallengeClearedChanged(bool cleared)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.OX) return; // owner 가드 — 위 HandleChallengeStepChanged와 동일 이유
         if (cleared) OnAllCleared?.Invoke();
     }
 

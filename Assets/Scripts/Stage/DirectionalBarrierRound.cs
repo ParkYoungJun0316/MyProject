@@ -103,46 +103,72 @@ public class DirectionalBarrierRound : MonoBehaviour
     PlayerColorType[] _roundColors;
 
     StageNetworkState _netState;
+    bool _subscribed;
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
     void OnEnable()
     {
-        // [버그 수정 2026-07-28] 구독을 Start/OnDestroy가 아니라 OnEnable/OnDisable로 건다 —
-        // _challengeStep은 씬당 공유 슬롯이라 Phase로 이 GameObject가 비활성화된 뒤에도
-        // Start에서 건 구독이 살아있으면 다른 챌린지(SequenceRing 등)의 ChallengeStepBegin에도
-        // 계속 반응해 "Coroutine couldn't be started because the game object is inactive" 에러가
-        // 났다 (SequenceRingMinigame.OnEnable과 동일 원칙 — Phase 컨테이너 수명에 맞춰야 함).
-        _netState = StageNetworkState.Instance;
-        if (_netState != null)
-        {
-            _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
+        TryBindAndSubscribe();
+    }
 
-            // late-subscribe catch-up: Host는 이 GameObject가 켜지자마자 Activate()로 _challengeStep을
-            // 쓰지만, Client는 접속·씬 로드·StageNetworkState replica 스폰을 거쳐야 해서 항상 Host보다
-            // 늦게 이 OnEnable이 돈다. 그 시점엔 이미 stepIndex가 "초기 스폰값"으로 도착해 있어
-            // OnValueChanged(변경 이벤트)가 발동하지 않는 NGO 표준 동작 때문에 HandleChallengeStepChanged가
-            // 영원히 안 불렸다(Client 화면에 베리어·타일이 아예 안 나오던 증상). 구독 직후 현재 NV 값으로
-            // 1회 강제 재실행해 놓친 이벤트를 보정 — Host는 이 시점에 아직 -1이라 중복 발동 없음.
-            if (_netState.ChallengeStepIndex >= 0)
-                HandleChallengeStepChanged(_netState.ChallengeStepIndex);
-        }
-
-        // Host 레인만 라운드를 발동(§11B ①Trigger+②RoundStart) — Client는 NV 전파만 관찰.
-        if (!IsClientOnly())
-            Activate();
+    /// <summary>
+    /// Unity가 실제로 보장하는 건 "씬의 모든 Awake가 끝난 뒤에야 모든 Start가 실행된다"뿐이고,
+    /// OnEnable은 이 보장 밖이라 다른 오브젝트(StageNetworkState)의 Awake보다 먼저 돌 수 있다.
+    /// 그래서 OnEnable에서만 _netState를 캐시하면 최초 활성화 시점에 null로 굳어버리는 레이스가
+    /// 있었다 (2026-07-28 버그 — GridColorChallenge와 동일 원인·동일 골격). Start()는 전역
+    /// Awake→Start 순서가 보장되므로(OXQuizManager와 동일 원칙) 여기서 최초 바인딩의 안전망을 맡는다.
+    /// </summary>
+    void Start()
+    {
+        TryBindAndSubscribe();
     }
 
     void OnDisable()
     {
         // Phase가 이 GameObject를 끌 때 구독 해제 + 코루틴/스폰 정리 — 다른 챌린지가 그 뒤에
         // _challengeStep을 쓸 때 이 컴포넌트가 반응하지 않도록 반드시 여기서 해제해야 한다.
-        if (_netState != null)
-            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
+        Unsubscribe();
 
         StopAllCoroutines();
         ClearBarriers();
         ClearTiles();
+    }
+
+    /// <summary>
+    /// _netState 바인딩 + 구독 + Host 라운드 발동을 한 곳에 모은 진입점. OnEnable과 Start 양쪽에서
+    /// 호출되지만 _subscribed 가드로 중복 구독을 막는다 (GridColorChallenge.TryBindAndSubscribe와
+    /// 동일 원칙 — 최초 활성화는 Start가 안전망, Phase 재활성화는 OnEnable이 재구독 전담).
+    /// </summary>
+    void TryBindAndSubscribe()
+    {
+        if (_subscribed) return;
+
+        _netState ??= StageNetworkState.Instance;
+        if (_netState == null) return;
+
+        _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
+        _subscribed = true;
+
+        // late-subscribe catch-up: Host는 이 GameObject가 켜지자마자 Activate()로 _challengeStep을
+        // 쓰지만, Client는 접속·씬 로드·StageNetworkState replica 스폰을 거쳐야 해서 항상 Host보다
+        // 늦게 이 시점이 온다. 그 시점엔 이미 stepIndex가 "초기 스폰값"으로 도착해 있어
+        // OnValueChanged(변경 이벤트)가 발동하지 않는 NGO 표준 동작 때문에 HandleChallengeStepChanged가
+        // 영원히 안 불렸다(Client 화면에 베리어·타일이 아예 안 나오던 증상). 구독 직후 현재 NV 값으로
+        // 1회 강제 재실행해 놓친 이벤트를 보정 — Host는 이 시점에 아직 -1이라 중복 발동 없음.
+        if (_netState.ChallengeStepIndex >= 0)
+            HandleChallengeStepChanged(_netState.ChallengeStepIndex);
+
+        // Host 레인만 라운드를 발동(§11B ①Trigger+②RoundStart) — Client는 NV 전파만 관찰.
+        if (!IsClientOnly())
+            Activate();
+    }
+
+    void Unsubscribe()
+    {
+        if (_netState != null)
+            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
+        _subscribed = false;
     }
 
     /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급 (OXQuizManager/ColorTileChallenge와 동일).</summary>
@@ -165,7 +191,7 @@ public class DirectionalBarrierRound : MonoBehaviour
         if (_netState == null) return;
 
         int seed = Random.Range(int.MinValue, int.MaxValue);
-        _netState.ChallengeStart(seed);
+        _netState.ChallengeStart(seed, ChallengeOwnerType.DirectionalBarrier);
         _netState.ChallengeStepBegin(0);
     }
 
@@ -177,6 +203,9 @@ public class DirectionalBarrierRound : MonoBehaviour
     /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
     {
+        // [버그 수정 2026-07-28] _challengeStep 공유 슬롯 owner 가드 — 내 것(DirectionalBarrier)이
+        // 아니면 무시(ChallengeOwnerType 정의부 참고, A-B-C-A 회귀의 근본 원인).
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.DirectionalBarrier) return;
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 

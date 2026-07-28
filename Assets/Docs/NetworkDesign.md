@@ -743,6 +743,38 @@ Unity **에디터**는 포커스를 잃은 Play 창의 Update 틱 레이트를 �
 - 플레이어 위치는 **Owner + CNT** (§7.3 확정).
 - **데미지·HP:** `NetworkDamageUtil` 단일 파이프라인 (§9A.3). 발사체만 §9.0.1 Client 보고 → Host 적용.
 
+#### 9.0.1-b Deferred OnSpawn / PurgeTrigger 경고 — 축 분류표 (Axis A/B)
+
+**증상:** 콘솔에 `[Deferred OnSpawn] Messages were received for a trigger of type
+XxxMessage associated with id (N), but the NetworkObject was not received within
+the timeout period 10 second(s).` → `Unity.Netcode.DeferredMessageManager.PurgeTrigger`.
+
+**원칙:** 이 로그는 NGO의 `DeferredMessageManager`가 **메시지 종류(Rpc/ClientRpc/
+NetworkTransformMessage 등)와 무관하게** "발신 시점에 로컬에 그 NetworkObjectId가 없음"을
+찍는 **공용** 경고다. **로그 문구가 같다고 원인도 같다고 가정하지 말 것** — 아래 축으로
+먼저 분류한 뒤 해당 축의 절만 본다.
+
+| 축 | 대상 | 원인 메커니즘 | 상태 |
+|----|------|--------------|------|
+| **Axis A** | 짧은 수명 함정 발사체 (`TrapProjectile` 공유 — Arrow/Drop/Boulder) | 별도 Rpc가 Spawn 메시지와 다른 경로로 전송되어, 이미 Despawn된 id 또는 아직 CreateObject가 도착 안 한 id를 대상으로 함 | **확정 해결 (2026-07-27~28)** — 아래 3개 fix로 수렴 |
+| **Axis B** | 지속 동기화 오브젝트 (Player, `ClientNetworkTransform`) — §11 사망/씬전환 | Owner가 매 틱 자동 전송하는 `NetworkTransformMessage`가 `destroyWithScene:true` 씬 리로드/전환으로 그 NetworkObject가 Despawn되는 시점과 겹침 | **미확정** — §11.5 참고, 재현 로그 확정 전 임의 수정 금지 |
+
+**Axis A 확정 fix 3종 (재사용 가능한 패턴 — 새 함정 발사체 추가 시 그대로 적용):**
+
+1. Spawn "전" `PrepareVelocity`/`PrepareWaypoints`로 예약 → NV에 기록 → Spawn 메시지 자체에
+   실려 전파 (`TrapProjectile.cs`, `ArrowTrap.cs`, `DropTrap.cs`, `BoulderSpawner.cs`)
+2. Rpc 타겟을 발사체 자기 자신이 아니라 상주 `StageNetworkState`로 이동
+   (`ReportTrapHitServerRpc` / `RequestTrapDestroyServerRpc`)
+3. Wall/Floor 중복 파괴 판정 자체를 제거 (`ArrowTrap.cs`, 재충돌마다 중복 요청 발생 원천 차단)
+
+**Axis B에는 Axis A 패턴을 그대로 적용할 수 없다:** `ClientNetworkTransform`은 Rpc가 아니라
+NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이로드 번들도 불가능하다. 이 경고
+하나만으로 Owner + CNT 이동 권한(§7.3 확정)을 바꾸는 방향은 채택하지 않는다.
+
+**AI 주의:** 새 Deferred OnSpawn/PurgeTrigger 경고가 보고되면 먼저 이 표로 Axis A/B(또는
+신규 축)인지 분류한다. Axis A 재발이면 위 3개 패턴 중 어긋난 지점만 찾는다. Axis B(또는
+신규 축)면 재현 로그로 원인을 확정하기 전에는 코드를 고치지 않는다.
+
 ### MVP 동기화 대상
 
 **우선순위:** `Must (Open/Playtest)` → `Should (여유)` → `Post (출시 이후)`
@@ -1159,6 +1191,7 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 | 카메라 안 붙음 | ④ Ready 발행 | ⑤ bind 구독 타이밍 |
 | UI/패드 일부만 깨짐 | ⑤ 해당 Consumer만 | ④ OK 확인 |
 | 죽어도 리로드 없음 | 사망 문 (Owner 가드 → ServerRpc → Host) | — |
+| `Deferred OnSpawn`/`PurgeTrigger` 경고 (Player NetworkObjectId 관련 의심 시) | §9.0.1-b 축 분류표로 Axis A/B 먼저 분류 | Axis B면 사망 문 1프레임 지연(`DeathReloadDelayFrames`) 또는 ② Spawn `destroyWithScene:true` 타이밍 재현 |
 
 규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer(+같은 가정 Consumer)만 고침. 칸에 복구 if 추가 금지. 코드 수정 전 Broken step/근거/Fix plan 제시.
 
@@ -1305,11 +1338,11 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 | 멤버 | 종류 | 역할 |
 |------|------|------|
-| `ChallengeStepState { seed, stepIndex, stepStartServerTime }` | `NetworkVariable` (Server write, 1개로 통합) | ②RoundStart 원자적 배포 |
-| `ChallengeSeed` / `ChallengeStepIndex` / `ChallengeStepStartServerTime` | 읽기 프로퍼티 | ③Generate·④Judge 타이머 기준 |
+| `ChallengeStepState { seed, stepIndex, stepStartServerTime, owner }` | `NetworkVariable` (Server write, 1개로 통합) | ②RoundStart 원자적 배포. `owner`는 2026-07-28 추가 — §11B.9 참고 |
+| `ChallengeSeed` / `ChallengeStepIndex` / `ChallengeStepStartServerTime` / `ChallengeOwner` | 읽기 프로퍼티 | ③Generate·④Judge 타이머 기준. `ChallengeOwner`는 §11B.9 소유자 가드 전용 |
 | `IsChallengeCleared`(`_challengeCleared` NV) | `NetworkVariable<bool>` (Server write) | ⑤Resolve 클리어 연출 신호 |
-| `ChallengeStart(seed)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)` | Host 전용 메서드 | Writer |
-| `OnChallengeStepChanged` / `OnChallengeClearedChanged` / `OnChallengeOutcome` | 이벤트 | 전 챌린지 매니저 공통 구독점 |
+| `ChallengeStart(seed, owner)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)` | Host 전용 메서드 | Writer. `owner`는 호출한 챌린지 자신의 `ChallengeOwnerType` — 반드시 자기 타입을 넘겨야 함 |
+| `OnChallengeStepChanged` / `OnChallengeClearedChanged` / `OnChallengeOutcome` | 이벤트 | 전 챌린지 매니저 공통 구독점(공유 슬롯이므로 핸들러 내부에서 `ChallengeOwner` 가드 필수 — §11B.9) |
 | `NotifyChallengeOutcomeClientRpc(bool success)` | `[ClientRpc]` | ④Judge 결과 1회성 연출(Client만 재생 — Host는 로컬에서 직접 처리하므로 스킵) |
 | `SubmitStepServerRpc(PlayerColorType color)` / `SubmitAnyKeyStepServerRpc()` | `[Rpc(SendTo.Server)]` | §11B.1 — Client 입력 제출 → Host가 `SequenceRingMinigame.Instance.TrySubmit()`/`TrySubmitAnyKey()` 호출 |
 | `OnChallengeTimeSync` / `SyncChallengeTimeClientRpc(float remaining)` | 이벤트 / `[ClientRpc]` | §11B.1 — 이벤트 기반 변동(페널티)이 있어 ServerTime 역산이 불가능한 연속 타이머 전용(SequenceRing). Host가 직접 tick + 주기 브로드캐스트 |
@@ -1343,6 +1376,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | 오답인데 데미지 없음(온라인) | ⑤ Resolve — `NetworkDamageUtil` 경유 여부 | ④ Judge 호출 여부 |
 | 전원 클리어했는데 다음 Phase로 안 넘어감 | ⑤ Resolve `Complete()` Host 가드 | §11A ③Progress 연결 여부 |
 | SequenceRing류에서 다른 사람이 누른 입력이 반영 안 됨 | §11B.1 ServerRpc 제출 누락 | ④ Judge `TrySubmit()` |
+| 챌린지 A를 고치면 B가 깨지는 회귀(A→B→C→A 순환) | §11B.9 `ChallengeOwner` 가드 누락 여부 | ② RoundStart의 `ChallengeStart(seed, owner)` 호출이 자기 타입을 넘기는지 |
 
 규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer만 고침. 칸에 복구 if 추가 금지.
 
@@ -1368,6 +1402,18 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 - `keepBWRatio`를 시드와 함께 NV에 실어보내 Client가 Phase 진행(`triggerTime`/`changeInterval`)을 독자 계산하지 않게 함(SequenceRing 시간 동기화와 같은 결론)
 - **ParrelSync 2인 검증 통과(2026-07-25)**: Host/Client 화면에서 타일 롤 패턴(Black/White/Reveal 배치)과 Phase 전환(간격·비율 변화) 타이밍 동일 확인
 - 상세 반영 내용: [`MStageNetworkBoard.md`](MStageNetworkBoard.md) "Floor 마이그레이션 반영 내용"
+
+### 11B.9 `ChallengeOwner` 소유자 가드 — 공유 슬롯 교차 오염 버그 수정 (2026-07-28)
+
+**증상:** 챌린지 하나(A)를 고치면 다른 챌린지(B)가 새로 깨지고, B를 고치면 C가 깨지는 식으로 계속 순환하는 회귀가 있었다.
+
+**원인:** §11B.2의 `_challengeStep`은 씬당 여러 챌린지 종류가 공유하는 슬롯인데, "이 컴포넌트를 꺼라"(`_currentPhase` NV, `PhaseManager`)와 "이번 라운드 데이터"(`_challengeStep` NV)가 서로 다른 NetworkVariable이라 Client 도착 순서가 NGO에서 보장되지 않는다. `PhaseManager.EnterPhase()`가 `onPhaseEnter`(새 챌린지의 `Activate()`/`StartQuiz()` 호출 → `_challengeStep` 갱신)를 먼저, `SyncPhase()`(오브젝트 on/off용 `_currentPhase` 갱신)를 나중에 쓰기 때문에, Client에서 두 NV의 `OnValueChanged` 콜백이 역전되면 아직 `SetActive(false)`되지 않은 이전 챌린지가 새 챌린지의 `stepIndex`를 자기 것으로 오인해 반응할 수 있었다. 이게 A를 고쳐 활성화 타이밍이 미묘하게 바뀔 때마다 다른 챌린지가 새로 이 레이스에 걸리는 회귀의 실제 원인이었다.
+
+**수정:** `ChallengeStepState`에 `owner : ChallengeOwnerType`(`None`/`OX`/`ColorTile`/`GridColor`/`GridBW`/`SequenceRing`/`DirectionalBarrier`) 필드를 추가. `ChallengeStart(seed, owner)` 호출 시 자기 자신의 타입을 실어보내고, `ChallengeStepBegin`/`ResetChallengeStep`은 기존 `owner` 값을 그대로 유지한다. 각 챌린지 매니저의 `HandleChallengeStepChanged`/`HandleChallengeClearedChanged`/`HandleChallengeOutcome` 핸들러 맨 앞에 `if (_netState.ChallengeOwner != <자기 타입>) return;` 가드를 추가해, 활성화 타이밍이 완벽히 맞지 않아도 "내 것이 아닌 이벤트"를 항상 안전하게 무시하게 만들었다.
+
+- `_currentPhase`/`_challengeStep`을 하나로 합치는 안(§11B.4 "별도 NV로 분리 금지" 원칙과 유사한 방향)도 검토했으나, `_currentPhase`는 트랩 스케줄링(`PhaseStartServerTime` 등)과도 얽혀 있어 블라스트 반경이 크고, 슬롯 배타성 원칙(§11B.8 "왜 별도 슬롯인가")과도 상충 — owner 태그 추가가 가장 국소적이고 기존 원칙과 일치하는 수정.
+- 적용 대상: OX/ColorTile/GridColor/GridBW/SequenceRing 5개 챌린지 + `DirectionalBarrierRound`(§11B.3에는 없으나 동일 공유 슬롯 사용 확인되어 함께 수정).
+- 상세 반영 내용: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
 
 ---
 

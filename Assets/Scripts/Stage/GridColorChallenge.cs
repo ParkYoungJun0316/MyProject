@@ -88,6 +88,7 @@ public class GridColorChallenge : MonoBehaviour
     public UnityEvent<int, bool> OnRoundSettled;
 
     bool _isRunning;
+    bool _subscribed;
     StageNetworkState _netState;
     Coroutine _judgeCoroutine;
 
@@ -107,19 +108,52 @@ public class GridColorChallenge : MonoBehaviour
 
     void OnEnable()
     {
-        // [버그 수정] 구독을 Start/OnDestroy가 아니라 OnEnable/OnDisable로 건다 —
-        // _challengeStep은 씬당 공유 슬롯이라 Phase로 이 GameObject가 비활성화된 뒤에도
-        // Start에서 건 구독이 살아있으면 다른 챌린지(GridBWTileChallenge 등)의 ChallengeStepBegin에도
-        // 계속 반응해 "Coroutine couldn't be started because the game object is inactive" 에러가
-        // 났다 (DirectionalBarrierRound.OnEnable과 동일 원칙).
-        _netState = StageNetworkState.Instance;
-        if (_netState != null)
-        {
-            _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
-            _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
-            _netState.OnChallengeOutcome        += HandleChallengeOutcome;
-            _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
-        }
+        TryBindAndSubscribe();
+    }
+
+    /// <summary>
+    /// Unity가 실제로 보장하는 건 "씬의 모든 Awake가 끝난 뒤에야 모든 Start가 실행된다"뿐이고,
+    /// OnEnable은 이 보장 밖이라 다른 오브젝트(StageNetworkState)의 Awake보다 먼저 돌 수 있다.
+    /// 그래서 OnEnable에서만 _netState를 캐시하면 최초 활성화 시점에 null로 굳어버리는 레이스가
+    /// 있었다 (2026-07-28 버그 — M.Stage5 GridRound 미진행, Activate()가 _netState null로 조기
+    /// 반환). Start()는 전역 Awake→Start 순서가 보장되므로(OXQuizManager와 동일 원칙) 여기서
+    /// 최초 바인딩의 안전망을 맡는다.
+    /// </summary>
+    void Start()
+    {
+        TryBindAndSubscribe();
+    }
+
+    void OnDisable()
+    {
+        Unsubscribe();
+
+        if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
+        _isRunning = false;
+    }
+
+    /// <summary>
+    /// _netState 바인딩 + 구독 + autoStart 트리거를 한 곳에 모은 진입점. OnEnable과 Start 양쪽에서
+    /// 호출되지만 _subscribed 가드로 중복 구독을 막는다.
+    /// - 최초 활성화: OnEnable이 StageNetworkState.Awake보다 먼저 돌면 _netState가 아직 null이라
+    ///   건너뛰고, 뒤이어 실행되는 Start()(순서 보장)가 안전하게 완료한다. 반대로 OnEnable이 이미
+    ///   늦게 돌아 바인딩에 성공했다면 Start()는 _subscribed=true를 보고 그냥 스킵한다.
+    /// - Phase 재활성화(2번째 이후 OnEnable): Start는 생애 1회만 실행되므로 이 경우엔 OnEnable이
+    ///   재구독 + autoStart 재트리거를 전담한다 (Phase가 이 GameObject를 껐다 켤 때마다 다시
+    ///   Activate()해야 하는 원래 동작 유지).
+    /// </summary>
+    void TryBindAndSubscribe()
+    {
+        if (_subscribed) return;
+
+        _netState ??= StageNetworkState.Instance;
+        if (_netState == null) return;
+
+        _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
+        _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
+        _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+        _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
+        _subscribed = true;
 
         if (!autoStart || IsClientOnly()) return;
 
@@ -129,7 +163,7 @@ public class GridColorChallenge : MonoBehaviour
             Activate();
     }
 
-    void OnDisable()
+    void Unsubscribe()
     {
         if (_netState != null)
         {
@@ -138,9 +172,7 @@ public class GridColorChallenge : MonoBehaviour
             _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
             _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
-
-        if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
-        _isRunning = false;
+        _subscribed = false;
     }
 
     IEnumerator AutoStartRoutine()
@@ -225,7 +257,7 @@ public class GridColorChallenge : MonoBehaviour
     void StartRound(int round)
     {
         int seed = Random.Range(int.MinValue, int.MaxValue);
-        _netState.ChallengeStart(seed);
+        _netState.ChallengeStart(seed, ChallengeOwnerType.GridColor);
         _netState.ChallengeStepBegin(round);
     }
 
@@ -237,6 +269,9 @@ public class GridColorChallenge : MonoBehaviour
     /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
     {
+        // [버그 수정 2026-07-28] _challengeStep 공유 슬롯 owner 가드 — 내 것(GridColor)이 아니면 무시
+        // (ChallengeOwnerType 정의부 참고, A-B-C-A 회귀의 근본 원인).
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.GridColor) return;
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
         if (tiles == null || tiles.Length == 0) return;
@@ -253,6 +288,7 @@ public class GridColorChallenge : MonoBehaviour
         var rng  = new System.Random(seed);
         PickRandomColorTiles(rng);
         ApplyTileStates();
+
         OnRoundStarted?.Invoke(stepIndex);
 
         // 판정은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 ClientRpc로만 관찰
@@ -291,7 +327,11 @@ public class GridColorChallenge : MonoBehaviour
     // ── 결과 반영 (전 머신 공통 — Host는 직접 호출, Client는 ClientRpc로 수신) ──
 
     /// <summary>Host는 JudgeRoutine에서 직접 호출하므로 이 핸들러는 Client에서만 의미 있음.</summary>
-    void HandleChallengeOutcome(bool success) => HandleRoundOutcome(CurrentRoundIndex, success);
+    void HandleChallengeOutcome(bool success)
+    {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.GridColor) return; // owner 가드 — HandleChallengeStepChanged와 동일 이유
+        HandleRoundOutcome(CurrentRoundIndex, success);
+    }
 
     void HandleRoundOutcome(int round, bool success)
     {
@@ -314,6 +354,7 @@ public class GridColorChallenge : MonoBehaviour
     /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnChallengeComplete를 1회 재생 (OX의 OnAllCleared와 동일 패턴).</summary>
     void HandleChallengeClearedChanged(bool cleared)
     {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.GridColor) return; // owner 가드 — HandleChallengeStepChanged와 동일 이유
         if (!cleared) return;
 
         _isRunning = false;

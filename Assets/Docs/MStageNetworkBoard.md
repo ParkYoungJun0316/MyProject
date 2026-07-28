@@ -26,6 +26,15 @@
 3. **Drop / Wind:** 기존 M 패턴 확정분 — 보스 인스턴스 스모크만.
 4. **M 풀코스 ParrelSync 2인:** Stage1→…→Boss 연속 1회.
 
+### `ChallengeOwner` 소유자 가드 — A-B-C-A 순환 회귀 수정 (코드, 2026-07-28)
+
+**증상:** 챌린지 하나(A)를 고치면 다른 챌린지(B)가 새로 깨지고, B를 고치면 C가 깨지는 식으로 순환하는 회귀. `NetworkDesign.md` §11B.9에 상세 원인·수정 내용 SSOT로 기록.
+
+- **원인**: `_challengeStep`(§11B.2 공유 슬롯)과 `_currentPhase`(`PhaseManager`, 오브젝트 on/off)가 별도 NV라 Client 도착 순서가 보장되지 않음 — 아직 안 꺼진 이전 챌린지가 새 챌린지의 `stepIndex`를 자기 것으로 오인해 반응하는 레이스였다.
+- **수정**: `Assets/Scripts/Network/StageNetworkState.cs`에 `ChallengeOwnerType` enum(`None`/`OX`/`ColorTile`/`GridColor`/`GridBW`/`SequenceRing`/`DirectionalBarrier`) 신설, `ChallengeStepState`에 `owner` 필드 추가, `ChallengeStart(seed)` → `ChallengeStart(seed, owner)`로 시그니처 변경(`ChallengeStepBegin`/`ResetChallengeStep`은 기존 owner 값 유지), `ChallengeOwner` 읽기 프로퍼티 추가.
+- 6개 챌린지 매니저(`OXQuizManager`/`ColorTileChallenge`/`GridColorChallenge`/`GridBWTileChallenge`/`SequenceRingMinigame`/`DirectionalBarrierRound`) 전부: `ChallengeStart` 호출부에 자기 타입 전달 + `HandleChallengeStepChanged`/`HandleChallengeClearedChanged`/`HandleChallengeOutcome`(구독 중인 것만) 맨 앞에 `ChallengeOwner` 불일치 시 즉시 반환하는 가드 추가.
+- 린트 확인 완료(에러 없음). **ParrelSync 재검증 필요** — 아직 미검증.
+
 ### BossHealthBarUI / ObjectiveUI 통합 + 세그먼트 BG (2026-07-27 확정 — M.Boss·T.Boss 동시 적용)
 
 `BossHealthBarUI`/`ObjectiveUI`/`BossFightObjective`는 M.Boss·T.Boss가 **같은 스크립트를 공유**하므로, 아래 UI 개편은 두 씬에 **동일하게** 반영한다 (T.Boss를 별도 이월 항목으로 미루지 않음):
@@ -136,9 +145,9 @@ public void FloorRoll(int seed, float keepBWRatio)
 ### 지금까지 실제로 한 일 (코드, 전부 완료)
 
 1. `Assets/Scripts/Network/StageNetworkState.cs` — 축 #4 공통 API 추가
-   - `ChallengeStepState` 구조체(`seed`/`stepIndex`/`stepStartServerTime`) + `NetworkVariable<ChallengeStepState> _challengeStep` **1개**로 통합 관리
+   - `ChallengeStepState` 구조체(`seed`/`stepIndex`/`stepStartServerTime`/`owner`, `owner`는 2026-07-28 추가) + `NetworkVariable<ChallengeStepState> _challengeStep` **1개**로 통합 관리
    - `NetworkVariable<bool> _challengeCleared`
-   - Host 전용 메서드: `ChallengeStart(seed)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)`
+   - Host 전용 메서드: `ChallengeStart(seed, owner)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)`
    - `[ClientRpc] NotifyChallengeOutcomeClientRpc(bool success)`
    - 이벤트: `OnChallengeStepChanged(int)` / `OnChallengeClearedChanged(bool)` / `OnChallengeOutcome(bool)`
 2. `Assets/Scripts/Stage/OXQuizManager.cs` — Q1~Q6, Q8 반영
