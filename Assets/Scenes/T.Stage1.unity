@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.28930807, g: 0.1828645, b: 0.28930807, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.02
@@ -20607,9 +20607,9 @@ MonoBehaviour:
   phases:
   - phaseName: Stage1
     surviveDuration: 0
-    objectsToDisable:
+    objectsToDisable: []
+    objectsToEnable:
     - {fileID: 883898712}
-    objectsToEnable: []
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
