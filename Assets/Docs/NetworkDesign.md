@@ -1,404 +1,10 @@
 # Network Design (MVP)
 
-네트워크 · 출시 계획 문서.  
+네트워크 동기화 아키텍처 문서 — 권한(Authority)·룸/세션·플레이어·스테이지 진행·챌린지 축의 SSOT.  
+**출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고** (2026-08, §0 전체를 두 문서로 분리).  
 **데모 없음.** Steam **Playtest** → **정식 출시**만.  
 스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**.  
 (`End.Demo` = 클리어 UI 씬명 레거시. 리네임은 별도 작업.)
-
-**앵커:** D0 = Steam Direct App Fee 결제일. **D14** = Coming Soon + Playtest 동시 오픈 목표.
-
----
-
-## 0. 출시 로드맵 · 작업 우선순위
-
-### 0.1 달력 · 3트랙 (확정)
-
-| 구간 | 초점 |
-|------|------|
-| **D0–D13** | 오픈 준비 — Steam P2P, **M 풀코스+보스**, **텔레메트리**, 스토어 리뷰, 법인 착수 |
-| **D14** | **Coming Soon + Playtest 동시** / Steam 2인 스모크 |
-| **D14–D21** | **Playtest M주** — `M.Stage1`→`M.Stage5`→`M.Boss` |
-| **D21–D28** | **Playtest T주** — `T.Stage1`→`T.Stage5`→`T.Boss` |
-| **D28–D30+** | 출시 직전 — Tutorial·옵션·밸런스·QA · **법인 계정**에서 정식 출시 |
-
-**출시 가능 윈도우:** 앱피 30일(≈D30) ∩ Coming Soon 14일(오픈 D14 → ≈D28 충족) → **대략 D30 전후**.
-
-| 트랙 | 역할 | 합류 |
-|------|------|------|
-| **게임/빌드** | P2P → M주 → T주 → 출시 Must | D14 / M주 / T주 / 출시 |
-| **스토어** | 페이지 → 리뷰 → Coming Soon(+Playtest) | **D14 = 게임 빌드와 동시** |
-| **법인** | 설립 → 법인 Steam → 앱 이전 | **출시 버튼만** 법인. Coming Soon·Playtest는 개인 가능 |
-
-**폴백:** Coming Soon만 먼저 → **+1주** Playtest. 기본안은 **동시**.
-
-### 0.1.1 전체 작업 목록 (확정 순서)
-
-| 순위 | 작업 | 비고 |
-|------|------|------|
-| 1 | **네트워크** | ParrelSync → 빌드 → **Steam P2P** (§0.2) — Playtest·정식 필수 |
-| 2 | **텔레메트리** | §0.5.1 — **Open Must** (관전 대신 상황 파악) |
-| 3 | **사운드 마무리** | 최소한만. 과하면 방해되므로 억제 |
-| 4 | **파티클** | 시작 안 함. **피격·Break** 등 핵심만 |
-| 5 | **난이도 밸런싱** | Playtest M주·T주 피드백 기반 → 출시 전 흡수 |
-| 6 | **UI 마무리** | 오픈: 최소 HUD / **정식:** 옵션·볼륨 등 |
-| 7 | **Steamworks 연동** | Transport·Lobby·Depot·Playtest (§0.3) |
-| 8 | **출시 QA** | 빌드·Steam·2~4인 시나리오 체크리스트 |
-| — | **컷씬** | **영구 제외** (출시 후에도 안 넣음) |
-| — | **관전** | 출시 전 제외 → **Post-Launch 후보** |
-| — | sit / dance 이모트 | Post-Launch |
-
-### 0.2 네트워크 테스트 단계 (개발자 환경)
-
-**개발 중 멀티 검증은 아래 순서로만 한다** (원격 IP Join·discovery 없음).
-
-**오픈·Playtest 핵심:** Steam에서 **원격 협동 + 인게임 보이스 + 응원** + **텔레메트리**.  
-**개발자 장비:** 테스트 PC **최대 2대** — Steam P2P 일상 검증은 **2인** 기준 (§0.2.1).
-
-```
-① ParrelSync (에디터 Host + Clone Client)
-   → 빠른 반복·버그 수정. ※ 출시 판정용 아님.
-
-② Development Build (Host EXE + Client EXE, localhost / 같은 PC)
-   → exe·NGO·마이크 등 **빌드 전용 버그** 중간 게이트. ※ 원격 4인 검증 아님.
-
-③ 응원 시스템 (CheerService + Dissonance + Vosk + /cheer)
-   → ②에서 1차, ④ Steam에서 최종 검증. (상세: CheerAndTutorialDesign.md §11)
-
-④ Steam P2P + Steam Lobby + Depot
-   → Transport 교체. **Playtest / 정식 오픈 게이트** — 2인 필수, 4인 권장 (§0.2.1).
-```
-
-| 단계 | 목적 | 통과 기준 (최소) |
-|------|------|------------------|
-| ① ParrelSync | 구현·버그 수정 속도 | Title→Lobby→M 경로 **2인** 진행 1회 |
-| ② Dev Build | 빌드 품질·localhost NGO | **2인** 클리어/사망 리로드 1회, 스테이지 전환 OK |
-| ③ 응원 | 협동+보이스+응원 | CheerAndTutorialDesign §12 시나리오 |
-| ④ **Steam P2P** | **Playtest·정식 오픈** | **2인** Steam 원격: 초대·보이스·응원. **4인 1회 권장** |
-
-**Transport:** ①② 개발 중 `UnityTransport`(localhost). **Playtest·정식 배포 = Steam Networking transport 필수.**
-
-#### 0.2.1 개발자 2PC · 2인 테스트 vs 4인
-
-| | **2인 Steam P2P** (일상) | **4인 Steam P2P** (오픈·Playtest 권장) |
-|--|--------------------------|----------------------------------|
-| 검증됨 | Transport, Lobby, Invite/Join, NGO 동기화, Dissonance, Vosk, 응원(필요 1표), 스테이지 진행 | 위 + **4슬롯·4스폰·응원 3표·4음성** |
-| **보장 안 됨 → 4인 전용 버그** | — | `ActivePlayerCount`·집계, 4색 Gate, 4명 보이스 혼잡, 이탈 시 §12 전원 타이틀 수렴 |
-| 판정 | **Playtest 오픈 최소 게이트** (2PC 한정) | **외부 신뢰도** — 친구 Playtest **1회 강력 권장** |
-
-**2인 통과 = 4인 100% 보장 아님.** 다만 NGO·Steam P2P·응원 **연결·규칙 골격**은 2인에서 대부분 검증 가능.  
-**4인만 터지는 버그**는 §0.2.1 표 우측 항목 — 오픈·M주 중 **4인 1회**로 잡는다.
-
-### 0.3 범위 — Open / Playtest / Release
-
-#### Open Must (D14 Coming Soon + Playtest)
-
-- **플레이 경로 (오픈 빌드):** Title → Lobby → `M.Stage1`…`M.Stage5` → `M.Boss` (멀티 **2~4인**)
-- **솔로:** 동일 경로 (**NGO Host 1인**, `partySize=1`)
-- **T 풀코스:** 오픈일에 완벽할 필요 없음. **T주 시작 전**(`D21`)까지 `T.Stage1`…`T.Boss` 완성
-- **네트워크:** §9 Must 동기화 + **§0.2 ④ Steam P2P + Steam Lobby** (친구 Playtest 다운·초대)
-- **응원·보이스:** 인게임 **Dissonance** + **Vosk 응원** + `/cheer` (`CheerAndTutorialDesign.md`)
-- **텔레메트리:** §0.5.1 — Steam **Playtest·정식** Depot에서 전송 ON
-- **배포:** Steam Playtest Depot. localhost/IP Join로 외부 테스트 **안 함**
-- **UI:** 타이틀·로비·HP·카운트다운·응원 HUD·채팅 `/cheer` · 클리어 시 `End.Demo`(풀런 시)
-- **사운드:** BGM 1~2 + 핵심 SFX
-- **파티클:** 피격·Break만 (선택)
-- **난이도:** “클리어 가능” 수준. 본격 밸런싱은 M주·T주 피드백 후
-
-#### Playtest M주 (D14–D21)
-
-- 코스: **`M.Stage1` → … → `M.Stage5` → `M.Boss`**
-- 텔레메트리로 이탈·사망·클리어·응원 거부 확인
-- 핫픽스 주 1–2회 · **4인 1회** 권장
-- 병행: T 풀코스 마무리
-
-#### Playtest T주 (D21–D28)
-
-- 코스: **`T.Stage1` → … → `T.Stage5` → `T.Boss`**
-- 동일하게 텔레메트리 + 핫픽스
-- 병행: Tutorial · 옵션 · 밸런스 흡수 · 법인 Steam·앱 이전
-
-#### Release Must (D28–D30+ · 정식 출시)
-
-- Steam P2P·Lobby **유지·안정화** (Invite UX polish)
-- **난이도 밸런싱** (Playtest 피드백)
-- **Tutorial** (연습·말해보기) + CheerName **발음 유사/G2P polish**
-- **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면
-- **출시 QA** · **법인 계정**에서 빌드 리뷰·정식 출시
-- (선택) Dissonance **Steam P2P** 음성 transport 분리
-
-#### 출시 전 · 영구 제외
-
-| 항목 | 처리 |
-|------|------|
-| Steam **데모** 빌드/페이지 | **없음.** Playtest로 대체 |
-| §12 재접속·유예·스냅샷·호스트 마이그레이션 | **미지원.** 인게임 이탈 = **방 종료** |
-| 원격 IP Join / UDP discovery | **미사용.** 개발=ParrelSync·localhost / 배포=**Steam** |
-| 관전(Spectator) | 출시 전 **제외** → Post-Launch 후보 |
-| **컷씬** | **영구 제외** (출시 후에도 안 넣) |
-| sit / dance 이모트 | Post-Launch |
-| 파티클 대량 추가 | Post-Launch |
-
-### 0.4 권장 작업 순서 (요약)
-
-**상세 실행 순서·체크 항목은 §0.5 참고.**
-
-```
-[D0–D13 오픈 준비]
-0. 테스트 전 블로커 (Vosk, CheerName, AudioListener)
-1. 폴리시 (오디오, 카메라, DialogueUI, End.Demo, 빌드 메타)
-2. 로컬 테스트 (1인 → 2인 Dev Build → 스크린샷 1차)
-3. Steamworks (App ID · Transport · Lobby · Depot) + 텔레메트리 MVP (§0.5.1)
-4. 스토어 페이지 · 리뷰 · M 풀코스+보스 Steam 2인
-
-[D14] Coming Soon + Playtest 동시
-[D14–D21] Playtest M주 (보스 포함) + T 병행
-[D21–D28] Playtest T주 (보스 포함) + Tutorial·옵션·법인 이전
-[D28–D30+] 출시 QA → 법인 계정 정식 출시
-```
-
-### 0.5 오픈·Playtest·출시 체크리스트 (실행 순서)
-
-> 음성 시스템(CheerService + Dissonance + Vosk) 구축 완료 이후 기준.  
-> 각 테스트 단계 직후 **버그 수정 구간**을 둔다.
-
-#### Phase 0 — 테스트 전 블로커
-
-| # | 작업 | 비고 |
-|---|------|------|
-| 0-1 | Vosk zip 정합 | `VoskModelLoader` 기대 zip ↔ `StreamingAssets` 실제 파일 일치 |
-| 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `hobak` — `CheerLexiconBuilder`·`CheerService`·`/cheer` 통일 |
-| 0-3 | AudioListener | `LocalPlayerCamera` 프리팹에 1개. 씬 Main Camera 비활성 → 클라이언트당 1개 보장 |
-
-#### Phase 1 — 폴리시
-
-| # | 작업 | 비고 |
-|---|------|------|
-| 1 | 오디오 | SFX/BGM 볼륨, `SFXManager.masterVolume`, Listener 배치 |
-| 2 | 카메라 | **C안 확정** — `LocalPlayerCamera` DDOL 프리팹. Owner 첫 스폰 시 1회 생성, 씬 Main Camera 비활성 |
-| 3 | DialogueUI | M/T 구역별 규칙·응원 설명 (`DialogueUI.cs`) |
-| 4 | End.Demo | 클리어 UI, 타이틀 복귀 (Discord 피드백 버튼 선택) |
-| 5 | 빌드 메타 | `Player Settings`: Product Name, Default Icon, `bundleVersion` (예: `0.1.0-playtest`) |
-
-#### Phase 2 — 로컬 테스트
-
-| # | 작업 | 통과 기준 (최소) |
-|---|------|------------------|
-| 6 | 1인 E2E | Title → Lobby → M 경로. `/cheer`·음성 응원 1회 |
-| 7 | 버그 수정 | Phase 2 이슈 정리 |
-| 8 | 2인 Dev Build E2E | localhost, 보이스 양방향, 응원, 사망 리로드 1회 (§0.2 ②) |
-| 9 | 버그 수정 | Phase 2 이슈 정리 |
-| 10 | 스크린샷 1차 | Steam 스토어 초안용 (§0.5.2) |
-
-#### Phase 3 — Steamworks · 텔레메트리 · 스토어
-
-| # | 작업 | 비고 |
-|---|------|------|
-| 11 | Steam App ID + Steamworks | Transport → Steam Networking, Lobby, Depot 파이프라인 |
-| 12 | **텔레메트리 MVP** | §0.5.1 — **Open Must.** Playtest Depot에서 전송 ON |
-| 13 | 스토어 페이지 · 리뷰 신청 | 스크린샷·설명 §0.5.2. D14 Coming Soon 목표 |
-| 14 | M 풀코스+보스 Steam 2인 | 오픈 직전 최소 게이트 |
-
-#### Phase 4 — D14 오픈 → M주 → T주 → 정식
-
-| # | 작업 | 비고 |
-|---|------|------|
-| 15 | **Coming Soon + Playtest 동시** | D14. 친구 초대 스모크 |
-| 16 | Playtest M주 | M1–5+Boss · 핫픽스 · 텔레메트리 · 4인 1회 권장 |
-| 17 | Playtest T주 | T1–5+Boss · Tutorial·옵션·밸런스 · 법인 이전 |
-| 18 | 스크린샷 최종 + 스토어 마무리 | 실플레이·안정 빌드 (§0.5.2) |
-| 19 | 출시 QA · **법인 계정** 빌드 리뷰 · **정식 출시** | 앱피 30일·Coming Soon 14일 충족 후 |
-
-#### 0.5.1 텔레메트리 MVP (Open Must)
-
-> **범위:** **Open Must** — Coming Soon/Playtest 오픈 전에 전송 경로 ON. 관전 시스템 대신 이탈·체류·사망·응원 거부로 상황 파악.  
-> **구현 에이전트:** 이 절만 읽고 구현 가능. 착수 = **D14 오픈 전**.  
-> 순서: ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
-
-##### 목적 · 시점
-
-- **목적:** Steam **Playtest·정식** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 바이옴(M/T) 체류·사망, 응원 거부·채팅 **합계**.
-- **시점:** **D14 오픈 전** 구현·전송 ON. Playtest 데이터를 잃지 않음.
-- **구현 순서:** ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
-
-##### 아키텍처
-
-| 항목 | 규칙 |
-|------|------|
-| **진입점** | `TelemetryService` — `0.Title` 배치, **DontDestroyOnLoad** |
-| **전송 대상** | Google Sheets (Apps Script **Web App** URL) |
-| **행 모델** | **세션 1행** — `sessionId` 기준 **upsert**(갱신). append-only 금지(중간 스냅샷 쓰레기 행 방지). |
-| **보내는 쪽** | **Host PC 1행만** (솔로 = 그 PC가 Host 역할). Client는 Host에 **+1만 RPC 보고**, Sheets 직접 전송 **금지**. |
-| **Sink 분리** | `ITelemetrySink` (MVP: `GoogleSheetsSink`) — URL·HTTP만 담당. 집계는 `TelemetryService`. |
-
-##### 전송 ON/OFF (Must)
-
-| 환경 | Sheets 기록 |
-|------|-------------|
-| Unity **에디터** Play | ❌ |
-| **ParrelSync** (에디터 클론) | ❌ |
-| **Development Build** localhost | ❌ |
-| **Steam Depot Playtest**, Steam 클라이언트로 실행 | ✅ |
-| **Steam Depot 정식**, Steam 클라이언트로 실행 | ✅ |
-
-**권장 게이트 (둘 다 만족 시 전송):**
-
-1. `#if !UNITY_EDITOR`
-2. Steamworks 초기화 성공 (`SteamAPI` 등). Playtest·정식 빌드 파이프라인에서 Scripting Define `TELEMETRY_RELEASE` (또는 동등한 배포 게이트).
-
-Inspector `enabled` 토글은 **로컬 디버그용**. 위 게이트가 **배포 판정** 기준.
-
-##### 세션 생명주기
-
-| | 시점 | 동작 |
-|--|------|------|
-| **세션 시작** | **`M.Stage1` 첫 로드** | 새 `sessionId`(UUID), 카운터·dwell 타이머 초기화. 멀티=로비 Start 후 / 솔로=로비 Start 후 동일. |
-| **세션 진행** | M·T 전 씬(보스 포함) 플레이 중 | 누적 카운터 갱신 + 주기 upsert (§전송 타이밍). |
-| **`run_complete`** | Host(또는 솔로 PC)가 **`End.Demo` 씬 로드** | `run_complete = true` (타이틀 복귀 **전**). |
-| **세션 끝** | Host(또는 솔로 PC) **`TitleReturnFlow.ExecuteReturn()`** | **마지막 upsert** + `quitAt` 기록 + `sessionId` 폐기. |
-
-**세션 끝 = Host `TitleReturnFlow` 1회.** 아래 경로는 전부 동일 훅:
-
-- `End.Demo` 타이틀 복귀 (`TitleReturnReason.EndDemo`)
-- Host Quit (`HostQuitRoom`)
-- Client 이탈 → Host `DisconnectManager` (`ClientDisconnected`)
-- Client가 End에서 먼저 나가도 Host도 타이틀 복귀 → Host `TitleReturnFlow`
-
-**예외 (세션 끝 upsert 없음):** Host **Alt+F4** / 작업 관리자 강제 종료 → `TitleReturnFlow` 미실행. **마지막 중간 upsert**(30초·씬 전환·리로드)까지만 유지. **감수.**
-
-로비만 있고 Start 안 누른 구간 = **세션 아님** (기록 없음).
-
-##### Google Sheets — 컬럼 (헤더 1행 고정)
-
-**복붙용 순서:**
-
-```
-timestamp | sessionId | buildVersion | playMode | partySize | run_complete | quitAt | M_dwell_sec | M_death_count | M_buff_count | T_dwell_sec | T_death_count | T_buff_count | reject_self_cheer | reject_target_buffed | reject_timeout | reject_chat_rate_limit | reject_voice_no_match | chat_used_count
-```
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| `timestamp` | datetime | **upsert 전송 시각** (UTC 또는 KST 중 하나로 통일) |
-| `sessionId` | string | 익명 UUID. **upsert 키.** |
-| `buildVersion` | string | `Application.version` (예: `0.1.0-playtest` / `1.0.0`) |
-| `playMode` | string | `Solo` / `Multi` (멀티 1인도 `Multi`) |
-| `partySize` | int | 1~4 |
-| `run_complete` | bool | `End.Demo` **씬 진입** 여부 |
-| `quitAt` | string | 세션 끝 upsert 시 Host 위치: `M` / `T` / `End` |
-| `M_dwell_sec` | float | **M 바이옴 합산** 체류(초) — `M.Stage*` + `M.Boss` |
-| `M_death_count` | int | **M 바이옴** 씬 로드(리로드 포함) 횟수 합산 |
-| `M_buff_count` | int | **M 바이옴** 버프 **적용** 횟수 합산 |
-| `T_dwell_sec` | float | **T 바이옴 합산** 체류(초) — `T.Stage*` + `T.Boss` |
-| `T_death_count` | int | **T 바이옴** 씬 로드 횟수 합산 |
-| `T_buff_count` | int | **T 바이옴** 버프 적용 횟수 합산 |
-| `reject_self_cheer` | int | 자기 응원 거부 **합계** (전원) |
-| `reject_target_buffed` | int | 대상 버프 중 거부 **합계** |
-| `reject_timeout` | int | 표 부족 타임아웃 **합계** |
-| `reject_chat_rate_limit` | int | 채팅 rate limit **합계** |
-| `reject_voice_no_match` | int | Vosk 미인식 **합계** |
-| `chat_used_count` | int | `/cheer` 사용 **총 횟수** (합계) |
-
-**수집 금지:** 마이크 원음, 채팅/대화 **전문**, SteamID, IP, 닉네임 등 **개인 식별 정보**.
-
-##### 측정 규칙 (Must)
-
-| 항목 | 규칙 |
-|------|------|
-| **바이옴** | 씬 이름이 `M.` 접두 → M 컬럼, `T.` 접두 → T 컬럼. Stage·Boss 구분 없이 **합산**. |
-| **dwell** | 해당 씬 **로드 직후** ~ **다른 씬으로 나가기 직전**까지 Host `Time.time`(또는 `unscaledTime`)을 해당 바이옴에 누적. |
-| **death_count** | 해당 바이옴 **씬 Load마다 +1** (첫 진입 포함). 사망=전원 리로드이므로 **리로드 1회 = death 1**. 동시 다수 사망도 **+1**. |
-| **buff_count** | 버프가 **플레이어 1명에게 적용될 때마다 +1**. 4인 전원 버프 = **+4**. 적용 시점 씬의 바이옴에 가산. |
-| **reject / chat** | **4인 합계** — Client 발생 시 Host RPC로 +1 보고 후 Host가 누적. |
-| **partySize** | 세션 시작 시 `GameSession` / `NetworkManager.ConnectedClientsIds.Count` 등 Host 기준 스냅샷. |
-
-##### reject / chat — 코드 매핑
-
-| 컬럼 | +1 조건 (구현 참고) |
-|------|---------------------|
-| `reject_self_cheer` | `CheerService.ValidateCheer` — 자기 색 응원 (`myIdx == targetColorIndex`) |
-| `reject_target_buffed` | `ValidateCheer` — `_buffEnd`에 target 존재 |
-| `reject_timeout` | `CheerService.CheckTimeouts` → `ResetVotes` (표 부족). **별도 timeout 이벤트 없음 — 여기만.** |
-| `reject_chat_rate_limit` | `ValidateCheer` — `!isVoice` && rate limit (`_chatRateEnd`) |
-| `reject_voice_no_match` | `CheerKeywordEngine` — Vosk 미매칭 시 **Client → Host RPC** |
-| `chat_used_count` | `InGameChatUI` — `/cheer` 파싱 성공 1회마다 +1 (Host 집계) |
-
-**제외:** `reject_invalid_target` — **수집하지 않음**.
-
-Host `ValidateCheer` false 반환 시 **reason enum**으로 위 컬럼 중 하나만 +1.
-
-**`TelemetryRejectReason` enum (구현용 — 컬럼명과 1:1):**
-
-```csharp
-public enum TelemetryRejectReason
-{
-    SelfCheer,        // → reject_self_cheer
-    TargetBuffed,     // → reject_target_buffed
-    Timeout,          // → reject_timeout
-    ChatRateLimit,    // → reject_chat_rate_limit
-    VoiceNoMatch,     // → reject_voice_no_match (Client → Host RPC)
-}
-```
-
-##### 전송 타이밍 · upsert
-
-매 전송은 **그 시점까지의 누적 스냅샷** 전체를 보냄 (예: death 5 → 10이면 **같은 `sessionId` 행**만 10으로 갱신).
-
-| 트리거 | upsert |
-|--------|--------|
-| **30초마다** | ✅ (Inspector `flushIntervalSec`, 기본 30) |
-| **씬 전환** (스테이지·보스·M→T·T→End) | ✅ |
-| **타이틀 복귀** 씬 전환 | ✅ |
-| **스테이지 씬 리로드**(사망) | ✅ |
-| **세션 끝** (`TitleReturnFlow`) | ✅ **마지막 flush** |
-| `Application.quitting` | ✅ 가능한 범위 동기 전송 (보조) |
-
-**Apps Script upsert:** POST body JSON → `token` 검증 → `sessionId` 검색 → 있으면 **Update**, 없으면 **Append**.  
-Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localhost Inspector 기본 empty).
-
-실패 시 **1~2회 재시도** 후 포기 (영구 로컬 큐는 MVP 범위 밖).
-
-##### 멀티 · 솔로
-
-| | |
-|--|--|
-| **멀티** | **Host만** `TelemetryService` 전송. Client → Host `TelemetryReportServerRpc(reason)` 등으로 reject/chat +1만. |
-| **솔로** | NGO Host 1인. `playMode=Solo`, `partySize=1`. 멀티와 동일 코드 경로. |
-| **멀티 1인** | `playMode=Multi`, `partySize=1`. |
-
-##### 게임 연동 훅 (구현 체크리스트)
-
-| # | 훅 | 동작 |
-|---|-----|------|
-| 1 | **M.*/T.* `SceneManager.sceneLoaded`** (Host·솔로) | 세션 시작(첫 `M.Stage1`만), 해당 바이옴 `death_count +1`, dwell 타이머 시작 |
-| 2 | **씬 unload / 다음 씬 로드 직전** | 떠나는 씬 dwell을 해당 바이옴에 확정 |
-| 3 | **`End.Demo` sceneLoaded** (Host·솔로) | `run_complete = true` |
-| 4 | **`TitleReturnFlow.ExecuteReturn()`** (Host·솔로) | `quitAt` = 현재 바이옴/`End`, **세션 끝 upsert**, 세션 상태 리셋 |
-| 5 | **`CheerService`** (Host·솔로) | reject reason별 +1, `ApplyBuff` 시 해당 바이옴 `buff_count +1`, timeout +1 |
-| 6 | **`CheerKeywordEngine`** (Client) | 미인식 → Host RPC |
-| 7 | **`InGameChatUI`** | `/cheer` 성공 시 `chat_used_count +1` |
-| 8 | **`TelemetryService.Update`** | 30초 주기 flush |
-
-`TitleReturnFlow`에 직접 삽입 또는 `ISessionResettable` / 전용 콜백 등록 — **게임 코어에 Sheets URL 흩뿌리지 말 것**.
-
-##### Google Sheets · Apps Script (구현 전 선행)
-
-1. Sheet 생성 → **헤더 1행** §컬럼 표와 **동일**하게 입력.
-2. **Apps Script** `doPost(e)`: JSON 파싱 → `token` 검증 → `sessionId` upsert.
-3. **Deploy → Web app** → URL 확보.
-4. Unity: `GoogleSheetsSink`에 URL + token (**Steam Playtest·정식 빌드** ScriptableObject 또는 `Resources` — 에디터·localhost 기본 empty).
-
-##### MVP 완료 판정
-
-- [ ] Steam **Playtest** 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
-- [ ] 멀티 Host: Client reject/chat 합산 **1행**에 반영.
-- [ ] 에디터 Play / Dev Build localhost: **행 추가 없음**.
-- [ ] payload에 **금지 필드** 없음.
-
-#### 0.5.2 스크린샷
-
-| 시점 | 목적 |
-|------|------|
-| §0.5 #10 (2인 Dev Build 후) | 스토어 **초안** — 플레이 가능 확인용 |
-| §0.5 #18 (Steam Playtest 후) | **최종** — capsule·헤더·실플레이 품질 |
 
 ---
 
@@ -480,13 +86,13 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 
 > **코드 참고:** `LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 존재하나, 이는 같은 PC/세션 내 편의 기능일 뿐 **물리적으로 분리된 2PC 간 실사용 LAN 연결 테스트 수단이 아니다** (미지원/미검증). Steamworks 연동 전까지 개발자 검증은 ①②로만 한다.
 
-### 4.2 Steam P2P + Lobby (**Open Must**, §0.2 ④)
+### 4.2 Steam P2P + Lobby (**Open Must**, `ReleaseRoadmap.md` §0.2 ④)
 
 - **Steamworks** 초기화 + **Steam Networking** transport + **Steam Lobby**.
 - Join: Lobby 코드 / 친구 초대 (Playtest 다운 후 Invite).
 - UI 마스킹 예: 식별자 `7**1` 형태.
 - **Depot 업로드** 후 Steam 클라이언트에서 실행 — **원격 2~4인** 협동·응원·보이스 검증 환경.
-- **개발자 2PC:** 일상 QA = **2인** Steam Join. 오픈·Playtest 중 **4인 1회** 권장 (§0.2.1).
+- **개발자 2PC:** 일상 QA = **2인** Steam Join. 오픈·Playtest 중 **4인 1회** 권장 (`ReleaseRoadmap.md` §0.2.1).
 
 ---
 
@@ -563,7 +169,7 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 
 ### 6A.3 개발 환경 연결 방식 — 실제 가능한 것만 (§4.1 보강)
 
-현재 실제로 검증 가능한 개발자 테스트 방법은 **2가지뿐**이다 (§0.2와 동일):
+현재 실제로 검증 가능한 개발자 테스트 방법은 **2가지뿐**이다 (`ReleaseRoadmap.md` §0.2와 동일):
 
 | 방법 | 실제 동작 |
 |------|----------|
@@ -572,7 +178,7 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 | 물리적으로 분리된 2PC 간 LAN 연결 | **테스트 안 됨 / 미지원** |
 | ④ Steam P2P | 아직 미구현 |
 
-`LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 코드에 있지만, 이는 같은 PC/세션 안에서의 편의 기능이고 **실사용 LAN 2PC 연결 테스트 수단이 아니다.** Steamworks(§0.2 ④)가 붙기 전까지 개발자 검증은 **①②만** 사용한다.
+`LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 코드에 있지만, 이는 같은 PC/세션 안에서의 편의 기능이고 **실사용 LAN 2PC 연결 테스트 수단이 아니다.** Steamworks(`ReleaseRoadmap.md` §0.2 ④)가 붙기 전까지 개발자 검증은 **①②만** 사용한다.
 
 ### 6A.4 금지 (평행 경로 — 발견 즉시 삭제)
 
@@ -843,6 +449,7 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 > 각 파일이 실제로 어느 씬에서 쓰이는지는 스크립트 `.meta` guid를 씬 파일에서 직접 대조해 확인한 것 — 추정 아님.
 
 > 그룹 1(B) 파일별 네트워크/로컬 분류·진단 로그: [`TrapNetworkBoard.md`](TrapNetworkBoard.md) (`SpikeLane`/`SpikeLaneField`는 T 전용이지만 체감 버그로 스코프 순서보다 먼저 수정 완료 — 2026-07-21, 보드 §2 참조).
+> T 전용(별도 라운드) 씬 인벤토리·결정 항목·작업 순서: [`TStageNetworkBoard.md`](TStageNetworkBoard.md).
 
 | 그룹 | 패턴 | 이번 라운드(M) 대상 | T 전용 — 별도 라운드로 미룸 |
 |------|------|-------------------|---------------------------|
@@ -1010,7 +617,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 #### 9A.6.4 Phase 2 완료 판정
 
 - [ ] `ClientNetworkTransform` / `ClientNetworkTransform.cs` 참조 **0건** (또는 클래스 Deprecated)
-- [ ] ParrelSync 2인 → Dev Build localhost 2인 → **Steam 원격 2인** 순서 통과 (§0.2)
+- [ ] ParrelSync 2인 → Dev Build localhost 2인 → **Steam 원격 2인** 순서 통과 (`ReleaseRoadmap.md` §0.2)
 - [ ] 함정·즉사·낙사: Host / Client **체감 규칙 동일** (같은 좌표계)
 - [ ] 이동 체감: **플레이 느낌**으로 예측 필요 여부 결정 (§9A.7)
 
@@ -1098,7 +705,54 @@ A. §9.0.1 B안 — Host는 Spawn+초기속도, **비행은 Client**, 피격 보
 A. **의도된 방침.** 이동은 Owner+CNT 유지. Phase 1+발사체 B만 Must.
 
 **Q. 2인 OK면 4인도 OK?**  
-A. §0.2.1과 동일.
+A. `ReleaseRoadmap.md` §0.2.1과 동일.
+
+---
+
+## 9B. 관측성 · 구조화 로그
+
+> **배경:** M.Stage 라운드에서 "A버그 고치면 B버그, B 고치면 C, C 고치면 다시 A"가 반복된 핵심 원인은 Host/Client 중 어느 쪽이 무엇을 언제 봤는지 로그로 알 수 없었다는 것. 이 절은 공통 포맷 1개로 그 공백만 메운다 — 로그를 "많이" 찍는 절이 아니다.
+> **적용 범위 (확정):** **T.Stage 신규 코드부터만 적용.** 기존 M.Stage 코드에는 소급 적용하지 않는다(사용자 확정, 2026-08). M 코드를 이 절 이유로 건드리지 말 것.
+
+### 9B.1 유틸 — `Assets/Scripts/Network/NetLog.cs`
+
+```csharp
+public static class NetLog
+{
+    public static void Transition(string system, string evt, string details = null) { ... }
+}
+```
+
+- 출력 포맷: `[Host]|[Client]|[Local] {system} {evt} {details}` — 예: `[Host] WallMoverSequencer SequenceStart seed=1234 startTime=12.34`
+- Role 태그는 `NetworkManager.Singleton` 기준 자동 판정(`IsListening` 없으면 `[Local]`, 있으면 `IsServer`로 `[Host]`/`[Client]`) — 호출부가 문자열로 Host/Client를 직접 넣지 않는다.
+- `details`는 key=value 나열(시드·인덱스·시각 등) 권장, 문장형 설명 금지.
+
+### 9B.2 사용처 (전환점만 — 확정)
+
+| 허용 | 금지 |
+|------|------|
+| Trigger 감지 (①) | `Update()`/`FixedUpdate()` 내부 매 프레임 호출 |
+| RoundStart·시드 배포 (②) | 매 틱 폴링 로그 |
+| Judge/Resolve (④⑤) | 값이 안 바뀌었는데도 반복 출력 |
+| Scene Load/Ready | 순수 연출(A 패턴 타일 등) 갱신 로그 |
+| 소유권 가드 실패 (교차 오염 감지 등) | — |
+
+**원칙:** state transition(상태 전이) 1회 = 로그 1줄. 틱마다 찍으면 노이즈가 되어 오히려 관측성을 해친다.
+
+### 9B.3 적용 대상
+
+T.Stage 신규 코드(예: T 라운드에서 새로 작성/수정하는 스크립트)에서만 사용한다. 기존 M.Stage 코드는 이미 검증·승급 완료 상태라 로그 리팩터로 건드리지 않는다 — 필요하면 별도 요청 시에만.
+
+작업 보드: [`TStageNetworkBoard.md`](TStageNetworkBoard.md).
+
+### 9B.4 M/T 보드 간 공유 컴포넌트 버그 라우팅 (확정)
+
+> **배경:** M/T 라운드가 별도 보드([`MStageNetworkBoard.md`](MStageNetworkBoard.md) / [`TStageNetworkBoard.md`](TStageNetworkBoard.md))로 나뉘어 있어, "지금 활성 라운드가 아닌 쪽"에서도 쓰는 공유 클래스(예: `StageStartGate`, `StageNetworkState`, `NetworkDamageUtil`, `PlayerSpawnCoordinator`)의 버그가 활성 보드에만 적혀서 반대쪽 라운드 작업자가 놓치는 사고를 막기 위한 규칙 (2026-08 확정).
+
+- **판단 기준:** 버그가 M/T 어느 한쪽 전용 코드가 아니라 **양쪽이 같이 쓰는 클래스**(본 문서에 이미 계약이 적혀 있는 파일)에서 발견됐다면 "공유 버그"로 분류한다.
+- **기록 위치 (발견 라운드 무관):** 공유 버그는 발견 즉시 그 컴포넌트가 이미 살고 있는 이 문서의 섹션(예: `StageStartGate`→§11A, `ChallengeOwner`→§11B.9)에 원인·수정 내용을 기록한다. "보드에 먼저 적고 나중에 승급"이 아니라 **바로 SSOT 직행** — 수정 시점엔 이미 원인·해결이 확정돼 있으므로 승급 대기 상태로 둘 이유가 없다.
+- **보드엔 포인터만:** 발견 당시 활성 보드(M 또는 T)에는 "OO 버그, 공유 컴포넌트라 §X.Y에 기록"이라는 1~2줄 포인터만 남긴다. 내용을 보드에 중복 서술하지 않는다.
+- **반대쪽 라운드 스모크 검증:** 공유 파일(본 문서에 계약이 명시된 파일)을 고쳤다면, 지금 작업 중인 라운드 씬뿐 아니라 **반대쪽 라운드 대표 씬 1개도 같이 ParrelSync 스모크 검증**한다 — 회귀가 반대쪽에서 조용히 발생하는 것을 막기 위함.
 
 ---
 
@@ -1245,8 +899,9 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 ### 11A.1 ① Gate 상세
 
 - `ColoredStartZone.OnTriggerEnter/Stay` — 로컬 점유 판정(색 매칭 + 생존). 네트워크 가드 없음 — **판정 자체는 표시/조회용**, 카운트다운 시작 여부는 Host만 사용.
-- `StageStartGate` (Host `Update`): `AllZonesOccupied()` → `MarkCountdownStart()`(NV) → 타이머 → `CompleteCountdown()` → `stageManager.StartStage()` + Host가 `_stageStartServerTime` NV 기록.
-- Client는 `_stageStartServerTime` NV 감지로 자기 화면에서도 `StartStage()`를 부른다 — **이건 ②Start 진입 트리거 전파일 뿐, ③Progress 판정에는 관여하지 않는다.** ②의 `objectives.Begin()`이 Client 로컬에서도 돌아가더라도, 그 이후 Complete/Fail 판정의 진실은 오직 Host.
+- `StageStartGate` (Host `Update`): `AllZonesOccupied()` → `MarkCountdownStart()`(NV) → 타이머 → `CompleteCountdown()` → `stageManager.StartStage()` + Host가 `MarkStageStart(gateId)`로 `StageStartSignal{serverTime, gateId}` NV 기록.
+- Client는 `StageStartSignal` NV 감지로 자기 화면에서도 `StartStage()`를 부른다 — **이건 ②Start 진입 트리거 전파일 뿐, ③Progress 판정에는 관여하지 않는다.** ②의 `objectives.Begin()`이 Client 로컬에서도 돌아가더라도, 그 이후 Complete/Fail 판정의 진실은 오직 Host.
+- **씬에 `StageStartGate`가 여러 개면(T.Stage2/4/5) 각 게이트가 자기 `gateId`를 신호에 실어 보내고, Client는 자기 `gateId`가 찍힌 신호만 자기 것으로 인정한다** — 2026-08 버그 수정, §11A.7 참고. 게이트가 1개뿐인 씬(M 전체, T.Stage1/3/Boss)은 기본값(-1)이 항상 자기 자신과만 일치하므로 영향 없음.
 
 ### 11A.2 ③ Progress — Host 레인과 챌린지 축(#4)의 경계
 
@@ -1297,6 +952,7 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 | 클리어했는데 다음 씬으로 안 넘어감 | ⑤ Exit-Clear (Host `LoadScene` 가드) | ④ Resolve `_isCleared` 확정 여부 |
 | 실패 판정 났는데 아무 일도 안 일어남 | ⑤ Exit-Fail (`ApplyInstantKill` 연결 여부) | ④ Resolve `_isFailed` 확정 여부 |
 | 리로드 후에도 이전 스테이지 상태 잔존(트랩 계속 날아다님 등) | §11 ①Load 재진입 정합성 | ② Start 재초기화 |
+| Client 화면만 존 점유·카운트다운 없이 스테이지가 저절로 시작(Host는 정상 대기) — 씬에 게이트가 여러 개 | ① Gate `gateId` 배정 여부/중복 여부 (§11A.7) | 해당 게이트 Inspector `gateId` 값 확인 |
 
 규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer만 고침. 칸에 복구 if 추가 금지.
 
@@ -1306,6 +962,20 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 - **Fail Exit은 §11 사망 문을 그대로 재사용** — 새 사망/리로드 정의 금지.
 - **Clear Exit은 §11 ①Load에 재진입**(다음 씬) — 새 씬 전환 정의 금지.
 - 즉 §11A는 §11에 새 문을 추가하지 않는다. 기존 두 문(사망 문 / ①Load 문)에 스테이지 콘텐츠가 **어떻게 도달하는지**만 정의한다.
+
+### 11A.7 다중 게이트 씬 `_stageStartServerTime` stale 재점화 버그 수정 (2026-08)
+
+**증상:** `T.Stage5`에서 Stage5.1 게이트 클리어 후 Stage5.2로 넘어갈 때, Client 화면의 타이머가 존 점유·카운트다운 없이 저절로 흐름. Host는 자기 `AllZonesOccupied()`를 실제로 기다리므로 정상 대기 — Host/Client가 서로 다른 시작 타이밍을 봄.
+
+**원인:** `StageStartGate` 신호(당시 `_stageStartServerTime` 단독 `double` NV)는 씬 하나에 게이트가 여럿이어도 슬롯 하나를 전부 공유했다. 이 값을 되돌리는 코드가 없어서, 앞 게이트(Stage5.1)가 완료 시 찍은 타임스탬프가 그대로 남아있는 상태에서 뒤 게이트(Stage5.2)가 `PhaseManager.EnterPhase()`의 `onPhaseEnter`로 `Arm()`되는 순간, `UpdateCountdownOnClient()`가 `StageStartServerTime > 0 && _isArmed`만 보고 "이미 시작됨"으로 오인해 즉시 `StartStage()`를 호출했다(`StageStartGate.cs` `UpdateCountdownOnClient()`). 씬 전체를 세어보니 T.Stage5(게이트 4개)뿐 아니라 **T.Stage2(3개)/T.Stage4(2개)도 동일 구조**라 같은 버그를 안고 있었음 — M 라운드는 씬당 게이트가 1개뿐이라 미해당.
+
+**수정:** `_stageStartServerTime`(단독 `double`)을 `StageStartSignal{serverTime, gateId}` 구조체 NV(`_stageStartSignal`)로 교체 — `ChallengeStepState`(§11B.2)와 동일하게 "연관 데이터는 하나의 NV로 원자적으로" 원칙 적용. `StageStartGate`에 `[SerializeField] int gateId`를 추가해 게이트마다 서로 다른 값을 갖게 하고, `MarkStageStart(gateId)`가 시간과 gateId를 같이 기록, `UpdateCountdownOnClient()`는 `StageStartGateId == gateId`까지 확인해서 다른 게이트의 낡은 신호를 걸러낸다. (baseline 스냅샷 방식도 검토했으나, `_currentPhase` NV와 `_stageStartSignal` NV가 서로 다른 NV라 도착 순서에 의존하게 되는 구조적 레이스가 남아 — 특히 `surviveDuration=0` 패스스루 Phase가 게이트 Arm 직전에 낄 경우 — gateId 방식으로 그 의존성 자체를 없앴다.) 게이트가 1개뿐인 씬은 기본값(-1)이 자기 자신과만 비교되므로 영향 없음 — Inspector 작업 불필요.
+
+**영향 파일:** `Assets/Scripts/Network/StageNetworkState.cs`(`StageStartSignal` 구조체 신설, `_stageStartServerTime`→`_stageStartSignal`, `MarkStageStart()`→`MarkStageStart(int gateId)`, `StageStartGateId` 프로퍼티 추가), `Assets/Scripts/Stage/StageStartGate.cs`(`gateId` 필드 + 중복/미설정 시 `Debug.LogError` 가드, `CompleteCountdown()`/`UpdateCountdownOnClient()` 갱신).
+
+**사용자 Inspector 작업 (필수 — 코드만으론 끝나지 않음):** 게이트가 여러 개인 씬만 대상 — `T.Stage5`(Stage5.1~5.4 게이트 4개 → `gateId` 0/1/2/3), `T.Stage2`(게이트 3개 → 0/1/2), `T.Stage4`(게이트 2개 → 0/1). 게이트가 1개뿐인 씬(M 전체, `T.Stage1`/`T.Stage3`/`T.Boss`)은 손댈 필요 없음. 잘못 설정하면(미설정 또는 중복) `Awake()`에서 콘솔에 에러 로그가 뜨므로 ParrelSync 검증 전에 콘솔로 먼저 확인할 것.
+
+**검증 상태:** 코드 반영 완료, **ParrelSync 2인 검증 미실시** — 위 Inspector 작업 완료 후 `T.Stage5`(Stage5.1→5.2 전환)에서 Client가 존 점유·카운트다운 없이 시작되지 않는지 확인 필요. §9B.4 규칙에 따라 이번 라운드(T) 씬뿐 아니라 **반대쪽 라운드(M) 대표 씬 1개**(예: `M.Stage1`, 게이트 1개)도 회귀 스모크 필요 — 단일 게이트 씬은 기본값(-1) 그대로 정상 동작해야 함.
 
 ---
 
@@ -1488,7 +1158,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 ### 16.1 네트워크 · 응원 · Steam (Open / Playtest)
 
-> **현재 실행 체크리스트:** §0.5.  
+> **현재 실행 체크리스트:** `ReleaseRoadmap.md` §0.5.  
 > **Authority:** §9.0 확정 (**이동=Owner+CNT**, 발사체=B안). Phase 2 이동 Host화 **폐기**.
 
 1. NGO + `UnityTransport` + Title `NetworkManager`
@@ -1501,7 +1171,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 8. **Development Build ②** — localhost **2인** (중간 게이트)
 9. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
 10. **Steamworks** — P2P transport, Lobby, Depot
-11. **텔레메트리** — §0.5.1 (**Open Must**)
+11. **텔레메트리** — [`TelemetryDesign.md`](TelemetryDesign.md) (**Open Must**)
 12. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Coming Soon + Playtest (D14)**
 13. M 풀코스+보스 / T 풀코스+보스 (`sceneSequence`) + `End.Demo`
 
@@ -1557,7 +1227,7 @@ A. **아니오.** **Steam P2P ④** (2인 Must + 4인 1회 권장) + 응원·보
 A. **아니오.** ②는 **중간 게이트**. Playtest = **Steam 원격** + 협동 + 응원.
 
 **Q. 개발 PC 2대뿐인데 4인 테스트?**  
-A. 일상 = **Steam 2인** (§0.2.1). 오픈·M주 중 **4인 1회** — 친구 Playtest 권장. 2인 통과 ≠ 4인 100% 보장.
+A. 일상 = **Steam 2인** (`ReleaseRoadmap.md` §0.2.1). 오픈·M주 중 **4인 1회** — 친구 Playtest 권장. 2인 통과 ≠ 4인 100% 보장.
 
 **Q. 2인 OK면 4인도 OK?**  
 A. **연결·Transport·응원 골격**은 2인에서 대부분 검증. **4인 전용** (3표 집계, 4보이스, 4Gate)은 4인 1회 필요.

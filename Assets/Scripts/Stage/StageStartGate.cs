@@ -21,6 +21,10 @@ using UnityEngine.Events;
 /// 4. countdownDuration = 5
 /// 5. StageManager.autoStart = false 확인
 /// 6. (선택) OnCountdownTick → TimerUI.SetTime 연결
+/// 7. ⚠ 씬 안에 StageStartGate가 여러 개면(T.Stage2/4/5처럼 방마다 게이트가 있는 씬)
+///    gateId에 게이트마다 서로 다른 값(0, 1, 2...)을 반드시 지정할 것 — 안 하면 콘솔에
+///    설정 오류 로그가 뜨고, 실제로는 뒤 게이트가 앞 게이트의 낡은 시작 신호로 오작동한다.
+///    씬에 게이트가 1개뿐이면 기본값(-1) 그대로 둬도 무방.
 ///
 /// ※ 사망 시 씬 재로드 방식 → 게이트는 씬 로드 시 armOnStart=true로 자동 초기화됨
 /// </summary>
@@ -45,6 +49,14 @@ public class StageStartGate : MonoBehaviour
              "false 면 Arm() 을 외부에서 직접 호출해야 함.")]
     [SerializeField] bool armOnStart = true;
 
+    [Header("게이트 식별자 (다중 게이트 씬 전용)")]
+    [Tooltip("씬에 이 게이트가 유일하면 -1(기본값) 그대로 둘 것.\n" +
+             "씬 안에 StageStartGate가 여러 개면(예: T.Stage2/4/5) 각 게이트마다 서로 다른 값을 줄 것" +
+             "(0, 1, 2...) — StageNetworkState._stageStartSignal 슬롯을 공유하기 때문에, 이 값이 없으면" +
+             "앞 게이트가 완료했다는 낡은 신호를 뒤 게이트가 자기 것으로 오인해 즉시 시작해버린다" +
+             "(2026-08 버그 수정, NetworkDesign.md §11A.1 참고).")]
+    [SerializeField] int gateId = -1;
+
     [Header("이벤트")]
     [Tooltip("매 프레임 카운트다운 남은 시간(0~countdownDuration)을 전달.\n" +
              "TimerUI.SetTime 등 UI 컴포넌트에 연결 권장.\n" +
@@ -68,6 +80,30 @@ public class StageStartGate : MonoBehaviour
     {
         if (zones == null || zones.Length == 0)
             zones = GetComponentsInChildren<ColoredStartZone>(true);
+
+        CheckGateIdConfigured();
+    }
+
+    /// <summary>
+    /// 씬에 StageStartGate가 여러 개인데 gateId가 미설정(-1)이거나 다른 게이트와 중복이면
+    /// 경고. 조용히 넘어가면 나중에 "Stage5.2가 저절로 시작됨" 같은 증상으로만 드러나
+    /// 원인 추적이 오래 걸린다(2026-08 버그) — 설정 실수를 여기서 바로 드러낸다.
+    /// </summary>
+    void CheckGateIdConfigured()
+    {
+        StageStartGate[] all = FindObjectsByType<StageStartGate>(FindObjectsSortMode.None);
+        if (all.Length <= 1) return;
+
+        int sameId = 0;
+        foreach (StageStartGate g in all)
+            if (g != null && g.gateId == gateId) sameId++;
+
+        if (gateId < 0 || sameId > 1)
+            Debug.LogError(
+                $"[StageStartGate] '{name}' gateId 설정 오류 — 이 씬에 게이트 {all.Length}개인데 " +
+                $"gateId={gateId} (미설정 또는 다른 게이트와 중복). 게이트마다 서로 다른 값(0,1,2...)을 " +
+                "Inspector에서 지정할 것 — 안 하면 다른 게이트의 낡은 시작 신호를 자기 것으로 오인함.",
+                this);
     }
 
     void Start()
@@ -129,7 +165,9 @@ public class StageStartGate : MonoBehaviour
 
         // 스테이지가 시작됐다면 이 게이트가 직접 연결된 StageManager를 시작
         // (RPC보다 NetworkVariable이 먼저 도달할 수 있으므로 여기서 처리)
-        if (sns.StageStartServerTime > 0 && _isArmed)
+        // gateId 일치까지 확인 — 씬에 게이트가 여럿이면(T.Stage2/4/5) 다른 게이트가 찍은
+        // 신호까지 걸러야 함(2026-08 버그 수정, StageNetworkState.StageStartSignal 참고).
+        if (sns.StageStartServerTime > 0 && sns.StageStartGateId == gateId && _isArmed)
         {
             SetZoneCountdownVisual(false);
             SetZonesActive(false);
@@ -207,11 +245,11 @@ public class StageStartGate : MonoBehaviour
         Disarm();
 
         // Host만 StartStage 호출. Client의 StartStage는 UpdateCountdownOnClient()가
-        // _stageStartServerTime NetworkVariable을 감지해 트리거한다 (§11A.1 — 단일 시작 신호).
+        // StageStartSignal(시간+gateId) NetworkVariable을 감지해 트리거한다 (§11A.1).
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
-        StageNetworkState.Instance?.MarkStageStart();
+        StageNetworkState.Instance?.MarkStageStart(gateId);
         stageManager?.StartStage();
     }
 

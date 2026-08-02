@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
 /// <summary>
@@ -26,16 +28,64 @@ using UnityEngine.Serialization;
 public class Breakable : MonoBehaviour
 {
     // ── 정적 레지스트리 (stable ID 기반 동기화용) ────────────────
-    // ID는 씬 로드마다 0부터 순서대로 부여. 파괴·제거가 일어나도 ID는 불변.
-    // Host/Client 모두 씬 로드 시 동일 순서로 Awake가 실행되므로 ID가 일치.
+    // [버그 수정 2026-08 — T.Stage5 Lump Host/Client 미동기화]
+    // 이전 방식(Awake() 호출 순서로 0부터 카운터 증가)은 "Host/Client 모두 씬 로드 시
+    // 동일 순서로 Awake가 실행된다"는 가정에 의존했는데, 실측 결과 그 가정이 깨졌다
+    // (PhaseManager.EnterPhaseOnClient()의 Phase 캐치업 배치 등으로 Host/Client의 실제
+    // Awake 타이밍·묶음이 달라질 수 있음 — TStageNetworkBoard.md 관련 진단 참고).
+    // 대신 Awake 순서와 무관하게 항상 같은 결과가 나오는 월드 좌표(고정 씬 데이터라
+    // Host/Client 어느 프로세스에서 읽어도 값이 동일) 기준 정렬로 stable ID를 부여한다.
+    // 씬(리로드 포함) 로드마다 처음 필요해지는 시점에 한 번만 전체를 모아 재구성 —
+    // Scene.handle로 "같은 이름 씬이어도 리로드마다 다른 세대"를 구분한다.
     static readonly Dictionary<int, Breakable> _registry = new();
-    static int _nextId = 0;
+    static int _registeredSceneHandle = int.MinValue;
 
     /// <summary>stable ID로 Breakable을 찾아 Client 측 파괴 연출을 적용. StageNetworkState에서 호출.</summary>
     public static void BreakById(int id)
     {
+        EnsureRegistryBuilt();
         if (_registry.TryGetValue(id, out Breakable b))
             b?.ApplyBreakFromNetwork();
+    }
+
+    /// <summary>
+    /// 현재 씬(리로드 세대 포함)에 존재하는 모든 Breakable을 월드 좌표 기준으로 정렬해
+    /// stable ID를 재부여. 이미 이번 씬 세대에서 구성됐다면 즉시 반환(중복 작업 없음).
+    /// 비활성 오브젝트(Stage5.4처럼 Phase 진입 전까지 꺼져 있는 컨테이너 하위 포함)도
+    /// FindObjectsInactive.Include로 함께 수집해야 Awake 시점과 무관하게 완전한 목록이 된다.
+    /// </summary>
+    static void EnsureRegistryBuilt()
+    {
+        Scene activeScene = SceneManager.GetActiveScene();
+        if (_registeredSceneHandle == activeScene.handle) return;
+
+        _registry.Clear();
+
+        Breakable[] all = FindObjectsByType<Breakable>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Array.Sort(all, CompareByWorldPosition);
+
+        for (int i = 0; i < all.Length; i++)
+        {
+            all[i]._netIndex = i;
+            _registry[i] = all[i];
+        }
+
+        _registeredSceneHandle = activeScene.handle;
+    }
+
+    /// <summary>x→y→z 순으로 비교. 씬 파일에 저장된 고정 좌표라 Host/Client가 항상 동일한 순서를 얻는다.</summary>
+    static int CompareByWorldPosition(Breakable a, Breakable b)
+    {
+        Vector3 pa = a.transform.position;
+        Vector3 pb = b.transform.position;
+
+        int c = pa.x.CompareTo(pb.x);
+        if (c != 0) return c;
+
+        c = pa.y.CompareTo(pb.y);
+        if (c != 0) return c;
+
+        return pa.z.CompareTo(pb.z);
     }
 
     [Header("파괴 조건")]
@@ -112,18 +162,17 @@ public class Breakable : MonoBehaviour
         _renderers = GetComponentsInChildren<Renderer>(true);
         _colliders = GetComponentsInChildren<Collider>(true);
 
-        // 씬 리로드 시 첫 Breakable이 Awake되는 시점에 레지스트리를 초기화.
-        // (이전 씬의 stale 항목 방지)
-        if (_registry.Count == 0) _nextId = 0;
-
-        _netIndex = _nextId++;
-        _registry[_netIndex] = this;
+        // 이번 씬 세대의 레지스트리가 아직 없으면 전체를 한 번에 구성(월드 좌표 정렬).
+        // 이미 다른 Breakable의 Awake()나 BreakById()가 먼저 구성해뒀다면 즉시 반환.
+        EnsureRegistryBuilt();
     }
 
     void OnDestroy()
     {
-        // 씬 언로드·리로드 시 제거. ID 자체는 불변이므로 다른 오브젝트 ID에 영향 없음.
-        _registry.Remove(_netIndex);
+        // 이 인스턴스가 여전히 자기 자리를 차지하고 있을 때만 제거 — 씬 리로드로 다음
+        // 세대 레지스트리가 이미 구성된 뒤라면(다른 인스턴스가 같은 id를 차지) 건드리지 않는다.
+        if (_registry.TryGetValue(_netIndex, out Breakable current) && current == this)
+            _registry.Remove(_netIndex);
     }
 
     void OnDisable()
@@ -242,7 +291,7 @@ public class Breakable : MonoBehaviour
                     dir.y = 0f;
                     if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
                     dir.Normalize();
-                    float force = Random.Range(knockbackForceMin, knockbackForceMax);
+                    float force = UnityEngine.Random.Range(knockbackForceMin, knockbackForceMax);
                     NetworkDamageUtil.ApplyKnockback(p, dir, force);
                 }
             }

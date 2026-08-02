@@ -132,8 +132,8 @@ public class PressurePad : MonoBehaviour
         _isFulfilled = nowFulfilled;
 
         // Client는 문 개폐 이벤트를 발동하지 않음.
-        // Host가 OnFulfilled → DoorController.CheckPadState() → DoorNetworkSync._isOpen NV
-        // → 전원 door.Open()/Close() 연출로 전파됨.
+        // Host가 OnFulfilled → DoorController.CheckPadState() → StageNetworkState._doorOpenStates NV
+        // (StagePressurePadSetup.SetupDoorNetworkSync 배선) → 전원 door.Open()/Close() 연출로 전파됨.
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 

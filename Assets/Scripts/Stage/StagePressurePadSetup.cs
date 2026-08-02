@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -40,12 +41,19 @@ public class StagePressurePadSetup : MonoBehaviour
     // 패드 → 이 패드를 requiredPads에 포함한 DoorController 목록
     readonly Dictionary<PressurePad, List<DoorController>> _padToDoors = new();
 
+    // 문 네트워크 동기화 (DoorNetworkSync 폐기 — StageNetworkState 공유 슬롯, TStageNetworkBoard.md §3.1).
+    // index는 이름순 정렬로 배정 — Host/Client가 항상 동일한 순서로 수집해야 같은 index가
+    // 같은 문을 가리킨다 (coloredPads.Sort()와 동일 관례).
+    DoorController[] _doorsByIndex = System.Array.Empty<DoorController>();
+    StageNetworkState _netState;
+
     // ── Unity 라이프사이클 ────────────────────────────────────────
 
     void Start()
     {
         Collect();
         BuildPadToDoorMap();
+        BuildDoorIndexMap();
 
         // 사망 리로드 시 시드 RPC(BroadcastNewSeedClientRpc)가
         // StagePressurePadSetup.Start()보다 먼저 도착한다는 보장이 없으므로,
@@ -64,6 +72,8 @@ public class StagePressurePadSetup : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= OnPlayersReadyHandler;
+        if (_netState != null)
+            _netState.OnDoorStateChanged -= HandleDoorStateChanged;
     }
 
     void ApplySeedAndColors()
@@ -91,6 +101,7 @@ public class StagePressurePadSetup : MonoBehaviour
         SyncDoorVisuals();
         SyncPadVisuals();
         SyncPadCountUIs();
+        SetupDoorNetworkSync();
     }
 
     // ── 단계별 처리 ──────────────────────────────────────────────
@@ -218,6 +229,69 @@ public class StagePressurePadSetup : MonoBehaviour
             if (pad == null) continue;
             pad.GetComponent<PressurePadCountUI>()?.Refresh();
         }
+    }
+
+    /// <summary>
+    /// 씬의 모든 DoorController를 이름순으로 정렬해 index를 배정한다.
+    /// Host/Client가 항상 동일한 순서로 수집해야 같은 index가 같은 문을 가리킨다
+    /// (coloredPads.Sort()와 동일 관례). ApplySeedAndColors()보다 먼저(Start()에서) 실행돼야
+    /// SetupDoorNetworkSync()가 이 배열을 바로 쓸 수 있다.
+    /// </summary>
+    void BuildDoorIndexMap()
+    {
+        DoorController[] allDoors = FindObjectsByType<DoorController>(FindObjectsSortMode.None);
+        System.Array.Sort(allDoors, (a, b) =>
+            string.Compare(a.gameObject.name, b.gameObject.name, System.StringComparison.Ordinal));
+        _doorsByIndex = allDoors;
+    }
+
+    /// <summary>
+    /// 문 개폐를 StageNetworkState 공유 슬롯(_doorOpenStates)에 배선한다 (DoorNetworkSync 폐기,
+    /// TStageNetworkBoard.md §3.1). Host: 슬롯 초기화 + 문 이벤트 → SetDoorOpen. 전 머신: 상태
+    /// 변경 구독 → Client만 DoorController.Open()/Close() 반영(Host는 이미 로컬 물리로 처리함).
+    /// </summary>
+    void SetupDoorNetworkSync()
+    {
+        _netState = StageNetworkState.Instance;
+        if (_netState == null)
+        {
+            Debug.LogWarning("[StagePressurePadSetup] StageNetworkState를 찾을 수 없어 문 네트워크 동기화를 건너뜁니다.");
+            return;
+        }
+
+        if (!IsClientOnly())
+        {
+            _netState.InitDoorSlots(_doorsByIndex.Length);
+            for (int i = 0; i < _doorsByIndex.Length; i++)
+            {
+                DoorController door = _doorsByIndex[i];
+                if (door == null) continue;
+                int index = i; // 클로저 캡처
+                door.OnOpened.AddListener(() => _netState.SetDoorOpen(index, true));
+                door.OnClosed.AddListener(() => _netState.SetDoorOpen(index, false));
+            }
+        }
+
+        _netState.OnDoorStateChanged += HandleDoorStateChanged;
+    }
+
+    void HandleDoorStateChanged(int index, bool isOpen)
+    {
+        // Host는 이미 로컬 물리로 문을 움직였으므로 중복 적용하지 않음 (구 DoorNetworkSync와 동일 가드).
+        if (!IsClientOnly()) return;
+        if (index < 0 || index >= _doorsByIndex.Length) return;
+
+        DoorController door = _doorsByIndex[index];
+        if (door == null) return;
+
+        if (isOpen) door.Open();
+        else        door.Close();
+    }
+
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     // ── 내부 유틸 ────────────────────────────────────────────────

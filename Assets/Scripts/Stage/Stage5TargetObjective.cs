@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections.Generic;
@@ -95,6 +96,15 @@ public class Stage5TargetObjective : StageObjective
 
         CleanupTargets();
 
+        // Client HUD 동기화 구독(중복 방지를 위해 항상 해제 후 재구독).
+        if (StageNetworkState.Instance != null)
+        {
+            StageNetworkState.Instance.OnStage5CaptureSync -= HandleCaptureSync;
+            StageNetworkState.Instance.OnStage5CaptureSync += HandleCaptureSync;
+            StageNetworkState.Instance.OnStage5RemainingSync -= HandleRemainingSync;
+            StageNetworkState.Instance.OnStage5RemainingSync += HandleRemainingSync;
+        }
+
         // PhaseManager 리셋 중 오브젝트가 비활성인 경우 스폰 건너뜀.
         // 이후 StageManager.StartStage() → Begin() 재호출 시 정상 스폰.
         if (!gameObject.activeInHierarchy) return;
@@ -106,6 +116,9 @@ public class Stage5TargetObjective : StageObjective
 
         Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
 
+        // Client는 spawner.SpawnTargets()가 내부에서 빈 리스트를 반환한다(Host 전권 스폰,
+        // TStageNetworkBoard.md §3.2) — 포획 판정도 Host-only라 Client가 로컬로 들고
+        // 있을 이유가 없다. Client HUD는 아래 SyncStage5CaptureClientRpc로만 갱신된다.
         List<Stage5TargetRunner> targets = spawner.SpawnTargets(requiredCaptures);
         foreach (Stage5TargetRunner t in targets)
         {
@@ -118,11 +131,26 @@ public class Stage5TargetObjective : StageObjective
         _started = true;
         OnCaptureCountChanged?.Invoke(_capturedCount, requiredCaptures);
         OnTimerChanged?.Invoke(Remaining);
+
+        if (!IsClientOnly())
+        {
+            NetLog.Transition("Stage5TargetObjective", "RoundStart", $"required={requiredCaptures}");
+            StageNetworkState.Instance?.SyncStage5CaptureClientRpc(_capturedCount, requiredCaptures);
+        }
     }
 
     public override void Tick()
     {
         if (!_started || IsCompleted || IsFailed) return;
+
+        var  nm     = NetworkManager.Singleton;
+        bool isHost = nm != null && nm.IsServer;
+
+        // Client: 판정(HandleTimeout/HandleCaptured)은 Host의 _activeTargets에서만 일어나므로
+        // (Client는 항상 빈 리스트) 로컬로 _elapsed를 진행시킬 이유가 없다 — SurviveTimeObjective와
+        // 동일한 "Progress는 Host 레인 하나" 원칙(NetworkDesign.md §11A). 타이머 UI는 Host가 보내는
+        // SyncStage5RemainingClientRpc(HandleRemainingSync)로만 갱신된다.
+        if (!isHost) return;
 
         _elapsed += Time.deltaTime;
 
@@ -130,6 +158,8 @@ public class Stage5TargetObjective : StageObjective
         {
             _nextUITick = Time.time + 1f;
             OnTimerChanged?.Invoke(Remaining);
+            if (nm.IsListening && nm.IsServer)
+                StageNetworkState.Instance?.SyncStage5RemainingClientRpc(Remaining);
         }
 
         // IsCompleted는 HandleCaptured()가 같은 프레임에 세팅할 수 있음 →
@@ -165,10 +195,16 @@ public class Stage5TargetObjective : StageObjective
 
         _capturedCount++;
         OnCaptureCountChanged?.Invoke(_capturedCount, requiredCaptures);
+        NetLog.Transition("Stage5TargetObjective", "Captured", $"count={_capturedCount}/{requiredCaptures}");
+
+        // HandleCaptured는 항상 Host에서만 호출된다 — Client의 _activeTargets는 항상 비어 있어
+        // t.OnCaptured 구독 자체가 일어나지 않는다(Begin() 참고). 그래도 방어적으로 가드.
+        if (!IsClientOnly())
+            StageNetworkState.Instance?.SyncStage5CaptureClientRpc(_capturedCount, requiredCaptures);
 
         _activeTargets.Remove(runner);
         runner.OnCaptured -= HandleCaptured;
-        Destroy(runner.gameObject);
+        DespawnOrDestroy(runner);
 
         if (_capturedCount >= requiredCaptures)
         {
@@ -184,6 +220,7 @@ public class Stage5TargetObjective : StageObjective
         // IsCompleted 재확인: HandleCaptured가 같은 프레임에 Complete()를 호출했을 수 있음
         if (IsCompleted) return;
 
+        NetLog.Transition("Stage5TargetObjective", "Timeout", $"captured={_capturedCount}/{requiredCaptures}");
         CleanupTargets();
         Fail();
     }
@@ -197,9 +234,38 @@ public class Stage5TargetObjective : StageObjective
             if (t == null) continue;
             t.OnCaptured -= HandleCaptured;
             t.Deactivate();
-            Destroy(t.gameObject);
+            DespawnOrDestroy(t);
         }
         _activeTargets.Clear();
+    }
+
+    /// <summary>Host에서만 호출됨(_activeTargets는 Host에만 채워짐) — 네트워크 오브젝트는 Despawn으로 전원 정리.</summary>
+    static void DespawnOrDestroy(Stage5TargetRunner runner)
+    {
+        NetworkObject netObj = runner.GetComponent<NetworkObject>();
+        if (netObj != null && netObj.IsSpawned)
+            netObj.Despawn(true);
+        else
+            Destroy(runner.gameObject);
+    }
+
+    void HandleCaptureSync(int captured, int required)
+    {
+        _capturedCount = captured;
+        requiredCaptures = required;
+        OnCaptureCountChanged?.Invoke(_capturedCount, requiredCaptures);
+    }
+
+    /// <summary>StageNetworkState.SyncStage5RemainingClientRpc 수신 시 호출 — Client 타이머 UI 갱신용.</summary>
+    void HandleRemainingSync(float remaining)
+    {
+        OnTimerChanged?.Invoke(remaining);
+    }
+
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     void OnDisable()
@@ -208,5 +274,11 @@ public class Stage5TargetObjective : StageObjective
         // 동적 스폰 타겟은 Stage 계층 외부에 있으므로 여기서 명시적으로 정리
         CleanupTargets();
         _started = false;
+
+        if (StageNetworkState.Instance != null)
+        {
+            StageNetworkState.Instance.OnStage5CaptureSync -= HandleCaptureSync;
+            StageNetworkState.Instance.OnStage5RemainingSync -= HandleRemainingSync;
+        }
     }
 }

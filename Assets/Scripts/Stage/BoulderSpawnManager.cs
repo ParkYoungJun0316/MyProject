@@ -30,7 +30,7 @@ public class BoulderSpawnManager : NetworkBehaviour
     [SerializeField] BoulderSpawner[] spawners = null;
 
     [Header("스폰 루프")]
-    [Tooltip("켜면 OnEnable 시 BeginSpawning() 자동 호출")]
+    [Tooltip("켜면 스폰 시(OnNetworkSpawn) BeginSpawning() 자동 호출")]
     [SerializeField] bool startSpawningOnEnable = false;
 
     [Tooltip("true: 모든 Spawner를 한 번씩만 발사 후 종료. false: 랜덤 간격 루프 반복")]
@@ -65,11 +65,20 @@ public class BoulderSpawnManager : NetworkBehaviour
     int[] _pool;
     int   _poolIndex;
 
-    // ── Unity 생명주기 ─────────────────────────────────────────
+    // ── Unity/NGO 생명주기 ─────────────────────────────────────
 
     void OnEnable()
     {
         _triggerFired = false;
+    }
+
+    // [버그 수정 2026-08] startSpawningOnEnable을 OnEnable()에서 그대로 처리하면, 씬 배치
+    // NetworkObject의 경우 Unity의 OnEnable()이 NGO가 이 오브젝트를 스폰 처리(IsServer 세팅)
+    // 하기 전에 먼저 실행될 수 있다 — 이 경우 IsServer가 아직 기본값 false라 BeginSpawning()의
+    // Host 가드에 걸려 스폰 루프가 영영 시작되지 않는다(SpikeTrap Start() 레이스와 동일 종류).
+    // OnNetworkSpawn()은 NGO가 스폰을 끝낸 뒤 호출을 보장하므로 여기서 IsServer를 읽는 게 안전.
+    public override void OnNetworkSpawn()
+    {
         if (startSpawningOnEnable)
             BeginSpawning();
     }

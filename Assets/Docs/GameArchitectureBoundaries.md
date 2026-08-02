@@ -7,7 +7,7 @@
 
 - Play path: **Title → Lobby → [Release: Tutorial] → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**
 - Solo = **NGO Host 1인** (`partySize=1`) — same path as multi. No offline mode.
-- **No Steam demo.** Coming Soon + Playtest → full release (`NetworkDesign.md` §0).
+- **No Steam demo.** Coming Soon + Playtest → full release (`ReleaseRoadmap.md` §0.1/§0.3).
 - Multiplayer: NGO 2.9 Listen-Server
 - No persistent cross-run checkpoint save in MVP (`NetworkDesign` §13) — respawn via **`ColoredStartZone`**
 
@@ -23,7 +23,7 @@
 - **Session leave (in-game):** `DisconnectManager` → `TitleReturnFlow` → `NetworkManagerSetup.Shutdown`.
 - **UI:** subscribe / display only — no gameplay ownership, no mic/Vosk ownership.
 - **Camera:** `TopDownCamera` follow/view only — not Cinemachine-as-SSOT.
-- **Telemetry:** `TelemetryService` (Host) — Open Must; see `NetworkDesign.md` §0.5.1.
+- **Telemetry:** `TelemetryService` (Host) — Open Must; see `TelemetryDesign.md`.
 
 ## Dependency Rules
 

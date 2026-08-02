@@ -34,6 +34,22 @@ template). Still no code until user OK.
 - Prefer one damage entry: `NetworkDamageUtil`
 - Session: in-game leave = room end — don't “fix” by adding reconnect
 - Cheer/Vosk hitch: confirm worker vs main, no double `Microphone.Start`, Dissonance buffer vs Vosk queue
+- **M/T shared-component check (always run, do not rely on memory) — cached lookup
+  first, live scan only as last resort:**
+  1. Grep the root-cause class/file name in `NetworkDesign.md` §9.1.3 grouping table
+     AND `TStageNetworkBoard.md` §2 / `MStageNetworkBoard.md` — these already classify
+     most files as M-only / T-only / shared from prior sessions. A hit here is final —
+     **do not also run step 2.**
+  2. **Only if step 1 has no hit** (genuinely undocumented file): grep `Assets/Scenes`
+     for the script's usage across `M.*` and `T.*` scenes to classify it.
+  3. If step 2 was run, **Fix proposal must include writing the new classification back**
+     into `NetworkDesign.md` §9.1.3 (or `TStageNetworkBoard.md` §2 inventory) as a
+     one-line entry — so the same file is a step-1 cache hit for every future session
+     and step 2 never repeats for it.
+  4. If classified as shared: **Fix proposal** must include writing the postmortem
+     directly into `NetworkDesign.md`'s existing section for that component (not a
+     round board), plus a smoke-test note for the opposite round's representative
+     scene (`NetworkDesign.md` §9B.4).
 
 ## Report format
 

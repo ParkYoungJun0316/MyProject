@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
@@ -10,6 +11,13 @@ using System.Collections;
 /// - 타겟이 은신(PlayerStealth 레이어)으로 전환 → 다른 비은신 후보로 교체. 후보 없으면 정지.
 /// - 일정 속도로 추격. 데미지는 자식 Stage5ChaserHitbox에서 항상 판정.
 ///
+/// [네트워크 — Host 전권 시뮬 + NetworkTransform 복제 (TStageNetworkBoard.md §3.2 확정)]
+/// - Update()의 NavMeshAgent 추적 판단은 Host 전용. Client는 프리팹의 서버 권한
+///   NetworkTransform이 위치만 받아 재생 — NavMeshAgent는 Client에서 비활성화해
+///   NetworkTransform과의 위치 갱신 충돌을 막는다.
+/// - isChase 애니 파라미터는 NetworkVariable로 전파(연출용, §9.0 원칙). Host가 값을 쓰면
+///   OnValueChanged가 전 머신(Host 포함)에서 동일하게 Animator에 반영.
+///
 /// [Inspector 설정]
 /// - NavMeshAgent 부착 필수
 /// - 자식에 ChaserHitBox + Collider isTrigger + Stage5ChaserHitbox
@@ -17,7 +25,7 @@ using System.Collections;
 /// - postHitStopDuration: 피격 후 정지 시간
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class Stage5ChaserAI : MonoBehaviour
+public class Stage5ChaserAI : NetworkBehaviour
 {
     [Header("이동")]
     [SerializeField] float moveSpeed        = 0f;
@@ -48,6 +56,9 @@ public class Stage5ChaserAI : MonoBehaviour
 
     Coroutine _postHitStopRoutine;
 
+    // Host가 쓰고 전 머신이 읽는 추격 애니 상태 (연출 전용, 판정 아님).
+    readonly NetworkVariable<bool> _isChasingNV = new NetworkVariable<bool>(false);
+
     // ── Unity 생명주기 ────────────────────────────────────────────
 
     void Awake()
@@ -62,6 +73,21 @@ public class Stage5ChaserAI : MonoBehaviour
             _anim = GetComponentInChildren<Animator>();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        // Client는 NetworkTransform이 위치를 전담 — Agent를 켜두면 NavMesh 스냅과 충돌한다.
+        if (!IsServer)
+            _agent.enabled = false;
+
+        _isChasingNV.OnValueChanged += HandleChaseChanged;
+        HandleChaseChanged(false, _isChasingNV.Value);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        _isChasingNV.OnValueChanged -= HandleChaseChanged;
+    }
+
     void OnEnable()
     {
         _isActive      = false;
@@ -71,6 +97,7 @@ public class Stage5ChaserAI : MonoBehaviour
 
     void Update()
     {
+        if (!IsServer) return; // Host 전권 시뮬 (TStageNetworkBoard.md §3.2)
         if (!_isActive || _isPostHitStop) return;
 
         _retargetTimer -= Time.deltaTime;
@@ -202,10 +229,16 @@ public class Stage5ChaserAI : MonoBehaviour
 
     // ── 애니메이션 ────────────────────────────────────────────────
 
+    /// <summary>Host 전용 호출부(Chase/Deactivate/PostHitStopRoutine)에서만 쓰인다.</summary>
     void SetAnimChase(bool chase)
     {
-        if (_anim == null) return;
-        _anim.SetBool("isChase", chase);
+        if (!IsServer) return;
+        _isChasingNV.Value = chase;
+    }
+
+    void HandleChaseChanged(bool previous, bool current)
+    {
+        if (_anim != null) _anim.SetBool("isChase", current);
     }
 
     // ── 유틸 ─────────────────────────────────────────────────────

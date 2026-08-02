@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -134,10 +135,11 @@ public class MovingCorridor : MonoBehaviour
     {
         if (!_isActive) return;
 
-        _elapsed = Time.time - _activatedTime;
+        float now = GetNetworkTime();
+        _elapsed = now - _activatedTime;
 
-        UpdateRandomMultiplier(ref _backRandomMultiplier, ref _nextBackRandomChangeTime, backRandomSpeed);
-        UpdateRandomMultiplier(ref _frontRandomMultiplier, ref _nextFrontRandomChangeTime, frontRandomSpeed);
+        UpdateRandomMultiplier(ref _backRandomMultiplier, ref _nextBackRandomChangeTime, backRandomSpeed, now);
+        UpdateRandomMultiplier(ref _frontRandomMultiplier, ref _nextFrontRandomChangeTime, frontRandomSpeed, now);
 
         Vector3 direction = moveDirection.normalized;
         float phaseMult = GetPhaseMultiplier();
@@ -162,7 +164,7 @@ public class MovingCorridor : MonoBehaviour
         if (_isActive) return;
 
         _isActive = true;
-        _activatedTime = Time.time;
+        _activatedTime = GetNetworkTime();
         InitializeRandomRuntime();
         OnActivated?.Invoke();
     }
@@ -187,9 +189,21 @@ public class MovingCorridor : MonoBehaviour
         return mult;
     }
 
+    /// <summary>Host/Client 결정론적 시간 소스. NetworkManager가 없으면(에디터 단독 테스트) Time.time 폴백.
+    /// WallMover.ScheduleRoutine / WallWaveController.FixedUpdate와 동일 패턴.</summary>
+    static float GetNetworkTime()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null ? (float)nm.ServerTime.Time : Time.time;
+    }
+
     void InitializeRandomRuntime()
     {
-        int seed = useFixedRandomSeed ? randomSeed : Environment.TickCount;
+        // Environment.TickCount는 머신마다 값이 달라 Host/Client가 다른 랜덤 시퀀스를 뽑는 원인이었음.
+        // StagePressurePadSetup.ApplySeedAndColors()와 동일한 "Seed ^ salt" 관례로 결정론적 시드 사용.
+        // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52
+        const int seedSalt = 0x4D43_0001;
+        int seed = useFixedRandomSeed ? randomSeed : (NetworkSessionData.Seed ^ seedSalt);
         _rng = new System.Random(seed);
 
         _backRandomMultiplier = 1f;
@@ -198,7 +212,7 @@ public class MovingCorridor : MonoBehaviour
         _nextFrontRandomChangeTime = 0f;
     }
 
-    void UpdateRandomMultiplier(ref float multiplier, ref float nextChangeTime, RandomWallSpeedSettings settings)
+    void UpdateRandomMultiplier(ref float multiplier, ref float nextChangeTime, RandomWallSpeedSettings settings, float now)
     {
         if (!settings.enabled) return;
         if (_rng == null) InitializeRandomRuntime();
@@ -212,10 +226,10 @@ public class MovingCorridor : MonoBehaviour
         bool invalidMultiplierRange = maxMultiplier <= 0f;
         if (invalidInterval || invalidMultiplierRange) return;
 
-        if (Time.time >= nextChangeTime)
+        if (now >= nextChangeTime)
         {
             multiplier = RandomRange(minMultiplier, maxMultiplier);
-            nextChangeTime = Time.time + RandomRange(minInterval, maxInterval);
+            nextChangeTime = now + RandomRange(minInterval, maxInterval);
         }
     }
 

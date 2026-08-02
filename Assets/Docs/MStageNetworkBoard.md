@@ -60,6 +60,8 @@
 - [ ] T 전용 E 패턴 (`WallMover`/`BoulderSpawner` 등 — `NetworkDesign.md` §9.1.3 그룹 2)
 - [ ] `T.Stage1` Must (패드·문·볼더 — `NetworkDesign.md` §9 표)
 
+> **이관 완료:** 위 체크리스트의 상세 씬 인벤토리·결정 항목·작업 순서는 [`TStageNetworkBoard.md`](TStageNetworkBoard.md)로 옮겨졌다 — T 라운드 작업은 여기가 아니라 그 문서를 참고할 것.
+
 ### Floor 마이그레이션 상세 설계 (2026-07-24 확정 — **코드 반영 완료 2026-07-25**, 아래 `### Floor 마이그레이션 반영 내용` 참고)
 
 **요약**: `Floormanager.cs`를 `NetworkBehaviour`(자체 `NetworkObject`) → 일반 `MonoBehaviour` + `StageNetworkState`의 새 전용 NV 슬롯 구독으로 전환. 기존 `SyncTilesClientRpc(byte[] states)`(타일 상태 배열 전체를 매번 전송)를 폐기하고, **시드 하나만 전송해 전 머신이 로컬로 동일 결과를 재생성**하는 §11B Generate 패턴을 재사용한다 (Floor는 성공/실패 판정이 없는 "무한 반복 Generate"라 ④Judge/⑤Resolve는 필요 없음 — OX/GridBW보다 단순).

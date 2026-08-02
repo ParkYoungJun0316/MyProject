@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
@@ -13,8 +14,13 @@ using System.Collections.Generic;
 ///
 ///  spawnPoints[]를 셔플 후 앞에서 count개 선택 → 각 위치에 Chaser 1마리 스폰.
 ///
+/// [네트워크 — Host 전권 시뮬 (TStageNetworkBoard.md §3.2 확정)]
+///  OnCountdownComplete는 전 머신에서 로컬로 발동하므로 StartSpawning() 자체가 Host 가드.
+///  Host만 Instantiate + NetworkObject.Spawn(). Client는 NGO 수신으로 로컬 복제본 자동 생성.
+///  셔플은 NetworkSessionData.Seed 기반 — Host만 쓰는 값이라 재현성·로그 목적.
+///
 /// [Inspector 설정]
-///  chaserPrefab   : Chaser 프리팹 1개
+///  chaserPrefab   : Chaser 프리팹 1개 (NetworkObject + 서버 권한 NetworkTransform 필요)
 ///  spawnPoints    : 스폰 후보 Transform (10개 권장). 1개 이상 필요.
 ///  spawnSampleRadius : NavMesh 위치 보정 반경(m)
 /// </summary>
@@ -51,12 +57,13 @@ public class Stage5ChaserSpawner : MonoBehaviour
         StartSpawning(count);
     }
 
-    /// <summary>마릿수를 직접 지정해 스폰.</summary>
+    /// <summary>직접 마릿수를 지정해 스폰. Host 전용 — Client는 이 시점 즉시 return.</summary>
     public void StartSpawning(int count)
     {
         CleanupChasers();
 
         if (!gameObject.activeInHierarchy) return;
+        if (IsClientOnly()) return; // Host 전권 스폰 (TStageNetworkBoard.md §3.2)
 
         if (chaserPrefab == null)
         {
@@ -72,7 +79,10 @@ public class Stage5ChaserSpawner : MonoBehaviour
 
         Player[] players    = FindObjectsByType<Player>(FindObjectsSortMode.None);
         int      actualCount = Mathf.Min(count, spawnPoints.Length);
-        int[]    indices    = ShuffledIndices(spawnPoints.Length);
+
+        const int salt = 0x43484153; // 셔플 결정성용 salt("CHAS") — 값 자체는 Host만 사용
+        UnityEngine.Random.InitState(NetworkSessionData.Seed ^ salt);
+        int[] indices = ShuffledIndices(spawnPoints.Length);
 
         for (int i = 0; i < actualCount; i++)
         {
@@ -83,7 +93,15 @@ public class Stage5ChaserSpawner : MonoBehaviour
             Stage5ChaserAI chaser = Instantiate(chaserPrefab, pos, Quaternion.identity);
             chaser.Activate(players);
             _activeChasers.Add(chaser);
+
+            NetworkObject netObj = chaser.GetComponent<NetworkObject>();
+            if (netObj != null)
+                netObj.Spawn(destroyWithScene: true);
+            else
+                Debug.LogWarning("[Stage5ChaserSpawner] chaserPrefab에 NetworkObject가 없습니다.");
         }
+
+        NetLog.Transition("Stage5ChaserSpawner", "SpawnComplete", $"count={actualCount} seed={NetworkSessionData.Seed}");
     }
 
     /// <summary>리셋 시 호출.</summary>
@@ -115,9 +133,20 @@ public class Stage5ChaserSpawner : MonoBehaviour
         {
             if (c == null) continue;
             c.Deactivate();
-            Destroy(c.gameObject);
+
+            NetworkObject netObj = c.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsSpawned)
+                netObj.Despawn(true);
+            else
+                Destroy(c.gameObject);
         }
         _activeChasers.Clear();
+    }
+
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     static int[] ShuffledIndices(int length)

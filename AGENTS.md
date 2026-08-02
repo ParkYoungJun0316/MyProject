@@ -48,7 +48,9 @@
 
 | Topic | Location |
 |-------|----------|
-| Authority, projectiles, session, traps, lobby, Steam/telemetry roadmap | `Assets/Docs/NetworkDesign.md` |
+| Authority, projectiles, session, traps, lobby, 관측성(구조화 로그) | `Assets/Docs/NetworkDesign.md` |
+| 출시 일정·범위·QA 체크리스트 (2026-08 §0에서 분리) | `Assets/Docs/ReleaseRoadmap.md` |
+| 텔레메트리 MVP 스펙 (2026-08 §0.5.1에서 분리) | `Assets/Docs/TelemetryDesign.md` |
 | Cheer / voice / Vosk / tutorial | `Assets/Docs/CheerAndTutorialDesign.md` |
 | Domain boundaries | `Assets/Docs/GameArchitectureBoundaries.md` |
 | Cursor AI rebuild process | `Assets/Docs/CursorVibeSetupBrief.md` |

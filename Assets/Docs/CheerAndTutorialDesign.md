@@ -33,7 +33,7 @@
 | **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 | — |
 | 음성 인식 정확도 | 100% 불필요. **로비 불러보기로** 사전 확인 | Tutorial 말해보기 polish |
 
-> **데모 빌드/페이지 없음.** Playtest + Coming Soon → 정식. 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost, 배포=Steam (`NetworkDesign.md` §0.2).
+> **데모 빌드/페이지 없음.** Playtest + Coming Soon → 정식. 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost, 배포=Steam (`ReleaseRoadmap.md` §0.2).
 
 ---
 
@@ -550,7 +550,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 ## 11. 구현 순서 (Phase)
 
-> 전체 네트워크 단계: `NetworkDesign.md` §0.2. **Playtest/오픈 게이트 = Steam P2P ④ + 응원·보이스.**
+> 전체 네트워크 단계: `ReleaseRoadmap.md` §0.2. **Playtest/오픈 게이트 = Steam P2P ④ + 응원·보이스.**
 
 ### Phase 0 — 설계 **[Open]**
 
@@ -603,7 +603,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 ### Phase 6 — Steam 4인 검증 **[Open 권장]**
 
 - 친구/플레이테스트 **4인 1회** — 3표 응원·4보이스·4Gate.
-- **2인 OK ≠ 4인 보장** (`NetworkDesign.md` §0.2.1).
+- **2인 OK ≠ 4인 보장** (`ReleaseRoadmap.md` §0.2.1).
 
 ### Phase 7 — Tutorial · 커스텀 **[Release Must]**
 
@@ -725,7 +725,7 @@ A. 상용·커스텀 파이프라인 부담. **Vosk grammar + G2P**가 기본.
 A. **아니오.** **Open Must** = Steam P2P 2인 + 보이스 + 응원. Dev Build ②는 **중간** 게이트.
 
 **Q. Steam P2P 테스트 2인만 가능한데?**  
-A. **2PC면 Steam 2인**이 일상 QA·**Playtest 오픈 최소 게이트**. **4인 1회**는 친구 플레이테스트 **권장** (§0.2.1).
+A. **2PC면 Steam 2인**이 일상 QA·**Playtest 오픈 최소 게이트**. **4인 1회**는 친구 플레이테스트 **권장** (`ReleaseRoadmap.md` §0.2.1).
 
 **Q. 2인 OK면 4인도 OK?**  
 A. **Transport·연결·1표 응원**은 2인에서 검증. **3표 집계·4보이스·4Gate**는 4인 전용 — **100% 보장 아님**.

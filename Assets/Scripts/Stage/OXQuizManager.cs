@@ -72,7 +72,7 @@ public class AnswerRevealEvent : UnityEvent<bool, string> { }
 ///  4. 정답 공개 및 해설 (OnAnswerRevealed) — 문제 데이터에서 로컬 도출, RPC 불필요
 ///  5. correctAnswerDelay 후 다음 문제로 Host가 진행 확정(StageNetworkState.ChallengeStepBegin)
 ///  6. 모든 문제가 끝났을 때, 생존자가 1명 이상이면 Host가 클리어 확정
-///     - AllCleared → barrierDoor Close(DoorNetworkSync로 전파) + StageNetworkState.ChallengeCleared
+///     - AllCleared → barrierDoor Close(StageNetworkState._doorOpenStates로 전파) + StageNetworkState.ChallengeCleared
 /// </summary>
 public class OXQuizManager : MonoBehaviour
 {
@@ -249,7 +249,7 @@ public class OXQuizManager : MonoBehaviour
     {
         if (IsClientOnly()) return;
 
-        barrierDoor?.Open(); // DoorNetworkSync가 NV로 전 클라이언트에 전파
+        barrierDoor?.Open(); // StageNetworkState._doorOpenStates NV로 전 클라이언트에 전파
 
         int seed = Random.Range(int.MinValue, int.MaxValue);
         _netState?.ChallengeStart(seed, ChallengeOwnerType.OX);
@@ -350,7 +350,7 @@ public class OXQuizManager : MonoBehaviour
         if (correctAnswerDelay > 0f)
             yield return new WaitForSeconds(correctAnswerDelay);
 
-        barrierDoor?.Close(); // DoorNetworkSync가 NV로 전파
+        barrierDoor?.Close(); // StageNetworkState._doorOpenStates NV로 전파
         // OnAllCleared 발동은 HandleChallengeClearedChanged 하나로만 — Host 자신에게도
         // 즉시 OnValueChanged가 발생하므로 여기서 직접 Invoke하면 Host에서 이중 발동된다.
         _netState?.ChallengeCleared(true);

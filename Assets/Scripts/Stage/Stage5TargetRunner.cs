@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using System;
@@ -14,6 +15,14 @@ using System;
 /// - 포획(트리거): 활성 플레이어 누구나 접촉 시 성공 (색·고유색 조건 없음)
 /// - 노드는 Stage5TargetObjective에서 Activate() 시 주입 (씬 오브젝트 → 프리팹에 못 넣음)
 ///
+/// [네트워크 — Host 전권 시뮬 + NetworkTransform 복제 (TStageNetworkBoard.md §3.2 확정)]
+/// - Update()의 노드 선택·추적 판단은 Host 전용. Client는 프리팹의 서버 권한 NetworkTransform이
+///   위치만 받아 재생 — NavMeshAgent는 Client에서 비활성화.
+/// - 포획 판정(OnTriggerEnter)도 Host-only — 함정 본체와 동일한 기존 표준(§9A.3)을 그대로 적용.
+///   Client 로컬 트리거는 무시된다(Client의 콜라이더는 보간 위치라 완전 정확하지 않을 수 있음 —
+///   기존 ContactDamage 등에서도 이미 감수 중인 동일한 원격 함정 체감 이슈, 새 문제 아님).
+/// - isRun/isWalk 애니 파라미터는 NetworkVariable(byte 상태)로 전파.
+///
 /// [Inspector 설정]
 /// - NavMeshAgent 부착 필수
 /// - Collider isTrigger = true (포획 판정)
@@ -21,7 +30,7 @@ using System;
 /// - minDeviationDegrees: 플레이어 방향과의 최소 허용 각도(기본 30°)
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class Stage5TargetRunner : MonoBehaviour
+public class Stage5TargetRunner : NetworkBehaviour
 {
     [Header("이동")]
     [SerializeField] float moveSpeed = 0f;
@@ -56,6 +65,9 @@ public class Stage5TargetRunner : MonoBehaviour
     bool _isActive;
     bool _isCaptured;
 
+    // Host가 쓰고 전 머신이 읽는 이동 애니 상태 (0=Idle, 1=Walk, 2=Run) — 연출 전용, 판정 아님.
+    readonly NetworkVariable<byte> _moveStateNV = new NetworkVariable<byte>(0);
+
     void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
@@ -65,6 +77,21 @@ public class Stage5TargetRunner : MonoBehaviour
 
         if (_anim == null)
             _anim = GetComponentInChildren<Animator>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        // Client는 NetworkTransform이 위치를 전담 — Agent를 켜두면 NavMesh 스냅과 충돌한다.
+        if (!IsServer)
+            _agent.enabled = false;
+
+        _moveStateNV.OnValueChanged += HandleMoveStateChanged;
+        HandleMoveStateChanged(0, _moveStateNV.Value);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        _moveStateNV.OnValueChanged -= HandleMoveStateChanged;
     }
 
     void OnEnable()
@@ -103,6 +130,7 @@ public class Stage5TargetRunner : MonoBehaviour
 
     void Update()
     {
+        if (!IsServer) return; // Host 전권 시뮬 (TStageNetworkBoard.md §3.2)
         if (!_isActive || _isCaptured) return;
 
         UpdateTrackedPlayer();
@@ -248,23 +276,34 @@ public class Stage5TargetRunner : MonoBehaviour
     // ── 애니메이션 ────────────────────────────────────────────────
 
     /// <summary>
-    /// isRun / isWalk 상태를 현재 추적 여부에 따라 갱신.
+    /// isRun / isWalk 상태를 현재 추적 여부에 따라 갱신 (Host 전용 — NV에 씀).
     /// - 플레이어 추적 중 → Run
     /// - 랜덤 배회 중    → Walk
     /// - 비활성/포획     → Idle (둘 다 false)
     /// </summary>
     void UpdateAnim()
     {
-        if (_anim == null) return;
+        if (!IsServer) return;
         bool active = _isActive && !_isCaptured;
-        _anim.SetBool("isRun",  active && _trackedPlayer != null);
-        _anim.SetBool("isWalk", active && _trackedPlayer == null);
+        byte state = !active ? (byte)0 : (_trackedPlayer != null ? (byte)2 : (byte)1);
+        if (_moveStateNV.Value != state) _moveStateNV.Value = state;
+    }
+
+    void HandleMoveStateChanged(byte previous, byte current)
+    {
+        if (_anim == null) return;
+        _anim.SetBool("isRun",  current == 2);
+        _anim.SetBool("isWalk", current == 1);
     }
 
     // ── 포획 판정 ────────────────────────────────────────────────
+    // Host-only 직접 감지 (함정 본체와 동일한 기존 표준, §9A.3) — Arrow류 발사체의
+    // Client 보고 방식(B안)과는 다르다. Runner는 NetworkTransform으로 Host authoritative
+    // 위치가 복제되므로, Host가 자신의 진짜 위치로 직접 판정하는 쪽이 표준과 일치한다.
 
     void OnTriggerEnter(Collider other)
     {
+        if (!IsServer) return;
         if (_isCaptured || !_isActive) return;
         if (!other.CompareTag("Player")) return;
 

@@ -42,6 +42,22 @@ public class SpikeTrap : TrapBase
 
     protected override void Start()
     {
+        EnsureInitialized();
+        base.Start();
+    }
+
+    /// <summary>
+    /// [버그 수정 2026-08] spikeTrigger 등은 원래 Start()에서만 세팅했는데, Client 씬 로드 중
+    /// NetworkVariable(Phase) 콜백이 Start()보다 먼저 StageManager.StartStage() → Activate()를
+    /// 동기 호출해버리는 레이스가 있었다(NGO가 AsyncOperation.completed 안에서 씬 배치
+    /// NetworkObject를 역직렬화하며 OnValueChanged를 그 자리에서 호출 — 이 시점은 Unity가 아직
+    /// 이 씬의 Start()들을 실행하기 전일 수 있음). RaiseCycle()이 spikeTrigger를 쓰기 직전에도
+    /// 같은 초기화를 멱등하게 재시도해 Start() 타이밍과 무관하게 안전하도록 방어.
+    /// </summary>
+    void EnsureInitialized()
+    {
+        if (spikeTrigger != null) return;
+
         spikeTrigger    = GetComponent<Collider>();
         spikeTriggerBox = spikeTrigger as BoxCollider;
         spikeTrigger.isTrigger = true;
@@ -52,8 +68,6 @@ public class SpikeTrap : TrapBase
 
         if (spikeTriggerBox != null)
             baseColliderCenter = spikeTriggerBox.center;
-
-        base.Start();
     }
 
     // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
@@ -106,6 +120,7 @@ public class SpikeTrap : TrapBase
 
     IEnumerator RaiseCycle()
     {
+        EnsureInitialized();
         isRaised = true;
         spikeTrigger.enabled = true;
 

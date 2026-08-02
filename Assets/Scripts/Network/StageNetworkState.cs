@@ -87,6 +87,33 @@ public struct FloorRollState : INetworkSerializable, IEquatable<FloorRollState>
 }
 
 /// <summary>
+/// 스테이지 시작 게이트 완료 신호(시간 + 게이트 식별자)를 하나로 묶은 값.
+/// [버그 수정 2026-08 — 다중 게이트 씬 stale 재점화] serverTime만 단독 NV로 두면, 씬 하나에
+/// 게이트가 여러 개(T.Stage2/4/5)일 때 앞 게이트가 찍은 값이 뒤 게이트에도 그대로 남아있어
+/// 뒤 게이트가 Arm()되는 즉시 "이미 시작됨"으로 오인해 카운트다운·존 점유 없이 바로 시작해버렸다
+/// (Host는 자기 AllZonesOccupied()를 실제로 기다리므로 Host/Client가 다른 타이밍을 봄).
+/// gateId를 시간과 원자적으로 같이 실어보내면(ChallengeStepState와 동일 원칙), 각 게이트는
+/// "내 gateId가 찍힌 신호"만 자기 것으로 인정하므로 다른 게이트의 낡은 신호를 착각할 수 없다.
+/// </summary>
+public struct StageStartSignal : INetworkSerializable, IEquatable<StageStartSignal>
+{
+    public double serverTime;
+    public int    gateId;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref serverTime);
+        serializer.SerializeValue(ref gateId);
+    }
+
+    public bool Equals(StageStartSignal other) =>
+        serverTime.Equals(other.serverTime) && gateId == other.gateId;
+
+    public override bool Equals(object obj) => obj is StageStartSignal other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(serverTime, gateId);
+}
+
+/// <summary>
 /// 스테이지 네트워크 상태 중앙 허브. NetworkBehaviour.
 /// M.Stage1 / T.Stage1 씬 내 NetworkObject GameObject에 부착.
 ///
@@ -100,7 +127,7 @@ public struct FloorRollState : INetworkSerializable, IEquatable<FloorRollState>
 /// [연결]
 /// - StageResetOnPlayerDeath.DoReset() → NotifyPlayerDeathServerRpc()
 /// - PhaseManager.EnterPhase() → MarkPhaseStart() + SyncPhase(index) (Host에서만 호출)
-/// - StageStartGate.CompleteCountdown() → MarkStageStart() (PhaseManager와 별개 슬롯)
+/// - StageStartGate.CompleteCountdown() → MarkStageStart(gateId) (PhaseManager와 별개 슬롯)
 /// </summary>
 public class StageNetworkState : NetworkBehaviour
 {
@@ -127,12 +154,14 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // 스테이지 시작 서버 시간 (StartStage() 직전 Host 기록).
-    // StageStartGate / MemoryPathIntroController 전용 — "이 방의 시작 게이트가 완료됐다"는
-    // 1회성 배타적 신호로 쓰인다. 다른 시스템이 여기에 같이 쓰면 그 배타성이 깨지므로
-    // (예: 2026-07-21 PhaseManager 오공유 버그) 절대 다른 곳에서 같이 쓰지 말 것.
-    private readonly NetworkVariable<double> _stageStartServerTime = new(
-        -1.0,
+    // 스테이지 시작 신호 (StartStage() 직전 Host 기록. 시간 + 어느 게이트인지를 원자적으로 묶음).
+    // StageStartGate / MemoryPathIntroController 전용 — "이 게이트가 완료됐다"는 신호로 쓰인다.
+    // 다른 시스템이 여기에 같이 쓰면 그 배타성이 깨지므로(예: 2026-07-21 PhaseManager 오공유 버그)
+    // 절대 다른 곳에서 같이 쓰지 말 것. gateId는 씬 하나에 게이트가 여럿인 경우(T.Stage2/4/5)
+    // 앞 게이트의 낡은 신호를 뒤 게이트가 자기 것으로 오인하지 않도록 구분하는 용도
+    // (2026-08 버그 수정 — 위 StageStartSignal 주석 참고).
+    private readonly NetworkVariable<StageStartSignal> _stageStartSignal = new(
+        new StageStartSignal { serverTime = -1.0, gateId = -1 },
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
@@ -185,6 +214,13 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── 문(Door) 개폐 동기화 (Door 전용 슬롯 — DoorNetworkSync 폐기, 2026-08) ──
+    // [설계: TStageNetworkBoard.md §3.1] 문마다 개별 NetworkObject+NetworkBehaviour를 붙이던
+    // DoorNetworkSync를 폐기하고, Floor(§11B.8)와 동일한 "슬롯 재사용" 원칙으로 여기에 통합한다.
+    // index는 StagePressurePadSetup이 씬의 DoorController[]를 이름순 정렬해 배정 — Host/Client가
+    // 항상 동일한 순서로 수집해야 같은 index가 같은 문을 가리킨다.
+    private readonly NetworkList<bool> _doorOpenStates = new();
+
     private bool _resetPending;
 
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
@@ -202,7 +238,8 @@ public class StageNetworkState : NetworkBehaviour
     public int    CurrentPhase            => _currentPhase.Value;
     public bool   IsCountdownActive        => _isCountdownActive.Value;
     public double CountdownStartServerTime => _countdownStartServerTime.Value;
-    public double StageStartServerTime     => _stageStartServerTime.Value;
+    public double StageStartServerTime     => _stageStartSignal.Value.serverTime;
+    public int    StageStartGateId         => _stageStartSignal.Value.gateId;
     public double PhaseStartServerTime     => _phaseStartServerTime.Value;
 
     public int    ChallengeSeed               => _challengeStep.Value.seed;
@@ -212,6 +249,12 @@ public class StageNetworkState : NetworkBehaviour
     public bool   IsChallengeCleared           => _challengeCleared.Value;
 
     public int    BossPhasesCleared            => _bossPhasesCleared.Value;
+
+    public int  DoorCount => _doorOpenStates.Count;
+
+    /// <summary>늦은 구독 캐치업용 — index의 현재 개폐 상태. 범위 밖이면 false.</summary>
+    public bool IsDoorOpen(int index) =>
+        index >= 0 && index < _doorOpenStates.Count && _doorOpenStates[index];
 
     /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnChallengeStepChanged;
@@ -232,6 +275,23 @@ public class StageNetworkState : NetworkBehaviour
 
     /// <summary>보스 페이즈 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점 — BossFightObjective가 구독해 OnPhaseCleared를 발동.</summary>
     public event Action<int> OnBossPhasesClearedChanged;
+
+    /// <summary>문 개폐 상태가 바뀔 때 발동(index, isOpen). Client가 구독해 DoorController.Open()/Close() 호출용.</summary>
+    public event Action<int, bool> OnDoorStateChanged;
+
+    /// <summary>
+    /// Stage5 타겟 포획 진행 상황(captured, required)이 바뀔 때 발동 — Client 전용 구독점.
+    /// Stage5TargetRunner.OnTriggerEnter가 Host-only 판정(TStageNetworkBoard.md §3.2)이라
+    /// Client는 로컬 포획 이벤트가 없다 — 이 Rpc가 Client HUD(ObjectiveUI)의 유일한 갱신 경로다.
+    /// </summary>
+    public event Action<int, int> OnStage5CaptureSync;
+
+    /// <summary>
+    /// Stage5 타겟 잡기 남은 시간이 갱신될 때 발동 — Client 전용 구독점.
+    /// Stage5TargetObjective.Tick()이 Host 레인에서만 _elapsed를 진행하므로(§11A "Progress는
+    /// Host 레인 하나"), Client는 이 신호로만 타이머 UI를 갱신한다.
+    /// </summary>
+    public event Action<float> OnStage5RemainingSync;
 
     /// <summary>
     /// §11 사망 문으로 재진입이 확정된 순간(Host 레인, NotifyPlayerDeathServerRpc 진입 시) 1회 발동.
@@ -257,9 +317,9 @@ public class StageNetworkState : NetworkBehaviour
     {
         _currentPhase.OnValueChanged += OnPhaseChanged;
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
-        _challengeCleared.OnValueChanged += OnChallengeClearedNvChanged;
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
+        _doorOpenStates.OnListChanged    += OnDoorOpenStatesChanged;
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
@@ -271,9 +331,9 @@ public class StageNetworkState : NetworkBehaviour
     {
         _currentPhase.OnValueChanged -= OnPhaseChanged;
         _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
-        _challengeCleared.OnValueChanged -= OnChallengeClearedNvChanged;
         _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
+        _doorOpenStates.OnListChanged    -= OnDoorOpenStatesChanged;
         if (Instance == this) Instance = null;
     }
 
@@ -425,14 +485,17 @@ public class StageNetworkState : NetworkBehaviour
     }
 
     /// <summary>
-    /// Host: StartStage() 직전 서버 시간 기록.
+    /// Host: StartStage() 직전 서버 시간 + 완료된 게이트 식별자 기록.
     /// TimerUI가 이 값 기준으로 Host/Client 동일한 경과 시간을 계산.
+    /// gateId는 호출한 StageStartGate 자신의 식별자 — 씬에 게이트가 여럿이면(T.Stage2/4/5)
+    /// 각 게이트가 자기 gateId가 찍힌 신호만 자기 것으로 인정해 다른 게이트의 낡은 신호를
+    /// 재사용하지 않게 한다.
     /// </summary>
-    public void MarkStageStart()
+    public void MarkStageStart(int gateId)
     {
         if (!IsServer) return;
-        _stageStartServerTime.Value = NetworkManager.Singleton.ServerTime.Time;
-        _isCountdownActive.Value    = false;
+        _stageStartSignal.Value  = new StageStartSignal { serverTime = NetworkManager.Singleton.ServerTime.Time, gateId = gateId };
+        _isCountdownActive.Value = false;
     }
 
     /// <summary>
@@ -477,6 +540,42 @@ public class StageNetworkState : NetworkBehaviour
     }
 
     void OnBossPhasesClearedNv(int prev, int next) => OnBossPhasesClearedChanged?.Invoke(next);
+
+    // ── 문(Door) 개폐 동기화 (Door 전용 슬롯) ──────────────────────
+
+    /// <summary>
+    /// Host: 씬의 문 개수만큼 슬롯을 초기화(전부 닫힘). StagePressurePadSetup이 OnPlayersReady
+    /// 이후 index 배정을 마친 뒤 1회 호출 — 이후 Add/RemoveAt으로 개수를 바꾸지 않는다
+    /// (index가 문마다 고정 배정이라 배정 후 개수 변경은 index 오염으로 이어짐).
+    /// </summary>
+    public void InitDoorSlots(int count)
+    {
+        if (!IsServer) return;
+        _doorOpenStates.Clear();
+        for (int i = 0; i < count; i++)
+            _doorOpenStates.Add(false);
+    }
+
+    /// <summary>Host: 문 index의 개폐 상태 갱신. DoorController.OnOpened/OnClosed에서 호출.</summary>
+    public void SetDoorOpen(int index, bool isOpen)
+    {
+        if (!IsServer) return;
+        if (index < 0 || index >= _doorOpenStates.Count) return;
+        if (_doorOpenStates[index] == isOpen) return;
+        _doorOpenStates[index] = isOpen;
+    }
+
+    void OnDoorOpenStatesChanged(NetworkListEvent<bool> change)
+    {
+        switch (change.Type)
+        {
+            case NetworkListEvent<bool>.EventType.Add:
+            case NetworkListEvent<bool>.EventType.Insert:
+            case NetworkListEvent<bool>.EventType.Value:
+                OnDoorStateChanged?.Invoke(change.Index, change.Value);
+                break;
+        }
+    }
 
     // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
 
@@ -532,11 +631,34 @@ public class StageNetworkState : NetworkBehaviour
         };
     }
 
-    /// <summary>Host: 챌린지 클리어 확정. Complete() 자체는 각 Objective가 자체 Host 가드로 처리 — 이 신호는 연출용.</summary>
+    /// <summary>
+    /// Host: 챌린지 클리어 확정. Complete() 자체는 각 Objective가 자체 Host 가드로 처리 — 이 신호는 연출용.
+    /// [버그 수정 2026-08] 예전엔 _challengeCleared NV의 OnValueChanged만으로 OnChallengeClearedChanged를
+    /// 발동시켰는데, 이 신호가 뜨자마자(같은/다음 프레임) 다음 챌린지의 ChallengeStart()가 같은 NV를
+    /// 곧바로 false로 되돌린다. NGO NetworkVariable은 매 네트워크 틱마다 "그 시점의 최종값"만 스냅샷으로
+    /// 보내므로, true→false가 같은 틱 안에서 겹치면 Client가 보는 값은 false→false — 변화 자체가
+    /// 감지되지 않아 OnValueChanged가 Client에서 전혀 발동하지 않았다(Host는 .Value setter 시점에
+    /// 로컬로 즉시 동기 콜백이 돌기 때문에 이 레이스를 겪지 않아 항상 정상으로 보였음 — OX 마지막 문제
+    /// 정답/해설 텍스트가 Client 화면에 영구히 남는 버그의 원인). NotifyChallengeOutcomeClientRpc와
+    /// 동일하게 RPC(메시지)로 보장 전달 — 이후 NV가 어떻게 바뀌든 무관하게 항상 도착한다.
+    /// _challengeCleared.Value 자체는 늦은 조회용 상태로만 유지(OnValueChanged 구독은 더 이상 하지 않음).
+    /// </summary>
     public void ChallengeCleared(bool cleared)
     {
         if (!IsServer) return;
         _challengeCleared.Value = cleared;
+        if (!cleared) return;
+
+        OnChallengeClearedChanged?.Invoke(true); // Host 로컬 즉시 발동
+        NotifyChallengeClearedClientRpc();
+    }
+
+    /// <summary>Client 전용 — 위 ChallengeCleared(true)가 보장 전달하는 1회성 신호.</summary>
+    [ClientRpc]
+    void NotifyChallengeClearedClientRpc()
+    {
+        if (IsServer) return;
+        OnChallengeClearedChanged?.Invoke(true);
     }
 
     /// <summary>
@@ -551,7 +673,6 @@ public class StageNetworkState : NetworkBehaviour
     }
 
     void OnChallengeStepChangedNv(ChallengeStepState prev, ChallengeStepState next) => OnChallengeStepChanged?.Invoke(next.stepIndex);
-    void OnChallengeClearedNvChanged(bool prev, bool next) => OnChallengeClearedChanged?.Invoke(next);
 
     /// <summary>
     /// Host: 연속 진행형 챌린지의 남은 시간을 Client에 브로드캐스트 (§11B ④Judge 부속 — 시간 표시 전용,
@@ -562,6 +683,30 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         OnChallengeTimeSync?.Invoke(remaining);
+    }
+
+    /// <summary>
+    /// Host: Stage5 타겟 포획 카운트를 Client HUD에 브로드캐스트. SyncChallengeTimeClientRpc와
+    /// 동일한 "Host 값 확정 + 주기/이벤트성 Rpc" 패턴 — 챌린지 축(ChallengeStepState)과는 무관한
+    /// 독립 채널이다 (Stage5TargetObjective는 ChallengeOwnerType 대상이 아님).
+    /// </summary>
+    [ClientRpc]
+    public void SyncStage5CaptureClientRpc(int captured, int required)
+    {
+        if (IsServer) return;
+        OnStage5CaptureSync?.Invoke(captured, required);
+    }
+
+    /// <summary>
+    /// Host: Stage5 타겟 잡기 남은 시간을 Client HUD에 브로드캐스트. SyncSurvivalRemainingClientRpc와
+    /// 동일한 "Host tick + 주기 Rpc" 패턴 — SyncStage5CaptureClientRpc처럼 챌린지 축과는 무관한
+    /// Stage5 전용 독립 채널이다.
+    /// </summary>
+    [ClientRpc]
+    public void SyncStage5RemainingClientRpc(float remaining)
+    {
+        if (IsServer) return;
+        OnStage5RemainingSync?.Invoke(remaining);
     }
 
     // ── Floor 타일 롤 동기화 (Floor 전용) ──────────────────────────

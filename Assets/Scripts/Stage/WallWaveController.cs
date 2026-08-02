@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -137,7 +138,10 @@ public class WallWaveController : MonoBehaviour
     {
         if (!_isPlaying) return;
 
-        float t = Time.time;
+        // 자유런(트리거 없이 씬 시작 즉시 재생) — 각 머신이 ServerTime만 폴링하면
+        // 결정론적으로 같은 위상을 계산하므로 RPC 불필요 (WallMover.ScheduleRoutine과 동일 원칙).
+        var nm = NetworkManager.Singleton;
+        float t = nm != null ? (float)nm.ServerTime.Time : Time.time;
         float phaseRad = phaseOffset * Mathf.Deg2Rad;
         float twoPiFreq = 2f * Mathf.PI * frequency;
 

@@ -62,11 +62,22 @@ public class WallMoverSequencer : NetworkBehaviour
     bool _isRunning;
     bool _hasActivated;
 
+    Collider _triggerCollider;
+
     // ── 라이프사이클 ─────────────────────────────────────────────
+
+    void Awake()
+    {
+        // 스폰 완료 전 물리 트리거가 먼저 발동해 RpcException이 나는 것을 막기 위해
+        // NetworkSpawn 전까지 콜라이더를 꺼둔다.
+        _triggerCollider = GetComponent<Collider>();
+        if (_triggerCollider != null) _triggerCollider.enabled = false;
+    }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+        if (_triggerCollider != null) _triggerCollider.enabled = true;
         // 씬 리로드 시 모든 관리 벽을 시작 위치로 강제 복귀.
         // _hasActivated는 새 인스턴스 기본값(false)이므로 ResetAll이 건드리지 않아도 무관.
         ResetAll();
