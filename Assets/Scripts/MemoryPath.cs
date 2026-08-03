@@ -18,15 +18,20 @@ using UnityEngine.Events;
 ///  1. 이 오브젝트 자식으로 발판들 배치
 ///  2. 각 발판에 MemoryPathTile + Collider 부착 후 role(Safe/Trap) 설정
 ///  3. previewDuration으로 경로 표시 시간 조정
-///  4. StartPreview()를 원하는 타이밍에 호출 (트리거, 버튼, UnityEvent 등)
+///  4. startOnAwake는 false로 둘 것 — StartPreview()는 MemoryPathIntroController가
+///     StageStartGate.OnCountdownComplete 이후(카메라 인트로 재생 후) 호출한다.
+///     직접 StartPreview()를 OnCountdownComplete에 연결하지 말 것(카메라 인트로 생략됨).
 /// </summary>
 public class MemoryPath : MonoBehaviour
 {
     public enum PathState { Idle, Previewing, Challenge, Complete, Failed }
 
     [Header("경로 설정")]
-    [Tooltip("게임 시작(Start) 시 자동으로 미리보기를 시작할지 여부")]
-    public bool startOnAwake = true;
+    [Tooltip("씬 로드(Start) 시 자동으로 미리보기를 시작할지 여부.\n" +
+             "false 필수 — MemoryPathIntroController.BeginIntro()가 카메라 인트로\n" +
+             "재생 후 StartPreview()를 호출한다(StageStartGate.OnCountdownComplete에\n" +
+             "직접 연결하지 말 것).")]
+    public bool startOnAwake = false;
 
     [Tooltip("경로를 보여주는 시간(초). 이 시간이 지나면 발판이 전부 같은 색으로 변함")]
     public float previewDuration = 3f;

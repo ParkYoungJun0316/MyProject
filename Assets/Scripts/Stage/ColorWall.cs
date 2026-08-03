@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -88,6 +89,11 @@ public class ColorWall : MonoBehaviour
     [Tooltip("씬 시작 시 자동으로 스케줄 시작")]
     [SerializeField] bool scheduleOnStart = true;
 
+    [Tooltip("플레이어 색 슬롯 배정을 결정론적으로 섞기 위한 salt.\n" +
+             "같은 씬의 여러 ColorWall이 서로 다른 색 배정을 갖길 원하면 벽마다 다른 값 지정.\n" +
+             "0(기본값)이면 슬롯 수가 같은 벽끼리 동일한 배정 — 그래도 Host/Client는 항상 일치함.")]
+    [SerializeField] int colorSeedSalt = 0;
+
     [Header("색상 일치 — 멈춤")]
     [Tooltip("색상이 같으면 이 시간(초) 동안 벽 이동 정지")]
     [SerializeField] float pauseDuration = 2f;
@@ -98,6 +104,10 @@ public class ColorWall : MonoBehaviour
 
     [Tooltip("색상이 바뀔 때 호출 (추가 시각 피드백용)")]
     public UnityEvent OnColorChanged;
+
+    // MovingCorridor.cs 주석의 salt 목록과 겹치지 않는 ColorWall 전용 salt
+    // (다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52)
+    const int ColorSeedBaseSalt = unchecked((int)0x434F4C57);
 
     WallColorType _wallColor;
     bool      _isPaused;
@@ -139,8 +149,11 @@ public class ColorWall : MonoBehaviour
     public void StartSchedule()
     {
         if (_scheduleCoroutine != null) StopCoroutine(_scheduleCoroutine);
-        // 플레이어 색 슬롯을 GameSession 활성색으로 재매핑 (GameSession 없으면 원본 그대로)
-        ColorChangeEvent[] effective = GameSessionWallColorRemap.RemapSchedule(colorSchedule);
+        // 플레이어 색 슬롯을 GameSession 활성색으로 재매핑 (GameSession 없으면 원본 그대로).
+        // NetworkSessionData.Seed 기반 rng를 넘겨 여분 슬롯 배정까지 Host/Client 동일하게 고정
+        // (안 넘기면 GameSessionColorDistribution이 UnityEngine.Random을 써서 머신마다 갈라짐).
+        var rng = new System.Random(NetworkSessionData.Seed ^ ColorSeedBaseSalt ^ colorSeedSalt);
+        ColorChangeEvent[] effective = GameSessionWallColorRemap.RemapSchedule(colorSchedule, rng);
         _scheduleCoroutine = StartCoroutine(ScheduleRoutine(effective));
     }
 
@@ -282,13 +295,13 @@ public class ColorWall : MonoBehaviour
     {
         while (true)
         {
-            float startTime = Time.time;
+            float startTime = NetTime();
 
             // 배열을 순서대로 순회 (atSeconds 오름차순 권장)
             foreach (var evt in events)
             {
                 float waitUntil = startTime + evt.atSeconds;
-                float remaining = waitUntil - Time.time;
+                float remaining = waitUntil - NetTime();
                 if (remaining > 0f)
                     yield return new WaitForSeconds(remaining);
 
@@ -299,13 +312,23 @@ public class ColorWall : MonoBehaviour
 
             // 다음 주기 시작까지 대기
             float periodEnd = startTime + schedulePeriod;
-            float waitForPeriod = periodEnd - Time.time;
+            float waitForPeriod = periodEnd - NetTime();
             if (waitForPeriod > 0f)
                 yield return new WaitForSeconds(waitForPeriod);
 
             // 주기 시작 시 defaultColor로 복귀
             SetColor(defaultColor);
         }
+    }
+
+    /// <summary>
+    /// 자유런(트리거 없이 씬 시작 즉시 재생) 스케줄용 시간 소스.
+    /// 각 머신이 ServerTime만 폴링하면 결정론적 (WallMover.ScheduleRoutine / WallWaveController와 동일 원칙).
+    /// </summary>
+    static float NetTime()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null ? (float)nm.ServerTime.Time : Time.time;
     }
 
     // ── 에디터 ──────────────────────────────────────────────────

@@ -68,8 +68,11 @@ public static class GameSessionWallColorRemap
     /// · Black / White / Default 이벤트는 변경 없음.
     /// · 플레이어 색 슬롯 수만큼 Distribute() 호출 → 활성 색으로 채움.
     /// · GameSession 없으면 schedule 원본 반환 (fallback).
+    /// · rng: 여분 슬롯 배정까지 결정론적으로 고정하려면 반드시 넘길 것 (예: ColorWall이
+    ///   NetworkSessionData.Seed 기반 System.Random을 생성해 전달). null이면 GameSessionColorDistribution이
+    ///   UnityEngine.Random을 써서 Host/Client가 다른 결과를 낼 수 있다(로컬 전용 호출자 하위호환용).
     /// </summary>
-    public static ColorWall.ColorChangeEvent[] RemapSchedule(ColorWall.ColorChangeEvent[] schedule)
+    public static ColorWall.ColorChangeEvent[] RemapSchedule(ColorWall.ColorChangeEvent[] schedule, System.Random rng = null)
     {
         if (schedule == null || schedule.Length == 0)
             return schedule;
@@ -87,8 +90,8 @@ public static class GameSessionWallColorRemap
         if (slotCount == 0)
             return schedule;
 
-        // 활성 색 기준 균등 분배
-        PlayerColorType[] distributed = GameSessionColorDistribution.Distribute(slotCount);
+        // 활성 색 기준 균등 분배 (rng 전달 — 안 넘기면 UnityEngine.Random이라 머신마다 갈라짐)
+        PlayerColorType[] distributed = GameSessionColorDistribution.Distribute(slotCount, rng);
 
         // 원본 순서 유지, 플레이어 색 슬롯만 재매핑
         var result = new ColorWall.ColorChangeEvent[schedule.Length];

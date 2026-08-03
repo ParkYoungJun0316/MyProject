@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -258,11 +259,11 @@ public class AdvancingWall : MonoBehaviour
     {
         while (true)
         {
-            float startTime = Time.time;
+            float startTime = NetTime();
 
             foreach (AdvanceEntry entry in schedule)
             {
-                float remaining = (startTime + entry.atSeconds) - Time.time;
+                float remaining = (startTime + entry.atSeconds) - NetTime();
                 if (remaining > 0f)
                     yield return new WaitForSeconds(remaining);
 
@@ -278,10 +279,20 @@ public class AdvancingWall : MonoBehaviour
             if (!loopSchedule) yield break;
 
             float periodEnd = startTime + schedulePeriod;
-            float waitLeft  = periodEnd - Time.time;
+            float waitLeft  = periodEnd - NetTime();
             if (waitLeft > 0f)
                 yield return new WaitForSeconds(waitLeft);
         }
+    }
+
+    /// <summary>
+    /// 자유런(트리거 없이 씬 시작 즉시 재생) 스케줄용 시간 소스.
+    /// 각 머신이 ServerTime만 폴링하면 결정론적 (WallMover.ScheduleRoutine / WallWaveController와 동일 원칙).
+    /// </summary>
+    static float NetTime()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null ? (float)nm.ServerTime.Time : Time.time;
     }
 
     /// <summary>단일 AdvanceEntry 실행 (지정 사이클 수만큼 전진·후퇴 반복).</summary>

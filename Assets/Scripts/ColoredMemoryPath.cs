@@ -25,14 +25,20 @@ using UnityEngine.Serialization;
 ///  2. 각 타일에 ColoredMemoryPathTile + Collider 부착
 ///  3. 각 타일의 safeColors에 안전 색 목록 설정
 ///  4. colorSequence로 미리보기 순서 지정
+///  5. startOnAwake는 false로 둘 것 — StartPreview()는 MemoryPathIntroController가
+///     StageStartGate.OnCountdownComplete 이후(카메라 인트로 재생 후) 호출한다.
+///     직접 StartPreview()를 OnCountdownComplete에 연결하지 말 것(카메라 인트로 생략됨).
 /// </summary>
 public class ColoredMemoryPath : MonoBehaviour
 {
     public enum PathState { Idle, Previewing, Challenge, Complete, Failed }
 
     [Header("경로 설정")]
-    [Tooltip("게임 시작 시 자동으로 미리보기를 시작할지 여부")]
-    public bool startOnAwake = true;
+    [Tooltip("씬 로드(Start) 시 자동으로 미리보기를 시작할지 여부.\n" +
+             "false 필수 — MemoryPathIntroController.BeginIntro()가 카메라 인트로\n" +
+             "재생 후 StartPreview()를 호출한다(StageStartGate.OnCountdownComplete에\n" +
+             "직접 연결하지 말 것).")]
+    public bool startOnAwake = false;
 
     [Tooltip("각 색 경로를 보여주는 시간(초)")]
     public float colorPreviewDuration = 0f;

@@ -201,7 +201,7 @@ public class MovingCorridor : MonoBehaviour
     {
         // Environment.TickCount는 머신마다 값이 달라 Host/Client가 다른 랜덤 시퀀스를 뽑는 원인이었음.
         // StagePressurePadSetup.ApplySeedAndColors()와 동일한 "Seed ^ salt" 관례로 결정론적 시드 사용.
-        // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52
+        // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52, 0x434F4C57(ColorWall), 0x574C525A(WallLineRandomizer)
         const int seedSalt = 0x4D43_0001;
         int seed = useFixedRandomSeed ? randomSeed : (NetworkSessionData.Seed ^ seedSalt);
         _rng = new System.Random(seed);

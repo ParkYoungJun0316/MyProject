@@ -1835,6 +1835,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -2246,6 +2247,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -2536,6 +2538,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -3053,6 +3056,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -3741,7 +3745,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &121057594
 Transform:
   m_ObjectHideFlags: 0
@@ -3930,6 +3934,54 @@ MonoBehaviour:
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 457933247}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 121057593}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 1276666776}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 161467525}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
         m_CallState: 2
 --- !u!1 &131254716 stripped
 GameObject:
@@ -4619,7 +4671,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &161467526
 Transform:
   m_ObjectHideFlags: 0
@@ -5287,6 +5339,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -5729,6 +5782,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -6607,6 +6661,7 @@ MonoBehaviour:
   colorFirstDelay: 1
   colorLeadBeforeWall: 1
   colorPool: 
+  cycleSeedSalt: 0
 --- !u!114 &230173297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6638,6 +6693,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -6965,6 +7021,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -7857,6 +7914,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -8734,9 +8792,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorTileChallenge
   autoStart: 1
+  challengeInstanceId: 1
   tilePrefabs:
   - colorType: 2
-    prefab: {fileID: 5961518118810855157, guid: 163ad6411ceaa4a47a6daab2ed17f3be, type: 3}
+    prefab: {fileID: 4160951414905225017, guid: 0816edd3e1e3dc5489c56f75551ee5ac, type: 3}
   spawnPoints:
   - {fileID: 990199353}
   - {fileID: 791163753}
@@ -10028,6 +10087,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -10344,6 +10404,7 @@ MonoBehaviour:
   colorFirstDelay: 1
   colorLeadBeforeWall: 1
   colorPool: 
+  cycleSeedSalt: 0
 --- !u!114 &377056146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10375,6 +10436,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -11967,7 +12029,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &457933248
 Transform:
   m_ObjectHideFlags: 0
@@ -12521,6 +12583,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -14896,6 +14959,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -17287,6 +17351,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -17635,6 +17700,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -17929,6 +17995,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -18423,6 +18490,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -18947,15 +19015,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorTileChallenge
   autoStart: 1
+  challengeInstanceId: 0
   tilePrefabs:
   - colorType: 1
-    prefab: {fileID: 5961518118810855157, guid: d9a27bda344948f49a2efd1e45888b2f, type: 3}
+    prefab: {fileID: 5797962265975425837, guid: a1e436dc1d0c3eb43990e3d01914b60a, type: 3}
   - colorType: 2
-    prefab: {fileID: 5961518118810855157, guid: 163ad6411ceaa4a47a6daab2ed17f3be, type: 3}
+    prefab: {fileID: 4160951414905225017, guid: 0816edd3e1e3dc5489c56f75551ee5ac, type: 3}
   - colorType: 3
-    prefab: {fileID: 5961518118810855157, guid: 4b557bd42ee5ad24f96635d4259f7389, type: 3}
+    prefab: {fileID: 6825469496282287166, guid: c1462b7f5f4911f4fad74648b3fc8168, type: 3}
   - colorType: 4
-    prefab: {fileID: 5961518118810855157, guid: 2a79be47384812844b83279c49ece615, type: 3}
+    prefab: {fileID: 3292826405906091819, guid: b118f2db206c7c744bb39bb8d2609d7b, type: 3}
   spawnPoints:
   - {fileID: 1688039296}
   - {fileID: 1323352785}
@@ -19100,6 +19169,7 @@ MonoBehaviour:
   colorFirstDelay: 0
   colorLeadBeforeWall: 1
   colorPool: 0000000001000000
+  cycleSeedSalt: 0
 --- !u!114 &763910954
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19196,6 +19266,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -19343,6 +19414,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -20346,6 +20418,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -20827,6 +20900,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -23827,6 +23901,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -24121,6 +24196,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -26866,6 +26942,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -28187,9 +28264,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorTileChallenge
   autoStart: 1
+  challengeInstanceId: 3
   tilePrefabs:
   - colorType: 3
-    prefab: {fileID: 5961518118810855157, guid: 4b557bd42ee5ad24f96635d4259f7389, type: 3}
+    prefab: {fileID: 6825469496282287166, guid: c1462b7f5f4911f4fad74648b3fc8168, type: 3}
   spawnPoints:
   - {fileID: 1987748521}
   - {fileID: 1028310325}
@@ -29016,6 +29094,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -29394,6 +29473,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -29700,9 +29780,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorTileChallenge
   autoStart: 1
+  challengeInstanceId: 0
   tilePrefabs:
   - colorType: 1
-    prefab: {fileID: 5961518118810855157, guid: d9a27bda344948f49a2efd1e45888b2f, type: 3}
+    prefab: {fileID: 5797962265975425837, guid: a1e436dc1d0c3eb43990e3d01914b60a, type: 3}
   spawnPoints:
   - {fileID: 488126555}
   - {fileID: 1639257196}
@@ -32008,6 +32089,7 @@ MonoBehaviour:
   colorFirstDelay: 0
   colorLeadBeforeWall: 1
   colorPool: 0000000001000000
+  cycleSeedSalt: 0
 --- !u!114 &1263871357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32104,6 +32186,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -32213,7 +32296,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1276666777
 Transform:
   m_ObjectHideFlags: 0
@@ -32327,6 +32410,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -33141,6 +33225,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -33701,6 +33786,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -34107,6 +34193,7 @@ MonoBehaviour:
   colorFirstDelay: 1
   colorLeadBeforeWall: 1
   colorPool: 
+  cycleSeedSalt: 0
 --- !u!114 &1360030461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34138,6 +34225,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -35244,6 +35332,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -37098,6 +37187,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -37592,6 +37682,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -38120,6 +38211,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -39068,6 +39160,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -40694,6 +40787,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -41054,6 +41148,7 @@ MonoBehaviour:
   colorFirstDelay: 1
   colorLeadBeforeWall: 1
   colorPool: 
+  cycleSeedSalt: 0
 --- !u!114 &1642011079
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41085,6 +41180,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -44073,6 +44169,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -45065,6 +45162,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -48037,9 +48135,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorTileChallenge
   autoStart: 1
+  challengeInstanceId: 2
   tilePrefabs:
   - colorType: 4
-    prefab: {fileID: 5961518118810855157, guid: 2a79be47384812844b83279c49ece615, type: 3}
+    prefab: {fileID: 3292826405906091819, guid: b118f2db206c7c744bb39bb8d2609d7b, type: 3}
   spawnPoints:
   - {fileID: 218689792}
   - {fileID: 356285029}
@@ -48067,34 +48166,10 @@ MonoBehaviour:
   penaltyAdvanceDistance: 5
   OnChallengeStarted:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2017583060}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnSuccess:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnFail:
     m_PersistentCalls:
       m_Calls: []
@@ -48424,6 +48499,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -49019,6 +49095,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -49309,6 +49386,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -50656,6 +50734,7 @@ MonoBehaviour:
   colorFirstDelay: 0
   colorLeadBeforeWall: 1
   colorPool: 0000000001000000
+  cycleSeedSalt: 0
 --- !u!114 &2083305975
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50679,6 +50758,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -51879,6 +51959,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -52280,6 +52361,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -52570,6 +52652,7 @@ MonoBehaviour:
   colorFirstDelay: 0
   colorLeadBeforeWall: 1
   colorPool: 0000000001000000
+  cycleSeedSalt: 0
 --- !u!114 &2126906802
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52666,6 +52749,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:
@@ -52920,6 +53004,7 @@ MonoBehaviour:
   loopSchedule: 0
   schedulePeriod: 60
   scheduleOnStart: 1
+  colorSeedSalt: 0
   pauseDuration: 2
   OnColorMatch:
     m_PersistentCalls:

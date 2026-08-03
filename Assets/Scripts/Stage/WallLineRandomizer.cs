@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -57,15 +59,72 @@ public class WallLineRandomizer : MonoBehaviour
     [Tooltip("랜덤으로 뽑을 논리 색 목록. 비우면 Default 제외 전체.")]
     [SerializeField] ColorWall.WallColorType[] colorPool = new ColorWall.WallColorType[0];
 
+    [Header("네트워크 시드 (Host/Client 동기화)")]
+    [Tooltip("보통은 안 건드려도 됨 — 인스턴스 구분은 씬 계층 경로로 자동 처리됨(_netIndex).\n" +
+             "그래도 특정 벽에 의도적으로 같은/다른 패턴을 강제하고 싶을 때만 값 지정.")]
+    [SerializeField] int cycleSeedSalt = 0;
+
+    // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52, 0x434F4C57(ColorWall)
+    const int WallLineSeedBaseSalt = unchecked((int)0x574C525A);
+
     AdvancingWall _wall;
     ColorWall[]   _colorWalls;
 
     Coroutine _mainCoroutine;
+    int       _cycleCount;
+
+    // ── 인스턴스 구분용 안정적 index (씬 편집 없이 자동 배정) ─────────────
+    // 같은 seed 재료(NetworkSessionData.Seed 등)를 쓰는 WallLineRandomizer가 씬에 여럿 있어도
+    // 서로 다른 랜덤 시퀀스를 갖도록, WindTrap._registry/GetHierarchyPath와 동일한 방식으로
+    // 계층 경로 정렬 index를 자동 배정한다(Host/Client가 같은 씬 계층을 가지므로 항상 같은 순서 —
+    // Awake 호출 순서 대신 경로 정렬을 쓰는 이유도 WindTrap과 동일: 늦은 활성화로 Awake 순서가
+    // 갈릴 수 있어서).
+    static bool _registryBuilt = false;
+    static int  _aliveCount = 0;
+    int _netIndex = -1;
+
+    static void EnsureRegistryBuilt()
+    {
+        if (_registryBuilt) return;
+        _registryBuilt = true;
+
+        WallLineRandomizer[] all = FindObjectsByType<WallLineRandomizer>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            .OrderBy(a => GetHierarchyPath(a.transform), StringComparer.Ordinal)
+            .ToArray();
+
+        for (int i = 0; i < all.Length; i++)
+            all[i]._netIndex = i;
+    }
+
+    static string GetHierarchyPath(Transform t)
+    {
+        string path = t.name + "#" + t.GetSiblingIndex().ToString("D4");
+        while (t.parent != null)
+        {
+            t = t.parent;
+            path = t.name + "#" + t.GetSiblingIndex().ToString("D4") + "/" + path;
+        }
+        return path;
+    }
 
     void Awake()
     {
         _wall       = GetComponent<AdvancingWall>();
         _colorWalls = GetComponentsInChildren<ColorWall>(true);
+
+        _aliveCount++;
+        EnsureRegistryBuilt();
+    }
+
+    void OnDestroy()
+    {
+        _aliveCount--;
+        // 씬의 마지막 인스턴스가 사라지면 다음 씬 로드 시 재구성되게 플래그 리셋
+        if (_aliveCount <= 0)
+        {
+            _aliveCount = 0;
+            _registryBuilt = false;
+        }
     }
 
     void Start()
@@ -90,11 +149,30 @@ public class WallLineRandomizer : MonoBehaviour
         }
     }
 
-    float NextWallGap()
+    /// <summary>
+    /// 이번 사이클의 시드를 생성하고 카운터를 올린다. 전 머신이 같은 순서로 이 루틴을 도니
+    /// _cycleCount가 항상 같은 시점에 같은 값이 되고, 결과적으로 항상 같은 System.Random을 만든다
+    /// (WindTrap.WindCycle / MouthController.AutoCycle과 동일 관례 — RPC 없이 시드만 맞추면 됨).
+    /// _netIndex를 섞어 씬에 여러 인스턴스가 있어도 서로 다른 시퀀스가 나오게 한다
+    /// (안 섞으면 같은 NetworkSessionData.Seed를 공유하는 인스턴스끼리 동일한 색·간격이 나옴 —
+    /// 2026-08 실기 테스트에서 실제로 겪은 버그, TStageNetworkBoard.md 참고).
+    /// 로컬 System.Random 인스턴스를 쓰는 이유: 한 사이클에서 간격+색 두 값을 뽑아야 하는데,
+    /// 전역 UnityEngine.Random을 쓰면 그 사이 yield(대기)에서 다른 시스템이 Random을 호출해
+    /// 전역 상태가 오염될 수 있다(GameSessionColorDistribution.Distribute와 동일 이유).
+    /// </summary>
+    System.Random NewCycleRng()
+    {
+        int seed = NetworkSessionData.Seed ^ WallLineSeedBaseSalt ^ (_netIndex * unchecked((int)0x9E3779B9))
+                 ^ cycleSeedSalt ^ (_cycleCount * 0x2545F491);
+        _cycleCount++;
+        return new System.Random(seed);
+    }
+
+    float NextWallGap(System.Random rng)
     {
         float a = Mathf.Min(wallIntervalMin, wallIntervalMax);
         float b = Mathf.Max(wallIntervalMin, wallIntervalMax);
-        return Random.Range(a, b);
+        return a + (float)rng.NextDouble() * (b - a);
     }
 
     IEnumerator SyncedRoutine()
@@ -110,14 +188,14 @@ public class WallLineRandomizer : MonoBehaviour
         {
             while (_wall.IsMoving) yield return null;
 
-            if (!firstCycle)
-            {
-                float gap = NextWallGap();
-                if (gap > 0f) yield return new WaitForSeconds(gap);
-            }
+            // 간격+색을 한 사이클 시드에서 연달아 뽑는다(순서 고정 — 두 값 사이 yield 없음).
+            System.Random rng = NewCycleRng();
+            float gap = firstCycle ? 0f : NextWallGap(rng);
+            ColorWall.WallColorType pick = pool[rng.Next(0, pool.Length)];
+
+            if (!firstCycle && gap > 0f) yield return new WaitForSeconds(gap);
             firstCycle = false;
 
-            ColorWall.WallColorType pick = pool[Random.Range(0, pool.Length)];
             ApplyColor(pick);
 
             float lead = Mathf.Max(0f, colorLeadBeforeWall);
@@ -144,11 +222,10 @@ public class WallLineRandomizer : MonoBehaviour
         {
             while (_wall.IsMoving) yield return null;
 
-            if (!first)
-            {
-                float gap = NextWallGap();
-                if (gap > 0f) yield return new WaitForSeconds(gap);
-            }
+            System.Random rng = NewCycleRng();
+            float gap = first ? 0f : NextWallGap(rng);
+
+            if (!first && gap > 0f) yield return new WaitForSeconds(gap);
             first = false;
 
             _wall.RunOnce(
@@ -171,14 +248,13 @@ public class WallLineRandomizer : MonoBehaviour
         bool first = true;
         while (true)
         {
-            if (!first)
-            {
-                float gap = NextWallGap();
-                if (gap > 0f) yield return new WaitForSeconds(gap);
-            }
+            System.Random rng = NewCycleRng();
+            float gap = first ? 0f : NextWallGap(rng);
+            ColorWall.WallColorType pick = pool[rng.Next(0, pool.Length)];
+
+            if (!first && gap > 0f) yield return new WaitForSeconds(gap);
             first = false;
 
-            ColorWall.WallColorType pick = pool[Random.Range(0, pool.Length)];
             ApplyColor(pick);
 
             float hold = Mathf.Max(0.05f, colorLeadBeforeWall);
@@ -229,7 +305,7 @@ public class WallLineRandomizer : MonoBehaviour
     {
         if (_colorWalls == null || _colorWalls.Length == 0) return;
         ColorWall.WallColorType[] pool = BuildPool();
-        ApplyColor(pool[Random.Range(0, pool.Length)]);
+        ApplyColor(pool[UnityEngine.Random.Range(0, pool.Length)]);
     }
 
     [ContextMenu("테스트: 색상 복귀")]

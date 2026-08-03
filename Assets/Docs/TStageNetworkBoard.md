@@ -5,17 +5,17 @@
 > **빈 체크리스트 전용이 아님.** 큰 틀을 정하기 위한 작업 md.
 
 **현재 인게임 진행:** `M.Stage1`…`M.Stage5` → `M.Boss` 네트워크 축은 종료됨 — 다음 라운드는 `T.Stage1`…`T.Stage5` → `T.Boss` (`AGENTS.md` / `MStageNetworkBoard.md` "T 라운드 이월 체크리스트" 참고).  
-**이 보드가 다루는 것:** T 전용 씬 인벤토리 정리, 관측성(구조화 로그, `NetworkDesign.md` §9B) 신설. Door 네트워크 통합(§3.1)은 구현+검증 완료. `MovingCorridor`(`startActive` 경로)는 T4 착수로 코드 반영 완료. **`AdvancingWall` 등 나머지 실제 게임 코드 수정은 아직 착수 전 — 해당 씬 라운드(T4 나머지/T.Boss) 착수 시.**
+**이 보드가 다루는 것:** T 전용 씬 인벤토리 정리, 관측성(구조화 로그, `NetworkDesign.md` §9B) 신설. Door 네트워크 통합(§3.1)은 구현+검증 완료. `MovingCorridor`(`startActive` 경로)는 T4 착수로 코드 반영 완료. **T.Boss ParrelSync 실기 테스트 중 `AdvancingWall`/`ColorWall`/`WallLineRandomizer` 착수 — 코드 반영 + ParrelSync 2인 검증 통과 (2026-08, §2/§3.3 참고). 이어서 `ColorTileChallenge` 인스턴스 5개 owner 슬롯 공유 교차 오염 버그(페널티 방향 Host/Client 불일치) 발견 → `instanceId` 가드 코드 반영 + ParrelSync 2인 검증 통과 완료 (2026-08, §3.3 참고).**
 
 ---
 
 ## 현재 상태 (다음 세션 시작점 — 여기부터 읽을 것)
 
-**요약 (2026-08):** T 라운드 착수 전 준비 단계 완료 — (1) `NetLog.Transition()` 구조화 로그 유틸 신설(`Assets/Scripts/Network/NetLog.cs`, `NetworkDesign.md` §9B), (2) 이 보드(`TStageNetworkBoard.md`) 신설 — 배경 조사로 정정한 씬 인벤토리·결정 항목·작업 순서를 아래에 확정. (3) **코딩 전 축 결정 3건 완료 (2026-08, 사용자 확정)** — 아래 "축 결정 (2026-08 확정)" 참고. (4) **Door(§3.1) 코드 구현 + ParrelSync 2인 검증 통과 완료 (2026-08)** — `DoorNetworkSync` 폐기, `StageNetworkState` 공유 슬롯 통합. (5) **패드·볼더 ParrelSync 2인 검증 통과 (2026-08)** — 새 코드 작업 없이 기존 구현 그대로 정상 동작 확인. **`T.Stage1` Must(패드/문/볼더) 전부 완료.** T5 AI(§3.2)/`AdvancingWall`(§3 결정 1·3)은 아직 미착수. `MovingCorridor`(startActive 경로)는 T4에서 코드 반영 완료(ParrelSync 검증 대기).
+**요약 (2026-08):** T 라운드 착수 전 준비 단계 완료 — (1) `NetLog.Transition()` 구조화 로그 유틸 신설(`Assets/Scripts/Network/NetLog.cs`, `NetworkDesign.md` §9B), (2) 이 보드(`TStageNetworkBoard.md`) 신설 — 배경 조사로 정정한 씬 인벤토리·결정 항목·작업 순서를 아래에 확정. (3) **코딩 전 축 결정 3건 완료 (2026-08, 사용자 확정)** — 아래 "축 결정 (2026-08 확정)" 참고. (4) **Door(§3.1) 코드 구현 + ParrelSync 2인 검증 통과 완료 (2026-08)** — `DoorNetworkSync` 폐기, `StageNetworkState` 공유 슬롯 통합. (5) **패드·볼더 ParrelSync 2인 검증 통과 (2026-08)** — 새 코드 작업 없이 기존 구현 그대로 정상 동작 확인. **`T.Stage1` Must(패드/문/볼더) 전부 완료.** T5 AI(§3.2)는 아직 미착수. `MovingCorridor`(startActive 경로)는 T4에서 코드 반영 완료(ParrelSync 검증 대기). **`AdvancingWall`/`ColorWall`/`WallLineRandomizer`(§3 결정 1·3)은 T.Boss ParrelSync 실기 테스트 중 미동기화 버그 발견 → 진단·코드 반영 + ParrelSync 2인 검증 통과 완료 (2026-08)** — 아래 "다음 세션 시작점" 및 §2/§3.3 참고.
 
 **공유 컴포넌트 버그 (2026-08):** `StageStartGate`/`StageNetworkState` 다중 게이트 stale 재점화 버그 발견·수정 — 공유 컴포넌트라 `NetworkDesign.md` §11A.7에 기록. 영향 씬: `T.Stage2`(3게이트)/`T.Stage4`(2게이트)/`T.Stage5`(4게이트). 코드 반영 완료, **Inspector `gateId` 배정 + ParrelSync 검증 대기**(§11A.7 참고) — 이 세 씬 착수 전 반드시 처리.
 
-**다음 세션 시작점:** **`T.Stage1` Must 항목(패드·문·볼더) 전부 검증 통과 (2026-08)** — 문(Door)은 §3.1 신규 구현+검증, 패드·볼더는 기존 구현 그대로 검증 통과(상세는 §2 T1 행). **패턴 E/B/A 전체 재분류표(§3.3) 확정 완료 (2026-08)** — `MovingCorridor`/`AdvancingWall`/`WallLineRandomizer`를 기존 검증된 두 표준(`WallMover` 자유런 / `WallMoverSequencer` 트리거+브로드캐스트)에 편입, `Breakable`/`RingBlendShapePulse`는 별개 축으로 확인. **`T3` 완료 (2026-08)** — SpikeLane 앵커 결함(`TrapNetworkBoard.md` §5) ParrelSync 2인 실기 검증 통과, `WallWaveController`(`playOnStart`, ①자유런) `Time.time`→`ServerTime` 치환 코드 반영 + ParrelSync 2인 검증 통과. **`MovingCorridor`(`startActive` 경로) `ServerTime`/시드 치환 코드 반영 완료 (2026-08)** — §3.3 표 참고, ParrelSync 2인 검증 대기. 아래 §4 작업 순서대로 **`T4`(OX 스모크 + `MovingCorridor` ParrelSync 검증)**로 진행.
+**다음 세션 시작점:** **`T.Stage1` Must 항목(패드·문·볼더) 전부 검증 통과 (2026-08)** — 문(Door)은 §3.1 신규 구현+검증, 패드·볼더는 기존 구현 그대로 검증 통과(상세는 §2 T1 행). **패턴 E/B/A 전체 재분류표(§3.3) 확정 완료 (2026-08)** — `MovingCorridor`/`AdvancingWall`/`WallLineRandomizer`를 기존 검증된 두 표준(`WallMover` 자유런 / `WallMoverSequencer` 트리거+브로드캐스트)에 편입, `Breakable`/`RingBlendShapePulse`는 별개 축으로 확인. **`T3` 완료 (2026-08)** — SpikeLane 앵커 결함(`TrapNetworkBoard.md` §5) ParrelSync 2인 실기 검증 통과, `WallWaveController`(`playOnStart`, ①자유런) `Time.time`→`ServerTime` 치환 코드 반영 + ParrelSync 2인 검증 통과. **`MovingCorridor`(`startActive` 경로) `ServerTime`/시드 치환 코드 반영 완료 (2026-08)** — §3.3 표 참고, ParrelSync 2인 검증 대기. **T.Boss ParrelSync 실기 테스트 중 `ColorWall` 색 미동기화 발견 → Bug Hunter 진단 + 사용자 승인 후 코드 반영 완료 (2026-08, §4 순서보다 앞당겨 처리)**: ① `GameSessionWallColorRemap.RemapSchedule()`이 `GameSessionColorDistribution.Distribute()`를 rng 없이 호출해 플레이어 색 슬롯 배정이 머신마다 갈라지던 버그 — `ColorWall.StartSchedule()`에서 `NetworkSessionData.Seed ^ salt` 기반 `System.Random` 생성해 전달하도록 수정(벽별 다양성은 신규 Inspector `colorSeedSalt`로 노출). ② `ColorWall`/`AdvancingWall` `ScheduleRoutine()`의 `Time.time` → `nm.ServerTime.Time` 치환(§3.3 표 참고). 이어서 **`WallLineRandomizer`(8개 인스턴스)도 같은 축으로 판단해 코드 반영 완료 (2026-08)** — 당초 제안했던 "`NetworkBehaviour`+`ClientRpc`" 대신, `WindTrap`(Random 모드)/`MouthController`가 이미 쓰던 "`NetworkSessionData.Seed ^ salt ^ (사이클 카운터)`로 매 사이클 RNG 재시드" 방식을 재사용 — `NetworkObject` 부착 자체가 불필요해짐(§3.3 표 참고). `WallLineRandomizer`는 1차 구현에서 `cycleSeedSalt` 씬 미반영으로 인스턴스 전부 같은 색·순서가 나오는 버그가 재발견돼, `WindTrap._registry`/`GetHierarchyPath`와 동일한 계층 경로 정렬로 `_netIndex`를 자동 배정하도록 재수정. **세 항목 모두 ParrelSync 2인 검증 통과 완료 (2026-08).** 이어서 실기 재현으로 **`ColorTileChallenge` 페널티 방향 Host/Client 불일치 버그**(`T.Boss` 인스턴스 5개 — `ColorChallenge_Wall_F/B/L/R`+`ColorChallenge_Ceiling` — 가 `ChallengeOwnerType.ColorTile` 슬롯을 공유해, `NotifyChallengeOutcomeClientRpc`가 Host 자신에겐 스킵되고 Client에서만 실제 발동 → Client에서만 형제 인스턴스 전부가 반응해 페널티 중복 적용, Host 2방향 vs Client 4방향)를 Bug Hunter로 진단해 `ChallengeStepState.instanceId` + `NotifyChallengeOutcomeClientRpc(bool, int)` 확장으로 수정, Inspector `challengeInstanceId` 배정(`Wall_F/B/L/R`=0~3, `Ceiling`=0 — 별도 Phase 컨테이너라 `PhaseManager.EnterPhase()` 동기 disable→enable로 겹치는 프레임 없음) 후 **ParrelSync 2인 검증 통과 완료 (2026-08, §3.3 참고).** 이어서 **T2 `MemoryPath`/`ColoredMemoryPath` 조사 완료 (2026-08)** — 네트워크 작업 불필요 확정. 미리보기 시작 타이밍은 기존 `MemoryPathIntroController`(카메라 인트로 오케스트레이터, `StageStartGate.OnCountdownComplete` → `BeginIntro()`)가 이미 처리 중이라 `startOnAwake` 기본값을 `false`로 맞추는 코드만 반영(§3.4 참고, ParrelSync 2인 검증 대기). 아래 §4 작업 순서대로 **`T4`(OX 스모크 + `MovingCorridor` ParrelSync 검증)**로 계속 진행.
 
 ### 축 결정 (2026-08 확정 — 코딩 착수 전 사용자 확인 완료)
 
@@ -53,7 +53,7 @@
   - **`Nodular`/`Lump`(`Breakable`) / `RingBlendShapePulse` / `WallLineRandomizer`까지 포함한 전체 매핑은 §3.3 재분류표로 확정** — E(월드모션) 두 표준에 나머지를 편입시키고, B(`Breakable`)·A(`RingBlendShapePulse`)는 별개 축임을 명시.
 - **T.Boss `BossFightObjective`는 이미 Host 가드 + `StageNetworkState.SetBossPhasesCleared` NV로 구현되어 있고, M.Boss와 클래스를 공유**한다(`MStageNetworkBoard.md` "T 라운드 이월 체크리스트"에 이미 명시). "BossFightObjective 없음"이라는 분석은 부정확 — **새 설계가 아니라 씬 인스턴스 확인(이벤트 연결·`totalPhases` 일치)만 남은 항목.**
 - **T5 Stage5 AI 스폰 권한은 2026-08 축 결정으로 확정됨** — `Stage5ChaserSpawner`/`Stage5ChaserAI`/`Stage5TargetRunner`는 조사 결과 `NetworkObject` 없이 완전 로컬(각 머신 독립 시뮬레이션)이었고, Docs(`NetworkDesign.md` §9A.5.1)가 언급하는 선례 `Enemy.cs`/`EnemyHitbox.cs`는 코드베이스에 존재하지 않음(grep 0건) — 재사용할 선례가 없어 **새 축으로 확정**(Host 전권 시뮬 + NetworkTransform 복제). **GUID 검색으로 `T.Stage5.unity` 전용 확인(2026-08, M.Stage5엔 없음) — T 단독 범위, M/T 공유 아님** — §3.2 참고.
-- **T2 MemoryPath**는 실제로 코드 조사가 안 된 상태 — 이번 라운드에서 결론 내지 않고 "다음 조사 대상"으로만 등록한다.
+- **T2 MemoryPath/ColoredMemoryPath는 조사 완료 — 네트워크 작업 불필요로 결론 (2026-08)**. 한때 네트워크 동기화 코드를 추가했다가 되돌렸는데, 정정 조사 결과 되돌린 판단이 맞았다 — 상세는 §3.4.
 
 ---
 
@@ -62,11 +62,11 @@
 | 씬 | 컨텐츠 | 상태(정정됨) |
 |---|---|---|
 | T1 | 패드·문·볼더·Breakable·WallMover | **Must 전부 완료 (2026-08).** 패드·볼더는 기존 구현 그대로 ParrelSync 2인 검증 통과(새 코드 작업 없음). 문(Door)은 §3.1 신규 구현 + ParrelSync 2인 검증 통과. Breakable은 M 그룹1(B)에서 처리된 클래스 재사용 스모크만(별도 확인 필요 시) |
-| T2 | MemoryPath + 문/패드 | 진행/판정 권한 **미조사** — 다음 세션 조사 대상으로 등록. 문은 T1에서 구현 완료된 §3.1 구조를 그대로 재사용(새 설계 없음) |
+| T2 | MemoryPath + ColoredMemoryPath + 문/패드 | **조사 완료 (2026-08) — 네트워크 작업 불필요.** Trap 즉사는 `NetworkDamageUtil.ApplyInstantKill`(서버 전용 가드 내장)로 이미 안전, Safe 경로는 런타임 랜덤 없이 고정이라 시드 이슈 없음, 미리보기 시작 타이밍은 기존 `MemoryPathIntroController`(카메라 인트로 오케스트레이터)가 이미 `StageStartGate.OnCountdownComplete` 기반으로 처리 중이라 `startOnAwake=false` 확인만 필요(§3.4). 문은 T1에서 구현 완료된 §3.1 구조를 그대로 재사용(새 설계 없음) |
 | T3 | WallMover/Sequencer/Wave·볼더·SpikeLane·패드퍼즐 | **완료 (2026-08).** WallMover/Sequencer는 기존 패턴 재사용. SpikeLane 앵커 — ParrelSync 2인 실기 검증 통과(코드는 2026-07-24 커밋 `2706cf4`에서 이미 반영, `TrapNetworkBoard.md` §5). `WallWaveController`(Wave) — ①자유런 코드 반영 + ParrelSync 2인 검증 통과(§3.3) |
 | T4 | OX(§11B 재사용) + MovingCorridor + `Nodular`(Breakable) 다수 + `RingBlendShapePulse` | OX는 이미 검증된 축 재사용(새 설계 없음). **MovingCorridor(startActive 경로) `ServerTime`/시드 치환 코드 반영 완료 (2026-08, §3.3 표)** — ParrelSync 2인 검증 대기. 이 씬 인스턴스는 `activateOnPlayerTrigger` 미사용이라 그 경로는 범위 밖. `Nodular`(Breakable)는 패턴 B 축 재사용, `RingBlendShapePulse`는 패턴 A(로컬 유지) — §3.3 참고 |
 | T5 | Floor(§11B.8 재사용) + Stage5 AI 스폰 + `Lump`(Breakable) 다수 | Floor는 이미 완료된 마이그레이션 재사용 스모크만. **AI 스폰 권한 확정됨(§3.2)** — Host 전권 시뮬 + NetworkTransform 복제 코드 작업 신규 필요. `T.Stage5.unity` 전용(M.Stage5엔 없음, GUID 검색 확인). `Lump`(Breakable)는 패턴 B 축 재사용 — §3.3 참고 |
-| T.Boss | ColorTile + SurviveTime + AdvancingWall 다수 | `BossFightObjective`/`BossHealthBarUI`는 **이미 M.Boss와 공유·구현 완료** — 씬 인스턴스 확인만. AdvancingWall은 T3와 마찬가지로 E 표준 미적용 상태 |
+| T.Boss | ColorTile + SurviveTime + AdvancingWall/ColorWall/WallLineRandomizer 다수 | `BossFightObjective`/`BossHealthBarUI`는 **이미 M.Boss와 공유·구현 완료** — 씬 인스턴스 확인만. `ColorTileChallenge`/`SurviveTimeObjective`는 조사 결과 이미 Host 가드 + NV/RPC로 구현 완료(추가 작업 불필요) — **정정 (2026-08): `ColorTileChallenge`는 인스턴스 5개(`ColorChallenge_Wall_F/B/L/R`+`ColorChallenge_Ceiling`)가 owner 슬롯을 공유해 Client에서 형제 인스턴스가 서로의 페널티에 교차 반응하는 실기 버그 발견(Host 2방향 vs Client 4방향 페널티) — `instanceId` 가드 코드 반영 + Inspector 배정(§3.3 표 참고) 완료, **ParrelSync 2인 검증 통과 (2026-08)**. `AdvancingWall`/`ColorWall`(46개 인스턴스, T.Boss 전용) — **`Time.time`→`ServerTime` 치환 코드 반영 완료 (2026-08)**, `ColorWall`은 추가로 `GameSessionWallColorRemap.RemapSchedule` 시드 결정론화도 반영. `WallLineRandomizer`(8개 인스턴스) — **WindTrap/MouthController 시드 미러링 방식으로 코드 반영 완료 (2026-08)**, `NetworkObject` 불필요(§3.3 참고). **`AdvancingWall`/`ColorWall`/`WallLineRandomizer`/`ColorTileChallenge` 전부 ParrelSync 2인 검증 통과 (2026-08)** — `BossFightObjective`/`BossHealthBarUI` 씬 인스턴스 확인만 남음 |
 
 ---
 
@@ -76,7 +76,7 @@
 2. **Door**: `DoorNetworkSync`(문마다 개별 `NetworkObject`) **폐기 확정 및 구현+검증 완료 (2026-08)**. `StageNetworkState` 공유 `NetworkList<bool>`로 통합 — §3.1 설계·구현 내용 참고. 컬러 Door(`ColoredDoorVisual` 부착분)도 동일 구조로 통일(비주얼 컴포넌트만 별개, 개폐 네트워크 경로는 하나).
 3. **Boulder**: 시드 불필요 확정(Host 단일 스폰 루프라 Client 계산 자체가 없음) — **ParrelSync 2인 검증 통과(2026-08)로 완료.**
 4. **T5 AI 스폰·틱 권한**: **Host 전권 시뮬 + NetworkTransform 복제로 확정 (2026-08)** — §3.2 설계 참고. `T.Stage5.unity` 전용(M.Stage5엔 없음 — GUID 검색 확인, 사용자 확정 2026-08).
-5. **T2 MemoryPath**: 미조사 상태 그대로 "다음 세션 조사 시작점"으로만 등록.
+5. **T2 MemoryPath/ColoredMemoryPath**: 조사 완료 — 네트워크 작업 불필요 확정 (2026-08). §3.4 참고.
 6. **T.Boss 범위**: M.Boss와 공유 컴포넌트이므로 별도 objective 설계 불필요 — 정정 기록.
 7. **BuffPickup**: 스크립트/배치 자체가 없는 Should 고아 항목 — 이번 범위에서 제외 확정.
 
@@ -129,11 +129,12 @@
 |---|---|---|---|
 | `WallMover` | ①자유런 | 원본 그 자체 | 없음 (완료) |
 | `WallMoverSequencer` | ②트리거+브로드캐스트 | 원본 그 자체 | 없음 (검증 완료) |
-| [`AdvancingWall`](../Scripts/Stage/AdvancingWall.cs) `ScheduleRoutine()`(내장 schedule, `scheduleOnStart`) | ①자유런 | 트리거 없이 `atSeconds` 배열을 순서대로 도는 구조가 `WallMover.ScheduleRoutine()`과 동일 | `Time.time` → `nm.ServerTime.Time` 치환만. RPC 불필요 |
+| [`AdvancingWall`](../Scripts/Stage/AdvancingWall.cs) `ScheduleRoutine()`(내장 schedule, `scheduleOnStart`) | ①자유런 | 트리거 없이 `atSeconds` 배열을 순서대로 도는 구조가 `WallMover.ScheduleRoutine()`과 동일 | `Time.time` → `nm.ServerTime.Time` 치환 — **코드 반영 + ParrelSync 2인 검증 통과 완료 (2026-08)** |
+| [`ColorWall`](../Scripts/Stage/ColorWall.cs) `ScheduleRoutine()`(`colorSchedule`, `scheduleOnStart`) — **T.Boss 착수 시 조사로 재분류표에 신규 편입 (2026-08, 최초 조사 시 누락)** | ①자유런 + 별도 결정론화 이슈 | 트리거 없이 `colorSchedule`을 순서대로 도는 구조는 `AdvancingWall`과 동일(①자유런). **추가로** `StartSchedule()`이 부르는 `GameSessionWallColorRemap.RemapSchedule()`이 `GameSessionColorDistribution.Distribute()`를 rng 없이 호출해 플레이어 색 슬롯 배정 자체가 머신마다 갈라지는 별도 버그가 있었음(시간 문제가 아니라 "다른 색"이 나오는 즉시성 버그) | `Time.time`→`ServerTime.Time` 치환 + `RemapSchedule`에 `NetworkSessionData.Seed ^ salt` 기반 `System.Random` 전달(벽별 다양성은 Inspector `colorSeedSalt` 필드로 노출) — **코드 반영 + ParrelSync 2인 검증 통과 완료 (2026-08)** |
 | [`MovingCorridor`](../Scripts/Stage/MovingCorridor.cs) — `startActive`(자동 시작) 경로 | ①자유런 | 트리거 없이 씬 시작부터 미는 구조 | `Time.time` → `ServerTime` 치환 + `backRandomSpeed`/`frontRandomSpeed`용 `Environment.TickCount` 시드를 `NetworkSessionData.Seed ^ salt`로 교체(머신별 랜덤 어긋남 제거) — **코드 반영 완료 (2026-08)**. ParrelSync 2인 실기 검증 대기 |
 | `MovingCorridor` — `activateOnPlayerTrigger` 경로 | ②트리거+브로드캐스트 | `OnTriggerEnter`로 시작 시점이 결정되는 구조가 `WallMoverSequencer.OnTriggerEnter`와 동일 | Host 가드 추가 + `Activate()` 시 `ServerTime` 앵커를 `ClientRpc`로 브로드캐스트하도록 `WallMoverSequencer` 그대로 복제(같은 이유로 `NetworkObject` 부착도 기존 선례 그대로) |
-| [`WallLineRandomizer`](../Scripts/Stage/WallLineRandomizer.cs)(+`AdvancingWall.RunOnce`) | ②트리거+브로드캐스트 (확장판) | 매 사이클 "언제, 무슨 색"을 누군가 결정해야 클라가 못 맞춤 — Host가 랜덤 픽 결정 후 방송하는 구조가 필요해 트리거 라인과 본질이 같음(트리거 소스만 "플레이어 진입"이 아니라 "내부 루프 조건"일 뿐) | `WallLineRandomizer` 자체를 `NetworkBehaviour`화(또는 `NetworkObject` 부착) → Host가 색+타이밍 결정 → `ClientRpc`로 앵커+색 방송 → 클라 로컬 재생 |
-| `AdvancingWall.PermanentAdvance`(챌린지 페널티) | 별도 취급 (이미 해결) | Host/Client가 `HandleChallengeOutcome`으로 동일 고정값을 각자 호출 — 애초에 방송이 필요 없는 케이스 | 손대지 않음 |
+| [`WallLineRandomizer`](../Scripts/Stage/WallLineRandomizer.cs)(+`AdvancingWall.RunOnce`) | 축 변경 — ②안(`NetworkBehaviour`+`ClientRpc`) 대신 **WindTrap/MouthController 시드 미러링 방식**으로 확정 (2026-08) | 매 사이클 "언제, 무슨 색"을 결정해야 하는 건 맞지만, `WindTrap.WindCycle()`(Random 모드)/`MouthController.AutoCycle()`이 이미 "`NetworkSessionData.Seed ^ salt ^ (카운터 * 0x2545F491)`로 매 사이클 RNG를 재시드"하는 방식으로 RPC 없이 전 머신 동일 결과를 내는 선례를 갖고 있음 — `NetworkObject`/`NetworkBehaviour` 신설(`architecture.mdc` 원칙과도 더 잘 맞음)보다 이 쪽이 더 단순하고 기존 패턴 재사용 | `WallLineRandomizer`에 `cycleSeedSalt`(Inspector, 수동 오버라이드용) + 사이클마다 로컬 `System.Random`(간격·색 두 값을 한 번에 뽑아야 해서 전역 `UnityEngine.Random` 대신 로컬 인스턴스 사용 — `GameSessionColorDistribution.Distribute`와 동일 이유) 생성 — **코드 반영 완료 (2026-08)**. `NetworkObject` 부착 불필요. **⚠ 1차 구현 버그 (2026-08, ParrelSync 실기 발견 후 수정)**: `cycleSeedSalt`가 씬에 미반영(전부 기본값 0)이라 인스턴스 여러 개가 전부 같은 색·같은 순서로 나옴 — `WindTrap._registry`/`GetHierarchyPath`와 동일하게 **계층 경로 정렬로 `_netIndex`를 자동 배정**해 시드에 섞도록 수정(씬 편집 불필요, 재발 방지). **ParrelSync 2인 재검증 통과 (2026-08)** |
+| `AdvancingWall.PermanentAdvance`(챌린지 페널티) | 별도 취급 — **재조사로 정정 + 수정 완료 (2026-08)** | ~~Host/Client가 `HandleChallengeOutcome`으로 동일 고정값을 각자 호출~~ → **오판정이었음.** `T.Boss`에 `ColorTileChallenge` 인스턴스가 5개(`ColorChallenge_Wall_F/B/L/R` + `ColorChallenge_Ceiling`) 있고 전부 같은 `ChallengeOwnerType.ColorTile` 슬롯을 공유하는데, `NotifyChallengeOutcomeClientRpc`가 Host 자신에게는 `if (IsServer) return;`로 스킵되고(Host는 `ResolveRound`의 직접 호출로만 자기 자신 반영) Client에서만 실제로 `OnChallengeOutcome` 이벤트가 발동해 **형제 인스턴스 5개 전부**가 반응 — Client가 Host보다 훨씬 많은 방향에 페널티를 중복 적용하는 실기 버그(Host 2방향 vs Client 4방향) 발견 | `ChallengeStepState`에 `instanceId` 필드 추가 + `NotifyChallengeOutcomeClientRpc(bool, int instanceId=0)`로 확장, `ColorTileChallenge`에 Inspector `challengeInstanceId` 필드 신설해 owner 가드에 인스턴스 일치 조건 추가 — **코드 반영 완료 (2026-08).** Inspector 배정: `Wall_F/B/L/R`=0~3(같은 Phase, 동시 구독이라 서로 달라야 함), `Ceiling`=0(별도 Phase 컨테이너라 `PhaseManager.EnterPhase()`의 동기 disable→enable로 F/B/L/R과 겹치는 프레임이 없어 ID 재사용 가능, 2026-08 확인). **ParrelSync 2인 검증 통과 (2026-08)** |
 | [`WallWaveController`](../Scripts/Stage/WallWaveController.cs) — `playOnStart`(트리거 없이 씬 시작 즉시 재생) | ①자유런 | 트리거 없이 매 프레임 사인파를 계산하는 연속 모션 — `AdvancingWall.ScheduleRoutine()`과 동일하게 각 머신이 같은 시간 소스만 폴링하면 결정론적 | `FixedUpdate()`의 `float t = Time.time;` → `nm.ServerTime.Time` 치환 완료 (2026-08). RPC/Host 가드 불필요 — **코드 반영 + ParrelSync 2인 실기 검증 통과 완료 (2026-08)** |
 | `WallWaveController` — `activateOnPlayerTrigger` 경로 | ②트리거+브로드캐스트 (미착수) | `OnTriggerEnter`로 시작 시점이 결정되는 구조가 `WallMoverSequencer.OnTriggerEnter`와 동일 | 이번 라운드 대상 아님(현재 씬 인스턴스는 `playOnStart` 전용) — 향후 트리거형 인스턴스가 배치되면 `WallMoverSequencer` 패턴 그대로 적용 |
 | `Nodular`/`Lump`([`Breakable`](../Scripts/Breakable.cs)) | 패턴 B — 별도 축 | E(월드모션)가 아니라 Host 판정 + 1회성 동기화(`SyncBreakClientRpc`) 축. 트리거 감지(`OnTriggerEnter`/`OnCollisionEnter`)는 이미 파이프에 포함돼 있어 E 라인과 안 섞임 | 파이프 그대로 재사용(M과 동일). fuse(`breakDelay`) 연출을 클라에도 방송할지만 미결(§6 참고) |
@@ -141,9 +142,25 @@
 
 **요약**: E 패턴은 결국 ①자유런/②트리거+브로드캐스트 둘 중 하나로만 갈리고, `MovingCorridor`·`WallLineRandomizer`는 컴포넌트 하나가 상황(자유런 경로 vs 트리거 경로)에 따라 두 라인에 걸칠 수 있다는 점만 유의. `Breakable`(B)·`RingBlendShapePulse`(A)는 애초에 E 축이 아니므로 섞지 않고 각자 축 유지.
 
-**영향 파일 (구현 시)**: `Assets/Scripts/Stage/AdvancingWall.cs`, `Assets/Scripts/Stage/WallLineRandomizer.cs` — 아직 미착수. `WallMover.cs`/`WallMoverSequencer.cs`/`Breakable.cs`/`RingBlendShapePulse.cs`는 무수정(재사용/유지). `WallWaveController.cs`는 `playOnStart` 경로 **수정+검증 완료**(2026-08) — `activateOnPlayerTrigger` 경로는 미착수(현재 씬에 해당 인스턴스 없음). `MovingCorridor.cs`는 `startActive` 경로 **수정 완료(2026-08, ParrelSync 검증 대기)** — `activateOnPlayerTrigger` 경로는 미착수(현재 씬에 해당 인스턴스 없음).
+**영향 파일 (구현 시)**: `Assets/Scripts/Stage/AdvancingWall.cs`(수정 완료), `Assets/Scripts/Stage/ColorWall.cs`(수정 완료, `using Unity.Netcode;` 추가 + `colorSeedSalt` Inspector 필드 신설), `Assets/Scripts/GameSessionWallColorRemap.cs`(`RemapSchedule`에 `System.Random rng = null` 인자 추가, 유일한 호출자인 `ColorWall.cs`만 영향), `Assets/Scripts/Stage/WallLineRandomizer.cs`(수정 완료 — `NetworkBehaviour` 전환 없이 `cycleSeedSalt` + 사이클별 로컬 `System.Random`으로 결정론화), `Assets/Scripts/Stage/MovingCorridor.cs`(salt 목록 주석에 `0x434F4C57`/`0x574C525A` 추가). `WallMover.cs`/`WallMoverSequencer.cs`/`Breakable.cs`/`RingBlendShapePulse.cs`는 무수정(재사용/유지). `WallWaveController.cs`는 `playOnStart` 경로 **수정+검증 완료**(2026-08) — `activateOnPlayerTrigger` 경로는 미착수(현재 씬에 해당 인스턴스 없음). `MovingCorridor.cs` 본체는 `startActive` 경로 **수정 완료(2026-08, ParrelSync 검증 대기)** — `activateOnPlayerTrigger` 경로는 미착수(현재 씬에 해당 인스턴스 없음).
 
-**상태**: 축 확정. `WallWaveController`(`playOnStart`, ①자유런) **완료**(코드+ParrelSync 2인 검증). `MovingCorridor`(`startActive` 경로) **코드 반영 완료 (2026-08)** — ParrelSync 2인 검증 대기. 나머지(`AdvancingWall`/`MovingCorridor`(`activateOnPlayerTrigger` 경로, 이 씬 미사용)/`WallLineRandomizer`)는 구현 전 — T3/T4/T.Boss 착수 시 반영(§3 결정 1, §4 작업 순서).
+**상태**: 축 확정. `WallWaveController`(`playOnStart`, ①자유런) **완료**(코드+ParrelSync 2인 검증). `MovingCorridor`(`startActive` 경로) **코드 반영 완료 (2026-08)** — ParrelSync 2인 검증 대기. **`AdvancingWall`/`ColorWall`/`WallLineRandomizer`(T.Boss 착수, 2026-08) 코드 반영 + ParrelSync 2인 검증 통과 완료.** 나머지(`MovingCorridor`(`activateOnPlayerTrigger` 경로, 이 씬 미사용))는 구현 전 — 실사용 인스턴스 배치 시 반영(§3 결정 1).
+
+### 3.4 T2 MemoryPath/ColoredMemoryPath 조사 결론 (2026-08 확정 — 네트워크 작업 불필요)
+
+**배경**: 한때 `MemoryPath`/`MemoryPathTile`에 네트워크 동기화 코드(`NetworkObject`/`NetworkVariable` 등)를 추가했다가 되돌렸다. 이유는 (1) Safe 경로가 고정이라 시드 문제가 없고, (2) Trap을 밟으면 즉사라는 판정 하나뿐이라는 것. 재조사로 이 판단이 맞았음을 확인했고, `ColoredMemoryPath`(색 버전 — `GameSession.IsColorActive()`로 활성 색만 필터링하는 것 외엔 구조 동일)도 같은 결론.
+
+**결론 근거**:
+
+- **Trap 즉사**: `MemoryPathTile.OnCollisionEnter()`가 `NetworkObject`/`IsServer` 가드 없이 로컬로 `NetworkDamageUtil.ApplyInstantKill(player)`를 호출하지만, 이 유틸 자체가 `if (!nm.IsServer) return;`으로 서버 전용 판정을 내장하고 있어(`Assets/Scripts/Network/NetworkDamageUtil.cs`) 트랩 오브젝트 쪽에 별도 가드가 필요 없다. **새 패턴이 아니라 `ColoredMemoryPathTile`/`PioneerPathTile`/`DoorController`가 이미 쓰는, `072e0eb`(네트워크 데모 수준 완료) 커밋에 포함된 기존 검증 패턴**과 동일 — 챌린지마다 새 `NetworkBehaviour` 발명 금지(`architecture.mdc`) 원칙에도 맞다.
+- **Safe 경로 고정**: `MemoryPathTile.role`(Safe/Trap)이 Inspector 고정값이고 런타임 랜덤이 없어, `ColorWall`/`WallLineRandomizer`가 겪은 "머신마다 다른 시드" 문제 자체가 발생할 수 없는 구조.
+- **판정 수렴 원리**: Trap/Safe 판정은 로컬 물리(`OnCollisionEnter`)로 이뤄지지만, 플레이어 위치가 `ClientNetworkTransform`으로 전 머신에 복제되므로 "누가 어느 발판을 밟았는지"는 모든 머신이 거의 동일한 시점에 로컬로 감지한다 — RPC/NV 없이도 `_safeStepped` 카운트와 `OnFailed` 발동이 전 머신에서 사실상 동시에 수렴한다.
+- **미리보기 시작 타이밍**: 시간차 자체(수십~수백 ms)는 문제가 안 되지만(1회성 타이머라 드리프트 누적 없음), `startOnAwake=true`로 씬 로드 즉시 시작하면 스폰이 늦은 클라이언트가 미리보기를 통째로 놓칠 수 있는 문제가 있었다 — 단, **이건 이미 `MemoryPathIntroController`(카메라 인트로 오케스트레이터, 기존 구현체)가 해결하고 있었음**. `StageStartGate.OnCountdownComplete`(Host/Client 동일 타이밍에 발동) → `MemoryPathIntroController.BeginIntro()` → 카메라 탑다운 전환 + 리드인 대기 → **이 구역의 모든 경로(`MemoryPath`/`ColoredMemoryPath`/`PioneerPathManager`) `StartPreview()`를 한 번에 호출** → 전체 Challenge 진입 대기 → 베리어 Open + `stageManager.StartStage()`까지 이미 한 파이프로 구성돼 있다. `StartPreview()`를 `OnCountdownComplete`에 직접 연결하면 이 카메라 인트로 시퀀스가 통째로 생략되므로 **하지 말 것** — `startOnAwake=false`만 지키면 나머지는 `MemoryPathIntroController`가 전담.
+- **라운드 진행 UI**: `MemoryRoundObjective`(`RoundProgressObjective` 상속, `StageObjective` 구현)가 Stage2의 구역 3개(`StageManager2.1/2.2/2.3`) 진행을 별도로 추적 — 각 구역 `StageStartGate.OnCountdownComplete` → `BeginSectionN()`도 같이 연결(진행 UI 갱신 전용, `MemoryPathIntroController`와는 목적이 다른 별개 리스너).
+
+**코드 반영 (2026-08)**: `MemoryPath.cs`/`ColoredMemoryPath.cs` 둘 다 `startOnAwake` 기본값 `true`→`false`로 갱신(주석은 `MemoryPathIntroController`가 호출 주체임을 명시). `StartPreview()`/`MemoryPathIntroController.BeginIntro()` 둘 다 기존에 이미 구현돼 있어 로직 변경은 없음 — 이번 조사로 "새로 만들 것 없음"이 재확인된 셈.
+
+**사용자 Inspector 작업 (필수)**: T.Stage2의 `MemoryPath`/`ColoredMemoryPath` 오브젝트 — `Start On Awake` 체크 해제(기존 씬 값은 코드 기본값 변경으로 자동 갱신 안 됨). 각 구역 `StageStartGate`는 `stageManager` 필드를 **비워두고**(`MemoryPathIntroController`가 대신 호출하므로), `On Countdown Complete()`에 `MemoryPathIntroController.BeginIntro()` + `MemoryRoundObjective.BeginSectionN()`을 연결. **ParrelSync 2인 검증 대기.**
 
 ---
 
@@ -153,9 +170,9 @@
 T1 Must — 전부 완료(패드/볼더/문 ParrelSync 2인 검증 통과, 2026-08)
   → T3 — 완료(SpikeLane 앵커·WallWaveController 자유런 전부 ParrelSync 2인 검증 통과, 2026-08)
   → T4(OX 스모크 + MovingCorridor ParrelSync 2인 검증 — 코드는 반영 완료)   ← 다음 착수
-  → T2(Memory 조사 + Door §3.1 재사용)
+  → T2(Memory 조사 완료 — §3.4, ParrelSync 2인 검증만 남음 + Door §3.1 재사용)
   → T5(Floor 스모크 + AI §3.2 신규 구현, T.Stage5 단독)
-  → T.Boss(씬 인스턴스 확인 + AdvancingWall §3 결정1 적용)
+  → T.Boss(씬 인스턴스 확인 남음 + AdvancingWall/ColorWall/WallLineRandomizer §3 결정1 코드 반영 + ParrelSync 2인 검증 통과 완료)
 ```
 
 각 씬 착수 시 §9B 구조화 로그(`NetLog.Transition`)를 신규 코드 전환점에 적용한다 — 기존 M 코드 소급 없음(`NetworkDesign.md` §9B 확정).
@@ -172,7 +189,7 @@ T1 Must — 전부 완료(패드/볼더/문 ParrelSync 2인 검증 통과, 2026-
 
 ## 6. 이번 라운드에서 하지 않은 것 (범위 밖)
 
-- `MovingCorridor`(`activateOnPlayerTrigger` 경로, 이 씬 미사용)/`AdvancingWall`/`WallLineRandomizer` 실제 게임 코드 수정 (E 표준 미적용 — 해당 씬 라운드 착수 시 처리, §3 결정 1 / §3.3). **Door는 §3.1로 완료됨, `MovingCorridor`(`startActive` 경로)는 T4에서 코드 반영 완료(ParrelSync 검증만 남음) — 이 목록에서 제외.**
+- `MovingCorridor`(`activateOnPlayerTrigger` 경로, 이 씬 미사용) 실제 게임 코드 수정 (E 표준 미적용 — 실사용 인스턴스 배치 시 처리, §3 결정 1). **Door는 §3.1로 완료됨, `MovingCorridor`(`startActive` 경로)는 T4에서 코드 반영 완료(ParrelSync 검증만 남음), `AdvancingWall`/`ColorWall`/`WallLineRandomizer`는 T.Boss 착수로 코드 반영 + ParrelSync 2인 검증 통과 완료 — 이 목록에서 제외.**
 - `Nodular`/`Lump`(`Breakable`) fuse(`breakDelay`) 연출을 클라에 사전 방송할지 여부 결정 — §3.3에 미결로 등록만, 이번 라운드 결론 없음
 - M.Stage 기존 코드에 구조화 로그 소급 적용 (사용자 확정: T 신규만)
 - 씬/프리팹 파일 직접 수정 (`unity-mcp-readonly.mdc` — 체크리스트만 제공. Door 프리팹의 `DoorNetworkSync`/`NetworkObject` 컴포넌트 제거는 사용자가 직접 수행)

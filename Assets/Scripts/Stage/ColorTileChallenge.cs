@@ -45,6 +45,12 @@ public class ColorTileChallenge : MonoBehaviour
              "false: StageStartGate 등 외부에서 StartSchedule() 또는 Activate()를 직접 호출해야 함.")]
     [SerializeField] bool autoStart = true;
 
+    [Tooltip("같은 owner 타입(ColorTile)의 챌린지가 씬에 여러 개 있을 때 서로 구분하는 고유 ID.\n" +
+             "같은 씬의 다른 ColorTileChallenge 인스턴스와 절대 겹치지 않게 설정할 것\n" +
+             "(2026-08 버그 수정 — 이 값이 없으면 형제 인스턴스가 서로의 성공/실패 결과에\n" +
+             "반응해 페널티가 중복 적용됨. T.Boss처럼 여러 개 배치할 때는 0,1,2... 순서로 배정 권장).")]
+    [SerializeField] int challengeInstanceId = 0;
+
     [Header("타일 프리팹 (색상별 4개 등록)")]
     [Tooltip("Blue / Red / Green / Yellow 각각의 ColorTile 프리팹을 등록.\n" +
              "런타임에 플레이어 고유색을 감지해 해당 프리팹을 사용.")]
@@ -153,7 +159,7 @@ public class ColorTileChallenge : MonoBehaviour
         if (_netState == null) return;
 
         _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
-        _netState.OnChallengeOutcome     += HandleChallengeOutcome;
+        _netState.OnChallengeOutcome     += HandleNetChallengeOutcome;
         _netState.OnDeathReloadStarted   += HandleDeathReloadStarted;
         _subscribed = true;
 
@@ -166,7 +172,7 @@ public class ColorTileChallenge : MonoBehaviour
         if (_netState != null)
         {
             _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
-            _netState.OnChallengeOutcome     -= HandleChallengeOutcome;
+            _netState.OnChallengeOutcome     -= HandleNetChallengeOutcome;
             _netState.OnDeathReloadStarted   -= HandleDeathReloadStarted;
         }
         _subscribed = false;
@@ -193,7 +199,7 @@ public class ColorTileChallenge : MonoBehaviour
         if (_netState == null) return;
 
         int seed = Random.Range(int.MinValue, int.MaxValue);
-        _netState.ChallengeStart(seed, ChallengeOwnerType.ColorTile);
+        _netState.ChallengeStart(seed, ChallengeOwnerType.ColorTile, challengeInstanceId);
         _netState.ChallengeStepBegin(0);
     }
 
@@ -260,7 +266,10 @@ public class ColorTileChallenge : MonoBehaviour
     {
         // [버그 수정 2026-07-28] _challengeStep 공유 슬롯 owner 가드 — 내 것(ColorTile)이 아니면 무시
         // (ChallengeOwnerType 정의부 참고, A-B-C-A 회귀의 근본 원인).
+        // [버그 수정 2026-08] instanceId 가드 추가 — T.Boss처럼 ColorTile 타입 인스턴스가 여러 개
+        // 있으면 owner 타입만으론 서로 구분이 안 돼 형제 인스턴스의 라운드를 자기 것으로 오인했다.
         if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.ColorTile) return;
+        if (_netState.ChallengeInstanceId != challengeInstanceId) return;
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 
@@ -376,8 +385,8 @@ public class ColorTileChallenge : MonoBehaviour
     void ResolveRound(bool success)
     {
         _judgeCoroutine = null;
-        HandleChallengeOutcome(success);
-        _netState?.NotifyChallengeOutcomeClientRpc(success);
+        HandleChallengeOutcome(success, challengeInstanceId);
+        _netState?.NotifyChallengeOutcomeClientRpc(success, challengeInstanceId);
     }
 
     /// <summary>
@@ -395,13 +404,28 @@ public class ColorTileChallenge : MonoBehaviour
     // ── 결과 반영 (전 머신 공통 — Host는 직접 호출, Client는 ClientRpc로 수신) ──
 
     /// <summary>
-    /// 라운드 결과 반영. Host는 ResolveRound에서 직접 호출하고, Client는
-    /// StageNetworkState.OnChallengeOutcome 구독으로 동일 메서드를 수신한다 (OXQuizManager와 동일 패턴 —
-    /// NotifyChallengeOutcomeClientRpc는 IsServer면 내부에서 스킵되므로 Host에서 이중 발동되지 않음).
+    /// StageNetworkState.OnChallengeOutcome(Client 전용 실제 발동 경로) 구독 래퍼.
+    /// [버그 수정 2026-08] NotifyChallengeOutcomeClientRpc가 실어보낸 instanceId를
+    /// LastChallengeOutcomeInstanceId로 읽어 HandleChallengeOutcome에 넘긴다 — 이 값이 없으면
+    /// T.Boss처럼 ColorTile 타입 인스턴스가 여러 개일 때 Client에서 형제 인스턴스 전부가
+    /// 남의 라운드 결과에 반응해 페널티를 중복 적용했다(Host는 ResolveRound가 자기 자신만
+    /// 직접 호출해 이 경로를 안 타므로 우연히 정상으로 보였음).
     /// </summary>
-    void HandleChallengeOutcome(bool success)
+    void HandleNetChallengeOutcome(bool success)
+    {
+        HandleChallengeOutcome(success, _netState != null ? _netState.LastChallengeOutcomeInstanceId : 0);
+    }
+
+    /// <summary>
+    /// 라운드 결과 반영. Host는 ResolveRound에서 자기 challengeInstanceId를 직접 넘겨 호출하고,
+    /// Client는 HandleNetChallengeOutcome을 거쳐 RPC로 전달된 instanceId를 받는다 (OXQuizManager와
+    /// 동일 패턴 — NotifyChallengeOutcomeClientRpc는 IsServer면 내부에서 스킵되므로 Host에서
+    /// 이중 발동되지 않음).
+    /// </summary>
+    void HandleChallengeOutcome(bool success, int instanceId)
     {
         if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.ColorTile) return; // owner 가드 — HandleChallengeStepChanged와 동일 이유
+        if (instanceId != challengeInstanceId) return; // [버그 수정 2026-08] 형제 인스턴스 결과 무시
 
         ClearTiles();
         _isRunning = false;

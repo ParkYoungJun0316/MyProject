@@ -40,22 +40,34 @@ public struct ChallengeStepState : INetworkSerializable, IEquatable<ChallengeSte
     public double stepStartServerTime;
     public ChallengeOwnerType owner;
 
+    /// <summary>
+    /// [버그 수정 2026-08] 같은 owner 타입의 챌린지 매니저가 씬에 여러 인스턴스 존재할 때
+    /// (예: T.Boss의 ColorTileChallenge 5개 — 플레이어별 개인 챌린지 4개 + 통합 1개) owner
+    /// 타입 하나만으로는 "어느 인스턴스"인지 구분이 안 돼, 한 인스턴스의 이벤트를 나머지
+    /// 형제 인스턴스가 자기 것으로 오인해 반응하는 교차 오염이 발생했다(T.Boss AdvancingWall
+    /// 페널티가 Host/Client에서 방향 수가 다르게 적용되던 버그의 근본 원인). 0 = 미사용(단일
+    /// 인스턴스만 있는 챌린지 타입은 항상 0으로 두면 기존 동작 그대로 유지됨).
+    /// </summary>
+    public int instanceId;
+
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref seed);
         serializer.SerializeValue(ref stepIndex);
         serializer.SerializeValue(ref stepStartServerTime);
         serializer.SerializeValue(ref owner);
+        serializer.SerializeValue(ref instanceId);
     }
 
     public bool Equals(ChallengeStepState other) =>
         seed == other.seed &&
         stepIndex == other.stepIndex &&
         stepStartServerTime.Equals(other.stepStartServerTime) &&
-        owner == other.owner;
+        owner == other.owner &&
+        instanceId == other.instanceId;
 
     public override bool Equals(object obj) => obj is ChallengeStepState other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(seed, stepIndex, stepStartServerTime, owner);
+    public override int GetHashCode() => HashCode.Combine(seed, stepIndex, stepStartServerTime, owner, instanceId);
 }
 
 /// <summary>
@@ -246,7 +258,16 @@ public class StageNetworkState : NetworkBehaviour
     public int    ChallengeStepIndex           => _challengeStep.Value.stepIndex;
     public double ChallengeStepStartServerTime => _challengeStep.Value.stepStartServerTime;
     public ChallengeOwnerType ChallengeOwner   => _challengeStep.Value.owner;
+    /// <summary>현재 _challengeStep 슬롯을 쓰고 있는 인스턴스 ID (같은 owner 타입 내 형제 인스턴스 구분용).</summary>
+    public int    ChallengeInstanceId          => _challengeStep.Value.instanceId;
     public bool   IsChallengeCleared           => _challengeCleared.Value;
+
+    /// <summary>
+    /// NotifyChallengeOutcomeClientRpc가 실어보낸 instanceId의 Client 로컬 캐시.
+    /// RPC 파라미터로 직접 전달되므로 _challengeStep이 그 사이 다른 인스턴스에 의해 덮어써져도
+    /// 안전하다(OnChallengeOutcome 구독자가 이 값을 읽는 시점은 항상 RPC 본문 실행 중 — 동기).
+    /// </summary>
+    public int    LastChallengeOutcomeInstanceId { get; private set; }
 
     public int    BossPhasesCleared            => _bossPhasesCleared.Value;
 
@@ -586,10 +607,10 @@ public class StageNetworkState : NetworkBehaviour
     /// owner는 호출한 챌린지 자신의 타입 — 각 매니저의 핸들러가 "내 것이 아니면 무시"를
     /// 판단하는 유일한 근거이므로 반드시 자기 자신의 타입을 넘겨야 한다.
     /// </summary>
-    public void ChallengeStart(int seed, ChallengeOwnerType owner)
+    public void ChallengeStart(int seed, ChallengeOwnerType owner, int instanceId = 0)
     {
         if (!IsServer) return;
-        _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0, owner = owner };
+        _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0, owner = owner, instanceId = instanceId };
         _challengeCleared.Value = false;
     }
 
@@ -608,6 +629,7 @@ public class StageNetworkState : NetworkBehaviour
             stepIndex            = stepIndex,
             stepStartServerTime  = NetworkManager.Singleton.ServerTime.Time,
             owner                = _challengeStep.Value.owner,
+            instanceId           = _challengeStep.Value.instanceId,
         };
     }
 
@@ -628,6 +650,7 @@ public class StageNetworkState : NetworkBehaviour
             stepIndex            = -1,
             stepStartServerTime  = -1.0,
             owner                = _challengeStep.Value.owner,
+            instanceId           = _challengeStep.Value.instanceId,
         };
     }
 
@@ -664,11 +687,20 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>
     /// Host: 판정 결과(성공/실패) 1회성 연출 신호. 진행 상태(NV)와 별개로
     /// Client 쪽 UnityEvent(정답/오답 연출 등)만 재생한다 — Host는 로컬에서 직접 처리하므로 스킵.
+    ///
+    /// [버그 수정 2026-08] instanceId 파라미터 추가 — 같은 owner 타입의 챌린지가 씬에 여러
+    /// 인스턴스 있을 때(T.Boss ColorTileChallenge 5개), 예전엔 이 RPC가 Client에서 실제로
+    /// OnChallengeOutcome을 발동시키면 owner 타입만 같으면 형제 인스턴스 전부가 반응해
+    /// 각자의 페널티를 중복 적용했다(Host는 ResolveRound가 자기 자신만 직접 호출하므로 이
+    /// 이벤트 경로 자체를 안 타 우연히 정상으로 보였음). instanceId를 실어보내 구독자가
+    /// "내 인스턴스로 온 결과인지" 직접 걸러낼 수 있게 한다 — 기본값 0은 인스턴스가 하나뿐인
+    /// 기존 챌린지 타입(OX/GridColor/GridBW/SequenceRing)의 하위호환용.
     /// </summary>
     [ClientRpc]
-    public void NotifyChallengeOutcomeClientRpc(bool success)
+    public void NotifyChallengeOutcomeClientRpc(bool success, int instanceId = 0)
     {
         if (IsServer) return;
+        LastChallengeOutcomeInstanceId = instanceId;
         OnChallengeOutcome?.Invoke(success);
     }
 
