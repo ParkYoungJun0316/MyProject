@@ -15,6 +15,8 @@ using UnityEngine.UI;
 /// - nameText             : 캐릭터 이름 TMP_Text — 타인 슬롯 표시용 (로컬은 입력창으로 대체)
 /// - cheerNameInput       : TMP_InputField — 로컬 슬롯만 표시. Enter 시 SetCheerNameServerRpc
 /// - cheerNameErrorRoot   : 이름 거절 시 표시할 오류 인디케이터 (3초 후 자동 숨김)
+/// - cheerNameDictWarningRoot : CheerName이 Vosk 모델 사전에 없을 때 표시할 경고(강제 아님,
+///                              CheerAndTutorialDesign.md §5.2 A). 로컬 슬롯 전용, 자동 숨김 없음.
 /// - characterDropdown    : 캐릭터 선택 TMP_Dropdown (로컬 플레이어 슬롯에서만 표시)
 /// - statusText           : READY / WAITING TMP_Text
 /// - readyIndicator       : 체크 아이콘 GameObject
@@ -50,6 +52,10 @@ public class LobbySlotUI : MonoBehaviour
 
     [Tooltip("이름 거절 시 표시. 3초 후 자동 숨김.")]
     [SerializeField] private GameObject     cheerNameErrorRoot;
+
+    [Tooltip("CheerName이 Vosk 모델 사전에 없을 때 표시할 경고(강제 아님, §5.2 A). 로컬 슬롯 전용.\n" +
+             "null이면 경고 비활성.")]
+    [SerializeField] private GameObject     cheerNameDictWarningRoot;
 
     [Tooltip("캐릭터 선택 드롭다운. 로컬 플레이어 슬롯에서만 표시됨.")]
     [SerializeField] private TMP_Dropdown   characterDropdown;
@@ -171,6 +177,10 @@ public class LobbySlotUI : MonoBehaviour
             }
         }
 
+        // 사전 미등재 경고 — 로컬 슬롯 전용, 강제 아님 (§5.2 A)
+        if (cheerNameDictWarningRoot != null)
+            cheerNameDictWarningRoot.SetActive(isLocalSlot && !CheerLexiconBuilder.IsKnownWord(effectiveName));
+
         // 드롭다운: 로컬만
         if (characterDropdown != null)
         {
@@ -212,6 +222,7 @@ public class LobbySlotUI : MonoBehaviour
         if (nameText           != null) nameText.text = "";
         if (cheerNameInput     != null) cheerNameInput.gameObject.SetActive(false);
         if (cheerNameErrorRoot != null) cheerNameErrorRoot.SetActive(false);
+        if (cheerNameDictWarningRoot != null) cheerNameDictWarningRoot.SetActive(false);
         if (characterDropdown  != null) characterDropdown.gameObject.SetActive(false);
         if (statusText         != null) statusText.text = "";
         if (readyIndicator     != null) readyIndicator.SetActive(false);

@@ -24,7 +24,7 @@
 | CheerName | **로비 커스텀** (§3). 빈칸 = 색 기본값 + Tutorial 연습 |
 | 이름 커스텀 | **Lobby 슬롯 인라인** + Host 확정 + `LobbyPlayerState` · `PlayerPrefs` 기억 |
 | **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시 (Start 강제 아님, §3.2) |
-| **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (커스텀 G2P) |
+| **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (사전 검증 + 발음 변형 대체 단어, §5) |
 | 채팅 응원 | `/cheer {name}` **필수 폴백** |
 | 스테이지 버프 | M = **Shield** (`Invincibility`), T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
 | 인게임 설명 | Tutorial(핵심 메카) + **DialogueUI** (M/T 구역별) |
@@ -253,9 +253,9 @@
 ### 3.7 발음·인식 정책 (확정)
 
 - **100% 정확 발음 강제 아님.** `back` / `bac` / `bek` / `bec` 등 **비슷한 소리**면 같은 CheerName으로 잡혀도 OK.
-- **정확한 철자 발음만** 허용하는 구조 **아님** — grammar + lexicon **발음 변형 여러 개**.
+- **정확한 철자 발음만** 허용하는 구조 **아님** — grammar에 **사전 검증된 발음 변형 대체 단어 여러 개**(§5.2 B) 포함.
 - 한국어 STT = Post-Launch. MVP = **로마字 CheerName + 영어 Vosk 모델**.
-- **음성으로 lexicon “학습·저장”하지 않음.** UI 텍스트 → G2P → 런타임 lexicon. Tutorial **말해보기** = **검증**만.
+- **음성으로 뭔가 “학습·저장”하지 않음.** grammar는 코드 테이블(§5.2)에서 즉시 생성. Tutorial **말해보기** = **검증**만.
 
 ---
 
@@ -354,56 +354,86 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 
 ---
 
-## 5. Lexicon / G2P 파이프라인
+## 5. 인식률 개선 파이프라인 (2026-08-04 재확정 — 커스텀 Lexicon 방식 폐기)
+
+> **폐기 배경:** 기존 §5는 Vosk `vosk_recognizer_set_grm_with_lexicon`(커스텀 발음 lexicon 런타임 주입)을 전제로 했으나,
+> 조사 결과 이 API는 [alphacep/vosk-api PR #1362](https://github.com/alphacep/vosk-api/pull/1362)로 **2023-05 제안된 뒤 아직 미병합·충돌(conflict) 상태로 정체**돼 있어
+> **어떤 공식 Vosk 배포본에도 포함돼 있지 않다** — 이 프로젝트가 쓰는 `libvosk.dll`(`Assets/ThirdParty/Vosk`)도 마찬가지.
+> 즉 "G2P → 커스텀 lexicon 적용"은 모델 그래프를 오프라인 재컴파일하지 않는 한 **구현 불가능** — 실제 존재하지 않는 API를 전제한 설계였으므로 폐기한다.
+>
+> **커스텀 빌드(PR #1362 패치)는 Post-Launch 후보로만 남긴다** — Windows/Android/OSX 네이티브 바이너리 전부 재빌드·자체 유지보수 필요, PR 자체도 미완성(SIL 하드코딩, grammar fst 미지원) 명시 상태라 9/1 일정 리스크가 큼.
 
 ### 5.1 데이터 역할 분리
 
 | 데이터 | 저장 | 용도 |
 |--------|------|------|
 | **CheerName** (텍스트) | `PlayerPrefs` **[Ship Must]**, Network 동기화 | UI, `/cheer`, grammar 토큰 |
-| **Lexicon** (발음표) | **저장 안 함** — 런타임 생성 | Vosk `SetGrammar` / `set_grm_with_lexicon` |
+| **대체 발음 후보** (텍스트 목록, 사전 검증됨) | **저장 안 함** — 코드 테이블 | grammar JSON에 원래 이름과 함께 포함 |
 | **Vosk 모델** | `StreamingAssets` | 빌드에 포함 |
 
-플레이어 UI 입력 = **영문 텍스트만**. Vosk 입력 = **grammar JSON + phoneme lexicon**.
+플레이어 UI 입력 = **영문 텍스트만**. Vosk 입력 = **grammar JSON(사전 등재 단어만)**. 커스텀 phoneme lexicon 없음.
 
-### 5.2 `CheerLexiconBuilder` (우리 구현)
+### 5.2 확정 방향 — A(사전 검증) + B(발음 변형 대체 단어) **[Ship Must]**
+
+Vosk grammar(`vosk_recognizer_new_grm`/`set_grm`)는 **모델 사전(words.txt)에 이미 있는 단어만** 인식 가능. 조어(`guma`/`sook`/`hobak` 등)는 모델에 없으면 원리상 인식이 잘 안 됨. 이를 아래 두 방법으로 보완한다.
+
+**A. 사전 검증 (`Model.vosk_model_find_word`)**
 
 ```
-입력: 세션 CheerName[] (최대 4, 자기 이름 제외 시 감지 목록 3)
+입력: CheerName 후보 (로비 커스텀 입력 또는 고정 4종)
   ↓
-1. grammar JSON: ["berry","guma","bec","[unk]"]
-2. 각 이름:
-   - 모델 사전에 있으면 기본 발음 사용 (berry 등)
-   - 없으면 G2P (grapheme → phoneme)
-   - 짧은 이름 / bac·back류: 발음 변형 2~3개 추가 (B EH K, B AE K …)
+Model.vosk_model_find_word(word) → -1 이면 모델 사전에 없음
   ↓
-출력: in-memory lexicon → Vosk 적용
+사전에 없으면: 로비 "불러보기"(§3.2/§5.4) UI에서 경고 표시 (강제 변경은 아님)
 ```
 
-**[Ship Must]:** 고정 4종 + 사전-defined lexicon 변형 (에디터 또는 코드 테이블).
+`vosk_model_find_word`는 `Assets/ThirdParty/Vosk/Model.cs`에 이미 바인딩돼 있음 — 새 네이티브 API 불필요, `CheerLexiconBuilder`/로비 검증 플로우에서 호출만 추가하면 됨.
 
-**[Ship Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 G2P 규칙**으로 lexicon 재생성.
+**B. 발음 변형 대체 단어 (grammar 배열 확장)**
 
-### 5.3 네트워크 — lexicon 동기화
+```
+입력: 고정 CheerName 중 사전 미등재 이름
+  ↓
+모델 words.txt 실측 + vosk_model_find_word로 검증된, 비슷한 소리의 실제 사전 단어를 후보로 추가
+  ↓
+grammar JSON: [원래 이름, 대체 단어..., "[unk]"]
+  ↓
+인식 결과가 대체 단어여도 CheerLexiconBuilder.ResolveVariant()로 원래 CheerName으로 매핑 → SubmitCheerServerRpc
+```
+
+**[Ship Must — 구현 완료, 2026-08]:** 고정 4종(`berry`/`guma`/`sook`/`hobak`)을 모델 `words.txt`에서 실측한 결과:
+
+| CheerName | 사전 등재 | 대체 단어 |
+|---|---|---|
+| `berry` | ✅ 있음 | 불필요 |
+| `guma`  | ✅ 있음 *(과거 "미포함" 기록은 오기 — 실측으로 정정)* | 불필요 |
+| `sook`  | ✅ 있음 *(과거 "미포함" 기록은 오기 — 실측으로 정정)* | 불필요 |
+| `hobak` | ❌ 없음 | `hobo` (앞 3음소 HH OW B 공유, 근사) |
+
+`CheerLexiconBuilder.VariantMap`(코드 테이블)에 반영 완료. `ResolveVariant()`로 인식된 대체 단어를 원래 CheerName으로 되돌림.
+
+**[Ship Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 매핑 테이블**로 grammar 재생성(§5.3 그대로).
+
+### 5.3 네트워크 — grammar 동기화
 
 ```
 Host: CheerName 4개 확정 (검증·중복)
   → ClientRpc / NetworkList
-Each Client: CheerLexiconBuilder.Build(names) → Vosk Apply (로컬)
+Each Client: CheerLexiconBuilder.BuildGrammarJson(names) → Vosk Apply (로컬)
 Each Client: 자기 마이크 → 감지 → SubmitCheerServerRpc
 ```
 
-lexicon **파일을 서버 DB에 모을 필요 없음**.
+grammar/매핑 테이블 **파일을 서버 DB에 모을 필요 없음**.
 
 ### 5.4 로비 불러보기 **[Ship Must]**
 
-§3.2 동일. 로비에서 이름 확정 → `[TEST]` → Vosk 토큰 ✓/다시.  
-**녹음 파일을 lexicon에 저장하지 않음.**
+§3.2 동일. 로비에서 이름 확정 → `[TEST]` → Vosk 토큰 ✓/다시. 사전 미등재(§5.2 A) 시 경고 표시.  
+**녹음 파일을 저장하지 않음.**
 
 ### 5.5 Tutorial 말해보기 **[Ship Must]**
 
 Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만으로 충분하면 생략 가능(구현 시 Docs 갱신).  
-실패 시 철자 변경 안내·G2P 변형 추가(개발 튜닝).
+실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝).
 
 ---
 
@@ -607,7 +637,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 ### Phase 7 — Tutorial · 커스텀 **[Ship Must]**
 
-- CheerName UI, G2P lexicon, 말해보기, Tutorial 씬.
+- CheerName UI, §5.2 사전 검증/대체 단어, 말해보기, Tutorial 씬.
 
 ---
 
@@ -657,7 +687,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님)
 - [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
 - [ ] **Vosk** grammar (세션 3~4명) + `CheerKeywordEngine`
-- [ ] `CheerLexiconBuilder` (세션 lexicon / G2P) + polish
+- [ ] `CheerLexiconBuilder` — §5.2 A(사전 검증) + B(발음 변형 대체 단어 매핑) + polish
 - [ ] Dissonance ↔ Vosk 마이크 공유
 - [ ] M=Invincibility, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
 - [ ] `CheerProgressUI` + `TeamStatusUI`
@@ -704,17 +734,17 @@ A. **아니오.** Ship Must = **인게임 보이스 (Dissonance)**. Discord 링�
 **Q. 음성을 서버로 보내서 인식하나?**  
 A. **아니오.** 키워드는 **각 Client 로컬 Vosk**. 서버는 RPC·집계만. 팀 대화는 **Dissonance P2P**.
 
-**Q. 50로비면 lexicon 200단어?**  
-A. **아니오.** Client당 **현재 로비 3~4 CheerName**만.
+**Q. 50로비면 grammar 200단어?**  
+A. **아니오.** Client당 **현재 로비 3~4 CheerName**(+대체 단어)만.
 
 **Q. `bec`를 back처럼 발음해도 되나?**  
-A. **OK.** grammar 4택1 + lexicon 발음 변형. 100% 불필요.
+A. **OK.** grammar 4택1 + §5.2 B 발음 변형 대체 단어. 100% 불필요.
 
-**Q. lexicon을 UI에서 녹음으로 저장?**  
-A. **아니오.** 텍스트 → G2P → 런타임 lexicon. 말해보기 = **검증**만.
+**Q. 커스텀 lexicon(발음표)을 Vosk에 직접 주입할 수 있나?**  
+A. **아니오 (2026-08-04 확정).** `vosk_recognizer_set_grm_with_lexicon`은 [PR #1362](https://github.com/alphacep/vosk-api/pull/1362)로 미병합·정체 상태 — 공식 Vosk 배포본에 없음. 대신 §5.2 A(사전 검증)+B(대체 단어)로 대응.
 
 **Q. Porcupine은?**  
-A. 상용·커스텀 파이프라인 부담. **Vosk grammar + G2P**가 기본.
+A. 상용·커스텀 파이프라인 부담. **Vosk grammar + §5.2 사전 검증/대체 단어**가 기본.
 
 **Q. ParrelSync / Dev Build만으로 정식 출시?**  
 A. **아니오.** **Ship Must** = Steam P2P 2인 + 보이스 + 응원 + Tutorial 등. Dev Build ②는 **중간** 게이트.

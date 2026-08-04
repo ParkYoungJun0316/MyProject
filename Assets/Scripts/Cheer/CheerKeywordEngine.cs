@@ -570,9 +570,12 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         string raw = node?[key]?.Value;
         if (string.IsNullOrEmpty(raw)) return;
 
-        foreach (string word in raw.Trim().ToLower().Split(' '))
+        foreach (string rawWord in raw.Trim().ToLower().Split(' '))
         {
-            if (string.IsNullOrEmpty(word) || word == "[unk]") continue;
+            if (string.IsNullOrEmpty(rawWord) || rawWord == "[unk]") continue;
+
+            // §5.2 B — 대체 단어(예: hobo)로 인식됐으면 원래 CheerName(hobak)으로 되돌림.
+            string word = CheerLexiconBuilder.ResolveVariant(rawWord);
 
             if (_lastDetected.TryGetValue(word, out float lastTime) &&
                 Time.time - lastTime < KeywordCooldown)

@@ -1,4 +1,5 @@
 using System.Collections;
+using Steamworks;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -30,6 +31,12 @@ using UnityEngine.SceneManagement;
 /// 설정 닫기      → OnClickCloseSettings()
 /// 게임 종료      → OnClickQuit()
 /// Discord        → OnClickDiscord()
+///
+/// [로컬 IP vs Steam 경로 분기 — SteamworksIntegrationDesign.md §5 확정]
+/// 에디터(①ParrelSync) 또는 Development Build(②)면 기존 LanDiscovery/StartHost/StartClient
+/// 로컬 IP 경로를 그대로 사용한다. 그 외(정식 릴리스 빌드, ④)는 Steam Lobby 경로
+/// (SteamLobbyManager + StartHostSteam/StartClientSteam)를 사용한다.
+/// roomCodeInputField는 두 경로에서 의미가 다르다 — 로컬: 6자리 룸코드, Steam: Lobby Id 전체 숫자.
 /// </summary>
 public class TitleMenuController : MonoBehaviour
 {
@@ -66,13 +73,50 @@ public class TitleMenuController : MonoBehaviour
 
     private Coroutine _discoveryTimeoutCoroutine;
 
+    /// <summary>
+    /// true면 기존 로컬 IP 경로(LanDiscovery/StartHost/StartClient) 사용.
+    /// false면 Steam Lobby 경로 사용 — 정식 릴리스 빌드 기준(§5).
+    /// 판정 로직 단일 소스는 <see cref="NetworkManagerSetup.UseLocalNetworkPath"/>.
+    /// </summary>
+    static bool UseLocalNetworkPath => NetworkManagerSetup.UseLocalNetworkPath;
+
+    // ── Unity 콜백 ────────────────────────────────────────────────
+
+    void OnEnable()
+    {
+        if (!UseLocalNetworkPath && SteamLobbyManager.Instance != null)
+            SteamLobbyManager.Instance.OnInviteAccepted += OnSteamInviteAccepted;
+    }
+
+    void OnDisable()
+    {
+        if (SteamLobbyManager.Instance != null)
+            SteamLobbyManager.Instance.OnInviteAccepted -= OnSteamInviteAccepted;
+    }
+
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
-    /// <summary>게임 만들기 버튼 — 룸코드 생성 후 NetworkManager.StartHost() → 로비 이동.</summary>
+    /// <summary>
+    /// 게임 만들기 버튼.
+    /// 로컬 경로: 룸코드 생성 후 StartHost() → 로비 이동.
+    /// Steam 경로: Private Lobby 생성 후 StartHostSteam() → 로비 이동(§3·§5).
+    /// </summary>
     public void OnClickCreateGame()
     {
         LobbyContext.Mode = LobbyMode.OnlineHost;
 
+        if (UseLocalNetworkPath)
+        {
+            CreateGameLocal();
+        }
+        else
+        {
+            _ = CreateGameSteamAsync();
+        }
+    }
+
+    void CreateGameLocal()
+    {
         if (NetworkManagerSetup.Instance == null)
         {
             Debug.LogWarning("[TitleMenuController] NetworkManagerSetup을 찾을 수 없습니다.");
@@ -95,7 +139,33 @@ public class TitleMenuController : MonoBehaviour
         }
     }
 
-    /// <summary>게임 참여 버튼 — 룸코드 입력 패널 열기.</summary>
+    async System.Threading.Tasks.Task CreateGameSteamAsync()
+    {
+        if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
+        {
+            Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
+            return;
+        }
+
+        Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.CreateLobbyAsync();
+        if (lobby == null)
+        {
+            Debug.LogError("[TitleMenuController] Steam Lobby 생성 실패. 로비 이동 중단.");
+            return;
+        }
+
+        bool ok = NetworkManagerSetup.Instance.StartHostSteam(lobby.Value.Id.Value.ToString());
+        if (!ok)
+        {
+            Debug.LogError("[TitleMenuController] StartHostSteam 실패. Lobby 정리 후 중단.");
+            SteamLobbyManager.Instance.LeaveCurrentLobby();
+            return;
+        }
+
+        NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+    }
+
+    /// <summary>게임 참여 버튼 — 룸코드/LobbyId 입력 패널 열기.</summary>
     public void OnClickJoinGame()
     {
         if (joinPanel != null)
@@ -120,13 +190,27 @@ public class TitleMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 룸코드 확인 버튼 — 입력값 검증 후 LAN Discovery 시작.
+    /// 확인 버튼.
+    /// 로컬 경로: 6자리 룸코드 검증 후 LAN Discovery 시작.
+    /// Steam 경로: Lobby Id(숫자) 검증 후 SteamLobbyManager.JoinLobbyAsync → StartClientSteam(§4).
     /// joinPanel 내 확인 버튼에 연결.
     /// </summary>
     public void OnClickConfirmJoin()
     {
         string code = roomCodeInputField != null ? roomCodeInputField.text.Trim() : string.Empty;
 
+        if (UseLocalNetworkPath)
+        {
+            ConfirmJoinLocal(code);
+        }
+        else
+        {
+            ConfirmJoinSteam(code);
+        }
+    }
+
+    void ConfirmJoinLocal(string code)
+    {
         if (code.Length != 6 || !IsDigitsOnly(code))
         {
             SetJoinStatus("6자리 숫자를 입력해주세요.");
@@ -143,6 +227,52 @@ public class TitleMenuController : MonoBehaviour
         SetJoinStatus("찾는 중...");
         LanDiscovery.Instance.StartDiscovery(code, OnDiscoveryFound);
         _discoveryTimeoutCoroutine = StartCoroutine(DiscoveryTimeout());
+    }
+
+    void ConfirmJoinSteam(string code)
+    {
+        if (code.Length == 0 || !IsDigitsOnly(code) || !ulong.TryParse(code, out ulong lobbyIdValue))
+        {
+            SetJoinStatus("초대 코드를 다시 확인해주세요.");
+            return;
+        }
+
+        SetJoinStatus("참여하는 중...");
+        _ = JoinGameSteamAsync(lobbyIdValue);
+    }
+
+    async System.Threading.Tasks.Task JoinGameSteamAsync(SteamId lobbyId)
+    {
+        if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
+        {
+            Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
+            SetJoinStatus("참여에 실패했습니다.");
+            return;
+        }
+
+        Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.JoinLobbyAsync(lobbyId);
+        if (lobby == null)
+        {
+            SetJoinStatus("방을 찾을 수 없습니다.");
+            return;
+        }
+
+        if (joinPanel != null) joinPanel.SetActive(false);
+
+        LobbyContext.Mode = LobbyMode.OnlineClient;
+
+        // 로컬 경로와 동일하게 StartClient 후 씬 전환은 NGO SceneManager가 자동 처리 — 수동 LoadScene 금지.
+        NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id);
+    }
+
+    /// <summary>
+    /// Steam Invite Overlay 수락 시(SteamLobbyManager.OnInviteAccepted) 자동 참여.
+    /// 게임이 이미 타이틀 화면에서 실행 중인 경우만 의미 있음(이 컴포넌트가 활성 상태일 때만 구독됨).
+    /// </summary>
+    void OnSteamInviteAccepted(SteamId lobbyId)
+    {
+        SetJoinStatus("초대를 수락하는 중...");
+        _ = JoinGameSteamAsync(lobbyId);
     }
 
     /// <summary>룸코드 입력 패널 닫기 + Discovery 중단.</summary>

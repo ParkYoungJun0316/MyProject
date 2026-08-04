@@ -275,10 +275,17 @@ public class LobbyMenuController : MonoBehaviour
         }
     }
 
-    /// <summary>SteamInvite — Post-MVP 스텁.</summary>
+    /// <summary>SteamInvite — Invite Overlay 열기 (SteamworksIntegrationDesign.md §3).</summary>
     public void OnClickSteamInvite()
     {
-        Debug.Log("[LobbyMenuController] Steam 초대는 Post-MVP에서 지원합니다.");
+        if (SteamLobbyManager.Instance != null && SteamLobbyManager.Instance.IsInLobby)
+        {
+            SteamLobbyManager.Instance.OpenInviteOverlay();
+        }
+        else
+        {
+            Debug.Log("[LobbyMenuController] Steam Lobby가 없습니다 (로컬 경로 세션이거나 Lobby 미생성).");
+        }
     }
 
     // ── UI 갱신 ───────────────────────────────────────────────────
@@ -337,14 +344,22 @@ public class LobbyMenuController : MonoBehaviour
         RebuildLobbyGrammarIfNeeded();
     }
 
+    /// <summary>
+    /// 룸코드 표시. 로컬 경로(6자리)는 기존 LanDiscovery 마스킹, Steam 경로(Lobby Id)는
+    /// SteamLobbyManager.MaskCode로 마스킹한다(§3, `7**1` 형태). 코드 자체는
+    /// LobbyNetworkManager.SharedRoomCode(NetworkVariable) 하나로 두 경로 모두 동일하게 전달된다.
+    /// </summary>
     void RefreshRoomCode()
     {
         if (roomCodeText == null) return;
         if (LobbyNetworkManager.Instance == null) return;
 
         string code = LobbyNetworkManager.Instance.SharedRoomCode;
-        if (!string.IsNullOrEmpty(code))
-            roomCodeText.text = LanDiscovery.FormatDisplayCode(code);
+        if (string.IsNullOrEmpty(code)) return;
+
+        roomCodeText.text = code.Length == 6
+            ? LanDiscovery.FormatDisplayCode(code)
+            : SteamLobbyManager.MaskCode(code);
     }
 
     void RefreshReadyVisual()
