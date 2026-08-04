@@ -20,7 +20,7 @@ using UnityEngine.InputSystem;
 /// EnterPreviewView(pivot) : 탑다운 시점으로 부드럽게 전환, pivot 고정
 /// ExitPreviewView()       : 게임플레이 시점으로 복귀
 /// </summary>
-public class TopDownCamera : MonoBehaviour
+public class ThirdPersonCamera : MonoBehaviour
 {
     [Header("Target")]
     [Tooltip("따라갈 대상 (Player 등). 비우면 이동 없음.")]

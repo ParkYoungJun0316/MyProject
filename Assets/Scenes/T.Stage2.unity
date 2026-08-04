@@ -916,6 +916,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -1393,7 +1394,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1775109451063138937, guid: 1bc8596d5861a134b9914484adc1316f, type: 3}
       propertyPath: role
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2278548642102608815, guid: 1bc8596d5861a134b9914484adc1316f, type: 3}
       propertyPath: m_LocalScale.x
@@ -2406,10 +2407,22 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
@@ -2752,6 +2765,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -2846,11 +2860,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -3018,11 +3044,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -3135,7 +3173,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1775109451063138937, guid: 1bc8596d5861a134b9914484adc1316f, type: 3}
       propertyPath: role
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2278548642102608815, guid: 1bc8596d5861a134b9914484adc1316f, type: 3}
       propertyPath: m_LocalScale.x
@@ -3220,6 +3258,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -4323,6 +4362,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -4460,6 +4500,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -5400,6 +5441,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -5448,7 +5490,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d94b8aebbb9a5f4b89275465abdd621, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryPathIntroController
-  topDownCamera: {fileID: 0}
+  thirdPersonCamera: {fileID: 0}
   previewPivot: {fileID: 360208623}
   cameraLeadInTime: 2
   memoryPaths: []
@@ -5988,6 +6030,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -7975,6 +8018,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -7992,6 +8036,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -8534,7 +8579,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1775109451063138937, guid: 1bc8596d5861a134b9914484adc1316f, type: 3}
       propertyPath: role
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2278548642102608815, guid: 1bc8596d5861a134b9914484adc1316f, type: 3}
       propertyPath: m_LocalScale.x
@@ -8615,15 +8660,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[1]'
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -8997,6 +9050,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -9356,6 +9410,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -10229,6 +10284,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -10247,7 +10303,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &734429174
 Transform:
   m_ObjectHideFlags: 0
@@ -10727,6 +10783,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -11001,6 +11058,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -11018,6 +11076,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -11453,6 +11512,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -11501,6 +11561,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -11518,6 +11579,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -11952,6 +12014,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -12053,6 +12116,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -12535,6 +12599,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -12845,6 +12910,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -13143,10 +13209,22 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
@@ -13630,11 +13708,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -14058,6 +14148,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -14159,6 +14250,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -14176,6 +14268,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -14208,7 +14301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d94b8aebbb9a5f4b89275465abdd621, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryPathIntroController
-  topDownCamera: {fileID: 0}
+  thirdPersonCamera: {fileID: 0}
   previewPivot: {fileID: 887831182}
   cameraLeadInTime: 2
   memoryPaths:
@@ -14502,6 +14595,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -15006,6 +15100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -15023,6 +15118,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -15541,6 +15637,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -15723,6 +15820,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -15807,6 +15905,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -15855,6 +15954,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -16377,6 +16477,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -16467,6 +16568,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -16917,6 +17019,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -17249,6 +17352,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -17658,6 +17762,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -17889,6 +17994,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -18551,6 +18657,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -19272,6 +19379,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -19538,6 +19646,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -19555,6 +19664,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -19857,6 +19967,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -19879,6 +19990,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -20115,6 +20227,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -20128,11 +20241,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
-      value: 5
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -20156,7 +20281,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 96.69995
+      value: 96.69
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalRotation.w
@@ -20771,6 +20896,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -21593,6 +21719,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -21610,6 +21737,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -22124,10 +22252,22 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
@@ -22545,6 +22685,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -22603,6 +22744,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -22620,6 +22762,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -22809,6 +22952,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -22853,11 +22997,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -23141,6 +23297,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -23600,6 +23757,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -23775,6 +23933,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -23823,6 +23982,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -24025,6 +24185,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -24209,6 +24370,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -24780,6 +24942,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -24797,6 +24960,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -24982,6 +25146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25231,6 +25396,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25248,6 +25414,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25354,6 +25521,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25452,6 +25620,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25469,6 +25638,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25651,6 +25821,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25757,6 +25928,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25779,6 +25951,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -25951,6 +26124,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26207,6 +26381,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26473,6 +26648,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26490,6 +26666,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26588,6 +26765,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26605,6 +26783,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26701,6 +26880,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -26718,6 +26898,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -27076,6 +27257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -27418,6 +27600,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -27517,7 +27700,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1882375383
 Transform:
   m_ObjectHideFlags: 0
@@ -27691,6 +27874,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -27708,6 +27892,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -28143,6 +28328,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -28615,6 +28801,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -28836,6 +29023,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -28881,11 +29069,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3019099503679744905, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: stageManager
@@ -28925,15 +29113,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_SizeDelta.x
-      value: -17
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3835361069865990560, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
@@ -29105,7 +29293,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7621602255045670127, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 87.13
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7854442590580305213, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -29162,6 +29350,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29505,6 +29694,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29603,6 +29793,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29701,6 +29892,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29718,6 +29910,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29735,6 +29928,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29793,6 +29987,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29810,6 +30005,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29832,6 +30028,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -29880,7 +30077,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d94b8aebbb9a5f4b89275465abdd621, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryPathIntroController
-  topDownCamera: {fileID: 0}
+  thirdPersonCamera: {fileID: 0}
   previewPivot: {fileID: 1202448459}
   cameraLeadInTime: 2
   memoryPaths: []
@@ -29904,6 +30101,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -30334,6 +30532,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -30842,6 +31041,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -30855,11 +31055,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: safeColors.Array.size
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: 'safeColors.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[2]'
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -2017798496894107133, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
+      propertyPath: 'safeColors.Array.data[3]'
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2768730161893394328, guid: 3d8855c76d78a954f8333098bf714e19, type: 3}
       propertyPath: m_LocalScale.x
@@ -31014,6 +31226,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -31193,6 +31406,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -31670,6 +31884,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 1
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -31768,6 +31983,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PioneerPathTile
   tileType: 0
   zone: {fileID: 0}
+  networkIndex: -1
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   unlockedColor: {r: 0.27, g: 1, b: 0.27, a: 1}
   trapColor: {r: 1, g: 0.2, b: 0.2, a: 1}

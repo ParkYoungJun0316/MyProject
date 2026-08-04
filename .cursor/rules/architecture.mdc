@@ -19,7 +19,7 @@ alwaysApply: true
 - **Enemy:** detect/chase/attack — local combat state
 - **Stage systems:** win/fail, flow, save I/O — keep responsibilities split (no UI owning gameplay state)
 - **UI:** display/subscribe only (e.g. Cheer HUD listens to replicated buff/state) — **no** mic ownership or Vosk
-- **Camera:** follow/view only (`TopDownCamera`)
+- **Camera:** follow/view only (`ThirdPersonCamera`)
 - **Cheer/Voice:** independent subsystem  
   - Detect: **Owner** `CheerKeywordEngine` (Vosk on **worker thread**; match/submit on **main**)  
   - Submit: `SubmitCheerServerRpc` → **Host** `CheerService` apply buff  

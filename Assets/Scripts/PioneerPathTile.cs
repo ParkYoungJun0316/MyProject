@@ -23,6 +23,10 @@ public class PioneerPathTile : MonoBehaviour
     // PioneerPathZone.Init()에서 주입
     [HideInInspector] public PioneerPathZone zone;
 
+    // PioneerPathManager가 Start()에서 배정 (Path 타일만, zone 순서 → zone 내 순서).
+    // -1이면 미배정 — 네트워크 동기화 대상 아님(예: 매니저 없이 단독 테스트하는 경우 방어용).
+    [HideInInspector] public int networkIndex = -1;
+
     // 색상 — PioneerPathZone.Init()에서 일괄 설정
     [HideInInspector] public Color normalColor   = new Color(0.45f, 0.45f, 0.45f);
     [HideInInspector] public Color unlockedColor = new Color(0.27f, 1f,    0.27f);
@@ -85,10 +89,16 @@ public class PioneerPathTile : MonoBehaviour
         // 이미 개방된 타일 — 모든 고유색 통과
         if (_isUnlocked) return;
 
-        // 미개방 타일 — pioneer 색이면 개방, 아니면 즉사
+        // 미개방 타일 — pioneer 색이면 Host에 개방 확정 요청, 아니면 즉사
         if (player.playerColorType == zone.EffectivePioneerColor)
         {
-            Unlock();
+            // Unlock()을 여기서 직접 호출하지 않는다 — 원격 플레이어는 Rigidbody가 kinematic이라
+            // 이 콜백 자체가 Owner/Host에서만 발생하고(NetworkPlayerSetup.ApplyPhysicsAuthority),
+            // 타일엔 Rigidbody가 없어 다른 Client는 이 이벤트를 영원히 못 받는다. Host가 감지한
+            // 것만 진실로 확정해 StageNetworkState._pioneerTileUnlocked로 브로드캐스트하면
+            // 전 머신(Host 포함)이 OnPioneerTileUnlocked 에코로 Unlock()을 받는다.
+            if (networkIndex >= 0)
+                StageNetworkState.Instance?.SetPioneerTileUnlocked(networkIndex);
         }
         else
         {
@@ -122,13 +132,17 @@ public class PioneerPathTile : MonoBehaviour
         ApplyColor(normalColor);
     }
 
-    // ── 내부 ─────────────────────────────────────────────────────
+    // ── 네트워크 에코 (PioneerPathManager가 StageNetworkState.OnPioneerTileUnlocked 구독 후 호출) ──
 
-    void Unlock()
+    /// <summary>Host 확정 해금 신호를 받아 로컬 상태·색을 적용한다. Host 자신도 이 경로로 처리(직접 호출 금지).</summary>
+    public void Unlock()
     {
+        if (_isUnlocked) return;
         _isUnlocked = true;
         ApplyColor(unlockedColor);
     }
+
+    // ── 내부 ─────────────────────────────────────────────────────
 
     void ApplyColor(Color color)
     {

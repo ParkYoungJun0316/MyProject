@@ -1,17 +1,17 @@
 # Telemetry Design (MVP)
 
-`NetworkDesign.md` §0.5.1에서 분리된 문서 (2026-08) — 텔레메트리 스펙 전용. 일정/체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 네트워크 동기화 아키텍처는 [`NetworkDesign.md`](NetworkDesign.md) 참고.
+텔레메트리 스펙 전용. 일정/체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 네트워크는 [`NetworkDesign.md`](NetworkDesign.md) 참고.
 
-> **범위:** **Open Must** — Coming Soon/Playtest 오픈 전에 전송 경로 ON. 관전 시스템 대신 이탈·체류·사망·응원 거부로 상황 파악.
-> **구현 에이전트:** 이 문서만 읽고 구현 가능. 착수 = **D14 오픈 전** (`ReleaseRoadmap.md` §0.1 참고).
+> **범위:** **출시 후 OK** — 9/1 블로커 아님 (`ReleaseRoadmap.md` §4 순위 8). 관전 대신 이탈·체류·사망·응원 거부로 상황 파악.
+> **구현 에이전트:** 이 문서만 읽고 구현 가능. 착수 = Steamworks(전부) 이후·출시 전후 여유 시.
 > 순서: ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
 
 ---
 
 ## 목적 · 시점
 
-- **목적:** Steam **Playtest·정식** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 바이옴(M/T) 체류·사망, 응원 거부·채팅 **합계**.
-- **시점:** **D14 오픈 전** 구현·전송 ON. Playtest 데이터를 잃지 않음.
+- **목적:** Steam **정식** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 바이옴(M/T) 체류·사망, 응원 거부·채팅 **합계**.
+- **시점:** **출시 이후 착수 OK.** 여유 있으면 출시 직전에도 가능.
 - **구현 순서:** ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
 
 ## 아키텍처
@@ -31,13 +31,12 @@
 | Unity **에디터** Play | ❌ |
 | **ParrelSync** (에디터 클론) | ❌ |
 | **Development Build** localhost | ❌ |
-| **Steam Depot Playtest**, Steam 클라이언트로 실행 | ✅ |
 | **Steam Depot 정식**, Steam 클라이언트로 실행 | ✅ |
 
 **권장 게이트 (둘 다 만족 시 전송):**
 
 1. `#if !UNITY_EDITOR`
-2. Steamworks 초기화 성공 (`SteamAPI` 등). Playtest·정식 빌드 파이프라인에서 Scripting Define `TELEMETRY_RELEASE` (또는 동등한 배포 게이트).
+2. Steamworks 초기화 성공 (`SteamAPI` 등). 정식 빌드 파이프라인에서 Scripting Define `TELEMETRY_RELEASE` (또는 동등한 배포 게이트).
 
 Inspector `enabled` 토글은 **로컬 디버그용**. 위 게이트가 **배포 판정** 기준.
 
@@ -73,7 +72,7 @@ timestamp | sessionId | buildVersion | playMode | partySize | run_complete | qui
 |------|------|------|
 | `timestamp` | datetime | **upsert 전송 시각** (UTC 또는 KST 중 하나로 통일) |
 | `sessionId` | string | 익명 UUID. **upsert 키.** |
-| `buildVersion` | string | `Application.version` (예: `0.1.0-playtest` / `1.0.0`) |
+| `buildVersion` | string | `Application.version` (예: `1.0.0`) |
 | `playMode` | string | `Solo` / `Multi` (멀티 1인도 `Multi`) |
 | `partySize` | int | 1~4 |
 | `run_complete` | bool | `End.Demo` **씬 진입** 여부 |
@@ -146,7 +145,7 @@ public enum TelemetryRejectReason
 | `Application.quitting` | ✅ 가능한 범위 동기 전송 (보조) |
 
 **Apps Script upsert:** POST body JSON → `token` 검증 → `sessionId` 검색 → 있으면 **Update**, 없으면 **Append**.
-Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localhost Inspector 기본 empty).
+Web App URL은 **Steam 정식 빌드** 설정에만 (에디터·localhost Inspector 기본 empty).
 
 실패 시 **1~2회 재시도** 후 포기 (영구 로컬 큐는 MVP 범위 밖).
 
@@ -178,11 +177,11 @@ Web App URL은 **Steam Playtest·정식 빌드** 설정에만 (에디터·localh
 1. Sheet 생성 → **헤더 1행** §컬럼 표와 **동일**하게 입력.
 2. **Apps Script** `doPost(e)`: JSON 파싱 → `token` 검증 → `sessionId` upsert.
 3. **Deploy → Web app** → URL 확보.
-4. Unity: `GoogleSheetsSink`에 URL + token (**Steam Playtest·정식 빌드** ScriptableObject 또는 `Resources` — 에디터·localhost 기본 empty).
+4. Unity: `GoogleSheetsSink`에 URL + token (**Steam 정식 빌드** ScriptableObject 또는 `Resources` — 에디터·localhost 기본 empty).
 
 ## MVP 완료 판정
 
-- [ ] Steam **Playtest** 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
+- [ ] Steam **정식** 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
 - [ ] 멀티 Host: Client reject/chat 합산 **1행**에 반영.
 - [ ] 에디터 Play / Dev Build localhost: **행 추가 없음**.
 - [ ] payload에 **금지 필드** 없음.

@@ -233,6 +233,28 @@ public class StageNetworkState : NetworkBehaviour
     // 항상 동일한 순서로 수집해야 같은 index가 같은 문을 가리킨다.
     private readonly NetworkList<bool> _doorOpenStates = new();
 
+    // ── Pioneer Path 타일 해금 동기화 (T.Stage2 전용 슬롯, 2026-08 버그 수정) ──
+    // [버그] PioneerPathTile.OnCollisionEnter의 Unlock()이 로컬 물리에만 의존했는데,
+    // 원격 플레이어는 NetworkPlayerSetup.ApplyPhysicsAuthority()가 Rigidbody를 kinematic으로
+    // 설정하고(Owner/Host만 non-kinematic) 타일은 Rigidbody가 없는 정적 Collider라, Unity 물리
+    // 규칙상 kinematic ↔ 무-Rigidbody 콜라이더 조합은 OnCollisionEnter 자체가 발생하지 않는다.
+    // 그 결과 pioneer 본인·Host 화면에서만 해금 색이 보이고 다른 Client는 항상(간헐적 아님)
+    // 해금 색을 못 봤다. Door(§3.1)와 동일한 슬롯 재사용 원칙으로 Host가 해금을 확정 브로드캐스트.
+    // index는 PioneerPathManager가 zone 순서 → zone 내 path 타일 순서로 배정(계층 순회라 Host/Client
+    // 항상 동일 순서).
+    private readonly NetworkList<bool> _pioneerTileUnlocked = new();
+
+    // ── MemoryRoundObjective 구역 클리어 동기화 (T.Stage2 전용 슬롯, 2026-08 버그 수정) ──
+    // [버그] MemoryRoundObjective가 StageManager.OnStageClear(§11A.0 — Host 레인에서만 유효한
+    // 로컬 이벤트)를 네트워크 브릿지 없이 직접 구독해, Client의 진행 카운터가 0에서 고정됐다
+    // (ObjectiveUI "0/3" 고착). BossFightObjective._phasesCleared와 동일한 버그 클래스라
+    // 같은 해법(Host가 카운트 후 NV로 확정 브로드캐스트) 재사용.
+    private readonly NetworkVariable<int> _memorySectionsCleared = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     private bool _resetPending;
 
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
@@ -277,6 +299,14 @@ public class StageNetworkState : NetworkBehaviour
     public bool IsDoorOpen(int index) =>
         index >= 0 && index < _doorOpenStates.Count && _doorOpenStates[index];
 
+    public int  PioneerTileCount => _pioneerTileUnlocked.Count;
+
+    /// <summary>늦은 구독 캐치업용 — index 타일의 현재 해금 상태. 범위 밖이면 false.</summary>
+    public bool IsPioneerTileUnlocked(int index) =>
+        index >= 0 && index < _pioneerTileUnlocked.Count && _pioneerTileUnlocked[index];
+
+    public int  MemorySectionsCleared => _memorySectionsCleared.Value;
+
     /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnChallengeStepChanged;
     /// <summary>챌린지 클리어 확정 상태가 바뀔 때 발동.</summary>
@@ -299,6 +329,12 @@ public class StageNetworkState : NetworkBehaviour
 
     /// <summary>문 개폐 상태가 바뀔 때 발동(index, isOpen). Client가 구독해 DoorController.Open()/Close() 호출용.</summary>
     public event Action<int, bool> OnDoorStateChanged;
+
+    /// <summary>Pioneer Path 타일이 해금될 때 발동(index). 전 머신(Host 포함) 공통 구독점 — PioneerPathManager가 구독해 해당 타일의 Unlock() 호출.</summary>
+    public event Action<int> OnPioneerTileUnlocked;
+
+    /// <summary>MemoryRoundObjective 구역 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
+    public event Action<int> OnMemorySectionsClearedChanged;
 
     /// <summary>
     /// Stage5 타겟 포획 진행 상황(captured, required)이 바뀔 때 발동 — Client 전용 구독점.
@@ -341,6 +377,8 @@ public class StageNetworkState : NetworkBehaviour
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
         _doorOpenStates.OnListChanged    += OnDoorOpenStatesChanged;
+        _pioneerTileUnlocked.OnListChanged += OnPioneerTileUnlockedChanged;
+        _memorySectionsCleared.OnValueChanged += OnMemorySectionsClearedNv;
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
@@ -355,6 +393,8 @@ public class StageNetworkState : NetworkBehaviour
         _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
         _doorOpenStates.OnListChanged    -= OnDoorOpenStatesChanged;
+        _pioneerTileUnlocked.OnListChanged -= OnPioneerTileUnlockedChanged;
+        _memorySectionsCleared.OnValueChanged -= OnMemorySectionsClearedNv;
         if (Instance == this) Instance = null;
     }
 
@@ -597,6 +637,53 @@ public class StageNetworkState : NetworkBehaviour
                 break;
         }
     }
+
+    // ── Pioneer Path 타일 해금 동기화 (T.Stage2 전용 슬롯) ─────────
+
+    /// <summary>
+    /// Host: 씬의 path 타일 개수만큼 슬롯을 초기화(전부 미해금). PioneerPathManager가
+    /// Start()에서 index 배정을 마친 뒤 1회 호출 — 이후 개수를 바꾸지 않는다(index 오염 방지,
+    /// InitDoorSlots와 동일 원칙).
+    /// </summary>
+    public void InitPioneerTiles(int count)
+    {
+        if (!IsServer) return;
+        _pioneerTileUnlocked.Clear();
+        for (int i = 0; i < count; i++)
+            _pioneerTileUnlocked.Add(false);
+    }
+
+    /// <summary>Host: index 타일 해금 확정. PioneerPathTile.OnCollisionEnter에서 호출(비-Host 호출은 no-op).</summary>
+    public void SetPioneerTileUnlocked(int index)
+    {
+        if (!IsServer) return;
+        if (index < 0 || index >= _pioneerTileUnlocked.Count) return;
+        if (_pioneerTileUnlocked[index]) return;
+        _pioneerTileUnlocked[index] = true;
+    }
+
+    void OnPioneerTileUnlockedChanged(NetworkListEvent<bool> change)
+    {
+        switch (change.Type)
+        {
+            case NetworkListEvent<bool>.EventType.Add:
+            case NetworkListEvent<bool>.EventType.Insert:
+            case NetworkListEvent<bool>.EventType.Value:
+                if (change.Value) OnPioneerTileUnlocked?.Invoke(change.Index);
+                break;
+        }
+    }
+
+    // ── MemoryRoundObjective 구역 클리어 동기화 (T.Stage2 전용 슬롯) ──
+
+    /// <summary>Host: 클리어된 구역 수 갱신. MemoryRoundObjective.HandleClear()에서 호출.</summary>
+    public void SetMemorySectionsCleared(int cleared)
+    {
+        if (!IsServer) return;
+        _memorySectionsCleared.Value = cleared;
+    }
+
+    void OnMemorySectionsClearedNv(int prev, int next) => OnMemorySectionsClearedChanged?.Invoke(next);
 
     // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
 

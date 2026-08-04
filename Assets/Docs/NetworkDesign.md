@@ -1,8 +1,8 @@
 # Network Design (MVP)
 
 네트워크 동기화 아키텍처 문서 — 권한(Authority)·룸/세션·플레이어·스테이지 진행·챌린지 축의 SSOT.  
-**출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고** (2026-08, §0 전체를 두 문서로 분리).  
-**데모 없음.** Steam **Playtest** → **정식 출시**만.  
+**출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고.**  
+**데모 / Playtest 없음.** 목표 = **2026-09-01 Steam 정식 출시**만.  
 스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**.  
 (`End.Demo` = 클리어 UI 씬명 레거시. 리네임은 별도 작업.)
 
@@ -10,14 +10,14 @@
 
 ## 1. 기술 스택
 
-| 항목 | 개발 ①② | **Playtest·정식 배포 ④** | 정식 |
-|------|---------|-----------------|------|
-| 네트워크 | **NGO** | **NGO** | 동일 |
-| 연결 | `UnityTransport` **localhost** (**7777**) | **Steam P2P + Lobby** | 동일·안정화 |
-| 권한 | §9.0 매트릭스 (**이동=Owner+CNT**, 판정=Host, 발사체 비행=Client B안) | 동일 | 동일 |
-| 최대 인원 | 4인 | 4인 | 동일 |
+| 항목 | 개발 ①② | **정식 배포 ④** |
+|------|---------|-----------------|
+| 네트워크 | **NGO** | **NGO** |
+| 연결 | `UnityTransport` **localhost** (**7777**) | **Steam P2P + Lobby** |
+| 권한 | §9.0 매트릭스 (**이동=Owner+CNT**, 판정=Host, 발사체 비행=Client B안) | 동일 |
+| 최대 인원 | 4인 | 4인 |
 
-- Transport **교체 가능**하게 분리 (`UnityTransport` ↔ Steam Networking). **Playtest·정식 = Steam transport 필수.**
+- Transport **교체 가능**하게 분리 (`UnityTransport` ↔ Steam Networking). **정식 = Steam transport 필수.**
 - 중간 참가(Late Join) **없음**. 재접속 **미지원**. 호스트 마이그레이션 **없음**.
 - **이탈 정책:** Host 또는 Client **누구든** 나가면 **즉시 방 종료** → 전원 타이틀. 남은 인원으로 계속·재입장 **없음**.
 
@@ -28,14 +28,14 @@
 ### 2.1 멀티플레이
 
 ```
-0.Title → 1.Lobby → [Release: Tutorial] → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo → 0.Title
+0.Title → 1.Lobby → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo → 0.Title
 ```
 
 | 씬 | 역할 |
 |----|------|
 | `0.Title` | `NetworkManager`, `GameSession`, `SceneFlowManager` (DDoL), Host/Join |
 | `1.Lobby` | Steam Lobby, Ready, 캐릭터 선택(선착순), Host Start |
-| Tutorial | **Release Must** — 조작·말해보기 (Playtest 오픈 빌드에서는 생략 가능) |
+| Tutorial | **Ship Must** — 조작·말해보기 (경험자 생략 가능 UX OK) |
 | `M.Stage1`…`M.Stage5` / `M.Boss` | M 바이옴 + 보스 |
 | `T.Stage1`…`T.Stage5` / `T.Boss` | T 바이옴 + 보스 |
 | `End.Demo` | 클리어 UI → 타이틀 복귀 (씬명 레거시) |
@@ -80,19 +80,19 @@
 | Join | `127.0.0.1:7777` 또는 6자리 룸코드 UI (개발용) |
 
 **※ 원격 IP Join·실사용 LAN(물리적으로 분리된 2대 PC) 테스트는 하지 않는다.**  
-**※ Steam Playtest·정식 배포·플레이어 멀티에는 사용하지 않음** → §4.2.
+**※ Steam 정식 배포·플레이어 멀티에는 사용하지 않음** → §4.2.
 
 **개발자 테스트:** ParrelSync(①) → Dev Build ② (같은 PC 2 exe). **실제 테스트 가능한 방법은 이 2가지뿐** — 상세: §6A.3.
 
 > **코드 참고:** `LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 존재하나, 이는 같은 PC/세션 내 편의 기능일 뿐 **물리적으로 분리된 2PC 간 실사용 LAN 연결 테스트 수단이 아니다** (미지원/미검증). Steamworks 연동 전까지 개발자 검증은 ①②로만 한다.
 
-### 4.2 Steam P2P + Lobby (**Open Must**, `ReleaseRoadmap.md` §0.2 ④)
+### 4.2 Steam P2P + Lobby (**Ship Must**, `ReleaseRoadmap.md` §3 ④)
 
 - **Steamworks** 초기화 + **Steam Networking** transport + **Steam Lobby**.
-- Join: Lobby 코드 / 친구 초대 (Playtest 다운 후 Invite).
+- Join: Lobby 코드 / 친구 초대.
 - UI 마스킹 예: 식별자 `7**1` 형태.
 - **Depot 업로드** 후 Steam 클라이언트에서 실행 — **원격 2~4인** 협동·응원·보이스 검증 환경.
-- **개발자 2PC:** 일상 QA = **2인** Steam Join. 오픈·Playtest 중 **4인 1회** 권장 (`ReleaseRoadmap.md` §0.2.1).
+- **개발자 2PC:** 일상 QA = **2인** Steam Join. 출시 전 **4인 1회** 권장 (`ReleaseRoadmap.md` §3.1).
 
 ---
 
@@ -169,7 +169,7 @@
 
 ### 6A.3 개발 환경 연결 방식 — 실제 가능한 것만 (§4.1 보강)
 
-현재 실제로 검증 가능한 개발자 테스트 방법은 **2가지뿐**이다 (`ReleaseRoadmap.md` §0.2와 동일):
+현재 실제로 검증 가능한 개발자 테스트 방법은 **2가지뿐**이다 (`ReleaseRoadmap.md` §3와 동일):
 
 | 방법 | 실제 동작 |
 |------|----------|
@@ -178,7 +178,7 @@
 | 물리적으로 분리된 2PC 간 LAN 연결 | **테스트 안 됨 / 미지원** |
 | ④ Steam P2P | 아직 미구현 |
 
-`LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 코드에 있지만, 이는 같은 PC/세션 안에서의 편의 기능이고 **실사용 LAN 2PC 연결 테스트 수단이 아니다.** Steamworks(`ReleaseRoadmap.md` §0.2 ④)가 붙기 전까지 개발자 검증은 **①②만** 사용한다.
+`LanDiscovery`(UDP 47777, 룸코드→IP 해석)가 코드에 있지만, 이는 같은 PC/세션 안에서의 편의 기능이고 **실사용 LAN 2PC 연결 테스트 수단이 아니다.** Steamworks(`ReleaseRoadmap.md` §3 ④)가 붙기 전까지 개발자 검증은 **①②만** 사용한다.
 
 ### 6A.4 금지 (평행 경로 — 발견 즉시 삭제)
 
@@ -383,7 +383,7 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 
 ### MVP 동기화 대상
 
-**우선순위:** `Must (Open/Playtest)` → `Should (여유)` → `Post (출시 이후)`
+**우선순위:** `Must (Ship / 9/1)` → `Should (여유)` → `Post (출시 이후)`
 
 **M.Stage1**
 
@@ -617,7 +617,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 #### 9A.6.4 Phase 2 완료 판정
 
 - [ ] `ClientNetworkTransform` / `ClientNetworkTransform.cs` 참조 **0건** (또는 클래스 Deprecated)
-- [ ] ParrelSync 2인 → Dev Build localhost 2인 → **Steam 원격 2인** 순서 통과 (`ReleaseRoadmap.md` §0.2)
+- [ ] ParrelSync 2인 → Dev Build localhost 2인 → **Steam 원격 2인** 순서 통과 (`ReleaseRoadmap.md` §3)
 - [ ] 함정·즉사·낙사: Host / Client **체감 규칙 동일** (같은 좌표계)
 - [ ] 이동 체감: **플레이 느낌**으로 예측 필요 여부 결정 (§9A.7)
 
@@ -681,7 +681,7 @@ Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX�
 
 ### 9A.11 §16 구현 순서에 끼워 넣을 위치
 
-**Open/Playtest 진행 — §9A:**
+**정식 출시 진행 — §9A:**
 
 ```
 A. Phase 1 — 데미지 Host + 발사체 §9.0.1 B안   ← ParrelSync / Dev Build 2인 검증  (Must)
@@ -701,11 +701,11 @@ A. **Owner + CNT 확정.** Host 이동화·Client Prediction **안 함**.
 **Q. 화살이 Client에서 끊기면?**  
 A. §9.0.1 B안 — Host는 Spawn+초기속도, **비행은 Client**, 피격 보고→Host 데미지.
 
-**Q. Phase 2 없이 Playtest/정식?**  
+**Q. Phase 2 없이 정식?**  
 A. **의도된 방침.** 이동은 Owner+CNT 유지. Phase 1+발사체 B만 Must.
 
 **Q. 2인 OK면 4인도 OK?**  
-A. `ReleaseRoadmap.md` §0.2.1과 동일.
+A. `ReleaseRoadmap.md` §3.1과 동일.
 
 ---
 
@@ -1104,7 +1104,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 > **확정 정책:** 재접속·Late Join·호스트 마이그레이션 **전부 미지원**. 구현·제안하지 않음.
 
-### 12.0 세션 이탈 규칙 (Playtest·정식 공통)
+### 12.0 세션 이탈 규칙 (정식)
 
 | 상황 | 동작 |
 |------|------|
@@ -1156,10 +1156,11 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 ## 16. 구현 순서 (권장)
 
-### 16.1 네트워크 · 응원 · Steam (Open / Playtest)
+### 16.1 네트워크 · 응원 · Steam → 정식 출시
 
-> **현재 실행 체크리스트:** `ReleaseRoadmap.md` §0.5.  
-> **Authority:** §9.0 확정 (**이동=Owner+CNT**, 발사체=B안). Phase 2 이동 Host화 **폐기**.
+> **현재 실행 체크리스트:** `ReleaseRoadmap.md` §5.  
+> **Authority:** §9.0 확정 (**이동=Owner+CNT**, 발사체=B안). Phase 2 이동 Host화 **폐기**.  
+> **목표:** **2026-09-01** 정식 (`ReleaseRoadmap.md`).
 
 1. NGO + `UnityTransport` + Title `NetworkManager`
 2. 로비 Ready / 캐릭터 / Start 동기화
@@ -1168,24 +1169,17 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 5. **§9.0.1 발사체 B안** — Host Spawn+velocity / Client 비행 / Client 보고→Host 피격
 6. **Must 동기화** (§9 표) — WindTrap Host 힘 포함
 7. **ParrelSync ①**
-8. **Development Build ②** — localhost **2인** (중간 게이트)
+8. **Development Build ②** — localhost **2인** (현재 잔여 게이트)
 9. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
-10. **Steamworks** — P2P transport, Lobby, Depot
-11. **텔레메트리** — [`TelemetryDesign.md`](TelemetryDesign.md) (**Open Must**)
-12. **Steam ④** — **2인 Must** + 4인 1회 권장 → **Coming Soon + Playtest (D14)**
-13. M 풀코스+보스 / T 풀코스+보스 (`sceneSequence`) + `End.Demo`
+10. **Steamworks (전부)** — P2P · Lobby · Depot/알파 · Invite (**출시 하드 블로커**, `ReleaseRoadmap.md` §4)
+11. 애니 → SFX → 응원 확장 → Tutorial → 난이도(Coming Soon play test) → 출시 QA
+12. **2026-09-01 정식 출시**
+13. **텔레메트리** — [`TelemetryDesign.md`](TelemetryDesign.md) (**출시 후 OK**)
+14. M/T 풀코스+보스 (`sceneSequence`) + `End.Demo` + UI 옵션
 
-### 16.2 Release (정식 · D28–D30+)
+### 16.2 Post-Launch
 
-1. 난이도 밸런싱 (Playtest M주·T주 피드백)
-2. Tutorial (연습·말해보기) + CheerName 발음/G2P polish
-3. UI 옵션 (볼륨·해상도)
-4. Steam Invite UX polish
-5. 출시 QA · **법인 계정** 빌드 리뷰 · 정식 출시
-
-### 16.3 Post-Launch
-
-- 관전(Spectator) — **후보** (일정 여유 시)
+- 관전(Spectator) — **후보**
 - sit/dance 이모트
 - (재접속·Late Join·호스트 마이그레이션은 **미지원 유지**)
 - **컷씬: 안 넣음** (로드맵에 넣지 않음)
@@ -1220,14 +1214,14 @@ A. **보인다.** Host가 판정한 **결과**를 동기화해 전원이 같은 
 **Q. 타이틀 복귀 시 멀티 연결은?**  
 A. **`NetworkManager.Shutdown()`** 으로 해제 (TitleReturnFlow / NetworkManagerSetup 경유).
 
-**Q. ParrelSync만 통과하면 Playtest 오픈해도 되나?**  
-A. **아니오.** **Steam P2P ④** (2인 Must + 4인 1회 권장) + 응원·보이스 + **텔레메트리**가 오픈 게이트.
+**Q. ParrelSync만 통과하면 정식 출시해도 되나?**  
+A. **아니오.** **Steam P2P ④** (2인 Must + 4인 1회 권장) + 응원·보이스 + Ship Must 콘텐츠가 출시 게이트.
 
-**Q. Dev Build ②만 통과하면 Playtest 오픈?**  
-A. **아니오.** ②는 **중간 게이트**. Playtest = **Steam 원격** + 협동 + 응원.
+**Q. Dev Build ②만 통과하면 출시?**  
+A. **아니오.** ②는 **중간 게이트**. 정식 = **Steam 원격** + 협동 + 응원 + `ReleaseRoadmap.md` Ship Must.
 
 **Q. 개발 PC 2대뿐인데 4인 테스트?**  
-A. 일상 = **Steam 2인** (`ReleaseRoadmap.md` §0.2.1). 오픈·M주 중 **4인 1회** — 친구 Playtest 권장. 2인 통과 ≠ 4인 100% 보장.
+A. 일상 = **Steam 2인** (`ReleaseRoadmap.md` §3.1). 출시 전 **4인 1회** — 친구 권장. 2인 통과 ≠ 4인 100% 보장.
 
 **Q. 2인 OK면 4인도 OK?**  
 A. **연결·Transport·응원 골격**은 2인에서 대부분 검증. **4인 전용** (3표 집계, 4보이스, 4Gate)은 4인 1회 필요.
@@ -1239,7 +1233,7 @@ A. **안 함.** 실제 검증 가능한 건 **ParrelSync · Dev Build(같은 PC)
 A. **아니오.** 로비 Kick=슬롯만 비움(§6), 방 유지. **인게임에는 Kick 기능 자체가 없다** (§6A.2) — 있는 건 이탈뿐이고, 발생 시 방 종료(§12).
 
 **Q. 컷씬·관전·이모트를 출시 전에 넣나?**  
-A. **컷씬: 안 넣음(영구).** 관전·이모트: **Post-Launch**. 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). 정식 Must는 Tutorial·밸런싱·옵션 UI·QA. Steam P2P·텔레메트리는 **Open Must**.
+A. **컷씬: 안 넣음(영구).** 관전·이모트: **Post-Launch**. 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). Ship Must·순서는 `ReleaseRoadmap.md` §4 (텔레메트리는 출시 후 OK).
 
-**Q. Steam 데모 페이지를 만드나?**  
-A. **아니오.** 데모 없음. **Playtest + Coming Soon** → 정식 출시.
+**Q. Steam 데모 / Playtest 페이지를 만드나?**  
+A. **아니오.** 데모·Playtest 없음. **2026-09-01 정식 출시**만.

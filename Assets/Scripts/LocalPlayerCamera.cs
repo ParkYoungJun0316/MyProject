@@ -14,20 +14,20 @@ using UnityEngine;
 /// 이 오브젝트가 유일한 활성 카메라.
 ///
 /// [프리팹 배치]
-/// Camera + TopDownCamera + AudioListener + UniversalAdditionalCameraData
+/// Camera + ThirdPersonCamera + AudioListener + UniversalAdditionalCameraData
 /// NetworkPlayerSetup._localCameraPrefab 필드에 연결.
 /// </summary>
-[RequireComponent(typeof(TopDownCamera))]
+[RequireComponent(typeof(ThirdPersonCamera))]
 [RequireComponent(typeof(Camera))]
 public class LocalPlayerCamera : MonoBehaviour, ISessionResettable
 {
     public static LocalPlayerCamera Instance { get; private set; }
 
-    TopDownCamera _topDownCam;
+    ThirdPersonCamera _thirdPersonCam;
     Camera        _camera;
 
-    /// <summary>씬 카메라 인트로 등 외부에서 쓰는 TopDownCamera 참조.</summary>
-    public TopDownCamera TopDownCam => _topDownCam;
+    /// <summary>씬 카메라 인트로 등 외부에서 쓰는 ThirdPersonCamera 참조.</summary>
+    public ThirdPersonCamera ThirdPersonCam => _thirdPersonCam;
 
     /// <summary>Player.followCamera 용 Camera 참조.</summary>
     public Camera Cam => _camera;
@@ -45,7 +45,7 @@ public class LocalPlayerCamera : MonoBehaviour, ISessionResettable
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        _topDownCam = GetComponent<TopDownCamera>();
+        _thirdPersonCam = GetComponent<ThirdPersonCamera>();
         _camera     = GetComponent<Camera>();
 
         TitleReturnFlow.Instance?.Register(this);
@@ -65,7 +65,7 @@ public class LocalPlayerCamera : MonoBehaviour, ISessionResettable
     /// </summary>
     public void SetTarget(Transform playerTransform, Player player = null)
     {
-        _topDownCam.target = playerTransform;
+        _thirdPersonCam.target = playerTransform;
         if (player != null)
             player.followCamera = _camera;
 

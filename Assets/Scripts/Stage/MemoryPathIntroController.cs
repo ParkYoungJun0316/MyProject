@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 기억 경로 스테이지 인트로 오케스트레이터.
@@ -23,10 +24,11 @@ public class MemoryPathIntroController : MonoBehaviour
 {
     [Header("카메라")]
     [Tooltip("비워두면 LocalPlayerCamera.Instance를 자동 사용 (C안 표준).")]
-    [SerializeField] TopDownCamera topDownCamera;
+    [FormerlySerializedAs("topDownCamera")]
+    [SerializeField] ThirdPersonCamera thirdPersonCamera;
 
     /// <summary>Inspector 값 우선, 없으면 로컬 카메라 싱글턴 사용.</summary>
-    TopDownCamera ActiveCamera => topDownCamera != null ? topDownCamera : LocalPlayerCamera.Instance?.TopDownCam;
+    ThirdPersonCamera ActiveCamera => thirdPersonCamera != null ? thirdPersonCamera : LocalPlayerCamera.Instance?.ThirdPersonCam;
 
     [Tooltip("프리뷰 동안 카메라가 고정될 지점. 경로 발판들의 중앙에 배치.")]
     [SerializeField] Transform previewPivot;

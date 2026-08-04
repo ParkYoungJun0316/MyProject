@@ -39,6 +39,9 @@ public class PioneerPathZone : MonoBehaviour
     public PlayerColorType     EffectivePioneerColor => _effectivePioneerColor;
     public PioneerPathManager  Manager               => _manager;
 
+    /// <summary>이 구역의 Path 타일만(Trap 제외) — PioneerPathManager가 네트워크 index 배정에 사용.</summary>
+    public PioneerPathTile[]   PathTiles             => _pathTiles;
+
     // ── 초기화 (PioneerPathManager.Awake에서 호출) ───────────────
 
     public void Init(PioneerPathManager manager, Color normal, Color unlocked, Color trap)

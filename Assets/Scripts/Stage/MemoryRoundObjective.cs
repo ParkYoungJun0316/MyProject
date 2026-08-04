@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -5,7 +6,11 @@ using UnityEngine.Events;
 /// Stage2의 MemoryPath 3구역 진행을 씬 단위로 관리하는 Objective.
 ///
 /// [동작]
-///  sections[i].OnStageClear → PlayedRounds 증가 → UI 갱신
+///  sections[i].OnStageClear(Host 레인 전용, §11A.0) → Host가 StageNetworkState._memorySectionsCleared
+///  NV로 확정 브로드캐스트 → 전 머신(Host 포함) 에코로 PlayedRounds 갱신 → UI 갱신.
+///  [버그 수정 2026-08] 이전엔 OnStageClear를 네트워크 브릿지 없이 직접 구독해 Client의
+///  PlayedRounds가 0에 고정됐다(ObjectiveUI "0/3" 고착) — BossFightObjective._phasesCleared와
+///  동일 버그 클래스, TStageNetworkBoard.md §3.5 Bug 2 참고.
 ///  전체 구역 완료 시 Complete()
 ///  실패(즉사)는 씬 리셋으로 처리 — Fail() 호출 없음
 ///
@@ -28,10 +33,20 @@ public class MemoryRoundObjective : RoundProgressObjective
     int _currentRoundIndex = -1;
 
     UnityAction[] _clearHandlers;
+    StageNetworkState _netState;
 
     public override int PlayedRounds      => _playedRounds;
     public override int TotalRounds       => sections != null ? sections.Length : 0;
     public override int CurrentRoundIndex => _currentRoundIndex;
+
+    // ── Unity ────────────────────────────────────────────────────
+
+    void Start()
+    {
+        _netState = StageNetworkState.Instance;
+        if (_netState != null)
+            _netState.OnMemorySectionsClearedChanged += HandleMemorySectionsClearedChanged;
+    }
 
     // ── StageObjective 구현 ──────────────────────────────────────
 
@@ -41,6 +56,9 @@ public class MemoryRoundObjective : RoundProgressObjective
 
         _playedRounds      = 0;
         _currentRoundIndex = -1;
+
+        // Host: NV도 0으로 리셋 (Client가 호출해도 내부 IsServer 가드로 no-op) — BossFightObjective.Begin()과 동일 패턴.
+        _netState?.SetMemorySectionsCleared(0);
 
         if (sections == null || sections.Length == 0)
         {
@@ -82,9 +100,21 @@ public class MemoryRoundObjective : RoundProgressObjective
         OnProgressChanged?.Invoke();
     }
 
+    /// <summary>
+    /// sections[i].OnStageClear는 StageManager.Update()가 Host 레인에서만 발동하므로(§11A.0)
+    /// 이 메서드도 Host에서만 호출된다. _playedRounds/OnProgressChanged/Complete()는 직접
+    /// 갱신하지 않고 NV 브로드캐스트 → HandleMemorySectionsClearedChanged 에코로만 처리한다
+    /// (Host 자신도 이 콜백을 통해 발동됨 — BossFightObjective.NotifyPhaseCleared와 동일 원칙).
+    /// </summary>
     void HandleClear(int index)
     {
-        _playedRounds++;
+        if (IsClientOnly()) return; // 방어적 가드 — OnStageClear 자체가 이미 Host 전용
+        _netState?.SetMemorySectionsCleared(_playedRounds + 1);
+    }
+
+    void HandleMemorySectionsClearedChanged(int cleared)
+    {
+        _playedRounds      = cleared;
         _currentRoundIndex = -1;
         OnProgressChanged?.Invoke();
 
@@ -103,5 +133,16 @@ public class MemoryRoundObjective : RoundProgressObjective
         _clearHandlers = null;
     }
 
-    void OnDestroy() => Unsubscribe();
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
+    }
+
+    void OnDestroy()
+    {
+        Unsubscribe();
+        if (_netState != null)
+            _netState.OnMemorySectionsClearedChanged -= HandleMemorySectionsClearedChanged;
+    }
 }

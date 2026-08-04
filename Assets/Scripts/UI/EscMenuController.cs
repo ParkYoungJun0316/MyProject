@@ -36,7 +36,7 @@ public class EscMenuController : MonoBehaviour
     [SerializeField] private Button resetButton;
 
     [Header("커서")]
-    [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. TopDownCamera.lockCursor 설정과 일치시키세요.")]
+    [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요.")]
     [SerializeField] private bool lockCursorOnClose = true;
 
     bool _isOpen;

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -71,6 +72,12 @@ public class PioneerPathManager : MonoBehaviour
     // 이번 라운드 4구역에 배정된 pioneer 색 (GameSession 활성색 기준 균등 분배)
     PlayerColorType[] _assignedColors;
 
+    // 해금 네트워크 동기화용 — zone 순서 → zone 내 path 타일 순서로 index 배정(계층 순회라
+    // Host/Client 항상 동일 순서, StagePressurePadSetup의 이름순 정렬과 동일한 목적).
+    // TStageNetworkBoard.md §3.5 버그 수정 참고.
+    readonly List<PioneerPathTile> _networkedPathTiles = new();
+    StageNetworkState _netState;
+
     public PathState State => _state;
 
     // ── Unity 라이프사이클 ────────────────────────────────────────
@@ -81,12 +88,21 @@ public class PioneerPathManager : MonoBehaviour
         for (int i = 0; i < _zones.Length; i++)
             if (_zones[i] != null)
                 _zones[i].Init(this, normalColor, unlockedColor, trapColor);
+
+        BuildPathTileIndexMap();
     }
 
     void Start()
     {
         ApplyNormalColorsToAll();
+        SetupTileNetworkSync();
         if (startOnAwake) StartPreview();
+    }
+
+    void OnDestroy()
+    {
+        if (_netState != null)
+            _netState.OnPioneerTileUnlocked -= HandleTileUnlocked;
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
@@ -143,6 +159,11 @@ public class PioneerPathManager : MonoBehaviour
 
     // ── 내부 유틸 ────────────────────────────────────────────────
 
+    // AssignPioneerColors()가 각 머신에서 독립적으로 로컬 실행되므로, 구역-색 배정은
+    // 반드시 세션 시드 기반 결정론 RNG를 써야 Host/Client가 같은 결과를 얻는다
+    // (ColorWall/GameSessionWallColorRemap과 동일 버그 클래스 — NetworkDesign.md TStageNetworkBoard §3.3 참고).
+    const int PioneerColorSeedSalt = 0x504E5254; // "PNRT"
+
     /// <summary>
     /// GameSession 활성색 기준으로 4구역 pioneer를 셔플 배정한다.
     ///  - 2인 : [A, A, B, B] 셔플 후 구역별 배정
@@ -153,13 +174,14 @@ public class PioneerPathManager : MonoBehaviour
     {
         if (_zones == null || _zones.Length == 0) return;
 
-        _assignedColors = GameSessionColorDistribution.Distribute(_zones.Length);
+        var rng = new System.Random(NetworkSessionData.Seed ^ PioneerColorSeedSalt);
+        _assignedColors = GameSessionColorDistribution.Distribute(_zones.Length, rng);
 
-        // 어떤 구역에 어떤 색이 배정될지 셔플
+        // 어떤 구역에 어떤 색이 배정될지 셔플 (같은 rng로 결정론 유지)
         PlayerColorType[] shuffled = (PlayerColorType[])_assignedColors.Clone();
         for (int i = shuffled.Length - 1; i > 0; i--)
         {
-            int j = Random.Range(0, i + 1);
+            int j = rng.Next(0, i + 1);
             (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
         }
 
@@ -189,6 +211,60 @@ public class PioneerPathManager : MonoBehaviour
         if (_zones == null) return;
         for (int i = 0; i < _zones.Length; i++)
             if (_zones[i] != null) _zones[i].HidePreview();
+    }
+
+    // ── 타일 해금 네트워크 동기화 (TStageNetworkBoard.md §3.5 버그 수정) ──
+
+    /// <summary>zone 순서 → zone 내 path 타일 순서로 전역 network index를 배정한다(계층 순회라 Host/Client 항상 동일).</summary>
+    void BuildPathTileIndexMap()
+    {
+        _networkedPathTiles.Clear();
+        if (_zones == null) return;
+
+        for (int zi = 0; zi < _zones.Length; zi++)
+        {
+            if (_zones[zi] == null) continue;
+            PioneerPathTile[] pathTiles = _zones[zi].PathTiles;
+            if (pathTiles == null) continue;
+
+            for (int ti = 0; ti < pathTiles.Length; ti++)
+            {
+                if (pathTiles[ti] == null) continue;
+                pathTiles[ti].networkIndex = _networkedPathTiles.Count;
+                _networkedPathTiles.Add(pathTiles[ti]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Host: 슬롯 초기화. 전 머신: 해금 신호 구독 — Host가 감지한 해금만 진실로 확정해
+    /// 전 머신(Host 포함)에 브로드캐스트한다(PioneerPathTile.OnCollisionEnter 참고).
+    /// </summary>
+    void SetupTileNetworkSync()
+    {
+        _netState = StageNetworkState.Instance;
+        if (_netState == null)
+        {
+            Debug.LogWarning("[PioneerPathManager] StageNetworkState를 찾을 수 없어 타일 네트워크 동기화를 건너뜁니다.");
+            return;
+        }
+
+        if (!IsClientOnly())
+            _netState.InitPioneerTiles(_networkedPathTiles.Count);
+
+        _netState.OnPioneerTileUnlocked += HandleTileUnlocked;
+    }
+
+    void HandleTileUnlocked(int index)
+    {
+        if (index < 0 || index >= _networkedPathTiles.Count) return;
+        _networkedPathTiles[index]?.Unlock();
+    }
+
+    static bool IsClientOnly()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && !nm.IsServer;
     }
 
     // ── 에디터 지원 ──────────────────────────────────────────────

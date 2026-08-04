@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 ///
 /// [역할]
 /// - OnNetworkSpawn: Owner / 비오너 분기 설정
-///   Owner   : PlayerInput 활성, TopDownCamera 타겟, VoiceBroadcastTrigger 활성, 입력→NV 기록
+///   Owner   : PlayerInput 활성, ThirdPersonCamera 타겟, VoiceBroadcastTrigger 활성, 입력→NV 기록
 ///   비오너  : PlayerInput 비활성, Rigidbody kinematic, VoiceBroadcastTrigger 비활성
 ///   Host    : HP·함정·낙사 확정 (Owner ReportFallDeath + Host Y 폴백)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)

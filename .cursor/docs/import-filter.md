@@ -34,7 +34,7 @@
 | Facepunch / Steamworks.NET as “current” dependency | Not chosen; ask user |
 | ECS / DOTS-first, UI Toolkit-first kits | Not our stack (uGUI) |
 | Web / React / Next / Node vibe kits | Irrelevant |
-| Cinemachine-as-camera-SSOT rules | We use **TopDownCamera** |
+| Cinemachine-as-camera-SSOT rules | We use **ThirdPersonCamera** |
 | “LAN multiplayer test required” skills | LAN broken; ParrelSync/build only |
 | Giant “18 Unity skills” dump without filter | Token waste + conflicts |
 | Anything that auto-writes Rules from random blog Docs | Violates Docs→Rules approval gate |

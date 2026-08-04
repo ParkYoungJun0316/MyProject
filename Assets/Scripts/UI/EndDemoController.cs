@@ -32,7 +32,7 @@ public class EndDemoController : MonoBehaviour
 
     void Awake()
     {
-        // 스테이지에서 TopDownCamera가 잠근 커서를 UI용으로 복원.
+        // 스테이지에서 ThirdPersonCamera가 잠근 커서를 UI용으로 복원.
         // Dissonance 오디오는 건드리지 않으므로 팀원 보이스 연결 유지.
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;

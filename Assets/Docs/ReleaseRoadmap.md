@@ -1,211 +1,234 @@
 # Release Roadmap
 
-`NetworkDesign.md` §0에서 분리된 문서 (2026-08) — 출시 일정·범위·체크리스트 전용. 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md), 네트워크 동기화 아키텍처는 [`NetworkDesign.md`](NetworkDesign.md) 참고.
+출시 일정·범위·체크리스트 SSOT.  
+텔레메트리 스펙: [`TelemetryDesign.md`](TelemetryDesign.md) · 네트워크: [`NetworkDesign.md`](NetworkDesign.md) · 응원/튜토리얼: [`CheerAndTutorialDesign.md`](CheerAndTutorialDesign.md).
 
-**앵커:** D0 = Steam Direct App Fee 결제일. **D14** = Coming Soon + Playtest 동시 오픈 목표.
+**확정 (2026-08):** 데모 / Steam Playtest Depot / Open·Release 이원화 **전부 폐기**.  
+**목표 하나:** **2026-09-01 Steam 정식 출시.**
 
 ---
 
-## 0.1 달력 · 3트랙 (확정)
+## 1. 앵커 · 달력
+
+| 항목 | 값 |
+|------|-----|
+| **출시일** | **2026-09-01** (정식) |
+| **배포** | Steam 정식 Depot만. 데모 페이지·**Steam Playtest Depot 없음** |
+| **스토어 상태 (현재)** | **상점 페이지 검수 중** |
+
+### 1.1 Steam 스토어 파이프라인 (확정)
+
+```
+페이지 검수 (현재)
+  → 빌드 검수 (약 2–5일; 실패 시 +약 7일·주말까지 버퍼)
+  → Coming Soon 약 2주 공개 노출
+       ※ 이 2주에 친구/지인 play test (난이도·버그 피드백)
+       ※ Steam Playtest 제품/Depot이 아님 — 정식 빌드·초대 플레이
+  → 2026-09-01 정식 출시
+```
+
+| 단계 | 의미 |
+|------|------|
+| **페이지 검수** | 스토어 페이지 Valve 리뷰 |
+| **빌드 검수** | Depot 업로드 빌드 Valve 리뷰 (약 2–5일) |
+| **2주 노출** | Coming Soon 공개. 트레일러·캡처 노출 + **비공식 play test**로 난이도·버그 수집 |
+| **9/1** | 정식 출시 버튼 |
+
+### 1.2 주간 초점 (러프)
 
 | 구간 | 초점 |
 |------|------|
-| **D0–D13** | 오픈 준비 — Steam P2P, **M 풀코스+보스**, **텔레메트리**, 스토어 리뷰, 법인 착수 |
-| **D14** | **Coming Soon + Playtest 동시** / Steam 2인 스모크 |
-| **D14–D21** | **Playtest M주** — `M.Stage1`→`M.Stage5`→`M.Boss` |
-| **D21–D28** | **Playtest T주** — `T.Stage1`→`T.Stage5`→`T.Boss` |
-| **D28–D30+** | 출시 직전 — Tutorial·옵션·밸런스·QA · **법인 계정**에서 정식 출시 |
+| **지금** | M/T **Dev Build(②)** 잔여 → **Steamworks(전부)** 착수 |
+| **페이지·빌드 검수 병행** | Steam 네트워크·로비·Depot·알파 빌드 + **애니**(트레일러) |
+| **중반** | SFX → 응원 확장 → Tutorial |
+| **Coming Soon 2주** | **난이도** (play test 피드백) · 버그 핫픽스 · QA 준비 |
+| **출시 직전** | **출시 QA** → 9/1 |
+| **출시 후 OK** | **텔레메트리** (9/1 블로커 아님) |
 
-**출시 가능 윈도우:** 앱피 30일(≈D30) ∩ Coming Soon 14일(오픈 D14 → ≈D28 충족) → **대략 D30 전후**.
+| 트랙 | 역할 |
+|------|------|
+| **게임/빌드** | §4 작업 순서 |
+| **스토어** | §1.1 파이프라인 · 트레일러·캡처 |
+| **법인** | 가능하면 출시 전 이전. 막히면 출시 후 허용 (출시일 고정) |
 
-| 트랙 | 역할 | 합류 |
-|------|------|------|
-| **게임/빌드** | P2P → M주 → T주 → 출시 Must | D14 / M주 / T주 / 출시 |
-| **스토어** | 페이지 → 리뷰 → Coming Soon(+Playtest) | **D14 = 게임 빌드와 동시** |
-| **법인** | 설립 → 법인 Steam → 앱 이전 | **출시 버튼만** 법인. Coming Soon·Playtest는 개인 가능 |
+---
 
-**폴백:** Coming Soon만 먼저 → **+1주** Playtest. 기본안은 **동시**.
+## 2. 출시 Must / 제외
 
-### 0.1.1 전체 작업 목록 (확정 순서)
+### 2.1 Ship Must (9/1에 들어가야 함)
 
-| 순위 | 작업 | 비고 |
-|------|------|------|
-| 1 | **네트워크** | ParrelSync → 빌드 → **Steam P2P** (§0.2) — Playtest·정식 필수 |
-| 2 | **텔레메트리** | [`TelemetryDesign.md`](TelemetryDesign.md) — **Open Must** (관전 대신 상황 파악) |
-| 3 | **사운드 마무리** | 최소한만. 과하면 방해되므로 억제 |
-| 4 | **파티클** | 시작 안 함. **피격·Break** 등 핵심만 |
-| 5 | **난이도 밸런싱** | Playtest M주·T주 피드백 기반 → 출시 전 흡수 |
-| 6 | **UI 마무리** | 오픈: 최소 HUD / **정식:** 옵션·볼륨 등 |
-| 7 | **Steamworks 연동** | Transport·Lobby·Depot·Playtest (§0.3) |
-| 8 | **출시 QA** | 빌드·Steam·2~4인 시나리오 체크리스트 |
-| — | **컷씬** | **영구 제외** (출시 후에도 안 넣음) |
-| — | **관전** | 출시 전 제외 → **Post-Launch 후보** |
-| — | sit / dance 이모트 | Post-Launch |
+- **플레이 경로:** Title → Lobby → **Tutorial** → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`
+- **솔로:** 동일 경로 (**NGO Host 1인**, `partySize=1`). 오프라인 모드 없음
+- **Steamworks (전부):** Steam Networking transport + Steam Lobby + Depot/알파 빌드 + Invite — §3 ④ · §4 순위 1. **로컬 NGO만으로 출시 불가**
+- **응원·보이스:** Dissonance + Vosk + `/cheer` + **응원 확장 2종**
+- **Tutorial:** 조작·말해보기 (경험자 생략 가능 UX OK)
+- **난이도:** Coming Soon 2주 play test 피드백 반영 후 출시선 확정
+- **사운드:** BGM + 핵심 SFX (과투자 금지)
+- **플레이어 애니메이션:** 트레일러·인게임 체감 품질
+- **UI:** 타이틀·로비·HP·카운트다운·응원 HUD·채팅 · 옵션(마스터·BGM·SFX, 해상도/전체화면)
+- **배포:** Steam 정식만. localhost/IP Join로 외부 배포 **안 함**
 
-## 0.2 네트워크 테스트 단계 (개발자 환경)
+### 2.2 출시 후 OK / 제외
 
-**개발 중 멀티 검증은 아래 순서로만 한다** (원격 IP Join·discovery 없음).
+| 항목 | 처리 |
+|------|------|
+| **텔레메트리** | **출시 이후 착수 OK** (9/1 블로커 아님). 스펙: [`TelemetryDesign.md`](TelemetryDesign.md) |
+| Steam **데모** / **Playtest Depot** | **없음** |
+| Open Must / Release Must 이원화 | **폐기** — Ship Must 하나 |
+| §12 재접속·호스트 마이그레이션 | **미지원.** 인게임 이탈 = **방 종료** |
+| 원격 IP Join / UDP discovery | **미사용** |
+| 관전 / sit·dance / 파티클 대량 | Post-Launch |
+| **컷씬** | **영구 제외** |
 
-**오픈·Playtest 핵심:** Steam에서 **원격 협동 + 인게임 보이스 + 응원** + **텔레메트리**.  
-**개발자 장비:** 테스트 PC **최대 2대** — Steam P2P 일상 검증은 **2인** 기준 (§0.2.1).
+---
+
+## 3. 네트워크 테스트 단계 (개발자 환경)
+
+원격 IP Join·discovery 없음. 개발자 PC **최대 2대** — Steam 일상 검증은 **2인**.
 
 ```
 ① ParrelSync (에디터 Host + Clone Client)
-   → 빠른 반복·버그 수정. ※ 출시 판정용 아님.
+   → 빠른 반복. ※ 출시 판정용 아님.
 
-② Development Build (Host EXE + Client EXE, localhost / 같은 PC)
-   → exe·NGO·마이크 등 **빌드 전용 버그** 중간 게이트. ※ 원격 4인 검증 아님.
+② Development Build (같은 PC localhost)
+   → 빌드 전용 버그. ※ Steamworks 전 잔여 게이트.
 
-③ 응원 시스템 (CheerService + Dissonance + Vosk + /cheer)
-   → ②에서 1차, ④ Steam에서 최종 검증. (상세: CheerAndTutorialDesign.md §11)
+③ 응원 (CheerService + Dissonance + Vosk + /cheer)
+   → ② 1차, Steamworks 후 Steam에서 최종.
 
-④ Steam P2P + Steam Lobby + Depot
-   → Transport 교체. **Playtest / 정식 오픈 게이트** — 2인 필수, 4인 권장 (§0.2.1).
+④ Steamworks = Steam 관련 전부
+   → Transport · Lobby · Depot/알파 · Invite.
+   → 정식 출시 게이트 — 2인 필수, 4인 권장 (§3.1).
 ```
 
 | 단계 | 목적 | 통과 기준 (최소) |
 |------|------|------------------|
-| ① ParrelSync | 구현·버그 수정 속도 | Title→Lobby→M 경로 **2인** 진행 1회 |
-| ② Dev Build | 빌드 품질·localhost NGO | **2인** 클리어/사망 리로드 1회, 스테이지 전환 OK |
-| ③ 응원 | 협동+보이스+응원 | CheerAndTutorialDesign §12 시나리오 |
-| ④ **Steam P2P** | **Playtest·정식 오픈** | **2인** Steam 원격: 초대·보이스·응원. **4인 1회 권장** |
+| ① ParrelSync | 구현 속도 | Title→Lobby→스테이지 **2인** 1회 |
+| ② Dev Build | 빌드 품질 | **2인** 클리어/사망 리로드·스테이지 전환 |
+| ③ 응원 | 보이스+응원 | Cheer 시나리오 |
+| ④ **Steamworks** | **출시 게이트** | **2인** Steam 원격: 초대·보이스·응원. **4인 1회 권장** |
 
-**Transport:** ①② 개발 중 `UnityTransport`(localhost). **Playtest·정식 배포 = Steam Networking transport 필수.**
+**Transport:** ①② = `UnityTransport`(localhost). **정식 = Steam Networking.**
 
-### 0.2.1 개발자 2PC · 2인 테스트 vs 4인
+### 3.1 2인 vs 4인
 
-| | **2인 Steam P2P** (일상) | **4인 Steam P2P** (오픈·Playtest 권장) |
-|--|--------------------------|----------------------------------|
-| 검증됨 | Transport, Lobby, Invite/Join, NGO 동기화, Dissonance, Vosk, 응원(필요 1표), 스테이지 진행 | 위 + **4슬롯·4스폰·응원 3표·4음성** |
-| **보장 안 됨 → 4인 전용 버그** | — | `ActivePlayerCount`·집계, 4색 Gate, 4명 보이스 혼잡, 이탈 시 §12(`NetworkDesign.md`) 전원 타이틀 수렴 |
-| 판정 | **Playtest 오픈 최소 게이트** (2PC 한정) | **외부 신뢰도** — 친구 Playtest **1회 강력 권장** |
+| | **2인 Steam** (일상) | **4인 Steam** (출시 전 권장) |
+|--|----------------------|------------------------------|
+| 검증 | Transport, Lobby, Invite, NGO, 보이스, 응원, 스테이지 | 위 + 4슬롯·응원 3표·4음성 |
+| 판정 | 출시 최소 게이트 | 친구 **1회 강력 권장** |
 
-**2인 통과 = 4인 100% 보장 아님.** 다만 NGO·Steam P2P·응원 **연결·규칙 골격**은 2인에서 대부분 검증 가능.  
-**4인만 터지는 버그**는 §0.2.1 표 우측 항목 — 오픈·M주 중 **4인 1회**로 잡는다.
+---
 
-## 0.3 범위 — Open / Playtest / Release
+## 4. 전체 작업 순서 (확정)
 
-#### Open Must (D14 Coming Soon + Playtest)
+> **Steamworks** = Steam 관련 **전부** (네트워크 P2P · Lobby · Depot/알파 빌드 · Invite · 빌드 검수용 업로드).  
+> 별도 “SDK만” 단계가 아님.
 
-- **플레이 경로 (오픈 빌드):** Title → Lobby → `M.Stage1`…`M.Stage5` → `M.Boss` (멀티 **2~4인**)
-- **솔로:** 동일 경로 (**NGO Host 1인**, `partySize=1`)
-- **T 풀코스:** 오픈일에 완벽할 필요 없음. **T주 시작 전**(`D21`)까지 `T.Stage1`…`T.Boss` 완성
-- **네트워크:** `NetworkDesign.md` §9 Must 동기화 + **§0.2 ④ Steam P2P + Steam Lobby** (친구 Playtest 다운·초대)
-- **응원·보이스:** 인게임 **Dissonance** + **Vosk 응원** + `/cheer` (`CheerAndTutorialDesign.md`)
-- **텔레메트리:** [`TelemetryDesign.md`](TelemetryDesign.md) — Steam **Playtest·정식** Depot에서 전송 ON
-- **배포:** Steam Playtest Depot. localhost/IP Join로 외부 테스트 **안 함**
-- **UI:** 타이틀·로비·HP·카운트다운·응원 HUD·채팅 `/cheer` · 클리어 시 `End.Demo`(풀런 시)
-- **사운드:** BGM 1~2 + 핵심 SFX
-- **파티클:** 피격·Break만 (선택)
-- **난이도:** “클리어 가능” 수준. 본격 밸런싱은 M주·T주 피드백 후
-
-#### Playtest M주 (D14–D21)
-
-- 코스: **`M.Stage1` → … → `M.Stage5` → `M.Boss`**
-- 텔레메트리로 이탈·사망·클리어·응원 거부 확인
-- 핫픽스 주 1–2회 · **4인 1회** 권장
-- 병행: T 풀코스 마무리
-
-#### Playtest T주 (D21–D28)
-
-- 코스: **`T.Stage1` → … → `T.Stage5` → `T.Boss`**
-- 동일하게 텔레메트리 + 핫픽스
-- 병행: Tutorial · 옵션 · 밸런스 흡수 · 법인 Steam·앱 이전
-
-#### Release Must (D28–D30+ · 정식 출시)
-
-- Steam P2P·Lobby **유지·안정화** (Invite UX polish)
-- **난이도 밸런싱** (Playtest 피드백)
-- **Tutorial** (연습·말해보기) + CheerName **발음 유사/G2P polish**
-- **UI:** 옵션(마스터·BGM·SFX), 해상도/전체화면
-- **출시 QA** · **법인 계정**에서 빌드 리뷰·정식 출시
-- (선택) Dissonance **Steam P2P** 음성 transport 분리
-
-#### 출시 전 · 영구 제외
-
-| 항목 | 처리 |
-|------|------|
-| Steam **데모** 빌드/페이지 | **없음.** Playtest로 대체 |
-| §12(`NetworkDesign.md`) 재접속·유예·스냅샷·호스트 마이그레이션 | **미지원.** 인게임 이탈 = **방 종료** |
-| 원격 IP Join / UDP discovery | **미사용.** 개발=ParrelSync·localhost / 배포=**Steam** |
-| 관전(Spectator) | 출시 전 **제외** → Post-Launch 후보 |
-| **컷씬** | **영구 제외** (출시 후에도 안 넣) |
-| sit / dance 이모트 | Post-Launch |
-| 파티클 대량 추가 | Post-Launch |
-
-## 0.4 권장 작업 순서 (요약)
-
-**상세 실행 순서·체크 항목은 §0.5 참고.**
+| 순위 | 작업 | 비고 |
+|------|------|------|
+| 0 | **M/T Dev Build(②)** | 현재 잔여. Steamworks 전 로컬 게이트 |
+| 1 | **Steamworks (전부)** | P2P · Lobby · Depot/알파 · 빌드 검수 대응 — **출시 하드 블로커** |
+| 2 | **플레이어 애니메이션** | 트레일러·인게임. 트레일러 일정과 맞춤 |
+| 3 | **SFX 마무리** | 인게임 폴리시. 트레일러 음성은 별도 믹스 OK |
+| 4 | **응원 시스템 확장 2개** | Ship Must |
+| 5 | **Tutorial 씬** | 조작·말해보기 |
+| 6 | **난이도** | Coming Soon 2주 play test 피드백 흡수 |
+| 7 | **출시 QA** | §6 — 출시 직전 E2E 통과 체크 |
+| 8 | **텔레메트리** | **출시 이후 OK** ([`TelemetryDesign.md`](TelemetryDesign.md)) |
+| — | 파티클(피격·Break) · UI 옵션 마감 | 여유 시 / QA 전 |
+| — | 컷씬 / 관전 / 이모트 | 제외 또는 Post-Launch |
 
 ```
-[D0–D13 오픈 준비]
-0. 테스트 전 블로커 (Vosk, CheerName, AudioListener)
-1. 폴리시 (오디오, 카메라, DialogueUI, End.Demo, 빌드 메타)
-2. 로컬 테스트 (1인 → 2인 Dev Build → 스크린샷 1차)
-3. Steamworks (App ID · Transport · Lobby · Depot) + 텔레메트리 MVP (TelemetryDesign.md)
-4. 스토어 페이지 · 리뷰 · M 풀코스+보스 Steam 2인
-
-[D14] Coming Soon + Playtest 동시
-[D14–D21] Playtest M주 (보스 포함) + T 병행
-[D21–D28] Playtest T주 (보스 포함) + Tutorial·옵션·법인 이전
-[D28–D30+] 출시 QA → 법인 계정 정식 출시
+[지금]           ② Dev Build → Steamworks(전부) + 애니(트레일러 병행 가능)
+[중반]           SFX → 응원 확장 → Tutorial
+[Coming Soon 2주] 난이도·버그 (친구 play test) → 핫픽스
+[출시 직전]      출시 QA → 9/1
+[출시 후]        텔레메트리
 ```
 
-## 0.5 오픈·Playtest·출시 체크리스트 (실행 순서)
+---
 
-> 음성 시스템(CheerService + Dissonance + Vosk) 구축 완료 이후 기준.  
-> 각 테스트 단계 직후 **버그 수정 구간**을 둔다.
+## 5. 실행 체크리스트
 
-#### Phase 0 — 테스트 전 블로커
+> 음성(CheerService + Dissonance + Vosk) 구축 완료 이후 기준.
 
-| # | 작업 | 비고 |
-|---|------|------|
-| 0-1 | Vosk zip 정합 | `VoskModelLoader` 기대 zip ↔ `StreamingAssets` 실제 파일 일치 |
-| 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `hobak` — `CheerLexiconBuilder`·`CheerService`·`/cheer` 통일 |
-| 0-3 | AudioListener | `LocalPlayerCamera` 프리팹에 1개. 씬 Main Camera 비활성 → 클라이언트당 1개 보장 |
-
-#### Phase 1 — 폴리시
+### Phase 0 — 테스트 전 블로커
 
 | # | 작업 | 비고 |
 |---|------|------|
-| 1 | 오디오 | SFX/BGM 볼륨, `SFXManager.masterVolume`, Listener 배치 |
-| 2 | 카메라 | **C안 확정** — `LocalPlayerCamera` DDOL 프리팹. Owner 첫 스폰 시 1회 생성, 씬 Main Camera 비활성 |
-| 3 | DialogueUI | M/T 구역별 규칙·응원 설명 (`DialogueUI.cs`) |
-| 4 | End.Demo | 클리어 UI, 타이틀 복귀 (Discord 피드백 버튼 선택) |
-| 5 | 빌드 메타 | `Player Settings`: Product Name, Default Icon, `bundleVersion` (예: `0.1.0-playtest`) |
+| 0-1 | Vosk zip 정합 | `VoskModelLoader` ↔ `StreamingAssets` |
+| 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `hobak` |
+| 0-3 | AudioListener | `LocalPlayerCamera` 1개 |
 
-#### Phase 2 — 로컬 테스트
+### Phase 1 — 로컬 빌드 게이트
 
-| # | 작업 | 통과 기준 (최소) |
-|---|------|------------------|
-| 6 | 1인 E2E | Title → Lobby → M 경로. `/cheer`·음성 응원 1회 |
-| 7 | 버그 수정 | Phase 2 이슈 정리 |
-| 8 | 2인 Dev Build E2E | localhost, 보이스 양방향, 응원, 사망 리로드 1회 (§0.2 ②) |
-| 9 | 버그 수정 | Phase 2 이슈 정리 |
-| 10 | 스크린샷 1차 | Steam 스토어 초안용 (§0.5.2) |
+| # | 작업 | 통과 기준 |
+|---|------|-----------|
+| 1 | M/T 1인 E2E | Title→Lobby→M/T. `/cheer`·음성 1회 |
+| 2 | M/T **2인 Dev Build** | localhost, 보이스, 응원, 사망 리로드 |
+| 3 | 빌드 버그 수정 | |
+| 4 | 스크린샷·트레일러 소재 1차 | 스토어/Coming Soon용 |
 
-#### Phase 3 — Steamworks · 텔레메트리 · 스토어
+### Phase 2 — Steamworks (전부) · 스토어 검수
 
 | # | 작업 | 비고 |
 |---|------|------|
-| 11 | Steam App ID + Steamworks | Transport → Steam Networking, Lobby, Depot 파이프라인 |
-| 12 | **텔레메트리 MVP** | [`TelemetryDesign.md`](TelemetryDesign.md) — **Open Must.** Playtest Depot에서 전송 ON |
-| 13 | 스토어 페이지 · 리뷰 신청 | 스크린샷·설명 §0.5.2. D14 Coming Soon 목표 |
-| 14 | M 풀코스+보스 Steam 2인 | 오픈 직전 최소 게이트 |
+| 5 | **Steamworks 전부** | Steam Networking · Lobby · Depot/알파 · Invite |
+| 6 | Steam **2인** 스모크 | 원격 초대·보이스·응원 |
+| 7 | **빌드 검수** 대응 | 페이지 검수 통과 후 · 실패 시 +~7일 버퍼 |
+| 8 | 빌드 메타 | Product Name, Icon, `bundleVersion` (예: `1.0.0`) |
+| 9 | Coming Soon 게시 | 트레일러·캡처. **약 2주 노출** |
 
-#### Phase 4 — D14 오픈 → M주 → T주 → 정식
+### Phase 3 — 콘텐츠 · Coming Soon play test
 
 | # | 작업 | 비고 |
 |---|------|------|
-| 15 | **Coming Soon + Playtest 동시** | D14. 친구 초대 스모크 |
-| 16 | Playtest M주 | M1–5+Boss · 핫픽스 · 텔레메트리 · 4인 1회 권장 |
-| 17 | Playtest T주 | T1–5+Boss · Tutorial·옵션·밸런스 · 법인 이전 |
-| 18 | 스크린샷 최종 + 스토어 마무리 | 실플레이·안정 빌드 (§0.5.2) |
-| 19 | 출시 QA · **법인 계정** 빌드 리뷰 · **정식 출시** | 앱피 30일·Coming Soon 14일 충족 후 |
+| 10 | 플레이어 애니메이션 | 트레일러 우선 → 인게임 |
+| 11 | SFX / BGM | 과투자 금지 |
+| 12 | 응원 확장 2개 | Cheer 문서 |
+| 13 | Tutorial 씬 | 연습·말해보기 |
+| 14 | **난이도** | **2주 노출 중** 친구 play test 피드백 |
+| 15 | UI 옵션 · DialogueUI / End.Demo | |
+| 16 | 핫픽스 | Coming Soon 기간 버그 |
 
-#### 0.5.2 스크린샷
+### Phase 4 — QA · 출시
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 17 | Steam **4인 1회** | 권장 |
+| 18 | **출시 QA** | §6 |
+| 19 | 스크린샷·스토어 최종 | |
+| 20 | **2026-09-01 정식 출시** | |
+| 21 | 텔레메트리 MVP | **출시 후 OK** |
+
+### 5.1 스크린샷 · 트레일러
 
 | 시점 | 목적 |
 |------|------|
-| §0.5 #10 (2인 Dev Build 후) | 스토어 **초안** — 플레이 가능 확인용 |
-| §0.5 #18 (Steam Playtest 후) | **최종** — capsule·헤더·실플레이 품질 |
+| Phase 1~2 | Coming Soon **초안** (애니 컷 포함) |
+| Phase 4 | **최종** capsule·헤더 |
+
+---
+
+## 6. 출시 QA (최소)
+
+출시 직전 **“이 빌드로 9/1에 내도 되나?”** E2E 통과 체크. (별도 QA팀 프로세스 아님.)
+
+- [ ] Title → Lobby → Tutorial → M 풀코스+보스 → T 풀코스+보스 → End → Title (1인 Host)
+- [ ] 동일 경로 **Steam 2인** (초대·보이스·응원·사망 리로드)
+- [ ] Steam **4인 1회** (가능 시)
+- [ ] 인게임 이탈 시 전원 타이틀 (`NetworkDesign` §12)
+- [ ] 옵션 볼륨/해상도 저장·적용
+- [ ] 스토어 페이지·빌드 Depot·버전 문자열 일치
+- [ ] (텔레메트리는 출시 후 — QA 블로커 아님)
+
+---
+
+## 7. Post-Launch (출시 후)
+
+- **텔레메트리** MVP ([`TelemetryDesign.md`](TelemetryDesign.md))
+- 관전(Spectator) 후보
+- sit / dance 이모트
+- 파티클 확장
+- (재접속·Late Join·호스트 마이그레이션 **미지원 유지**)
+- **컷씬: 영구 제외**

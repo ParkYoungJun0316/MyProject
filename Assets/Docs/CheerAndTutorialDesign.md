@@ -7,33 +7,33 @@
 
 | 태그 | 의미 |
 |------|------|
-| **[Open Must]** | Coming Soon + Playtest 오픈(D14) 전 필수 |
-| **[Open]** | 오픈·Playtest에 포함, Must는 아님 |
-| **[Release Must]** | 정식 출시 전 필수 |
+| **[Ship Must]** | **2026-09-01 정식 출시** 전 필수 |
 | **[Post-Launch]** | 정식 이후 (관전 후보 등). **컷씬은 영구 제외** |
+
+> 구 Open Must / Release Must / Playtest 이원화는 **폐기** (`ReleaseRoadmap.md`).
 
 ---
 
-## 0. Open / Playtest / Release — 범위 요약
+## 0. 정식 출시 — 범위 요약
 
-| 항목 | **[Open Must]** | **[Release Must]** |
-|------|-----------------|-------------------|
-| 씬 흐름 | Title → Lobby → **M.Stage1…5 → M.Boss** (T는 T주까지) | Title → Lobby → **Tutorial** → M1…5→M.Boss → T1…5→T.Boss → End.Demo |
-| Tutorial 씬 | **없음** (Playtest 오픈) | **필수 경로** (연습 구간은 경험자 생략 가능) |
-| **인게임 보이스챗** | **Dissonance + NGO** (4인 Global, Voice Activation) | 동일. Steam 직전 **Dissonance Steam P2P** transport 검토 |
-| CheerName | **로비 커스텀** (§3). 빈칸 = 색 기본값 | 동일 + Tutorial 연습 |
-| 이름 커스텀 | **Lobby 슬롯 인라인** + Host 확정 + `LobbyPlayerState` | Lobby 유지. `PlayerPrefs` 기억 |
-| **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시 (Start 강제 아님, §3.2) | Tutorial 말해보기로 확장 가능 |
-| **키워드 인식** | **Vosk grammar** (세션 3~4 CheerName lexicon) | Vosk + **CheerLexiconBuilder** (커스텀 G2P) |
-| 채팅 응원 | `/cheer {name}` **필수 폴백** | 동일 |
-| 스테이지 버프 | M = **Shield** (`Invincibility`), T = **SpeedUp** | 동일 |
-| 인게임 설명 | **DialogueUI** (M/T 구역별) | Tutorial(핵심 메카) + DialogueUI |
-| **멀티 연결** | **Steam P2P + Lobby** (§NetworkDesign ④) | 유지·Invite polish |
-| **목표** | Steam **Playtest** — 원격 협동 + 보이스 + 응원 + **텔레메트리** | Tutorial·밸런싱·옵션·정식 출시 |
-| **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 | — |
-| 음성 인식 정확도 | 100% 불필요. **로비 불러보기로** 사전 확인 | Tutorial 말해보기 polish |
+| 항목 | **[Ship Must]** |
+|------|-----------------|
+| 씬 흐름 | Title → Lobby → **Tutorial** → M1…5→M.Boss → T1…5→T.Boss → End.Demo |
+| Tutorial 씬 | **필수 경로** (연습 구간은 경험자 생략 가능) |
+| **인게임 보이스챗** | **Dissonance + NGO** (4인 Global, Voice Activation). Steam 시 **Dissonance Steam P2P** transport 검토 |
+| CheerName | **로비 커스텀** (§3). 빈칸 = 색 기본값 + Tutorial 연습 |
+| 이름 커스텀 | **Lobby 슬롯 인라인** + Host 확정 + `LobbyPlayerState` · `PlayerPrefs` 기억 |
+| **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시 (Start 강제 아님, §3.2) |
+| **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (커스텀 G2P) |
+| 채팅 응원 | `/cheer {name}` **필수 폴백** |
+| 스테이지 버프 | M = **Shield** (`Invincibility`), T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
+| 인게임 설명 | Tutorial(핵심 메카) + **DialogueUI** (M/T 구역별) |
+| **멀티 연결** | **Steam P2P + Lobby** (`NetworkDesign` ④) |
+| **목표** | **2026-09-01** 원격 협동 + 보이스 + 응원 + Tutorial (텔레메트리는 출시 후 OK) |
+| **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 |
+| 음성 인식 정확도 | 100% 불필요. **로비 불러보기** + Tutorial 말해보기로 확인 |
 
-> **데모 빌드/페이지 없음.** Playtest + Coming Soon → 정식. 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost, 배포=Steam (`ReleaseRoadmap.md` §0.2).
+> **데모 / Playtest 없음.** 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost, 배포=Steam (`ReleaseRoadmap.md` §3).
 
 ---
 
@@ -157,14 +157,14 @@
 `LobbyPlayerState.CheerName`이 **빈 문자열**이면 저장값으로 기본명을 넣지 않는다.  
 표시·`/cheer`·Vosk grammar·버프 대상은 **현재 `ColorIndex`의 기본 CheerName**으로 해석한다.
 
-### 3.2 어디에 설정하나 **[Open Must]**
+### 3.2 어디에 설정하나 **[Ship Must]**
 
 - **씬:** Tutorial 신설 없이 **`1.Lobby` 슬롯 UI**.
 - **UI:** 기존 슬롯 `nameText`(BERRY 등) 자리 — **로컬 슬롯만** `TMP_InputField`(또는 클릭 시 편집). 타인 슬롯은 읽기 전용.
 - **채팅 UI로 닉네임 설정하지 않음.** 인게임 `/cheer` 폴백만 채팅.
 - **타이틀에서 입력하지 않음.** (로컬 기억용 `PlayerPrefs`는 정식에서 검토)
 
-#### 로비 불러보기 (Say Test) **[Open Must]**
+#### 로비 불러보기 (Say Test) **[Ship Must]**
 
 인게임 첫 실패 고통을 줄이기 위해, **로비에서 CheerName 인식이 되는지** 확인한다.
 
@@ -202,7 +202,7 @@
 
 클라 1차 → **Host 최종**. 실패 시 슬롯값 변경 없음.
 
-#### 형식 **[Open Must]**
+#### 형식 **[Ship Must]**
 
 | # | 규칙 | 값 / 비고 |
 |---|------|-----------|
@@ -215,7 +215,7 @@
 `b_4nana` 등이 Vosk grammar/G2P에서 인식되는지 **플레이테스트 후** 숫자 금지로  Tight할 수 있다.  
 테스트 전제: 숫자 포함 이름 2~3종을 Dev Build 2인에서 외쳐 보기 → 실패율 높으면 §3.5에서 `0-9` 제거로 Docs 갱신.
 
-#### 세션·시스템 **[Open Must]**
+#### 세션·시스템 **[Ship Must]**
 
 | # | 규칙 |
 |---|------|
@@ -224,7 +224,7 @@
 | 7 | `CanStart`에 이름 유일 포함 (§3.4) |
 | 8 | 예약어 불가: `cheer`, `admin`, `host`, `server`, `system`, `bot`, `null` 등 |
 
-#### 금칙어 **[Open Must]**
+#### 금칙어 **[Ship Must]**
 
 | # | 규칙 | 범위 |
 |---|------|------|
@@ -235,7 +235,7 @@
 
 공개 영문 blocklist 파일 + Host 재검증. AI 필터 없음.
 
-#### 정식에서 강화 **[Release Must]**
+#### 정식에서 강화 **[Ship Must]**
 
 | # | 규칙 |
 |---|------|
@@ -243,7 +243,7 @@
 | 14 | Tutorial 연습 맵 + 말해보기 polish (로비 불러보기는 Open에 이미 있음) |
 | 15 | `PlayerPrefs`로 로컬 이름 기억 · 경험자 Tutorial 이름 UI 생략 (§9.3) |
 
-### 3.6 **[Release Must]** Tutorial과의 관계
+### 3.6 **[Ship Must]** Tutorial과의 관계
 
 - Open: Lobby에서 커스텀 완료. Tutorial 씬 **불필요**.
 - 정식: `2.Tutorial`은 **조작 연습 + 말해보기** 중심. CheerName 입력은 Lobby 유지 또는 Tutorial 병행(구현 시 택1, Docs 갱신).
@@ -261,7 +261,7 @@
 
 ## 4. 음성 스택 — Dissonance + Vosk
 
-### 4.1 인게임 보이스챗 — Dissonance **[Open Must]**
+### 4.1 인게임 보이스챗 — Dissonance **[Ship Must]**
 
 | 항목 | 선택 |
 |------|------|
@@ -272,9 +272,9 @@
 | 배치 | Lobby→Stage DDoL 또는 M/T 씬 `DissonanceSetup` + `NfgoCommsNetwork` |
 | NGO | 게임 상태와 **병행**. 음성은 Dissonance transport, 규칙은 NGO Host |
 
-**[Release Must] Steam 직전:** Dissonance **Steamworks P2P** 음성 transport 분리 검토 (Open은 NGO transport로 충분).
+**[Ship Must] Steam 직전:** Dissonance **Steamworks P2P** 음성 transport 분리 검토 (개발기는 NGO transport로 충분).
 
-### 4.2 키워드 인식 — Vosk **[Open Must]**
+### 4.2 키워드 인식 — Vosk **[Ship Must]**
 
 | 항목 | 내용 |
 |------|------|
@@ -286,7 +286,7 @@
 
 **Porcupine / Azure:** 상용·과금·커스텀 파이프라인 부담 → **본 프로젝트 기본 선택 아님**. Post-Launch 검토만.
 
-### 4.3 마이크 공유 **[Open Must · 코드 확정]**
+### 4.3 마이크 공유 **[Ship Must · 코드 확정]**
 
 Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **이중 오픈 금지**.
 
@@ -297,7 +297,7 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 
 **과거 사고:** 멀티에서 Dissonance + 직접 `Microphone.Start` 동시 → 버퍼 오버런·오디오 스레드 경합이 메인 스톨(0.3~0.4s)로 번짐 → NGO 스폰 Deferred/유실. **재발 금지.**
 
-### 4.4 스레드 구조 **[Open Must · 코드 확정]**
+### 4.4 스레드 구조 **[Ship Must · 코드 확정]**
 
 꿀떡은 “보이스 채팅 + 로컬 STT로 버프 트리거”라 일반 보이스 전용 게임과 다름. 인식 부하는 메인에서 빼야 함.
 
@@ -360,7 +360,7 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 
 | 데이터 | 저장 | 용도 |
 |--------|------|------|
-| **CheerName** (텍스트) | `PlayerPrefs` **[Release Must]**, Network 동기화 | UI, `/cheer`, grammar 토큰 |
+| **CheerName** (텍스트) | `PlayerPrefs` **[Ship Must]**, Network 동기화 | UI, `/cheer`, grammar 토큰 |
 | **Lexicon** (발음표) | **저장 안 함** — 런타임 생성 | Vosk `SetGrammar` / `set_grm_with_lexicon` |
 | **Vosk 모델** | `StreamingAssets` | 빌드에 포함 |
 
@@ -380,9 +380,9 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 출력: in-memory lexicon → Vosk 적용
 ```
 
-**[Open Must]:** 고정 4종 + 사전-defined lexicon 변형 (에디터 또는 코드 테이블).
+**[Ship Must]:** 고정 4종 + 사전-defined lexicon 변형 (에디터 또는 코드 테이블).
 
-**[Release Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 G2P 규칙**으로 lexicon 재생성.
+**[Ship Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 G2P 규칙**으로 lexicon 재생성.
 
 ### 5.3 네트워크 — lexicon 동기화
 
@@ -395,12 +395,12 @@ Each Client: 자기 마이크 → 감지 → SubmitCheerServerRpc
 
 lexicon **파일을 서버 DB에 모을 필요 없음**.
 
-### 5.4 로비 불러보기 **[Open Must]**
+### 5.4 로비 불러보기 **[Ship Must]**
 
 §3.2 동일. 로비에서 이름 확정 → `[TEST]` → Vosk 토큰 ✓/다시.  
 **녹음 파일을 lexicon에 저장하지 않음.**
 
-### 5.5 Tutorial 말해보기 **[Release Must]**
+### 5.5 Tutorial 말해보기 **[Ship Must]**
 
 Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만으로 충분하면 생략 가능(구현 시 Docs 갱신).  
 실패 시 철자 변경 안내·G2P 변형 추가(개발 튜닝).
@@ -424,7 +424,7 @@ Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만�
 | `keywordConfidence` | Vosk 결과 필터 (필요 시) |
 | `minVolume` / `maxVolume` | (선택) VAD 보조 |
 
-### 6.2 채팅 **[Open Must]**
+### 6.2 채팅 **[Ship Must]**
 
 - **문법:** `/cheer berry` (`/cheer {CheerName}`, 공백 1개)
 - 대소문자 무시, trim.
@@ -466,7 +466,7 @@ Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만�
 
 - **`PlayerColorType`** (또는 `NetworkPlayerSetup.colorIndex`) — `NetworkSessionData.ClientColors`와 일치.
 
-### 7.3 버프 동기화 **[Open Must]**
+### 7.3 버프 동기화 **[Ship Must]**
 
 `PlayerBuffSystem`은 로컬 MonoBehaviour → **`NetworkPlayerSetup`에 버프 NetworkVariable** 미러링 (Host Apply 후 갱신, Client HUD 일치).
 
@@ -480,7 +480,7 @@ Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만�
 
 ## 8. UI
 
-### 8.1 응원 HUD **[Open Must]**
+### 8.1 응원 HUD **[Ship Must]**
 
 - 수혜자별 **`2/3`** 또는 **`●●○`**
 - **내가 응원 중인 타겟** 하이라이트
@@ -489,22 +489,22 @@ Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만�
 
 **연동:** `TeamStatusUI` (버프 아이콘), `CheerProgressUI` (신규).
 
-### 8.2 보이스 UI **[Open]**
+### 8.2 보이스 UI (여유)
 
-- (선택) 마이크 mute, 수신 볼륨 — 최소 구현 OK. 옵션 패널 전체 = 정식.
+- (선택) 마이크 mute, 수신 볼륨 — 최소 구현 OK. 옵션 패널(마스터·BGM·SFX)은 Ship Must.
 
-### 8.3 Tutorial UI **[Release Must]**
+### 8.3 Tutorial UI **[Ship Must]**
 
 - CheerName 입력 + **말해보기 테스트**
 - Gate 카운트다운 — `TimerUI` / `OnCountdownTick` 재사용
 
-### 8.4 채팅 입력 **[Open Must]**
+### 8.4 채팅 입력 **[Ship Must]**
 
 - M/T 스테이지 HUD에 `/cheer`용 **최소 입력창** (TMP_InputField 등).
 
 ---
 
-## 9. Tutorial (**[Release Must]**)
+## 9. Tutorial (**[Ship Must]**)
 
 ### 9.1 씬 흐름
 
@@ -512,7 +512,7 @@ Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만�
 Title → Lobby → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo
 ```
 
-**[Open]:** Tutorial 없음. Lobby → M 풀코스(+Boss). T는 Playtest T주.
+정식 경로에 Tutorial **포함**. 경험자는 연습 생략 가능 (§9.3).
 
 ### 9.2 Tutorial 역할
 
@@ -550,13 +550,13 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 ## 11. 구현 순서 (Phase)
 
-> 전체 네트워크 단계: `ReleaseRoadmap.md` §0.2. **Playtest/오픈 게이트 = Steam P2P ④ + 응원·보이스.**
+> 전체 네트워크 단계: `ReleaseRoadmap.md` §3. **출시 게이트 = Steam P2P ④ + 응원·보이스 + Ship Must 콘텐츠.**
 
-### Phase 0 — 설계 **[Open]**
+### Phase 0 — 설계 (완료)
 
 - 본 문서 + NetworkDesign 확정.
 
-### Phase 1 — 응원 코어 (채팅만) **[Open Must]**
+### Phase 1 — 응원 코어 (채팅만) **[Ship Must]**
 
 | 작업 | 내용 |
 |------|------|
@@ -567,7 +567,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 **테스트:** ParrelSync **2인** — 채팅만 버프·쿨·타임아웃.
 
-### Phase 2 — Dissonance **[Open Must]**
+### Phase 2 — Dissonance **[Ship Must]**
 
 | 작업 | 내용 |
 |------|------|
@@ -576,7 +576,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 **테스트:** Dev Build ② localhost **2인** — 보이스 들림 (응원 전).
 
-### Phase 3 — Vosk **[Open Must]**
+### Phase 3 — Vosk **[Ship Must]**
 
 | 작업 | 내용 |
 |------|------|
@@ -585,12 +585,12 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 **테스트:** Dev Build ② **2인** — `"berry go go"` + `/cheer` 중복 방지.
 
-### Phase 4 — Development Build 중간 게이트 **[Open]**
+### Phase 4 — Development Build 중간 게이트
 
 - localhost **2인**: NGO Must + 보이스 + 응원 **1회** 클리어, 사망 리로드.
-- **Playtest 오픈 아님** — Steam 전 빌드 버그 제거용.
+- 출시 판정 아님 — Steam 전 빌드 버그 제거용.
 
-### Phase 5 — Steam P2P + Lobby + Depot **[Open Must]**
+### Phase 5 — Steam P2P + Lobby + Depot **[Ship Must]**
 
 | 작업 | 내용 |
 |------|------|
@@ -598,14 +598,14 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 | NGO | Host/Client Steam Join |
 | Dissonance | Steam 세션 위 보이스 |
 
-**테스트 (2PC):** Steam **2인** 원격 — Title→Lobby→M→T + 보이스 + 응원. **Playtest 오픈 최소 게이트.**
+**테스트 (2PC):** Steam **2인** 원격 — Title→Lobby→M→T + 보이스 + 응원. **출시 최소 게이트.**
 
-### Phase 6 — Steam 4인 검증 **[Open 권장]**
+### Phase 6 — Steam 4인 검증 (출시 전 권장)
 
-- 친구/플레이테스트 **4인 1회** — 3표 응원·4보이스·4Gate.
-- **2인 OK ≠ 4인 보장** (`ReleaseRoadmap.md` §0.2.1).
+- 친구 **4인 1회** — 3표 응원·4보이스·4Gate.
+- **2인 OK ≠ 4인 보장** (`ReleaseRoadmap.md` §3.1).
 
-### Phase 7 — Tutorial · 커스텀 **[Release Must]**
+### Phase 7 — Tutorial · 커스텀 **[Ship Must]**
 
 - CheerName UI, G2P lexicon, 말해보기, Tutorial 씬.
 
@@ -618,15 +618,15 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 | 1 | ParrelSync | 2 | `/cheer` 규칙 |
 | 2~3 | Dev Build ② | **2** | 보이스 + Vosk |
 | 4 | Dev Build ② | **2** | NGO+응원 중간 게이트 |
-| 5 | **Steam P2P ④** | **2 (Must)** | **Playtest/오픈 게이트** — 원격+보이스+응원 |
-| 6 | Steam P2P | **4 (권장)** | 3표·4보이스·홍보 신뢰도 |
-| 7 | Dev/Steam | — | 커스텀 이름 **[Release Must]** |
+| 5 | **Steam P2P ④** | **2 (Must)** | **출시 게이트** — 원격+보이스+응원 |
+| 6 | Steam P2P | **4 (권장)** | 3표·4보이스·신뢰도 |
+| 7 | Dev/Steam | — | Tutorial · 커스텀 이름 **[Ship Must]** |
 
-### Open Must 시나리오
+### Ship Must 시나리오
 
-**Steam 2인 (2PC — Playtest 오픈 게이트):**
+**Steam 2인 (2PC — 출시 최소 게이트):**
 
-- [ ] Steam Lobby Join → Lobby → M 풀코스(+Boss) (T는 T주)
+- [ ] Steam Lobby Join → Lobby → Tutorial → M 풀코스(+Boss) → T 풀코스(+Boss)
 - [ ] Dissonance 보이스 양방향
 - [ ] 대화 중 `"berry go go"` → Shield/SpeedUp (2인: **1표**면 발동)
 - [ ] `/cheer berry` 폴백
@@ -647,7 +647,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 ## 13. 구현 체크리스트
 
-### **[Open Must]**
+### **[Ship Must]**
 
 - [ ] `CheerService` + `SubmitCheerServerRpc`
 - [ ] `/cheer {세션 CheerName}` (빈칸→색 기본값)
@@ -657,25 +657,20 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님)
 - [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
 - [ ] **Vosk** grammar (세션 3~4명) + `CheerKeywordEngine`
-- [ ] `CheerLexiconBuilder` (세션 lexicon / G2P)
+- [ ] `CheerLexiconBuilder` (세션 lexicon / G2P) + polish
 - [ ] Dissonance ↔ Vosk 마이크 공유
-- [ ] M=Invincibility, T=SpeedUp + NetworkPlayerSetup 버프 미러링
+- [ ] M=Invincibility, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
 - [ ] `CheerProgressUI` + `TeamStatusUI`
 - [ ] 채팅 입력 UI
 - [ ] 솔로 `/cheer` + 로컬 CheerService
 - [ ] **숫자 포함 이름** — 로비 불러보기로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
-- [ ] Dev Build ② **2인** (중간) — 로비 이름+불러보기+인게임 응원
-- [ ] **Steam P2P ④ 2인** (2PC — **Playtest/오픈 게이트**)
-- [ ] Steam **4인 1회** (권장)
-
-### **[Release Must]**
-
-- [ ] `2.Tutorial` + Lobby → Tutorial (조작 연습; 말해보기는 로비와 중복 시 간소화)
-- [ ] CheerName `PlayerPrefs` 기억 + 경험자 이름 UI 생략
-- [ ] `CheerLexiconBuilder` G2P polish + 발음 유사 검증
-- [ ] TutorialCompleted 스킵 + Gate → M.Stage1
+- [ ] `2.Tutorial` + Lobby → Tutorial (조작·말해보기; 경험자 생략 OK)
+- [ ] CheerName `PlayerPrefs` 기억 + TutorialCompleted 스킵 + Gate → M.Stage1
 - [ ] 연습 구역 (Stealth / Pad / Cheer)
-- [ ] (선택) Dissonance Steam P2P 음성 transport **[Release Must]**
+- [ ] Dev Build ② **2인** (중간) — 로비 이름+불러보기+인게임 응원
+- [ ] **Steam P2P ④ 2인** (2PC — **출시 게이트**)
+- [ ] Steam **4인 1회** (권장)
+- [ ] (선택) Dissonance Steam P2P 음성 transport
 
 ---
 
@@ -704,7 +699,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 A. **Warn.** 메인 히치로 마이크를 제때 못 비울 때. §4.5 — 1순위 히치, 2순위 청크. 코드 수정은 Docs 정리 후.
 
 **Q. Discord로 팀 대화하면 되지 않나?**  
-A. **아니오.** Open Must = **인게임 보이스 (Dissonance)**. Discord 링크는 커뮤니티용만.
+A. **아니오.** Ship Must = **인게임 보이스 (Dissonance)**. Discord 링크는 커뮤니티용만.
 
 **Q. 음성을 서버로 보내서 인식하나?**  
 A. **아니오.** 키워드는 **각 Client 로컬 Vosk**. 서버는 RPC·집계만. 팀 대화는 **Dissonance P2P**.
@@ -721,23 +716,23 @@ A. **아니오.** 텍스트 → G2P → 런타임 lexicon. 말해보기 = **검�
 **Q. Porcupine은?**  
 A. 상용·커스텀 파이프라인 부담. **Vosk grammar + G2P**가 기본.
 
-**Q. ParrelSync / Dev Build만으로 Playtest 오픈?**  
-A. **아니오.** **Open Must** = Steam P2P 2인 + 보이스 + 응원. Dev Build ②는 **중간** 게이트.
+**Q. ParrelSync / Dev Build만으로 정식 출시?**  
+A. **아니오.** **Ship Must** = Steam P2P 2인 + 보이스 + 응원 + Tutorial 등. Dev Build ②는 **중간** 게이트.
 
 **Q. Steam P2P 테스트 2인만 가능한데?**  
-A. **2PC면 Steam 2인**이 일상 QA·**Playtest 오픈 최소 게이트**. **4인 1회**는 친구 플레이테스트 **권장** (`ReleaseRoadmap.md` §0.2.1).
+A. **2PC면 Steam 2인**이 일상 QA·**출시 최소 게이트**. **4인 1회**는 친구 **권장** (`ReleaseRoadmap.md` §3.1).
 
 **Q. 2인 OK면 4인도 OK?**  
 A. **Transport·연결·1표 응원**은 2인에서 검증. **3표 집계·4보이스·4Gate**는 4인 전용 — **100% 보장 아님**.
 
 **Q. Steam P2P 전에 응원 넣나?**  
-A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P2P **2인** → (권장) Steam 4인 → Playtest 오픈.
+A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P2P **2인** → (권장) Steam 4인 → **9/1 정식**.
 
 **Q. 솔로 `/cheer`?**  
 A. `/cheer {자기 CheerName}`. 빈칸이면 색 기본값 (`berry` 등).
 
 **Q. CheerName은 로비에서? Tutorial에서?**  
-A. **Open Must = 로비 슬롯 인라인 + 불러보기.** Tutorial 조작 연습은 **Release Must**. §3.2·§3.6.
+A. **로비 슬롯 인라인 + 불러보기**가 기본. Tutorial은 조작·말해보기 연습. §3.2·§3.6.
 
 **Q. 로비 불러보기 실패하면 Start 막나?**  
 A. **아니오.** 강제 아님. 이름 수정 안내만. §3.2.

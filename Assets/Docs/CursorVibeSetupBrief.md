@@ -17,7 +17,7 @@
 - 네트워크: **Netcode for GameObjects 2.9**
 - **Steamworks 미연동.** Transport는 추후 Steam Networking 교체 예정  
   → Facepunch / Steamworks.NET / Mirror / Photon / Relay **임의 제안·단정 금지**. 미정이면 **질문**
-- 카메라: **TopDownCamera** (Cinemachine을 카메라 SSOT로 취급 금지)
+- 카메라: **ThirdPersonCamera** (Cinemachine을 카메라 SSOT로 취급 금지)
 
 ### 테스트 환경 (중요)
 
