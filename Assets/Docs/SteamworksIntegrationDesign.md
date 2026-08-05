@@ -1,8 +1,9 @@
-# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료)
+# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료)
 
 > **상태: 전략적 결정 11개(§1~§11) 확정 완료 + 코드 구현(트랙 1 부트스트랩 / 트랙 2 Transport / 트랙 3 Lobby) 및 실사용 스모크 테스트(Host↔Client 접속, 인게임 진입, Invite Overlay) 전부 통과 (2026-08-04).**
+> **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05):** String Table + `LocalizeStringEvent` 패턴 검증 완료, Locale Fallback(en) 스모크 테스트 통과. 자세한 내용은 맨 아래 "트랙 4" 절 참고. 남은 건 실번역 11개 언어 입력 + 나머지 Ship Must UI 복제.
 > §4(연결 API 시그니처)는 실제 구현된 `StartHostSteam(string roomCode = "")` / `StartClientSteam(SteamId)`로 이미 확정 사용 중 — 문서 §4 텍스트만 아직 "미정"으로 남아있어 정리 필요(급하지 않음).
-> **다음 작업은 맨 아래 "트랙 1~3 전체 완료" 절의 후속 작업 목록(다국어 구현 / 실제 Steam Depot 업로드) 참고.**
+> **다음 작업은 맨 아래 "트랙 4" 절의 후속 작업 목록(11개 언어 실번역 / 나머지 UI 복제) 및 "트랙 1~3 전체 완료" 절의 후속 작업 목록(실제 Steam Depot 업로드) 참고.**
 > 확정된 내용은 `NetworkDesign.md` §4.2(Steam P2P + Lobby) / 신규 로컬라이제이션 절로 승격 예정(아직 미승격).
 >
 > 배경: `ReleaseRoadmap.md` §4 순위 1 "Steamworks (전부)" — 출시 하드 블로커.
@@ -134,7 +135,7 @@
 
 | 방법 | 상태 |
 |------|------|
-| `SteamApps.GetCurrentGameLanguage()` (정식) | ✅ 확정 |
+| `SteamApps.GameLanguage` (정식 — 문서 초안엔 `GetCurrentGameLanguage()`로 잘못 적혀 있었으나, 실제 API 리플렉션 확인 결과 이 이름이 맞음. `GameLocalizationBootstrap.cs`에 이 이름으로 이미 구현됨) | ✅ 확정 |
 | `Application.systemLanguage` (로컬 폴백) | ✅ 확정 |
 | Steam 런치 옵션 `-language` (파트너 백엔드 설정) | 사용 안 함 (API 방식으로 대체) |
 
@@ -189,8 +190,39 @@ Steam 부트스트랩(트랙 1) · Transport 이중화(트랙 2) · Steam Lobby(
 
 **다음 에이전트가 시작할 수 있는 후속 작업 (우선순위 순):**
 
-1. **다국어(Localization) 구현** — §9~11 확정 사항 기준. `com.unity.localization` 패키지(이미 설치돼 있음)로 String Table + 키 기반 텍스트 패턴 구축. **`DialogueUI`부터 파일럿** 진행 후 나머지 Ship Must UI(타이틀·로비·HP·카운트다운·응원 HUD·채팅·옵션)에 동일 패턴 복제. 코어 12개 언어(§10) 대상.
+1. **다국어(Localization) 구현 — 파일럿 완료, 계속 진행 필요** (아래 "트랙 4" 절 참고). `DialogueUI` 파일럿(4줄)은 en 텍스트 + 이벤트 배선까지 끝났고, 나머지 11개 언어 실번역 + 나머지 Ship Must UI 복제가 남음.
 2. **실제 Steam Depot 업로드 준비** — 지금까지는 로컬 P2P/Lobby 코드 검증만 했고, 실제 Steam 백엔드(SteamPipe/ContentBuilder)로 빌드를 업로드해본 적은 없음. App Admin에서 단일 Depot(Windows, §6 확정) 설정 + `steamcmd`/ContentBuilder 스크립트(VDF) 작성 + 실제 업로드 1회 테스트가 필요. 이건 Steamworks 파트너 사이트 관리자 권한이 필요한 작업이라 사용자와 함께 진행해야 함.
 3. **§4 연결 API 세부 이름 문서 반영** — 코드 상 이미 `StartHostSteam(string roomCode = "")`/`StartClientSteam(SteamId)`로 확정되어 쓰이고 있음. 이 문서 §4 "미정" 상태를 실제 시그니처로 업데이트할 것(사소한 문서 정리, 급하지 않음).
 
-> **코드 참고 파일:** `Assets/Scripts/Network/SteamManager.cs`(Steam 부트스트랩), `Assets/Scripts/Network/SteamLobbyManager.cs`(Lobby 생성/참여/마스킹/§8 Owner 이전 무시/Invite Overlay), `Assets/Scripts/Network/NetworkManagerSetup.cs`(`StartHostSteam`/`StartClientSteam`/`IsSteamPath`/`Shutdown`), `Assets/Scripts/UI/TitleMenuController.cs`(`UseLocalNetworkPath` 로컬·Steam 경로 분기, 초대 수락 자동 참여), `Assets/Scripts/UI/LobbyMenuController.cs`(`OnClickSteamInvite`/`RefreshRoomCode` 마스킹 분기).
+> **코드 참고 파일 (트랙 1~3):** `Assets/Scripts/Network/SteamManager.cs`(Steam 부트스트랩), `Assets/Scripts/Network/SteamLobbyManager.cs`(Lobby 생성/참여/마스킹/§8 Owner 이전 무시/Invite Overlay), `Assets/Scripts/Network/NetworkManagerSetup.cs`(`StartHostSteam`/`StartClientSteam`/`IsSteamPath`/`Shutdown`/`UseLocalNetworkPath`), `Assets/Scripts/UI/TitleMenuController.cs`(`UseLocalNetworkPath` 참조로 로컬·Steam 경로 분기, 초대 수락 자동 참여), `Assets/Scripts/UI/LobbyMenuController.cs`(`OnClickSteamInvite`/`RefreshRoomCode` 마스킹 분기).
+
+---
+
+## 트랙 4: 다국어(Localization) 파일럿 — DialogueUI (2026-08-05)
+
+**목표:** §9~11 확정 사항 기준으로 `com.unity.localization`(String Table + 키 기반 텍스트) 패턴을 `DialogueUI` 하나에 먼저 검증. 검증되면 나머지 Ship Must UI에 동일 패턴 복제.
+
+### 완료된 작업
+
+1. **공용 경로 분기 정리** — `NetworkManagerSetup`에 `public static bool UseLocalNetworkPath => Application.isEditor || Debug.isDebugBuild;` 신설. `TitleMenuController`의 중복 private 프로퍼티 제거하고 이걸 참조하도록 변경. (Steam/로컬 분기 로직을 한 곳으로 통합 — 로컬라이제이션 부트스트랩도 이 플래그로 Steam API 사용 여부를 결정함.)
+2. **`GameLocalizationBootstrap.cs` 신규 작성** (`Assets/Scripts/Localization/`) — 씬 최초 진입 시 1회, `LocalizationSettings.InitializationOperation` 대기 후:
+   - 로컬 경로(`UseLocalNetworkPath == true`): `Application.systemLanguage` → Locale 코드 매핑 후 적용.
+   - 정식 경로: `SteamApps.GameLanguage`(§9 참고 — API명 정정됨) → Locale 코드 매핑, 실패 시 `systemLanguage`로 폴백.
+   - 매핑 실패/Locale 없음 시 최종적으로 `en`으로 폴백.
+   - **미검증 항목**: 지금까지는 에디터(`systemLanguage` 경로)에서만 테스트함. 실제 Steam 초기화된 빌드에서 `SteamApps.GameLanguage` 분기가 정상 동작하는지는 아직 스모크 테스트 안 됨 — 다음 에이전트가 Steam 빌드로 한번 확인할 것.
+3. **Editor 설정 (사용자 작업)** — Project Settings > Localization에 로케일 13개(en 포함, §10 코어 12개 + en) 전부 등록 완료. `es-419`(Spanish Latin America)는 표준 피커에 안 떠서 "Add Custom Locale"로 직접 추가.
+4. **String Table Collection `Dialogue` 생성 + 파일럿 4줄 연결** — `M.Stage1` 씬 `Dialogue_Panel` 하위 `Text (TMP) (1)~(4)`(사용자가 미리 만들어 둔 키 `M.Stage1.Intro.Line1~4`, `en` 값은 이미 채워져 있었음) 각각에 대해:
+   - `LocalizeStringEvent.SetTable("Dialogue")` / `SetEntry(key)`로 String Reference 연결.
+   - `OnUpdateString(string)` 이벤트 → 해당 오브젝트 자신의 `TextMeshProUGUI.text` 세터를 Dynamic String 방식으로 바인딩.
+   - (에디터 UI에서 "TMP_Text → text"가 안 보이는 문제로 막혀서, 사용자 명시적 요청으로 이 1건은 MCP `execute_code`로 직접 배선함 — 리플렉션으로 `PropertyInfo.GetSetMethod()` + `Delegate.CreateDelegate` + `UnityEventTools.AddPersistentListener`. 실수로 중복 키(`M.Stage1.Dialogue.Line1~4`)를 새로 만들었다가, 기존 `Intro.Line1~4` 키에 이미 en 텍스트가 있는 걸 뒤늦게 발견하고 정정 + 중복 키 삭제함.)
+5. **Locale Fallback 설정 (사용자 작업)** — `en`을 제외한 12개 Locale 각각에 `Fallback Locale` 메타데이터 = `en` 추가.
+6. **⚠️ 함정 발견 — "Use Fallback" 체크박스가 2개 있음** — Project Settings > Localization 화면에 `Asset Database`용 `Use Fallback`과 `String Database`용 `Use Fallback`이 서로 다른 섹션에 각각 존재. 텍스트(String Table) 폴백에는 **`String Database` 쪽**을 켜야 하는데, 모양이 똑같아서 처음엔 `Asset Database` 쪽만 켜고 한참 헤맴(`LocalizationSettings.StringDatabase.UseFallback`이 계속 `false`로 남아있었음). 프로젝트의 `LocalizationSettings` 에셋 실제 파일명은 `Assets/StringTableCollection.asset`(이름이 헷갈리니 참고).
+7. **스모크 테스트 통과 (2026-08-05, 사용자 확인)** — 시스템 언어 `ko`(한국어) 환경에서 Play 모드 진입 → `ko` 테이블엔 아직 값이 없지만 `en`으로 폴백되어 대사 4줄이 정상 텍스트로 표시됨 (이전엔 `"No translation found for '...' in Dialogue"` 메시지가 그대로 UI에 노출되던 상태였음).
+
+### 남은 작업 (다음 에이전트)
+
+- **`ko` 등 11개 언어 실번역 입력** — 현재 `Dialogue` 테이블은 `en` 값만 채워져 있고 나머지 11개 언어는 전부 비어 있음(폴백으로 영어가 대신 보이는 중). 실제 번역 텍스트를 `M.Stage1.Intro.Line1~4` 각 언어 컬럼에 채워 넣을 것.
+- **나머지 Ship Must UI에 동일 패턴 복제** — 타이틀·로비·HP·카운트다운·응원 HUD·채팅·옵션 (`ReleaseRoadmap.md` §2.1 목록). `DialogueUI`에서 검증된 패턴(String Table 키 + `LocalizeStringEvent` + Dynamic String 바인딩) 그대로 반복.
+- **Steam 빌드에서 `SteamApps.GameLanguage` 분기 스모크 테스트** — 위 "미검증 항목" 참고.
+
+> **코드 참고 파일 (트랙 4):** `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`(부트스트랩), `Assets/Scripts/Network/NetworkManagerSetup.cs`의 `UseLocalNetworkPath`, `Assets/StringTableCollection.asset`(프로젝트 Localization Settings), `Dialogue` String Table Collection(`M.Stage1.Intro.Line1~4` 키).

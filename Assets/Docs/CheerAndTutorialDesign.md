@@ -224,6 +224,11 @@
 | 7 | `CanStart`에 이름 유일 포함 (§3.4) |
 | 8 | 예약어 불가: `cheer`, `admin`, `host`, `server`, `system`, `bot`, `null` 등 |
 
+> **알려진 구현 갭 (2026-08-05 발견, 의도적으로 미수정 — 재조사·재제안 금지):**
+> `LobbyNetworkManager.SetCheerNameServerRpc`의 "taken" 중복 검사와 `HasDuplicateColors()`는 **현재 점유된 슬롯끼리만** 비교함(`_slots` 순회). 미점유 색(아무도 안 앉은 색)의 기본 이름(`DefaultCheerNames[ci]`)은 비교 대상에 없음.
+> 예: 1인 플레이(Blue)가 커스텀 이름을 `sook`(Green 기본값)으로 확정해도 통과됨 → Start 시 세션 배열에 `sook`이 2번 들어감(`GameSession.SetSessionCheerNames`). `GameSession.GetSessionColorIndex`는 선형 탐색 첫 매치 반환이라 **colorIndex가 낮은 쪽이 항상 이김** — 반대 경우(낮은 색이 높은 색 기본값을 뺏음)엔 실제 응원 오작동으로 이어질 수 있음.
+> 이 갭은 규칙 #5(문서상 의도)와 실제 구현이 다르다는 걸 확인한 것이며, **사용자가 "지금처럼 점유 슬롯만 비교"로 유지하기로 명시적으로 결정함(2026-08-05)**. 다음 세션에서 이 항목을 다시 "버그"로 재보고하지 말 것 — 재논의 필요 시 사용자가 먼저 꺼낼 것.
+
 #### 금칙어 **[Ship Must]**
 
 | # | 규칙 | 범위 |
@@ -413,6 +418,34 @@ grammar JSON: [원래 이름, 대체 단어..., "[unk]"]
 `CheerLexiconBuilder.VariantMap`(코드 테이블)에 반영 완료. `ResolveVariant()`로 인식된 대체 단어를 원래 CheerName으로 되돌림.
 
 **[Ship Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 매핑 테이블**로 grammar 재생성(§5.3 그대로).
+
+**C. 커스텀 이름 발음 변형 — 혼합 방식 [설계 확정 2026-08-05, 구현 미착수]**
+
+B는 고정 4종에만 적용됨(사람이 직접 `words.txt`를 찾아서 표에 넣는 수동 방식이라 자유 입력 이름엔 자동 적용 불가). 커스텀 CheerName(`sahur` 등)까지 대체 발음을 지원하려면 아래 **혼합 방식**으로 확장하기로 확정:
+
+```
+1. 플레이어가 CheerName 확정 시도 (예: "sahur")
+2. IsKnownWord(사전 검증, §5.2 A) → 사전에 없으면:
+   a. 발음 근사 알고리즘(Metaphone/Soundex 계열 — 텍스트 스펠링 기반, Vosk G2P 아님)으로
+      모델 words.txt 전체에서 발음이 비슷한 실제 사전 단어 N개 후보 산출
+   b. 로비 UI에 후보 리스트 표시 → 플레이어가 그중 선택
+   c. 플레이어가 후보 밖 단어를 직접 입력해도 허용 — 단 그 단어도 IsKnownWord 통과해야 함
+      (Vosk grammar는 사전에 없는 단어를 원리상 출력 불가 — 어떤 방식이든 이 제약은 못 피함)
+3. 최종 선택된 "인식 대상 단어" → CheerName과 별도로 저장 (커스텀 VariantMap 엔트리로 취급)
+4. 인식되면 §5.2 B의 ResolveVariant()와 동일한 방식으로 원래 CheerName에 매핑
+```
+
+**미착수 이유:** phonetic 유사도 인덱싱(30만+ 단어) + 후보 선택 UI가 필요해 B(표 하나 추가)보다 작업량이 큼. 다음 세션에서 이어서 설계·구현.
+
+**미착수 시 폴백:** 커스텀 이름은 A(경고)만 적용 — 대체 발음 없이 원래 이름 그대로 grammar에 들어감(사전에 있으면 정상 인식, 없으면 인식 어려움 안내만).
+
+**실측 참고 (2026-08-05, `graph/words.txt` 직접 확인):**
+| 예시 이름 | 사전 등재 |
+|---|---|
+| `berry`/`guma`/`sook`/`jun`/`jack`/`saha`/`sahar`/`sahara` | ✅ 있음 |
+| `hobak`/`sahur` | ❌ 없음 |
+
+→ 흔한 영어 단어·이름은 대부분 이미 사전에 있음(모델이 30만+ 단어). 문제는 조어·외래어 계열만.
 
 ### 5.3 네트워크 — grammar 동기화
 
@@ -687,7 +720,9 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님)
 - [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
 - [ ] **Vosk** grammar (세션 3~4명) + `CheerKeywordEngine`
-- [ ] `CheerLexiconBuilder` — §5.2 A(사전 검증) + B(발음 변형 대체 단어 매핑) + polish
+- [x] `CheerLexiconBuilder` — §5.2 A(사전 검증) 구현 완료, 동작 확인됨 (2026-08-05)
+- [x] `CheerLexiconBuilder` — §5.2 B(고정 4종 발음 변형 대체 단어 매핑) 구현 완료 — 실제 인식 플레이테스트는 아직
+- [ ] `CheerLexiconBuilder` — §5.2 C(커스텀 이름 혼합 방식 대체 발음) — 설계만 확정, 구현 안 함
 - [ ] Dissonance ↔ Vosk 마이크 공유
 - [ ] M=Invincibility, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
 - [ ] `CheerProgressUI` + `TeamStatusUI`
@@ -745,6 +780,15 @@ A. **아니오 (2026-08-04 확정).** `vosk_recognizer_set_grm_with_lexicon`은 
 
 **Q. Porcupine은?**  
 A. 상용·커스텀 파이프라인 부담. **Vosk grammar + §5.2 사전 검증/대체 단어**가 기본.
+
+**Q. `jun`, `jack`처럼 흔한 이름도 경고 뜨나?**  
+A. **아니오.** 모델(`vosk-model-en-us-0.22-lgraph`)이 30만+ 단어라 흔한 영어 이름·단어는 대부분 이미 사전에 있음. `hobak`, `sahur`처럼 조어·외래어만 경고 대상.
+
+**Q. 사전 검증(A)만 빼고 대체 발음(B/C)만 쓰면 사전에 없는 단어도 인식되나?**  
+A. **아니오.** Vosk grammar 모드는 모델 사전에 없는 단어를 원리상 출력 불가 — 이건 UI 경고를 끄고 끌 수 있는 옵션이 아니라 기술적 제약. 대체 발음도 결국 "사전에 있는 다른 단어"로 바꿔치기하는 것일 뿐, 원래 이름 자체가 인식되는 게 아님.
+
+**Q. 커스텀 이름(`sahur` 등)도 §5.2 B처럼 자동으로 대체 발음이 붙나?**  
+A. **아니오, 아직.** B는 고정 4종만(수동 표). 커스텀 이름까지 다루려면 §5.2 C(혼합 방식 — 자동 후보 제안 + 플레이어 선택/직접입력)로 확장하기로 설계만 확정, 구현은 다음 세션.
 
 **Q. ParrelSync / Dev Build만으로 정식 출시?**  
 A. **아니오.** **Ship Must** = Steam P2P 2인 + 보이스 + 응원 + Tutorial 등. Dev Build ②는 **중간** 게이트.

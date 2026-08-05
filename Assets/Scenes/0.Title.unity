@@ -1336,6 +1336,7 @@ GameObject:
   - component: {fileID: 794936813}
   - component: {fileID: 794936814}
   - component: {fileID: 794936815}
+  - component: {fileID: 794936816}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1555,6 +1556,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SteamManager
   appId: 5029890
+--- !u!114 &794936816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794936804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14317687e934a8f4994a1378928b6e33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameLocalizationBootstrap
 --- !u!1 &817844834
 GameObject:
   m_ObjectHideFlags: 0
@@ -3232,7 +3245,7 @@ MonoBehaviour:
   sceneSequence:
   - 0.Title
   - 1.Lobby
-  - T.Stage4
+  - M.Stage1
   - T.Stage2
   - T.Stage3
   - T.Stage5
