@@ -7,7 +7,9 @@ using UnityEngine;
 ///
 /// [실측 — 2026-08, 모델 words.txt 직접 확인 (CheerAndTutorialDesign.md §5.2)]
 /// berry / guma / sook : 모델 사전에 이미 등재됨 → 변형 불필요 (과거 "사전 미포함" 주석은 오기, 실측으로 정정).
-/// hobak               : 모델 사전에 없음 → §5.2 B 변형 단어 "hobo" 추가 (VariantMap 참고).
+/// hobak               : 모델 사전에 없음 → §5.2 B 변형 단어 "dan" 추가 (VariantMap 참고).
+///   실제 발음 원형은 한국어 "단호박"(danhobak) — 앞 음절 "dan"이 모델 사전에 실제 등재된 단어라
+///   "hobo"(순수 영어 G2P 근사, 실발화와 무관) 대신 채택 (2026-08-05).
 ///
 /// [테스트 키워드 세트 — 인식률 비교용]
 /// Set1 (현재): worcestershire / colonel / anemone / mischievous
@@ -29,8 +31,9 @@ public static class CheerLexiconBuilder
     /// </summary>
     static readonly Dictionary<string, string[]> VariantMap = new()
     {
-        // hobak(HH OW B AE K) 사전 미등재 → hobo(HH OW B OW) 앞 3음소 공유로 근사.
-        { "hobak", new[] { "hobo" } },
+        // hobak 사전 미등재 → 실제 발화 원형 "단호박"(danhobak)의 앞 음절 "dan"이
+        // 모델 사전에 실제 등재된 단어(words.txt: dan)라 대체 단어로 채택 (2026-08-05).
+        { "hobak", new[] { "dan" } },
     };
 
     /// <summary>
@@ -53,7 +56,7 @@ public static class CheerLexiconBuilder
 
     /// <summary>
     /// 데모 기본 4종 grammar JSON (커스텀 미설정 시 폴백용).
-    /// 결과 예: ["berry","guma","sook","hobak","hobo","[unk]"]
+    /// 결과 예: ["berry","guma","sook","hobak","dan","[unk]"]
     ///
     /// 커스텀 이름이 있을 때는 BuildGrammarJson(세션이름[]) 을 사용할 것.
     /// </summary>

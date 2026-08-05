@@ -574,7 +574,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         {
             if (string.IsNullOrEmpty(rawWord) || rawWord == "[unk]") continue;
 
-            // §5.2 B — 대체 단어(예: hobo)로 인식됐으면 원래 CheerName(hobak)으로 되돌림.
+            // §5.2 B — 대체 단어(예: dan)로 인식됐으면 원래 CheerName(hobak)으로 되돌림.
             string word = CheerLexiconBuilder.ResolveVariant(rawWord);
 
             if (_lastDetected.TryGetValue(word, out float lastTime) &&

@@ -413,9 +413,11 @@ grammar JSON: [원래 이름, 대체 단어..., "[unk]"]
 | `berry` | ✅ 있음 | 불필요 |
 | `guma`  | ✅ 있음 *(과거 "미포함" 기록은 오기 — 실측으로 정정)* | 불필요 |
 | `sook`  | ✅ 있음 *(과거 "미포함" 기록은 오기 — 실측으로 정정)* | 불필요 |
-| `hobak` | ❌ 없음 | `hobo` (앞 3음소 HH OW B 공유, 근사) |
+| `hobak` | ❌ 없음 | `dan` (실발화 원형 "단호박"(danhobak)의 앞 음절, 사전 등재 확인 — 2026-08-05, `hobo` 근사 대체) |
 
 `CheerLexiconBuilder.VariantMap`(코드 테이블)에 반영 완료. `ResolveVariant()`로 인식된 대체 단어를 원래 CheerName으로 되돌림.
+
+> **2026-08-05 변경 배경:** 기존 `hobo`는 "hobak"을 순수 영어 철자 G2P로 근사(HH OW B 공유)한 것이라 실제 발화와 무관했음. `hobak`(호박)의 실제 구어 원형은 한국어 "단호박"(danhobak, 단맛 호박)이고, 그 앞 음절 "dan"이 모델 `words.txt`에 실제 등재된 단어로 확인됨 → 실발화 기반 대체 단어로 교체. **트레이드오프:** `dan`은 영어에서 매우 흔한 인명·단어라 인게임 자유 대화(Dissonance) 중 우연히 언급되면 오탐(false positive) 응원 소지가 `hobo`보다 높을 수 있음 — 플레이테스트로 재확인 필요.
 
 **[Ship Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 매핑 테이블**로 grammar 재생성(§5.3 그대로).
 
