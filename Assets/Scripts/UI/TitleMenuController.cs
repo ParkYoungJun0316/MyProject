@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Steamworks;
 using TMPro;
@@ -80,7 +81,20 @@ public class TitleMenuController : MonoBehaviour
     /// </summary>
     static bool UseLocalNetworkPath => NetworkManagerSetup.UseLocalNetworkPath;
 
+    /// <summary>
+    /// 게임이 꺼져 있다가 Steam Invite 수락으로 새로 실행된 경우, 앱 전체 수명에서 단 한 번만
+    /// 커맨드라인 <c>+connect_lobby</c> 처리를 시도하기 위한 플래그.
+    /// 타이틀 복귀(TitleReturnFlow)로 이 씬이 다시 로드되어도 재시도하지 않는다 — 그 시점엔
+    /// 이미 최초 진입에서 처리(성공/실패)가 끝난 상태이므로 중복 Join 시도를 막는다.
+    /// </summary>
+    static bool s_launchLobbyArgsHandled;
+
     // ── Unity 콜백 ────────────────────────────────────────────────
+
+    void Start()
+    {
+        if (!UseLocalNetworkPath) TryAutoJoinFromLaunchArgs();
+    }
 
     void OnEnable()
     {
@@ -94,6 +108,37 @@ public class TitleMenuController : MonoBehaviour
             SteamLobbyManager.Instance.OnInviteAccepted -= OnSteamInviteAccepted;
     }
 
+    /// <summary>
+    /// 게임이 꺼져 있는 상태에서 Steam Lobby Invite를 수락하면, Steam이 게임을 실행하며
+    /// <c>+connect_lobby &lt;64bit lobbyId&gt;</c>를 커맨드라인 인자로 넘긴다(Steamworks 공식 문서).
+    /// 이미 실행 중인 상태에서 수락하는 경로(<see cref="OnSteamInviteAccepted"/>, GameLobbyJoinRequested_t)와는
+    /// 별개의 진입점 — 여기서 잡아서 동일한 JoinGameSteamAsync 경로로 합류시킨다.
+    /// </summary>
+    void TryAutoJoinFromLaunchArgs()
+    {
+        if (s_launchLobbyArgsHandled) return;
+        s_launchLobbyArgsHandled = true;
+
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (!string.Equals(args[i], "+connect_lobby", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (ulong.TryParse(args[i + 1], out ulong lobbyIdValue) && lobbyIdValue > 0)
+            {
+                Debug.Log($"[TitleMenuController] 커맨드라인 +connect_lobby 감지 — lobbyId={lobbyIdValue}");
+                SetJoinStatus("Accepting invite...");
+                _ = JoinGameSteamAsync(lobbyIdValue);
+            }
+            else
+            {
+                Debug.LogWarning($"[TitleMenuController] +connect_lobby 뒤에 유효한 lobbyId가 없습니다 — 값='{args[i + 1]}'");
+            }
+            return;
+        }
+    }
+
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
     /// <summary>
@@ -103,6 +148,7 @@ public class TitleMenuController : MonoBehaviour
     /// </summary>
     public void OnClickCreateGame()
     {
+        Debug.Log($"[TitleMenuController] OnClickCreateGame 클릭 — UseLocalNetworkPath={UseLocalNetworkPath}");
         LobbyContext.Mode = LobbyMode.OnlineHost;
 
         if (UseLocalNetworkPath)
@@ -141,28 +187,40 @@ public class TitleMenuController : MonoBehaviour
 
     async System.Threading.Tasks.Task CreateGameSteamAsync()
     {
+        Debug.Log("[TitleMenuController] CreateGameSteamAsync 진입");
+
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
             return;
         }
 
-        Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.CreateLobbyAsync();
-        if (lobby == null)
+        try
         {
-            Debug.LogError("[TitleMenuController] Steam Lobby 생성 실패. 로비 이동 중단.");
-            return;
-        }
+            Debug.Log("[TitleMenuController] CreateLobbyAsync 호출 시작");
+            Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.CreateLobbyAsync();
+            Debug.Log($"[TitleMenuController] CreateLobbyAsync 반환 — lobby={(lobby.HasValue ? lobby.Value.Id.ToString() : "null")}");
+            if (lobby == null)
+            {
+                Debug.LogError("[TitleMenuController] Steam Lobby 생성 실패. 로비 이동 중단.");
+                return;
+            }
 
-        bool ok = NetworkManagerSetup.Instance.StartHostSteam(lobby.Value.Id.Value.ToString());
-        if (!ok)
+            bool ok = NetworkManagerSetup.Instance.StartHostSteam(lobby.Value.Id.Value.ToString());
+            Debug.Log($"[TitleMenuController] StartHostSteam 반환 — ok={ok}");
+            if (!ok)
+            {
+                Debug.LogError("[TitleMenuController] StartHostSteam 실패. Lobby 정리 후 중단.");
+                SteamLobbyManager.Instance.LeaveCurrentLobby();
+                return;
+            }
+
+            NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+        }
+        catch (System.Exception e)
         {
-            Debug.LogError("[TitleMenuController] StartHostSteam 실패. Lobby 정리 후 중단.");
-            SteamLobbyManager.Instance.LeaveCurrentLobby();
-            return;
+            Debug.LogError($"[TitleMenuController] CreateGameSteamAsync 예외 — {e}");
         }
-
-        NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
     }
 
     /// <summary>게임 참여 버튼 — 룸코드/LobbyId 입력 패널 열기.</summary>
@@ -237,12 +295,15 @@ public class TitleMenuController : MonoBehaviour
             return;
         }
 
+        Debug.Log($"[TitleMenuController] ConfirmJoinSteam — lobbyId={lobbyIdValue}");
         SetJoinStatus("Joining...");
         _ = JoinGameSteamAsync(lobbyIdValue);
     }
 
     async System.Threading.Tasks.Task JoinGameSteamAsync(SteamId lobbyId)
     {
+        Debug.Log($"[TitleMenuController] JoinGameSteamAsync 진입 — lobbyId={lobbyId}");
+
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
@@ -250,19 +311,30 @@ public class TitleMenuController : MonoBehaviour
             return;
         }
 
-        Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.JoinLobbyAsync(lobbyId);
-        if (lobby == null)
+        try
         {
-            SetJoinStatus("Room not found.");
-            return;
+            Debug.Log("[TitleMenuController] JoinLobbyAsync 호출 시작");
+            Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.JoinLobbyAsync(lobbyId);
+            Debug.Log($"[TitleMenuController] JoinLobbyAsync 반환 — lobby={(lobby.HasValue ? lobby.Value.Id.ToString() : "null")}");
+            if (lobby == null)
+            {
+                SetJoinStatus("Room not found.");
+                return;
+            }
+
+            if (joinPanel != null) joinPanel.SetActive(false);
+
+            LobbyContext.Mode = LobbyMode.OnlineClient;
+
+            // 로컬 경로와 동일하게 StartClient 후 씬 전환은 NGO SceneManager가 자동 처리 — 수동 LoadScene 금지.
+            bool ok = NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id);
+            Debug.Log($"[TitleMenuController] StartClientSteam 반환 — ok={ok}");
         }
-
-        if (joinPanel != null) joinPanel.SetActive(false);
-
-        LobbyContext.Mode = LobbyMode.OnlineClient;
-
-        // 로컬 경로와 동일하게 StartClient 후 씬 전환은 NGO SceneManager가 자동 처리 — 수동 LoadScene 금지.
-        NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id);
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[TitleMenuController] JoinGameSteamAsync 예외 — {e}");
+            SetJoinStatus("Failed to join.");
+        }
     }
 
     /// <summary>

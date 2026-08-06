@@ -1,13 +1,13 @@
-# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 진행 중 — 버그 4건 발견·진단)
+# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 — 버그 4건 발견, 2026-08-07 2차 세션에서 이슈 A 근본 원인 재진단·수정 + B/C/D 추가 진단)
 
 > **상태: 전략적 결정 11개(§1~§11) 확정 완료 + 코드 구현(트랙 1 부트스트랩 / 트랙 2 Transport / 트랙 3 Lobby) 및 실사용 스모크 테스트(Host↔Client 접속, 인게임 진입, Invite Overlay) 전부 통과 (2026-08-04).**
 > **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05) + 전체 대사/OX퀴즈 번역 완료 (2026-08-06):** String Table + `LocalizeStringEvent` 패턴 검증 완료, `Dialogue` 테이블 실번역 11개 언어 입력 완료(사용자), OX퀴즈용 `LocalizedString` 코드 전환 + 번역 완료(테이블 미생성). 자세한 내용은 아래 "트랙 4" 절 참고.
-> **⭐ 트랙 5(실 App ID Depot 2인 스모크 테스트) — 진행 중, 다음 에이전트가 이어받을 것 (2026-08-06/07):** 실제 App ID(`5029890`)로 빌드 업로드·Set Live·테스터 계정 초대까지 완료, 실사용 2인 테스트 중 **버그 4건(A~D) 발견·진단 완료** — **이슈 A는 원인·수정안 확정, 사용자 OK만 받으면 바로 구현 가능.** 자세한 내용·재현 절차·Cause Site는 맨 아래 "트랙 5" 절 참고 — **다음 에이전트는 여기부터 시작.**
+> **⭐ 트랙 5(실 App ID Depot 2인 스모크 테스트) — 버그 4건(A~D) 중 A 수정 완료(재검증 대기), B/C/D 다음 에이전트가 이어받을 것 (2026-08-06/07 발견 → 2026-08-07 2차 세션에서 A 근본 원인 재진단·수정 + B/C/D 추가 진단):** 실제 App ID(`5029890`)로 빌드 업로드·Set Live·테스터 계정 초대까지 완료. **다음 에이전트는 맨 아래 "트랙 5" 절, 특히 "2026-08-07 2차 세션 — 인수인계" 하위 절부터 시작.**
 > §4(연결 API 시그니처)는 실제 구현된 `StartHostSteam(string roomCode = "")` / `StartClientSteam(SteamId)`로 이미 확정 사용 중 — 문서 §4 텍스트만 아직 "미정"으로 남아있어 정리 필요(급하지 않음).
 > 확정된 내용은 `NetworkDesign.md` §4.2(Steam P2P + Lobby) / 신규 로컬라이제이션 절로 승격 예정(아직 미승격).
 >
 > 배경: `ReleaseRoadmap.md` §4 순위 1 "Steamworks (전부)" — 출시 하드 블로커.
-> 다국어(스팀 언어 감지 포함)는 같은 페이즈로 묶어 진행하기로 합의됨.
+> 다국어(스팀 언어 감지 포함)는 같은 페이즈로 묶어 진행하기로 합의됨. **단, 2026-08-07 사용자 결정: Steam 자동 언어감지는 우선순위 하향 — 나중에 만들 설정 화면에서 수동 언어 변경만 확실히 되면 충분(이미 코드상 가능, 블로커 없음). 자세한 내용은 아래 이슈 C 절 참고.**
 
 ---
 
@@ -340,8 +340,132 @@ Steam 부트스트랩(트랙 1) · Transport 이중화(트랙 2) · Steam Lobby(
 
 **다음 에이전트 액션:** 재현할 때 `Player.log`에서 `[NetworkManagerSetup]`, `[SteamLobbyManager]` 태그 로그를 그대로 캡처해달라고 요청 — "이미 실행 중입니다" 경고가 찍혔는지, `CreateLobbyAsync가 null 반환` 에러가 찍혔는지 보면 둘 중 뭔지 바로 나옴.
 
-### 인수인계 요약 — 다음 에이전트가 할 일 (우선순위 순)
+### 인수인계 요약 (2026-08-06/07, 최초 진단 시점 — 아래 "2026-08-07 2차 세션"에서 갱신됨)
 
-1. **이슈 A 수정 승인 요청 → 승인되면 즉시 구현.** 위 진단 그대로 사용자에게 제시하고 OK만 받으면 `LobbySlotUI.cs` 218행 `return;` 제거 (1줄 수정, 리스크 낮음).
-2. **이슈 B/C/D는 사용자에게 위 "확인 필요" 질문들 먼저 던지고, 재현 정보(로그/재테스트 결과) 받은 뒤 진단 마무리 → 수정안 제시 → 승인 후 구현.**
+1. ~~이슈 A 수정 승인 요청~~ → 2차 세션에서 처리 완료(아래 참고).
+2. 이슈 B/C/D는 사용자에게 위 "확인 필요" 질문들 먼저 던지고, 재현 정보(로그/재테스트 결과) 받은 뒤 진단 마무리 → 수정안 제시 → 승인 후 구현.
 3. 이슈 A~D 전부 해결 후, 트랙4 남은 "미검증 항목"(Steam 빌드에서 `SteamApps.GameLanguage` 분기 확인)까지 이슈 C 재테스트로 같이 충족되면 트랙 4/5 모두 종료 처리하고 `ReleaseRoadmap.md` §4 순서대로 응원 시스템 확장 테스트로 넘어갈 것.
+
+---
+
+## 트랙 5 — 2026-08-07 2차 세션: 이슈 A 근본 원인 재진단·수정 완료 + B/C/D 추가 진단 (다음 에이전트 인수인계)
+
+> **이 절이 최신 상태.** 위의 "이슈 A~D" 최초 진단(2026-08-06/07)은 출발점으로만 참고하고, 실제 조치는 이 절 기준으로 이어갈 것.
+
+### 이슈 A — 수정 완료 (2단계, 재검증 대기)
+
+**1단계 수정 (승인받고 즉시 적용, 2026-08-07):** `LobbySlotUI.cs` `SetEmpty()`의 조기 `return` 제거 — 최초 진단대로. 하지만 이것만으론 **부족했음** (아래 2단계가 진짜 원인).
+
+**2단계 — 진짜 근본 원인 발견 (재현 로그로 확정):** 1단계 수정을 포함한 빌드로 재테스트했는데도 유령 슬롯이 그대로 재현됨. `Player.log`에서 결정적 증거 발견:
+
+```
+[LobbyMenuController] VoskModelLoader 로드 실패 — libvosk assembly:<unknown assembly> type:<unknown type> member:(null)
+DllNotFoundException: libvosk ...
+  at Vosk.Vosk.SetLogLevel (System.Int32 level) ...
+  at VoskModelLoader.GetSharedModel () ...
+  at CheerLexiconBuilder.IsKnownWord (System.String word) ...
+  at LobbySlotUI.Refresh (...) ...
+  at LobbyMenuController.RefreshAllSlots () ...
+  at LobbyMenuController.SubscribeAll () ...
+  at LobbyMenuController.Start () ...
+```
+
+**Root cause:** 빌드에 libvosk 네이티브 DLL이 없어서(별도 이슈 — 음성 인식 관련, 이번 범위 밖) `VoskModelLoader.GetSharedModel()`의 `Vosk.Vosk.SetLogLevel(0)`이 `DllNotFoundException`을 던짐. 이 예외가 `LobbySlotUI.Refresh()`(동기 호출, 182행 `CheerLexiconBuilder.IsKnownWord()`)까지 안 잡히고 올라가서, **`LobbyMenuController.RefreshAllSlots()`의 for문 자체가 로컬(호스트) 슬롯을 처리하다가 그 자리에서 중단됨.** 그 뒤에 와야 할 `allSlotUIs[1..3].SetEmpty()` 호출이 통째로 스킵되어, 빈 슬롯들이 씬 기본값("Young" 이름 + Ready 체크 + 별 아이콘)으로 그대로 남음. (`CheerKeywordEngine`의 같은 호출은 코루틴 안이라 Unity가 개별적으로 예외를 잡아줘서 이 문제가 없었음 — `LobbySlotUI.Refresh()`만 동기 호출이라 안전망이 없었음.)
+
+**Cause site:** `Assets/Scripts/Cheer/VoskModelLoader.cs` → `GetSharedModel()` (당시 95~106행), `Vosk.Vosk.SetLogLevel(0)` 호출부.
+
+**Fix 적용 완료:** `GetSharedModel()`의 모델 로드 부분을 try/catch로 감싸서, 예외 발생 시 로그만 남기고 `null` 반환(이미 있던 "모델 없음→null" 패턴과 동일하게 취급). 이러면 `CheerLexiconBuilder.IsKnownWord()`의 기존 `if (model == null) return true;` 처리로 자연스럽게 흡수되고, `LobbySlotUI.Refresh()`/`RefreshAllSlots()` 루프가 끝까지 정상 실행됨. `LobbyMenuController.cs:98`(`VoskModelLoader.LoadSync()`)와 `CheerKeywordEngine.cs:144`(`GetSharedModel()`)도 같은 수정으로 자동 보호됨 — 코드베이스 전체에서 이 두 API의 호출부는 이 3곳뿐임을 확인함(grep).
+
+**Files changed:** `Assets/Scripts/UI/LobbySlotUI.cs`(1단계, `return` 제거), `Assets/Scripts/Cheer/VoskModelLoader.cs`(2단계, try/catch).
+
+**Verify (다음 에이전트/사용자):** 재빌드 + Depot 재업로드 후, 호스트 혼자 로비 진입 시 빈 슬롯 3개가 완전히 빈 발판으로 보이는지, 2인 접속 시 정확히 그 슬롯만 실데이터로 채워지는지 확인. libvosk DLL 누락 자체(음성 인식 기능이 실제로 동작하는지)는 별도 이슈로 취급 — 이번 수정은 "그로 인한 로비 UI 크래시 전파"만 막는 것.
+
+### 이슈 B — 여전히 미확정, 재현 조건 갱신 필요
+
+- 2026-08-07 재현 시도에서 사용자가 **룸코드 직접 입력**으로 들어감(Invite Overlay 수락 경로 아님) → 이번 로그는 이슈 B 증거로 못 씀.
+- **진단용 로그 계측 완료(2026-08-07):** `TitleMenuController.OnClickCreateGame/ConfirmJoinSteam/CreateGameSteamAsync/JoinGameSteamAsync`에 진입 로그 + try/catch 추가, `SteamLobbyManager.CreateLobbyAsync/JoinLobbyAsync/LeaveCurrentLobby`에 진입 로그 + 소요시간(ms) + try/catch 추가, `NetworkManagerSetup.Shutdown()`에 진입 로그 추가. 순수 로그 추가라 동작 변경 없음.
+- **⚠️ 로그 필터 명령 실수 정정:** 이전에 안내한 `Select-String` 필터 패턴에 `\[TitleMenuController\]`가 빠져 있어서, 정작 "버튼이 눌렸는지/초대냐 수동입력이냐" 구분에 필요한 로그가 잘려나갔었음. **다음엔 이 패턴 사용:**
+  ```powershell
+  Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log" -Pattern "\[NetworkManagerSetup\]|\[SteamLobbyManager\]|\[GameLocalizationBootstrap\]|\[SteamManager\]|\[TitleReturnFlow\]|\[TitleMenuController\]" | Select-Object -ExpandProperty Line
+  ```
+- **다음 에이전트 액션:** 게임이 이미 타이틀 화면에 떠 있는 상태에서 Invite Overlay로 수락하는 케이스를 정확히 재현해서(커맨드라인 실행 케이스 아님) 위 필터로 로그 받을 것. `[SteamLobbyManager] 초대 수락 감지` 로그 유무로 이벤트 체인이 끊긴 지점을 좁힐 것 (§ 위 "이슈 B" 최초 진단 참고).
+
+### 이슈 C — 원인 확정(Steam 파트너 사이트 언어 선언 누락), 그러나 사용자 결정으로 우선순위 하향
+
+- **1차 확인:** Steamworks 파트너 사이트 "Managing Base Languages"에 English만 체크돼 있었음(스크린샷 확인) → 12개 코어 언어 체크 + Save 완료.
+- **2차 확인:** Base Languages 등록 후에도 `Player.log`에 `[GameLocalizationBootstrap] Locale 적용 — en (소스: Steam)`이 계속 찍힘. 웹 검색으로 확인한 Steamworks 공식 동작: `GetCurrentGameLanguage()`는 Steam 클라이언트 전체 언어가 아니라 **Steam 라이브러리에서 그 게임에 대해 개별로 설정하는 "Language" 값**(Library > 게임 우클릭 > 속성 > 일반 > Language 드롭다운)을 먼저 보고, 이게 기본으로 English로 고정되는 게 알려진 Steam 클라이언트 동작(참고: [rlabrecque/Steamworks.NET#539](https://github.com/rlabrecque/Steamworks.NET/issues/539), [ceifa/steamworks.js#141](https://github.com/ceifa/steamworks.js/issues/141)).
+- **3차 확인(반전):** 사용자가 실제로 Steam 라이브러리 속성 화면을 확인했는데, **일반 탭에 Language 드롭다운 자체가 안 보임**(스크린샷 확인 — "게임 내 Steam 오버레이 사용" 토글과 "실행 옵션"만 있고 언어 섹션 없음). 원인 미확인 상태(Steam 클라이언트 버전/캐시/Depot 언어 메타데이터 전파 지연 등 후보 있으나 미검증).
+- **⭐ 사용자 결정 (2026-08-07): 이 이슈는 우선순위 하향.** Steam 자동 언어감지가 되면 좋지만 필수는 아니고, **나중에 만들 설정(Settings) 화면에서 수동으로 언어를 바꾸는 기능만 확실히 동작하면 충분**하다고 확정함. 수동 전환은 `LocalizationSettings.SelectedLocale = <Locale>` 한 줄로 Steam API와 완전히 무관하게 이미 동작 가능한 경로이므로(en/ko 폴백이 이미 검증된 것과 같은 메커니즘), **블로커 없음.**
+- **다음 에이전트 액션 없음(당장) — Settings 화면 구현 시점에 언어 선택 UI에서 `LocalizationSettings.SelectedLocale` 연결만 하면 됨.** Steam 자동감지 미스터리는 사용자가 다시 요청할 때 재조사.
+
+### 이슈 D — 이번 세션 미재현, 재현 자체를 안 해봄
+
+- 사용자가 방 폭파 후 재생성을 시도하지 않고 바로 앱을 종료함(`quit`) — 이번 세션은 증거 없음, 최초 진단(두 가지 후보)만 유효.
+- 진단용 로그 계측(이슈 B와 동일 커밋)이 이미 적용돼 있으니, 다음 재현 시 위 이슈 B의 정정된 필터로 `Shutdown 완료` 이후 로그가 이어지는지만 보면 됨 — 로그가 없으면 버튼 클릭 자체가 안 된 것, `이미 실행 중입니다` 경고가 있으면 §후보1(NGO Shutdown 비동기 타이밍), `CreateLobbyAsync`/`JoinLobbyAsync` 예외 로그가 있으면 §후보2(Steam Lobby 정리 타이밍).
+
+### Depot 업로드 절차 (정리, 2026-08-07)
+
+SDK 위치: `C:\Users\u\Desktop\Steam\sdk\tools\ContentBuilder\` (Unity 프로젝트 밖, Desktop). 스크립트: `scripts\app_build_5029890.vdf` + `scripts\depot_build_5029891.vdf`.
+
+1. Unity Build (Windows, **Development Build 체크 해제** — Steam 경로를 타야 함).
+2. 빌드 결과물을 `content\KKUL-TTEOK!_Build\`에 통째로 복사(덮어쓰기). **`steam_appid.txt`는 이 폴더에 넣지 말 것** — Unity 프로젝트 루트(`steam_appid.txt`)는 에디터/로컬 테스트 전용(§5)이고 Depot엔 불필요, 넣으면 `WARNING! File steam_appid.txt shouldn't be included in Steam depots.` 경고만 남음(무해하지만 지저분함).
+3. `cd C:\Users\u\Desktop\Steam\sdk\tools\ContentBuilder` → `.\builder\steamcmd.exe +login <계정> +run_app_build ..\scripts\app_build_5029890.vdf +quit`
+4. Steamworks 파트너 사이트 App Admin > SteamPipe > Builds에서 새 BuildID를 `default` 브랜치에 Set Live.
+5. `app_build_5029890.vdf`의 `Desc`는 버전 문자열(현재 `"Version 1.0.3 Beta"`, 2026-08-07 갱신 — 이전엔 `1.0.1 Beta`로 2번 빌드됨) — 다음 업로드 전 필요시 갱신.
+
+### 인수인계 요약 (2026-08-07 2차 세션 기준, 최신)
+
+1. **이슈 A — 수정 완료.** 재빌드 + Depot 재업로드 후 재검증만 남음.
+2. **이슈 B — Invite Overlay 수락(게임이 타이틀에 떠 있는 상태)으로 정확히 재현 + 정정된 필터(`[TitleMenuController]` 포함)로 로그 캡처 필요.**
+3. **이슈 C — 보류.** Settings 화면 만들 때 `LocalizationSettings.SelectedLocale` 연결만 하면 됨. Steam 자동감지 문제(Library 속성에 Language 드롭다운 자체가 안 보이는 것)는 사용자가 다시 요청할 때만 재조사.
+4. **이슈 D — 실제로 방 폭파 후 재생성을 시도하는 재현이 아직 한 번도 안 됨.** 다음 테스트에서 반드시 시도하고 정정된 필터로 로그 캡처.
+5. B/D 둘 다 진단용 로그 계측은 이미 배포된 빌드에 포함돼 있음 — 추가 코드 변경 없이 재현 로그만 받으면 진단 마무리 가능.
+
+---
+
+## 트랙 5 — 2026-08-07 3차 세션: 이슈 D 근본 원인 재확정·수정 완료 + 이슈 B 절반 수정(냉기동) + 이슈 B 재확인(온기동, 미해결) (다음 세션 인수인계)
+
+> **이 절이 최신 상태.** 2차 세션 인수인계 요약(바로 위)의 "후보 두 가지" 추측은 이 절에서 확정된 실제 원인으로 대체됨.
+
+### 이슈 D — 진짜 근본 원인 확정 + 수정 완료 (재빌드 후 검증 대기)
+
+**사용자가 이번 세션에 직접 재현 + Player.log(계정 A "Young") 전체 캡처 제공.** 로그 분석 결과 2차 세션의 두 후보(①`IsListening` 레이스 ②Lobby 정리 타이밍) 둘 다 아니었음 — 실제 원인은 완전히 다른 곳.
+
+**Root cause:** `FacepunchTransport.Shutdown()`(NGO 패키지 코드)이 소켓만 닫는 게 아니라 **`SteamClient.Shutdown()`을 호출해서 Steam 클라이언트 전체를 죽여버림.** 반면 `SteamManager.IsInitialized` 플래그는 절대 리셋이 안 돼서(자기 스스로 Shutdown된 적 없다고 착각), 다음 `StartHostSteam()`에서 재초기화를 스킵함. 그 상태로 `NetworkManager.StartHost()` → `FacepunchTransport.StartServer()` → `SteamNetworkingSockets.CreateRelaySocket()`가 `ArgumentException: Invalid Socket`으로 매번 실패(로그에서 4연속 재현 확인). **한 번이라도 Host를 했다가 방을 폭파하면, 같은 프로세스에서는 재시작 전까지 다시 Host가 안 되는 버그**였음 — 계정 B가 성공했던 건 B가 그 프로세스에서 Host(서버 릴레이 소켓)를 만든 적이 한 번도 없어서(Client로만 있었음) 우연히 안 걸린 것.
+
+**#6(계정 A 화면 0명)도 동일 원인의 연쇄 증상으로 확인:** A가 Host 재시도를 4번 실패하는 동안 NGO `NetworkSceneManager` 내부 상태가 오염돼서, 그 뒤 A가 B 방에 Client로 들어갔을 때 `Exception: Server Scene Handle already exist! ... scene load of 1.Lobby`가 6번 연속 발생 → 씬 동기화 실패 → 스폰 반영 안 됨(0명) → Ready 클릭 시 RPC `NullReferenceException` → 연결 끊김. 이슈 D가 고쳐지면 재호스트가 정상적으로 성공하므로 이 연쇄도 같이 사라질 것으로 예상(별도 검증 필요).
+
+**Fix 적용 완료:**
+- `Library/PackageCache/com.community.netcode.transport.facepunch@27d3e825ecdd/Runtime/FacepunchTransport.cs` → `Shutdown()`에서 `SteamClient.Shutdown();` 줄 삭제, `connectionManager`/`socketManager`를 `null`로 정리하는 코드로 교체. **주의(§2와 동일한 성격의 임시 위치 이슈): `Library/PackageCache`는 Unity가 관리하는 캐시라 패키지 재-resolve(Library 삭제, 매니페스트 버전 변경 등) 시 이 수정이 사라질 수 있음.** 영구화하려면 이 패키지를 Package Manager에서 "Embed" 후 그 복사본(`Packages/com.community.netcode.transport.facepunch/`)에 동일 수정을 다시 적용할 것 — §2의 "중복 #endregion" 워크어라운드와 같은 성격의 임시 위치 이슈이니 그때 같이 영구화 권장.
+- `Assets/Scripts/Network/NetworkManagerSetup.cs` → `Shutdown()` 로그에 `SteamManager.IsInitialized` 상태 같이 출력하도록 보강(검증용, 동작 변경 없음).
+
+**Verify (다음 세션 — 사용자가 내일 재빌드 후 확인):** 재빌드 + Depot 재업로드 후, Host → 방 폭파 → 다시 Host 생성을 연속 3회 이상 시도해서 전부 성공하는지, 그 뒤 Client 접속 시 씬 핸들 충돌 예외 없이 정상 스폰(#6 증상 재현 안 되는지)까지 함께 확인. Player.log에서 `StartHostSteam() 실패`/`Invalid Socket` 문자열이 더 이상 안 나오는지로 1차 확인 가능.
+
+**Files read (이번 세션 추가):** 계정 A `Player.log`(직접 읽음), `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/SteamManager.cs`, `Library/PackageCache/com.community.netcode.transport.facepunch@27d3e825ecdd/Runtime/FacepunchTransport.cs`.
+
+### 이슈 B — 냉기동(게임 꺼진 상태) 케이스 구현 완료 + 온기동(게임 켜진 상태) 케이스는 여전히 미해결
+
+사용자가 **두 케이스 다** 재현: (a) 게임이 켜진 채 타이틀에 있는데 초대를 받아도 계정 B가 그 자리에 그대로 머묦, (b) 게임이 꺼진 상태에서 초대 수락 → 새로 실행되지만 타이틀까지만 가고 로비로 안 들어감.
+
+**(b) 냉기동 케이스 — 구현 완료 (재빌드 후 검증 대기):** Steam은 게임이 안 켜진 상태에서 Lobby Invite를 수락하면 `+connect_lobby <64bit lobbyId>`를 커맨드라인 인자로 넘겨서 게임을 새로 실행시킨다(Steamworks 공식 문서, [partner.steamgames.com/doc/features/multiplayer/matchmaking](https://partner.steamgames.com/doc/features/multiplayer/matchmaking) 확인). 이 인자를 안 읽고 있던 게 원인. `TitleMenuController.Start()`에서 `Environment.GetCommandLineArgs()`로 `+connect_lobby` 토큰을 찾아 파싱 후, 기존 Invite Overlay 수락 경로(`OnSteamInviteAccepted`)와 동일한 `JoinGameSteamAsync()`로 합류시킴. 앱 프로세스 수명당 1회만 처리(`static bool s_launchLobbyArgsHandled`) — 타이틀 복귀로 씬이 다시 로드돼도 재시도 안 함.
+
+**(a) 온기동 케이스 — 원인 미확정, 재현 로그 필요.** 기존 경로(`SteamFriends.OnGameLobbyJoinRequested` → `SteamLobbyManager.OnInviteAccepted` → `TitleMenuController.OnSteamInviteAccepted` → `JoinGameSteamAsync`)는 코드상 이미 완성돼 있고 오늘 건드리지 않았음. 이 경로가 왜 안 되는지는 코드만 봐서 확정 불가 — 아래 두 후보 중 뭔지는 로그로만 구분 가능:
+1. Steam이 콜백(`OnGameLobbyJoinRequested`) 자체를 안 준 것 → `[SteamLobbyManager] 초대 수락 감지` 로그가 전혀 안 찍힘.
+2. 콜백은 왔는데 그 다음(`JoinGameSteamAsync`/`StartClientSteam`)이 실패 → 그 로그는 찍히는데 그 이후 로그가 없거나 예외가 남음.
+   - 참고로 이번 세션에 확인한 유명한 후보 원인 하나(Facepunch.Steamworks `InstallEvents()` 미호출로 `OnGameLobbyJoinRequested`가 전혀 안 불리는 버그, [Facepunch.Steamworks#379](https://github.com/Facepunch/Facepunch.Steamworks/issues/379))는 **2020년에 이미 고쳐진 버그라 우리가 쓰는 2.3.2 버전엔 해당 안 됨 — 배제함.**
+
+**다음 세션 액션:** 계정 B를 미리 타이틀 화면에 켜둔 상태에서 A가 Invite Overlay로 초대 → B가 Accept → 아래 필터로 B의 `Player.log` 캡처:
+```powershell
+Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log" -Pattern "\[NetworkManagerSetup\]|\[SteamLobbyManager\]|\[TitleMenuController\]|\[SteamManager\]" | Select-Object -ExpandProperty Line
+```
+`[SteamLobbyManager] 초대 수락 감지` 유무로 위 후보 1/2를 바로 가른다.
+
+**Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`(냉기동 커맨드라인 파싱 추가), `Assets/Scripts/Network/NetworkManagerSetup.cs`(로그 보강), `Library/PackageCache/com.community.netcode.transport.facepunch@27d3e825ecdd/Runtime/FacepunchTransport.cs`(이슈 D 수정).
+
+### 인수인계 요약 (2026-08-07 3차 세션 기준, 최신)
+
+1. **이슈 A — 사용자 확인 완료(해결).**
+2. **이슈 B — 냉기동 케이스 수정 완료(검증 대기). 온기동 케이스는 위 필터로 B의 Player.log 캡처 필요.**
+3. **이슈 C — 보류(사용자 결정 유지). 이번 세션 재확인(#4, 인게임에서도 en) — 새 정보 아니고 기존 미스터리 그대로.**
+4. **이슈 D — 근본 원인 확정·수정 완료(검증 대기). 재빌드 + Depot 재업로드 후 Host 재생성 연속 테스트 + Player.log 확인.**
+5. **내일 재빌드 후: Issue D 검증용 + Issue B(온기동) 진단용 Player.log를 계정 A/B 둘 다 위 필터로 캡처해서 전달.**

@@ -225,6 +225,8 @@ public class NetworkManagerSetup : MonoBehaviour
     /// </summary>
     public void Shutdown()
     {
+        Debug.Log($"[NetworkManagerSetup] Shutdown 진입 — IsListening={_net != null && _net.IsListening}");
+
         LanDiscovery.Instance?.Stop();
         SteamLobbyManager.Instance?.LeaveCurrentLobby(); // §8: Lobby 객체는 재사용 안 함, Host/Client 모두 나감 처리
         NetworkSessionData.Clear();
@@ -233,7 +235,7 @@ public class NetworkManagerSetup : MonoBehaviour
         if (_net != null && _net.IsListening)
         {
             _net.Shutdown();
-            Debug.Log("[NetworkManagerSetup] Shutdown 완료");
+            Debug.Log($"[NetworkManagerSetup] Shutdown 완료 — SteamManager.IsInitialized={SteamManager.Instance != null && SteamManager.Instance.IsInitialized}");
         }
 
         if (_net != null && _transport != null)

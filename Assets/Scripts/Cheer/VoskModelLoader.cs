@@ -99,9 +99,20 @@ public static class VoskModelLoader
         string modelPath = EnsureModel();
         if (modelPath == null) return null;
 
-        Vosk.Vosk.SetLogLevel(0);
-        _sharedModel = new Model(modelPath);
-        Debug.Log("[VoskModelLoader] 공유 Model 동기 로드 완료 (fallback)");
+        // libvosk 네이티브 라이브러리가 빌드에 없으면 DllNotFoundException이 던져진다.
+        // 동기 호출(LobbySlotUI.Refresh 등)에서 이 예외가 안 잡히면 호출자의 루프 전체가
+        // 끊기므로(로비 슬롯 갱신 중단 등), 여기서 흡수하고 모델 없음(null)으로 취급한다.
+        try
+        {
+            Vosk.Vosk.SetLogLevel(0);
+            _sharedModel = new Model(modelPath);
+            Debug.Log("[VoskModelLoader] 공유 Model 동기 로드 완료 (fallback)");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[VoskModelLoader] 공유 Model 로드 실패 (libvosk 누락 등) — {e.Message}");
+            _sharedModel = null;
+        }
         return _sharedModel;
     }
 }

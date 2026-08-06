@@ -69,9 +69,23 @@ public class SteamLobbyManager : MonoBehaviour
     /// <summary>Private Lobby 생성. 실패 시 null 반환.</summary>
     public async Task<Lobby?> CreateLobbyAsync()
     {
+        Debug.Log($"[SteamLobbyManager] CreateLobbyAsync 진입 — CurrentLobby={(CurrentLobby?.Id.ToString() ?? "없음")}");
+
         if (!EnsureSteamReady()) return null;
 
-        Lobby? lobby = await SteamMatchmaking.CreateLobbyAsync(maxMembers);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Lobby? lobby;
+        try
+        {
+            lobby = await SteamMatchmaking.CreateLobbyAsync(maxMembers);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[SteamLobbyManager] CreateLobbyAsync 예외 ({sw.ElapsedMilliseconds}ms 경과) — {e}");
+            return null;
+        }
+        Debug.Log($"[SteamLobbyManager] SteamMatchmaking.CreateLobbyAsync 반환 ({sw.ElapsedMilliseconds}ms 경과) — result={(lobby.HasValue ? lobby.Value.Id.ToString() : "null")}");
+
         if (lobby == null)
         {
             Debug.LogError("[SteamLobbyManager] Lobby 생성 실패 (CreateLobbyAsync가 null 반환).");
@@ -89,9 +103,23 @@ public class SteamLobbyManager : MonoBehaviour
     /// <summary>LobbyId로 참여. 실패 시 null 반환.</summary>
     public async Task<Lobby?> JoinLobbyAsync(SteamId lobbyId)
     {
+        Debug.Log($"[SteamLobbyManager] JoinLobbyAsync 진입 — lobbyId={lobbyId}, CurrentLobby={(CurrentLobby?.Id.ToString() ?? "없음")}");
+
         if (!EnsureSteamReady()) return null;
 
-        Lobby? lobby = await SteamMatchmaking.JoinLobbyAsync(lobbyId);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Lobby? lobby;
+        try
+        {
+            lobby = await SteamMatchmaking.JoinLobbyAsync(lobbyId);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[SteamLobbyManager] JoinLobbyAsync 예외 ({sw.ElapsedMilliseconds}ms 경과) — {e}");
+            return null;
+        }
+        Debug.Log($"[SteamLobbyManager] SteamMatchmaking.JoinLobbyAsync 반환 ({sw.ElapsedMilliseconds}ms 경과) — result={(lobby.HasValue ? lobby.Value.Id.ToString() : "null")}");
+
         if (lobby == null)
         {
             Debug.LogError("[SteamLobbyManager] Lobby 참여 실패 — LobbyId를 다시 확인하세요.");
@@ -106,6 +134,8 @@ public class SteamLobbyManager : MonoBehaviour
     /// <summary>현재 Lobby 나가기. NetworkManagerSetup.Shutdown()에서 호출됨.</summary>
     public void LeaveCurrentLobby()
     {
+        Debug.Log($"[SteamLobbyManager] LeaveCurrentLobby 진입 — CurrentLobby={(CurrentLobby?.Id.ToString() ?? "없음")}");
+
         if (CurrentLobby.HasValue)
         {
             CurrentLobby.Value.Leave();
