@@ -58,7 +58,7 @@ public class TitleMenuController : MonoBehaviour
     [Tooltip("joinPanel 안의 TMP_InputField (6자리 숫자).")]
     [SerializeField] private TMP_InputField roomCodeInputField;
 
-    [Tooltip("joinPanel 안의 상태 메시지 TMP_Text.\n예) 찾는 중... / 방을 찾을 수 없습니다.")]
+    [Tooltip("joinPanel 안의 상태 메시지 TMP_Text.\n예) Searching... / Room not found.")]
     [SerializeField] private TMP_Text joinStatusText;
 
     [Tooltip("룸코드 Discovery 타임아웃 (초).")]
@@ -213,7 +213,7 @@ public class TitleMenuController : MonoBehaviour
     {
         if (code.Length != 6 || !IsDigitsOnly(code))
         {
-            SetJoinStatus("6자리 숫자를 입력해주세요.");
+            SetJoinStatus("Wrong code.");
             return;
         }
 
@@ -224,7 +224,7 @@ public class TitleMenuController : MonoBehaviour
             return;
         }
 
-        SetJoinStatus("찾는 중...");
+        SetJoinStatus("Searching...");
         LanDiscovery.Instance.StartDiscovery(code, OnDiscoveryFound);
         _discoveryTimeoutCoroutine = StartCoroutine(DiscoveryTimeout());
     }
@@ -233,11 +233,11 @@ public class TitleMenuController : MonoBehaviour
     {
         if (code.Length == 0 || !IsDigitsOnly(code) || !ulong.TryParse(code, out ulong lobbyIdValue))
         {
-            SetJoinStatus("초대 코드를 다시 확인해주세요.");
+            SetJoinStatus("Wrong code.");
             return;
         }
 
-        SetJoinStatus("참여하는 중...");
+        SetJoinStatus("Joining...");
         _ = JoinGameSteamAsync(lobbyIdValue);
     }
 
@@ -246,14 +246,14 @@ public class TitleMenuController : MonoBehaviour
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
-            SetJoinStatus("참여에 실패했습니다.");
+            SetJoinStatus("Failed to join.");
             return;
         }
 
         Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.JoinLobbyAsync(lobbyId);
         if (lobby == null)
         {
-            SetJoinStatus("방을 찾을 수 없습니다.");
+            SetJoinStatus("Room not found.");
             return;
         }
 
@@ -271,7 +271,7 @@ public class TitleMenuController : MonoBehaviour
     /// </summary>
     void OnSteamInviteAccepted(SteamId lobbyId)
     {
-        SetJoinStatus("초대를 수락하는 중...");
+        SetJoinStatus("Accepting invite...");
         _ = JoinGameSteamAsync(lobbyId);
     }
 
@@ -346,7 +346,7 @@ public class TitleMenuController : MonoBehaviour
     {
         yield return new WaitForSeconds(discoveryTimeoutSeconds);
         LanDiscovery.Instance?.Stop();
-        SetJoinStatus("방을 찾을 수 없습니다.");
+        SetJoinStatus("Room not found.");
         _discoveryTimeoutCoroutine = null;
     }
 

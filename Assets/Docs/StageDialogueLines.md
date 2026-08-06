@@ -39,7 +39,7 @@
 
 1. 네 색 타일 위에 올라가서 버텨!
 
-*(Color 모드 기준. BW 모드용 별도 문구는 아직 미정 — 필요 시 추가.)*
+*(Color/BW 모드 공용 — BW 모드용 별도 문구 없음.)*
 
 ## M.Boss (BossFightObjective — 몬스터 없음, 스테이지 함정 자체가 보스)
 
@@ -98,6 +98,5 @@
 ## 열려 있는 항목 (다음 작업)
 
 - [ ] M.Stage2 (OX퀴즈) 대사 미정
-- [ ] M.Stage5 GridBW 모드용 별도 대사 미정
 - [ ] 위 전체를 `Dialogue_en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl` 로컬라이제이션 테이블에 번역해 반영
 - [ ] 씬(.unity)의 `DialogueUI.dialogueLines` TMP 텍스트에 실제 한국어 원문 입력 (에디터 작업, 에이전트는 읽기만 — `unity-mcp-readonly.mdc`)

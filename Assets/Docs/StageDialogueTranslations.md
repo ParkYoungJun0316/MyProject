@@ -34,7 +34,7 @@
 번역 대상에서 제외 (원문 미정 — `StageDialogueLines.md` "열려 있는 항목" 참고):
 
 - `M.Stage2` (OX퀴즈) — 한국어 원문 자체가 없음
-- `M.Stage5` BW 모드용 별도 문구 — 미정
+- `M.Stage5` BW 모드용 별도 문구 — 없음 (Color 모드와 공용, `M.Stage5.Line1` 그대로 사용)
 
 ---
 
@@ -157,7 +157,7 @@
 
 ---
 
-## M.Stage5 (Color 모드 기준)
+## M.Stage5 (Color/BW 모드 공용 — BW 모드용 별도 문구 없음)
 
 ### M.Stage5.Line1
 

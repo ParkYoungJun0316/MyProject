@@ -718,6 +718,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] `/cheer {세션 CheerName}` (빈칸→색 기본값)
 - [ ] **Lobby CheerName 인라인 편집** + Host `SetCheerNameServerRpc`
 - [ ] `LobbyPlayerState.CheerName` (빈칸 = 기본값 취급) + 슬롯 UI 동기화
+- [ ] **[필수] Lobby 씬 UI 로컬라이제이션** — `TitleMenuController`/Lobby 상태 메시지 등 하드코딩된 한국어 문자열(예: "찾는 중...", "방을 찾을 수 없습니다.", "6자리 숫자를 입력해주세요." 등)을 String Table 방식으로 전환. DialogueUI/OXQuiz와 동일한 패턴 적용
 - [ ] CheerName 검증 (§3.5) + `CanStart` 이름 유일
 - [ ] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님)
 - [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
