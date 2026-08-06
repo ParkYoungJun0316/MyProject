@@ -1,9 +1,9 @@
-# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료)
+# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 진행 중 — 버그 4건 발견·진단)
 
 > **상태: 전략적 결정 11개(§1~§11) 확정 완료 + 코드 구현(트랙 1 부트스트랩 / 트랙 2 Transport / 트랙 3 Lobby) 및 실사용 스모크 테스트(Host↔Client 접속, 인게임 진입, Invite Overlay) 전부 통과 (2026-08-04).**
-> **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05) + 전체 대사/OX퀴즈 번역 완료 (2026-08-06):** String Table + `LocalizeStringEvent` 패턴 검증 완료, `Dialogue` 테이블 실번역 11개 언어 입력 완료(사용자), OX퀴즈용 `LocalizedString` 코드 전환 + 번역 완료(테이블 미생성). 자세한 내용은 맨 아래 "트랙 4" 절 참고. **다음 작업은 `LocalizeStringEvent` MCP 연결(M.Stage4부터)**.
+> **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05) + 전체 대사/OX퀴즈 번역 완료 (2026-08-06):** String Table + `LocalizeStringEvent` 패턴 검증 완료, `Dialogue` 테이블 실번역 11개 언어 입력 완료(사용자), OX퀴즈용 `LocalizedString` 코드 전환 + 번역 완료(테이블 미생성). 자세한 내용은 아래 "트랙 4" 절 참고.
+> **⭐ 트랙 5(실 App ID Depot 2인 스모크 테스트) — 진행 중, 다음 에이전트가 이어받을 것 (2026-08-06/07):** 실제 App ID(`5029890`)로 빌드 업로드·Set Live·테스터 계정 초대까지 완료, 실사용 2인 테스트 중 **버그 4건(A~D) 발견·진단 완료** — **이슈 A는 원인·수정안 확정, 사용자 OK만 받으면 바로 구현 가능.** 자세한 내용·재현 절차·Cause Site는 맨 아래 "트랙 5" 절 참고 — **다음 에이전트는 여기부터 시작.**
 > §4(연결 API 시그니처)는 실제 구현된 `StartHostSteam(string roomCode = "")` / `StartClientSteam(SteamId)`로 이미 확정 사용 중 — 문서 §4 텍스트만 아직 "미정"으로 남아있어 정리 필요(급하지 않음).
-> **다음 작업은 맨 아래 "트랙 4" 절의 후속 작업 목록(`OXQuiz` 테이블 생성 · `LocalizeStringEvent` MCP 연결 · Bossdown 대화 배선) 및 "트랙 1~3 전체 완료" 절의 후속 작업 목록(실제 Steam Depot 업로드) 참고.**
 > 확정된 내용은 `NetworkDesign.md` §4.2(Steam P2P + Lobby) / 신규 로컬라이제이션 절로 승격 예정(아직 미승격).
 >
 > 배경: `ReleaseRoadmap.md` §4 순위 1 "Steamworks (전부)" — 출시 하드 블로커.
@@ -190,8 +190,8 @@ Steam 부트스트랩(트랙 1) · Transport 이중화(트랙 2) · Steam Lobby(
 
 **다음 에이전트가 시작할 수 있는 후속 작업 (우선순위 순):**
 
-1. **다국어(Localization) 구현 — 파일럿 완료, 계속 진행 필요** (아래 "트랙 4" 절 참고). `DialogueUI` 파일럿(4줄)은 en 텍스트 + 이벤트 배선까지 끝났고, 나머지 11개 언어 실번역 + 나머지 Ship Must UI 복제가 남음.
-2. **실제 Steam Depot 업로드 준비** — 지금까지는 로컬 P2P/Lobby 코드 검증만 했고, 실제 Steam 백엔드(SteamPipe/ContentBuilder)로 빌드를 업로드해본 적은 없음. App Admin에서 단일 Depot(Windows, §6 확정) 설정 + `steamcmd`/ContentBuilder 스크립트(VDF) 작성 + 실제 업로드 1회 테스트가 필요. 이건 Steamworks 파트너 사이트 관리자 권한이 필요한 작업이라 사용자와 함께 진행해야 함.
+1. ✅ (완료) ~~다국어(Localization) 구현~~ — 트랙 4에서 전체 대사/OX퀴즈 번역 완료 (2026-08-06).
+2. ✅ (완료) ~~실제 Steam Depot 업로드 준비~~ — 실 App ID(`5029890`)로 업로드·Set Live·테스터 초대까지 완료 (2026-08-06/07). **다만 그 실사용 스모크 테스트에서 버그 4건 발견 — 아래 "트랙 5" 절 참고, 다음 에이전트가 이어서 진단·수정할 것.**
 3. **§4 연결 API 세부 이름 문서 반영** — 코드 상 이미 `StartHostSteam(string roomCode = "")`/`StartClientSteam(SteamId)`로 확정되어 쓰이고 있음. 이 문서 §4 "미정" 상태를 실제 시그니처로 업데이트할 것(사소한 문서 정리, 급하지 않음).
 
 > **코드 참고 파일 (트랙 1~3):** `Assets/Scripts/Network/SteamManager.cs`(Steam 부트스트랩), `Assets/Scripts/Network/SteamLobbyManager.cs`(Lobby 생성/참여/마스킹/§8 Owner 이전 무시/Invite Overlay), `Assets/Scripts/Network/NetworkManagerSetup.cs`(`StartHostSteam`/`StartClientSteam`/`IsSteamPath`/`Shutdown`/`UseLocalNetworkPath`), `Assets/Scripts/UI/TitleMenuController.cs`(`UseLocalNetworkPath` 참조로 로컬·Steam 경로 분기, 초대 수락 자동 참여), `Assets/Scripts/UI/LobbyMenuController.cs`(`OnClickSteamInvite`/`RefreshRoomCode` 마스킹 분기).
@@ -236,3 +236,112 @@ Steam 부트스트랩(트랙 1) · Transport 이중화(트랙 2) · Steam Lobby(
 - **Steam 빌드에서 `SteamApps.GameLanguage` 분기 스모크 테스트** — 트랙4 항목2 "미검증 항목" 그대로 유지, 아직 확인 안 됨.
 
 > **코드 참고 파일 (트랙 4):** `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`(부트스트랩), `Assets/Scripts/Network/NetworkManagerSetup.cs`의 `UseLocalNetworkPath`, `Assets/StringTableCollection.asset`(프로젝트 Localization Settings), `Dialogue` String Table Collection(`M.Stage1.Intro.Line1~4` 키), `Assets/Scripts/Stage/OXQuizManager.cs`(`OXQuestion.questionText`/`explanationText` = `LocalizedString`), `Assets/Docs/StageDialogueTranslations.md`, `Assets/Docs/OXQuizTranslations.md`.
+
+---
+
+## 트랙 5: 실 App ID Depot 2인 스모크 테스트 — 버그 4건 발견 (2026-08-06/07, 다음 에이전트 인수인계)
+
+> **⚠️ 이 절은 이전 대화의 컨텍스트가 꽉 차서 다음 에이전트가 이어받도록 작성됨. 아직 코드 수정 없음 — 이슈 A는 사용자 OK만 받으면 즉시 구현 가능한 상태, B/C/D는 사용자에게 재현 정보를 더 받아야 확정 진단 가능.**
+
+### 완료된 셋업 (재현 불필요, 참고만)
+
+- **실 App ID(`5029890`)/Depot(`5029891`)로 최초 업로드 성공** — `steamcmd` + ContentBuilder VDF(`app_build_5029890.vdf`, `depot_build_5029891.vdf`). `BuildOutput`을 존재하지 않는 `D:\` 경로에서 `..\output\`(SDK 내부, 상대경로)로 수정해서 해결. **BuildID `24596262`**로 성공, `default` 브랜치에 Set Live 완료.
+  - 경고 `WARNING! File steam_appid.txt shouldn't be included in Steam depots.` — 무해, 다음 업로드부터 Depot 파일 매핑에서 제외 권장(급하지 않음).
+  - Set Live 직후 설치 시 일시적 "No internet connection" 에러 발생 → CDN 전파 지연으로 진단, 몇 분 후 재시도로 해결 추정.
+- **테스터 계정 초대 완료** — App Admin > Manage Users에서 권한 체크박스 **전부 해제**(Manage Users 등 Partner-wide 권한 없음)로 초대. "Everyone" 그룹 autogrant(Developer Comp)로 라이브러리 접근만 확보 — Depot 관리 권한은 안 줌. `Everyone Group Rights: View Rights Only`, `Organization Rights: None`으로 최종 확인됨.
+- **테스트 시점 빌드 조건:** Development Build 체크 해제한 Release 빌드로 뽑음 → `NetworkManagerSetup.UseLocalNetworkPath`가 `false`가 되어 Steam 경로(`StartHostSteam`/`StartClientSteam`) 및 Steam 로케일 분기(`GameLocalizationBootstrap`)를 정상적으로 타는 상태에서 테스트됨.
+
+### 사용자 원본 재현 보고 (2026-08-07, 2인 실사용 테스트, 원문 그대로)
+
+1. 로비 들어가면 host 화면이 위 이미지처럼 되어 있음(스크린샷: 빈 슬롯 3개가 이미 이름·별 아이콘·체크(Ready)·색상으로 채워진 것처럼 보임)
+2. invite overlay 잘 열리고 잘 초대됨
+3. 계정 B 초대 수락 눌렀는데 로비에는 못들어감
+4. `109775241266342676`(LobbyId/코드 번호) 입력하고 들어가면 들어가짐
+5. 계정 B가 코드번호 입력하고 들어왔는데도 위 이미지처럼(유령 슬롯 상태) 그대로임
+6. 계정 B는 정상적으로 2명의 플레이어가 보임
+7. 계정 B ready하고 호스트가 (유령 슬롯 상태에서) 그냥 start 누르면 인게임 들어가짐
+8. 방폭파(방 나가기/종료)는 잘됨
+9. 방폭파하고 다시 방 만들고 테스트하려고 하는데 방이 **2계정 다** 안만들어짐
+10. 언어 바꾸고 테스트 재실행. 언어 안바뀜 — Steam 클라이언트 언어 바꿔서 재실행했는데도 그대로
+
+### 이슈 A (#1, #5) — Host 화면 "Young" 유령 슬롯 3개 + 색상 중복 경고 — **원인 확정, 수정 대기 중**
+
+**재현:** Host가 방 만들고 로비 들어가면(실제 인원 1명뿐인데도) 빈 슬롯 3개가 이미 "Young"이라는 이름 + 별 아이콘 + 체크(Ready) + 색(BERRY)로 채워진 것처럼 보임. Client B가 실제 코드로 들어온 뒤에도 Host 화면이 그대로임.
+
+**Root cause:** `LobbySlotUI.SetEmpty()`에 조기 `return`이 있어서, `slotContentRoot`를 꺼주는 것 말고는 개별 필드(이름/Ready/Host별/드롭다운 등)를 정리하는 아래쪽 코드가 전혀 실행되지 않음:
+
+```204:231:Assets/Scripts/UI/LobbySlotUI.cs
+    public void SetEmpty()
+    {
+        _assignedClientId = ulong.MaxValue;
+        UnsubscribeDropdown();
+        UnsubscribeInput();
+
+        HideAllHeardDots();
+
+        if (emptyVisualRoot != null) emptyVisualRoot.SetActive(true);
+
+        if (slotContentRoot != null)
+        {
+            slotContentRoot.SetActive(false);
+            return; // ← 이 return 때문에 아래 개별 필드 정리가 전부 스킵됨
+        }
+
+        // slotContentRoot 미연결 시 개별 처리 (return 때문에 도달 못 함)
+        if (portrait           != null) portrait.gameObject.SetActive(false);
+        if (nameText           != null) nameText.text = "";
+        // ...
+        if (readyIndicator     != null) readyIndicator.SetActive(false);
+        if (hostIndicator      != null) hostIndicator.SetActive(false);
+        // ...
+    }
+```
+
+실제 씬 파일(`Assets/Scenes/1.Lobby.unity`) 확인 결과, "ID"라는 이름의 `TextMeshProUGUI` 오브젝트(= `nameText` 필드)가 `m_text: Young`으로 하드코딩돼 있고, **`slotContentRoot`의 자식이 아니라 `Slot0`의 직속 자식(형제 관계)**으로 배치돼 있음. 즉 `slotContentRoot.SetActive(false)`로는 이 텍스트가 절대 안 꺼짐. Slot0(호스트, 실제 점유)에서는 `Refresh()`가 `nameText.gameObject.SetActive(false)`를 명시적으로 호출해서 가려지지만, Slot1~3(빈 슬롯)은 위 `return` 때문에 그 처리가 스킵되어 씬 기본값("Young" 텍스트 활성 상태)이 그대로 노출됨. UI 목업 작업 중 임시로 넣어둔 이름("Young" — 파트너 사이트 테스터 계정 표시명과 동일)이 그대로 남은 것으로 추정.
+
+**Files read:** `Assets/Scripts/UI/LobbySlotUI.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Scripts/Network/LobbyNetworkManager.cs`, `Assets/Scenes/1.Lobby.unity`(grep "Young" + GameObject 계층 추적)
+
+**Cause site:** `Assets/Scripts/UI/LobbySlotUI.cs` → `SetEmpty()` 205~231행, 특히 218행의 `return;`
+
+**Fix proposal:** `return`을 제거해서 `slotContentRoot` 토글 여부와 무관하게 아래 개별 필드 정리 코드가 항상 실행되게 수정. (씬 쪽 "ID" 텍스트를 `slotContentRoot` 자식으로 재배치하는 게 근본적으로 더 깔끔하지만, 그건 씬 편집 영역 — Unity MCP 읽기 전용 규칙상 에이전트가 직접 못 건드림. 코드만 고쳐도 기능적으로는 충분히 해결됨. 씬 재배치는 사용자가 직접 하거나 "MCP로 수정해줘"라고 명시적으로 요청 시에만 가능.)
+
+**Verify:** Build에서 1인만 로비 들어갔을 때 빈 슬롯 3개가 완전히 빈 발판으로 보이는지, 2인 접속 후 정확히 그 슬롯만 실제 데이터로 채워지는지 확인.
+
+**Impact:** 순수 UI 표시 로직 — 네트워크/게임플레이 로직엔 영향 없음. Slot1~3 관련 화면 전체에 동일 효과.
+
+**다음 에이전트 액션:** 사용자에게 이 진단 내용 그대로 보여주고 OK 받으면 `Assets/Scripts/UI/LobbySlotUI.cs` 218행 `return;` 제거하고 컴파일 확인.
+
+### 이슈 B (#3) — Invite 수락해도 로비 자동 참여 안 됨 — **재현 조건 확인 필요**
+
+기존 코드에 이미 범위가 명시돼 있음:
+
+```35:36:Assets/Scripts/Network/SteamLobbyManager.cs
+/// Invite Overlay 수락 시 발행 (SteamFriends.OnGameLobbyJoinRequested 중계).
+/// 게임이 이미 실행 중인 상태(타이틀 화면)에서만 의미 있음 — 게임 미실행 중 초대 수락(커맨드라인 실행)은 범위 밖.
+```
+
+**다음 에이전트가 사용자에게 확인해야 할 것:** 계정 B가 Invite를 수락할 때, **게임이 이미 타이틀 화면에 켜져 있던 상태**였는지, 아니면 **게임이 꺼져 있다가 Accept 누르니까 새로 실행**됐는지.
+
+- 후자라면 → 버그 아님, 원래 범위 밖으로 명시된 케이스(런치 인자 파싱 미구현). 고치려면 별도 작업(커맨드라인 `+connect_lobby` 파싱)이 필요 — 사용자와 우선순위 논의 필요.
+- 전자(이미 켜져 있었는데도 안 됨)라면 → 진짜 버그. Client B 쪽 `Player.log`에서 `[SteamLobbyManager] 초대 수락 감지` 로그가 찍혔는지 확인 필요.
+
+### 이슈 C (#10) — 언어 바꿔도 텍스트 안 바뀜 — **테스트 대상 화면이 잘못됐을 가능성 높음, 재테스트 필요**
+
+로비 화면 텍스트("Waiting for all players...", "Warning! Have Same Color Player!!", "START"/"QUIT" 등)는 **로컬라이제이션에 아예 연결이 안 된 하드코딩 영어 텍스트**임 — 트랙4 기준 지금까지 연결된 건 `M.Stage1` 대사 4줄 파일럿 + OX퀴즈 코드뿐이고, 로비 UI는 아직 손 안 댄 상태.
+
+**다음 에이전트 액션:** 로비가 아니라 **`M.Stage1`에 진입해서 대사 4줄이 언어별로 바뀌는지**로 재테스트 요청. (아직 ko 등 다른 언어 값이 채워진 게 en뿐이라, en 폴백이면 그것도 "정상 동작"으로 봐야 함 — 텍스트 자체가 바뀌는지가 아니라 에러 없이 en으로라도 뜨는지가 포인트. 이건 트랙4 "미검증 항목"이었던 `SteamApps.GameLanguage` 분기 스모크 테스트와 동일 건.)
+
+### 이슈 D (#9) — 방 폭파 후 재생성 실패 (양쪽 계정 다) — **로그 필요, 확정 진단 불가**
+
+코드만으로 확신 있게 원인을 못 짚음. 후보 두 가지:
+
+1. `NetworkManagerSetup.StartHostSteam`/`StartClientSteam`에 `_net.IsListening`이 아직 `true`면 조용히 무시하고 `true`만 반환하는 가드가 있음(179~188행 근처) — NGO `Shutdown()`이 비동기라 완전히 정리되기 전에 재시도하면 이 가드에 걸릴 수 있음.
+2. `SteamLobbyManager.LeaveCurrentLobby()`가 Steam 쪽 `Leave()` 완료를 기다리지 않고 로컬 상태만 바로 지우는데, Steam 서버 쪽 정리가 늦으면 곧바로 `CreateLobbyAsync()`가 실패할 수 있음.
+
+**다음 에이전트 액션:** 재현할 때 `Player.log`에서 `[NetworkManagerSetup]`, `[SteamLobbyManager]` 태그 로그를 그대로 캡처해달라고 요청 — "이미 실행 중입니다" 경고가 찍혔는지, `CreateLobbyAsync가 null 반환` 에러가 찍혔는지 보면 둘 중 뭔지 바로 나옴.
+
+### 인수인계 요약 — 다음 에이전트가 할 일 (우선순위 순)
+
+1. **이슈 A 수정 승인 요청 → 승인되면 즉시 구현.** 위 진단 그대로 사용자에게 제시하고 OK만 받으면 `LobbySlotUI.cs` 218행 `return;` 제거 (1줄 수정, 리스크 낮음).
+2. **이슈 B/C/D는 사용자에게 위 "확인 필요" 질문들 먼저 던지고, 재현 정보(로그/재테스트 결과) 받은 뒤 진단 마무리 → 수정안 제시 → 승인 후 구현.**
+3. 이슈 A~D 전부 해결 후, 트랙4 남은 "미검증 항목"(Steam 빌드에서 `SteamApps.GameLanguage` 분기 확인)까지 이슈 C 재테스트로 같이 충족되면 트랙 4/5 모두 종료 처리하고 `ReleaseRoadmap.md` §4 순서대로 응원 시스템 확장 테스트로 넘어갈 것.

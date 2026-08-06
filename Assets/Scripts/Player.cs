@@ -57,7 +57,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     /// <summary>
     /// 네트워크 Owner 여부. NetworkPlayerSetup이 OnNetworkSpawn에서 설정.
-    /// 의미(Phase 2): "로컬 입력·카메라·연출 대상" — 물리·이동 판정 주도 아님 (서버가 담당).
+    /// true면 이 머신이 물리 이동의 권한자(Owner Authority) — 입력·FixedUpdate 이동·카메라 타겟 전부 이 캐릭터 주도.
+    /// 비오너는 ClientNetworkTransform(Owner 권한)으로 위치만 수신.
     /// 오프라인(NGO 미사용) 시 기본값 true → 입력·물리 그대로 동작.
     /// </summary>
     [HideInInspector] public bool isOwnerControlled = true;
@@ -364,8 +365,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         isDamage = true;
 
-        // Phase 2: Rigidbody가 kinematic(클라이언트)이면 AddForce 불가 → 가드.
-        // 물리 넉백은 서버 RB에서만 유효하나, 현재 넉백은 연출 목적이므로 MVP에서 감수.
+        // 넉백은 Owner 로컬 물리로만 적용 (Owner Rigidbody는 항상 dynamic).
+        // Rigidbody가 kinematic이면 AddForce가 no-op이므로 가드.
         if (isBossAtk && isOwnerControlled && !rigid.isKinematic)
         {
             isKnockback = true;

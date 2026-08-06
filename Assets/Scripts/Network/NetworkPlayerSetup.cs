@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 ///
 /// [배치]
 /// Network Player Prefab에 추가.
-/// 같은 GameObject에 Player, ClientNetworkTransform(서버권한), Rigidbody, PlayerInput 필요.
+/// 같은 GameObject에 Player, ClientNetworkTransform(Owner 권한), Rigidbody, PlayerInput 필요.
 /// </summary>
 [RequireComponent(typeof(Player))]
 public class NetworkPlayerSetup : NetworkBehaviour
@@ -250,9 +250,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>
-    /// Phase 2 — Host Authority: 서버면 Rigidbody 동적(물리 시뮬), 클라이언트면 kinematic(NetworkTransform 수신).
-    /// Owner/비오너 설정 이후 OnNetworkSpawn 마지막에 호출해 최종 권한을 확정한다.
-    /// Host는 전 플레이어의 Rigidbody를 직접 시뮬레이션하므로 모두 동적으로 유지.
+    /// Owner Authority 확정: Owner/비오너 설정 이후 OnNetworkSpawn 마지막에 호출.
+    /// Owner는 본인 캐릭터를 직접 물리 이동시키므로 항상 dynamic.
+    /// Host는 비오너 캐릭터도 함정 Trigger 판정을 위해 dynamic으로 유지(이동은 CNT 수신, 시뮬은 안 함).
+    /// Client는 비오너 캐릭터를 kinematic으로 두고 CNT 수신 위치만 반영.
     /// </summary>
     void ApplyPhysicsAuthority()
     {

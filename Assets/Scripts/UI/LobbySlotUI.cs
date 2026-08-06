@@ -214,10 +214,9 @@ public class LobbySlotUI : MonoBehaviour
         if (slotContentRoot != null)
         {
             slotContentRoot.SetActive(false);
-            return;
         }
 
-        // slotContentRoot 미연결 시 개별 처리
+        // slotContentRoot 자식이 아닌 오브젝트(예: 씬에 형제로 배치된 nameText)까지 확실히 정리
         if (portrait           != null) portrait.gameObject.SetActive(false);
         if (nameText           != null) nameText.text = "";
         if (cheerNameInput     != null) cheerNameInput.gameObject.SetActive(false);
