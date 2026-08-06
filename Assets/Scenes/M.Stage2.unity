@@ -328,7 +328,7 @@ GameObject:
   - component: {fileID: 162923347}
   - component: {fileID: 162923348}
   m_Layer: 0
-  m_Name: StageManager2.1
+  m_Name: StageManager2.2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -598,6 +598,7 @@ MonoBehaviour:
   stageManager: {fileID: 628739176}
   countdownDuration: 3
   armOnStart: 0
+  gateId: -1
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls:
@@ -946,6 +947,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1001 &495793373
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1183,7 +1185,7 @@ GameObject:
   m_Component:
   - component: {fileID: 523270670}
   m_Layer: 0
-  m_Name: Stage2.0
+  m_Name: Stage2.1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1419,7 +1421,7 @@ GameObject:
   - component: {fileID: 628739175}
   - component: {fileID: 628739176}
   m_Layer: 0
-  m_Name: StageManager2.0
+  m_Name: StageManager2.1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2229,48 +2231,234 @@ MonoBehaviour:
     oTile: {fileID: 60076108}
     xTile: {fileID: 1754096119}
   questions:
-  - questionText: Adults produce over 1 liter of saliva every day.
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: Adults produce about 1 to 1.5 liters of saliva each day.
-  - questionText: Different parts of the tongue can only taste certain flavors.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 0
-    explanationText: All parts of the tongue can detect all basic tastes.
-  - questionText: Tongue patterns are different for each person.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: The surface patterns of the tongue are unique enough to be studied
-      for biometric technology.
-  - questionText: Lips do not have sweat glands like normal skin.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: Lips dry out easily because they do not have sweat or oil glands.
-  - questionText: People often become better at eating bitter foods as they get older.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: This happens because of changes in taste and repeated food experiences.
-  - questionText: The longest human tooth recorded in Guinness World Records was
-      over 4 cm long.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 0
-    explanationText: The longest recorded human canine tooth was about 3.67 cm long.
-  - questionText: There are billions of bacteria living inside the mouth.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: Even after brushing, many bacteria still remain inside the mouth.
-  - questionText: People produce much more saliva while sleeping.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 0
-    explanationText: Saliva production almost stops during sleep, which can cause
-      bad breath in the morning.
-  - questionText: The tongue can get tired.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: The tongue is made of muscles, so it can become fatigued after
-      heavy use.
-  - questionText: Teeth have a different structure from bones.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: Unlike bones, teeth cannot fully repair themselves.
-  - questionText: 'Human lips look red because they contain a lot of red pigment. '
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 0
-    explanationText: Lips are thin, so the color of blood vessels underneath can
-      be seen through the skin.
-  - questionText: The tongue is one of the fastest-healing parts of the body.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - questionText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     correctAnswerIsO: 1
-    explanationText: The tongue heals quickly because it has strong blood flow and
-      fast cell repair.
+    explanationText:
+      m_TableReference:
+        m_TableCollectionName: 
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
   questionsPerRun: 2
   answerTimeLimit: 10
   correctAnswerDelay: 6
@@ -2297,6 +2485,9 @@ MonoBehaviour:
   OnAllCleared:
     m_PersistentCalls:
       m_Calls: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!4 &1021570198 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -2665,7 +2856,6 @@ GameObject:
   - component: {fileID: 1133977673}
   - component: {fileID: 1133977672}
   - component: {fileID: 1133977671}
-  - component: {fileID: 1133977674}
   m_Layer: 0
   m_Name: StageNetworkState
   m_TagString: Untagged
@@ -2726,36 +2916,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1133977674
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1133977669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0c8d35c0d4b42f4c97943e76a25f6ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PhaseDialogueGate
-  ShowTopMostFoldoutHeaderGroup: 1
-  dialogueUI: {fileID: 1703988422}
-  showOnceKey: Stage2.0
-  OnAllReady:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 315001972}
-        m_TargetAssemblyTypeName: StageStartGate, Assembly-CSharp
-        m_MethodName: Arm
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!4 &1150381451 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -3881,6 +4041,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 6343719034208085508, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+    - {fileID: 7066319307284133424, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+    - {fileID: 2283512513919721882, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+    - {fileID: 6864354226617457997, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+    - {fileID: 4652287179021543480, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
@@ -3911,17 +4075,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3bcff797d999a348955d953c9aa7845, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StartCountdownUI
---- !u!114 &1703988422 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2879022694852666727, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
-  m_PrefabInstance: {fileID: 1703988418}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d08555c6247b416469d2179667b3e5a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DialogueUI
 --- !u!4 &1704226166 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7322730663392626339, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
@@ -3994,7 +4147,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1751779496}
   m_Layer: 0
-  m_Name: Stage2.1
+  m_Name: Stage2.2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4507,9 +4660,9 @@ MonoBehaviour:
     onPhaseEnter:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1133977674}
-          m_TargetAssemblyTypeName: PhaseDialogueGate, Assembly-CSharp
-          m_MethodName: Begin
+        - m_Target: {fileID: 628739176}
+          m_TargetAssemblyTypeName: StageManager, Assembly-CSharp
+          m_MethodName: StartStage
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -4522,7 +4675,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Delay_Stage2.1
+  - phaseName: Delay1
     surviveDuration: 3
     objectsToDisable:
     - {fileID: 523270669}
@@ -4547,7 +4700,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage2.1
+  - phaseName: Stage2.2
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable: []

@@ -282,7 +282,7 @@ GameObject:
   - component: {fileID: 51977780}
   - component: {fileID: 51977781}
   m_Layer: 0
-  m_Name: StageManager3.1
+  m_Name: StageManager3.2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -690,7 +690,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PhaseDialogueGate
   ShowTopMostFoldoutHeaderGroup: 1
   dialogueUI: {fileID: 1711509780}
-  showOnceKey: Stage3.0
+  showOnceKey: Stage3.1
   OnAllReady:
     m_PersistentCalls:
       m_Calls:
@@ -895,6 +895,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorTileChallenge
   autoStart: 0
+  challengeInstanceId: 0
   tilePrefabs:
   - colorType: 1
     prefab: {fileID: 5797962265975425837, guid: a1e436dc1d0c3eb43990e3d01914b60a, type: 3}
@@ -1234,6 +1235,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1 &513131638
 GameObject:
   m_ObjectHideFlags: 0
@@ -1244,7 +1246,7 @@ GameObject:
   m_Component:
   - component: {fileID: 513131639}
   m_Layer: 0
-  m_Name: Stage3.0
+  m_Name: Stage3.1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1455,6 +1457,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!4 &750318819
 Transform:
   m_ObjectHideFlags: 0
@@ -1846,6 +1849,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!4 &891936727
 Transform:
   m_ObjectHideFlags: 0
@@ -1987,7 +1991,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1004349403}
   m_Layer: 0
-  m_Name: Stage3.1
+  m_Name: Stage3.2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2071,6 +2075,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1001 &1191861754
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2209,6 +2214,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1 &1251620088
 GameObject:
   m_ObjectHideFlags: 0
@@ -2265,6 +2271,7 @@ MonoBehaviour:
   stageManager: {fileID: 1590687362}
   countdownDuration: 3
   armOnStart: 0
+  gateId: -1
   OnCountdownTick:
     m_PersistentCalls:
       m_Calls:
@@ -2452,6 +2459,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1 &1380054028
 GameObject:
   m_ObjectHideFlags: 0
@@ -2694,6 +2702,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1 &1468563473
 GameObject:
   m_ObjectHideFlags: 0
@@ -3197,7 +3206,7 @@ GameObject:
   - component: {fileID: 1590687361}
   - component: {fileID: 1590687362}
   m_Layer: 0
-  m_Name: StageManager3.0
+  m_Name: StageManager3.1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3338,6 +3347,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1438379755}
     m_Modifications:
+    - target: {fileID: 614668548641379357, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_text
+      value: If you don't make it... the teeth on the ceiling will start falling.
+      objectReference: {fileID: 0}
+    - target: {fileID: 892092522305068323, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_text
+      value: You have to step onto it before time runs out.
+      objectReference: {fileID: 0}
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -3345,6 +3362,10 @@ PrefabInstance:
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2879022694852666727, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: dialogueLines.Array.size
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
@@ -3357,6 +3378,11 @@ PrefabInstance:
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_text
+      value: From now on, a tile matching your color will randomly light up on the
+        floor.
       objectReference: {fileID: 0}
     - target: {fileID: 4862474480044982399, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_Name
@@ -3459,7 +3485,8 @@ PrefabInstance:
       value: OnClickLeaveRoom
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 7066319307284133424, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
@@ -3761,7 +3788,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseManager
   phases:
-  - phaseName: Stage3.0
+  - phaseName: Stage3.1
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
@@ -3785,7 +3812,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Delay3.1
+  - phaseName: Delay1
     surviveDuration: 3
     objectsToDisable:
     - {fileID: 513131638}
@@ -3810,7 +3837,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage3.1
+  - phaseName: Stage3.2
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable: []
@@ -3929,6 +3956,7 @@ MonoBehaviour:
   initialDelay: 0
   startOnAwake: 1
   screenFader: {fileID: 0}
+  seedSalt: 1297044820
 --- !u!1 &2078363739
 GameObject:
   m_ObjectHideFlags: 0

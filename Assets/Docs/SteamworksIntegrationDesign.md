@@ -1,9 +1,9 @@
 # Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료)
 
 > **상태: 전략적 결정 11개(§1~§11) 확정 완료 + 코드 구현(트랙 1 부트스트랩 / 트랙 2 Transport / 트랙 3 Lobby) 및 실사용 스모크 테스트(Host↔Client 접속, 인게임 진입, Invite Overlay) 전부 통과 (2026-08-04).**
-> **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05):** String Table + `LocalizeStringEvent` 패턴 검증 완료, Locale Fallback(en) 스모크 테스트 통과. 자세한 내용은 맨 아래 "트랙 4" 절 참고. 남은 건 실번역 11개 언어 입력 + 나머지 Ship Must UI 복제.
+> **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05) + 전체 대사/OX퀴즈 번역 완료 (2026-08-06):** String Table + `LocalizeStringEvent` 패턴 검증 완료, `Dialogue` 테이블 실번역 11개 언어 입력 완료(사용자), OX퀴즈용 `LocalizedString` 코드 전환 + 번역 완료(테이블 미생성). 자세한 내용은 맨 아래 "트랙 4" 절 참고. **다음 작업은 `LocalizeStringEvent` MCP 연결(M.Stage4부터)**.
 > §4(연결 API 시그니처)는 실제 구현된 `StartHostSteam(string roomCode = "")` / `StartClientSteam(SteamId)`로 이미 확정 사용 중 — 문서 §4 텍스트만 아직 "미정"으로 남아있어 정리 필요(급하지 않음).
-> **다음 작업은 맨 아래 "트랙 4" 절의 후속 작업 목록(11개 언어 실번역 / 나머지 UI 복제) 및 "트랙 1~3 전체 완료" 절의 후속 작업 목록(실제 Steam Depot 업로드) 참고.**
+> **다음 작업은 맨 아래 "트랙 4" 절의 후속 작업 목록(`OXQuiz` 테이블 생성 · `LocalizeStringEvent` MCP 연결 · Bossdown 대화 배선) 및 "트랙 1~3 전체 완료" 절의 후속 작업 목록(실제 Steam Depot 업로드) 참고.**
 > 확정된 내용은 `NetworkDesign.md` §4.2(Steam P2P + Lobby) / 신규 로컬라이제이션 절로 승격 예정(아직 미승격).
 >
 > 배경: `ReleaseRoadmap.md` §4 순위 1 "Steamworks (전부)" — 출시 하드 블로커.
@@ -219,10 +219,20 @@ Steam 부트스트랩(트랙 1) · Transport 이중화(트랙 2) · Steam Lobby(
 6. **⚠️ 함정 발견 — "Use Fallback" 체크박스가 2개 있음** — Project Settings > Localization 화면에 `Asset Database`용 `Use Fallback`과 `String Database`용 `Use Fallback`이 서로 다른 섹션에 각각 존재. 텍스트(String Table) 폴백에는 **`String Database` 쪽**을 켜야 하는데, 모양이 똑같아서 처음엔 `Asset Database` 쪽만 켜고 한참 헤맴(`LocalizationSettings.StringDatabase.UseFallback`이 계속 `false`로 남아있었음). 프로젝트의 `LocalizationSettings` 에셋 실제 파일명은 `Assets/StringTableCollection.asset`(이름이 헷갈리니 참고).
 7. **스모크 테스트 통과 (2026-08-05, 사용자 확인)** — 시스템 언어 `ko`(한국어) 환경에서 Play 모드 진입 → `ko` 테이블엔 아직 값이 없지만 `en`으로 폴백되어 대사 4줄이 정상 텍스트로 표시됨 (이전엔 `"No translation found for '...' in Dialogue"` 메시지가 그대로 UI에 노출되던 상태였음).
 
-### 남은 작업 (다음 에이전트)
+### 후속 진행 (2026-08-06) — 전체 스테이지 대사 + OX퀴즈 번역
 
-- **`ko` 등 11개 언어 실번역 입력** — 현재 `Dialogue` 테이블은 `en` 값만 채워져 있고 나머지 11개 언어는 전부 비어 있음(폴백으로 영어가 대신 보이는 중). 실제 번역 텍스트를 `M.Stage1.Intro.Line1~4` 각 언어 컬럼에 채워 넣을 것.
-- **나머지 Ship Must UI에 동일 패턴 복제** — 타이틀·로비·HP·카운트다운·응원 HUD·채팅·옵션 (`ReleaseRoadmap.md` §2.1 목록). `DialogueUI`에서 검증된 패턴(String Table 키 + `LocalizeStringEvent` + Dynamic String 바인딩) 그대로 반복.
-- **Steam 빌드에서 `SteamApps.GameLanguage` 분기 스모크 테스트** — 위 "미검증 항목" 참고.
+1. **`StageDialogueLines.md`(SSOT) 기준 M/T 전체 스테이지 대사 11개 언어 번역 완료** → `Assets/Docs/StageDialogueTranslations.md` 작성(총 29줄, ko 제외 11개 언어 + 제안 키 네이밍 `M.StageX.LineY` / `T.StageX.LineY`). **사용자가 `Dialogue` String Table에 값 입력까지 완료.**
+2. **`M.Stage4.Stage1.Line1`의 "Space" 키 강조 확정** — 이미지 삽입 대신 TMP Rich Text로 처리. 최초 파란색(`#3B82F6`) → 사용자 피드백으로 어색하다는 의견 → 빨강(오답/경고 색과 충돌) 대신 **`<b><color=#FFC400>...</color></b>`(골드)**로 최종 확정. *(주의: 이 강조가 실제로 보이려면 해당 씬의 TMP 오브젝트가 `LocalizeStringEvent`로 String Table에 연결되어 있어야 함 — 현재 `M.Stage4` 씬은 아직 하드코딩된 영어 텍스트라 미연결 상태, 아래 "남은 작업" 참고.)*
+3. **`OXQuizManager.cs` 코드 변경 완료** — `OXQuestion.questionText`/`explanationText`를 `string` → `LocalizedString`으로 전환(`[TextArea]` 제거), `OnQuestionReady`/`OnAnswerRevealed`에서 `.GetLocalizedString()` 호출로 변경. `DialogueUI` 파일럿과 동일한 String Table 참조 패턴.
+4. **OX퀴즈 문항/해설 11개 언어 번역 완료** → `Assets/Docs/OXQuizTranslations.md` 작성 — `M.Stage2`(12문항) + `T.Stage4`(13문항), 키 네이밍 `OXQuiz.StageX.QY.Question` / `...Explanation`. **`OXQuiz` String Table Collection 자체는 아직 미생성 — 번역 텍스트만 준비된 상태, 테이블 생성·입력은 남은 작업.**
 
-> **코드 참고 파일 (트랙 4):** `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`(부트스트랩), `Assets/Scripts/Network/NetworkManagerSetup.cs`의 `UseLocalNetworkPath`, `Assets/StringTableCollection.asset`(프로젝트 Localization Settings), `Dialogue` String Table Collection(`M.Stage1.Intro.Line1~4` 키).
+### 남은 작업 (다음 에이전트 / 다음 작업)
+
+- **`OXQuiz` String Table Collection 신규 생성 + 50키 값 입력** (사용자 작업) — `OXQuizTranslations.md` 체크리스트 참고. 생성 후 `M.Stage2`/`T.Stage4`의 `OXQuizManager` 컴포넌트 Inspector에서 각 `LocalizedString` 필드를 Table+Entry로 재연결해야 함(문자열 직접 입력 아님).
+- **⭐ `LocalizeStringEvent` 연결 — 다음 작업, MCP로 진행 예정** — 사용자가 Cursor 무료 grok 에이전트로 MCP를 통해 직접 연결할 계획. **`M.Stage4`부터 먼저 연결해 정상 동작(골드 강조 포함) 확인 후 나머지 스테이지로 확장.** 연결 방식은 위 트랙4 항목4의 `M.Stage1` 파일럿과 동일: `SetTable("Dialogue")`/`SetEntry(key)`로 String Reference 연결 + `OnUpdateString(string)` → 해당 오브젝트 `TextMeshProUGUI.text` Dynamic String 바인딩. (Inspector에서 "TMP_Text → text"가 안 보이는 문제가 있었던 전례가 있음 — 그때는 MCP `execute_code`로 리플렉션 배선(`PropertyInfo.GetSetMethod()` + `Delegate.CreateDelegate` + `UnityEventTools.AddPersistentListener`)으로 해결함. 이번에도 같은 방식이 필요할 수 있음.)
+- **Bossdown 대화 배선 (M.Boss / T.Boss)** — 현재 `PhaseManager.onAllPhasesComplete`가 `SceneFlowRelay.LoadNextScene`에 직결되어 대화 없이 바로 씬 전환됨. 순서: 모든 phase clear → (신규) `Dialogue_Panel` + 2번째 `PhaseDialogueGate`의 `Begin()` 호출 → 전원 스페이스로 완료 시 `OnAllReady` → `SceneFlowRelay.LoadNextScene`. 미구현.
+- **`M.Stage1` 구 파일럿 키(`Intro.Line1~4`) 정리** — 실제 스테이지 대사 키(`M.Stage1.LineY`)와 이름이 겹치지 않는지 확인하고, 기술 검증용으로만 쓰인 거면 정리/삭제.
+- **미사용 Portuguese(pt) Locale + 빈 테이블 정리** — 현재는 매핑되지 않아 런타임 문제는 없으나, 정리 권장.
+- **Steam 빌드에서 `SteamApps.GameLanguage` 분기 스모크 테스트** — 트랙4 항목2 "미검증 항목" 그대로 유지, 아직 확인 안 됨.
+
+> **코드 참고 파일 (트랙 4):** `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`(부트스트랩), `Assets/Scripts/Network/NetworkManagerSetup.cs`의 `UseLocalNetworkPath`, `Assets/StringTableCollection.asset`(프로젝트 Localization Settings), `Dialogue` String Table Collection(`M.Stage1.Intro.Line1~4` 키), `Assets/Scripts/Stage/OXQuizManager.cs`(`OXQuestion.questionText`/`explanationText` = `LocalizedString`), `Assets/Docs/StageDialogueTranslations.md`, `Assets/Docs/OXQuizTranslations.md`.

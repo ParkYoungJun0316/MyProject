@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Localization;
 
 // ── 데이터 클래스 ────────────────────────────────────────────────
 
@@ -22,20 +23,21 @@ public class OXRow
     }
 }
 
-/// <summary>OX 퀴즈 문제.</summary>
+/// <summary>
+/// OX 퀴즈 문제. DialogueUI 파일럿과 동일한 패턴 — `LocalizedString`으로 String Table(예: `OXQuiz`
+/// 컬렉션) 엔트리를 참조한다. Inspector에서 Table + Entry를 선택해 연결(문자열 직접 입력 아님).
+/// </summary>
 [System.Serializable]
 public class OXQuestion
 {
-    [Tooltip("출제할 문제 텍스트 (OnQuestionReady 이벤트로 UI에 전달됨)")]
-    [TextArea(2, 4)]
-    public string questionText;
+    [Tooltip("출제할 문제 텍스트. String Table 엔트리 참조 (OnQuestionReady 이벤트로 UI에 전달됨)")]
+    public LocalizedString questionText;
 
     [Tooltip("정답. true = O, false = X")]
     public bool correctAnswerIsO;
 
-    [Tooltip("판정 후 정답 공개 시 표시할 해설 (OnAnswerRevealed 두 번째 인자)")]
-    [TextArea(2, 5)]
-    public string explanationText;
+    [Tooltip("판정 후 정답 공개 시 표시할 해설. String Table 엔트리 참조 (OnAnswerRevealed 두 번째 인자)")]
+    public LocalizedString explanationText;
 }
 
 /// <summary>UnityEvent&lt;string&gt; 직렬화 래퍼.</summary>
@@ -289,7 +291,7 @@ public class OXQuizManager : MonoBehaviour
         row.SetState(OXQuizTile.TileState.Pending);
         _quizActive = true;
 
-        string text = questions[_questionOrder[_questionIndex]].questionText;
+        string text = questions[_questionOrder[_questionIndex]].questionText.GetLocalizedString();
         OnQuestionReady?.Invoke(text);
 
         StopTimer();
@@ -323,7 +325,7 @@ public class OXQuizManager : MonoBehaviour
         // 정답 공개는 문제 데이터에서 로컬로 도출 가능 — 전 머신 동시 재생 (RPC 불필요)
         OXQuestion current = questions[_questionOrder[_questionIndex]];
         ApplyAnswerRevealColors(current.correctAnswerIsO);
-        OnAnswerRevealed?.Invoke(current.correctAnswerIsO, current.explanationText);
+        OnAnswerRevealed?.Invoke(current.correctAnswerIsO, current.explanationText.GetLocalizedString());
 
         if (IsClientOnly()) yield break; // 실제 판정·데미지·진행 확정은 Host만
 

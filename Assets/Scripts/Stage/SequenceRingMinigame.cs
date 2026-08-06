@@ -605,8 +605,30 @@ public class SequenceRingMinigame : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// [버그 수정 2026-08-06] 이번 판 실제 활성 색만 반환 — 이전엔 simPlayers(1인 로컬 테스트용
+    /// 키 매핑)/기본 4색만 봐서 실제 접속 인원과 무관하게 항상 4색이 나왔다(1인은 존재하지도 않는
+    /// 3색이 섞여 못 깨고, 3인은 미접속 1색이 섞여 그 스텝을 아무도 못 눌렀음).
+    /// ColorTileChallenge/GridColorChallenge 등 다른 챌린지와 동일한 SSOT 체인으로 통일
+    /// (architecture.mdc: "Prefer extending existing systems").
+    /// </summary>
     PlayerColorType[] GetUniqueColorPool()
     {
+        PlayerColorType[] psColors = PlayerSpawnCoordinator.GetActiveColors();
+        if (psColors.Length > 0) return psColors;
+
+        if (GameSession.Instance != null)
+        {
+            IReadOnlyList<PlayerColorType> active = GameSession.Instance.GetActiveColors();
+            if (active.Count > 0)
+            {
+                var arr = new PlayerColorType[active.Count];
+                for (int i = 0; i < active.Count; i++) arr[i] = active[i];
+                return arr;
+            }
+        }
+
+        // 둘 다 없을 때만 순수 로컬 테스트용 simPlayers로 fallback (씬 없이 컴포넌트만 단독 Play 등)
         if (simPlayers != null && simPlayers.Length > 0)
         {
             var list = new List<PlayerColorType>();
