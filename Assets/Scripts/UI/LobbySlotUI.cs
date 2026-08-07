@@ -12,7 +12,7 @@ using UnityEngine.UI;
 /// [Inspector 연결 — 전부 연결할 것]
 /// - slotContentRoot      : 슬롯 내 모든 UI를 묶은 부모 (Empty 시 통째로 숨김)
 /// - portrait             : 캐릭터 초상화 Image
-/// - nameText             : 캐릭터 이름 TMP_Text — 타인 슬롯 표시용 (로컬은 입력창으로 대체)
+/// - nameText             : "ID" — Steam 표시 이름 TMP_Text (LobbyPlayerState.DisplayName, 전 슬롯 공통 표시)
 /// - cheerNameInput       : TMP_InputField — 로컬 슬롯만 표시. Enter 시 SetCheerNameServerRpc
 /// - cheerNameErrorRoot   : 이름 거절 시 표시할 오류 인디케이터 (3초 후 자동 숨김)
 /// - cheerNameDictWarningRoot : CheerName이 Vosk 모델 사전에 없을 때 표시할 경고(강제 아님,
@@ -43,7 +43,7 @@ public class LobbySlotUI : MonoBehaviour
 
     [SerializeField] private Image          portrait;
 
-    [Tooltip("나중에 Steam ID 등 계정 ID를 표시할 필드. CheerName 표시 안 함.")]
+    [Tooltip("Steam 표시 이름(LobbyPlayerState.DisplayName) 표시 필드. CheerName 표시 안 함.")]
     [SerializeField] private TMP_Text       nameText;
 
     [Header("CheerName 편집 (로컬 슬롯 전용)")]
@@ -153,9 +153,13 @@ public class LobbySlotUI : MonoBehaviour
             if (portraitSprite != null) portrait.sprite = portraitSprite;
         }
 
-        // ID 칸 — Steam ID용, CheerName 표시 안 함 (구현 전까지 숨김)
+        // ID 칸 — Steam 표시 이름. 접속 직후 Host가 아직 보고받기 전이면 잠깐 공백일 수 있음
+        // (SubmitDisplayNameServerRpc 도착 시 OnSlotsChanged로 자동 갱신됨).
         if (nameText != null)
-            nameText.gameObject.SetActive(false);
+        {
+            nameText.gameObject.SetActive(true);
+            nameText.text = state.DisplayName.ToString();
+        }
 
         // CheerName: 로컬=편집 가능, 타인=읽기 전용 표시 (별도 Text 불필요)
         string effectiveName = LobbyNetworkManager.GetEffectiveCheerName(state);

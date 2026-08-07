@@ -10,6 +10,8 @@ using UnityEngine.Localization.Settings;
 /// (SteamworksIntegrationDesign.md §9~11 확정 — 다국어 파일럿, DialogueUI부터).
 ///
 /// [언어 소스 우선순위]
+/// 0. 옵션 메뉴에서 사용자가 직접 언어를 선택해 저장한 값(<see cref="ManualLocaleOverrideKey"/>)이
+///    있으면 최우선 적용 — GameSettingsManager.SetLocale()이 이 키에 저장함.
 /// 1. 릴리스 경로(<see cref="NetworkManagerSetup.UseLocalNetworkPath"/> == false) — Steam 클라이언트
 ///    언어(<c>SteamApps.GameLanguage</c>)를 §10 코어 12개 Locale 코드로 매핑해 적용.
 /// 2. 로컬 경로(①ParrelSync ②Dev Build)이거나 위가 실패하면 — <c>Application.systemLanguage</c> 폴백.
@@ -29,6 +31,9 @@ using UnityEngine.Localization.Settings;
 public class GameLocalizationBootstrap : MonoBehaviour
 {
     public static GameLocalizationBootstrap Instance { get; private set; }
+
+    /// <summary>옵션 메뉴에서 수동으로 저장한 Locale 코드 PlayerPrefs 키. GameSettingsManager와 공유.</summary>
+    public const string ManualLocaleOverrideKey = "Settings.LocaleCode";
 
     const string FallbackLocaleCode = "en";
 
@@ -85,15 +90,21 @@ public class GameLocalizationBootstrap : MonoBehaviour
         yield return LocalizationSettings.InitializationOperation;
 
         string source = "systemLanguage(폴백)";
-        string localeCode = null;
-
-        if (!NetworkManagerSetup.UseLocalNetworkPath)
+        string localeCode = PlayerPrefs.GetString(ManualLocaleOverrideKey, "");
+        if (!string.IsNullOrEmpty(localeCode))
         {
-            localeCode = TryResolveSteamLocaleCode();
-            if (localeCode != null) source = "Steam";
+            source = "수동 저장값(옵션 메뉴)";
         }
+        else
+        {
+            if (!NetworkManagerSetup.UseLocalNetworkPath)
+            {
+                localeCode = TryResolveSteamLocaleCode();
+                if (localeCode != null) source = "Steam";
+            }
 
-        localeCode ??= ResolveSystemLanguageLocaleCode();
+            localeCode ??= ResolveSystemLanguageLocaleCode();
+        }
 
         Locale locale = FindLocale(localeCode) ?? FindLocale(FallbackLocaleCode);
         if (locale == null)

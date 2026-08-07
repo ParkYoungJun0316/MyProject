@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Steamworks;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -59,6 +61,12 @@ public class LobbyNetworkManager : NetworkBehaviour
     // NetworkList 는 Awake 전에 초기화해야 함 (필드 초기화 or Awake)
     private readonly NetworkList<LobbyPlayerState> _slots = new();
 
+    // SubmitDisplayNameServerRpc가 OnClientJoined보다 먼저 도착하는 레이스 대비 버퍼(Host 전용).
+    // 이 프로젝트에서 Steam 릴레이 트랜스포트가 접속 이벤트를 중복·재정렬 전달하는 문제가
+    // 여러 번 확인됐음(SteamworksIntegrationDesign.md 트랙5) — 슬롯이 아직 없을 때 도착한
+    // DisplayName을 여기 담아뒀다가 슬롯 생성 시 바로 적용한다.
+    private readonly Dictionary<ulong, FixedString64Bytes> _pendingDisplayNames = new();
+
     // 룸코드: Host가 설정하고 모든 클라이언트에 동기화
     private readonly NetworkVariable<FixedString32Bytes> _sharedRoomCode = new(
         default,
@@ -85,6 +93,9 @@ public class LobbyNetworkManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log($"[LobbyNetworkManager][DIAG] OnNetworkSpawn — IsHost={IsHost} LocalClientId={NetworkManager.LocalClientId} " +
+                  $"기존 슬롯수={_slots.Count} ConnectedClients={NetworkManager.ConnectedClients.Count}");
+
         _slots.OnListChanged += HandleSlotsChanged;
 
         if (IsHost)
@@ -99,13 +110,33 @@ public class LobbyNetworkManager : NetworkBehaviour
             // Host 자신을 Slot0에 추가 → OnListChanged 발행 → OnSlotsChanged 1회 발행
             _slots.Add(new LobbyPlayerState
             {
-                ClientId   = NetworkManager.LocalClientId,
-                ColorIndex = 0,
-                IsReady    = false,
+                ClientId    = NetworkManager.LocalClientId,
+                ColorIndex  = 0,
+                IsReady     = false,
+                DisplayName = new FixedString64Bytes(GetLocalDisplayName(NetworkManager.LocalClientId)),
             });
+
+            // [DIAG] 이 스폰 시점 이전에 이미 연결된(=구독을 놓쳤을 수 있는) Client가 있는지 확인.
+            // NGO EnableSceneManagement=1이면 보통 이럴 일이 없어야 하나, 재호스트/씬 재로드 타이밍에
+            // 발생 가능성 있는지 실측 확인용.
+            foreach (var kv in NetworkManager.ConnectedClients)
+            {
+                if (kv.Key == NetworkManager.LocalClientId) continue;
+                Debug.LogWarning($"[LobbyNetworkManager][DIAG] OnNetworkSpawn 시점에 이미 연결돼 있던 Client 발견 — " +
+                                  $"clientId={kv.Key} (OnClientJoined 구독 전에 연결된 것으로 추정, 슬롯 누락 가능)");
+            }
         }
         else
         {
+            // Client: 내 연결이 끊기면(Host 이탈 등) 타이틀 복귀 — DisconnectManager(인게임)와 동일 패턴.
+            NetworkManager.OnClientDisconnectCallback += OnClientDisconnectedSelf;
+
+            // 내 Steam 표시 이름을 Host에 보고 — 슬롯 자체는 OnClientJoined(Host)에서 이미 생성됨.
+            // 단, Host의 OnClientJoined(슬롯 생성)가 이 RPC보다 늦게 처리되는 레이스가 있으면
+            // (Steam 릴레이 트랜스포트 메시지 순서 비보장 — SteamworksIntegrationDesign.md 트랙5의
+            // 여러 순서/중복 이슈와 같은 계열) 슬롯이 아직 없어 조용히 씹힌다 — 재시도로 보정.
+            StartCoroutine(SubmitDisplayNameWithRetry());
+
             // Client: 서버에서 리스트가 이미 동기화됐을 수 있으므로 초기 UI 갱신
             OnSlotsChanged?.Invoke();
         }
@@ -120,6 +151,10 @@ public class LobbyNetworkManager : NetworkBehaviour
             NetworkManager.OnClientConnectedCallback  -= OnClientJoined;
             NetworkManager.OnClientDisconnectCallback -= OnClientLeft;
         }
+        else
+        {
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectedSelf;
+        }
 
         if (Instance == this) Instance = null;
     }
@@ -128,25 +163,112 @@ public class LobbyNetworkManager : NetworkBehaviour
 
     void OnClientJoined(ulong clientId)
     {
-        // Host 자신은 OnNetworkSpawn에서 이미 추가됨
-        if (clientId == NetworkManager.LocalClientId) return;
+        Debug.Log($"[LobbyNetworkManager][DIAG] OnClientJoined 호출됨 — clientId={clientId}, " +
+                  $"현재 슬롯수={_slots.Count}, ConnectedClients={NetworkManager.ConnectedClients.Count}");
 
-        _slots.Add(new LobbyPlayerState
+        // Host 자신은 OnNetworkSpawn에서 이미 추가됨
+        if (clientId == NetworkManager.LocalClientId)
+        {
+            Debug.Log("[LobbyNetworkManager][DIAG] OnClientJoined — 자기 자신(Host)이라 스킵");
+            return;
+        }
+
+        // NGO가 동일 클라이언트에 대해 OnClientConnectedCallback을 중복 호출하는 경우가 있음
+        // (Scene 재동기화/재승인 등 실측 확인됨) — 이미 슬롯이 있으면 중복 추가하지 않음.
+        // 이 가드가 없으면 슬롯이 무한정 늘어나며 NetworkList 폭주 → 씬 동기화 충돌
+        // (Server Scene Handle already exist)까지 유발하는 것으로 확인됨.
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId != clientId) continue;
+            Debug.LogWarning($"[LobbyNetworkManager][DIAG] OnClientJoined — clientId={clientId}는 이미 슬롯[{i}]에 존재. 중복 호출로 판단해 무시.");
+            return;
+        }
+
+        var newSlot = new LobbyPlayerState
         {
             ClientId   = clientId,
             ColorIndex = GetNextFreeColorIndex(),
             IsReady    = false,
-        });
+        };
+
+        // SubmitDisplayNameServerRpc가 이 슬롯 생성보다 먼저 도착해 버퍼링돼 있었다면 바로 적용.
+        if (_pendingDisplayNames.TryGetValue(clientId, out var pendingName))
+        {
+            newSlot.DisplayName = pendingName;
+            _pendingDisplayNames.Remove(clientId);
+            Debug.Log($"[LobbyNetworkManager][DIAG] OnClientJoined — 버퍼링된 DisplayName 즉시 적용 clientId={clientId}");
+        }
+
+        _slots.Add(newSlot);
+
+        Debug.Log($"[LobbyNetworkManager][DIAG] OnClientJoined — 슬롯 추가 완료. 새 슬롯수={_slots.Count}");
     }
 
     void OnClientLeft(ulong clientId)
     {
-        for (int i = 0; i < _slots.Count; i++)
+        Debug.Log($"[LobbyNetworkManager][DIAG] OnClientLeft 호출됨 — clientId={clientId}, 현재 슬롯수={_slots.Count}");
+
+        // 과거 중복 추가분(위 가드 적용 전 세션 등)이 남아있을 가능성까지 고려해
+        // 해당 clientId 슬롯을 전부 제거(첫 매치만 지우면 유령 슬롯이 남을 수 있음).
+        bool removedAny = false;
+        for (int i = _slots.Count - 1; i >= 0; i--)
         {
             if (_slots[i].ClientId != clientId) continue;
             _slots.RemoveAt(i);
-            return;
+            removedAny = true;
+            Debug.Log($"[LobbyNetworkManager][DIAG] OnClientLeft — 슬롯[{i}] 제거 완료. 새 슬롯수={_slots.Count}");
         }
+        _pendingDisplayNames.Remove(clientId);
+
+        if (!removedAny)
+            Debug.LogWarning($"[LobbyNetworkManager][DIAG] OnClientLeft — clientId={clientId}에 해당하는 슬롯을 못 찾음(이미 없음)");
+    }
+
+    // ── 이탈 감지 (Client 전용) ───────────────────────────────────
+
+    /// <summary>
+    /// Client: 내 연결이 끊기면 타이틀 복귀. Host가 로비를 나가면(=서버 종료) 발생.
+    /// DisconnectManager.OnClientLeft(인게임 버전)와 동일한 isSelf 판정 패턴.
+    /// NotifyHostQuitClientRpc가 먼저 도착해 TitleReturnFlow가 이미 처리 중이면
+    /// Request()의 _isReturning 가드가 중복 호출을 무시한다.
+    /// </summary>
+    void OnClientDisconnectedSelf(ulong clientId)
+    {
+        bool isSelf = clientId == NetworkManager.LocalClientId || !NetworkManager.IsListening;
+        Debug.Log($"[LobbyNetworkManager][DIAG] OnClientDisconnectedSelf 호출됨 — clientId={clientId}, " +
+                  $"LocalClientId={NetworkManager.LocalClientId}, IsListening={NetworkManager.IsListening}, isSelf={isSelf}");
+        if (!isSelf) return;
+
+        Debug.Log("[LobbyNetworkManager] 연결 끊김 — 타이틀 복귀");
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.ClientDisconnected,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
+    }
+
+    /// <summary>
+    /// Host가 로비에서 "나가기" 버튼을 눌렀을 때 LobbyMenuController.OnClickQuit()에서 호출.
+    /// 남은 Client 전원에게 즉시 타이틀 복귀를 알린다 — DisconnectManager(인게임)의
+    /// NotifyAllReturnClientRpc와 동일 패턴. Shutdown()으로 연결이 끊기기 전에 먼저 보내야 한다.
+    /// </summary>
+    public void NotifyHostQuit()
+    {
+        Debug.Log($"[LobbyNetworkManager][DIAG] NotifyHostQuit 호출됨 — IsHost={IsHost}, ConnectedClients={NetworkManager.ConnectedClients.Count}");
+        if (!IsHost) return;
+        NotifyHostQuitClientRpc();
+    }
+
+    [ClientRpc]
+    void NotifyHostQuitClientRpc()
+    {
+        Debug.Log($"[LobbyNetworkManager][DIAG] NotifyHostQuitClientRpc 수신됨 — IsHost={IsHost}");
+        if (IsHost) return;
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.HostQuitRoom,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
     }
 
     // ── ServerRpc ─────────────────────────────────────────────────
@@ -239,6 +361,76 @@ public class LobbyNetworkManager : NetworkBehaviour
             SendCheerNameResult(sender, true, "");
             return;
         }
+    }
+
+    /// <summary>
+    /// 자기 Steam 표시 이름을 Host에 보고. Client가 OnNetworkSpawn에서 자동 호출.
+    /// Host 자신은 슬롯 생성 시 직접 설정하므로 호출하지 않음.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SubmitDisplayNameServerRpc(FixedString64Bytes displayName, RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId != sender) continue;
+            var s = _slots[i];
+            s.DisplayName = displayName;
+            _slots[i] = s;
+            return;
+        }
+
+        // 슬롯이 아직 없음(OnClientJoined보다 먼저 도착한 레이스) — 버퍼링해두면
+        // OnClientJoined가 슬롯을 만들 때 바로 적용됨.
+        Debug.LogWarning($"[LobbyNetworkManager][DIAG] SubmitDisplayNameServerRpc — clientId={sender} 슬롯 아직 없음. 버퍼링.");
+        _pendingDisplayNames[sender] = displayName;
+    }
+
+    /// <summary>
+    /// 로컬 Steam 표시 이름. Steam 초기화 안 됐으면(로컬 개발 경로) "PlayerN" 폴백.
+    /// </summary>
+    static string GetLocalDisplayName(ulong clientId)
+    {
+        if (SteamManager.Instance != null && SteamManager.Instance.IsInitialized)
+            return SteamClient.Name;
+        return $"Player{clientId}";
+    }
+
+    /// <summary>
+    /// Client 전용. SubmitDisplayNameServerRpc가 Host의 슬롯 생성(OnClientJoined)보다
+    /// 먼저 도착하면 대상 슬롯이 없어 조용히 무시되던 문제 — 최대 5회(1초 간격) 재전송하며,
+    /// 내 슬롯의 DisplayName이 채워진 게 확인되면 즉시 중단한다.
+    /// 1차 방어(이 재시도)가 5회 안에 확인 못 해도, 2차 방어로 Host의 _pendingDisplayNames
+    /// 버퍼가 시간 제한 없이 슬롯 생성 시점에 적용해주므로 실질적으로 유실되지 않는다.
+    /// </summary>
+    IEnumerator SubmitDisplayNameWithRetry()
+    {
+        var myName = new FixedString64Bytes(GetLocalDisplayName(NetworkManager.LocalClientId));
+
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            SubmitDisplayNameServerRpc(myName);
+            yield return new WaitForSeconds(1f);
+
+            if (IsLocalDisplayNameConfirmed())
+            {
+                Debug.Log($"[LobbyNetworkManager] DisplayName 반영 확인됨 (시도 {attempt + 1}회).");
+                yield break;
+            }
+        }
+
+        Debug.LogWarning("[LobbyNetworkManager] SubmitDisplayNameServerRpc 5회 재시도 후에도 반영 확인 안 됨 — 슬롯 자체가 없는 상태일 수 있음.");
+    }
+
+    bool IsLocalDisplayNameConfirmed()
+    {
+        ulong localId = NetworkManager.LocalClientId;
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId != localId) continue;
+            return _slots[i].DisplayName.Length > 0;
+        }
+        return false;
     }
 
     void SendCheerNameResult(ulong targetClientId, bool success, string errorKey)
@@ -383,6 +575,23 @@ public class LobbyNetworkManager : NetworkBehaviour
         // Client에 배포
         SyncCheerNamesClientRpc(sessionNames[0], sessionNames[1], sessionNames[2], sessionNames[3]);
 
+        // ── 세션 Steam 표시 이름 확정 후 전원에 배포 ──────────────────────
+        // (캐릭터 머리 위 이름표는 CheerName만 쓰지만, TeamStatusUI 코너 패널은 이 값을 씀)
+        var sessionDisplayNames = new FixedString64Bytes[4];
+        for (int i = 0; i < 4; i++) sessionDisplayNames[i] = new FixedString64Bytes($"Player{i}");
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            int ci = _slots[i].ColorIndex;
+            if (ci >= 0 && ci < 4)
+                sessionDisplayNames[ci] = _slots[i].DisplayName;
+        }
+        // Host 로컬 적용
+        var displayNamesForSession = new string[4];
+        for (int i = 0; i < 4; i++) displayNamesForSession[i] = sessionDisplayNames[i].ToString();
+        GameSession.Instance?.SetSessionDisplayNames(displayNamesForSession);
+        // Client에 배포
+        SyncDisplayNamesClientRpc(sessionDisplayNames[0], sessionDisplayNames[1], sessionDisplayNames[2], sessionDisplayNames[3]);
+
         // 씬 전환은 SceneFlowManager 단일 SSOT로 위임 — sceneSequence 상 "1.Lobby" 다음 항목이 로드된다.
         if (SceneFlowManager.Instance == null)
         {
@@ -474,6 +683,21 @@ public class LobbyNetworkManager : NetworkBehaviour
         Debug.Log($"[LobbyNetworkManager] Client 세션 CheerName 수신: {string.Join(", ", names)}");
     }
 
+    /// <summary>
+    /// 세션 Steam 표시 이름을 Client에 동기화.
+    /// 4색(Blue/Purple/Green/Yellow) 순서 고정 — colorIndex 0~3.
+    /// </summary>
+    [ClientRpc]
+    void SyncDisplayNamesClientRpc(
+        FixedString64Bytes n0, FixedString64Bytes n1,
+        FixedString64Bytes n2, FixedString64Bytes n3)
+    {
+        if (IsHost) return; // Host는 이미 적용됨
+        var names = new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() };
+        GameSession.Instance?.SetSessionDisplayNames(names);
+        Debug.Log($"[LobbyNetworkManager] Client 세션 표시 이름 수신: {string.Join(", ", names)}");
+    }
+
     // ── 로비 Heard 공유 ────────────────────────────────────────────
 
     /// <summary>로비 Heard 이벤트를 전원에게 브로드캐스트할 때 발행.</summary>
@@ -506,8 +730,12 @@ public class LobbyNetworkManager : NetworkBehaviour
         OnLobbyHeardBroadcast?.Invoke(targetColorIndex, speakerColorIndex);
     }
 
-    void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> _) =>
+    void HandleSlotsChanged(NetworkListEvent<LobbyPlayerState> ev)
+    {
+        Debug.Log($"[LobbyNetworkManager][DIAG] HandleSlotsChanged — type={ev.Type}, 총 슬롯수={_slots.Count}, " +
+                  $"구독자수(OnSlotsChanged)={OnSlotsChanged?.GetInvocationList().Length ?? 0}");
         OnSlotsChanged?.Invoke();
+    }
 
     int GetNextFreeColorIndex()
     {

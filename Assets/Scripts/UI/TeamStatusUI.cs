@@ -211,11 +211,15 @@ public class TeamStatusUI : MonoBehaviour
         svc.OnVoteReset       += HandleVoteReset;
     }
 
-    /// <summary>colorIndex → "BERRY" 형태 대문자 CheerName. 매핑 실패 시 "???".</summary>
-    static string GetCheerDisplayName(int colorIndex)
+    /// <summary>
+    /// colorIndex → Steam 표시 이름(닉네임). 매핑 실패 시 "???".
+    /// CheerName("BERRY" 등)은 응원 시 혼동을 줄이기 위해 캐릭터 머리 위(PlayerNameTagUI)로 이전했고,
+    /// 이 코너 패널은 "실제로 누구인지" 확인용 Steam 닉네임을 표시한다.
+    /// </summary>
+    static string GetPlayerDisplayName(int colorIndex)
     {
-        string name = CheerService.GetCheerName(colorIndex);
-        return string.IsNullOrEmpty(name) ? "???" : name.ToUpper();
+        string name = GameSession.Instance != null ? GameSession.Instance.GetSessionDisplayName(colorIndex) : null;
+        return string.IsNullOrEmpty(name) ? "???" : name;
     }
 
     void UnsubscribeCheerService()
@@ -288,7 +292,7 @@ public class TeamStatusUI : MonoBehaviour
         var nameObj = new GameObject("Name");
         nameObj.transform.SetParent(root.transform, false);
         slot.nameText           = nameObj.AddComponent<TextMeshProUGUI>();
-        slot.nameText.text      = GetCheerDisplayName(slot.colorIndex);
+        slot.nameText.text      = GetPlayerDisplayName(slot.colorIndex);
         slot.nameText.fontSize  = 13f;
         slot.nameText.fontStyle = FontStyles.Bold;
         slot.nameText.color     = Color.white;
@@ -403,7 +407,7 @@ public class TeamStatusUI : MonoBehaviour
 
         slot.colorIndex = ResolveColorIndex(slot.player);
         if (slot.nameText != null)
-            slot.nameText.text = GetCheerDisplayName(slot.colorIndex);
+            slot.nameText.text = GetPlayerDisplayName(slot.colorIndex);
 
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
         if (slot.heartImages == null) return;

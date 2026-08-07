@@ -1,14 +1,15 @@
 # Release Roadmap
 
 출시 일정·범위·체크리스트 SSOT.  
-텔레메트리 스펙: [`TelemetryDesign.md`](TelemetryDesign.md) · 네트워크: [`NetworkDesign.md`](NetworkDesign.md) · 응원/튜토리얼: [`CheerAndTutorialDesign.md`](CheerAndTutorialDesign.md).
+텔레메트리 스펙: [`TelemetryDesign.md`](TelemetryDesign.md) · 네트워크: [`NetworkDesign.md`](NetworkDesign.md) · 응원/튜토리얼: [`CheerAndTutorialDesign.md`](CheerAndTutorialDesign.md) · 사운드/옵션 메뉴: [`SoundAndSettingsDesign.md`](SoundAndSettingsDesign.md).
 
 **확정 (2026-08):** 데모 / Steam Playtest Depot / Open·Release 이원화 **전부 폐기**.  
 **목표 하나:** **2026-09-01 Steam 정식 출시.**
 
 > **순서 갱신 (2026-08-06):** Steamworks 코드 구현(트랙 1~3: 부트스트랩/Transport/Lobby)·다국어(Localization) 전체 번역 완료. 다음은 **Depot 실사용 2인 스모크 → 빌드 검수 즉시 제출(콘텐츠 완성 기다리지 않음, §1.1a) → 응원 확장 테스트 → BGM → 옵션/설정 메뉴 → SFX+볼륨조절 → 애니메이션 → Tutorial → 난이도 → 출시 QA** 순으로 확정. 상세는 §4 참고.
-> **오늘(2026-08-06) 목표:** 최소 **응원 시스템 확장 2개 테스트**(구현 완료, 테스트만 남음) 완료. 여유 되면 **SFX 마무리 + BGM 음량 조절**까지.
-> **⭐ Depot 2인 스모크 진행 결과 (2026-08-06/07):** 실 App ID 빌드 업로드·Set Live·테스터 초대 완료 후 실사용 테스트 진행, **버그 4건 발견** — 진단·인수인계 내용은 [`SteamworksIntegrationDesign.md`](SteamworksIntegrationDesign.md) "트랙 5" 절 참고. 이슈 A(로비 유령 슬롯)는 원인·수정안 확정, 나머지 3건은 재현 정보 추가 확인 필요. **다음 에이전트는 이 이슈들부터 마무리하고 §4 순서(응원 확장 테스트→...)로 진행할 것.**
+> **✅ Depot 2인 스모크 완료 (2026-08-06~07, §4 순위 2 종료):** 실 App ID 빌드 업로드·Set Live·테스터 초대 완료 후 실사용 테스트에서 버그 6건 발견, 전부 진단·수정·검증 통과. 상세 히스토리는 [`SteamworksIntegrationDesign.md`](SteamworksIntegrationDesign.md) "트랙 5" 절(6차 세션이 최종) 참고.
+> **✅ 빌드 검수 제출 완료 (2026-08-07, §4 순위 3 종료):** 빌드 메타 정리 후 Steam 빌드 검수 제출함. 결과(약 2~5일, 실패 시 +~7일 버퍼, §1.1a) 대기 중.
+> **🔶 §4 순위 5~7(BGM/옵션·설정 메뉴/SFX 볼륨) — 코드 구현 완료, 에디터 배치·UI 프리팹·테스트는 아직 (2026-08-07 세션):** `GameSettingsManager`(볼륨·화면·언어 SSOT)·`BGMManager`(구역별 BGM+크로스페이드)·`OptionsMenuController`(옵션 UI)·`SFXLibrary` 클립별 볼륨 보정까지 스크립트 전부 작성됨. **다음 세션은 [`SoundAndSettingsDesign.md`](SoundAndSettingsDesign.md) "남은 작업(에디터·콘텐츠)" 절부터 이어서 진행** — 씬에 컴포넌트 배치, 옵션 패널 UI 프리팹 제작·연결, BGM 곡 배정, 실사용 테스트가 남음. 응원 시스템 확장 2개 테스트(§4 순위 4)는 다른 세션에서 병행 진행 중.
 
 ---
 
@@ -138,12 +139,12 @@
 |------|------|------|
 | 0 | ~~M/T Dev Build(②)~~ | ✅ 완료 |
 | 1 | ~~Steamworks 코드 구현 (트랙1~3) + 다국어~~ | ✅ 완료 (부트스트랩/Transport/Lobby, 전체 번역) |
-| **2** | **Depot 실사용 2인 스모크 테스트** | Steam 원격 접속·초대·로컬라이제이션 확인 — 출시 하드 블로커 마무리 |
-| **3** | **빌드 메타 정리 + 빌드 검수 즉시 제출** | Product Name/Icon/버전 문자열. **콘텐츠 완성 기다리지 않음** (§1.1a) |
+| 2 | ~~Depot 실사용 2인 스모크 테스트~~ | ✅ 완료 — 버그 6건 발견·전부 수정·검증 통과 (`SteamworksIntegrationDesign.md` 트랙5) |
+| 3 | ~~빌드 메타 정리 + 빌드 검수 즉시 제출~~ | ✅ 완료 — 검수 제출함 (2026-08-07), 결과 대기 중 (§1.1a) |
 | **4** | **응원 시스템 확장 2개 테스트** | 구현 완료, 테스트만 남음 — 검수 대기 중 병행 |
-| **5** | **BGM 추가** | 스테이지 분위기 먼저 확정 |
-| **6** | **옵션/설정 메뉴** | 마스터·BGM·SFX 볼륨, 해상도/전체화면 — 오디오 버스 구조를 여기서 먼저 잡음 |
-| **7** | **SFX 마무리 + BGM 음량 조절** | 옵션 메뉴의 버스 구조에 맞춰 마무리 |
+| **5** | **BGM 추가** | 🔶 코드 완료(`BGMManager`), 곡 배정·씬 배치·테스트 남음 — [`SoundAndSettingsDesign.md`](SoundAndSettingsDesign.md) |
+| **6** | **옵션/설정 메뉴** | 🔶 코드 완료(`GameSettingsManager`/`OptionsMenuController`), UI 프리팹 제작·연결 남음. AudioMixer 미사용(스크립트 기반, 과투자 방지) — [`SoundAndSettingsDesign.md`](SoundAndSettingsDesign.md) |
+| **7** | **SFX 마무리 + BGM 음량 조절** | 🔶 코드 완료(`SFXLibrary` 클립별 볼륨 보정), 실사용 밸런스 조정 남음 |
 | **8** | **플레이어 애니메이션** | 트레일러·인게임. 트레일러 일정과 맞춤 |
 | **9** | **Tutorial 씬** | 조작·말해보기 |
 | **10** | **난이도** | Coming Soon 2주 play test 피드백 흡수 |
@@ -189,9 +190,9 @@
 | # | 작업 | 비고 |
 |---|------|------|
 | 5 | ~~Steamworks 전부 (코드)~~ | ✅ 완료 — Steam Networking · Lobby · Depot/알파 · Invite |
-| 6 | Depot **2인** 스모크 | 원격 초대·보이스·응원·로컬라이제이션 확인 |
-| 7 | 빌드 메타 | Product Name, Icon, `bundleVersion` (예: `1.0.0`) — 검수 제출 전 먼저 |
-| 8 | **빌드 검수** 제출 | **콘텐츠 완성 기다리지 않고 즉시** · 실패 시 +~7일 버퍼 (§1.1a) |
+| 6 | ~~Depot **2인** 스모크~~ | ✅ 완료 — 버그 6건 발견·전부 수정·검증 통과 |
+| 7 | ~~빌드 메타~~ | ✅ 완료 |
+| 8 | ~~**빌드 검수** 제출~~ | ✅ 완료 (2026-08-07) — 결과 대기 중, 실패 시 +~7일 버퍼 (§1.1a) |
 | 9 | Coming Soon 게시 | 트레일러·캡처. **약 2주 노출** |
 
 ### Phase 3 — 콘텐츠 · Coming Soon play test
@@ -199,9 +200,9 @@
 | # | 작업 | 비고 |
 |---|------|------|
 | 10 | 응원 확장 2개 테스트 | 구현 완료, 테스트만 남음 — Cheer 문서. **검수 대기 중 병행** |
-| 11 | BGM 추가 | 스테이지 분위기 먼저 확정 |
-| 12 | 옵션/설정 메뉴 (+ DialogueUI / End.Demo 마감) | 마스터·BGM·SFX 볼륨, 해상도/전체화면 |
-| 13 | SFX 마무리 + BGM 음량 조절 | 옵션 메뉴 버스 구조에 맞춰 |
+| 11 | BGM 추가 | 🔶 코드 완료, 곡 배정·씬 배치·테스트 남음 — `SoundAndSettingsDesign.md` |
+| 12 | 옵션/설정 메뉴 (+ DialogueUI / End.Demo 마감) | 🔶 코드 완료, UI 프리팹 제작·연결 남음 — `SoundAndSettingsDesign.md` |
+| 13 | SFX 마무리 + BGM 음량 조절 | 🔶 코드 완료(클립별 보정 배율), 실사용 밸런스 조정 남음 |
 | 14 | 플레이어 애니메이션 | 트레일러 우선 → 인게임 |
 | 15 | Tutorial 씬 | 연습·말해보기 |
 | 16 | **난이도** | **2주 노출 중** 친구 play test 피드백 |

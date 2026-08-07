@@ -53,6 +53,26 @@ public class NetworkManagerSetup : MonoBehaviour
     private NetworkManager  _net;
     private UnityTransport  _transport;
 
+    // 이슈 D 우회(SteamworksIntegrationDesign.md): 같은 프로세스에서 Steam 릴레이 소켓을
+    // 재사용하면 "Invalid Socket"으로 실패하므로, Host 시작마다 다른 virtual port를 발급한다.
+    // 프로세스 수명 전체에서 증가만 하는 카운터 — 0은 예전 고정값이라 1부터 시작해 구분한다.
+    private static int s_nextVirtualPort = 1;
+
+    /// <summary>가장 최근 StartHostSteam()에서 발급한 virtual port. Lobby 데이터에 실어 Client에 전달할 때 사용.</summary>
+    public int LastHostVirtualPort { get; private set; }
+
+    // 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5 — "온기동" 이슈):
+    // 이 프로세스에서 StartClientSteam()을 이미 성공적으로 호출한 적이 있으면, 이후 재접속 시도는
+    // Steam 릴레이/SteamNetworkingSockets 세션 상태가 누적되어 ConnectionApprovedMessage 등이
+    // 중복 전달되고 "Server Scene Handle already exist!"까지 유발하는 것으로 실측 확인됨
+    // (SteamClient.Shutdown()을 호출하지 않는 이슈 D 우회와 트레이드오프 관계).
+    // 완전한 재현 방지를 위해 TitleMenuController가 이 플래그를 보고 두 번째 이상 Client 접속
+    // 시도부터는 인프로세스 접속 대신 프로세스 재시작(+connect_lobby)으로 우회한다.
+    private static bool s_hasConnectedAsClientSteamThisProcess;
+
+    /// <summary>이 프로세스에서 StartClientSteam()이 이미 한 번이라도 성공한 적이 있는지.</summary>
+    public static bool HasConnectedAsClientSteamThisProcess => s_hasConnectedAsClientSteamThisProcess;
+
     /// <summary>
     /// true면 기존 로컬 IP 경로(LanDiscovery/StartHost/StartClient) 사용.
     /// false면 Steam Lobby 경로 사용 — 정식 릴리스 빌드 기준(SteamworksIntegrationDesign.md §5).
@@ -174,11 +194,17 @@ public class NetworkManagerSetup : MonoBehaviour
         _net.NetworkConfig.NetworkTransport = steamTransport;
         _net.ConnectionApprovalCallback = ApproveConnection;
 
+        int vport = s_nextVirtualPort++;
+        steamTransport.virtualPort = vport;
+
+        SubscribeDiagCallbacksOnce();
+
         bool ok = _net.StartHost();
         if (ok)
         {
             if (!string.IsNullOrEmpty(roomCode)) RoomCode = roomCode;
-            Debug.Log($"[NetworkManagerSetup] Steam Host 시작됨 — SteamId {SteamClient.SteamId}");
+            LastHostVirtualPort = vport;
+            Debug.Log($"[NetworkManagerSetup] Steam Host 시작됨 — SteamId {SteamClient.SteamId}, virtualPort {vport}");
         }
         else
         {
@@ -190,7 +216,11 @@ public class NetworkManagerSetup : MonoBehaviour
     /// <summary>
     /// Steam Client 시작. hostId = 접속할 Lobby Owner의 SteamId (Lobby Id 아님 — §4 확정).
     /// </summary>
-    public bool StartClientSteam(SteamId hostId)
+    /// <param name="virtualPort">
+    /// Host가 StartHostSteam()에서 발급한 릴레이 virtual port (이슈 D 우회, Lobby 데이터로 전달됨).
+    /// 값을 못 받은 경우(구버전 Lobby 등) 0으로 폴백 — 기존 동작과 동일.
+    /// </param>
+    public bool StartClientSteam(SteamId hostId, int virtualPort = 0)
     {
         if (_net == null || steamTransport == null)
         {
@@ -212,10 +242,20 @@ public class NetworkManagerSetup : MonoBehaviour
 
         _net.NetworkConfig.NetworkTransport = steamTransport;
         steamTransport.targetSteamId = hostId;
+        steamTransport.virtualPort   = virtualPort;
+
+        SubscribeDiagCallbacksOnce();
 
         bool ok = _net.StartClient();
-        if (ok) Debug.Log($"[NetworkManagerSetup] Steam Client 시작됨 — target {hostId}");
-        else    Debug.LogError("[NetworkManagerSetup] StartClientSteam() 실패");
+        if (ok)
+        {
+            s_hasConnectedAsClientSteamThisProcess = true;
+            Debug.Log($"[NetworkManagerSetup] Steam Client 시작됨 — target {hostId}, virtualPort {virtualPort}");
+        }
+        else
+        {
+            Debug.LogError("[NetworkManagerSetup] StartClientSteam() 실패");
+        }
         return ok;
     }
 
@@ -240,6 +280,39 @@ public class NetworkManagerSetup : MonoBehaviour
 
         if (_net != null && _transport != null)
             _net.NetworkConfig.NetworkTransport = _transport; // 다음 세션은 기본적으로 로컬 경로
+    }
+
+    // ── 진단용 로그 (SteamworksIntegrationDesign.md 트랙5 — 로비 로스터 미갱신/중복 Connect 원인 확인용) ──
+
+    private bool _diagSubscribed;
+
+    /// <summary>
+    /// NGO의 원본 OnClientConnectedCallback/OnClientDisconnectCallback을 LobbyNetworkManager와
+    /// 무관하게 직접 후킹 — 구독 타이밍 문제(LobbyNetworkManager가 늦게 구독해서 이벤트를 놓치는지)와
+    /// 무관하게 NGO가 실제로 이 콜백을 몇 번, 언제 호출하는지 그 자체를 확인하기 위한 진단 전용 로그.
+    /// 여러 번 Start/Shutdown을 반복해도 중복 구독되지 않도록 1회만 구독.
+    /// </summary>
+    private void SubscribeDiagCallbacksOnce()
+    {
+        if (_diagSubscribed || _net == null) return;
+        _net.OnClientConnectedCallback    += DiagOnClientConnected;
+        _net.OnClientDisconnectCallback   += DiagOnClientDisconnected;
+        _diagSubscribed = true;
+    }
+
+    private void DiagOnClientConnected(ulong clientId)
+    {
+        Debug.Log($"[NetworkManagerSetup][DIAG] OnClientConnectedCallback — clientId={clientId}, " +
+                  $"IsHost={_net.IsHost}, IsClient={_net.IsClient}, LocalClientId={_net.LocalClientId}, " +
+                  $"ConnectedClients.Count={_net.ConnectedClients.Count}, " +
+                  $"ConnectedClientsIds=[{string.Join(",", _net.ConnectedClientsIds)}]");
+    }
+
+    private void DiagOnClientDisconnected(ulong clientId)
+    {
+        Debug.Log($"[NetworkManagerSetup][DIAG] OnClientDisconnectCallback — clientId={clientId}, " +
+                  $"IsHost={_net.IsHost}, IsClient={_net.IsClient}, LocalClientId={_net.LocalClientId}, " +
+                  $"ConnectedClients.Count={_net.ConnectedClients.Count}");
     }
 
     // ── Connection Approval ───────────────────────────────────────

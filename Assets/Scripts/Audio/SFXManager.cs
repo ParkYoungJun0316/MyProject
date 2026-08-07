@@ -17,8 +17,8 @@ using UnityEngine;
 ///            SFXManager.Instance.StopLoop(src);
 ///
 /// [볼륨]
-///   masterVolume 을 Inspector 에서 설정 (0 = 무음, 1 = 최대).
-///   기본값 0 → Inspector 에서 반드시 설정할 것.
+///   GameSettingsManager.Instance가 있으면 MasterVolume × SfxVolume 를 우선 사용(옵션 메뉴 연동).
+///   없으면(격리 테스트 등) Inspector의 masterVolume 필드로 폴백 (0 = 미설정 취급 → 1로 처리).
 /// </summary>
 public class SFXManager : MonoBehaviour
 {
@@ -32,12 +32,24 @@ public class SFXManager : MonoBehaviour
     [Tooltip("비워두면 자동 생성. PlayOnAwake = false, SpatialBlend = 0 자동 설정")]
     [SerializeField] AudioSource source2D;
 
-    [Header("볼륨")]
+    [Header("볼륨 (GameSettingsManager 없을 때 폴백)")]
     [Tooltip("전체 SFX 볼륨 배율 (0 ~ 1). 0이면 무음.")]
     [SerializeField] [Range(0f, 1f)] float masterVolume = 0f;
 
-    // masterVolume 이 설정되지 않았을 때(0)를 최대 볼륨으로 처리
-    float EffectiveVolume => masterVolume > 0f ? masterVolume : 1f;
+    /// <summary>
+    /// 현재 SFX 유효 볼륨. GameSettingsManager가 있으면 그쪽 값 우선(옵션 메뉴 실시간 반영),
+    /// 없으면 Inspector의 masterVolume 폴백(0이면 1로 처리 — 기존 동작 유지).
+    /// 외부(PlayerAudio 등)가 자체 AudioSource 볼륨에 곱해 쓸 때도 이 프로퍼티를 사용할 것.
+    /// </summary>
+    public float EffectiveVolume
+    {
+        get
+        {
+            GameSettingsManager settings = GameSettingsManager.Instance;
+            if (settings != null) return settings.MasterVolume * settings.SfxVolume;
+            return masterVolume > 0f ? masterVolume : 1f;
+        }
+    }
 
     readonly Dictionary<int, bool> _alternateUseSecond = new Dictionary<int, bool>();
 
@@ -79,7 +91,7 @@ public class SFXManager : MonoBehaviour
         if (library == null || source2D == null) return;
         AudioClip clip = library.GetClip(id);
         if (clip == null) return;
-        source2D.PlayOneShot(clip, EffectiveVolume);
+        source2D.PlayOneShot(clip, EffectiveVolume * library.GetVolumeMultiplier(id));
     }
 
     // ── 3D 1회 재생 (월드 위치) ───────────────────────────────────
@@ -90,7 +102,7 @@ public class SFXManager : MonoBehaviour
         if (library == null) return;
         AudioClip clip = library.GetClip(id);
         if (clip == null) return;
-        AudioSource.PlayClipAtPoint(clip, worldPosition, EffectiveVolume);
+        AudioSource.PlayClipAtPoint(clip, worldPosition, EffectiveVolume * library.GetVolumeMultiplier(id));
     }
 
     // ── 1/2 교차 재생 ─────────────────────────────────────────────
@@ -148,7 +160,7 @@ public class SFXManager : MonoBehaviour
         src.loop          = true;
         src.spatialBlend  = 0f;
         src.playOnAwake   = false;
-        src.volume        = vol * EffectiveVolume;
+        src.volume        = vol * EffectiveVolume * library.GetVolumeMultiplier(id);
         src.Play();
         return src;
     }

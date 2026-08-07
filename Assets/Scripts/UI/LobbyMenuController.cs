@@ -251,6 +251,12 @@ public class LobbyMenuController : MonoBehaviour
     /// <summary>Quit 버튼 — TitleReturnFlow에 복귀 위임.</summary>
     public void OnClickQuit()
     {
+        // Host가 나가면 Listen-Server 구조상 접속 중인 Client 전원도 함께 끊긴다.
+        // Shutdown() 전에 먼저 알려서 Client가 곧바로 타이틀로 복귀하게 한다
+        // (LobbyNetworkManager.OnClientDisconnectedSelf가 그물망 역할로 한 번 더 받아준다).
+        if (LobbyNetworkManager.Instance != null && LobbyNetworkManager.Instance.IsHost)
+            LobbyNetworkManager.Instance.NotifyHostQuit();
+
         TitleReturnFlow.Instance?.Request(new TitleReturnOptions
         {
             Reason = TitleReturnReason.LobbyQuit,
@@ -296,7 +302,11 @@ public class LobbyMenuController : MonoBehaviour
     /// </summary>
     void RefreshAllSlots()
     {
-        if (LobbyNetworkManager.Instance == null) return;
+        if (LobbyNetworkManager.Instance == null)
+        {
+            Debug.LogWarning("[LobbyMenuController][DIAG] RefreshAllSlots — LobbyNetworkManager.Instance가 null이라 스킵");
+            return;
+        }
 
         ulong localId = NetworkManager.Singleton != null
             ? NetworkManager.Singleton.LocalClientId
@@ -304,6 +314,10 @@ public class LobbyMenuController : MonoBehaviour
 
         ulong hostId = LobbyNetworkManager.Instance.HostClientId;
         bool  isHost = LobbyContext.IsOnlineHost;
+
+        Debug.Log($"[LobbyMenuController][DIAG] RefreshAllSlots 실행 — SlotCount={LobbyNetworkManager.Instance.SlotCount}, " +
+                  $"localId={localId}, hostId={hostId}, isHost={isHost}, " +
+                  $"NGO.ConnectedClients={(NetworkManager.Singleton != null ? NetworkManager.Singleton.ConnectedClients.Count : -1)}");
 
         _localSlotUI = null;
         for (int i = 0; i < allSlotUIs.Length; i++)
@@ -317,6 +331,9 @@ public class LobbyMenuController : MonoBehaviour
                 bool isHostSlot  = s.ClientId == hostId;
                 bool canKick     = isHost && !isLocalSlot;
 
+                Debug.Log($"[LobbyMenuController][DIAG] Slot[{i}] clientId={s.ClientId} color={s.ColorIndex} " +
+                          $"ready={s.IsReady} isLocalSlot={isLocalSlot} isHostSlot={isHostSlot}");
+
                 allSlotUIs[i].Refresh(s, GetPortrait(s.ColorIndex), canKick, isHostSlot, isLocalSlot);
 
                 if (isLocalSlot)
@@ -327,6 +344,7 @@ public class LobbyMenuController : MonoBehaviour
             }
             else
             {
+                Debug.Log($"[LobbyMenuController][DIAG] Slot[{i}] SetEmpty (SlotCount={LobbyNetworkManager.Instance.SlotCount} 이하 범위 밖)");
                 allSlotUIs[i].SetEmpty();
             }
         }

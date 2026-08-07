@@ -1337,6 +1337,8 @@ GameObject:
   - component: {fileID: 794936814}
   - component: {fileID: 794936815}
   - component: {fileID: 794936816}
+  - component: {fileID: 794936818}
+  - component: {fileID: 794936817}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1529,6 +1531,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Facepunch Transport for Netcode for GameObjects::Netcode.Transports.Facepunch.FacepunchTransport
   steamAppId: 5029890
   targetSteamId: 0
+  virtualPort: 0
   userSteamId: 0
 --- !u!114 &794936814
 MonoBehaviour:
@@ -1568,6 +1571,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14317687e934a8f4994a1378928b6e33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameLocalizationBootstrap
+--- !u!114 &794936817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794936804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3898946058d2984b968ced4d4b66fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BGMManager
+  zoneClips:
+  - scenePrefix: M
+    clips:
+    - {fileID: 8300000, guid: c74214d5866cfc544ac408eafb6d71c0, type: 3}
+    - {fileID: 8300000, guid: 17696c19c8e5e894a8950bef03a5110e, type: 3}
+    - {fileID: 8300000, guid: 4a128b3720dba1b41b6b4e998b3cc63f, type: 3}
+    - {fileID: 8300000, guid: 912d813fd7c937340a8a441b180aeec3, type: 3}
+    - {fileID: 8300000, guid: 6ef2aadc7529c88498e0e1fde2145253, type: 3}
+  fadeDuration: 1.5
+--- !u!114 &794936818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794936804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b62dd9f41c7de3942bf29ff681d440d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameSettingsManager
 --- !u!1 &817844834
 GameObject:
   m_ObjectHideFlags: 0
@@ -3245,9 +3281,16 @@ MonoBehaviour:
   sceneSequence:
   - 0.Title
   - 1.Lobby
-  - T.Boss
+  - M.Stage1
   - M.Stage2
+  - M.Stage3
+  - M.Stage4
+  - M.Stage5
+  - M.Boss
+  - T.Stage1
+  - T.Stage2
   - T.Stage3
+  - T.Stage4
   - T.Stage5
   - T.Boss
   screenFader: {fileID: 508085740}

@@ -197,8 +197,13 @@ public class SteamLobbyManager : MonoBehaviour
     /// </summary>
     void HandleGameLobbyJoinRequested(Lobby lobby, SteamId friendId)
     {
+        if (OnInviteAccepted == null)
+        {
+            Debug.LogWarning($"[SteamLobbyManager] 초대 수락 감지 — Lobby {lobby.Id}, 초대자 {friendId} — 그러나 OnInviteAccepted 구독자 없음(이벤트 소멸됨).");
+            return;
+        }
         Debug.Log($"[SteamLobbyManager] 초대 수락 감지 — Lobby {lobby.Id}, 초대자 {friendId}");
-        OnInviteAccepted?.Invoke(lobby.Id);
+        OnInviteAccepted.Invoke(lobby.Id);
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

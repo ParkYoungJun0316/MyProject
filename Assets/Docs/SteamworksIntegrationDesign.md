@@ -1,8 +1,17 @@
-# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 — 버그 4건 발견, 2026-08-07 2차 세션에서 이슈 A 근본 원인 재진단·수정 + B/C/D 추가 진단)
+# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 — 버그 4건 발견, 2026-08-07 2차 세션 이슈 A 수정 + 3차 세션 이슈 D 근본원인 수정·이슈 B 절반 수정 + 4차 세션 이슈 D 실제 수정(virtual port)·이슈 E 신규 발견·수정·이슈 F 신규 발견 + 5차 세션 이슈 F 진짜 원인 확정·유령슬롯 근본수정·이슈 B 온기동 프로세스 재시작 우회 구현 + 6차 세션 이슈 B 온기동 진짜 근본원인 확정·수정 완료·사용자 검증 통과 — **트랙 5 전 이슈 종료**)
 
+> ## ⭐⭐⭐ 다음 에이전트(새 채팅) 시작 지침 — 여기부터 읽을 것
+>
+> **트랙 5(Depot 실사용 스모크 테스트) 이슈 A~F 전부 해결 확인 완료 — 이 트랙은 종료됨.** 다음 에이전트는:
+> 1. 이 파일 맨 아래 "트랙 5 — 2026-08-07 6차 세션" 절의 "인수인계 요약"만 참고하면 충분 — 그 이전 세션들은 히스토리.
+> 2. `ReleaseRoadmap.md` §4 순위 3(빌드 메타 정리 + 빌드 검수 제출) 진행 상태를 이어서 확인할 것 — 트랙 5 종료로 순위 2(Depot 실사용 스모크)는 완료됨.
+> 3. Bug Hunter 규칙(`.cursor/rules/bug-hunter.mdc`) 적용 — 새 버그가 나오면 로그로 확정 안 되는 부분은 진단만 하고 사용자 OK 전엔 코드 수정하지 말 것.
+>
+> ---
+>
 > **상태: 전략적 결정 11개(§1~§11) 확정 완료 + 코드 구현(트랙 1 부트스트랩 / 트랙 2 Transport / 트랙 3 Lobby) 및 실사용 스모크 테스트(Host↔Client 접속, 인게임 진입, Invite Overlay) 전부 통과 (2026-08-04).**
 > **트랙 4(다국어) — `DialogueUI` 파일럿 완료 (2026-08-05) + 전체 대사/OX퀴즈 번역 완료 (2026-08-06):** String Table + `LocalizeStringEvent` 패턴 검증 완료, `Dialogue` 테이블 실번역 11개 언어 입력 완료(사용자), OX퀴즈용 `LocalizedString` 코드 전환 + 번역 완료(테이블 미생성). 자세한 내용은 아래 "트랙 4" 절 참고.
-> **⭐ 트랙 5(실 App ID Depot 2인 스모크 테스트) — 버그 4건(A~D) 중 A 수정 완료(재검증 대기), B/C/D 다음 에이전트가 이어받을 것 (2026-08-06/07 발견 → 2026-08-07 2차 세션에서 A 근본 원인 재진단·수정 + B/C/D 추가 진단):** 실제 App ID(`5029890`)로 빌드 업로드·Set Live·테스터 계정 초대까지 완료. **다음 에이전트는 맨 아래 "트랙 5" 절, 특히 "2026-08-07 2차 세션 — 인수인계" 하위 절부터 시작.**
+> **✅ 트랙 5(실 App ID Depot 2인 스모크 테스트) — 종료. 버그 A~F 전부 해결 확인 완료 (2026-08-07 6차 세션):** 실제 App ID(`5029890`)로 빌드 업로드·Set Live·테스터 계정 초대까지 완료, 발견된 버그 6건(A/B/D/E/F + 유령슬롯 재발) 전부 수정·검증 통과. C(Steam 자동 언어감지)는 사용자 결정으로 우선순위 하향(수동 전환 경로는 이미 동작). 자세한 내용은 맨 아래 "트랙 5" 절 참고.
 > §4(연결 API 시그니처)는 실제 구현된 `StartHostSteam(string roomCode = "")` / `StartClientSteam(SteamId)`로 이미 확정 사용 중 — 문서 §4 텍스트만 아직 "미정"으로 남아있어 정리 필요(급하지 않음).
 > 확정된 내용은 `NetworkDesign.md` §4.2(Steam P2P + Lobby) / 신규 로컬라이제이션 절로 승격 예정(아직 미승격).
 >
@@ -468,4 +477,168 @@ Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok
 2. **이슈 B — 냉기동 케이스 수정 완료(검증 대기). 온기동 케이스는 위 필터로 B의 Player.log 캡처 필요.**
 3. **이슈 C — 보류(사용자 결정 유지). 이번 세션 재확인(#4, 인게임에서도 en) — 새 정보 아니고 기존 미스터리 그대로.**
 4. **이슈 D — 근본 원인 확정·수정 완료(검증 대기). 재빌드 + Depot 재업로드 후 Host 재생성 연속 테스트 + Player.log 확인.**
-5. **내일 재빌드 후: Issue D 검증용 + Issue B(온기동) 진단용 Player.log를 계정 A/B 둘 다 위 필터로 캡처해서 전달.**
+5. **2026-08-07 오전 재빌드 + 재테스트 완료 — 결과는 사용자가 다음 채팅(컨텍스트 초과로 이 채팅 이어가기 불가)에서 전달할 예정. 다음 에이전트는 그 결과(Player.log 등)를 받는 즉시 이슈 D/B(온기동) 확정 진단부터 시작할 것.**
+
+## 트랙 5 — 2026-08-07 4차 세션: 이슈 D "진짜" 근본원인 확정(virtual port 방식으로 수정) + 이슈 E 신규 발견·수정 + 이슈 F 신규 발견(미수정) (다음 세션 인수인계)
+
+> **이 절이 최신 상태.** 3차 세션에서 "근본 원인 확정"이라고 적었던 `SteamClient.Shutdown()` 제거 수정은 **필요하지만 불충분한 수정**이었음 — 재빌드 후에도 사용자가 같은 프로세스에서 재호스트를 시도하면 `Invalid Socket`이 그대로 재발했다.
+
+### 이슈 D — 재발. 진짜 원인은 "릴레이 소켓 virtualport=0 재사용 자체가 구조적으로 불가"
+
+**재현 로그(계정 A):** `SteamClient.Shutdown()` 제거 수정이 반영된 빌드에서도, Host → 방 폭파 → 재-Host 시도 시 여전히 `SteamNetworkingSockets.CreateRelaySocket()`에서 `ArgumentException: Invalid Socket` 발생. `SteamManager.IsInitialized`는 이번엔 정상적으로 `True`를 유지하고 있었음(3차 세션 수정은 유효) — 그런데도 실패. 즉 Steam 클라이언트 자체는 살아있는데, **같은 프로세스에서 `virtualport=0`으로 릴레이 리슨 소켓을 한 번 닫았다가 다시 여는 것 자체가 SteamNetworkingSockets 레이어의 구조적 제약으로 막혀 있음**(재시도 딜레이를 줘도 동일하게 실패 — 사용자가 직접 확인). 타이밍/레이스 문제가 아니라 "같은 소켓 번호 재사용 불가"라는 API 레벨 제약.
+
+**Fix (구현 완료, 재빌드 후 검증 대기):** 소켓을 닫았다 다시 여는 대신, **Host 세션마다 다른 virtual port 번호를 발급**해서 재사용 자체를 피하는 방식으로 전환.
+- `Library/PackageCache/com.community.netcode.transport.facepunch@27d3e825ecdd/Runtime/FacepunchTransport.cs`: `virtualPort` 필드 추가, `StartServer()`의 `CreateRelaySocket()`과 `StartClient()`의 `ConnectRelay()`에 전달하도록 수정. (§2/이슈 D 3차 세션 수정과 같은 성격의 임시 위치 이슈 — Package Manager "Embed" 시 함께 영구화 필요.)
+- `Assets/Scripts/Network/NetworkManagerSetup.cs`: `StartHostSteam()`이 프로세스 전역 증가 카운터(`s_nextVirtualPort`, 1부터 시작)로 매번 새 포트를 발급해 `steamTransport.virtualPort`에 설정, 발급값은 `LastHostVirtualPort`로 공개. `StartClientSteam(SteamId hostId, int virtualPort = 0)`으로 시그니처 확장 — Client는 Host가 실제로 쓴 포트 번호를 받아서 그대로 연결해야 함(안 그러면 기본 포트 0에 접속 시도하다 실패).
+- `Assets/Scripts/UI/TitleMenuController.cs`: `CreateGameSteamAsync()`에서 Host 성공 후 `lobby.Value.SetData("vport", ...)`로 Lobby 메타데이터에 포트 번호를 실어 공유. `JoinGameSteamAsync()`에서 `lobby.Value.GetData("vport")`로 읽어 `StartClientSteam(ownerId, vport)`에 전달(값 없거나 파싱 실패 시 0으로 폴백 — 구버전 호환).
+
+**Verify (다음 세션):** 재빌드 후 Host → 방 폭파 → 재-Host를 프로세스 재시작 없이 5회 이상 연속 성공하는지, 그리고 Client가 매번 정상적으로 그 Host에 접속되는지(포트 불일치로 연결 실패하지 않는지) 확인.
+
+### 이슈 E (신규) — 로비에서 Host가 "나가기" 눌러도 Client가 타이틀로 안 돌아옴 — 원인 확정·수정 완료
+
+**재현:** 계정 A(Host)가 로비 화면에서 "나가기" 버튼 클릭 → 계정 A 본인은 정상적으로 타이틀 복귀됨(로그 확인) → 그러나 계정 B(Client)는 로비 화면에 그대로 멈춰 있음 (Steam 쪽에서도 방이 살아있는 것처럼 보임).
+
+**Root cause:** 인게임(`M.Stage1`/`T.Stage1`)에는 `DisconnectManager`가 있어서 Host 이탈 시 Client 전원에게 `NotifyAllReturnClientRpc()`로 즉시 알리고, 만약 그마저 놓쳐도 `NetworkManager.OnClientDisconnectCallback`으로 자기 자신의 연결 끊김을 감지해 타이틀로 복귀한다. **`1.Lobby` 씬에는 이 두 안전장치가 전혀 없었음** — `LobbyMenuController.OnClickQuit()`은 그냥 로컬 `TitleReturnFlow.Request()`만 호출하고 끝(Client에 알리는 RPC 없음), `LobbyNetworkManager`는 Host 쪽에서만 `OnClientDisconnectCallback`을 구독하고(슬롯 정리용) Client 쪽은 아무것도 구독하지 않았음. 그 결과 Host가 나가서 서버가 죽어도, Client는 자기 연결이 끊긴 걸 알아챌 코드 자체가 없어서 로비 화면에 그대로 방치됨.
+
+**Fix 적용 완료:**
+- `Assets/Scripts/Network/LobbyNetworkManager.cs`: Client 쪽 `OnNetworkSpawn()/OnNetworkDespawn()`에 `NetworkManager.OnClientDisconnectCallback`을 새로 구독(`OnClientDisconnectedSelf`) — 인게임 `DisconnectManager`와 동일한 isSelf 판정으로 자기 연결이 끊기면 `TitleReturnFlow.Request(ClientDisconnected)` 호출. 그리고 Host 전용 공개 메서드 `NotifyHostQuit()` + `[ClientRpc] NotifyHostQuitClientRpc()` 추가 — Host가 나갈 때 Client 전원에게 즉시 `TitleReturnFlow.Request(HostQuitRoom)`을 브로드캐스트.
+- `Assets/Scripts/UI/LobbyMenuController.cs`: `OnClickQuit()`이 `TitleReturnFlow.Request()` 호출 전에 `LobbyNetworkManager.Instance.IsHost`면 먼저 `NotifyHostQuit()`을 호출하도록 수정 (RPC가 먼저 도착 → Client 즉시 복귀, 혹시 못 받아도 위 `OnClientDisconnectedSelf`가 안전망 역할).
+- `TitleReturnFlow.Request()`의 기존 `_isReturning` 가드 덕분에 RPC 경로와 disconnect 콜백 경로가 둘 다 걸려도 중복 처리되지 않음(추가 플래그 불필요).
+
+**Verify (다음 세션):** Host가 로비에서 "나가기" 클릭 시 Client가 즉시(또는 최소 지연으로) 타이틀로 복귀하는지, Steam 쪽에서도 Lobby가 정상적으로 정리되는지 확인.
+
+**설계 결정 확정(사용자 확인, 2026-08-07 4차 세션):** 인게임용 기존 `DisconnectManager` 컴포넌트를 로비 씬에 그대로 붙이는 방식은 **채택하지 않음** — 사용자에게 직접 확인함. 이유: `DisconnectManager`의 Host측 로직(`OnClientLeft`)은 "누구든(자기 자신 아니어도) 한 명이라도 이탈하면 무조건 전원 타이틀 복귀"라서, 로비의 기존 확정 정책("로비 kick/leave = 슬롯만 초기화, 인게임만 방 종료" — `multiplayer-ngo.mdc`)과 정면 충돌한다. 그대로 붙이면 로비에서 클라이언트 1명만 나가거나 네트워크가 잠깐 끊겨도 호스트 포함 전원이 타이틀로 튕기는 회귀가 생김. 사용자가 "기존 그대로 — 그 슬롯만 비우고 나머지는 로비에 남음" 정책을 명시적으로 재확인했으므로, 위 `LobbyNetworkManager`/`LobbyMenuController` 전용 구현(호스트 명시적 이탈 시에만 전원 알림)을 유지 — 향후 에이전트는 이 부분을 `DisconnectManager` 재사용으로 되돌리지 말 것.
+
+### 이슈 F (신규, **미수정** — 진단만 완료) — Client로 씬 진입 시 `Server Scene Handle already exist` 재현, 이슈 D와 무관한 별개 원인
+
+**재현 로그(계정 A, 이번 세션 캡처):** 한 프로세스 안에서 ①Host로 "1.Lobby" 정상 진입 → ②로비에서 "나가기"로 정상 Shutdown+타이틀 복귀(실패한 재호스트 시도 없음, 이슈 D 연쇄 아님) → ③이후 **Client**로 다른 사람이 새로 만든 방("1.Lobby")에 참여 → `Exception: Server Scene Handle (...) already exist! Happened during scene load of 1.Lobby with Client Handle (-678)` 즉시 발생, 스폰 실패.
+
+이게 중요한 이유: 이전 3차 세션에서는 이 예외를 "이슈 D(재호스트 실패)의 연쇄 증상"으로 추정했었는데, **이번엔 재호스트 실패가 단 한 번도 없었는데도 똑같은 예외가 재현됨** — 즉 이슈 D와는 별개의 독립적인 버그다. 사용자가 물어본 "3번 현상(A 0명/B 3명)이 로비 폭파 문제(이슈 E)와 같은 원인이냐"에 대한 답: **아니다, 이슈 E와도 다른 제3의 원인.**
+
+**가설(미검증, NGO 소스 분석 기반):** NGO `NetworkSceneManager`는 Host→Client 세션 전환 때마다 `ServerSceneHandleToClientSceneHandle` 딕셔너리를 새로 만들지만(`NetworkManager.ShutdownInternal()`이 `SceneManager.Dispose()` 후 `null` 처리 — 코드 확인함), 새 `NetworkSceneManager`가 초기화되며 **그 시점에 로컬에 이미 로드돼 있는 Unity 씬들("0.Title" 등)의 `Scene.handle` 값을 자기 자신에게 매핑해 미리 등록**한다(`InitializeScenesLoaded()`). `Scene.handle`은 Unity가 프로세스 내에서 재사용하는 작은 정수라서, 마침 클라이언트가 현재 있는 "0.Title" 씬의 handle 번호와 **원격 Host가 보내온 "1.Lobby" 씬의 서버측 handle 번호가 우연히 같은 값으로 겹치면** `UpdateServerClientSceneHandle()`이 "이미 존재"로 판단해 예외를 던진다(`ClientLoadedSynchronization`, NGO 2.9.2 소스 `NetworkSceneManager.cs` 1800줄대 확인). 즉 Host였던 적이 있는지와 무관하게, **같은 프로세스에서 씬 로드를 반복하며 Unity의 handle 번호가 우연히 겹치기만 해도** 발생할 수 있는 구조적 이슈로 추정.
+
+**아직 코드 수정 안 함 — 이유:** (1) 위 가설은 NGO 소스 코드 분석 기반 추론이며 실측 handle 번호로 직접 검증하지 못함, (2) 이슈 D/E 수정으로 씬 로드 시퀀스/타이밍이 달라지면 이 우연한 충돌 자체가 사라지거나 재현 조건이 바뀔 수 있음, (3) 섣부른 수정은 리스크 대비 확신도가 낮음(Bug Hunter 원칙).
+
+**다음 세션 액션(우선순위):**
+1. 이슈 D/E 수정 반영 후 재테스트 — 이슈 F가 여전히 재현되는지부터 확인. (씬 로드 흐름이 바뀌어서 우연히 사라질 가능성 있음, 그래도 근본 해결은 아니므로 계속 관찰 필요.)
+2. 재현되면, 예외 발생 직전/직후 `Debug.Log($"[Diag] localScene({sceneName}).handle={UnityEngine.SceneManagement.SceneManager.GetSceneByName(sceneName).handle}")` 같은 임시 로그를 추가해서 실제 handle 값 충돌을 실측 확인.
+3. 확인되면 후보 수정안(택1, 리스크·효과 재검토 필요): (a) Client가 "0.Title"에서 대기 중일 때 씬 로드를 시작하지 않고 먼저 언로드하도록 흐름 변경, (b) 이 특정 예외를 캐치해서 완전 실패 대신 재시도/복구하는 래퍼 추가, (c) Unity/NGO 패치 버전 확인(2.9.2 이후 수정된 known issue인지 체인지로그 확인).
+
+**Files changed (이번 세션):** `Library/PackageCache/com.community.netcode.transport.facepunch@27d3e825ecdd/Runtime/FacepunchTransport.cs`(virtual port 필드/적용), `Assets/Scripts/Network/NetworkManagerSetup.cs`(virtual port 발급/전달), `Assets/Scripts/UI/TitleMenuController.cs`(Lobby 데이터로 vport 공유/조회), `Assets/Scripts/Network/LobbyNetworkManager.cs`(Client 이탈 감지 + Host 이탈 알림 RPC 추가), `Assets/Scripts/UI/LobbyMenuController.cs`(OnClickQuit에서 NotifyHostQuit 호출 추가).
+
+**Files read (이번 세션):** 계정 A `Player.log`(직접 읽음, 최신), `Assets/Scripts/Flow/TitleReturnFlow.cs`, `Assets/Scripts/Network/DisconnectManager.cs`, `Assets/Scripts/Network/LobbyNetworkManager.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, NGO 패키지 소스(`NetworkSceneManager.cs`, `NetworkManager.cs`, `com.unity.netcode.gameobjects@02e4aaa4170c`).
+
+### 인수인계 요약 (2026-08-07 4차 세션 기준, 최신)
+
+1. **이슈 A — 해결 확인 완료.**
+2. **이슈 B — 냉기동 해결 확인 완료(사용자 재확인). 온기동은 여전히 원인 미확정 — 위 3차 세션 절의 로그 캡처 방법 그대로 필요.**
+3. **이슈 C — 보류(사용자 결정 유지, 우선순위 하향).**
+4. **이슈 D — 3차 세션 수정은 불충분했음(재발 확인). 4차 세션에서 virtual port 방식으로 재수정 완료 — 재빌드 후 연속 재호스트 테스트 필요.**
+5. **이슈 E(신규) — 원인 확정·수정 완료. 재빌드 후 Host 로비 이탈 시 Client 즉시 복귀하는지 검증 필요.**
+6. **이슈 F(신규) — 진단만 완료, 미수정. 이슈 D/E 재테스트 후에도 재현되면 위 "다음 세션 액션" 순서대로 진행.**
+
+---
+
+## 트랙 5 — 2026-08-07 5차 세션: 유령 슬롯 근본수정 + 이슈 F 진짜 원인 확정(4차 세션 가설 기각) + 이슈 B(온기동)·F 공통 우회 구현 (다음 세션 인수인계)
+
+> **이 절이 최신 상태.** 4차 세션의 이슈 F 가설("Unity Scene.handle 재사용 충돌")은 이번 세션 재현 로그로 **기각됨** — 진짜 원인은 완전히 다름.
+
+### 발견한 버그 1 — 유령 슬롯 재발의 진짜 원인: `LobbyNetworkManager.OnClientJoined`에 중복 방지 가드 없음 — **수정 완료**
+
+**증상:** 클라이언트 1명이 접속했는데 호스트 화면에 같은 사람이 여러 슬롯에 중복으로 나타남(계정A 4명/계정B 0명 등). 클라이언트가 나가도 유령 슬롯이 남음.
+
+**Root cause:** Host·Client 양쪽 `Player.log`를 대조한 결과, `NetworkManager.OnClientConnectedCallback`이 **같은 clientId에 대해 여러 번(실측 5회) 호출**됐는데, `LobbyNetworkManager.OnClientJoined()`는 호출될 때마다 무조건 `_slots.Add()`만 해서 매번 중복 슬롯이 쌓였음. `OnClientLeft()`도 첫 매치 하나만 지우고 `return`해서, 나갈 때도 유령이 대부분 남았음.
+
+**Fix 적용 완료 (`Assets/Scripts/Network/LobbyNetworkManager.cs`):**
+- `OnClientJoined`: 슬롯 추가 전 해당 `clientId`가 이미 있는지 검사 — 있으면 무시.
+- `OnClientLeft`: 첫 매치만 지우던 것을 **해당 clientId 슬롯 전부 제거**로 변경.
+
+**검증 결과(사용자 재테스트, 이번 세션):** 이 수정 이후 호스트 쪽 슬롯 수는 정확히 1개씩만 증가 — 유령 슬롯 문제 자체는 해결 확인됨. (단, 아래 "발견한 버그 2"는 별개로 남아있었음.)
+
+### 발견한 버그 2 — 이슈 F 진짜 원인: `ConnectionApprovedMessage` 트랜스포트 레벨 중복 전달, 온기동(이슈 B)과 동일 원인 — **프로세스 재시작으로 우회 구현**
+
+**4차 세션 가설 기각:** "Unity Scene.handle 재사용 우연 충돌" 가설은 근거 부족이었음. 이번 세션에 유령 슬롯 수정을 반영한 빌드로도 `Server Scene Handle already exist`가 **그대로 재현**돼서 가설이 틀렸음이 확인됨.
+
+**진짜 Root cause (로그로 확정):** 클라이언트 쪽 `Player.log`에 결정적 증거:
+```
+[Netcode] [Client-2] Connection approved! Synchronizing...
+[Netcode] [Client-2] Connection approved! Synchronizing...   ← 같은 접속에 대해 중복
+```
+바로 다음 재접속 시도에서는 3번 중복으로 더 늘어남. **`ConnectionApprovedMessage`가 클라이언트에 중복 전달**되고, 클라이언트는 이 메시지를 받을 때마다 현재 씬("1.Lobby")을 다시 로드하려 시도 → 첫 처리는 성공해서 Server↔Client Scene Handle 매핑을 등록하지만, 중복 처리가 같은 매핑을 또 등록하려다 `Server Scene Handle already exist!`로 충돌·크래시. 이후 NGO 내부 상태가 깨져서 `Ready` 클릭 시 RPC `NullReferenceException`까지 이어짐.
+
+이건 우리 C# 코드 버그가 아니라 **Facepunch.Steamworks/SteamNetworkingSockets 릴레이 트랜스포트가 메시지를 중복 전달하는 SDK 레벨 문제**로 확인됨 — Unity NGO 공식 GitHub에 동일 증상 이슈 있음([`#2704`](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/2704), NGO 팀 답변: "Steam Networking Transport가 중복 메시지를 전달하는 문제로 보임").
+
+**왜 냉기동은 되고 온기동만 안 되는지 — 이슈 B와 완전히 같은 원인으로 통합됨:**
+- **냉기동**(프로세스 새로 실행): `SteamClient.Init()`이 진짜 최초 1회 → 릴레이 세션 상태 깨끗 → 항상 성공.
+- **온기동**(같은 프로세스에서 재접속): 이슈 D(재호스트 `Invalid Socket`) 우회를 위해 `SteamClient.Shutdown()`을 절대 호출하지 않도록 만들어 놨음(3차 세션) — 그 결과 같은 프로세스 안에서 클라이언트 접속을 반복할수록 Steam 릴레이 세션/디스패치 상태가 절대 리셋되지 않고 누적됨. 재접속 시도 횟수가 늘수록 중복 메시지 개수도 1→2→3으로 계속 늘어나는 것을 실측 확인.
+- 호스트 쪽 재호스팅(virtual port 우회, 이슈 D)은 같은 프로세스에서 반복해도 문제 없었음 — 이 버그는 **클라이언트 쪽에만** 있음.
+
+**Fix 적용 완료 — 이슈 B(온기동)와 이슈 F를 한 번에 해결하는 공통 우회, "재시작해서 항상 냉기동처럼 접속":**
+- `Assets/Scripts/Network/NetworkManagerSetup.cs`: 프로세스 전역 플래그 `HasConnectedAsClientSteamThisProcess` 추가 — `StartClientSteam()` 성공 시 `true`로 세팅. "이 프로세스에서 Client로 접속한 게 몇 번째 시도인지" 추적용.
+- `Assets/Scripts/UI/TitleMenuController.cs`: 모든 클라이언트 접속 진입점(웜 인바이트 수락 + 수동 룸코드 입장)이 공통으로 지나가는 `JoinGameSteamAsync()` 맨 앞에 `TryRestartForWarmReconnect(lobbyId)` 체크 추가. `HasConnectedAsClientSteamThisProcess`가 이미 `true`면(=2번째 이상 시도) 인프로세스 접속 대신 현재 실행 파일을 `+connect_lobby <lobbyId>` 인자로 재실행하고 `Application.Quit()`. 새 프로세스는 기존에 이미 있던 냉기동 경로(`TryAutoJoinFromLaunchArgs`)를 그대로 타서 정상 접속.
+- 호스트 쪽은 건드리지 않음 — 재호스팅은 이 버그의 영향을 받지 않는 것으로 확인됨(위 참고).
+
+**Verify (다음 세션):**
+1. 방장이 방 폭파 → 재생성 후, 클라이언트가 **두 번째로** 초대 수락 시 화면이 잠깐 꺼지고 재시작되며 자동으로 그 로비에 들어가는지.
+2. 재시작 후 접속한 클라이언트가 정상적으로 슬롯에 보이는지, `Server Scene Handle already exist` 없이 깨끗하게 되는지.
+3. 재시작 방식(`Process.Start` + `Application.Quit`)이 Steam 오버레이/AppID 인식과 충돌 없이 자연스러운지 — 문제 있으면 `steam://run/<appid>//+connect_lobby <id>` URI 방식으로 교체 검토.
+
+**Files changed (이번 세션):** `Assets/Scripts/Network/LobbyNetworkManager.cs`(유령 슬롯 근본 수정), `Assets/Scripts/Network/NetworkManagerSetup.cs`(`HasConnectedAsClientSteamThisProcess` 플래그), `Assets/Scripts/UI/TitleMenuController.cs`(`TryRestartForWarmReconnect` 재시작 우회).
+
+**Files read (이번 세션):** 계정 A/B `Player.log`(여러 라운드, 직접 읽음), `Assets/Scripts/Network/LobbyNetworkManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/SteamManager.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, `Library/PackageCache/com.community.netcode.transport.facepunch@27d3e825ecdd/Runtime/FacepunchTransport.cs`, NGO 패키지 소스(`NetworkConnectionManager.cs`, `NetworkSceneManager.cs`, `SceneEventData.cs`, `NetworkManagerHooks.cs` — `com.unity.netcode.gameobjects@02e4aaa4170c`), 웹 검색(NGO GitHub issue #2704/#239, Facepunch.Steamworks issue #217).
+
+### 인수인계 요약 (2026-08-07 5차 세션 기준, 최신)
+
+1. **이슈 A — 해결 확인 완료(유지).**
+2. **이슈 B(온기동) — 프로세스 재시작 우회 구현 완료, 검증 대기.** 이슈 F와 동일 원인으로 통합됨.
+3. **이슈 C — 보류(사용자 결정 유지).**
+4. **이슈 D — 해결 확인 완료(유지, virtual port 방식).**
+5. **이슈 E — 해결 확인 완료(유지).**
+6. **이슈 F — 진짜 원인 확정(4차 세션 가설 기각). 이슈 B와 같은 프로세스 재시작 우회로 해결 시도 — 검증 대기.**
+7. **유령 슬롯(구 이슈 A 재발) — `LobbyNetworkManager.OnClientJoined` 중복 방지 가드로 근본 수정 완료, 사용자 재테스트로 해결 확인됨.**
+8. **다음 세션 액션:** 위 "Verify" 3개 항목 확인. 재시작 방식이 어색하거나 문제 있으면 `steam://run/` URI 방식 재검토.
+
+---
+
+## 트랙 5 — 2026-08-07 6차 세션: 이슈 B(온기동) 진짜 근본원인 확정·수정 완료·검증 통과 — **트랙 5 전 이슈 종료**
+
+> **이 절이 최신 상태.** 5차 세션의 "프로세스 재시작 우회"(트랜스포트 중복 메시지 회피)는 유지되지만, 온기동 최초 진입 실패의 **진짜 원인은 그것과 무관한 별개 버그**였음이 이번 세션에 확정됨.
+
+### 재현 (사용자 원본 보고)
+
+1. 계정 B를 **새로 실행**해 타이틀 화면에 대기(최초 진입) → 계정 A가 Invite Overlay로 초대 → 알림은 뜨고 B가 Accept 눌렀는데 화면이 그대로 타이틀에 머묦(로비로 안 들어감).
+2. B가 룸코드 직접 입력으로 방에 들어감(성공) → 방 폭파 → A가 방 재생성 후 다시 초대 → **이번엔 정상 합류됨.**
+
+두 시도의 유일한 차이는 "B가 타이틀 씬에 몇 번째로 진입했는가"였음(둘 다 같은 프로세스, 같은 Steam 초기화 상태).
+
+### Root cause — Unity Awake/OnEnable 실행 순서 비결정성
+
+`TitleMenuController.OnEnable()`이 `SteamLobbyManager.Instance`를 참조해 `OnInviteAccepted` 이벤트를 구독하는데, `SteamLobbyManager.Instance`는 그 자신의 `Awake()`에서 세팅됨. Unity 공식 문서(Execution order of event functions, Unity 6000.3 Manual)가 명시하는 대로 **다른 GameObject 간의 `Awake`/`OnEnable` 순서는 비결정적**이라, `0.Title` 씬 최초 로드 시 `TitleMenuController.OnEnable()`이 `SteamLobbyManager.Awake()`보다 먼저 실행되면 `Instance == null`이라 구독이 **로그 한 줄 없이** 스킵됨. 이후 Steam이 정상적으로 `OnInviteAccepted`를 발행해도 구독자가 없어 이벤트가 소멸.
+
+두 번째 이후 타이틀 진입(로비→타이틀 복귀)에서는 `SteamLobbyManager`가 이미 DDOL로 살아있어 `Instance`가 항상 non-null이므로 구독이 항상 성공 — 그래서 "최초 진입만 실패, 그 이후는 항상 성공"하는 패턴이 나왔던 것.
+
+**Cause site:** `Assets/Scripts/UI/TitleMenuController.cs` → `OnEnable()` (구 99~103행), `SteamLobbyManager.Instance != null` 조건이 최초 씬 로드 타이밍에 false가 되는 경로.
+
+### Fix 적용 완료
+
+- `Assets/Scripts/UI/TitleMenuController.cs`: `_inviteSubscribed` 멱등 플래그 + `TrySubscribeInviteAccepted()` 헬퍼 신설. `OnEnable()`과 `Start()` 양쪽에서 호출 — `Start()`는 씬 내 모든 `Awake`/`OnEnable`이 끝난 뒤 보장되므로 `OnEnable()`에서 놓쳤어도 `Start()`에서 반드시 재시도·성공한다. 구독 성공/보류 시 각각 로그 추가(향후 같은 계열 문제 발생 시 즉시 판별 가능).
+- `Assets/Scripts/Network/SteamLobbyManager.cs`: `HandleGameLobbyJoinRequested()`에 `OnInviteAccepted == null`(구독자 없음) 케이스 경고 로그 추가 — 이벤트가 소멸되는 상황을 더 이상 조용히 넘기지 않음.
+
+### 검증 결과 — 사용자 확인 완료 (2026-08-07)
+
+계정 B 최초 타이틀 진입 상태에서 A의 초대를 Accept → 정상 로비 합류 확인. **이슈 B(온기동) 해결.**
+
+### 인수인계 요약 (2026-08-07 6차 세션 기준, 최종)
+
+1. **이슈 A — 해결 확인 완료.**
+2. **이슈 B — 냉기동·온기동 둘 다 해결 확인 완료.** (온기동 최초 진입 실패는 트랜스포트 문제가 아니라 이벤트 구독 타이밍 버그였음 — 5차 세션의 재시작 우회는 별개로 여전히 유효(2번째 이상 접속 시 트랜스포트 중복 메시지 회피용).)
+3. **이슈 C — 보류(사용자 결정 유지).**
+4. **이슈 D — 해결 확인 완료(virtual port 방식).**
+5. **이슈 E — 해결 확인 완료.**
+6. **이슈 F — 5차 세션 수정(프로세스 재시작 우회)으로 해결 시도 중이었고, 이번 세션 재현 시 별도 재발 보고 없음.**
+7. **유령 슬롯(구 이슈 A 재발) — 해결 확인 완료.**
+8. **⭐ 트랙 5 종료. 다음 작업은 `ReleaseRoadmap.md` §4 순위 3 "빌드 메타 정리 + 빌드 검수 즉시 제출"로 진행.**
+
+**Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`(`_inviteSubscribed`/`TrySubscribeInviteAccepted` 추가), `Assets/Scripts/Network/SteamLobbyManager.cs`(구독자 없음 경고 로그 추가).
+
+**Files read (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/SteamManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`, `Assets/Scenes/0.Title.unity`(스크립트 배치 순서), `ProjectSettings/MonoManager.asset`, Unity 6000.3 Execution order 공식 문서(웹).

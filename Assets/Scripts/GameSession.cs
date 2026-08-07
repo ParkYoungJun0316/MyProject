@@ -55,6 +55,10 @@ public class GameSession : MonoBehaviour
     // 미설정 시 LobbyNetworkManager.DefaultCheerNames 기본값 반환.
     private string[] _sessionCheerNames;
 
+    // 이번 판 확정 Steam 표시 이름(DisplayName). 인덱스 = colorIndex.
+    // 로비 LobbyPlayerState.DisplayName을 게임 시작 시 1회 그대로 옮겨온 것 — 별도 네트워크 갱신 없음.
+    private string[] _sessionDisplayNames;
+
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
     public int ActivePlayerCount => _activePlayers.Count;
@@ -178,6 +182,28 @@ public class GameSession : MonoBehaviour
         return System.Array.IndexOf(LobbyNetworkManager.DefaultCheerNames, lower);
     }
 
+    // ── 세션 Steam 표시 이름 ───────────────────────────────────────
+
+    /// <summary>
+    /// 이번 판 확정 Steam 표시 이름 배열 저장.
+    /// 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
+    /// StartGame 직전 Host 로컬·Client 양쪽에서 CheerName과 동일하게 1회만 호출됨(런타임 갱신 없음).
+    /// </summary>
+    public void SetSessionDisplayNames(string[] names)
+    {
+        _sessionDisplayNames = names;
+        Debug.Log($"[GameSession] 세션 표시 이름 적용: {string.Join(", ", names)}");
+    }
+
+    /// <summary>colorIndex → 이번 판 Steam 표시 이름. 미설정/빈 값이면 "Player" 폴백.</summary>
+    public string GetSessionDisplayName(int colorIndex)
+    {
+        if (_sessionDisplayNames != null && colorIndex >= 0 && colorIndex < _sessionDisplayNames.Length
+            && !string.IsNullOrEmpty(_sessionDisplayNames[colorIndex]))
+            return _sessionDisplayNames[colorIndex];
+        return "Player";
+    }
+
     // ── 인트로 대화 본 여부 ───────────────────────────────────────
 
     /// <summary>해당 씬 키의 인트로 대화를 이미 봤는지 확인.</summary>
@@ -197,6 +223,7 @@ public class GameSession : MonoBehaviour
         _activeColors.Clear();
         _seenIntroKeys.Clear();
         _sessionCheerNames = null;
+        _sessionDisplayNames = null;
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }

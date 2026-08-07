@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -14,6 +15,13 @@ using UnityEngine;
 ///
 /// [1/2 교차 재생]
 ///   FruitPop, Mouth_TeethBreak, Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
+///
+/// [클립별 볼륨 보정 — Volume Overrides]
+///   원본 음원끼리 소리 크기가 서로 안 맞을 때(다른 곳에서 받아온 음원 등), Audacity로 파일 자체를
+///   고치지 않고도 이 에셋(Inspector)에서 특정 SFX만 상대적으로 크게/작게 보정할 수 있음.
+///   목록에 없는 SFXId는 보정 없음(1배)으로 처리됨. 0~2배 범위 — 1보다 크면 원본보다 부스트됨
+///   (너무 크게 부스트하면 노이즈/클리핑 위험 있으니 소폭 보정 용도로만 사용 권장).
+///   최종 소리 크기 = 원본 × 이 보정배율 × 옵션 메뉴 마스터·SFX 볼륨(0~1, GameSettingsManager).
 /// </summary>
 [CreateAssetMenu(fileName = "SFXLibrary", menuName = "Audio/SFX Library")]
 public class SFXLibrary : ScriptableObject
@@ -100,6 +108,29 @@ public class SFXLibrary : ScriptableObject
     [Header("Wind")]
     public AudioClip Wind_Pull;
     public AudioClip Wind_Push;
+
+    // ── 클립별 볼륨 보정 ──────────────────────────────────────────
+
+    [Serializable]
+    public class VolumeOverride
+    {
+        public SFXId id;
+        [Range(0f, 2f)]
+        [Tooltip("1 = 원본 그대로. 1보다 작으면 감쇠, 크면 부스트(과하게 쓰면 클리핑 위험).")]
+        public float volume = 1f;
+    }
+
+    [Header("클립별 볼륨 보정 (선택, 목록에 없으면 1배)")]
+    [SerializeField] VolumeOverride[] volumeOverrides;
+
+    /// <summary>id에 대한 볼륨 보정 배율. 목록에 없으면 1(보정 없음).</summary>
+    public float GetVolumeMultiplier(SFXId id)
+    {
+        if (volumeOverrides == null) return 1f;
+        foreach (VolumeOverride o in volumeOverrides)
+            if (o != null && o.id == id) return o.volume;
+        return 1f;
+    }
 
     // ─────────────────────────────────────────────────────────────
 

@@ -23,7 +23,7 @@
 | **인게임 보이스챗** | **Dissonance + NGO** (4인 Global, Voice Activation). Steam 시 **Dissonance Steam P2P** transport 검토 |
 | CheerName | **로비 커스텀** (§3). 빈칸 = 색 기본값 + Tutorial 연습 |
 | 이름 커스텀 | **Lobby 슬롯 인라인** + Host 확정 + `LobbyPlayerState` · `PlayerPrefs` 기억 |
-| **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시 (Start 강제 아님, §3.2) |
+| **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시, **최초 1회 등록 확인 수준** (Start 강제 아님, §3.2). 반복 인식·인식률 검증은 Tutorial(§5.5)에서 |
 | **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (사전 검증 + 발음 변형 대체 단어, §5) |
 | 채팅 응원 | `/cheer {name}` **필수 폴백** |
 | 스테이지 버프 | M = **Shield** (`Invincibility`), T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
@@ -31,7 +31,7 @@
 | **멀티 연결** | **Steam P2P + Lobby** (`NetworkDesign` ④) |
 | **목표** | **2026-09-01** 원격 협동 + 보이스 + 응원 + Tutorial (텔레메트리는 출시 후 OK) |
 | **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 |
-| 음성 인식 정확도 | 100% 불필요. **로비 불러보기** + Tutorial 말해보기로 확인 |
+| 음성 인식 정확도 | 100% 불필요. 로비 불러보기(최초 1회) → **Tutorial 말해보기(반복 인식·인식률 최종 검증)**로 확인 |
 
 > **데모 / Playtest 없음.** 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost, 배포=Steam (`ReleaseRoadmap.md` §3).
 
@@ -164,9 +164,9 @@
 - **채팅 UI로 닉네임 설정하지 않음.** 인게임 `/cheer` 폴백만 채팅.
 - **타이틀에서 입력하지 않음.** (로컬 기억용 `PlayerPrefs`는 정식에서 검토)
 
-#### 로비 불러보기 (Say Test) **[Ship Must]**
+#### 로비 불러보기 (Say Test) **[Ship Must — 범위 축소, 2026-08-07]**
 
-인게임 첫 실패 고통을 줄이기 위해, **로비에서 CheerName 인식이 되는지** 확인한다.
+인게임 첫 실패 고통을 줄이기 위해, **로비에서 CheerName 인식이 되는지 최초 1회 정도** 확인한다.
 
 | 항목 | 규칙 |
 |------|------|
@@ -175,7 +175,10 @@
 | 인식 | 로컬 Vosk + 유효 CheerName grammar. 가능하면 **팀원 슬롯 이름**도 같은 엔진으로 불러보기 |
 | 강제 | **Ready/Start 강제 통과 아님.** 실패해도 진행 가능. 안내만 (“안 되면 이름 고쳐라”) |
 | 저장 | **녹음·lexicon 학습 없음.** 검증 UI만 |
-| 숫자 테스트 | `b_4nana` 등 §3.5 잠정 숫자 — 이 불러보기로 인식률 판단 |
+| 숫자 테스트 | `b_4nana` 등 §3.5 잠정 숫자 — 최초 등록 확인만 여기서, **인식률 최종 판단은 Tutorial 말해보기(§5.5)** |
+
+> **2026-08-07 Dev Build 2인 테스트 결과 + 결론:** libvosk 네이티브 DLL(+ 종속 DLL 3종) 빌드 미포함 문제 수정 후, **로비 불러보기·인게임 음성 응원 모두 인식 자체는 정상 동작 확인.** 다만 로비 쪽에서 **최초 1회만 인식되고 이후 같은 슬롯에서 재시도하면 인식이 안 되는 증상**이 새로 발견됨 — 원인 미조사.
+> **결정(사용자 확정):** 이 증상은 **지금 조사·수정하지 않는다.** CheerName 등록·**반복 인식 안정성 검증·인식률 테스트**의 최종 무대는 **로비가 아니라 `2.Tutorial` 씬**으로 확정했기 때문 (§3.6 갱신). 로비 불러보기는 "최초 1회 등록 확인" 수준이면 충분하고, 그 이상의 반복 안정성 폴리싱은 Tutorial 구현 시로 이관한다. 다음 세션에서 이 로비 1회-한정 증상을 다시 "버그"로 재조사하지 말 것 — 필요해지면 사용자가 먼저 꺼낼 것.
 
 ### 3.3 소유·색 변경 (확정)
 
@@ -245,13 +248,14 @@
 | # | 규칙 |
 |---|------|
 | 13 | 발음 유사 (`bac` / `bek`) 경고 또는 차단 |
-| 14 | Tutorial 연습 맵 + 말해보기 polish (로비 불러보기는 Open에 이미 있음) |
+| 14 | Tutorial 연습 맵 + 말해보기 — **반복 인식·인식률 최종 검증** (2026-08-07 확정, §5.5). 로비 불러보기는 최초 1회 등록 확인만 |
 | 15 | `PlayerPrefs`로 로컬 이름 기억 · 경험자 Tutorial 이름 UI 생략 (§9.3) |
 
 ### 3.6 **[Ship Must]** Tutorial과의 관계
 
-- Open: Lobby에서 커스텀 완료. Tutorial 씬 **불필요**.
-- 정식: `2.Tutorial`은 **조작 연습 + 말해보기** 중심. CheerName 입력은 Lobby 유지 또는 Tutorial 병행(구현 시 택1, Docs 갱신).
+- **CheerName 입력 UI 자체는 Lobby 유지** (이미 구현·동작 확인됨 — 슬롯 인라인 편집 + Host 확정).
+- **⭐ 결정 (2026-08-07, "구현 시 택1" 해소):** CheerName **등록 확인 + 반복 인식 안정성 검증 + 인식률 테스트**의 최종 무대는 **Lobby가 아니라 `2.Tutorial` 씬**으로 확정. 로비 불러보기(§3.2)는 "최초 1회 등록 확인" 수준까지만 책임지고, 그 이상의 폴리싱(반복 인식·인식률)은 Tutorial 구현 시 다룬다 — 지금 로비 쪽 증상에 매달리지 않기로 함(§3.2 각주).
+- `2.Tutorial`은 **조작 연습 + CheerName 말해보기(반복 인식·인식률 검증)** 중심.
 - 인게임 이름 변경 = **Post-Launch**.
 - ⚠️ `PlayerPrefs` / TutorialCompleted는 **네트워크 재접속이 아님.** 세션 정책은 `NetworkDesign.md` §12.
 
@@ -460,14 +464,15 @@ Each Client: 자기 마이크 → 감지 → SubmitCheerServerRpc
 
 grammar/매핑 테이블 **파일을 서버 DB에 모을 필요 없음**.
 
-### 5.4 로비 불러보기 **[Ship Must]**
+### 5.4 로비 불러보기 **[Ship Must — 범위: 최초 1회 등록 확인만]**
 
 §3.2 동일. 로비에서 이름 확정 → `[TEST]` → Vosk 토큰 ✓/다시. 사전 미등재(§5.2 A) 시 경고 표시.  
-**녹음 파일을 저장하지 않음.**
+**녹음 파일을 저장하지 않음.**  
+2026-08-07 결정: 반복 인식·인식률 검증은 이 단계 책임이 아님 — §5.5로 이관.
 
-### 5.5 Tutorial 말해보기 **[Ship Must]**
+### 5.5 Tutorial 말해보기 **[Ship Must — "구현 시 택1" 해소: Tutorial로 확정, 2026-08-07]**
 
-Tutorial 연습 구간에 말해보기 UX를 넣거나, 로비 불러보기만으로 충분하면 생략 가능(구현 시 Docs 갱신).  
+CheerName **반복 인식 안정성 + 인식률 테스트**의 최종 검증 지점. (과거 "로비 불러보기만으로 충분하면 생략 가능" 문구는 폐기 — 로비에서 최초 1회 인식 후 재시도 시 인식 안 되는 증상이 발견됐고, 그 검증·튜닝을 여기서 담당하기로 확정.)  
 실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝).
 
 ---
@@ -583,7 +588,7 @@ Title → Lobby → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.
 
 | 구간 | 신규 | 경험자 |
 |------|------|--------|
-| 이름 설정 | CheerName UI | PlayerPrefs 있으면 **생략** |
+| 이름 설정 + **말해보기(반복 인식·인식률 검증, §5.5)** | CheerName UI | PlayerPrefs 있으면 **생략** |
 | 연습 | Stealth, 색 패드, **응원 1회** | **생략** |
 | StageStartGate | **필수** | **필수** |
 
@@ -720,7 +725,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] `LobbyPlayerState.CheerName` (빈칸 = 기본값 취급) + 슬롯 UI 동기화
 - [ ] **[필수] Lobby 씬 UI 로컬라이제이션** — `TitleMenuController`/Lobby 상태 메시지 등 하드코딩된 한국어 문자열(예: "찾는 중...", "방을 찾을 수 없습니다.", "6자리 숫자를 입력해주세요." 등)을 String Table 방식으로 전환. DialogueUI/OXQuiz와 동일한 패턴 적용
 - [ ] CheerName 검증 (§3.5) + `CanStart` 이름 유일
-- [ ] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님)
+- [x] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님). 2026-08-07 Dev Build 2인 확인: 최초 1회 인식 정상, **반복 재시도 시 인식 안 되는 증상** 있으나 조사 보류 (§3.2 각주) — 반복 인식·인식률 검증은 §5.5 Tutorial 항목으로 이관
 - [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
 - [ ] **Vosk** grammar (세션 3~4명) + `CheerKeywordEngine`
 - [x] `CheerLexiconBuilder` — §5.2 A(사전 검증) 구현 완료, 동작 확인됨 (2026-08-05)
@@ -731,8 +736,8 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] `CheerProgressUI` + `TeamStatusUI`
 - [ ] 채팅 입력 UI
 - [ ] 솔로 `/cheer` + 로컬 CheerService
-- [ ] **숫자 포함 이름** — 로비 불러보기로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
-- [ ] `2.Tutorial` + Lobby → Tutorial (조작·말해보기; 경험자 생략 OK)
+- [ ] **숫자 포함 이름** — Tutorial 말해보기(§5.5)로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
+- [ ] `2.Tutorial` — 조작 연습 + CheerName **말해보기(반복 인식·인식률 최종 검증)**; 경험자 생략 OK. **[Ship Must, 최종 검증 무대 확정 2026-08-07]**
 - [ ] CheerName `PlayerPrefs` 기억 + TutorialCompleted 스킵 + Gate → M.Stage1
 - [ ] 연습 구역 (Stealth / Pad / Cheer)
 - [ ] Dev Build ② **2인** (중간) — 로비 이름+불러보기+인게임 응원
@@ -809,7 +814,7 @@ A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P
 A. `/cheer {자기 CheerName}`. 빈칸이면 색 기본값 (`berry` 등).
 
 **Q. CheerName은 로비에서? Tutorial에서?**  
-A. **로비 슬롯 인라인 + 불러보기**가 기본. Tutorial은 조작·말해보기 연습. §3.2·§3.6.
+A. **입력 자체는 로비 슬롯 인라인**이 기본(구현됨). 하지만 **반복 인식·인식률 검증(말해보기)의 최종 무대는 Tutorial**로 확정(2026-08-07) — 로비 불러보기는 최초 1회 등록 확인 수준만 책임진다. §3.2·§3.6·§5.5.
 
 **Q. 로비 불러보기 실패하면 Start 막나?**  
 A. **아니오.** 강제 아님. 이름 수정 안내만. §3.2.

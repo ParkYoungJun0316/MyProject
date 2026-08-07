@@ -14,7 +14,7 @@ using UnityEngine.UI;
 /// Resume  버튼 → OnClickResume()
 /// Reset   버튼 → OnClickReset()
 /// Quit    버튼 → DisconnectManager.OnClickLeaveRoom()   (Inspector 직접 연결)
-/// Setting 버튼 → 미구현 (추후 추가)
+/// Setting 버튼 → OnClickSettings() / 닫기 → OnClickCloseSettings()
 ///
 /// [동작]
 /// Esc 키   : 패널 열기 / 닫기 토글
@@ -35,6 +35,10 @@ public class EscMenuController : MonoBehaviour
     [Tooltip("Reset 버튼. Host일 때만 interactable = true.")]
     [SerializeField] private Button resetButton;
 
+    [Header("설정 패널")]
+    [Tooltip("Setting 버튼 클릭 시 열릴 패널 (OptionsMenuController 부착). 비워두면 클릭 무시.")]
+    [SerializeField] private GameObject settingsPanel;
+
     [Header("커서")]
     [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요.")]
     [SerializeField] private bool lockCursorOnClose = true;
@@ -47,6 +51,9 @@ public class EscMenuController : MonoBehaviour
     {
         if (escPanel != null)
             escPanel.SetActive(false);
+
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
     }
 
     // ── 입력 ──────────────────────────────────────────────────────
@@ -116,7 +123,18 @@ public class EscMenuController : MonoBehaviour
             Debug.LogWarning("[EscMenuController] StageNetworkState가 없어 Reset을 수행할 수 없습니다.");
     }
 
-    // Setting 버튼: 미구현. 추후 OnClickSetting() 추가.
+    /// <summary>Setting 버튼 OnClick에 연결.</summary>
+    public void OnClickSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+        else Debug.LogWarning("[EscMenuController] settingsPanel이 연결되지 않았습니다.");
+    }
+
+    /// <summary>설정 패널 닫기. 설정 패널 내 닫기 버튼에도 연결.</summary>
+    public void OnClickCloseSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+    }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────
 

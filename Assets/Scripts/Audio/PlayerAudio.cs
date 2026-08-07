@@ -91,6 +91,12 @@ public class PlayerAudio : MonoBehaviour
             StartRun();
         else if (!moving && _isRunning)
             StopRun();
+
+        if (_isRunning && _runSource != null)
+        {
+            float baseVolume = runVolume > 0f ? runVolume : 1f;
+            _runSource.volume = baseVolume * (SFXManager.Instance?.EffectiveVolume ?? 1f);
+        }
     }
 
     void StartRun()
@@ -99,8 +105,7 @@ public class PlayerAudio : MonoBehaviour
         AudioClip clip = SFXManager.Instance?.GetClip(SFXId.Player_Run);
         if (clip == null) return;
 
-        _runSource.clip   = clip;
-        _runSource.volume = runVolume > 0f ? runVolume : 1f;
+        _runSource.clip = clip;
         _runSource.Play();
         _isRunning = true;
     }

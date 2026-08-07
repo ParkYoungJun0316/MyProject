@@ -91,15 +91,27 @@ public class TitleMenuController : MonoBehaviour
 
     // ── Unity 콜백 ────────────────────────────────────────────────
 
+    /// <summary>
+    /// OnInviteAccepted 구독은 OnEnable이 아니라 여기 Start() 한 곳에서만 한다 — 1방향.
+    /// Unity는 서로 다른 오브젝트 간 Awake/OnEnable 순서를 보장하지 않아 OnEnable()에서
+    /// 구독하면 SteamLobbyManager.Awake()보다 먼저 실행될 경우 Instance가 아직 null이라
+    /// 구독이 조용히 누락될 수 있었음(트랙5 이슈B 온기동 최초 진입 재현).
+    /// Start()는 씬 내 모든 Awake/OnEnable이 끝난 뒤 정확히 1회만 호출되는 것이 보장되므로,
+    /// 여기서만 구독하면 재시도·중복방지 플래그 없이도 항상 정확히 1번만 구독된다.
+    /// (이 컴포넌트는 타이틀 씬 생명주기 동안 비활성화되지 않으므로 OnEnable 재구독은 불필요.)
+    /// </summary>
     void Start()
     {
-        if (!UseLocalNetworkPath) TryAutoJoinFromLaunchArgs();
-    }
+        if (!UseLocalNetworkPath)
+        {
+            TryAutoJoinFromLaunchArgs();
 
-    void OnEnable()
-    {
-        if (!UseLocalNetworkPath && SteamLobbyManager.Instance != null)
-            SteamLobbyManager.Instance.OnInviteAccepted += OnSteamInviteAccepted;
+            if (SteamLobbyManager.Instance == null)
+                Debug.LogError("[TitleMenuController] SteamLobbyManager.Instance가 null — OnInviteAccepted 구독 실패. " +
+                               "0.Title NetworkManager GameObject에 SteamLobbyManager가 있는지 확인하세요.");
+            else
+                SteamLobbyManager.Instance.OnInviteAccepted += OnSteamInviteAccepted;
+        }
     }
 
     void OnDisable()
@@ -137,6 +149,43 @@ public class TitleMenuController : MonoBehaviour
             }
             return;
         }
+    }
+
+    /// <summary>
+    /// 이 프로세스에서 이미 Steam Client로 접속한 적이 있으면(=이번이 2번째 이상 시도) 게임을
+    /// <c>+connect_lobby &lt;lobbyId&gt;</c> 인자로 재실행하고 현재 프로세스를 종료한다.
+    /// 재시작이 곧 "냉기동" 경로를 그대로 다시 타는 것이므로, SteamNetworkingSockets 릴레이 세션이
+    /// 누적되어 발생하는 중복 메시지/Server Scene Handle 충돌을 근본적으로 회피한다.
+    /// 재시작 트리거 시 true 반환(호출부는 곧바로 return해야 함). 재실행 실패 시 false를 반환해
+    /// 인프로세스 접속으로 폴백한다.
+    /// </summary>
+    static bool TryRestartForWarmReconnect(SteamId lobbyId)
+    {
+        if (!NetworkManagerSetup.HasConnectedAsClientSteamThisProcess) return false;
+
+        Debug.Log($"[TitleMenuController] 이 프로세스에서 이미 Steam Client로 접속한 적 있음 — " +
+                  $"트랜스포트 중복 메시지 버그 회피를 위해 프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
+
+        try
+        {
+            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+            var startInfo = new System.Diagnostics.ProcessStartInfo(exePath, $"+connect_lobby {lobbyId.Value}")
+            {
+                UseShellExecute = true,
+            };
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[TitleMenuController] 재시작 실패 — {e}. 인프로세스 접속으로 폴백합니다(재현될 수 있음).");
+            return false;
+        }
+
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        return true;
     }
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
@@ -214,6 +263,9 @@ public class TitleMenuController : MonoBehaviour
                 SteamLobbyManager.Instance.LeaveCurrentLobby();
                 return;
             }
+
+            // 이슈 D 우회용 virtual port를 Lobby 데이터로 공유 — Client가 StartClientSteam에 그대로 전달.
+            lobby.Value.SetData("vport", NetworkManagerSetup.Instance.LastHostVirtualPort.ToString());
 
             NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
         }
@@ -304,6 +356,12 @@ public class TitleMenuController : MonoBehaviour
     {
         Debug.Log($"[TitleMenuController] JoinGameSteamAsync 진입 — lobbyId={lobbyId}");
 
+        // "온기동" 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5):
+        // 이 프로세스에서 이미 한 번이라도 Steam Client로 접속한 적이 있으면, 인프로세스 재접속은
+        // Server Scene Handle 충돌로 항상 실패하는 것으로 실측 확인됨. 검증된 "냉기동" 경로
+        // (+connect_lobby 커맨드라인 재실행)로 우회한다.
+        if (TryRestartForWarmReconnect(lobbyId)) return;
+
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
@@ -326,9 +384,14 @@ public class TitleMenuController : MonoBehaviour
 
             LobbyContext.Mode = LobbyMode.OnlineClient;
 
+            // Host가 SetData("vport", ...)로 공유한 virtual port를 읽어 그대로 접속 — 이슈 D 우회.
+            // 값이 없거나(구버전) 파싱 실패 시 0으로 폴백.
+            string vportStr = lobby.Value.GetData("vport");
+            if (!int.TryParse(vportStr, out int vport)) vport = 0;
+
             // 로컬 경로와 동일하게 StartClient 후 씬 전환은 NGO SceneManager가 자동 처리 — 수동 LoadScene 금지.
-            bool ok = NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id);
-            Debug.Log($"[TitleMenuController] StartClientSteam 반환 — ok={ok}");
+            bool ok = NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id, vport);
+            Debug.Log($"[TitleMenuController] StartClientSteam 반환 — ok={ok}, virtualPort={vport}");
         }
         catch (System.Exception e)
         {
