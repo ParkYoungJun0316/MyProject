@@ -14,7 +14,7 @@ using UnityEngine;
 ///   3. SFXManager Inspector 의 Library 필드에 이 에셋을 연결한다.
 ///
 /// [1/2 교차 재생]
-///   FruitPop, Mouth_TeethBreak, Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
+///   Mouth_TeethBreak, Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
 ///
 /// [클립별 볼륨 보정 — Volume Overrides]
 ///   원본 음원끼리 소리 크기가 서로 안 맞을 때(다른 곳에서 받아온 음원 등), Audacity로 파일 자체를
@@ -50,14 +50,11 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Door_Close;
     public AudioClip Door_Open;
 
-    // ── Fruit ────────────────────────────────────────────────────
-    [Header("Fruit")]
-    public AudioClip FruitPop_1;
-    public AudioClip FruitPop_2;
-
     // ── Minigame / Quiz ──────────────────────────────────────────
     [Header("Minigame / Quiz")]
     public AudioClip Minigame_OX_Correct;
+    [Tooltip("문제 시작~정답 공개까지 도는 타이머 틱 루프 사운드")]
+    public AudioClip Minigame_OX_TimerTick;
     public AudioClip Minigame_OX_Wrong;
     public AudioClip Minigame_SequenceRing_Correct;
 
@@ -71,7 +68,6 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Player_ColorChange;
     public AudioClip Player_Death;
     public AudioClip Player_Hit;
-    public AudioClip Player_Respawn;
     [Tooltip("달리기 루프 클립. 앞뒤를 잘라서 루프가 자연스럽도록 준비할 것")]
     public AudioClip Player_Run;
 
@@ -153,10 +149,8 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Door_Close:                        return Door_Close;
             case SFXId.Door_Open:                         return Door_Open;
 
-            case SFXId.FruitPop_1:                        return FruitPop_1;
-            case SFXId.FruitPop_2:                        return FruitPop_2;
-
             case SFXId.Minigame_OX_Correct:               return Minigame_OX_Correct;
+            case SFXId.Minigame_OX_TimerTick:             return Minigame_OX_TimerTick;
             case SFXId.Minigame_OX_Wrong:                 return Minigame_OX_Wrong;
             case SFXId.Minigame_SequenceRing_Correct:     return Minigame_SequenceRing_Correct;
 
@@ -166,7 +160,6 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Player_ColorChange:                return Player_ColorChange;
             case SFXId.Player_Death:                      return Player_Death;
             case SFXId.Player_Hit:                        return Player_Hit;
-            case SFXId.Player_Respawn:                    return Player_Respawn;
             case SFXId.Player_Run:                        return Player_Run;
 
             case SFXId.Stage_Clear:                       return Stage_Clear;

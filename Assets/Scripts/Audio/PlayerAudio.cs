@@ -5,7 +5,7 @@ using UnityEngine;
 /// Player 프리팹 루트에 추가한다.
 ///
 /// [담당 SFX]
-///   Player_Hit / Player_Death / Player_Respawn / Player_ColorChange / Player_Run (루프)
+///   Player_Hit / Player_Death / Player_ColorChange / Player_Run (루프)
 ///   Buff_SpeedUp / Buff_Shield
 ///
 /// [배치 방법]
@@ -49,7 +49,6 @@ public class PlayerAudio : MonoBehaviour
         {
             _events.OnDamaged            += OnHit;
             _events.OnDied               += OnDeath;
-            _events.OnRespawned          += OnRespawn;
             _events.OnBlackWhiteChanged  += OnBWChanged;
             _events.OnUniqueColorChanged += OnUniqueChanged;
         }
@@ -64,7 +63,6 @@ public class PlayerAudio : MonoBehaviour
         {
             _events.OnDamaged            -= OnHit;
             _events.OnDied               -= OnDeath;
-            _events.OnRespawned          -= OnRespawn;
             _events.OnBlackWhiteChanged  -= OnBWChanged;
             _events.OnUniqueColorChanged -= OnUniqueChanged;
         }
@@ -121,7 +119,6 @@ public class PlayerAudio : MonoBehaviour
 
     void OnHit(bool _)          => SFXManager.Instance?.Play(SFXId.Player_Hit);
     void OnDeath()              => SFXManager.Instance?.Play(SFXId.Player_Death);
-    void OnRespawn()            => SFXManager.Instance?.Play(SFXId.Player_Respawn);
     void OnBWChanged(bool _)    => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
     void OnUniqueChanged(int _) => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
 

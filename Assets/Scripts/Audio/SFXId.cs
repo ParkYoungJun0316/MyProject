@@ -23,12 +23,9 @@ public enum SFXId
     Door_Close,
     Door_Open,
 
-    // ── Fruit ────────────────────────────────────────────────────
-    FruitPop_1,
-    FruitPop_2,
-
     // ── Minigame / Quiz ──────────────────────────────────────────
     Minigame_OX_Correct,
+    Minigame_OX_TimerTick,
     Minigame_OX_Wrong,
     Minigame_SequenceRing_Correct,
 
@@ -40,7 +37,6 @@ public enum SFXId
     Player_ColorChange,
     Player_Death,
     Player_Hit,
-    Player_Respawn,
     Player_Run,
 
     // ── Stage / Flow ─────────────────────────────────────────────

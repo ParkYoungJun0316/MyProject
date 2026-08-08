@@ -1578,7 +1578,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3898946058d2984b968ced4d4b66fdf, type: 3}
   m_Name: 
@@ -1591,6 +1591,30 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 4a128b3720dba1b41b6b4e998b3cc63f, type: 3}
     - {fileID: 8300000, guid: 912d813fd7c937340a8a441b180aeec3, type: 3}
     - {fileID: 8300000, guid: 6ef2aadc7529c88498e0e1fde2145253, type: 3}
+  - scenePrefix: M.Boss
+    clips:
+    - {fileID: 8300000, guid: 0bdd48398468e6a41b34a1585bb11b1f, type: 3}
+    - {fileID: 8300000, guid: d4ffc17705720a243af6e108f4aed231, type: 3}
+    - {fileID: 8300000, guid: 28e9a530bd35b4447aeabbcb3621eb37, type: 3}
+  - scenePrefix: T.Stage1
+    clips:
+    - {fileID: 8300000, guid: 1fed3c0bf7f266c4bac97218d4bd5717, type: 3}
+  - scenePrefix: T.Stage2
+    clips:
+    - {fileID: 8300000, guid: cf838ab0d01e5b7429a38dbee7adc21b, type: 3}
+  - scenePrefix: T.Stage3
+    clips:
+    - {fileID: 8300000, guid: 1fed3c0bf7f266c4bac97218d4bd5717, type: 3}
+  - scenePrefix: T.Stage4
+    clips:
+    - {fileID: 8300000, guid: 008f3ccf2c0047145883334cce891c98, type: 3}
+  - scenePrefix: T.Stage5
+    clips:
+    - {fileID: 8300000, guid: b26146ba87593174aa2fcb97180b23db, type: 3}
+  - scenePrefix: T.Boss
+    clips:
+    - {fileID: 8300000, guid: 383fc420188d53f438098c84673e33b1, type: 3}
+    - {fileID: 8300000, guid: 4a36f6a1cde4c574a82855e37fb676da, type: 3}
   fadeDuration: 1.5
 --- !u!114 &794936818
 MonoBehaviour:
@@ -3281,18 +3305,10 @@ MonoBehaviour:
   sceneSequence:
   - 0.Title
   - 1.Lobby
-  - M.Stage1
   - M.Stage2
   - M.Stage3
   - M.Stage4
   - M.Stage5
-  - M.Boss
-  - T.Stage1
-  - T.Stage2
-  - T.Stage3
-  - T.Stage4
-  - T.Stage5
-  - T.Boss
   screenFader: {fileID: 508085740}
   fadeOutDuration: 1
   fadeInDuration: 1

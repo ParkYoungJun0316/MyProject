@@ -127,9 +127,6 @@ public class SFXManager : MonoBehaviour
         _alternateUseSecond[key] = !useSecond;
     }
 
-    public void PlayFruitPop(Vector3 worldPosition) =>
-        PlayAlternating(SFXId.FruitPop_1, SFXId.FruitPop_2, worldPosition);
-
     public void PlayMouthTeethBreak(Vector3 worldPosition) =>
         PlayAlternating(SFXId.Mouth_TeethBreak_1, SFXId.Mouth_TeethBreak_2, worldPosition);
 

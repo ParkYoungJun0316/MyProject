@@ -311,7 +311,7 @@ public class Stage5TargetRunner : NetworkBehaviour
         if (p == null || p.IsDead) return;
 
         _isCaptured = true;
-        SFXManager.Instance?.PlayFruitPop(transform.position);
+        SFXManager.Instance?.Play(SFXId.Stage5_Runner_Captured, transform.position);
         Deactivate();
         OnCaptured?.Invoke(this);
     }
