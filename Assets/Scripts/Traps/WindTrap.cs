@@ -322,7 +322,7 @@ public class WindTrap : TrapBase
         if (_windChargeTime > 0f)
             yield return new WaitForSeconds(_windChargeTime);
 
-        GetActiveParticle()?.Play();
+        PlayActiveParticle();
         SFXManager.Instance?.Play(
             _activeWindMode == WindMode.Push ? SFXId.Wind_Push : SFXId.Wind_Pull,
             transform.position);
@@ -331,7 +331,7 @@ public class WindTrap : TrapBase
         {
             ApplyForceToAll(ForceMode.Impulse);
             _windActive = false;
-            GetActiveParticle()?.Stop();
+            StopActiveParticle();
             OnWindEnd?.Invoke();
             yield break;
         }
@@ -355,13 +355,29 @@ public class WindTrap : TrapBase
             _windActive = false;
             _forceActive = false;
             _windForceElapsed = 0f;
-            GetActiveParticle()?.Stop();
+            StopActiveParticle();
             OnWindEnd?.Invoke();
         }
     }
 
     /// <summary>이번 사이클에서 확정된 모드(_activeWindMode)에 대응하는 파티클.</summary>
     ParticleSystem GetActiveParticle() => _activeWindMode == WindMode.Push ? pushParticle : pullParticle;
+
+    // GetActiveParticle()?.Play()/Stop() 형태는 쓰지 않는다 — UnityEngine.Object에 대한 ?.는
+    // C# 컴파일러가 raw null 체크만 하고 Object의 fake-null(오버로드된 ==) 판정을 건너뛰어,
+    // Inspector에서 미할당된 필드에 그대로 Play()/Stop()이 호출되어 UnassignedReferenceException이
+    // 난다 (실사례: pushParticle 미할당 시 WindCycle()에서 재현됨). 반드시 != null로 체크한다.
+    void PlayActiveParticle()
+    {
+        ParticleSystem p = GetActiveParticle();
+        if (p != null) p.Play();
+    }
+
+    void StopActiveParticle()
+    {
+        ParticleSystem p = GetActiveParticle();
+        if (p != null) p.Stop();
+    }
 
     /// <summary>비활성화/중단 시 안전하게 둘 다 정지 — 어느 쪽이 재생 중이었는지 추적할 필요 없음.</summary>
     void StopAllParticles()
