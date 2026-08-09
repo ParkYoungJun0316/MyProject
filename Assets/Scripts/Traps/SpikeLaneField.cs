@@ -36,25 +36,24 @@ public class SpikeLaneField : TrapBase
     [Tooltip("true: 직전에 발동됐던 레인은 다음 발동 후보에서 제외 (연속 방지)")]
     [SerializeField] bool excludeLastLanes = false;
 
-    [Header("경고 연출 (추후 구현)")]
-#pragma warning disable CS0414
-    [Tooltip("경고 비주얼 프리팹 — 추후 연결")]
-    [SerializeField] GameObject warningPrefab = null;
-
-    [Tooltip("경고 표시 지속 시간(초)")]
+    [Header("경고 연출")]
+    [Tooltip("경고 표시 시간(초). 이 시간 동안 선택된 레인의 마커가 노랑→빨강으로 보간되고,\n" +
+             "다 차는 순간 그 레인이 발동한다. 0이면 경고 없이 즉시 발동")]
     [SerializeField] float warningDuration = 0f;
 
-    [Tooltip("경고 오브젝트를 생성할 부모 Transform — 추후 연결")]
-    [SerializeField] Transform warningParent = null;
-
-    [Tooltip("경고 오디오 클립 — 추후 연결")]
-    [SerializeField] AudioClip warningSound = null;
-#pragma warning restore CS0414
+    [Tooltip("경고 시작 시 재생할 SFX. None이면 무음")]
+    [SerializeField] SFXId warnSfxId = SFXId.None;
 
     int[] _lastSelected;
 
-    // Host/Client가 같은 레인을 뽑도록 OnTrapTrigger 발동 횟수를 시드 salt로 사용.
+    // OnPreFireCharge(경고 시작) 시점에 미리 뽑아둔 레인 — OnTrapTrigger(발동 시점)가 그대로 재사용.
+    // warningDuration<=0이면 OnPreFireCharge 자체가 발행되지 않으므로(TrapBase.FireWithCharge) null로 남고,
+    // 그 경우 OnTrapTrigger가 그 자리에서 즉시 선택하는 폴백으로 동작.
+    int[] _pendingSelected;
+
+    // Host/Client가 같은 레인을 뽑도록 발동 횟수를 시드 salt로 사용.
     // TrapLoop()가 ServerTime에 앵커링돼 있어 이 값은 Host/Client에서 항상 같은 시점에 같은 값으로 증가함.
+    // SelectLanes()에서 정확히 한 번만 증가해야 함 — 중복 증가 시 Host/Client 시드가 어긋난다.
     int _fireCount;
 
     protected override void Awake()
@@ -62,6 +61,24 @@ public class SpikeLaneField : TrapBase
         base.Awake();
         if (lanes == null || lanes.Length == 0)
             lanes = GetComponentsInChildren<SpikeLane>(true);
+
+        // MouthTrapAnimator와 동일한 관례: 이 값이 TrapLoop의 fireAtSeconds/activateInterval
+        // 대기시간 계산(FireWithCharge)에 자동으로 반영되어 별도 타이밍 계산이 필요 없다.
+        SetPreFireChargeTime(warningDuration);
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        OnPreFireCharge += HandleWarnStart;
+    }
+
+    protected override void OnDisable()
+    {
+        OnPreFireCharge -= HandleWarnStart;
+        base.OnDisable();
+        _fireCount = 0;
+        _pendingSelected = null;
     }
 
     // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
@@ -108,24 +125,54 @@ public class SpikeLaneField : TrapBase
         }
     }
 
+    /// <summary>
+    /// 경고 시작(OnPreFireCharge, warningDuration>0일 때만 발행). 이 시점에 발동할 레인을 미리
+    /// 뽑아 각 레인의 마커를 warningDuration 동안 노랑→빨강으로 재생한다. 실제 발동(OnTrapTrigger)은
+    /// preFireChargeTime(=warningDuration) 뒤에 이 선택을 그대로 재사용한다.
+    /// </summary>
+    void HandleWarnStart()
+    {
+        if (lanes == null || lanes.Length == 0) return;
+
+        _pendingSelected = SelectLanes();
+
+        for (int i = 0; i < _pendingSelected.Length; i++)
+            if (lanes[_pendingSelected[i]] != null)
+                lanes[_pendingSelected[i]].PlayWarning(warningDuration);
+
+        if (warnSfxId != SFXId.None)
+            SFXManager.Instance?.Play(warnSfxId, transform.position);
+    }
+
     protected override void OnTrapTrigger()
     {
         if (lanes == null || lanes.Length == 0) return;
 
-        // Host/Client가 동일한 레인을 뽑도록 공유 세션 시드 + 발동 횟수로 로컬 RNG를 동기화.
-        // StagePressurePadSetup.ApplySeedAndColors()와 동일한 "Seed ^ salt" 관례를 따름.
+        // warningDuration>0이면 HandleWarnStart가 이미 뽑아둔 레인을 그대로 사용(경고와 발동이
+        // 같은 레인이어야 함). warningDuration<=0이면 OnPreFireCharge가 발행되지 않아
+        // _pendingSelected가 비어있으므로 그 자리에서 즉시 선택(경고 없는 즉발 폴백).
+        int[] selected = _pendingSelected ?? SelectLanes();
+        _pendingSelected = null;
+
+        for (int i = 0; i < selected.Length; i++)
+            if (lanes[selected[i]] != null) lanes[selected[i]].Trigger();
+
+        _lastSelected = selected;
+    }
+
+    /// <summary>Host/Client가 동일한 레인을 뽑도록 공유 세션 시드 + 발동 횟수로 로컬 RNG를 동기화.
+    /// StagePressurePadSetup.ApplySeedAndColors()와 동일한 "Seed ^ salt" 관례를 따름.
+    /// 발동 1회당 정확히 한 번만 호출되어야 함(HandleWarnStart 또는 OnTrapTrigger 중 하나) —
+    /// 두 곳에서 중복 호출되면 Host/Client _fireCount가 어긋나 시드가 갈라진다.</summary>
+    int[] SelectLanes()
+    {
         const int seedSalt = 0x5B1DE000;
         int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (_fireCount * 0x2545F491);
         UnityEngine.Random.InitState(mixedSeed);
         _fireCount++;
 
         int count = Mathf.Clamp(activeLaneCount, 1, lanes.Length);
-        int[] selected = PickRandomIndices(count);
-
-        for (int i = 0; i < selected.Length; i++)
-            if (lanes[selected[i]] != null) lanes[selected[i]].Trigger();
-
-        _lastSelected = selected;
+        return PickRandomIndices(count);
     }
 
     /// <summary>count개의 레인 인덱스를 중복 없이 랜덤 선택.</summary>
@@ -169,15 +216,9 @@ public class SpikeLaneField : TrapBase
     protected override void OnDeactivated()
     {
         _fireCount = 0;
+        _pendingSelected = null;
         if (lanes == null) return;
         for (int i = 0; i < lanes.Length; i++)
             if (lanes[i] != null) lanes[i].ForceDeactivate();
-    }
-
-    // SetActive(false) 경로: OnDisable()만 불리고 OnDeactivated()는 안 불림 (DropTrap.OnDisable과 동일 이유)
-    protected override void OnDisable()
-    {
-        base.OnDisable();
-        _fireCount = 0;
     }
 }

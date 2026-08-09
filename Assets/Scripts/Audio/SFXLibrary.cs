@@ -14,7 +14,7 @@ using UnityEngine;
 ///   3. SFXManager Inspector 의 Library 필드에 이 에셋을 연결한다.
 ///
 /// [1/2 교차 재생]
-///   Mouth_TeethBreak, Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
+///   Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
 ///
 /// [클립별 볼륨 보정 — Volume Overrides]
 ///   원본 음원끼리 소리 크기가 서로 안 맞을 때(다른 곳에서 받아온 음원 등), Audacity로 파일 자체를
@@ -33,7 +33,6 @@ public class SFXLibrary : ScriptableObject
 
     // ── Boulder ──────────────────────────────────────────────────
     [Header("Boulder")]
-    public AudioClip Boulder_PlayerCollision;
     public AudioClip Boulder_Roll;
 
     // ── Breakable ────────────────────────────────────────────────
@@ -55,13 +54,12 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Minigame_OX_Correct;
     [Tooltip("문제 시작~정답 공개까지 도는 타이머 틱 루프 사운드")]
     public AudioClip Minigame_OX_TimerTick;
-    public AudioClip Minigame_OX_Wrong;
     public AudioClip Minigame_SequenceRing_Correct;
+    public AudioClip Minigame_SequenceRing_Wrong;
 
     // ── Mouth ────────────────────────────────────────────────────
     [Header("Mouth")]
     public AudioClip Mouth_TeethBreak_1;
-    public AudioClip Mouth_TeethBreak_2;
 
     // ── Player ───────────────────────────────────────────────────
     [Header("Player")]
@@ -73,8 +71,6 @@ public class SFXLibrary : ScriptableObject
 
     // ── Stage / Flow ─────────────────────────────────────────────
     [Header("Stage / Flow")]
-    public AudioClip Stage_Clear;
-    public AudioClip Stage_Countdown;
     public AudioClip Stage_TransitionEnter;
     public AudioClip Stage_TransitionEsophagus;
 
@@ -138,7 +134,6 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Boss_PhaseTransition_Mouth:        return Boss_PhaseTransition_Mouth;
             case SFXId.Boss_PhaseTransition_Esophagus:    return Boss_PhaseTransition_Esophagus;
 
-            case SFXId.Boulder_PlayerCollision:           return Boulder_PlayerCollision;
             case SFXId.Boulder_Roll:                      return Boulder_Roll;
 
             case SFXId.Breakable_Destroy:                 return Breakable_Destroy;
@@ -151,19 +146,16 @@ public class SFXLibrary : ScriptableObject
 
             case SFXId.Minigame_OX_Correct:               return Minigame_OX_Correct;
             case SFXId.Minigame_OX_TimerTick:             return Minigame_OX_TimerTick;
-            case SFXId.Minigame_OX_Wrong:                 return Minigame_OX_Wrong;
             case SFXId.Minigame_SequenceRing_Correct:     return Minigame_SequenceRing_Correct;
+            case SFXId.Minigame_SequenceRing_Wrong:       return Minigame_SequenceRing_Wrong;
 
             case SFXId.Mouth_TeethBreak_1:                  return Mouth_TeethBreak_1;
-            case SFXId.Mouth_TeethBreak_2:                  return Mouth_TeethBreak_2;
 
             case SFXId.Player_ColorChange:                return Player_ColorChange;
             case SFXId.Player_Death:                      return Player_Death;
             case SFXId.Player_Hit:                        return Player_Hit;
             case SFXId.Player_Run:                        return Player_Run;
 
-            case SFXId.Stage_Clear:                       return Stage_Clear;
-            case SFXId.Stage_Countdown:                   return Stage_Countdown;
             case SFXId.Stage_TransitionEnter:             return Stage_TransitionEnter;
             case SFXId.Stage_TransitionEsophagus:         return Stage_TransitionEsophagus;
 

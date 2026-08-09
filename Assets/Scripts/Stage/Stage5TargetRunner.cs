@@ -50,6 +50,15 @@ public class Stage5TargetRunner : NetworkBehaviour
     [Tooltip("비워두면 자식에서 자동 탐색")]
     [SerializeField] Animator _anim;
 
+    [Header("사운드 (Run 루프 — 3D)")]
+    [Tooltip("0 = 완전 2D, 1 = 완전 3D")]
+    [SerializeField] [Range(0f, 1f)] float runSpatialBlend = 1f;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float runMinDistance = 1f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float runMaxDistance = 0f;
+    [SerializeField] AudioRolloffMode runRolloffMode = AudioRolloffMode.Logarithmic;
+
     public event Action<Stage5TargetRunner> OnCaptured;
 
     NavMeshAgent _agent;
@@ -64,6 +73,8 @@ public class Stage5TargetRunner : NetworkBehaviour
 
     bool _isActive;
     bool _isCaptured;
+
+    AudioSource _runLoopSource;
 
     // Host가 쓰고 전 머신이 읽는 이동 애니 상태 (0=Idle, 1=Walk, 2=Run) — 연출 전용, 판정 아님.
     readonly NetworkVariable<byte> _moveStateNV = new NetworkVariable<byte>(0);
@@ -92,6 +103,7 @@ public class Stage5TargetRunner : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         _moveStateNV.OnValueChanged -= HandleMoveStateChanged;
+        StopRunLoop();
     }
 
     void OnEnable()
@@ -101,6 +113,11 @@ public class Stage5TargetRunner : NetworkBehaviour
         _retargetTimer = 0f;
         _stuckTimer = 0f;
         _lastPosition = transform.position;
+    }
+
+    void OnDisable()
+    {
+        StopRunLoop();
     }
 
     /// <summary>
@@ -130,6 +147,10 @@ public class Stage5TargetRunner : NetworkBehaviour
 
     void Update()
     {
+        // 볼륨 실시간 반영(옵션 메뉴 마스터/SFX 슬라이더) — 전 머신에서 실행, Host 전용 로직과 무관.
+        if (_runLoopSource != null && _runLoopSource.isPlaying && SFXManager.Instance != null)
+            _runLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Stage5_Runner_Run);
+
         if (!IsServer) return; // Host 전권 시뮬 (TStageNetworkBoard.md §3.2)
         if (!_isActive || _isCaptured) return;
 
@@ -291,9 +312,49 @@ public class Stage5TargetRunner : NetworkBehaviour
 
     void HandleMoveStateChanged(byte previous, byte current)
     {
-        if (_anim == null) return;
-        _anim.SetBool("isRun",  current == 2);
-        _anim.SetBool("isWalk", current == 1);
+        if (_anim != null)
+        {
+            _anim.SetBool("isRun",  current == 2);
+            _anim.SetBool("isWalk", current == 1);
+        }
+
+        // Run(추적당해 도망치는 상태)일 때만 루프 재생 — Walk(랜덤 배회)는 무음.
+        if (current == 2) StartRunLoop();
+        else StopRunLoop();
+    }
+
+    // ── 사운드 (Run 루프) ─────────────────────────────────────────
+    // _moveStateNV는 Host가 쓰고 전 머신(Host 포함)이 OnValueChanged로 동일하게 수신 —
+    // 이미 네트워크로 동기화된 상태라 별도 RPC 없이 여기 얹기만 하면 전 머신에서 안전하게 재생됨.
+
+    void StartRunLoop()
+    {
+        if (_runLoopSource != null && _runLoopSource.isPlaying) return;
+        if (SFXManager.Instance == null) return;
+
+        AudioClip clip = SFXManager.Instance.GetClip(SFXId.Stage5_Runner_Run);
+        if (clip == null) return;
+
+        if (_runLoopSource == null)
+        {
+            _runLoopSource               = gameObject.AddComponent<AudioSource>();
+            _runLoopSource.loop          = true;
+            _runLoopSource.playOnAwake   = false;
+            _runLoopSource.spatialBlend  = runSpatialBlend;
+            _runLoopSource.rolloffMode   = runRolloffMode;
+            _runLoopSource.minDistance   = runMinDistance > 0f ? runMinDistance : 1f;
+            _runLoopSource.maxDistance   = runMaxDistance > 0f ? runMaxDistance : 500f;
+        }
+
+        _runLoopSource.clip   = clip;
+        _runLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Stage5_Runner_Run);
+        _runLoopSource.Play();
+    }
+
+    void StopRunLoop()
+    {
+        if (_runLoopSource != null && _runLoopSource.isPlaying)
+            _runLoopSource.Stop();
     }
 
     // ── 포획 판정 ────────────────────────────────────────────────
@@ -311,8 +372,18 @@ public class Stage5TargetRunner : NetworkBehaviour
         if (p == null || p.IsDead) return;
 
         _isCaptured = true;
-        SFXManager.Instance?.Play(SFXId.Stage5_Runner_Captured, transform.position);
+        PlayCapturedSfxClientRpc(transform.position);
         Deactivate();
         OnCaptured?.Invoke(this);
+    }
+
+    /// <summary>
+    /// 포획 사운드를 전 머신에서 재생. Host 로컬 Play() 직접 호출은 Host만 들리는 버그였음
+    /// (OnTriggerEnter가 Host-only라서) — WindTrap/DropTrap과 동일하게 Host 판정 → 전체 브로드캐스트로 통일.
+    /// </summary>
+    [ClientRpc]
+    void PlayCapturedSfxClientRpc(Vector3 position)
+    {
+        SFXManager.Instance?.Play(SFXId.Stage5_Runner_Captured, position);
     }
 }

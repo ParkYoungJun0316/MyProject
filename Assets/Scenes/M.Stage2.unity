@@ -398,6 +398,10 @@ PrefabInstance:
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
+      propertyPath: fireSfxId
+      value: 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: arrowPrefab
       value: 
       objectReference: {fileID: 1228902361557107635, guid: 0264dc866f1379243bbaa22854497a52, type: 3}
@@ -867,7 +871,7 @@ MonoBehaviour:
   baseDropSpeed: 5
   speedPhases: []
   warnSfxId: 40
-  fireSfxId: 40
+  fireSfxId: 32
 --- !u!114 &453563920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1040,6 +1044,10 @@ PrefabInstance:
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: baseSpeed
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
+      propertyPath: fireSfxId
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: arrowPrefab
@@ -1223,6 +1231,10 @@ PrefabInstance:
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: baseSpeed
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
+      propertyPath: fireSfxId
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: arrowPrefab
@@ -2473,7 +2485,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1332737327}
         m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: StartLoop
+        m_MethodName: PlayUntilStopped
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2503,29 +2515,17 @@ MonoBehaviour:
         m_CallState: 2
   OnWrongAnswer:
     m_PersistentCalls:
+      m_Calls: []
+  OnAnswerRevealed:
+    m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1332737327}
         m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: StopLoop
+        m_MethodName: Stop
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnAnswerRevealed:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -2665,6 +2665,10 @@ PrefabInstance:
     - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
       propertyPath: baseSpeed
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
+      propertyPath: fireSfxId
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
       propertyPath: arrowPrefab
@@ -2824,6 +2828,10 @@ PrefabInstance:
     - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
       propertyPath: baseSpeed
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
+      propertyPath: fireSfxId
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
       propertyPath: arrowPrefab
@@ -3137,6 +3145,10 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
+      propertyPath: fireSfxId
+      value: 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 6796030624572472020, guid: 8cbd94c014df563449f5a98d52f1f798, type: 3}
       propertyPath: arrowPrefab
       value: 
       objectReference: {fileID: 4828375429449359924, guid: bb57d8ecee4483c439a9f59f1588cac1, type: 3}
@@ -3237,7 +3249,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1332737330}
   - component: {fileID: 1332737329}
-  - component: {fileID: 1332737328}
   - component: {fileID: 1332737327}
   m_Layer: 0
   m_Name: SFXEventManager
@@ -3259,19 +3270,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
   sfxId: 10
---- !u!114 &1332737328
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1332737326}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 11
 --- !u!114 &1332737329
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4555,6 +4553,10 @@ PrefabInstance:
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
+      propertyPath: fireSfxId
+      value: 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: arrowPrefab
       value: 
       objectReference: {fileID: 1228902361557107635, guid: 0264dc866f1379243bbaa22854497a52, type: 3}
@@ -5020,6 +5022,10 @@ PrefabInstance:
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: baseSpeed
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
+      propertyPath: fireSfxId
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 3371802313720838045, guid: 854fa8353588d514aa4678bf15358b01, type: 3}
       propertyPath: arrowPrefab

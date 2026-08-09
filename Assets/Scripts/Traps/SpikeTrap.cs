@@ -33,6 +33,10 @@ public class SpikeTrap : TrapBase
     [Tooltip("연속 데미지 간격(초). 0이면 닿을 때마다 즉시")]
     [SerializeField] private float damageInterval = 0f;
 
+    [Header("사운드")]
+    [Tooltip("가시가 올라올 때 재생할 SFX. None이면 무음.")]
+    [SerializeField] private SFXId raiseSfxId = SFXId.None;
+
     Collider spikeTrigger;
     BoxCollider spikeTriggerBox;
     Vector3 loweredLocalPos;
@@ -123,6 +127,9 @@ public class SpikeTrap : TrapBase
         EnsureInitialized();
         isRaised = true;
         spikeTrigger.enabled = true;
+
+        if (raiseSfxId != SFXId.None)
+            SFXManager.Instance?.Play(raiseSfxId, transform.position);
 
         yield return MoveSpikeLocal(loweredLocalPos, loweredLocalPos + Vector3.up * raiseHeight);
 

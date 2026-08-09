@@ -1036,7 +1036,7 @@ MonoBehaviour:
   baseDropSpeed: 20
   speedPhases: []
   warnSfxId: 40
-  fireSfxId: 34
+  fireSfxId: 32
 --- !u!1 &437495287
 GameObject:
   m_ObjectHideFlags: 0
@@ -1585,6 +1585,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8044922d27d3fe547ad1c323c41ddaa2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColoredStartZone
+--- !u!1 &796540930
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 796540932}
+  - component: {fileID: 796540931}
+  m_Layer: 0
+  m_Name: SFXEventPlayer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &796540931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 796540930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
+  sfxId: 31
+--- !u!4 &796540932
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 796540930}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &843514282
 GameObject:
   m_ObjectHideFlags: 0
@@ -2609,7 +2654,7 @@ MonoBehaviour:
   baseDropSpeed: 15
   speedPhases: []
   warnSfxId: 40
-  fireSfxId: 34
+  fireSfxId: 32
 --- !u!1 &1438379754
 GameObject:
   m_ObjectHideFlags: 0
@@ -2991,7 +3036,19 @@ MonoBehaviour:
   telegraph: {fileID: 0}
   OnAdvanceStarted:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 796540931}
+        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnAdvanceCompleted:
     m_PersistentCalls:
       m_Calls: []
@@ -3121,7 +3178,7 @@ MonoBehaviour:
   baseDropSpeed: 12
   speedPhases: []
   warnSfxId: 40
-  fireSfxId: 34
+  fireSfxId: 32
 --- !u!1001 &1573549451
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3764,7 +3821,7 @@ MonoBehaviour:
   baseDropSpeed: 5
   speedPhases: []
   warnSfxId: 40
-  fireSfxId: 34
+  fireSfxId: 32
 --- !u!1 &1871857760
 GameObject:
   m_ObjectHideFlags: 0
@@ -4067,7 +4124,7 @@ MonoBehaviour:
   baseDropSpeed: 1
   speedPhases: []
   warnSfxId: 40
-  fireSfxId: 34
+  fireSfxId: 32
 --- !u!1 &1596284920620874483
 GameObject:
   m_ObjectHideFlags: 0
@@ -5096,3 +5153,4 @@ SceneRoots:
   - {fileID: 262236992}
   - {fileID: 81951522}
   - {fileID: 271734374}
+  - {fileID: 796540932}

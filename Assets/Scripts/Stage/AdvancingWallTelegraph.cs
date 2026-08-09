@@ -31,14 +31,6 @@ public class AdvancingWallTelegraph : MonoBehaviour
     [Tooltip("흔들림 주파수(Hz). 예) 10~15 = 빠르게 잔떨림")]
     [SerializeField] float shakeFrequency = 0f;
 
-    [Header("사운드")]
-    [Tooltip("AudioSource. 비워두면 같은 오브젝트에서 자동 탐색")]
-    [SerializeField] AudioSource audioSource;
-    [Tooltip("흔들림 구간(텔레그래프) 시작 시 재생. 비워두면 재생 없음")]
-    [SerializeField] AudioClip telegraphClip;
-    [Tooltip("실제 전진 시작 순간 재생. 비워두면 재생 없음")]
-    [SerializeField] AudioClip moveClip;
-
     /// <summary>외부(AdvancingWall)에서 대기 시간 계산용으로 읽는 경고 구간(초).</summary>
     public float Duration => telegraphDuration;
 
@@ -47,7 +39,6 @@ public class AdvancingWallTelegraph : MonoBehaviour
 
     void Awake()
     {
-        if (audioSource == null) audioSource = GetComponent<AudioSource>();
         _visualOrigin = visualRoot != null ? visualRoot.localPosition : Vector3.zero;
     }
 
@@ -61,13 +52,6 @@ public class AdvancingWallTelegraph : MonoBehaviour
     {
         if (_routine != null) StopCoroutine(_routine);
         _routine = StartCoroutine(TelegraphRoutine());
-    }
-
-    /// <summary>전진 시작 순간 이동 사운드 재생.</summary>
-    public void PlayMoveSound()
-    {
-        if (moveClip != null && audioSource != null)
-            audioSource.PlayOneShot(moveClip);
     }
 
     /// <summary>연출 중단 + 비주얼 원상복귀. 색상 일치 중단 / Deactivate 시 호출.</summary>
@@ -85,8 +69,7 @@ public class AdvancingWallTelegraph : MonoBehaviour
 
     IEnumerator TelegraphRoutine()
     {
-        if (telegraphClip != null && audioSource != null)
-            audioSource.PlayOneShot(telegraphClip);
+        SFXManager.Instance?.Play(SFXId.Trap_AdvancingWall_Telegraph, transform.position);
 
         float elapsed = 0f;
         while (elapsed < telegraphDuration)

@@ -83,6 +83,17 @@ public class SFXManager : MonoBehaviour
         return library != null ? library.GetClip(id) : null;
     }
 
+    /// <summary>
+    /// 외부 컴포넌트가 자체 AudioSource(3D 세팅 등)로 재생할 때 곱해야 할 최종 볼륨.
+    /// 클립별 보정(SFXLibrary.VolumeOverride) × EffectiveVolume(마스터 × SFX).
+    /// SpinRoller 등 PlayLoop()의 2D 고정 세팅을 못 쓰는 루프 사운드가 사용.
+    /// </summary>
+    public float GetEffectiveVolume(SFXId id)
+    {
+        float multiplier = library != null ? library.GetVolumeMultiplier(id) : 1f;
+        return EffectiveVolume * multiplier;
+    }
+
     // ── 2D 1회 재생 ──────────────────────────────────────────────
 
     /// <summary>SpatialBlend = 0 (UI / 플레이어 전용 단발음).</summary>
@@ -128,7 +139,7 @@ public class SFXManager : MonoBehaviour
     }
 
     public void PlayMouthTeethBreak(Vector3 worldPosition) =>
-        PlayAlternating(SFXId.Mouth_TeethBreak_1, SFXId.Mouth_TeethBreak_2, worldPosition);
+        Play(SFXId.Mouth_TeethBreak_1, worldPosition);
 
     public void PlayTrapArrow(Vector3 worldPosition) =>
         PlayAlternating(SFXId.Trap_Arrow_1, SFXId.Trap_Arrow_2, worldPosition);

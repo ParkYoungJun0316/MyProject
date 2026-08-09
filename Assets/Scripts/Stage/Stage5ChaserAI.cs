@@ -42,6 +42,15 @@ public class Stage5ChaserAI : NetworkBehaviour
     [Tooltip("비워두면 자식에서 자동 탐색")]
     [SerializeField] Animator _anim;
 
+    [Header("사운드 (Run 루프 — 3D)")]
+    [Tooltip("0 = 완전 2D, 1 = 완전 3D")]
+    [SerializeField] [Range(0f, 1f)] float runSpatialBlend = 1f;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float runMinDistance = 1f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float runMaxDistance = 0f;
+    [SerializeField] AudioRolloffMode runRolloffMode = AudioRolloffMode.Logarithmic;
+
     // ── 내부 상태 ─────────────────────────────────────────────────
 
     NavMeshAgent _agent;
@@ -55,6 +64,8 @@ public class Stage5ChaserAI : NetworkBehaviour
     float _retargetTimer;
 
     Coroutine _postHitStopRoutine;
+
+    AudioSource _runLoopSource;
 
     // Host가 쓰고 전 머신이 읽는 추격 애니 상태 (연출 전용, 판정 아님).
     readonly NetworkVariable<bool> _isChasingNV = new NetworkVariable<bool>(false);
@@ -86,6 +97,7 @@ public class Stage5ChaserAI : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         _isChasingNV.OnValueChanged -= HandleChaseChanged;
+        StopRunLoop();
     }
 
     void OnEnable()
@@ -95,8 +107,17 @@ public class Stage5ChaserAI : NetworkBehaviour
         _retargetTimer = 0f;
     }
 
+    void OnDisable()
+    {
+        StopRunLoop();
+    }
+
     void Update()
     {
+        // 볼륨 실시간 반영(옵션 메뉴 마스터/SFX 슬라이더) — 전 머신에서 실행, Host 전용 로직과 무관.
+        if (_runLoopSource != null && _runLoopSource.isPlaying && SFXManager.Instance != null)
+            _runLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Stage5_Chaser_Run);
+
         if (!IsServer) return; // Host 전권 시뮬 (TStageNetworkBoard.md §3.2)
         if (!_isActive || _isPostHitStop) return;
 
@@ -195,12 +216,28 @@ public class Stage5ChaserAI : NetworkBehaviour
     /// <summary>히트박스가 피해를 줄 수 있는지. 활성 상태면 항상 true.</summary>
     public bool CanApplyDamage() => _isActive;
 
-    /// <summary>히트박스에서 TakeDamage 직후 호출 — 정지 코루틴 시작.</summary>
+    /// <summary>
+    /// 히트박스에서 TakeDamage 직후 호출 — 정지 코루틴 시작.
+    /// OnTriggerStay로 매 프레임 재호출될 수 있어, 사운드는 아직 postHitStop 중이 아닐 때(=새
+    /// 히트 에피소드 시작 시점)만 1회 재생 — 붙어있는 동안 계속 겹쳐 불려도 스팸되지 않는다.
+    /// </summary>
     public void NotifyHitFromHitbox()
     {
         if (!_isActive) return;
+        if (!_isPostHitStop) PlayAttackSfxClientRpc(transform.position);
         if (_postHitStopRoutine != null) StopCoroutine(_postHitStopRoutine);
         _postHitStopRoutine = StartCoroutine(PostHitStopRoutine());
+    }
+
+    /// <summary>
+    /// 공격(피격) 사운드를 전 머신에서 재생. NotifyHitFromHitbox()는 Stage5ChaserHitbox.TryHit()의
+    /// Host-only 가드를 거쳐 Host에서만 호출되므로, WindTrap/DropTrap과 동일하게 여기서 전체
+    /// 브로드캐스트로 통일한다(Host 로컬 Play() 직접 호출 시 Host만 들리는 문제 방지).
+    /// </summary>
+    [ClientRpc]
+    void PlayAttackSfxClientRpc(Vector3 position)
+    {
+        SFXManager.Instance?.Play(SFXId.Stage5_Chaser_Attack, position);
     }
 
     IEnumerator PostHitStopRoutine()
@@ -239,6 +276,43 @@ public class Stage5ChaserAI : NetworkBehaviour
     void HandleChaseChanged(bool previous, bool current)
     {
         if (_anim != null) _anim.SetBool("isChase", current);
+
+        if (current) StartRunLoop();
+        else StopRunLoop();
+    }
+
+    // ── 사운드 (Run 루프) ─────────────────────────────────────────
+    // _isChasingNV는 Host가 쓰고 전 머신(Host 포함)이 OnValueChanged로 동일하게 수신 —
+    // 이미 네트워크로 동기화된 상태라 별도 RPC 없이 여기 얹기만 하면 전 머신에서 안전하게 재생됨.
+
+    void StartRunLoop()
+    {
+        if (_runLoopSource != null && _runLoopSource.isPlaying) return;
+        if (SFXManager.Instance == null) return;
+
+        AudioClip clip = SFXManager.Instance.GetClip(SFXId.Stage5_Chaser_Run);
+        if (clip == null) return;
+
+        if (_runLoopSource == null)
+        {
+            _runLoopSource               = gameObject.AddComponent<AudioSource>();
+            _runLoopSource.loop          = true;
+            _runLoopSource.playOnAwake   = false;
+            _runLoopSource.spatialBlend  = runSpatialBlend;
+            _runLoopSource.rolloffMode   = runRolloffMode;
+            _runLoopSource.minDistance   = runMinDistance > 0f ? runMinDistance : 1f;
+            _runLoopSource.maxDistance   = runMaxDistance > 0f ? runMaxDistance : 500f;
+        }
+
+        _runLoopSource.clip   = clip;
+        _runLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Stage5_Chaser_Run);
+        _runLoopSource.Play();
+    }
+
+    void StopRunLoop()
+    {
+        if (_runLoopSource != null && _runLoopSource.isPlaying)
+            _runLoopSource.Stop();
     }
 
     // ── 유틸 ─────────────────────────────────────────────────────

@@ -16,7 +16,8 @@ using UnityEngine;
 ///    (BoxCollider = 방향성 바람 통로, SphereCollider = 방사형 바람 권장)
 /// 2. Push 모드: transform.forward 방향으로 밀어냄 → GameObject 회전으로 방향 조절
 /// 3. Pull 모드: 이 오브젝트 중심으로 당김 → 흡입구
-/// 4. windParticle에 파티클 시스템 연결 시 바람 활성화 동안 자동 재생
+/// 4. pushParticle/pullParticle에 각각 파티클 시스템 연결 시, 이번 사이클의 확정 모드(Random이면
+///    발동 시점에 뽑힌 값)에 맞는 쪽만 자동 재생됨. Wind_Push/Wind_Pull SFX도 같은 타이밍에 자동 재생.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class WindTrap : TrapBase
@@ -54,8 +55,11 @@ public class WindTrap : TrapBase
     [SerializeField] private SpeedPhase[] speedPhases = new SpeedPhase[0];
 
     [Header("Wind Visual (선택)")]
-    [Tooltip("바람 활성화 시 재생할 파티클 시스템. 없으면 생략")]
-    [SerializeField] private ParticleSystem windParticle = null;
+    [Tooltip("Push 모드일 때 재생할 파티클. Push/Pull은 입자 흐름 방향이 반대라 따로 필요. 없으면 생략")]
+    [SerializeField] private ParticleSystem pushParticle = null;
+
+    [Tooltip("Pull 모드일 때 재생할 파티클. 없으면 생략")]
+    [SerializeField] private ParticleSystem pullParticle = null;
 
     float _scheduleStartTime;
     float _phaseForceMultiplier = 1f;
@@ -221,7 +225,7 @@ public class WindTrap : TrapBase
         _windForceElapsed = 0f;
         _targetsInZone.Clear();
         _fireCount = 0;
-        if (windParticle != null) windParticle.Stop();
+        StopAllParticles();
     }
 
     protected override IEnumerator TrapLoop()
@@ -318,13 +322,16 @@ public class WindTrap : TrapBase
         if (_windChargeTime > 0f)
             yield return new WaitForSeconds(_windChargeTime);
 
-        if (windParticle != null) windParticle.Play();
+        GetActiveParticle()?.Play();
+        SFXManager.Instance?.Play(
+            _activeWindMode == WindMode.Push ? SFXId.Wind_Push : SFXId.Wind_Pull,
+            transform.position);
 
         if (windDuration <= 0f)
         {
             ApplyForceToAll(ForceMode.Impulse);
             _windActive = false;
-            if (windParticle != null) windParticle.Stop();
+            GetActiveParticle()?.Stop();
             OnWindEnd?.Invoke();
             yield break;
         }
@@ -348,9 +355,19 @@ public class WindTrap : TrapBase
             _windActive = false;
             _forceActive = false;
             _windForceElapsed = 0f;
-            if (windParticle != null) windParticle.Stop();
+            GetActiveParticle()?.Stop();
             OnWindEnd?.Invoke();
         }
+    }
+
+    /// <summary>이번 사이클에서 확정된 모드(_activeWindMode)에 대응하는 파티클.</summary>
+    ParticleSystem GetActiveParticle() => _activeWindMode == WindMode.Push ? pushParticle : pullParticle;
+
+    /// <summary>비활성화/중단 시 안전하게 둘 다 정지 — 어느 쪽이 재생 중이었는지 추적할 필요 없음.</summary>
+    void StopAllParticles()
+    {
+        if (pushParticle != null) pushParticle.Stop();
+        if (pullParticle != null) pullParticle.Stop();
     }
 
     void ApplyForceToAll(ForceMode mode)
@@ -453,7 +470,7 @@ public class WindTrap : TrapBase
         _windForceElapsed = 0f;
         _targetsInZone.Clear();
         _fireCount = 0;
-        if (windParticle != null) windParticle.Stop();
+        StopAllParticles();
 
         // Wind 발동 중 Deactivate() 직접 호출 시(SetActive 사이클 없이 소프트 중단)
         // OnWindEnd를 명시적으로 발행 → MouthWindAnimator가 입 열기 복귀를 처리하도록 통보

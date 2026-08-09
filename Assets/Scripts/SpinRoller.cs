@@ -16,11 +16,8 @@ public class SpinRoller : MonoBehaviour
     public float spinSpeed = 0f;
 
     [Header("굴림 사운드")]
-    [Tooltip("굴러가는 동안 루프 재생할 SFX. None이면 무음.")]
+    [Tooltip("굴러가는 동안 루프 재생할 SFX. None이면 무음. 볼륨은 SFXLibrary(클립별 보정) × 옵션 메뉴 마스터/SFX 볼륨으로 일괄 결정됨.")]
     [SerializeField] SFXId rollSfxId = SFXId.None;
-
-    [Tooltip("루프 볼륨 (0~1). 0이면 1로 처리.")]
-    [SerializeField] [Range(0f, 1f)] float rollVolume = 0f;
 
     [Header("3D 오디오 설정")]
     [Tooltip("0 = 완전 2D, 1 = 완전 3D. 위압감을 위해 0.7~1 권장.")]
@@ -59,6 +56,9 @@ public class SpinRoller : MonoBehaviour
         }
 
         if (!_isRolling) StartRollSound();
+
+        if (_isRolling && _rollSource != null && SFXManager.Instance != null)
+            _rollSource.volume = SFXManager.Instance.GetEffectiveVolume(rollSfxId);
     }
 
     void StartRollSound()
@@ -71,7 +71,7 @@ public class SpinRoller : MonoBehaviour
         _rollSource.clip             = clip;
         _rollSource.loop             = true;
         _rollSource.spatialBlend     = rollSpatialBlend;
-        _rollSource.volume           = rollVolume > 0f ? rollVolume : 1f;
+        _rollSource.volume           = SFXManager.Instance.GetEffectiveVolume(rollSfxId);
         _rollSource.rolloffMode      = rollRolloffMode;
         _rollSource.minDistance      = rollMinDistance > 0f ? rollMinDistance : 1f;
         _rollSource.maxDistance      = rollMaxDistance > 0f ? rollMaxDistance : 500f;

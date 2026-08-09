@@ -106,8 +106,6 @@ MonoBehaviour:
   lifetime: 20
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
-  destroyOnWall: 0
-  destroyOnFloor: 0
   hitEffectPrefab: {fileID: 0}
 --- !u!65 &8010234829467193693
 BoxCollider:
@@ -146,13 +144,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 268435456
   breakDelay: 0
-  breakDelaySound: {fileID: 0}
-  breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
-  breakSound: {fileID: 0}
-  breakSoundVolume: 1
+  useMouthTeethBreakSfx: 1
   damagePlayerOnBreak: 1
   breakDamage: 1
   knockbackForceMin: 5

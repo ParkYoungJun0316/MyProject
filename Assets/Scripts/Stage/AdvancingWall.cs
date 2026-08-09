@@ -113,6 +113,15 @@ public class AdvancingWall : MonoBehaviour
     [Tooltip("출발 전 경고 연출 컴포넌트. 비워두면 경고 없이 즉시 출발")]
     [SerializeField] AdvancingWallTelegraph telegraph;
 
+    [Header("사운드 (이동 루프 — 3D)")]
+    [Tooltip("전진·후퇴 이동 중에만 재생되는 루프. 이동 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
+    [SerializeField] [Range(0f, 1f)] float moveSpatialBlend = 1f;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float moveMinDistance = 1f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float moveMaxDistance = 0f;
+    [SerializeField] AudioRolloffMode moveRolloffMode = AudioRolloffMode.Logarithmic;
+
     [Header("이벤트")]
     public UnityEvent OnAdvanceStarted;
     public UnityEvent OnAdvanceCompleted;
@@ -133,6 +142,8 @@ public class AdvancingWall : MonoBehaviour
     Coroutine _scheduleCoroutine;
     Coroutine _pauseCoroutine;
 
+    AudioSource _moveLoopSource;
+
     // ── 생명주기 ─────────────────────────────────────────────────
 
     void Awake()
@@ -140,6 +151,18 @@ public class AdvancingWall : MonoBehaviour
         _rb             = GetComponent<Rigidbody>();
         _rb.isKinematic = true;
         _currentOrigin  = transform.position;
+    }
+
+    void Update()
+    {
+        // 볼륨 실시간 반영(옵션 메뉴 마스터/SFX 슬라이더).
+        if (_moveLoopSource != null && _moveLoopSource.isPlaying && SFXManager.Instance != null)
+            _moveLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Trap_AdvancingWall_Move);
+    }
+
+    void OnDisable()
+    {
+        StopMoveLoop();
     }
 
     void Start()
@@ -187,6 +210,7 @@ public class AdvancingWall : MonoBehaviour
             _advanceCoroutine = null;
         }
         telegraph?.Cancel();
+        StopMoveLoop();
     }
 
     /// <summary>시작 위치로 완전 초기화.</summary>
@@ -331,11 +355,11 @@ public class AdvancingWall : MonoBehaviour
                 telegraph.Cancel();
             }
 
-            telegraph?.PlayMoveSound();
-
             // 전진
             OnAdvanceStarted?.Invoke();
+            StartMoveLoop();
             yield return LerpTo(_currentOrigin, advanceTarget, advDur);
+            StopMoveLoop();
             _rb.MovePosition(advanceTarget);
             OnAdvanceCompleted?.Invoke();
 
@@ -346,7 +370,9 @@ public class AdvancingWall : MonoBehaviour
             if (retDist > 0f)
             {
                 OnRetreatStarted?.Invoke();
+                StartMoveLoop();
                 yield return LerpTo(advanceTarget, newOrigin, retDur);
+                StopMoveLoop();
                 _rb.MovePosition(newOrigin);
                 OnRetreatCompleted?.Invoke();
 
@@ -399,6 +425,7 @@ public class AdvancingWall : MonoBehaviour
             _advanceCoroutine = null;
         }
         telegraph?.Cancel();
+        StopMoveLoop();
         _isActive        = false;
         _isPausedByColor = true;
 
@@ -413,6 +440,40 @@ public class AdvancingWall : MonoBehaviour
 
         _isPausedByColor = false;
         // ScheduleRoutine이 _isPausedByColor == false 를 확인 후 다음 항목 자동 실행
+    }
+
+    // ── 사운드 (이동 루프) ────────────────────────────────────────
+    // 전진/후퇴 공용. LerpTo() 시작 직전에 켜고, 완료 직후(또는 강제 중단 시 Deactivate/
+    // PauseByColorRoutine에서) 꺼서 "소리 나는 시간 = 실제 이동 시간"을 보장한다.
+
+    void StartMoveLoop()
+    {
+        if (_moveLoopSource != null && _moveLoopSource.isPlaying) return;
+        if (SFXManager.Instance == null) return;
+
+        AudioClip clip = SFXManager.Instance.GetClip(SFXId.Trap_AdvancingWall_Move);
+        if (clip == null) return;
+
+        if (_moveLoopSource == null)
+        {
+            _moveLoopSource              = gameObject.AddComponent<AudioSource>();
+            _moveLoopSource.loop         = true;
+            _moveLoopSource.playOnAwake  = false;
+            _moveLoopSource.spatialBlend = moveSpatialBlend;
+            _moveLoopSource.rolloffMode  = moveRolloffMode;
+            _moveLoopSource.minDistance  = moveMinDistance > 0f ? moveMinDistance : 1f;
+            _moveLoopSource.maxDistance  = moveMaxDistance > 0f ? moveMaxDistance : 500f;
+        }
+
+        _moveLoopSource.clip   = clip;
+        _moveLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Trap_AdvancingWall_Move);
+        _moveLoopSource.Play();
+    }
+
+    void StopMoveLoop()
+    {
+        if (_moveLoopSource != null && _moveLoopSource.isPlaying)
+            _moveLoopSource.Stop();
     }
 
     IEnumerator LerpTo(Vector3 from, Vector3 to, float duration)

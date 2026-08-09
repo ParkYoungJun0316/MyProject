@@ -115,6 +115,8 @@ public class SequenceRingMinigame : MonoBehaviour
     public UnityEvent OnMinigameStarted;
     public UnityEvent OnMinigameSuccess;
     public UnityEvent OnMinigameFailed;
+    [Tooltip("플레이어 입력으로 스텝을 정답 통과할 때마다 발동(자동 통과되는 Danger 타임아웃은 제외). SFX 등에 사용.")]
+    public UnityEvent OnCorrectInput;
     public UnityEvent OnWrongInput;
     [FormerlySerializedAs("OnTimerTick")]
     public SequenceFloatEvent OnTimeRemainingChanged;
@@ -483,7 +485,7 @@ public class SequenceRingMinigame : MonoBehaviour
         if (_dangerStepTimer <= 0f)
         {
             _dangerStepTimer = 0f; // 연속 Danger 스텝에서 음수 누적 방지
-            AdvanceStep();
+            AdvanceStep(fromPlayerInput: false);
         }
     }
 
@@ -504,8 +506,15 @@ public class SequenceRingMinigame : MonoBehaviour
     /// Host: 다음 스텝으로 진행 확정. 실제 스텝 인덱스 전파는 ChallengeStepBegin(NV)로 하고,
     /// 화면 반영(OnEnterStep/RefreshTileColors)은 전 머신 공통 HandleChallengeStepChanged가 담당한다.
     /// </summary>
-    void AdvanceStep()
+    /// <param name="fromPlayerInput">
+    /// true면 실제 입력으로 통과한 것 — OnCorrectInput 발동. Danger 타임아웃 자동 통과(TickDangerStep)는
+    /// 입력이 아니므로 false로 호출해 OnWrongInput처럼 "플레이어가 실제로 뭘 했을 때만" 울리게 한다.
+    /// </param>
+    void AdvanceStep(bool fromPlayerInput = true)
     {
+        if (fromPlayerInput)
+            OnCorrectInput?.Invoke();
+
         _successCount++;
 
         if (_successCount >= targetStepCount)

@@ -96,12 +96,6 @@ public class Breakable : MonoBehaviour
     [Tooltip("충돌 후 최종 파괴(숨김·파편·즉사)까지 대기 시간(초). 0이면 즉시.")]
     [SerializeField] private float breakDelay = 0f;
 
-    [Tooltip("지연 구간 시작 시 재생. 없으면 생략.")]
-    [SerializeField] private AudioClip breakDelaySound = null;
-
-    [Tooltip("지연 사운드 볼륨 (0~1)")]
-    [SerializeField] [Range(0f, 1f)] private float breakDelaySoundVolume = 1f;
-
     [Header("파편 / 이펙트")]
     [Tooltip("파괴 시 생성할 파편 또는 Particle 프리팹. 없으면 생략.")]
     [SerializeField] private GameObject debrisPrefab = null;
@@ -110,14 +104,9 @@ public class Breakable : MonoBehaviour
     [SerializeField] private float debrisLifetime = 0f;
 
     [Header("사운드")]
-    [Tooltip("true: SFXLibrary Mouth_TeethBreak 1/2 교차 재생 (M.Stage4 이빨 등)")]
+    [Tooltip("true: SFXLibrary Mouth_TeethBreak_1 재생 (M.Stage4 이빨 등)\n" +
+             "이 외의 파괴 사운드는 OnBreak 이벤트에 SFXEventPlayer를 직접 연결해서 처리할 것.")]
     [SerializeField] private bool useMouthTeethBreakSfx = false;
-
-    [Tooltip("최종 파괴 시 재생할 AudioClip. useMouthTeethBreakSfx 가 켜져 있으면 무시.")]
-    [SerializeField] private AudioClip breakSound = null;
-
-    [Tooltip("파괴 사운드 볼륨 (0~1)")]
-    [SerializeField] [Range(0f, 1f)] private float breakSoundVolume = 1f;
 
     [Header("범위 데미지 + 넉백 (선택)")]
     [Tooltip("최종 파괴 시점에 반경 내 플레이어에게 데미지+넉백을 적용할지 여부.\n" +
@@ -247,8 +236,6 @@ public class Breakable : MonoBehaviour
     {
         if (breakDelay > 0f)
         {
-            if (breakDelaySound != null)
-                AudioSource.PlayClipAtPoint(breakDelaySound, transform.position, breakDelaySoundVolume);
             yield return new WaitForSeconds(breakDelay);
         }
 
@@ -326,8 +313,6 @@ public class Breakable : MonoBehaviour
 
         if (useMouthTeethBreakSfx)
             SFXManager.Instance?.PlayMouthTeethBreak(transform.position);
-        else if (breakSound != null)
-            AudioSource.PlayClipAtPoint(breakSound, transform.position, breakSoundVolume);
     }
 
     // ── 리셋 (함정과 동일: 부모 SetActive false→true 사이클로 자동 복원) ─────
