@@ -19,6 +19,8 @@ using UnityEngine.UI;
 /// - languageDropdown    : TMP_Dropdown — LocalizationSettings.AvailableLocales 기반 자동 채움
 /// - displayModeDropdown : TMP_Dropdown — 전체화면 / 창모드 / 테두리없는 창모드 (고정 3항목, 자동 채움)
 /// - resolutionDropdown  : TMP_Dropdown — Screen.resolutions 기반 자동 채움
+/// - displayModeExclusiveLabel / WindowedLabel / BorderlessLabel : LocalizedString — 화면모드 3항목
+///   라벨의 String Table 엔트리 연결(OXQuizManager와 동일 패턴). 미연결 시 한국어 기본값 폴백.
 ///
 /// 패널이 열릴 때(OnEnable)마다 현재 GameSettingsManager / Screen / LocalizationSettings 값을
 /// 읽어 UI에 반영함.
@@ -37,6 +39,13 @@ public class OptionsMenuController : MonoBehaviour
     [Tooltip("전체화면(독점) / 창모드 / 테두리없는 창모드")]
     [SerializeField] private TMP_Dropdown displayModeDropdown;
     [SerializeField] private TMP_Dropdown resolutionDropdown;
+
+    [Header("화면모드 라벨 (Localization)")]
+    [Tooltip("String Table 엔트리 연결용 — 문자열 직접 입력 아님(OXQuizManager와 동일 패턴). " +
+             "미연결 상태면 한국어 기본값으로 폴백.")]
+    [SerializeField] private LocalizedString displayModeExclusiveLabel;
+    [SerializeField] private LocalizedString displayModeWindowedLabel;
+    [SerializeField] private LocalizedString displayModeBorderlessLabel;
 
     static readonly FullScreenMode[] DisplayModeValues =
     {
@@ -62,6 +71,7 @@ public class OptionsMenuController : MonoBehaviour
         if (languageDropdown    != null) languageDropdown.onValueChanged.AddListener(OnLanguageChanged);
         if (displayModeDropdown != null) displayModeDropdown.onValueChanged.AddListener(OnDisplayModeChanged);
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+        LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
     }
 
     void OnDisable()
@@ -72,6 +82,18 @@ public class OptionsMenuController : MonoBehaviour
         if (languageDropdown    != null) languageDropdown.onValueChanged.RemoveListener(OnLanguageChanged);
         if (displayModeDropdown != null) displayModeDropdown.onValueChanged.RemoveListener(OnDisplayModeChanged);
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.RemoveListener(OnResolutionChanged);
+        LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
+    }
+
+    /// <summary>
+    /// 언어 드롭다운에서 즉시 언어를 바꿨을 때, 패널을 닫았다 열지 않아도
+    /// 화면모드 드롭다운 옵션 라벨("전체화면" 등, 코드로 채우는 문자열)이 즉시 갱신되도록 함.
+    /// </summary>
+    void OnSelectedLocaleChanged(Locale locale)
+    {
+        _refreshing = true;
+        RefreshDisplayModeDropdown();
+        _refreshing = false;
     }
 
     // ── 새로고침 ──────────────────────────────────────────────────
@@ -115,12 +137,21 @@ public class OptionsMenuController : MonoBehaviour
     static string DisplayNameOf(Locale locale) =>
         locale.Identifier.CultureInfo != null ? locale.Identifier.CultureInfo.NativeName : locale.LocaleName;
 
+    /// <summary>String Table 엔트리가 아직 연결 안 됐으면(IsEmpty) 한국어 기본값으로 폴백.</summary>
+    static string LocalizedOrFallback(LocalizedString localized, string fallback) =>
+        localized != null && !localized.IsEmpty ? localized.GetLocalizedString() : fallback;
+
     void RefreshDisplayModeDropdown()
     {
         if (displayModeDropdown == null) return;
 
         displayModeDropdown.ClearOptions();
-        displayModeDropdown.AddOptions(new List<string> { "전체화면", "창모드", "테두리 없는 창모드" });
+        displayModeDropdown.AddOptions(new List<string>
+        {
+            LocalizedOrFallback(displayModeExclusiveLabel, "전체화면"),
+            LocalizedOrFallback(displayModeWindowedLabel, "창모드"),
+            LocalizedOrFallback(displayModeBorderlessLabel, "테두리 없는 창모드"),
+        });
 
         int index = System.Array.IndexOf(DisplayModeValues, Screen.fullScreenMode);
         displayModeDropdown.value = Mathf.Max(0, index);
