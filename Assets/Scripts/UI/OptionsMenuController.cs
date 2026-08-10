@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Dissonance;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -40,6 +41,12 @@ public class OptionsMenuController : MonoBehaviour
     [SerializeField] private TMP_Dropdown displayModeDropdown;
     [SerializeField] private TMP_Dropdown resolutionDropdown;
 
+    [Header("마이크")]
+    [Tooltip("Dissonance IsMuted 토글 — 네트워크 전송만 끊김, 응원 키워드 감지엔 영향 없음.")]
+    [SerializeField] private Toggle micMuteToggle;
+    [Tooltip("Dissonance.GetMicrophoneDevices() 기반 자동 채움. 첫 항목은 '시스템 기본'.")]
+    [SerializeField] private TMP_Dropdown micDeviceDropdown;
+
     [Header("화면모드 라벨 (Localization)")]
     [Tooltip("String Table 엔트리 연결용 — 문자열 직접 입력 아님(OXQuizManager와 동일 패턴). " +
              "미연결 상태면 한국어 기본값으로 폴백.")]
@@ -56,6 +63,7 @@ public class OptionsMenuController : MonoBehaviour
 
     List<Locale> _locales = new List<Locale>();
     List<Resolution> _resolutions = new List<Resolution>();
+    List<string> _micDevices = new List<string>();
 
     bool _refreshing;
 
@@ -71,6 +79,8 @@ public class OptionsMenuController : MonoBehaviour
         if (languageDropdown    != null) languageDropdown.onValueChanged.AddListener(OnLanguageChanged);
         if (displayModeDropdown != null) displayModeDropdown.onValueChanged.AddListener(OnDisplayModeChanged);
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+        if (micMuteToggle       != null) micMuteToggle.onValueChanged.AddListener(OnMicMuteChanged);
+        if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.AddListener(OnMicDeviceChanged);
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
     }
 
@@ -82,6 +92,8 @@ public class OptionsMenuController : MonoBehaviour
         if (languageDropdown    != null) languageDropdown.onValueChanged.RemoveListener(OnLanguageChanged);
         if (displayModeDropdown != null) displayModeDropdown.onValueChanged.RemoveListener(OnDisplayModeChanged);
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.RemoveListener(OnResolutionChanged);
+        if (micMuteToggle       != null) micMuteToggle.onValueChanged.RemoveListener(OnMicMuteChanged);
+        if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.RemoveListener(OnMicDeviceChanged);
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
     }
 
@@ -89,24 +101,27 @@ public class OptionsMenuController : MonoBehaviour
     /// 언어 드롭다운에서 즉시 언어를 바꿨을 때, 패널을 닫았다 열지 않아도
     /// 화면모드 드롭다운 옵션 라벨("전체화면" 등, 코드로 채우는 문자열)이 즉시 갱신되도록 함.
     /// </summary>
-    void OnSelectedLocaleChanged(Locale locale)
-    {
-        _refreshing = true;
-        RefreshDisplayModeDropdown();
-        _refreshing = false;
-    }
+    void OnSelectedLocaleChanged(Locale locale) => WithRefreshGuard(RefreshDisplayModeDropdown);
 
     // ── 새로고침 ──────────────────────────────────────────────────
 
-    void RefreshAll()
+    void RefreshAll() => WithRefreshGuard(() =>
     {
-        _refreshing = true;
-
         RefreshVolumeSliders();
         RefreshLanguageDropdown();
         RefreshDisplayModeDropdown();
         RefreshResolutionDropdown();
+        RefreshMicRow();
+    });
 
+    /// <summary>
+    /// UI 값을 코드에서 갱신하는 동안 onValueChanged 콜백이 재귀적으로
+    /// GameSettingsManager에 다시 쓰지 않도록 막는 공용 가드.
+    /// </summary>
+    void WithRefreshGuard(System.Action action)
+    {
+        _refreshing = true;
+        action();
         _refreshing = false;
     }
 
@@ -180,6 +195,30 @@ public class OptionsMenuController : MonoBehaviour
         resolutionDropdown.RefreshShownValue();
     }
 
+    void RefreshMicRow()
+    {
+        GameSettingsManager settings = GameSettingsManager.Instance;
+        if (settings != null && micMuteToggle != null)
+            micMuteToggle.isOn = settings.MicMuted;
+
+        if (micDeviceDropdown == null) return;
+
+        _micDevices.Clear();
+        DissonanceComms comms = DissonanceComms.GetSingleton();
+        if (comms != null) comms.GetMicrophoneDevices(_micDevices);
+        else _micDevices.AddRange(Microphone.devices);
+
+        List<string> labels = new List<string> { "시스템 기본" };
+        labels.AddRange(_micDevices);
+        micDeviceDropdown.ClearOptions();
+        micDeviceDropdown.AddOptions(labels);
+
+        string current = settings != null ? settings.MicDeviceName : "";
+        int index = string.IsNullOrEmpty(current) ? 0 : _micDevices.IndexOf(current) + 1;
+        micDeviceDropdown.value = Mathf.Max(0, index);
+        micDeviceDropdown.RefreshShownValue();
+    }
+
     // ── 콜백 ──────────────────────────────────────────────────────
 
     void OnMasterVolumeChanged(float value)
@@ -232,5 +271,26 @@ public class OptionsMenuController : MonoBehaviour
 
         Resolution res = _resolutions[index];
         GameSettingsManager.Instance?.ApplyDisplay(res.width, res.height, Screen.fullScreenMode);
+    }
+
+    void OnMicMuteChanged(bool value)
+    {
+        if (_refreshing) return;
+        GameSettingsManager.Instance?.SetMicMuted(value);
+    }
+
+    void OnMicDeviceChanged(int index)
+    {
+        if (_refreshing) return;
+        // index 0 = "시스템 기본" → 빈 문자열
+        string device = index <= 0 || index - 1 >= _micDevices.Count ? "" : _micDevices[index - 1];
+        GameSettingsManager.Instance?.SetMicDevice(device);
+    }
+
+    /// <summary>"초기화" 버튼(Btn_Reset)의 onClick에 연결. 기본값 적용 후 UI를 새로 반영.</summary>
+    public void OnClickReset()
+    {
+        GameSettingsManager.Instance?.ResetToDefaults();
+        RefreshAll();
     }
 }

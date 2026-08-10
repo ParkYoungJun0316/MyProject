@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Dissonance;
 using Steamworks;
 using Unity.Collections;
 using Unity.Netcode;
@@ -66,6 +67,11 @@ public class LobbyNetworkManager : NetworkBehaviour
     // 여러 번 확인됐음(SteamworksIntegrationDesign.md 트랙5) — 슬롯이 아직 없을 때 도착한
     // DisplayName을 여기 담아뒀다가 슬롯 생성 시 바로 적용한다.
     private readonly Dictionary<ulong, FixedString64Bytes> _pendingDisplayNames = new();
+
+    // SubmitVoiceIdServerRpc가 OnClientJoined보다 먼저 도착하는 레이스 대비 버퍼(Host 전용) —
+    // DisplayName과 동일한 이유(위 참고). Dissonance 준비(Start() 완료)가 슬롯 생성보다 늦는 경우가
+    // 흔해서(코루틴으로 폴링) 이 버퍼가 자주 쓰일 수 있음.
+    private readonly Dictionary<ulong, FixedString64Bytes> _pendingVoiceIds = new();
 
     // 룸코드: Host가 설정하고 모든 클라이언트에 동기화
     private readonly NetworkVariable<FixedString32Bytes> _sharedRoomCode = new(
@@ -140,6 +146,13 @@ public class LobbyNetworkManager : NetworkBehaviour
             // Client: 서버에서 리스트가 이미 동기화됐을 수 있으므로 초기 UI 갱신
             OnSlotsChanged?.Invoke();
         }
+
+        // Host/Client 공통: 내 Dissonance VoiceId(LocalPlayerName) 보고.
+        // DisplayName과 달리 Host도 즉시 값을 못 넣는다 — Dissonance가 자기 Start()에서
+        // 랜덤 GUID를 만드는 시점이 이 슬롯 생성보다 늦을 수 있어서 폴링이 필요함.
+        // Host가 SubmitVoiceIdServerRpc(ServerRpc)를 직접 호출해도 동일 프로세스라 정상 동작
+        // (LobbyMenuController.OnClickReady가 SetReadyServerRpc를 Host/Client 구분 없이 호출하는 것과 동일 패턴).
+        StartCoroutine(ReportLocalVoiceIdRoutine());
     }
 
     public override void OnNetworkDespawn()
@@ -199,6 +212,14 @@ public class LobbyNetworkManager : NetworkBehaviour
             Debug.Log($"[LobbyNetworkManager][DIAG] OnClientJoined — 버퍼링된 DisplayName 즉시 적용 clientId={clientId}");
         }
 
+        // SubmitVoiceIdServerRpc도 동일하게 버퍼링돼 있었다면 바로 적용.
+        if (_pendingVoiceIds.TryGetValue(clientId, out var pendingVoiceId))
+        {
+            newSlot.VoiceId = pendingVoiceId;
+            _pendingVoiceIds.Remove(clientId);
+            Debug.Log($"[LobbyNetworkManager][DIAG] OnClientJoined — 버퍼링된 VoiceId 즉시 적용 clientId={clientId}");
+        }
+
         _slots.Add(newSlot);
 
         Debug.Log($"[LobbyNetworkManager][DIAG] OnClientJoined — 슬롯 추가 완료. 새 슬롯수={_slots.Count}");
@@ -219,6 +240,7 @@ public class LobbyNetworkManager : NetworkBehaviour
             Debug.Log($"[LobbyNetworkManager][DIAG] OnClientLeft — 슬롯[{i}] 제거 완료. 새 슬롯수={_slots.Count}");
         }
         _pendingDisplayNames.Remove(clientId);
+        _pendingVoiceIds.Remove(clientId);
 
         if (!removedAny)
             Debug.LogWarning($"[LobbyNetworkManager][DIAG] OnClientLeft — clientId={clientId}에 해당하는 슬롯을 못 찾음(이미 없음)");
@@ -387,6 +409,28 @@ public class LobbyNetworkManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// 자기 Dissonance VoiceId(LocalPlayerName)를 Host에 보고.
+    /// Host/Client 모두 OnNetworkSpawn에서 ReportLocalVoiceIdRoutine을 통해 자동 호출.
+    /// DisplayName과 달리 호스트도 슬롯 생성 시 직접 설정 못 함(Dissonance 준비가 더 늦음) — 항상 이 경로.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SubmitVoiceIdServerRpc(FixedString64Bytes voiceId, RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId != sender) continue;
+            var s = _slots[i];
+            s.VoiceId = voiceId;
+            _slots[i] = s;
+            return;
+        }
+
+        Debug.LogWarning($"[LobbyNetworkManager][DIAG] SubmitVoiceIdServerRpc — clientId={sender} 슬롯 아직 없음. 버퍼링.");
+        _pendingVoiceIds[sender] = voiceId;
+    }
+
+    /// <summary>
     /// 로컬 Steam 표시 이름. Steam 초기화 안 됐으면(로컬 개발 경로) "PlayerN" 폴백.
     /// </summary>
     static string GetLocalDisplayName(ulong clientId)
@@ -394,6 +438,52 @@ public class LobbyNetworkManager : NetworkBehaviour
         if (SteamManager.Instance != null && SteamManager.Instance.IsInitialized)
             return SteamClient.Name;
         return $"Player{clientId}";
+    }
+
+    /// <summary>
+    /// Host/Client 공통. DissonanceComms가 준비되고 LocalPlayerName이 확정될 때까지 기다린 뒤
+    /// SubmitVoiceIdServerRpc로 보고 — 최대 5회(1초 간격) 재전송, 반영 확인되면 즉시 중단.
+    /// (SubmitDisplayNameWithRetry와 동일한 레이스 방어 패턴, 1차 방어 실패해도 Host의
+    /// _pendingVoiceIds 버퍼가 시간 제한 없이 슬롯 생성 시점에 적용해준다.)
+    /// </summary>
+    IEnumerator ReportLocalVoiceIdRoutine()
+    {
+        DissonanceComms comms = null;
+        while (comms == null) { comms = DissonanceComms.GetSingleton(); yield return null; }
+
+        string localVoiceId = null;
+        while (string.IsNullOrEmpty(localVoiceId))
+        {
+            localVoiceId = comms.LocalPlayerName;
+            yield return null;
+        }
+
+        var myVoiceId = new FixedString64Bytes(localVoiceId);
+
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            SubmitVoiceIdServerRpc(myVoiceId);
+            yield return new WaitForSeconds(1f);
+
+            if (IsLocalVoiceIdConfirmed())
+            {
+                Debug.Log($"[LobbyNetworkManager] VoiceId 반영 확인됨 (시도 {attempt + 1}회).");
+                yield break;
+            }
+        }
+
+        Debug.LogWarning("[LobbyNetworkManager] SubmitVoiceIdServerRpc 5회 재시도 후에도 반영 확인 안 됨 — 슬롯 자체가 없는 상태일 수 있음.");
+    }
+
+    bool IsLocalVoiceIdConfirmed()
+    {
+        ulong localId = NetworkManager.LocalClientId;
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            if (_slots[i].ClientId != localId) continue;
+            return _slots[i].VoiceId.Length > 0;
+        }
+        return false;
     }
 
     /// <summary>
@@ -592,6 +682,22 @@ public class LobbyNetworkManager : NetworkBehaviour
         // Client에 배포
         SyncDisplayNamesClientRpc(sessionDisplayNames[0], sessionDisplayNames[1], sessionDisplayNames[2], sessionDisplayNames[3]);
 
+        // ── 세션 Dissonance VoiceId 확정 후 전원에 배포 ───────────────────
+        // (OptionsTeamVoicePanel이 팀원 VoicePlayerState를 찾는 키 — SoundAndSettingsDesign.md §6-8)
+        var sessionVoiceIds = new FixedString64Bytes[4];
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            int ci = _slots[i].ColorIndex;
+            if (ci >= 0 && ci < 4)
+                sessionVoiceIds[ci] = _slots[i].VoiceId;
+        }
+        // Host 로컬 적용
+        var voiceIdsForSession = new string[4];
+        for (int i = 0; i < 4; i++) voiceIdsForSession[i] = sessionVoiceIds[i].ToString();
+        GameSession.Instance?.SetSessionVoiceIds(voiceIdsForSession);
+        // Client에 배포
+        SyncVoiceIdsClientRpc(sessionVoiceIds[0], sessionVoiceIds[1], sessionVoiceIds[2], sessionVoiceIds[3]);
+
         // 씬 전환은 SceneFlowManager 단일 SSOT로 위임 — sceneSequence 상 "1.Lobby" 다음 항목이 로드된다.
         if (SceneFlowManager.Instance == null)
         {
@@ -696,6 +802,21 @@ public class LobbyNetworkManager : NetworkBehaviour
         var names = new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() };
         GameSession.Instance?.SetSessionDisplayNames(names);
         Debug.Log($"[LobbyNetworkManager] Client 세션 표시 이름 수신: {string.Join(", ", names)}");
+    }
+
+    /// <summary>
+    /// 세션 Dissonance VoiceId를 Client에 동기화.
+    /// 4색(Blue/Purple/Green/Yellow) 순서 고정 — colorIndex 0~3.
+    /// </summary>
+    [ClientRpc]
+    void SyncVoiceIdsClientRpc(
+        FixedString64Bytes n0, FixedString64Bytes n1,
+        FixedString64Bytes n2, FixedString64Bytes n3)
+    {
+        if (IsHost) return; // Host는 이미 적용됨
+        var ids = new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() };
+        GameSession.Instance?.SetSessionVoiceIds(ids);
+        Debug.Log($"[LobbyNetworkManager] Client 세션 VoiceId 수신 완료");
     }
 
     // ── 로비 Heard 공유 ────────────────────────────────────────────

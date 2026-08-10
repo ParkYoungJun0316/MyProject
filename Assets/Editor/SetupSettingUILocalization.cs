@@ -36,14 +36,12 @@ public static class SetupSettingUILocalization
         { "Close.Btn", "Settings.Close" },
         { "Row_Resolution", "Settings.Resolution" },
         { "Row_DisplayMode", "Settings.DisplayMode" },
-        { "Row_Brightness", "Settings.Brightness" },
         { "Row_Language", "Settings.Language" },
         { "Row_Master", "Settings.MasterVolume" },
         { "Row_BGM", "Settings.BgmVolume" },
         { "Row_SFX", "Settings.SfxVolume" },
         { "Row_InputDevice", "Settings.InputDevice" },
         { "Row_MicVolume", "Settings.MicVolume" },
-        { "Row_OutputDevice", "Settings.OutputDevice" },
         { "Row_MicMute", "Settings.MicMute" },
         { "Btn_Cancel", "Settings.Cancel" },
         { "Btn_Reset", "Settings.Reset" },
@@ -126,9 +124,6 @@ public static class SetupSettingUILocalization
 
             string bindKey = ResolveBindKey(tmp);
             if (bindKey == null) continue;
-
-            // Team voice slot labels are dynamic (Steam name) — skip LocalizeStringEvent
-            if (bindKey.StartsWith("Settings.TeamVoice.Slot")) continue;
 
             LocalizeStringEvent loc = tmp.GetComponent<LocalizeStringEvent>();
             if (loc == null) loc = Undo.AddComponent<LocalizeStringEvent>(tmp.gameObject);
@@ -361,9 +356,6 @@ public static class SetupSettingUILocalization
         Add("Settings.DisplayMode.Borderless",
             "Borderless Window", "테두리 없는 창모드", "ボーダーレス", "无边框窗口", "無邊框視窗",
             "Без рамки", "Rahmenlos", "Fenêtre sans bord", "Sin bordes", "Sin bordes", "Sem bordas", "Bez ramek");
-        Add("Settings.Brightness",
-            "Brightness", "밝기", "明るさ", "亮度", "亮度",
-            "Яркость", "Helligkeit", "Luminosité", "Brillo", "Brillo", "Brilho", "Jasność");
         Add("Settings.Language",
             "Language", "언어", "言語", "语言", "語言",
             "Язык", "Sprache", "Langue", "Idioma", "Idioma", "Idioma", "Język");
@@ -383,9 +375,6 @@ public static class SetupSettingUILocalization
         Add("Settings.MicVolume",
             "Mic Volume", "마이크 볼륨", "マイク音量", "麦克风音量", "麥克風音量",
             "Громкость микрофона", "Mikrofonlautstärke", "Volume micro", "Volumen del micrófono", "Volumen del micrófono", "Volume do microfone", "Głośność mikrofonu");
-        Add("Settings.OutputDevice",
-            "Output Device", "출력 장치", "出力デバイス", "输出设备", "輸出裝置",
-            "Устройство вывода", "Ausgabegerät", "Périphérique de sortie", "Dispositivo de salida", "Dispositivo de salida", "Dispositivo de saída", "Urządzenie wyjściowe");
         Add("Settings.MicMute",
             "Mic Mute", "마이크 음소거", "マイクミュート", "麦克风静音", "麥克風靜音",
             "Микрофон выкл.", "Mikrofon stumm", "Micro coupé", "Silenciar micrófono", "Silenciar micrófono", "Silenciar microfone", "Wycisz mikrofon");

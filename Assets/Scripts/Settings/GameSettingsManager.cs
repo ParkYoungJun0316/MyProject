@@ -1,3 +1,5 @@
+using System.Collections;
+using Dissonance;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
@@ -31,10 +33,21 @@ public class GameSettingsManager : MonoBehaviour
     const string KeyDisplayMode  = "Settings.DisplayMode";
     const string KeyResWidth     = "Settings.ResWidth";
     const string KeyResHeight    = "Settings.ResHeight";
+    const string KeyMicMuted     = "Settings.MicMuted";
+    const string KeyMicDevice    = "Settings.MicDevice";
 
-    public float MasterVolume { get; private set; } = 1f;
-    public float BgmVolume    { get; private set; } = 1f;
-    public float SfxVolume    { get; private set; } = 1f;
+    [Header("초기화(Reset) 기본값")]
+    [Tooltip("옵션 메뉴 '초기화' 버튼을 누르면 이 값들로 되돌아감. 최초 실행 기본값이기도 함.")]
+    [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 1f;
+    [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 1f;
+    [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
+
+    public float  MasterVolume  { get; private set; } = 1f;
+    public float  BgmVolume     { get; private set; } = 1f;
+    public float  SfxVolume     { get; private set; } = 1f;
+    public bool   MicMuted      { get; private set; }
+    /// <summary>빈 문자열 = 시스템 기본 마이크(Dissonance/Microphone API의 null과 동일 취급).</summary>
+    public string MicDeviceName { get; private set; } = "";
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -48,11 +61,58 @@ public class GameSettingsManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        MasterVolume = PlayerPrefs.GetFloat(KeyMasterVolume, 1f);
-        BgmVolume    = PlayerPrefs.GetFloat(KeyBgmVolume, 1f);
-        SfxVolume    = PlayerPrefs.GetFloat(KeySfxVolume, 1f);
+        MasterVolume  = PlayerPrefs.GetFloat(KeyMasterVolume, defaultMasterVolume);
+        BgmVolume     = PlayerPrefs.GetFloat(KeyBgmVolume, defaultBgmVolume);
+        SfxVolume     = PlayerPrefs.GetFloat(KeySfxVolume, defaultSfxVolume);
+        MicMuted      = PlayerPrefs.GetInt(KeyMicMuted, 0) == 1;
+        MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
 
         ApplySavedDisplay();
+        StartCoroutine(ApplySavedMicSettingsWhenReady());
+    }
+
+    // ── 마이크 ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// DissonanceComms는 0.Title 로드 시점에 이미 Start()가 끝나있을 수도, 아닐 수도 있어
+    /// (같은 GameObject라도 컴포넌트 순서 비결정적 위험 회피 — §1 pull 원칙과 동일 이유)
+    /// GetSingleton()이 준비될 때까지 폴링 후 적용한다(CheerKeywordEngine과 동일 패턴).
+    /// </summary>
+    IEnumerator ApplySavedMicSettingsWhenReady()
+    {
+        DissonanceComms comms = null;
+        while (comms == null)
+        {
+            comms = DissonanceComms.GetSingleton();
+            yield return null;
+        }
+
+        comms.IsMuted = MicMuted;
+        if (!string.IsNullOrEmpty(MicDeviceName))
+            comms.MicrophoneName = MicDeviceName;
+    }
+
+    /// <summary>옵션 메뉴 마이크 음소거 토글에서 호출. 즉시 적용 + 저장.
+    /// Dissonance IsMuted는 네트워크 전송(인코더)만 끊고 로컬 캡처는 유지하므로
+    /// CheerKeywordEngine의 SubscribeToRecordedAudio 기반 응원 키워드 감지에는 영향 없음.</summary>
+    public void SetMicMuted(bool value)
+    {
+        MicMuted = value;
+        PlayerPrefs.SetInt(KeyMicMuted, value ? 1 : 0);
+
+        DissonanceComms comms = DissonanceComms.GetSingleton();
+        if (comms != null) comms.IsMuted = value;
+    }
+
+    /// <summary>옵션 메뉴 마이크 입력장치 드롭다운에서 호출. 즉시 적용 + 저장.
+    /// deviceName이 비어있으면 시스템 기본 마이크로 되돌림.</summary>
+    public void SetMicDevice(string deviceName)
+    {
+        MicDeviceName = deviceName ?? "";
+        PlayerPrefs.SetString(KeyMicDevice, MicDeviceName);
+
+        DissonanceComms comms = DissonanceComms.GetSingleton();
+        if (comms != null) comms.MicrophoneName = string.IsNullOrEmpty(MicDeviceName) ? null : MicDeviceName;
     }
 
     // ── 볼륨 ──────────────────────────────────────────────────────
@@ -106,5 +166,25 @@ public class GameSettingsManager : MonoBehaviour
         if (locale == null) return;
         LocalizationSettings.SelectedLocale = locale;
         PlayerPrefs.SetString(GameLocalizationBootstrap.ManualLocaleOverrideKey, locale.Identifier.Code);
+    }
+
+    // ── 초기화(Reset) ─────────────────────────────────────────────
+
+    /// <summary>
+    /// 옵션 메뉴 "초기화" 버튼에서 호출. 볼륨은 Inspector 기본값, 화면은 현 모니터 네이티브
+    /// 해상도 + 전체화면(독점), 언어는 수동 선택 해제 후 Steam/systemLanguage 자동감지로 되돌림.
+    /// 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        SetMasterVolume(defaultMasterVolume);
+        SetBgmVolume(defaultBgmVolume);
+        SetSfxVolume(defaultSfxVolume);
+
+        Resolution native = Screen.currentResolution;
+        ApplyDisplay(native.width, native.height, FullScreenMode.ExclusiveFullScreen);
+
+        PlayerPrefs.DeleteKey(GameLocalizationBootstrap.ManualLocaleOverrideKey);
+        GameLocalizationBootstrap.Instance?.ReapplyAutoDetectedLocale();
     }
 }

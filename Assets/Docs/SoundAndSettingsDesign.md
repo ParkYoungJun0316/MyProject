@@ -1,11 +1,50 @@
 # 사운드(BGM/SFX) · 옵션(설정) 메뉴 — 설계·구현 현황
 
 `ReleaseRoadmap.md` §4 순위 5~7("BGM 추가" / "옵션·설정 메뉴" / "SFX 마무리 + BGM 음량 조절")의 상세 구현 문서.
-**코드 구현은 완료, 에디터 배치·UI 프리팹 제작·실제 테스트는 아직 진행 전** (2026-08-07 세션 기준).
+**옵션 패널 UI는 타이틀 씬에 실제로 배치·연결 완료(로컬라이제이션 포함). BGM 곡 배정도 완료(§5).
+2026-08-10 세션에서 발견된 버그 8개 중 7개 수정 완료, 1개는 의도적 보류(§9.2/§9.4 참고). 2026-08-11 세션에서
+마이크 음소거·입력장치 선택 구현 완료, 밝기·출력장치는 스코프 제외 확정(§8/§9.5), 팀원별 수신 볼륨
+(Dissonance 연동)도 코드 구현 완료(§9.6). ESC 메뉴 연결·SFX 볼륨 보정은 아직 진행 전** (2026-08-11 세션 기준).
 
-> **다음 에이전트/세션 시작 지침:** 이 문서 "남은 작업(에디터·콘텐츠)" 절부터 확인. 코드 쪽에 추가 변경이
-> 필요한 상황이 아니면 이 문서의 아키텍처를 재설계하지 말 것 — 사용자와 합의된 구조임(AudioMixer 미사용
-> 등, 아래 §1 참고).
+> **다음 에이전트/세션 시작 지침:** §9.2 버그는 §9.4에서 대부분 수정 완료 처리됨. 마이크 음소거·입력장치는
+> §9.5, 팀원별 수신 볼륨은 §9.6에서 코드 구현 완료 — **사용자가 `Tools > Setup Setting Panel (Title)` →
+> `Tools > Setup Setting UI Localization` 재실행 필요**(§9.5 "남은 사용자 작업" 참고). 그 다음 **§6 "남은
+> 작업"**(ESC 메뉴 패널 배치, SFX 볼륨 보정 등)부터 진행할 것. 코드 쪽에 추가 변경이 필요한 상황이 아니면
+> 이 문서의 아키텍처를 재설계하지 말 것 — 사용자와 합의된 구조임(AudioMixer 미사용 등, 아래 §1 참고).
+>
+> **Unity MCP 쓰기 권한:** 워크스페이스 `.cs` 파일 수정은 항상 허용. 씬/프리팹 배치 등 에디터 MCP
+> **쓰기**는 사용자가 "MCP로 해줘"라고 명시할 때만 — `.cursor/rules/unity-mcp-readonly.mdc` 참고.
+
+### 다음 세션 체크리스트 (2026-08-11 세션 종료 시점, 컨텍스트 소진으로 핸드오프)
+
+**코드 쪽은 전부 완료·린트 통과 상태.** 아래는 순서대로.
+
+1. **[사용자 확인 필요, 최우선]** 사용자가 아래 두 에디터 툴을 재실행했는지 확인부터 할 것 — 안 했으면
+   먼저 안내:
+   - `Tools > Setup Setting Panel (Title)` — 새 마이크 입력장치 드롭다운(`Row_InputDevice` 실동작화) +
+     마이크 음소거 토글(`Row_MicMute`, `ToggleSpriteSwap` 부착) 반영, `Row_Brightness`/`Row_OutputDevice`
+     제거 반영. **주의: `ContentRoot`/`Footer`를 통째로 지우고 재생성함** — 재실행 전 수동 레이아웃 조정이
+     있었는지 사용자에게 먼저 물어볼 것.
+   - `Tools > Setup Setting UI Localization` — 위 재생성된 UI에 `LocalizeStringEvent` 재부착 + 새
+     String Table 엔트리 반영.
+   - 재실행 후 `read_console`(MCP, 읽기 전용)로 컴파일 에러 없는지, `Setting_Panel` 하위에
+     `Row_InputDevice`/`Row_MicMute`가 정상 생성됐는지 확인.
+2. ~~[설계 결정 필요] §6-8 팀원별 수신 볼륨~~ — **사용자가 대안 A(스키마 추가) 채택, 구현 완료(§9.6).**
+   실제 멀티플레이(2인 이상)에서 볼륨 슬라이더가 상대 목소리 크기를 실제로 바꾸는지 테스트 필요.
+3. **[코드 작업]** §6의 3·4번 — ESC 메뉴(인게임)용 설정 패널 배치·연결(타이틀 씬 `Setting_Panel`과 같은
+   구조 재사용, `EscMenuController.OnClickCloseSettings()` 연결). 이건 씬 배치라 에디터 작업 — 체크리스트로
+   안내하고 사용자가 직접 하거나, "MCP로 해줘"라고 명시하면 MCP 쓰기.
+4. **[미확인]** §6-9·10 — `GameSettingsManager` Inspector `Default*Volume` 값 조정, `Btn_Reset` onClick
+   연결 여부가 실제로 됐는지 아직 확인 안 됨.
+5. 그 외 §6 잔여 항목(7. SFX 볼륨 보정 실사용 튜닝, 6. Phase별 BGM 선택사항).
+
+**이번 세션에 변경된 파일 전체 목록**(§2/§9.5/§9.6에 상세, 전부 린트 통과):
+`GameSettingsManager.cs`(마이크 음소거/장치 추가), `OptionsMenuController.cs`(마이크 UI 연결),
+`CheerKeywordEngine.cs`(솔로 폴백 장치 선택 반영), `SetupSettingPanel.cs`(Row_Brightness/OutputDevice 제거,
+Row_InputDevice 실동작화, ToggleSpriteSwap 부착), `SetupSettingUILocalization.cs`(죽은 String Table 엔트리
+제거), `ToggleSpriteSwap.cs`(신규), `LobbyPlayerState.cs`(VoiceId 필드 추가), `LobbyNetworkManager.cs`
+(VoiceId self-report RPC·세션 배포), `GameSession.cs`(세션 VoiceId SSOT), `OptionsTeamVoicePanel.cs`
+(Dissonance VoicePlayerState 실연동).
 
 ---
 
@@ -51,14 +90,25 @@
 
 | 파일 | 역할 |
 |---|---|
-| `Assets/Scripts/Settings/GameSettingsManager.cs` (신규) | 볼륨·화면·언어 SSOT. 싱글턴, DontDestroyOnLoad. PlayerPrefs 저장/로드. |
+| `Assets/Scripts/Settings/GameSettingsManager.cs` (신규 / 수정 2026-08-11) | 볼륨·화면·언어·마이크(음소거/입력장치) SSOT. 싱글턴, DontDestroyOnLoad. PlayerPrefs 저장/로드. `ResetToDefaults()`(§9.4), `SetMicMuted()`/`SetMicDevice()`(§9.5, `DissonanceComms` 바인딩). |
 | `Assets/Scripts/Audio/BGMManager.cs` (신규) | 씬 이름 접두사 기반 BGM 재생 + 크로스페이드(1.5초). `PlayClip(AudioClip)`으로 같은 씬 안 Phase별 강제 전환도 지원(§5). |
 | `Assets/Scripts/Audio/SFXManager.cs` (수정) | `EffectiveVolume`이 `GameSettingsManager` 우선 사용(없으면 기존 Inspector 필드 폴백). `SFXLibrary.GetVolumeMultiplier(id)` 반영. |
 | `Assets/Scripts/Audio/SFXLibrary.cs` (수정) | `VolumeOverride[]` 배열 추가 — 클립별 0~2배 보정(§4). |
 | `Assets/Scripts/Audio/PlayerAudio.cs` (수정) | 달리기 루프 사운드가 SFX 마스터 볼륨을 매 프레임 반영하도록 수정(기존엔 전혀 반영 안 되던 버그성 gap). |
 | `Assets/Scripts/Localization/GameLocalizationBootstrap.cs` (수정) | 옵션에서 저장한 수동 언어(`ManualLocaleOverrideKey`)가 있으면 Steam/systemLanguage 자동감지보다 최우선 적용. |
-| `Assets/Scripts/UI/OptionsMenuController.cs` (신규) | 슬라이더 3개 + 언어/해상도/화면모드 드롭다운 ↔ `GameSettingsManager` 연결. 타이틀·ESC 메뉴 양쪽 재사용 가능. |
+| `Assets/Scripts/UI/OptionsMenuController.cs` (신규 / 수정 2026-08-11) | 슬라이더 3개 + 언어/해상도/화면모드 드롭다운 + 마이크 음소거 토글·입력장치 드롭다운 ↔ `GameSettingsManager` 연결(§9.5). 타이틀·ESC 메뉴 양쪽 재사용 가능. 화면모드 드롭다운 라벨 3개도 `LocalizedString` 필드로 로컬라이즈(§9.1). |
 | `Assets/Scripts/UI/EscMenuController.cs` (수정) | 미구현이던 Setting 버튼에 `OnClickSettings()`/`OnClickCloseSettings()` 추가(`TitleMenuController`와 동일 패턴). |
+| `Assets/Scripts/UI/OptionsPanelTabs.cs` (신규, 2026-08-10 / 수정 2026-08-11) | 옵션 패널 좌측 탭(일반/사운드/팀보이스) 전환 — 탭 버튼 클릭 시 콘텐츠 패널 토글 + 선택/비선택 스프라이트 교체. 마지막으로 본 탭을 `static` 필드로 기억해 재오픈 시 유지(§9.2-⑤ 수정 완료). |
+| `Assets/Scripts/UI/OptionsTeamVoicePanel.cs` (신규, 2026-08-10 / 수정 2026-08-11) | 팀 보이스 탭 — 고정 이름(GUMA/DANHO/SOOK) 대신 `GameSession`(인게임) 또는 `LobbyNetworkManager`(로비)에서 팀원 Steam 표시 이름을 읽어 슬롯에 표시. 수신 볼륨 슬라이더가 `VoiceId`로 `DissonanceComms.FindPlayer()`를 조회해 실제 `VoicePlayerState.Volume`에 연동됨(§9.6). |
+| `Assets/Scripts/Network/LobbyPlayerState.cs` (수정 2026-08-11) | `VoiceId`(Dissonance `LocalPlayerName`) 필드 추가 — `DisplayName`과 동일한 self-report 패턴(§9.6). |
+| `Assets/Scripts/Network/LobbyNetworkManager.cs` (수정 2026-08-11) | `SubmitVoiceIdServerRpc` + `ReportLocalVoiceIdRoutine`(Host/Client 공통, Dissonance 준비 대기 후 보고) + `StartGameServerRpc`에서 세션 VoiceId 확정·배포(`SyncVoiceIdsClientRpc`) 추가(§9.6). |
+| `Assets/Scripts/GameSession.cs` (수정 2026-08-11) | `SetSessionVoiceIds`/`GetSessionVoiceId` 추가 — `DisplayName`과 동일한 세션 SSOT 패턴(§9.6). |
+| `Assets/Scripts/UI/SliderValuePercentLabel.cs` (신규, 2026-08-10) | `Slider` 값을 옆 텍스트에 "70%" 형태로 표시하는 범용 컴포넌트. |
+| `Assets/Scripts/UI/ToggleSpriteSwap.cs` (신규, 2026-08-11) | `Toggle` on/off 상태에 따라 `Image.sprite` 교체하는 범용 컴포넌트. 예전 에디터 툴의 비영속 `AddListener` 클로저 버그(§9.2-③) 대체. |
+| `Assets/Scripts/Cheer/CheerKeywordEngine.cs` (수정 2026-08-11) | 솔로(1인) 마이크 폴백 경로(`StartSoloMic`/`PollSoloMic`/`Shutdown`)가 옵션에서 고른 마이크 장치(`GameSettingsManager.MicDeviceName`)를 쓰도록 수정(기존엔 `null`=시스템 기본 하드코딩). |
+| `Assets/Editor/SetupSettingPanel.cs` (신규, 2026-08-10 / 수정 2026-08-11) | `TitleCanvas/Setting_Panel` 하위 구조(탭 3개, 콘텐츠 3종, Footer 버튼) 생성 + `OptionsPanelTabs`/`OptionsMenuController` 부착·필드 연결하는 1회성 에디터 툴(`Tools > Setup Setting Panel (Title)`). Footer는 이제 `Btn_Reset`만 생성(취소/적용 버튼 생성 코드 제거, §9.2-② 수정 완료). `CloseButton` 이름 불일치는 사용자가 씬에서 직접 통일(§9.2-④ 해결). `Row_Brightness`/`Row_OutputDevice` 생성 제거, `Row_InputDevice` 실동작화, `Row_MicMute`가 `ToggleSpriteSwap` 부착(§9.5). |
+| `Assets/Editor/SetupSettingUILocalization.cs` (신규, 2026-08-10 / 수정 2026-08-11) | `SettingUI` String Table 생성·번역 채우기 + 패널의 `TextMeshProUGUI`에 `LocalizeStringEvent` 부착 + 팀보이스 슬롯 재구성까지 하는 1회성 에디터 툴(`Tools > Setup Setting UI Localization`). 죽은 분기(`TeamVoice.Slot`) 제거(§9.2-⑥ 수정 완료). `Settings.Brightness`/`Settings.OutputDevice` 엔트리 제거(§9.5). |
+| `Assets/Localization/StringTables/SettingUI*.asset` (신규, 2026-08-10) | 옵션 패널 UI 텍스트 전용 String Table Collection. 12개 로케일(한국어 포함 en/ja/ko/zh-Hans/zh-Hant/de/es/es-419/fr/pl/pt-BR/ru) 번역 수록(§9.1). |
 
 ---
 
@@ -111,23 +161,52 @@ Inspector에서 특정 SFX만 보정 가능:
 일단 그대로 넣어보고 실제 플레이에서 "너무 금방 반복된다" 싶을 때만 나중에 늘리는 작업을 하기로 함(미리
 작업 안 함). 참고로 같은 구역에 이 2곡을 둘 다 등록하면 위 재생목록 순환 기능으로 번갈아 재생됨.
 
+**배정 완료(2026-08-11 MCP 조회로 확인)** — `0.Title` 씬 `NetworkManager`의 `BGMManager.zoneClips`에 이미
+아래처럼 채워져 있음:
+
+| `scenePrefix` | 곡 |
+|---|---|
+| `M` (구역 공통) | M1~M5.wav (5곡 순환) |
+| `M.Boss` | M.Boss1~3.wav (3곡 순환) |
+| `T.Stage1` | T.1,3.wav |
+| `T.Stage2` | T.2.wav |
+| `T.Stage3` | T.1,3.wav |
+| `T.Stage4` | T.4.wav |
+| `T.Stage5` | T.5.wav |
+| `T.Boss` | T.Boss1~2.wav (2곡 순환) |
+
+위 §5 본문의 "말랑말랑한_발걸음.mp3" / "Gums and Gullet.wav" 임시 배치 설명은 이 실제 배정 이전 상태를
+설명한 것 — 지금은 위 표가 실제 상태.
+
 ---
 
 ## 6. 남은 작업 (에디터·콘텐츠 — 다음 세션에서 진행)
 
-1. **`0.Title` 씬의 `NetworkManager` GameObject**(SteamManager/GameLocalizationBootstrap과 같은 자리)에
-   `GameSettingsManager`, `BGMManager` 컴포넌트 추가.
-2. `BGMManager.Zone Clips`에 `"M."`/`"T."` 접두사 + 곡 연결(§5 참고, 사용자가 어느 쪽에 어느 곡 쓸지 아직
-   미정 — 결정 필요).
-3. **옵션 패널 UI 프리팹 신규 제작**: 슬라이더 3개(마스터/BGM/SFX) + 언어 드롭다운 + 해상도 드롭다운 +
-   화면모드 드롭다운. `OptionsMenuController` 부착 후 각 필드 연결.
-4. 이 패널을 **타이틀 씬**(`TitleMenuController.settingsPanel`)과 **각 스테이지의 ESC 메뉴**
-   (`EscMenuController.settingsPanel`, `UI.prefab` 쪽으로 추정)에 배치. 가능하면 같은 프리팹 재사용.
-5. 각 패널의 "닫기" 버튼에 `OnClickCloseSettings()` 연결.
+**§9.2 버그 수정은 §9.4에서 대부분 완료.** 이제 아래 목록이 우선순위.
+
+1. ~~`0.Title` 씬의 `NetworkManager` GameObject에 `GameSettingsManager`, `BGMManager` 컴포넌트 추가~~ —
+   **완료 확인**(2026-08-11 MCP 조회, §9.4 참고). 둘 다 부착돼 있음.
+2. ~~`BGMManager.Zone Clips`에 `"M."`/`"T."` 접두사 + 곡 연결~~ — **완료 확인**(2026-08-11 MCP 조회, §5
+   표 참고). M/M.Boss/T.Stage1~5/T.Boss 전 구역 곡 배정 끝남.
+3. ~~옵션 패널 UI~~ **타이틀 씬은 완료**(§9.1). **ESC 메뉴(인게임)용 패널은 아직 미배치** — 같은
+   `Setting_Panel` 구조/프리팹을 재사용해 `EscMenuController.settingsPanel`에 연결할 것. 팀 보이스 탭은
+   인게임에서만 의미 있음(로비/인게임 팀원 존재) — 타이틀에선 `emptyState`만 보일 것.
+4. ESC 메뉴 쪽 배치 완료 후, 해당 패널의 "닫기"를 `EscMenuController.OnClickCloseSettings()`에 연결.
+5. ~~각 패널의 "닫기" 버튼에 `OnClickCloseSettings()` 연결~~ — 타이틀 쪽 완료. 취소/적용 버튼은 제거하고
+   닫기(X) 버튼 하나로 통일하기로 확정·수정 완료(§9.2-②, §9.4 참고).
 6. (선택) `M.Stage2`처럼 씬 안에 Phase가 여러 개인 스테이지에서 구간별 BGM이 필요하면, 해당
    `PhaseData.onPhaseEnter`에 `BGMManager.PlayClip()` 연결(§5).
 7. `SFXLibrary.Volume Overrides`는 실제 플레이해보면서 소리 크기 안 맞는 것부터 채워나가는 방식으로 진행
    (§4).
+8. ~~`OptionsTeamVoicePanel`의 수신 볼륨 슬라이더 → Dissonance 실제 볼륨 반영 연동~~ — **✅ 구현
+   완료(§9.6).** `LobbyPlayerState.VoiceId` self-report 필드 추가(대안 A 채택, §9.6 참고) + 슬라이더를
+   `DissonanceComms.FindPlayer(voiceId).Volume`에 직접 연결. **실제 멀티(2인 이상)에서 상대 목소리 크기가
+   실제로 바뀌는지 테스트 필요**(§7 체크리스트에 추가).
+9. `GameSettingsManager` Inspector의 `Default Master/Bgm/Sfx Volume` 필드를 실제 원하는 수치로 조정 —
+   완료 여부 미확인, 다음 세션에서 확인.
+10. `Setting_Panel`의 `Btn_Reset` → `OnClick()`에 `OptionsMenuController.OnClickReset` 연결 — 완료 여부
+    미확인, 다음 세션에서 확인.
+11. `Row_MicVolume`(마이크 게인/노이즈 게이트)는 아직 placeholder 슬라이더 — 필요해지면 별도 스펙 논의.
 
 ## 7. 테스트 체크리스트 (위 배치 완료 후)
 
@@ -139,18 +218,220 @@ Inspector에서 특정 SFX만 보정 가능:
 - [ ] 언어 드롭다운 선택 시 즉시 텍스트가 바뀌는지(연결된 로컬라이즈 텍스트 한정) + 재실행 후에도 그 언어 유지되는지
 - [ ] BGM이 M구역/T구역 이동 시 자연스럽게 크로스페이드되는지, 같은 구역 내 스테이지 이동 시 안 끊기는지
 - [ ] (해당 시) `M.Stage2` OX퀴즈→화살함정 구간 전환에서 BGM이 바뀌는지
+- [ ] **(신규, §9.6)** 실제 멀티(2인 이상)에서 팀 보이스 탭 수신 볼륨 슬라이더를 움직이면 상대방 목소리
+      크기가 실제로 바뀌는지 (로비/인게임 둘 다) — `VoiceId` 매칭이 안 되면 슬라이더가 비활성화됨(정상,
+      Dissonance 보고가 아직 안 된 상태)
 
 ---
 
-## 8. 참고 — 나중에 옵션 메뉴에 추가될 수 있는 항목 (지금 범위 아님)
+## 8. 참고 — 옵션 메뉴 확장 항목 스코프 결정 (2026-08-11, §9.5)
 
-사용자가 언급했지만 이번 작업 범위에서 제외, 나중에 필요 시 지금 구조 위에 자연스럽게 얹을 수 있음:
+- **밝기 조절 — 스코프 제외 확정.** `ReleaseRoadmap.md` §2.1 Ship Must UI 항목("옵션: 마스터·BGM·SFX,
+  해상도/전체화면")에 없음, 이 게임은
+  어두운 톤의 장르가 아님, 구현하려면 각 스테이지 씬에 이미 있는 개별 `Global Volume Profile`과 충돌 안
+  나게 별도 상위 우선순위 Volume 인프라를 새로 깔아야 해서 비용 대비 실익 낮음. 플레이테스트에서 특정
+  구간 시야 불만이 나오면 그때 재검토(조명 자체를 손볼 문제일 수도 있음).
+- **출력장치(헤드셋) 선택 — 기술적으로 불가능, 스코프 제외 확정.** Unity `AudioSource`/`AudioListener`는
+  OS 기본 출력 장치로만 재생되고, 이걸 게임에서 바꾸는 표준 API가 없음(네이티브 플러그인 없이는 불가).
+  Windows 사운드 설정에서 사용자가 직접 바꾸도록 안내.
+- **마이크 입력장치 선택 — 구현 완료(§9.5).** `DissonanceComms.MicrophoneName` / `GetMicrophoneDevices()`
+  기반. 멀티에서는 Dissonance가 마이크 소유자라 여기로 바로 반영, 솔로 폴백 경로(`CheerKeywordEngine`)도
+  같은 선택값을 씀.
+- **마이크 음소거 on/off — 구현 완료(§9.5).** `DissonanceComms.IsMuted` 바인딩. 네트워크 전송(인코더)만
+  끊고 로컬 캡처는 유지되므로 응원 키워드 감지(Cheer)에는 영향 없음(코드 확인함).
+- **마이크 볼륨(게인) 조절 — 아직 미구현.** `Row_MicVolume`는 placeholder 슬라이더로 남아있음. 솔로
+  폴백 경로는 이미 `autoNormalizeMic`/`soloMicGain`이 있지만 옵션 UI에는 안 연결됨 — 필요해지면 별도 진행.
+- **팀원 보이스 수신 볼륨 조절 — 구현 완료(§9.6).** Dissonance `VoicePlayerState.PlayerId`가 세션마다
+  랜덤 GUID라 팀원 슬롯과 매칭이 안 되는 신원 문제가 있었는데, 사용자가 (필드 추가 없이 우회하는 대안보다)
+  `LobbyPlayerState`에 self-report 필드(`VoiceId`)를 추가하는 쪽을 채택해 해결(§9.6). 개별 음소거(mute)
+  버튼은 이번엔 추가 안 함 — 필요해지면 같은 `VoicePlayerState.IsLocallyMuted`로 후속 가능.
 
-- 밝기 조절
-- 입력장치/출력장치 선택 (드롭다운)
-- 마이크 볼륨 조절 (+ 소음 차단 기능 여부는 별도 검토)
-- 마이크 음소거 on/off
-- 팀원 보이스 크기 조절(수신 음량)
+---
 
-`CheerAndTutorialDesign.md` §8.2에 "마이크 mute, 수신 볼륨 — 최소 구현 OK. 옵션 패널(마스터·BGM·SFX)은
-Ship Must"라고 이미 명시돼 있어 우선순위상 지금 범위(마스터/BGM/SFX/화면/언어)가 먼저.
+## 9. 2026-08-10 세션 결과 — Setting_Panel 실제 구현 + 로컬라이제이션 + 팀보이스 Steam화
+
+이 세션에서 사용자가 `TitleCanvas` 아래 만들어둔 `Setting_Panel`을 기반으로 MCP(에디터 스크립트 경유)로
+실제 UI 계층·컴포넌트를 구성했고, 로컬라이제이션과 팀 보이스 동적 표시까지 완료했다. **컨텍스트 소진으로
+버그 수정 전에 세션 종료** — 다음 세션은 §9.2부터 처리할 것.
+
+### 9.1 이번 세션에서 완료한 것
+
+- **`Assets/Editor/SetupSettingPanel.cs`** (`Tools > Setup Setting Panel (Title)`)로 `Setting_Panel`
+  하위에 다음을 생성·연결:
+  - 기존에 있던 탭 버튼 3개를 `Tab_General`/`Tab_Sound`/`Tab_TeamVoice`로 식별해 재사용(단, 씬 안 실제
+    이름은 스크립트가 기대하는 이름과 다를 수 있음 — §9.2-④ 참고).
+  - `ContentRoot` 하위에 일반/사운드/팀보이스 콘텐츠 3종(슬라이더 행, 드롭다운 행, 토글 행 등).
+  - `Footer`에 취소/적용/초기화 버튼, 우상단에 `Close.Btn`(X).
+  - `OptionsPanelTabs`, `OptionsMenuController` 컴포넌트 부착 + Inspector serialized 필드 전부 코드로
+    연결(슬라이더 3개, 드롭다운 3개, 탭 배열, Figma 배경 이미지 등).
+- **`Assets/Editor/SetupSettingUILocalization.cs`** (`Tools > Setup Setting UI Localization`)로:
+  - `Assets/Localization/StringTables/SettingUI*.asset` String Table Collection 신규 생성, 12개 로케일
+    번역(예: "마스터 볼륨", "BGM 볼륨", "SFX 볼륨", "언어", "해상도", "화면 모드", "전체화면"/"창모드"/
+    "테두리 없는 창모드", "취소"/"적용"/"초기화", "닫기" 등) 채움.
+  - `Setting_Panel` 하위 모든 `TextMeshProUGUI`를 순회하며 `LocalizeStringEvent` 컴포넌트를 부착하고
+    `SettingUI` 테이블의 해당 키에 연결(라벨↔키 매핑은 스크립트 내 `LabelBindings` 딕셔너리).
+  - `OptionsMenuController`의 화면모드 드롭다운 라벨 3개(`LocalizedString` 필드)와 `OptionsTeamVoicePanel`
+    필드도 같은 실행에서 함께 연결.
+- **`Assets/Scripts/UI/OptionsTeamVoicePanel.cs`** 신규 작성 — 팀 보이스 탭이 더 이상 GUMA/DANHO/SOOK
+  고정 이름을 쓰지 않고, 인게임이면 `GameSession`, 로비면 `LobbyNetworkManager`에서 팀원(본인 제외) Steam
+  표시 이름을 최대 3명까지 읽어 슬롯에 채움. 팀원이 없으면(솔로) `emptyState` 표시.
+- `OptionsMenuController`에 `LocalizationSettings.SelectedLocaleChanged` 구독 추가 — 언어 변경 시 화면모드
+  드롭다운 라벨도 즉시 갱신되도록 처리.
+
+### 9.2 리뷰에서 발견한 버그·이슈 (§9.4에서 처리 완료 — 아래는 발견 당시 기록)
+
+읽기 전용 리뷰(씬/코드 조회만, 쓰기 없음)로 찾은 것 — 우선순위 높은 순. **처리 결과는 각 항목 끝의 상태
+표시와 §9.4 참고.**
+
+1. **`Btn_Reset`(초기화) 버튼이 완전히 비어있음** — `onClick` 리스너가 하나도 안 걸려있어 눌러도 아무 동작
+   안 함. `GameSettingsManager`에 초기값 리셋 메서드가 있는지 확인하고, 없으면 추가해서 연결 필요.
+   **→ ✅ 수정 완료(§9.4-①).**
+2. **`Close.Btn`(X) / `Btn_Cancel`(취소) / `Btn_Apply`(적용) 세 버튼이 전부 동일하게
+   `OnClickCloseSettings()`만 호출** — 지금 구조가 "값 변경 즉시 적용(pull 방식, §1)"이라 "취소"를 눌러도
+   되돌릴 값이 없고 "적용"도 실질적으로 아무것도 안 하고 닫기만 함. 라벨과 실제 동작이 안 맞아 사용자가
+   혼란스러울 수 있음. **결정 필요:** (a) 취소/적용 버튼을 없애고 닫기 버튼 하나로 통일, 또는 (b) 진짜
+   "취소 시 되돌리기" 기능을 만들려면 패널 열 때 스냅샷을 떠야 함(설계 변경 필요 — 사용자와 상의 후 진행).
+   **→ ✅ (a) 채택해 수정 완료(§9.4-②).**
+3. **마이크 음소거 토글(`Row_MicMute`)의 스프라이트 교체 리스너가 비영속(non-persistent) C# 클로저로
+   `AddListener`됨** — 씬 저장 시 직렬화되지 않으므로, 도메인 리로드 후나 빌드된 게임에서는 토글을 눌러도
+   on/off 스프라이트가 안 바뀜(기능 자체는 동작하되 시각 피드백만 깨짐). `SetupSettingPanel.cs`에서 이
+   부분을 영속 리스너(별도 컴포넌트 메서드로 빼서 `UnityEvent.AddListener`가 아니라 Inspector에서 연결
+   하거나, 전용 `ToggleSpriteSwap` 같은 작은 컴포넌트를 새로 만들어 부착)로 바꿔야 함.
+   **→ ⏸ 의도적 보류(§9.4-③) — 지금은 `interactable = false`인 비활성 placeholder라 실질 영향 없음. 마이크
+   음소거를 실제로 구현하는 시점에 재검토.**
+4. **닫기 버튼 이름 불일치** — `SetupSettingPanel.cs`는 `CloseButton`이라는 이름으로 GameObject를
+   생성/탐색하는데, 실제 씬에는 `Close.Btn`이라는 이름으로 존재(사용자가 미리 만들어둔 것으로 추정).
+   `SetupSettingUILocalization.cs`의 `LabelBindings`는 두 이름 다 대응해놨지만, `SetupSettingPanel.cs`의
+   "기존 자식 파괴 후 재생성" 로직은 `CloseButton`만 찾기 때문에 **`Tools > Setup Setting Panel (Title)`을
+   재실행하면 `Close.Btn`이 안 지워지고 새 `CloseButton`이 중복 생성될 위험**이 있음. 재실행 전에 반드시
+   이 부분부터 고칠 것(이름 통일 또는 파괴 로직에 `Close.Btn`도 포함).
+   **→ ✅ 해결(§9.4-④) — 사용자가 씬에서 직접 `CloseButton`으로 이름 통일.**
+5. **옵션 패널이 열릴 때마다 항상 "일반" 탭으로 리셋됨** (`OptionsPanelTabs.OnEnable() → ShowTab(defaultTabIndex=0)`) —
+   사용자가 "사운드" 탭에서 조정하다 닫고 다시 열면 또 "일반" 탭부터 시작. UX상 아쉬운 부분 — 마지막으로 본
+   탭을 기억하게(static 필드 또는 `GameSettingsManager`에 저장) 개선하면 좋음(필수 아님, 사용자 판단).
+   **→ ✅ 수정 완료(§9.4-⑤).**
+6. **`SetupSettingUILocalization.cs`에 죽은 코드 존재** — `bindKey.StartsWith("Settings.TeamVoice.Slot")`
+   분기가 있는데 실제로 이 접두사를 가진 키가 정의된 적이 없어 항상 false. 정리하거나, 팀보이스 슬롯 라벨도
+   로컬라이즈 키 체계에 편입시키려면 이 분기를 실제로 쓰게 고쳐야 함.
+   **→ ✅ 제거 완료(§9.4-⑥).**
+7. **`OptionsMenuController.OnSelectedLocaleChanged`가 `_refreshing` 가드를 자체적으로 다시 구현** —
+   기존 `RefreshAll()`이 이미 같은 패턴을 쓰고 있어서 코드가 중복됨. 기능상 버그는 아니고 정리 대상(사소).
+   **→ ✅ `WithRefreshGuard` 헬퍼로 통합 완료(§9.4-⑦).**
+8. **`GameSettingsManager`/`BGMManager`가 `0.Title` 씬의 `NetworkManager` GameObject에 실제로 부착됐는지
+   미확인** — 이번 세션은 UI 작업만 진행, §6-1 항목을 확인 안 하고 넘어갔음. 다음 세션에서 씬 조회로 확인
+   필요(없으면 부착부터).
+   **→ ✅ 확인 완료(§9.4-⑧) — 둘 다 부착돼 있었고, BGM 곡 배정도 이미 끝나 있었음(§5 표).**
+
+### 9.3 다음 세션 시작 순서 (2026-08-10 시점 기록 — §9.4에서 실행 완료)
+
+1. §9.2의 1~4번(기능 결함) 먼저 수정 — 특히 4번(이름 불일치)은 `SetupSettingPanel.cs` 재실행 전 필수.
+2. §9.2-2번은 사용자에게 (a)/(b) 중 선택받고 진행(설계 판단 필요, 임의 결정 금지).
+3. §6의 남은 항목(ESC 메뉴 배치, BGM 곡 배정, SFX 볼륨 보정, Dissonance 연동) 순서대로 진행.
+4. 전체 완료 후 §7 테스트 체크리스트로 검증.
+
+### 9.4 2026-08-11 세션 결과 — §9.2 버그 수정
+
+사용자와 버그별로 스펙을 확인해가며 하나씩 처리. 코드 변경분만 반영(씬/에디터 조작은 사용자가 직접 진행—
+`unity-mcp-readonly.mdc` 원칙).
+
+- **① 초기화 버튼:** `GameSettingsManager.ResetToDefaults()` 신규 — 볼륨은 새로 추가한 Inspector 필드
+  `defaultMasterVolume`/`defaultBgmVolume`/`defaultSfxVolume`(0~1, 사용자가 나중에 원하는 수치로 튜닝 예정,
+  지금은 1.0)로 복원, 화면은 현재 모니터 네이티브 해상도 + 전체화면(독점)으로, 언어는 수동 선택 해제 후
+  Steam/systemLanguage 자동감지로 재적용. `GameLocalizationBootstrap`에 재적용용 `ReapplyAutoDetectedLocale()`
+  public 메서드 신규 추가(에디터 전용 컨텍스트 메뉴도 이걸로 통일). `OptionsMenuController.OnClickReset()`
+  신규 — 리셋 후 UI 새로고침까지 처리. **남은 사용자 작업:** Inspector 기본값 수치 조정(§6-9), `Btn_Reset`
+  `OnClick()` 연결(§6-10).
+- **② 취소/적용/닫기 불일치:** 사용자가 (a) 채택(취소/적용 버튼 제거, 닫기(X) 하나로 통일). `SetupSettingPanel.cs`
+  Footer 생성부에서 `Btn_Cancel`/`Btn_Apply` 생성 및 wiring 코드 제거, `Btn_Reset`만 남김. 씬에 이미 있던
+  `Btn_Cancel`/`Btn_Apply`는 사용자가 직접 Hierarchy에서 삭제.
+- **③ 마이크 음소거 비영속 리스너:** ✅ **§9.5에서 실제로 수정 완료.** `ToggleSpriteSwap` 컴포넌트 신규 —
+  에디터 툴이 `AddListener` 클로저로 직접 등록하던 걸 걷어내고, 필드 참조로 정상 직렬화되는 컴포넌트가
+  자기 `OnEnable`에서 구독하는 방식으로 교체.
+- **④ CloseButton/Close.Btn 이름 불일치:** 사용자가 씬에서 직접 이름을 `CloseButton`으로 통일해 해결.
+- **⑤ 탭 항상 "일반"으로 리셋:** `OptionsPanelTabs`에 `static int s_lastTabIndex` 추가 — 마지막으로 본 탭을
+  기억해 다음에 열 때도 유지(타이틀/ESC 패널 인스턴스 간에도 공유).
+- **⑥ 죽은 코드:** `SetupSettingUILocalization.cs`에서 항상 false였던 `Settings.TeamVoice.Slot` 분기 제거.
+- **⑦ `_refreshing` 가드 중복:** `OptionsMenuController`에 `WithRefreshGuard(Action)` 헬퍼 추가, `RefreshAll()`/
+  `OnSelectedLocaleChanged()` 둘 다 이걸로 통일.
+- **⑧ 컴포넌트 부착 미확인:** MCP로 `0.Title` 씬 `NetworkManager`를 조회해 `GameSettingsManager`/`BGMManager`
+  둘 다 이미 부착돼 있음을 확인. 덤으로 `BGMManager.zoneClips`에 M/T 전 구역 곡이 이미 배정돼 있는 것도
+  발견(§5 표에 반영, §6-2 완료 처리).
+
+**다음 세션 시작 순서:** §6의 9·10번(Reset 기본값 수치 조정 + `Btn_Reset` 연결) 확인 후, 3·4번(ESC 메뉴
+패널 배치)부터 진행.
+
+### 9.5 2026-08-11 세션 결과 — 마이크 음소거·입력장치 선택 구현, 밝기·출력장치 스코프 확정
+
+사용자가 "밝기/마이크 찾기/음소거/헤드셋 찾기는 어떻게 연동하냐"고 물어서, 각 항목의 실제 Unity/Dissonance
+지원 여부를 코드로 확인한 뒤 항목별로 스코프를 확정하고 가능한 것부터 구현했다(§8 참고).
+
+- **밝기:** 스코프 제외 확정(사용자 동의). §8 참고.
+- **출력장치(헤드셋):** Unity 표준 API로 불가능함을 확인, 스코프 제외 확정(사용자 동의). §8 참고.
+- **마이크 음소거 — 구현 완료.** `GameSettingsManager`에 `MicMuted`(PlayerPrefs `Settings.MicMuted`) +
+  `SetMicMuted()` 추가, `DissonanceComms.IsMuted`에 바인딩. **중요 발견:** Dissonance의 `IsMuted`는
+  `CapturePipelineManager.Update(muted, ...)`에서 인코더(네트워크 전송) 구독만 끄고 전처리기(로컬 캡처)는
+  그대로 돌아가므로, 음소거를 켜도 `CheerKeywordEngine.SubscribeToRecordedAudio` 기반 응원 키워드 감지는
+  영향 없음(코드 확인, `Assets/Plugins/Dissonance/Core/Audio/Capture/CapturePipelineManager.cs:165-225`).
+  `OptionsMenuController.micMuteToggle` 필드 신규, `OnMicMuteChanged` 콜백 추가.
+- **마이크 입력장치 선택 — 구현 완료.** `GameSettingsManager`에 `MicDeviceName`(PlayerPrefs
+  `Settings.MicDevice`) + `SetMicDevice()` 추가, `DissonanceComms.MicrophoneName`(런타임 핫스왑 가능,
+  `_started` 락 없음)에 바인딩. 드롭다운 목록은 `DissonanceComms.GetMicrophoneDevices()`(Dissonance 자체
+  해석 우선, 실패 시 `Microphone.devices` 폴백)로 채움. **솔로(1인) 폴백 경로도 동일하게 처리** —
+  `CheerKeywordEngine`이 Dissonance 오디오 미수신 시 직접 여는 `Microphone.Start(null, ...)`를
+  `_soloMicDevice` 필드로 바꿔 옵션에서 고른 장치를 그대로 씀(`StartSoloMic`/`PollSoloMic`/`Shutdown` 전부
+  일관되게 수정). `OptionsMenuController.micDeviceDropdown` 필드 신규, `OnMicDeviceChanged` 콜백 추가.
+- **부수적으로 §9.2-③ 실제 수정:** 위 마이크 음소거를 실제 기능으로 만들면서, 예전에 "의도적 보류"였던
+  `Row_MicMute` 토글의 비영속 리스너 버그도 같이 고쳤다. 새 `Assets/Scripts/UI/ToggleSpriteSwap.cs`
+  컴포넌트가 on/off 스프라이트 교체를 전담(Inspector 필드 참조라 정상 직렬화, 매번 자기 `OnEnable`에서
+  구독). `SetupSettingPanel.cs`의 `CreateToggleRow`가 이 컴포넌트를 부착하도록 교체, `interactable = false`
+  및 "(미연동)" 라벨 제거.
+- **`Row_OutputDevice`/`Row_Brightness` 생성 코드 제거**(`SetupSettingPanel.cs`), 관련 로컬라이제이션
+  String Table 엔트리(`Settings.Brightness`/`Settings.OutputDevice`)도 `SetupSettingUILocalization.cs`에서
+  제거. `Row_InputDevice` 드롭다운은 `stub: true` 해제해 실제 동작하도록 전환.
+- **조사했지만 이번엔 구현 안 함 — 팀원별 음소거/수신 볼륨(§6-8):** `OptionsTeamVoicePanel`의 볼륨
+  슬라이더를 Dissonance `VoicePlayerState.Volume`에 연결하면 될 것 같았으나, Dissonance
+  `LocalPlayerName`(=`VoicePlayerState.PlayerId`)이 명시적으로 안 정하면 세션마다 랜덤 GUID로 자동
+  생성됨(`DissonanceCommsImpl.cs` `Start()` 참고) — 팀원 슬롯(`LobbyPlayerState.ClientId`/`DisplayName`)과
+  매칭할 방법이 없음. 해결하려면 `LobbyPlayerState`에 자기 자신의 Dissonance GUID를 self-report하는 필드를
+  추가해야 함(기존 `DisplayName`/`CheerName` self-report 패턴과 동일 — `SubmitDisplayNameServerRpc` 참고).
+  이건 NetworkList 동기화 스키마를 건드리는 변경이라 **사용자 확인 후 진행할 것**(§6-8에 상세 기록).
+
+**다음 세션 시작 순서:** 사용자가 `Tools > Setup Setting Panel (Title)` → `Tools > Setup Setting UI
+Localization` 재실행해서 새 마이크 드롭다운/토글을 씬에 반영한 뒤, §6-8(팀원별 음소거 스키마 변경 여부
+확인) → §6 3·4번(ESC 메뉴 패널 배치) 순서로 진행.
+
+### 9.6 2026-08-11 세션 결과 — 팀원별 수신 볼륨(Dissonance 연동) 구현
+
+§9.5에서 조사만 하고 미룬 §6-8(팀원 수신 볼륨)을 이어서 진행. 두 가지 대안을 사용자에게 제시했다:
+
+- **대안 A**: `LobbyPlayerState`에 필드 추가(스키마 변경) — self-report로 Dissonance ID를 그대로 보고.
+- **대안 B**: 스키마 안 건드리고 `DissonanceComms.LocalPlayerName`을 접속 전에 우리가 이미 아는 값(Steam
+  표시 이름)으로 선점 — 대신 `[DefaultExecutionOrder]`로 Awake/Start 순서를 강제해야 하는 새로운 타이밍
+  위험이 생기고(§1에서 이미 겪은 문제와 같은 유형), Steam 닉네임 중복 이론상 가능성도 있음.
+
+**사용자가 대안 A 채택.** 기존 `DisplayName`/`CheerName` self-report 패턴을 그대로 재사용:
+
+- **`LobbyPlayerState.cs`**: `VoiceId`(`FixedString64Bytes`) 필드 추가, `NetworkSerialize`/`Equals`에 반영.
+- **`LobbyNetworkManager.cs`**:
+  - `SubmitVoiceIdServerRpc` 신규 — `SubmitDisplayNameServerRpc`와 동일 구조(슬롯 없으면 `_pendingVoiceIds`
+    버퍼링).
+  - `ReportLocalVoiceIdRoutine()` 코루틴 신규 — **Host/Client 구분 없이 `OnNetworkSpawn`에서 공통 호출**
+    (DisplayName과 달리 Host도 슬롯 생성 시점에 즉시 값을 못 넣음 — Dissonance가 자기 `Start()`에서
+    `LocalPlayerName`을 확정하는 시점이 늦을 수 있어서 폴링 필요). `DissonanceComms.GetSingleton()`과
+    `LocalPlayerName`이 비어있지 않을 때까지 기다린 뒤 `SubmitVoiceIdServerRpc`를 최대 5회(1초 간격)
+    재시도. Host가 자기 자신의 `[Rpc(SendTo.Server)]` 메서드를 직접 호출하는 것은 `SetReadyServerRpc`를
+    `LobbyMenuController`가 Host/Client 구분 없이 호출하는 기존 패턴으로 이미 검증된 안전한 방식.
+  - `StartGameServerRpc`에 세션 VoiceId 확정·배포 블록 추가(`DisplayName`과 동일 구조) —
+    `SyncVoiceIdsClientRpc` 신규.
+- **`GameSession.cs`**: `SetSessionVoiceIds`/`GetSessionVoiceId(colorIndex)` 추가 — `DisplayName`과 동일한
+  세션 SSOT 패턴(인게임에서는 이 값을 읽음).
+- **`OptionsTeamVoicePanel.cs`**: 팀원 목록 수집 시 이름과 함께 `VoiceId`도 같이 가져오도록 변경. 슬라이더
+  `onValueChanged`를 `DissonanceComms.GetSingleton().FindPlayer(voiceId).Volume`에 직접 연결(신규
+  `BindVolumeSlider` 헬퍼). `VoiceId` 매칭 실패(아직 미보고/미접속) 시 슬라이더 `interactable = false`로
+  비활성화하고 100%로 표시 — 크래시 없이 조용히 저하.
+
+**개별 음소거(mute) 버튼은 이번 범위에 포함 안 함** — 필요해지면 같은 `VoicePlayerState.IsLocallyMuted`로
+후속 가능(구조는 이미 갖춰짐, `FindPlayer` 결과 재사용).
+
+**다음 세션 시작 순서:** §7 체크리스트의 신규 항목(실제 멀티에서 수신 볼륨 슬라이더 동작 확인) → §6
+3·4번(ESC 메뉴 패널 배치) → §6-9·10(Reset 기본값/`Btn_Reset` 연결 확인) 순서로 진행.

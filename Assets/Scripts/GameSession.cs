@@ -59,6 +59,11 @@ public class GameSession : MonoBehaviour
     // 로비 LobbyPlayerState.DisplayName을 게임 시작 시 1회 그대로 옮겨온 것 — 별도 네트워크 갱신 없음.
     private string[] _sessionDisplayNames;
 
+    // 이번 판 확정 Dissonance VoiceId(LocalPlayerName). 인덱스 = colorIndex.
+    // 로비 LobbyPlayerState.VoiceId를 게임 시작 시 1회 그대로 옮겨온 것 — DisplayName과 동일 패턴.
+    // OptionsTeamVoicePanel이 DissonanceComms.FindPlayer(voiceId)로 팀원 VoicePlayerState를 찾는 키.
+    private string[] _sessionVoiceIds;
+
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
     public int ActivePlayerCount => _activePlayers.Count;
@@ -204,6 +209,28 @@ public class GameSession : MonoBehaviour
         return "Player";
     }
 
+    // ── 세션 Dissonance VoiceId ─────────────────────────────────────
+
+    /// <summary>
+    /// 이번 판 확정 Dissonance VoiceId 배열 저장.
+    /// 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
+    /// StartGame 직전 Host 로컬·Client 양쪽에서 DisplayName과 동일하게 1회만 호출됨(런타임 갱신 없음).
+    /// </summary>
+    public void SetSessionVoiceIds(string[] ids)
+    {
+        _sessionVoiceIds = ids;
+        Debug.Log("[GameSession] 세션 VoiceId 적용 완료");
+    }
+
+    /// <summary>colorIndex → 이번 판 Dissonance VoiceId. 미설정/빈 값이면 null(매칭 불가로 취급).</summary>
+    public string GetSessionVoiceId(int colorIndex)
+    {
+        if (_sessionVoiceIds != null && colorIndex >= 0 && colorIndex < _sessionVoiceIds.Length
+            && !string.IsNullOrEmpty(_sessionVoiceIds[colorIndex]))
+            return _sessionVoiceIds[colorIndex];
+        return null;
+    }
+
     // ── 인트로 대화 본 여부 ───────────────────────────────────────
 
     /// <summary>해당 씬 키의 인트로 대화를 이미 봤는지 확인.</summary>
@@ -224,6 +251,7 @@ public class GameSession : MonoBehaviour
         _seenIntroKeys.Clear();
         _sessionCheerNames = null;
         _sessionDisplayNames = null;
+        _sessionVoiceIds = null;
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }

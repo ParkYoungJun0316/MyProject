@@ -97,19 +97,21 @@ public static class SetupSettingPanel
         cVoice.SetActive(false);
 
         // --- General ---
+        // 밝기는 SoundAndSettingsDesign.md §8 확정으로 스코프 제외(URP Volume 인프라 필요 대비 실익 낮음,
+        // 게임이 어두운 톤도 아님) — Row_Brightness 생성하지 않음.
         var resolutionDd = CreateDropdownRow(cGeneral.transform, "Row_Resolution", "해상도", fontKr, dropdownBg, dropdownArrow);
         var displayModeDd = CreateDropdownRow(cGeneral.transform, "Row_DisplayMode", "화면 모드", fontKr, dropdownBg, dropdownArrow);
-        CreateSliderRow(cGeneral.transform, "Row_Brightness", "밝기", fontKr, out _, out _, placeholder: true);
         var languageDd = CreateDropdownRow(cGeneral.transform, "Row_Language", "언어", fontKr, dropdownBg, dropdownArrow);
 
-        // --- Sound (wired volumes + design stubs) ---
+        // --- Sound (wired volumes + mic) ---
+        // 출력 장치(헤드셋) 선택은 Unity 표준 API로 불가능(OS 기본 출력 장치로만 재생, 네이티브 플러그인
+        // 없이는 지원 불가) — Row_OutputDevice 생성하지 않음. Windows 사운드 설정에서 변경하도록 안내.
         CreateSliderRow(cSound.transform, "Row_Master", "마스터 볼륨", fontKr, out var masterSlider, out _);
         CreateSliderRow(cSound.transform, "Row_BGM", "BGM 볼륨", fontKr, out var bgmSlider, out _);
         CreateSliderRow(cSound.transform, "Row_SFX", "SFX 볼륨", fontKr, out var sfxSlider, out _);
-        CreateDropdownRow(cSound.transform, "Row_InputDevice", "입력 장치", fontKr, dropdownBg, dropdownArrow, stub: true);
+        var micDeviceDd = CreateDropdownRow(cSound.transform, "Row_InputDevice", "입력 장치", fontKr, dropdownBg, dropdownArrow);
         CreateSliderRow(cSound.transform, "Row_MicVolume", "마이크 볼륨", fontKr, out _, out _, placeholder: true);
-        CreateDropdownRow(cSound.transform, "Row_OutputDevice", "출력 장치", fontKr, dropdownBg, dropdownArrow, stub: true);
-        CreateToggleRow(cSound.transform, "Row_MicMute", "마이크 음소거", fontKr, toggleOn, toggleOff);
+        var micMuteToggle = CreateToggleRow(cSound.transform, "Row_MicMute", "마이크 음소거", fontKr, toggleOn, toggleOff);
 
         // --- Team voice stubs ---
         CreateSliderRow(cVoice.transform, "Row_GumaVoice", "GUMA Voice", fontKr, out _, out _, placeholder: true);
@@ -117,12 +119,13 @@ public static class SetupSettingPanel
         CreateSliderRow(cVoice.transform, "Row_SsukVoice", "SSUK Voice", fontKr, out _, out _, placeholder: true);
 
         // Footer
+        // 취소/적용 버튼은 제거됨 — pull 방식(값 즉시 적용) 구조라 "취소"할 스냅샷이 없고 "적용"도
+        // 실질적으로 닫기와 동일해 라벨-동작 불일치 버그였음(SoundAndSettingsDesign.md §9.2-②).
+        // 닫기는 우상단 Close.Btn(X) 하나로 통일.
         var footer = CreateUiObject("Footer", panelT);
         var fRt = footer.GetComponent<RectTransform>();
-        StretchCenter(fRt, new Vector2(0.5f, 0.5f), new Vector2(180f, -230f), new Vector2(420f, 56f));
-        var cancelBtn = CreateFooterButton(footer.transform, "Btn_Cancel", "취소", new Vector2(-140f, 0f), notSelectSp, fontKr);
+        StretchCenter(fRt, new Vector2(0.5f, 0.5f), new Vector2(0f, -230f), new Vector2(160f, 56f));
         CreateFooterButton(footer.transform, "Btn_Reset", "초기화", new Vector2(0f, 0f), notSelectSp, fontKr);
-        var applyBtn = CreateFooterButton(footer.transform, "Btn_Apply", "적용", new Vector2(140f, 0f), selectSp, fontKr);
 
         // Components on panel
         var tabs = panel.GetComponent<OptionsPanelTabs>();
@@ -150,6 +153,8 @@ public static class SetupSettingPanel
         optSo.FindProperty("languageDropdown").objectReferenceValue = languageDd;
         optSo.FindProperty("displayModeDropdown").objectReferenceValue = displayModeDd;
         optSo.FindProperty("resolutionDropdown").objectReferenceValue = resolutionDd;
+        optSo.FindProperty("micMuteToggle").objectReferenceValue = micMuteToggle;
+        optSo.FindProperty("micDeviceDropdown").objectReferenceValue = micDeviceDd;
         optSo.ApplyModifiedPropertiesWithoutUndo();
 
         // Wire TitleMenuController
@@ -161,19 +166,13 @@ public static class SetupSettingPanel
             tmSo.ApplyModifiedPropertiesWithoutUndo();
 
             ClearPersistent(closeBtn);
-            ClearPersistent(cancelBtn);
-            ClearPersistent(applyBtn);
             UnityEventTools.AddVoidPersistentListener(closeBtn.onClick, titleMenu.OnClickCloseSettings);
-            UnityEventTools.AddVoidPersistentListener(cancelBtn.onClick, titleMenu.OnClickCloseSettings);
-            UnityEventTools.AddVoidPersistentListener(applyBtn.onClick, titleMenu.OnClickCloseSettings);
             EditorUtility.SetDirty(closeBtn);
-            EditorUtility.SetDirty(cancelBtn);
-            EditorUtility.SetDirty(applyBtn);
             EditorUtility.SetDirty(titleMenu);
         }
         else
         {
-            Debug.LogWarning("[SetupSettingPanel] TitleMenuController not found — close/cancel/apply not wired.");
+            Debug.LogWarning("[SetupSettingPanel] TitleMenuController not found — close not wired.");
         }
 
         panel.SetActive(false);
@@ -538,10 +537,10 @@ public static class SetupSettingPanel
         return dd;
     }
 
-    static void CreateToggleRow(Transform parent, string name, string label, TMP_FontAsset font, Sprite onSp, Sprite offSp)
+    static Toggle CreateToggleRow(Transform parent, string name, string label, TMP_FontAsset font, Sprite onSp, Sprite offSp)
     {
         var row = CreateRow(parent, name, 56f);
-        CreateRowLabel(row.transform, label + " (미연동)", font);
+        CreateRowLabel(row.transform, label, font);
 
         var toggleGo = CreateUiObject("Toggle", row.transform);
         var tRt = toggleGo.GetComponent<RectTransform>();
@@ -557,11 +556,16 @@ public static class SetupSettingPanel
         var toggle = toggleGo.AddComponent<Toggle>();
         toggle.targetGraphic = bg;
         toggle.isOn = false;
-        toggle.interactable = false;
-        if (onSp != null && offSp != null)
-        {
-            toggle.onValueChanged.AddListener(on => bg.sprite = on ? onSp : offSp);
-        }
+
+        var swap = toggleGo.AddComponent<ToggleSpriteSwap>();
+        var swapSo = new SerializedObject(swap);
+        swapSo.FindProperty("toggle").objectReferenceValue = toggle;
+        swapSo.FindProperty("targetImage").objectReferenceValue = bg;
+        swapSo.FindProperty("onSprite").objectReferenceValue = onSp;
+        swapSo.FindProperty("offSprite").objectReferenceValue = offSp;
+        swapSo.ApplyModifiedPropertiesWithoutUndo();
+
+        return toggle;
     }
 
     static Button CreateFooterButton(Transform parent, string name, string label, Vector2 pos, Sprite sp, TMP_FontAsset font)

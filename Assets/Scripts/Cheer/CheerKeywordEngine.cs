@@ -88,6 +88,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     AudioClip _soloMicClip;
     int       _soloMicLastPos;
     int       _soloMicSourceHz;
+    /// <summary>null = 시스템 기본. 옵션 메뉴에서 고른 장치가 있으면 그걸 씀(GameSettingsManager.MicDeviceName).</summary>
+    string    _soloMicDevice;
 
     // 재사용 버퍼 (메인 스레드 전용)
     float[] _captureBuf;
@@ -186,7 +188,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             if (_usingSoloMic)
             {
                 float posWait = Time.time + SoloMicPositionWaitSec;
-                while (Time.time < posWait && Microphone.GetPosition(null) <= 0)
+                while (Time.time < posWait && Microphone.GetPosition(_soloMicDevice) <= 0)
                     yield return null;
                 yield return new WaitForSeconds(SoloMicWarmupSec);
             }
@@ -201,7 +203,12 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             return;
         }
 
-        _soloMicClip = Microphone.Start(null, true, SoloMicBufSec, SoloMicCaptureHz);
+        string preferred = GameSettingsManager.Instance != null ? GameSettingsManager.Instance.MicDeviceName : "";
+        _soloMicDevice = !string.IsNullOrEmpty(preferred) && System.Array.IndexOf(Microphone.devices, preferred) >= 0
+            ? preferred
+            : null;
+
+        _soloMicClip = Microphone.Start(_soloMicDevice, true, SoloMicBufSec, SoloMicCaptureHz);
         if (_soloMicClip == null)
         {
             Debug.LogError("[CheerKeywordEngine] Microphone.Start 실패");
@@ -230,10 +237,11 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
         if (_usingSoloMic)
         {
-            Microphone.End(null);
+            Microphone.End(_soloMicDevice);
             _usingSoloMic    = false;
             _soloMicClip     = null;
             _soloMicSourceHz = 0;
+            _soloMicDevice   = null;
             _captureBuf      = null;
             _resampleBuf     = null;
             _accumBuf        = null;
@@ -308,9 +316,9 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     void PollSoloMic()
     {
         if (_workerNextModel == null || _soloMicClip == null) return;
-        if (!Microphone.IsRecording(null)) return;
+        if (!Microphone.IsRecording(_soloMicDevice)) return;
 
-        int pos = Microphone.GetPosition(null);
+        int pos = Microphone.GetPosition(_soloMicDevice);
         if (pos < 0) return;
 
         if (pos <= _soloMicLastPos) { _soloMicLastPos = pos; return; }

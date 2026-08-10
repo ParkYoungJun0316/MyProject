@@ -20,6 +20,9 @@ public class OptionsPanelTabs : MonoBehaviour
     [SerializeField] Sprite unselectedSprite;
     [SerializeField] int defaultTabIndex;
 
+    /// <summary>마지막으로 본 탭(패널 인스턴스 간 공유 — 타이틀/ESC 어느 쪽에서 열어도 이어짐). -1이면 아직 없음.</summary>
+    static int s_lastTabIndex = -1;
+
     void Awake()
     {
         for (int i = 0; i < tabs.Length; i++)
@@ -30,12 +33,13 @@ public class OptionsPanelTabs : MonoBehaviour
         }
     }
 
-    void OnEnable() => ShowTab(defaultTabIndex);
+    void OnEnable() => ShowTab(s_lastTabIndex >= 0 ? s_lastTabIndex : defaultTabIndex);
 
     public void ShowTab(int index)
     {
         if (tabs == null || tabs.Length == 0) return;
         index = Mathf.Clamp(index, 0, tabs.Length - 1);
+        s_lastTabIndex = index;
 
         for (int i = 0; i < tabs.Length; i++)
         {

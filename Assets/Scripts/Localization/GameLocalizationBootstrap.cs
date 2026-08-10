@@ -83,6 +83,13 @@ public class GameLocalizationBootstrap : MonoBehaviour
 
     void Start() => StartCoroutine(ApplyStartupLocale());
 
+    /// <summary>
+    /// 옵션 메뉴 "초기화" 버튼에서 호출(<see cref="GameSettingsManager.ResetToDefaults"/>).
+    /// 수동 선택 언어(<see cref="ManualLocaleOverrideKey"/>)를 지운 뒤 호출해야
+    /// Steam/systemLanguage 자동감지가 실제로 적용됨.
+    /// </summary>
+    public void ReapplyAutoDetectedLocale() => StartCoroutine(ApplyStartupLocale());
+
     // ── Locale 결정 · 적용 ────────────────────────────────────────
 
     IEnumerator ApplyStartupLocale()
@@ -145,7 +152,7 @@ public class GameLocalizationBootstrap : MonoBehaviour
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: Locale 재적용")]
-    void Debug_Reapply() => StartCoroutine(ApplyStartupLocale());
+    void Debug_Reapply() => ReapplyAutoDetectedLocale();
 
     [ContextMenu("테스트: 상태 출력")]
     void Debug_Status() =>
