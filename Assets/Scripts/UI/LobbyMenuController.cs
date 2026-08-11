@@ -37,6 +37,9 @@ using UnityEngine.UI;
 /// Btn_Quit        → OnClickQuit()
 /// Btn_Copy        → OnClickCopy()
 /// Btn_SteamInvite → OnClickSteamInvite()
+/// Option          → OnClickSettings()
+/// (설정 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결 — 패널 자신을 SetActive(false).
+///  OnClickCloseSettings()는 코드에서 강제로 닫아야 할 때 쓰는 보조 API.)
 /// Slot1~3 Kick    → 각 LobbySlotUI.OnClickKick()
 /// </summary>
 public class LobbyMenuController : MonoBehaviour
@@ -44,6 +47,10 @@ public class LobbyMenuController : MonoBehaviour
     [Header("캐릭터 초상화")]
     [Tooltip("드롭다운 인덱스 순: [0]Blue [1]Purple [2]Green [3]Yellow. RefreshAllSlots에서 SlotUI로 전달됨.")]
     [SerializeField] private Sprite[] characterPortraits = new Sprite[4];
+
+    [Header("설정 패널")]
+    [Tooltip("Option 버튼 클릭 시 열릴 패널 (OptionsMenuController 부착). 비워두면 클릭 무시.")]
+    [SerializeField] private GameObject settingsPanel;
 
     [Header("온라인 전용 UI")]
     [SerializeField] private GameObject onlineOnlyRoot;
@@ -85,6 +92,12 @@ public class LobbyMenuController : MonoBehaviour
     LobbySlotUI _localSlotUI;          // 로컬 플레이어 슬롯 캐시 — CheerName 결과 전달용
 
     // ── 초기화 ────────────────────────────────────────────────────
+
+    void Awake()
+    {
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
+    }
 
     void OnDestroy()
     {
@@ -262,6 +275,22 @@ public class LobbyMenuController : MonoBehaviour
             Reason = TitleReturnReason.LobbyQuit,
             Scope  = TitleReturnScope.SessionOnly,
         });
+    }
+
+    /// <summary>Option 버튼 OnClick에 연결.</summary>
+    public void OnClickSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+        else Debug.LogWarning("[LobbyMenuController] settingsPanel이 연결되지 않았습니다.");
+    }
+
+    /// <summary>
+    /// 설정 패널 닫기 — 코드에서 강제로 닫아야 할 때 쓰는 보조 API.
+    /// 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결되어 있어 이 메서드를 거치지 않는다.
+    /// </summary>
+    public void OnClickCloseSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
     /// <summary>Copy 버튼 — 전체 6자리 룸코드 클립보드 복사.</summary>

@@ -141,9 +141,6 @@ public class SFXManager : MonoBehaviour
     public void PlayMouthTeethBreak(Vector3 worldPosition) =>
         Play(SFXId.Mouth_TeethBreak_1, worldPosition);
 
-    public void PlayTrapArrow(Vector3 worldPosition) =>
-        PlayAlternating(SFXId.Trap_Arrow_1, SFXId.Trap_Arrow_2, worldPosition);
-
     // ── 루프 재생 ────────────────────────────────────────────────
 
     /// <summary>

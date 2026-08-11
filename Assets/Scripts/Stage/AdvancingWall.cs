@@ -114,6 +114,9 @@ public class AdvancingWall : MonoBehaviour
     [SerializeField] AdvancingWallTelegraph telegraph;
 
     [Header("사운드 (이동 루프 — 3D)")]
+    [Tooltip("전진·후퇴 이동 중 재생할 SFX. 기본값(Trap_AdvancingWall_Move)은 일반 벽용 — 천장 낙하 등\n" +
+             "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId(예: Trap_Ceiling)로 지정할 것.")]
+    [SerializeField] SFXId moveSfxId = SFXId.Trap_AdvancingWall_Move;
     [Tooltip("전진·후퇴 이동 중에만 재생되는 루프. 이동 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
     [SerializeField] [Range(0f, 1f)] float moveSpatialBlend = 1f;
     [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
@@ -157,7 +160,7 @@ public class AdvancingWall : MonoBehaviour
     {
         // 볼륨 실시간 반영(옵션 메뉴 마스터/SFX 슬라이더).
         if (_moveLoopSource != null && _moveLoopSource.isPlaying && SFXManager.Instance != null)
-            _moveLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Trap_AdvancingWall_Move);
+            _moveLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(moveSfxId);
     }
 
     void OnDisable()
@@ -451,7 +454,7 @@ public class AdvancingWall : MonoBehaviour
         if (_moveLoopSource != null && _moveLoopSource.isPlaying) return;
         if (SFXManager.Instance == null) return;
 
-        AudioClip clip = SFXManager.Instance.GetClip(SFXId.Trap_AdvancingWall_Move);
+        AudioClip clip = SFXManager.Instance.GetClip(moveSfxId);
         if (clip == null) return;
 
         if (_moveLoopSource == null)
@@ -466,7 +469,7 @@ public class AdvancingWall : MonoBehaviour
         }
 
         _moveLoopSource.clip   = clip;
-        _moveLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(SFXId.Trap_AdvancingWall_Move);
+        _moveLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(moveSfxId);
         _moveLoopSource.Play();
     }
 

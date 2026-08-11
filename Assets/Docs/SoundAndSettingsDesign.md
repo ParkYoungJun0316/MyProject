@@ -31,11 +31,10 @@
      `Row_InputDevice`/`Row_MicMute`가 정상 생성됐는지 확인.
 2. ~~[설계 결정 필요] §6-8 팀원별 수신 볼륨~~ — **사용자가 대안 A(스키마 추가) 채택, 구현 완료(§9.6).**
    실제 멀티플레이(2인 이상)에서 볼륨 슬라이더가 상대 목소리 크기를 실제로 바꾸는지 테스트 필요.
-3. **[코드 작업]** §6의 3·4번 — ESC 메뉴(인게임)용 설정 패널 배치·연결(타이틀 씬 `Setting_Panel`과 같은
-   구조 재사용, `EscMenuController.OnClickCloseSettings()` 연결). 이건 씬 배치라 에디터 작업 — 체크리스트로
-   안내하고 사용자가 직접 하거나, "MCP로 해줘"라고 명시하면 MCP 쓰기.
-4. **[미확인]** §6-9·10 — `GameSettingsManager` Inspector `Default*Volume` 값 조정, `Btn_Reset` onClick
-   연결 여부가 실제로 됐는지 아직 확인 안 됨.
+3. ~~§6의 3·4번 ESC/로비 설정 패널 배치~~ — **MCP로 완료**(2026-08-11). `Setting_Panel.prefab`
+   공유 + Title/Lobby/`UI.prefab` 연결 검증됨.
+4. ~~§6-10 `Btn_Reset` onClick~~ — Prefab에서 `OptionsMenuController.OnClickReset` 연결 완료.
+   §6-9 `Default*Volume` 수치 튜닝은 아직(플레이 후 조절).
 5. 그 외 §6 잔여 항목(7. SFX 볼륨 보정 실사용 튜닝, 6. Phase별 BGM 선택사항).
 
 **이번 세션에 변경된 파일 전체 목록**(§2/§9.5/§9.6에 상세, 전부 린트 통과):
@@ -188,12 +187,14 @@ Inspector에서 특정 SFX만 보정 가능:
    **완료 확인**(2026-08-11 MCP 조회, §9.4 참고). 둘 다 부착돼 있음.
 2. ~~`BGMManager.Zone Clips`에 `"M."`/`"T."` 접두사 + 곡 연결~~ — **완료 확인**(2026-08-11 MCP 조회, §5
    표 참고). M/M.Boss/T.Stage1~5/T.Boss 전 구역 곡 배정 끝남.
-3. ~~옵션 패널 UI~~ **타이틀 씬은 완료**(§9.1). **ESC 메뉴(인게임)용 패널은 아직 미배치** — 같은
-   `Setting_Panel` 구조/프리팹을 재사용해 `EscMenuController.settingsPanel`에 연결할 것. 팀 보이스 탭은
-   인게임에서만 의미 있음(로비/인게임 팀원 존재) — 타이틀에선 `emptyState`만 보일 것.
-4. ESC 메뉴 쪽 배치 완료 후, 해당 패널의 "닫기"를 `EscMenuController.OnClickCloseSettings()`에 연결.
-5. ~~각 패널의 "닫기" 버튼에 `OnClickCloseSettings()` 연결~~ — 타이틀 쪽 완료. 취소/적용 버튼은 제거하고
-   닫기(X) 버튼 하나로 통일하기로 확정·수정 완료(§9.2-②, §9.4 참고).
+3. ~~옵션 패널 UI~~ **타이틀·로비·인게임(ESC) 전부 완료**(2026-08-11). `Assets/Prefab/Setting_Panel.prefab`
+   공유 프리팹 — Title `TitleCanvas` / Lobby `TitleCanvas` / `UI.prefab` 각각 인스턴스.
+   - Title: `TitleMenuController.settingsPanel` + 설정 버튼(기존)
+   - Lobby: `LobbyMenuController.settingsPanel` + `Option` → `OnClickSettings`
+   - ESC: `EscMenuController.settingsPanel` + `Btn.Setting` → `OnClickSettings`
+   닫기(X)/초기화는 패널 자체 `OptionsMenuController.OnClickClose`/`OnClickReset`에 연결(씬별 컨트롤러 불필요).
+4. ~~ESC 메뉴 닫기 연결~~ — 위 3번과 함께 완료(`OptionsMenuController.OnClickClose`).
+5. ~~각 패널의 "닫기" 버튼~~ — Prefab 공통으로 `OptionsMenuController.OnClickClose`에 통일 완료.
 6. (선택) `M.Stage2`처럼 씬 안에 Phase가 여러 개인 스테이지에서 구간별 BGM이 필요하면, 해당
    `PhaseData.onPhaseEnter`에 `BGMManager.PlayClip()` 연결(§5).
 7. `SFXLibrary.Volume Overrides`는 실제 플레이해보면서 소리 크기 안 맞는 것부터 채워나가는 방식으로 진행

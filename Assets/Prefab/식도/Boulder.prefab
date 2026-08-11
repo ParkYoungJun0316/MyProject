@@ -191,11 +191,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
   spinSpeed: 20
   rollSfxId: 3
-  rollVolume: 0.5
   rollSpatialBlend: 1
   rollMinDistance: 1
-  rollMaxDistance: 0
-  rollRolloffMode: 0
+  rollMaxDistance: 100
+  rollRolloffMode: 1
 --- !u!114 &5974761475387525526
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,13 +211,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 268435456
   breakDelay: 0
-  breakDelaySound: {fileID: 0}
-  breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
   useMouthTeethBreakSfx: 0
-  breakSound: {fileID: 0}
-  breakSoundVolume: 1
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5

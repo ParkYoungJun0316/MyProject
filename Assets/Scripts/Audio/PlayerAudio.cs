@@ -6,7 +6,7 @@ using UnityEngine;
 ///
 /// [담당 SFX]
 ///   Player_Hit / Player_Death / Player_ColorChange / Player_Run (루프)
-///   Buff_SpeedUp / Buff_Shield
+///   Buff
 ///
 /// [배치 방법]
 ///   1. Player.G / Player.B 등 프리팹 루트에 Add Component → PlayerAudio.
@@ -126,9 +126,6 @@ public class PlayerAudio : MonoBehaviour
 
     void OnBuffApplied(PlayerBuffSystem.BuffType type, float _)
     {
-        SFXId id = type == PlayerBuffSystem.BuffType.SpeedUp
-            ? SFXId.Buff_SpeedUp
-            : SFXId.Buff_Shield;
-        SFXManager.Instance?.Play(id);
+        SFXManager.Instance?.Play(SFXId.Buff);
     }
 }

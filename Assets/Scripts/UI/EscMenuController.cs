@@ -14,10 +14,13 @@ using UnityEngine.UI;
 /// Resume  버튼 → OnClickResume()
 /// Reset   버튼 → OnClickReset()
 /// Quit    버튼 → DisconnectManager.OnClickLeaveRoom()   (Inspector 직접 연결)
-/// Setting 버튼 → OnClickSettings() / 닫기 → OnClickCloseSettings()
+/// Setting 버튼 → OnClickSettings()
+/// (설정 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결 — 패널 자신을 SetActive(false).
+///  OnClickCloseSettings()는 코드에서 강제로 닫아야 할 때 쓰는 보조 API.)
 ///
 /// [동작]
-/// Esc 키   : 패널 열기 / 닫기 토글
+/// Esc 키   : 설정 패널이 열려 있으면 그것부터 닫고, 아니면 ESC 메뉴 열기/닫기 토글
+///           (Setting_Panel은 ESC_Panel과 형제 GameObject라 Resume은 서로 건드리지 않음)
 /// 패널 열림 : 커서 표시·잠금 해제, Reset 버튼 활성 여부 갱신
 /// 패널 닫힘 : 커서 숨김·잠금 (lockCursorOnClose = true 일 때)
 ///
@@ -64,8 +67,14 @@ public class EscMenuController : MonoBehaviour
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (_isOpen) OnClickResume();
-            else         OpenPanel();
+            // Setting_Panel은 ESC_Panel과 형제(sibling)라 OnClickResume()이 이를 건드리지 않는다.
+            // 설정 패널이 열려 있으면 Esc는 그것부터 닫는다(뒤에 남은 ESC 메뉴 상태는 유지).
+            if (settingsPanel != null && settingsPanel.activeSelf)
+                settingsPanel.SetActive(false);
+            else if (_isOpen)
+                OnClickResume();
+            else
+                OpenPanel();
         }
     }
 
@@ -130,7 +139,10 @@ public class EscMenuController : MonoBehaviour
         else Debug.LogWarning("[EscMenuController] settingsPanel이 연결되지 않았습니다.");
     }
 
-    /// <summary>설정 패널 닫기. 설정 패널 내 닫기 버튼에도 연결.</summary>
+    /// <summary>
+    /// 설정 패널 닫기 — 코드에서 강제로 닫아야 할 때 쓰는 보조 API.
+    /// 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결되어 있어 이 메서드를 거치지 않는다.
+    /// </summary>
     public void OnClickCloseSettings()
     {
         if (settingsPanel != null) settingsPanel.SetActive(false);

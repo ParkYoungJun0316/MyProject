@@ -14,6 +14,8 @@ public enum SFXId
     // ── Boss ─────────────────────────────────────────────────────
     Boss_PhaseTransition_Mouth    = 0,
     Boss_PhaseTransition_Esophagus = 1,
+    Boss_Die_Mouth                 = 41,
+    Boss_Die_Esophagus             = 42,
 
     // ── Boulder ──────────────────────────────────────────────────
     Boulder_Roll                  = 3,
@@ -22,8 +24,7 @@ public enum SFXId
     Breakable_Destroy              = 4,
 
     // ── Buff ─────────────────────────────────────────────────────
-    Buff_Shield                    = 5,
-    Buff_SpeedUp                   = 6,
+    Buff                           = 5,
 
     // ── Door ─────────────────────────────────────────────────────
     Door_Close                     = 7,
@@ -42,10 +43,13 @@ public enum SFXId
     Player_ColorChange              = 15,
     Player_Death                    = 16,
     Player_Hit                      = 17,
+    Player_Punch                    = 43,
     Player_Run                      = 18,
 
     // ── Stage / Flow ─────────────────────────────────────────────
-    Stage_TransitionEnter           = 21,
+    // Stage_TransitionMouth: M.* 씬(Mouth 구역) 진입 시. Stage_TransitionEsophagus: T.* 씬(Esophagus 구역) 진입 시.
+    // SceneFlowManager.OnSceneLoaded() 에서 씬 이름 접두사로 자동 재생 (코드 연결, 인스펙터 연결 아님).
+    Stage_TransitionMouth           = 21,
     Stage_TransitionEsophagus       = 22,
 
     // ── Stage 5 ──────────────────────────────────────────────────
@@ -57,12 +61,10 @@ public enum SFXId
     // ── Trap / Hazard ────────────────────────────────────────────
     Trap_AdvancingWall_Move          = 27,
     Trap_AdvancingWall_Telegraph      = 28,
-    Trap_Arrow_1                     = 29,
-    Trap_Arrow_2                     = 30,
+    Trap_Arrow                       = 29,
     Trap_Ceiling                     = 31,
     Trap_Drop                        = 32,
     Trap_SpikeRaise                  = 33,
-    Trap_WallMover                   = 34,
 
     // ── UI / Menu ────────────────────────────────────────────────
     UI_Click                         = 35,

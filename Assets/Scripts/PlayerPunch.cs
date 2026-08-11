@@ -57,6 +57,7 @@ public class PlayerPunch : NetworkBehaviour
     {
         if (!value.isPressed) return;
         if (!IsOwner || _player == null || _player.IsDead) return;
+        SFXManager.Instance?.Play(SFXId.Player_Punch);
         PunchServerRpc();
     }
 

@@ -13,7 +13,6 @@ using UnityEngine;
 /// [예시 연결]
 ///   DoorController.OnOpened  → SFXEventPlayer.Play()  (sfxId = Door_Open)
 ///   DoorController.OnClosed  → SFXEventPlayer.Play()  (sfxId = Door_Close)
-///   WallMover.OnMoveStarted  → SFXEventPlayer.Play()  (sfxId = Trap_WallMover)
 ///   PhaseData.onPhaseEnter   → SFXEventPlayer.Play()  (sfxId = Boss_PhaseTransition_Mouth / Boss_PhaseTransition_Esophagus)
 ///
 /// [3D 재생]

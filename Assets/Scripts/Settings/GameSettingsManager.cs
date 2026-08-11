@@ -36,8 +36,8 @@ public class GameSettingsManager : MonoBehaviour
     const string KeyMicMuted     = "Settings.MicMuted";
     const string KeyMicDevice    = "Settings.MicDevice";
 
-    [Header("초기화(Reset) 기본값")]
-    [Tooltip("옵션 메뉴 '초기화' 버튼을 누르면 이 값들로 되돌아감. 최초 실행 기본값이기도 함.")]
+    [Header("기본값(Reset) 값")]
+    [Tooltip("옵션 메뉴 '기본값' 버튼을 누르면 이 값들로 되돌아감. 최초 실행 기본값이기도 함.")]
     [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
@@ -48,6 +48,14 @@ public class GameSettingsManager : MonoBehaviour
     public bool   MicMuted      { get; private set; }
     /// <summary>빈 문자열 = 시스템 기본 마이크(Dissonance/Microphone API의 null과 동일 취급).</summary>
     public string MicDeviceName { get; private set; } = "";
+
+    /// <summary>
+    /// 모니터의 진짜 네이티브(최대) 해상도. 저장된 해상도를 적용하기 전(ApplySavedDisplay 호출 전)
+    /// Awake에서 딱 한 번만 캡처해서 고정함. Screen.currentResolution은 SetResolution(특히 독점
+    /// 전체화면)을 호출하면 그 값 자체가 바뀌어버려서, 낮은 해상도로 바꾼 뒤에는 더 높은 해상도를
+    /// 다시 선택할 방법이 없어지는 버그가 있었음 — 그래서 매번 재조회하지 않고 캐시해서 씀.
+    /// </summary>
+    public Resolution NativeResolution { get; private set; }
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -67,6 +75,7 @@ public class GameSettingsManager : MonoBehaviour
         MicMuted      = PlayerPrefs.GetInt(KeyMicMuted, 0) == 1;
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
 
+        NativeResolution = Screen.currentResolution;
         ApplySavedDisplay();
         StartCoroutine(ApplySavedMicSettingsWhenReady());
     }
@@ -171,7 +180,7 @@ public class GameSettingsManager : MonoBehaviour
     // ── 초기화(Reset) ─────────────────────────────────────────────
 
     /// <summary>
-    /// 옵션 메뉴 "초기화" 버튼에서 호출. 볼륨은 Inspector 기본값, 화면은 현 모니터 네이티브
+    /// 옵션 메뉴 "기본값" 버튼에서 호출. 볼륨은 Inspector 기본값, 화면은 현 모니터 네이티브
     /// 해상도 + 전체화면(독점), 언어는 수동 선택 해제 후 Steam/systemLanguage 자동감지로 되돌림.
     /// 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
     /// </summary>
@@ -181,8 +190,7 @@ public class GameSettingsManager : MonoBehaviour
         SetBgmVolume(defaultBgmVolume);
         SetSfxVolume(defaultSfxVolume);
 
-        Resolution native = Screen.currentResolution;
-        ApplyDisplay(native.width, native.height, FullScreenMode.ExclusiveFullScreen);
+        ApplyDisplay(NativeResolution.width, NativeResolution.height, FullScreenMode.ExclusiveFullScreen);
 
         PlayerPrefs.DeleteKey(GameLocalizationBootstrap.ManualLocaleOverrideKey);
         GameLocalizationBootstrap.Instance?.ReapplyAutoDetectedLocale();

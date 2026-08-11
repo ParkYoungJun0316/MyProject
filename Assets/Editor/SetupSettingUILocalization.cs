@@ -383,8 +383,8 @@ public static class SetupSettingUILocalization
             "Cancel", "취소", "キャンセル", "取消", "取消",
             "Отмена", "Abbrechen", "Annuler", "Cancelar", "Cancelar", "Cancelar", "Anuluj");
         Add("Settings.Reset",
-            "Reset", "초기화", "リセット", "重置", "重設",
-            "Сброс", "Zurücksetzen", "Réinitialiser", "Restablecer", "Restablecer", "Redefinir", "Resetuj");
+            "Default", "기본값", "デフォルト", "默认", "預設",
+            "По умолчанию", "Standard", "Par défaut", "Predeterminado", "Predeterminado", "Padrão", "Domyślne");
         Add("Settings.Apply",
             "Apply", "적용", "適用", "应用", "套用",
             "Применить", "Übernehmen", "Appliquer", "Aplicar", "Aplicar", "Aplicar", "Zastosuj");

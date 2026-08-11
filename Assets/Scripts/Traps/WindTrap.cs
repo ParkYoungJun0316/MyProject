@@ -17,7 +17,8 @@ using UnityEngine;
 /// 2. Push 모드: transform.forward 방향으로 밀어냄 → GameObject 회전으로 방향 조절
 /// 3. Pull 모드: 이 오브젝트 중심으로 당김 → 흡입구
 /// 4. pushParticle/pullParticle에 각각 파티클 시스템 연결 시, 이번 사이클의 확정 모드(Random이면
-///    발동 시점에 뽑힌 값)에 맞는 쪽만 자동 재생됨. Wind_Push/Wind_Pull SFX도 같은 타이밍에 자동 재생.
+///    발동 시점에 뽑힌 값)에 맞는 쪽만 자동 재생됨. Wind_Push/Wind_Pull SFX도 같은 타이밍에 자동 재생
+///    (windDuration=0이면 1회성, 0보다 크면 지속 시간 동안 루프 후 자동 정지).
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class WindTrap : TrapBase
@@ -60,6 +61,17 @@ public class WindTrap : TrapBase
 
     [Tooltip("Pull 모드일 때 재생할 파티클. 없으면 생략")]
     [SerializeField] private ParticleSystem pullParticle = null;
+
+    [Header("사운드 (바람 루프 — 3D)")]
+    [Tooltip("windDuration > 0일 때 바람이 지속되는 동안 재생되는 루프. 발동~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
+    [SerializeField] [Range(0f, 1f)] private float windSpatialBlend = 1f;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] private float windMinDistance = 1f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] private float windMaxDistance = 0f;
+    [SerializeField] private AudioRolloffMode windRolloffMode = AudioRolloffMode.Logarithmic;
+
+    AudioSource _windLoopSource;
 
     float _scheduleStartTime;
     float _phaseForceMultiplier = 1f;
@@ -226,6 +238,7 @@ public class WindTrap : TrapBase
         _targetsInZone.Clear();
         _fireCount = 0;
         StopAllParticles();
+        StopWindLoop();
     }
 
     protected override IEnumerator TrapLoop()
@@ -323,18 +336,22 @@ public class WindTrap : TrapBase
             yield return new WaitForSeconds(_windChargeTime);
 
         PlayActiveParticle();
-        SFXManager.Instance?.Play(
-            _activeWindMode == WindMode.Push ? SFXId.Wind_Push : SFXId.Wind_Pull,
-            transform.position);
+
+        SFXId windSfx = _activeWindMode == WindMode.Push ? SFXId.Wind_Push : SFXId.Wind_Pull;
 
         if (windDuration <= 0f)
         {
+            // 순간 Impulse: 지속되는 상태가 없으므로 1회성 재생.
+            SFXManager.Instance?.Play(windSfx, transform.position);
             ApplyForceToAll(ForceMode.Impulse);
             _windActive = false;
             StopActiveParticle();
             OnWindEnd?.Invoke();
             yield break;
         }
+
+        // windDuration 동안 지속되는 힘이므로 루프로 재생 → FixedUpdate 종료 시점에 정지.
+        StartWindLoop(windSfx);
 
         // charge 완료 → FixedUpdate 힘 적용 시작
         _windForceElapsed = 0f;
@@ -356,8 +373,49 @@ public class WindTrap : TrapBase
             _forceActive = false;
             _windForceElapsed = 0f;
             StopActiveParticle();
+            StopWindLoop();
             OnWindEnd?.Invoke();
         }
+    }
+
+    // ── 사운드 (바람 루프) ────────────────────────────────────────
+
+    void StartWindLoop(SFXId id)
+    {
+        if (_windLoopSource != null && _windLoopSource.isPlaying) return;
+        if (SFXManager.Instance == null) return;
+
+        AudioClip clip = SFXManager.Instance.GetClip(id);
+        if (clip == null) return;
+
+        if (_windLoopSource == null)
+        {
+            _windLoopSource              = gameObject.AddComponent<AudioSource>();
+            _windLoopSource.loop         = true;
+            _windLoopSource.playOnAwake  = false;
+            _windLoopSource.spatialBlend = windSpatialBlend;
+            _windLoopSource.rolloffMode  = windRolloffMode;
+            _windLoopSource.minDistance  = windMinDistance > 0f ? windMinDistance : 1f;
+            _windLoopSource.maxDistance  = windMaxDistance > 0f ? windMaxDistance : 500f;
+        }
+
+        _windLoopSource.clip   = clip;
+        _windLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(id);
+        _windLoopSource.Play();
+    }
+
+    void StopWindLoop()
+    {
+        if (_windLoopSource != null && _windLoopSource.isPlaying)
+            _windLoopSource.Stop();
+    }
+
+    void Update()
+    {
+        // 볼륨 실시간 반영(옵션 메뉴 마스터/SFX 슬라이더).
+        if (_windLoopSource != null && _windLoopSource.isPlaying && SFXManager.Instance != null)
+            _windLoopSource.volume = SFXManager.Instance.GetEffectiveVolume(
+                _activeWindMode == WindMode.Push ? SFXId.Wind_Push : SFXId.Wind_Pull);
     }
 
     /// <summary>이번 사이클에서 확정된 모드(_activeWindMode)에 대응하는 파티클.</summary>
@@ -487,6 +545,7 @@ public class WindTrap : TrapBase
         _targetsInZone.Clear();
         _fireCount = 0;
         StopAllParticles();
+        StopWindLoop();
 
         // Wind 발동 중 Deactivate() 직접 호출 시(SetActive 사이클 없이 소프트 중단)
         // OnWindEnd를 명시적으로 발행 → MouthWindAnimator가 입 열기 복귀를 처리하도록 통보

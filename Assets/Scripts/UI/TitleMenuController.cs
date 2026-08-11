@@ -29,7 +29,8 @@ using UnityEngine.SceneManagement;
 /// Join 확인      → OnClickConfirmJoin()
 /// Join 닫기      → OnClickCloseJoin()
 /// 설정           → OnClickSettings()
-/// 설정 닫기      → OnClickCloseSettings()
+/// (설정 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결 — 패널 자신을 SetActive(false).
+///  OnClickCloseSettings()는 코드에서 강제로 닫아야 할 때 쓰는 보조 API.)
 /// 게임 종료      → OnClickQuit()
 /// Discord        → OnClickDiscord()
 ///
@@ -431,7 +432,10 @@ public class TitleMenuController : MonoBehaviour
         else Debug.LogWarning("[TitleMenuController] settingsPanel이 연결되지 않았습니다.");
     }
 
-    /// <summary>설정 패널 닫기. 설정 패널 내 닫기 버튼에도 연결.</summary>
+    /// <summary>
+    /// 설정 패널 닫기 — 코드에서 강제로 닫아야 할 때 쓰는 보조 API.
+    /// 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결되어 있어 이 메서드를 거치지 않는다.
+    /// </summary>
     public void OnClickCloseSettings()
     {
         if (settingsPanel != null) settingsPanel.SetActive(false);

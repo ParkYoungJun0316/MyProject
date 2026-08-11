@@ -125,7 +125,7 @@ public static class SetupSettingPanel
         var footer = CreateUiObject("Footer", panelT);
         var fRt = footer.GetComponent<RectTransform>();
         StretchCenter(fRt, new Vector2(0.5f, 0.5f), new Vector2(0f, -230f), new Vector2(160f, 56f));
-        CreateFooterButton(footer.transform, "Btn_Reset", "초기화", new Vector2(0f, 0f), notSelectSp, fontKr);
+        CreateFooterButton(footer.transform, "Btn_Reset", "기본값", new Vector2(0f, 0f), notSelectSp, fontKr);
 
         // Components on panel
         var tabs = panel.GetComponent<OptionsPanelTabs>();

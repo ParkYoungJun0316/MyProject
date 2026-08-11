@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 프로젝트 전체 효과음 클립 목록 (ScriptableObject).
@@ -12,9 +13,6 @@ using UnityEngine;
 ///   2. 각 슬롯에 해당 AudioClip 을 드래그한다.
 ///      - 아직 없는 SFX 는 비워 둔다 (null 이면 재생 스킵됨).
 ///   3. SFXManager Inspector 의 Library 필드에 이 에셋을 연결한다.
-///
-/// [1/2 교차 재생]
-///   Trap_Arrow 는 SFXManager.PlayAlternating() 으로 번갈아 재생.
 ///
 /// [클립별 볼륨 보정 — Volume Overrides]
 ///   원본 음원끼리 소리 크기가 서로 안 맞을 때(다른 곳에서 받아온 음원 등), Audacity로 파일 자체를
@@ -30,6 +28,8 @@ public class SFXLibrary : ScriptableObject
     [Header("Boss")]
     public AudioClip Boss_PhaseTransition_Mouth;
     public AudioClip Boss_PhaseTransition_Esophagus;
+    public AudioClip Boss_Die_Mouth;
+    public AudioClip Boss_Die_Esophagus;
 
     // ── Boulder ──────────────────────────────────────────────────
     [Header("Boulder")]
@@ -41,8 +41,8 @@ public class SFXLibrary : ScriptableObject
 
     // ── Buff ─────────────────────────────────────────────────────
     [Header("Buff")]
-    public AudioClip Buff_Shield;
-    public AudioClip Buff_SpeedUp;
+    [FormerlySerializedAs("Buff_Shield")]
+    public AudioClip Buff;
 
     // ── Door ─────────────────────────────────────────────────────
     [Header("Door")]
@@ -66,12 +66,16 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Player_ColorChange;
     public AudioClip Player_Death;
     public AudioClip Player_Hit;
+    public AudioClip Player_Punch;
     [Tooltip("달리기 루프 클립. 앞뒤를 잘라서 루프가 자연스럽도록 준비할 것")]
     public AudioClip Player_Run;
 
     // ── Stage / Flow ─────────────────────────────────────────────
     [Header("Stage / Flow")]
-    public AudioClip Stage_TransitionEnter;
+    [Tooltip("M.* 씬(Mouth 구역) 진입 시 재생. SceneFlowManager.OnSceneLoaded()에서 씬 이름 접두사로 자동 재생됨.")]
+    [FormerlySerializedAs("Stage_TransitionEnter")]
+    public AudioClip Stage_TransitionMouth;
+    [Tooltip("T.* 씬(Esophagus 구역) 진입 시 재생. SceneFlowManager.OnSceneLoaded()에서 씬 이름 접두사로 자동 재생됨.")]
     public AudioClip Stage_TransitionEsophagus;
 
     // ── Stage 5 ──────────────────────────────────────────────────
@@ -85,12 +89,11 @@ public class SFXLibrary : ScriptableObject
     [Header("Trap / Hazard")]
     public AudioClip Trap_AdvancingWall_Move;
     public AudioClip Trap_AdvancingWall_Telegraph;
-    public AudioClip Trap_Arrow_1;
-    public AudioClip Trap_Arrow_2;
+    [FormerlySerializedAs("Trap_Arrow_1")]
+    public AudioClip Trap_Arrow;
     public AudioClip Trap_Ceiling;
     public AudioClip Trap_Drop;
     public AudioClip Trap_SpikeRaise;
-    public AudioClip Trap_WallMover;
 
     // ── UI / Menu ────────────────────────────────────────────────
     [Header("UI / Menu")]
@@ -133,13 +136,14 @@ public class SFXLibrary : ScriptableObject
         {
             case SFXId.Boss_PhaseTransition_Mouth:        return Boss_PhaseTransition_Mouth;
             case SFXId.Boss_PhaseTransition_Esophagus:    return Boss_PhaseTransition_Esophagus;
+            case SFXId.Boss_Die_Mouth:                    return Boss_Die_Mouth;
+            case SFXId.Boss_Die_Esophagus:                return Boss_Die_Esophagus;
 
             case SFXId.Boulder_Roll:                      return Boulder_Roll;
 
             case SFXId.Breakable_Destroy:                 return Breakable_Destroy;
 
-            case SFXId.Buff_Shield:                       return Buff_Shield;
-            case SFXId.Buff_SpeedUp:                      return Buff_SpeedUp;
+            case SFXId.Buff:                              return Buff;
 
             case SFXId.Door_Close:                        return Door_Close;
             case SFXId.Door_Open:                         return Door_Open;
@@ -154,9 +158,10 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Player_ColorChange:                return Player_ColorChange;
             case SFXId.Player_Death:                      return Player_Death;
             case SFXId.Player_Hit:                        return Player_Hit;
+            case SFXId.Player_Punch:                      return Player_Punch;
             case SFXId.Player_Run:                        return Player_Run;
 
-            case SFXId.Stage_TransitionEnter:             return Stage_TransitionEnter;
+            case SFXId.Stage_TransitionMouth:             return Stage_TransitionMouth;
             case SFXId.Stage_TransitionEsophagus:         return Stage_TransitionEsophagus;
 
             case SFXId.Stage5_Chaser_Attack:              return Stage5_Chaser_Attack;
@@ -166,12 +171,10 @@ public class SFXLibrary : ScriptableObject
 
             case SFXId.Trap_AdvancingWall_Move:           return Trap_AdvancingWall_Move;
             case SFXId.Trap_AdvancingWall_Telegraph:      return Trap_AdvancingWall_Telegraph;
-            case SFXId.Trap_Arrow_1:                      return Trap_Arrow_1;
-            case SFXId.Trap_Arrow_2:                      return Trap_Arrow_2;
+            case SFXId.Trap_Arrow:                        return Trap_Arrow;
             case SFXId.Trap_Ceiling:                      return Trap_Ceiling;
             case SFXId.Trap_Drop:                         return Trap_Drop;
             case SFXId.Trap_SpikeRaise:                   return Trap_SpikeRaise;
-            case SFXId.Trap_WallMover:                    return Trap_WallMover;
 
             case SFXId.UI_Click:                          return UI_Click;
 
