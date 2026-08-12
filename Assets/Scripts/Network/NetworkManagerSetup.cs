@@ -80,6 +80,38 @@ public class NetworkManagerSetup : MonoBehaviour
     /// </summary>
     public static bool UseLocalNetworkPath => Application.isEditor || Debug.isDebugBuild;
 
+    /// <summary>
+    /// 현재 실행 파일을 <c>+connect_lobby &lt;lobbyId&gt;</c> 인자로 다시 실행하고 이 프로세스를 종료한다.
+    /// 새 프로세스는 검증된 "냉기동" 경로(TitleMenuController.TryAutoJoinFromLaunchArgs)를 그대로 타므로,
+    /// 같은 프로세스에서 Steam 릴레이 세션이 누적되어 생기는 중복 메시지 / Server Scene Handle 충돌을
+    /// 구조적으로 회피한다(SteamworksIntegrationDesign.md 트랙5·트랙6).
+    /// 재실행 실패 시 false를 반환하고 프로세스를 유지한다 — 호출부가 폴백을 결정할 수 있다.
+    /// </summary>
+    public static bool RestartWithConnectLobby(SteamId lobbyId)
+    {
+        try
+        {
+            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+            var startInfo = new System.Diagnostics.ProcessStartInfo(exePath, $"+connect_lobby {lobbyId.Value}")
+            {
+                UseShellExecute = true,
+            };
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[NetworkManagerSetup] +connect_lobby 재실행 실패 — {e}");
+            return false;
+        }
+
+        Debug.Log($"[NetworkManagerSetup] +connect_lobby {lobbyId.Value}로 재실행 — 현재 프로세스 종료.");
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        return true;
+    }
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()

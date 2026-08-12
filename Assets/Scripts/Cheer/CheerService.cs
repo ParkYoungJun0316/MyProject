@@ -233,16 +233,17 @@ public class CheerService : NetworkBehaviour
     {
         if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return false;
 
-        // 자기 자신 응원 불가 (단, 1인 세션에서는 허용)
-        if (PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor))
+        // 자기 자신 응원 불가 (단, 1인 세션에서는 허용).
+        // 색 조회(TryGetColor) 실패 시 자기 응원 여부를 확정할 수 없으므로 안전하게 거부한다
+        // (fail-closed — 조회 실패를 "자기 응원 아님"으로 취급해 통과시키면 안 됨).
+        if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor)) return false;
+
+        int myIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, myColor);
+        if (myIdx == targetColorIndex)
         {
-            int myIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, myColor);
-            if (myIdx == targetColorIndex)
-            {
-                // 1인 세션에서는 자기 자신 응원 허용 (partySize==1 규칙)
-                bool isSolo = GameSession.Instance != null && GameSession.Instance.ActivePlayerCount == 1;
-                if (!isSolo) return false;
-            }
+            // 1인 세션에서는 자기 자신 응원 허용 (partySize==1 규칙)
+            bool isSolo = GameSession.Instance != null && GameSession.Instance.ActivePlayerCount == 1;
+            if (!isSolo) return false;
         }
 
         // 수혜자 버프 중 → 표 차단
@@ -284,8 +285,17 @@ public class CheerService : NetworkBehaviour
 
     // ── 헬퍼 ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// 필요 응원 수 = max(1, 실제 참여 인원-1). NetworkManager 연결 수가 아니라
+    /// GameSession.ActivePlayerCount(이번 판 참가 인원)를 기준으로 삼는다 — 관전/유령 연결 등으로
+    /// ConnectedClientsIds.Count가 실제 참여 인원과 달라지면 필요 표수가 부풀려져 버프가
+    /// 영원히 발동하지 않는 문제가 있었다(CheerAndTutorialDesign.md §2.1과 소스 일치).
+    /// </summary>
     int GetRequiredVotes()
     {
+        if (GameSession.Instance != null && GameSession.Instance.ActivePlayerCount > 0)
+            return Mathf.Max(1, GameSession.Instance.ActivePlayerCount - 1);
+
         if (NetworkManager.Singleton == null) return 1;
         int active = NetworkManager.Singleton.ConnectedClientsIds.Count;
         return Mathf.Max(1, active - 1);

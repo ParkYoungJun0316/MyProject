@@ -105,6 +105,9 @@ public class PlayerBuffVisual : MonoBehaviour
     {
         if (root == null) return;
 
+        // 이미 재생 중인 파티클 위에 그냥 Play()하면 기존 파티클이 안 지워지고 겹쳐서
+        // 다중 막처럼 보인다(예: Shield 3중 겹침). 재생 여부와 무관하게 항상 먼저 정리 후 재생.
+        StopParticles(particles);
         ApplyColor(particles);
         root.SetActive(true);
         PlayParticles(particles);

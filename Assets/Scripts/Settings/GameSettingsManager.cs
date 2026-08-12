@@ -51,11 +51,26 @@ public class GameSettingsManager : MonoBehaviour
 
     /// <summary>
     /// 모니터의 진짜 네이티브(최대) 해상도. 저장된 해상도를 적용하기 전(ApplySavedDisplay 호출 전)
-    /// Awake에서 딱 한 번만 캡처해서 고정함. Screen.currentResolution은 SetResolution(특히 독점
-    /// 전체화면)을 호출하면 그 값 자체가 바뀌어버려서, 낮은 해상도로 바꾼 뒤에는 더 높은 해상도를
-    /// 다시 선택할 방법이 없어지는 버그가 있었음 — 그래서 매번 재조회하지 않고 캐시해서 씀.
+    /// Awake에서 딱 한 번만 캡처해서 고정함.
+    /// Screen.currentResolution이 아니라 Screen.resolutions 중 최대값을 쓰는 이유: currentResolution은
+    /// "지금 OS가 실제로 떠 있는 해상도"라서 SetResolution(특히 독점 전체화면) 호출 후 그 값 자체가
+    /// 바뀌고, 이전 실행 종료 시 OS가 원래 해상도로 복원 못 했으면(비정상 종료 등) 다음 실행에서도
+    /// 낮은 값을 그대로 캡처해버림. Screen.resolutions는 모니터/드라이버가 지원하는 디스플레이 모드
+    /// 목록이라 현재 OS 상태와 무관하게 항상 모니터의 진짜 최대 해상도가 포함돼 있어 더 안전함.
     /// </summary>
     public Resolution NativeResolution { get; private set; }
+
+    static Resolution QueryNativeResolution()
+    {
+        Resolution[] resolutions = Screen.resolutions;
+        if (resolutions == null || resolutions.Length == 0) return Screen.currentResolution;
+
+        Resolution max = resolutions[0];
+        for (int i = 1; i < resolutions.Length; i++)
+            if (resolutions[i].width * resolutions[i].height > max.width * max.height)
+                max = resolutions[i];
+        return max;
+    }
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -75,7 +90,7 @@ public class GameSettingsManager : MonoBehaviour
         MicMuted      = PlayerPrefs.GetInt(KeyMicMuted, 0) == 1;
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
 
-        NativeResolution = Screen.currentResolution;
+        NativeResolution = QueryNativeResolution();
         ApplySavedDisplay();
         StartCoroutine(ApplySavedMicSettingsWhenReady());
     }

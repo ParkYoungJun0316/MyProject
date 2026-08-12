@@ -288,7 +288,7 @@
 | 항목 | 내용 |
 |------|------|
 | 종류 | **오픈소스** STT (Apache 2.0). Asset Store 유료 아님 |
-| 연동 | GitHub `alphacep/vosk-unity-asr` + 영어 소형 모델 (~50MB, `StreamingAssets`) |
+| 연동 | GitHub `alphacep/vosk-unity-asr` + 영어 모델 `vosk-model-en-us-0.22-lgraph` (**204MB / 17파일, 압축 해제된 폴더 그대로 `StreamingAssets`에 포함**) |
 | 모드 | **grammar** — 세션 CheerName + `[unk]` 만 후보 |
 | 비용 | **$0**, MAU 무제한 (클라이언트 로컬 처리) |
 | 서버 | 음성·lexicon **서버 저장 없음** |
@@ -378,7 +378,11 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 |--------|------|------|
 | **CheerName** (텍스트) | `PlayerPrefs` **[Ship Must]**, Network 동기화 | UI, `/cheer`, grammar 토큰 |
 | **대체 발음 후보** (텍스트 목록, 사전 검증됨) | **저장 안 함** — 코드 테이블 | grammar JSON에 원래 이름과 함께 포함 |
-| **Vosk 모델** | `StreamingAssets` | 빌드에 포함 |
+| **Vosk 모델** | `StreamingAssets/vosk-model-en-us-0.22-lgraph/` (폴더 204MB) | 빌드에 포함 — 런타임 압축 해제·다운로드 **없음** |
+
+> **[2026-08-13 확정 — 모델 배포·로드 규칙]** 모델은 **zip이 아니라 압축 해제된 폴더**로 `StreamingAssets`에 넣는다. `persistentDataPath`로 풀어 쓰던 기존 방식은 **Windows 사용자명이 한글인 플레이어에서 100% 크래시**했다 — libvosk 내부 Kaldi가 `std::ifstream`으로 파일을 열어 비ASCII 경로를 읽지 못하고([vosk-api#1072](https://github.com/alphacep/vosk-api/issues/1072)), `new Model()`이 예외 대신 NULL 핸들을 돌려주는 탓에 실패가 감지되지 않은 채 다음 네이티브 호출에서 프로세스가 즉사했다.
+> 지켜야 할 것: ① 모델 경로를 사용자 폴더로 옮기지 말 것(비ASCII 유입) ② `VoskModelLoader.GetSharedModel()`의 **null 반환을 반드시 존중**할 것 — 네이티브 핸들 검증은 로더에서 1회만 수행한다 ③ **모델 로드 실패는 음성 인식만 비활성화하고 게임 진행을 막지 않는다.**
+> 전체 진단 기록: `SteamworksIntegrationDesign.md` 트랙 6 — 8차 세션.
 
 플레이어 UI 입력 = **영문 텍스트만**. Vosk 입력 = **grammar JSON(사전 등재 단어만)**. 커스텀 phoneme lexicon 없음.
 

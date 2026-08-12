@@ -1,11 +1,17 @@
-# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 — 버그 4건 발견, 2026-08-07 2차 세션 이슈 A 수정 + 3차 세션 이슈 D 근본원인 수정·이슈 B 절반 수정 + 4차 세션 이슈 D 실제 수정(virtual port)·이슈 E 신규 발견·수정·이슈 F 신규 발견 + 5차 세션 이슈 F 진짜 원인 확정·유령슬롯 근본수정·이슈 B 온기동 프로세스 재시작 우회 구현 + 6차 세션 이슈 B 온기동 진짜 근본원인 확정·수정 완료·사용자 검증 통과 — **트랙 5 전 이슈 종료**)
+# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 — 버그 4건 발견, 2026-08-07 2차 세션 이슈 A 수정 + 3차 세션 이슈 D 근본원인 수정·이슈 B 절반 수정 + 4차 세션 이슈 D 실제 수정(virtual port)·이슈 E 신규 발견·수정·이슈 F 신규 발견 + 5차 세션 이슈 F 진짜 원인 확정·유령슬롯 근본수정·이슈 B 온기동 프로세스 재시작 우회 구현 + 6차 세션 이슈 B 온기동 진짜 근본원인 확정·수정 완료·사용자 검증 통과 — 트랙 5 전 이슈 종료 + **2026-08-12 트랙 6 재개 — 4인 Depot 실사용 테스트에서 크래시 + 온기동 재발 보고, 6차 세션 컨텍스트 소진으로 인계 → 7차 세션에서 크래시 원인 확정(D3D12 디바이스 제거, 크래시 덤프 8건으로 증명·"D3D11도 실패" 보고는 구빌드 오데이터로 정정) + 온기동 근본원인 확정·수정 완료(로비 씬에서 초대 이벤트 소멸) — 둘 다 친구/2인 재검증 대기** + **2026-08-13 8차 세션 — 크래시 진짜 원인 확정: 친구 크래시는 D3D12가 아니라 비ASCII(한글) 사용자명 경로에서 libvosk가 모델을 열지 못한 것. 재현 성공(companyName 한글화) + 수정 완료(모델을 StreamingAssets에 풀린 상태로 배포, 런타임 압축 해제 제거, 네이티브 핸들 NULL 검증, 실패 시 음성 인식만 비활성화). 7차 세션의 "D3D12 단독 원인" 결론 정정 — 크래시는 두 종류였다. 한글 사용자명 친구 재검증 대기**)
 
 > ## ⭐⭐⭐ 다음 에이전트(새 채팅) 시작 지침 — 여기부터 읽을 것
 >
-> **트랙 5(Depot 실사용 스모크 테스트) 이슈 A~F 전부 해결 확인 완료 — 이 트랙은 종료됨.** 다음 에이전트는:
-> 1. 이 파일 맨 아래 "트랙 5 — 2026-08-07 6차 세션" 절의 "인수인계 요약"만 참고하면 충분 — 그 이전 세션들은 히스토리.
-> 2. `ReleaseRoadmap.md` §4 순위 3(빌드 메타 정리 + 빌드 검수 제출) 진행 상태를 이어서 확인할 것 — 트랙 5 종료로 순위 2(Depot 실사용 스모크)는 완료됨.
-> 3. Bug Hunter 규칙(`.cursor/rules/bug-hunter.mdc`) 적용 — 새 버그가 나오면 로그로 확정 안 되는 부분은 진단만 하고 사용자 OK 전엔 코드 수정하지 말 것.
+> **트랙 6 7차 세션이 최신 — 맨 아래 "트랙 6 — 7차 세션" 절부터 읽을 것.**
+> 1. 트랙 5(6차 세션까지)는 전부 해결 확인된 히스토리 — 재조사 불필요.
+> 2. **크래시는 두 종류였다 (8차 세션에서 정정 — 7차 세션의 "D3D12 단독 원인" 결론은 절반만 옳았다):**
+>    - ① 호스트 PC **"실행 직후"** = D3D12 디바이스 제거(덤프 8건으로 증명). **D3D11 고정으로 조치 — 유지한다.**
+>    - ② 친구 PC **"로비 진입 후"** = **비ASCII(한글) 사용자명 경로에서 libvosk가 모델을 못 열고, 실패가 감지되지 않은 채 네이티브 호출로 프로세스 즉사.** 8차 세션에서 **재현 성공 + 수정 완료**(모델을 StreamingAssets에 풀린 상태로 배포).
+>    - 7차 세션의 "친구는 D3D11 빌드를 테스트한 적 없다"는 타임라인 추론은 **사용자 정정으로 폐기** — 친구는 D3D11 빌드에서도 크래시했다.
+>    - **교훈: 크래시 타이밍이 다르면 다른 버그로 취급할 것.** 호스트 덤프로 친구 크래시를 설명하려 한 것이 2개 세션을 낭비시켰다.
+> 3. **온기동 재발도 원인 확정·수정 완료** — 트랙 5 6차 세션 수정의 회귀가 아니라, 그때 다루지 않은 별개 케이스(로비 씬에서 초대 수신)였음.
+> 4. Bug Hunter 규칙(`.cursor/rules/bug-hunter.mdc`) 적용 — 새 버그가 나오면 로그로 확정 안 되는 부분은 진단만 하고 사용자 OK 전엔 코드 수정하지 말 것.
+> 5. **네이티브 크래시는 `Player.log`가 아니라 크래시 덤프 폴더를 볼 것:** `%LOCALAPPDATA%\Temp\DefaultCompany\Kkul-tteok!\Crashes\Crash_<날짜>\`에 `crash.dmp` + 그 세션의 `Player.log`가 크래시별로 **보존**된다. `Player.log`는 재실행 시 덮어써지지만 이 폴더는 남으므로, 테스트가 끝난 뒤에도 증거를 받을 수 있다.
 >
 > ---
 >
@@ -642,3 +648,257 @@ Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok
 **Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`(`_inviteSubscribed`/`TrySubscribeInviteAccepted` 추가), `Assets/Scripts/Network/SteamLobbyManager.cs`(구독자 없음 경고 로그 추가).
 
 **Files read (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/SteamManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`, `Assets/Scenes/0.Title.unity`(스크립트 배치 순서), `ProjectSettings/MonoManager.asset`, Unity 6000.3 Execution order 공식 문서(웹).
+
+---
+
+## 트랙 6: 2026-08-12 — 4인 Depot 실사용 테스트에서 크래시 재발 + 온기동 재발 (다음 세션 인수인계, **컨텍스트 소진으로 미완료 상태에서 인계**)
+
+> **⚠️ 이 절이 최신 상태. 아직 원인 미확정 — 코드 수정은 그래픽 API 변경(§ 아래) 하나만 적용됐고, 그것도 효과가 있는지 검증 실패 상태.** 다음 에이전트는 반드시 크래시 당사자(친구) PC의 실제 `Player.log`를 먼저 확보하고 진행할 것 — 추측 기반 재수정 금지(Bug Hunter 원칙).
+
+### 재현 보고 (사용자 원본, 시간순)
+
+1. 정식(Release, Development Build 체크 해제) 빌드를 Steam에 업로드 후 친구 4명과 실사용 테스트 진행. **Invite Overlay로 초대**, **로비 진입 후(after_lobby) 크래시**, **재현성: 고정(매번 동일)**.
+2. **4명 중 2명이 크래시, 본인 + 친구 1명은 정상.**
+3. 친구들이 마이크를 뽑고 재접속 테스트 — **크래시 동일하게 재현** (~~Vosk/마이크 네이티브 크래시 가설 배제~~ — **⚠️ 8차 세션에서 이 배제가 오류로 판명. 모델 로드·`vosk_model_find_word`·`VoskRecognizer` 생성은 전부 마이크 유무와 무관하게 로비 진입만으로 실행된다. 실제 원인이 바로 Vosk였다.**).
+4. 본인(호스트) PC의 `Player.log`에서 크래시 직전 로그 확보 — 아래 "1차 진단" 참고.
+5. 그래픽 API를 Direct3D 11로 전환 후 재빌드/재업로드, 친구가 재테스트 — **"안돼. 그렇게 설정했는데도 똑같대."(사용자 원문) — 여전히 크래시 재현 보고.**
+6. 별개로, **Steam 친구 초대 "온기동"이 다시 제대로 안 된다는 보고** — 트랙 5 6차 세션에서 "해결 확인 완료"로 종료 처리했던 바로 그 이슈(§ 위 "트랙 5 — 6차 세션" 참고)의 재발 가능성.
+
+### 크래시 — 1차 진단: D3D12 디바이스 제거 크래시 (호스트 PC에서 발견, **친구 PC 로그로는 아직 미확인**)
+
+**증거 (호스트 본인 `Player.log`, 이번 세션에 직접 읽음):**
+```
+[D3D12 Device Filter] Vendor Name: NVIDIA
+[D3D12 Device Filter] Device Name: NVIDIA GeForce RTX 3060
+...
+d3d12: swapchain present failed (887a0001)
+Unrecoverable D3D12 device error!
+```
+`ProjectSettings/ProjectSettings.asset`의 Windows Graphics API 설정이 당시 **Auto**(자동 선택)였어서 Unity 6이 D3D12를 우선 선택했고, 로비 진입 후 D3D12 디바이스가 제거(`DXGI_ERROR_INVALID_CALL`, device removed)되며 크래시하는 것으로 추정됨. 이 패턴은 Unity 6 D3D12 백엔드가 Steam Overlay 또는 특정 GPU 드라이버 조합과 충돌하는 알려진 문제군과 일치.
+
+**적용한 조치 (완료):** Player Settings > Windows Graphics API를 **Direct3D 11 단일 항목으로 명시 고정**(Auto 해제). 실제 설정 파일로 확인됨:
+```550:552:ProjectSettings/ProjectSettings.asset
+  - m_BuildTarget: WindowsStandaloneSupport
+    m_APIs: 02000000
+    m_Automatic: 0
+```
+(`m_APIs: 02000000` = `GraphicsDeviceType.Direct3D11`(값 2) 단일 항목, `m_Automatic: 0`으로 자동 선택 꺼짐 — 코드 수정 아니라 Player Settings에서 사용자가 직접 변경한 것.)
+
+**재빌드 후 호스트 본인 PC 검증(이번 세션 확인):** `Player.log` 최신본과 `Player-prev.log` 둘 다 `Direct3D 11.0 [level 11.1]` 사용 확인, 두 세션 모두 크래시 없이 `HostQuitRoom`/`LobbyQuit` 경로로 **정상 종료**(로그 마지막까지 정상). **즉, D3D11 전환 이후 호스트 자신의 PC에서는 크래시가 재현되지 않았음.**
+
+**그런데 사용자는 "친구가 재테스트해도 여전히 팅긴다"고 보고 — 이 지점에서 컨텍스트 소진.** 다음 두 가능성이 미구분 상태:
+1. **진짜 원인이 D3D12가 아니었다** (다른 크래시 원인이 있고 D3D12는 호스트 PC에만 우연히 해당).
+2. **친구가 테스트한 게 실제로는 D3D11 반영 전 구빌드였다** (Depot 재업로드/Set Live가 친구 쪽에 아직 전파 안 됨, 또는 재업로드 자체를 아직 안 함) — 이 경우 "D3D11도 안 됨"이라는 결론 자체가 틀린 데이터일 수 있음.
+
+**다음 에이전트 최우선 액션 — 확정 없이 넘어가지 말 것:**
+1. **친구가 테스트한 빌드가 실제로 D3D11 반영본인지 먼저 확인** (Depot BuildID / Set Live 시각 vs 친구가 마지막으로 다운로드/업데이트한 시각 대조. Steam은 클라이언트가 자동 업데이트 받게 되어 있지만 확인 필요).
+2. **크래시하는 친구 본인 PC의 `Player.log`를 반드시 확보할 것** — 지금까지 확보한 로그는 전부 호스트(크래시 안 나는 쪽) 것뿐이라 실제 크래시 스택/에러 코드를 한 번도 못 봤음. 경로: `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log`(친구 PC에서 직접 열어서 크래시 직전 20~30줄 + 파일 마지막 줄 캡처 요청). `Player-prev.log`도 같이(현재 세션이 아니라 크래시났던 그 세션 로그일 수 있음).
+3. 위 로그 없이는 그래픽 API 외 다른 원인(GPU 드라이버 상이, 특정 하드웨어 스펙 부족, 다른 네이티브 플러그인 등)을 추측하지 말 것 — 로그로 확정 후 진행.
+
+### 온기동 재발 보고 — 회귀 여부 미확인, 재현 정보 필요
+
+트랙 5 6차 세션에서 "이슈 B(온기동) — `TitleMenuController.OnEnable()`의 `SteamLobbyManager.Instance` null 참조로 구독 스킵" 문제를 `_inviteSubscribed`/`TrySubscribeInviteAccepted()`(`OnEnable` + `Start()` 이중 시도)로 근본 수정 완료, 사용자 검증까지 통과했던 이슈. 이번 4인 테스트에서 사용자가 "온기동도 제대로 안 됨"이라고 재차 보고했으나, **이번 세션엔 재현 조건(누가·몇 번째 진입에서·냉기동/온기동 중 어느 쪽인지)을 아직 못 받음.**
+
+**다음 에이전트 액션:**
+1. 정확히 어떤 증상인지부터 재확인 필요 — 트랙 5에서 구분했던 두 케이스 그대로 물어볼 것: (a) 게임이 이미 타이틀에 떠 있는 상태에서 초대 Accept해도 로비로 안 들어가는지(온기동), (b) 게임이 꺼진 상태에서 초대 Accept로 새로 켜졌는데 로비로 안 들어가는지(냉기동). 트랙 5 6차 세션 수정은 (a) 전용이었고, 5차 세션 재시작 우회는 "2번째 이상 접속 시" 트랜스포트 중복 메시지 회피용이었음 — 어느 경로가 깨졌는지 증상만 봐도 좁혀짐.
+2. 재현되면 동일한 로그 필터로 캡처 요청:
+   ```powershell
+   Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log" -Pattern "\[NetworkManagerSetup\]|\[SteamLobbyManager\]|\[TitleMenuController\]|\[SteamManager\]" | Select-Object -ExpandProperty Line
+   ```
+   `[SteamLobbyManager] 초대 수락 감지` 로그 유무, `[TitleMenuController]` 구독 성공/보류 로그(6차 세션에서 추가한 것) 유무로 판별.
+3. **가능성 있는 새 변수:** 이번엔 4인 테스트(트랙 5는 2인)라서, 트랙 5에서 검증 안 된 "3번째 이상 인원이 초대받는 경로"나 "이미 2명 있는 방에 3/4번째가 온기동으로 합류" 같은 트랙 5 미검증 조합일 수 있음 — 재현 시 몇 번째 인원인지도 같이 확인.
+
+### 인수인계 요약 (2026-08-12, 트랙 6 — 다음 세션 필수 확인)
+
+1. **크래시 — 원인 미확정.** D3D12 디바이스 제거 크래시는 호스트 PC 로그에서만 확인됨, D3D11 전환은 호스트 PC에서는 효과 확인(크래시 재현 안 됨)했으나 친구 PC 재테스트에서 "여전히 크래시" 보고 — 친구가 실제로 D3D11 빌드를 테스트했는지 미확인 상태. **크래시하는 친구 PC의 `Player.log` 확보가 최우선.**
+2. **온기동 — 회귀 여부 미확인.** 트랙 5 6차 세션에서 해결 확인까지 했던 이슈라 재현 조건(냉기동/온기동 구분, 몇 번째 인원)부터 다시 받아야 함.
+3. 이번 세션에 코드 변경 없음 — 그래픽 API 변경은 Player Settings(에디터)에서 사용자가 직접 적용한 것, 에이전트의 파일 수정 없음.
+4. 컨텍스트 소진으로 이 세션 종료 — 다음 에이전트는 위 "다음 에이전트 최우선 액션" 두 항목(친구 PC 로그, 온기동 재현 조건)부터 확보한 뒤 진단을 이어갈 것.
+
+**Files read (이번 세션):** 호스트 본인 `Player.log`/`Player-prev.log`(2회, D3D12 크래시 버전 + D3D11 전환 후 버전), `ProjectSettings/ProjectSettings.asset`(Graphics API 설정), `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/Network/SteamManager.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/PlayerSpawnManager.cs`, `Assets/Scripts/GameSession.cs`, `Assets/Scripts/Cheer/CheerKeywordEngine.cs`, `Assets/Scripts/Cheer/VoskModelLoader.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Docs/NetworkDesign.md`.
+
+---
+
+## 트랙 6 — 7차 세션 (2026-08-12 밤): 크래시 원인 확정(D3D12) + 온기동 재발 근본원인 확정·수정 완료
+
+> **⚠️ 이 절의 크래시 결론은 8차 세션(맨 아래)에서 정정됨 — 절반만 옳았다.** 아래 "D3D12 원인 확정"은 **호스트 PC의 "실행 직후" 크래시**에만 해당한다. 친구의 **"로비 진입 후" 크래시는 별개 원인**(비ASCII 경로 + libvosk 모델 로드 실패)이었고, 아래 "친구가 구빌드를 테스트했다"는 타임라인 추론은 **사용자 정정으로 폐기됐다** — 친구는 D3D11 빌드에서도 크래시했다. 온기동 수정 내용은 유효하다.
+
+### 결정적 방법론 — 네이티브 크래시는 `Player.log`가 아니라 크래시 덤프 폴더
+
+6차 세션까지 "친구 `Player.log`를 못 받아서 확정 불가"로 막혀 있었으나, 사용자가 보낸 스크린샷의 창이 **`UnityCrashHandler64`의 크래시 리포터**임을 식별한 것이 돌파점이었다. 네이티브 크래시는 아래 경로에 크래시별 폴더로 **보존**된다.
+
+```
+%LOCALAPPDATA%\Temp\DefaultCompany\Kkul-tteok!\Crashes\Crash_<yyyy-MM-dd_HHmmssfff>\
+  ├─ crash.dmp
+  └─ Player.log   ← 그 세션 전용 스냅샷 (덮어써지지 않음)
+```
+
+호스트 본인 PC에서 이 폴더를 열자 **덤프 8건**이 그대로 남아 있었다. `Player.log`는 재실행 시 덮어써지지만 이 폴더는 남으므로, **테스트가 끝난 뒤에도 증거 확보가 가능하다.** 앞으로 크래시 보고를 받으면 이 폴더를 먼저 요청할 것.
+
+### 크래시 — 원인 확정: D3D12 디바이스 제거 (`DXGI_ERROR_INVALID_CALL`)
+
+**증거:** 크래시 덤프 8건(21:13~22:09) 전부 동일 패턴. `Direct3D 12 [level 12.2]`로 초기화된 뒤:
+
+```
+d3d12: swapchain present failed (887a0001).
+d3d12: Device failed error (887a0001).
+Unrecoverable D3D12 device error!
+Crash!!!
+→ 스택 전부 UnityPlayer 렌더 스레드
+```
+
+`887A0001` = `DXGI_ERROR_INVALID_CALL`. 8건 모두 매니지드 로그가 **한 줄도 없다** — 즉 첫 씬 로드 이전, 실행 직후 첫 present에서 죽었다(6차 세션에 적힌 "로비 진입 후"와 다름 — 친구 쪽 크래시 타이밍은 별개일 수 있으나 원인 계열은 동일). 로드된 모듈에 Steam 오버레이(`gameoverlayrenderer64.dll`) + NVIDIA 캡처 훅(`nvspcap64.dll`)이 함께 주입되어 있어, D3D12 + 오버레이 훅 조합에서 디바이스가 제거되는 알려진 패턴과 일치. 4명 중 2명만 크래시한 것도 GPU/드라이버/오버레이 조합 차이로 설명된다.
+
+**⭐ "D3D11에서도 팅긴다"는 6차 세션 보고는 잘못된 데이터 — 타임라인으로 증명:**
+
+| 시각 (2026-08-12) | 사건 |
+|---|---|
+| 21:13 ~ 22:09 | 크래시 8건 — 전부 **D3D12** (Steam 설치 경로에서 실행) |
+| 22:15:18 | `ProjectSettings.asset` 수정 = D3D11 고정이 실제로 적용된 시각 |
+| 22:15:39 | ContentBuilder `content\KKUL-TTEOK!_Build\`에 새 빌드 복사 |
+| 22:19:04 | Steam 설치본 갱신 (buildid **`24693223`**) |
+| 22:22 / 22:24 | D3D11로 두 세션 정상 — **크래시 없음** |
+
+**D3D11이 포함된 빌드가 처음 존재한 시각이 22:15:39**이고, 친구 4인 테스트는 그 이전에 이미 종료됐다. 즉 친구는 D3D11 빌드를 받아본 적이 없다. 6차 세션 문서가 남겨둔 두 갈래 중 **"가능성 2(친구가 구빌드 테스트)"가 정답**이었다.
+
+**Cause site:** 코드 아님 — `ProjectSettings/ProjectSettings.asset` 550~552행(`m_APIs: 02000000` = Direct3D11 단일, `m_Automatic: 0`). 현재 올바르게 적용되어 있음.
+
+**조치:** 코드 변경 없음. **남은 것은 친구 재검증뿐.** 확인 순서: ① 친구가 실행 후 `Player.log` 상단에 `Direct3D 11.0`이 찍히는지(D3D12면 아직 구빌드 = 결과 무효) ② 그래도 크래시하면 위 `Crashes` 폴더를 압축해서 받을 것.
+
+### 온기동 재발 — 근본원인 확정·수정 완료 (트랙 5 6차 세션 수정의 회귀 아님)
+
+**Reproduce (로그 확정):** 본인 PC `Player-prev.log`에 그 순간이 그대로 남아 있었다.
+
+```
+[LobbyMenuController] 룸코드 복사됨: 109775241869821632
+[SteamLobbyManager] 초대 수락 감지 — Lobby 109775241869822409, 초대자 76561198662605787
+                    — 그러나 OnInviteAccepted 구독자 없음(이벤트 소멸됨).
+```
+
+계정 A가 **자기 방을 만들어 로비 씬에 있는 상태**에서 초대를 수락 → Steam 콜백은 정상 도착했으나 구독자가 없어 버려짐. 이후 A가 방을 나가고 앱을 완전히 종료한 뒤 같은 lobbyId로 초대를 재수락하니 `+connect_lobby` 냉기동 경로로 정상 입장(최신 `Player.log`).
+
+**Root cause:** 초대를 처리하는 주체가 `TitleMenuController`, 즉 **타이틀 씬에만 존재하는 UI 컴포넌트**였다. 이벤트 발행자 `SteamLobbyManager`는 DDOL이라 어디서든 콜백을 받지만, 로비 씬으로 넘어가면 `TitleMenuController`가 파괴되며 `OnDisable()`에서 구독을 해제한다. 결과: **타이틀 화면에 있을 때만 초대가 동작하고, 방을 만들어 로비에 있거나 인게임 중이면 100% 무시.** 트랙 5 6차 세션에서 고친 "Awake/OnEnable 순서로 최초 진입 구독 누락"은 회귀하지 않았고(`Start()` 구독 유지, 정상 동작 중), 이번 건은 그때 다루지 않은 별개 케이스다. 4인 테스트에서 잘 재현된 이유는 인원이 늘면 "각자 방을 만들어 놓고 서로 초대를 주고받는" 상황이 훨씬 자주 생기기 때문.
+
+**Cause site:** `Assets/Scripts/UI/TitleMenuController.cs` `Start()`(구독) / `OnDisable()`(해제), `Assets/Scripts/Network/SteamLobbyManager.cs` `HandleGameLobbyJoinRequested()`(구독자 없으면 경고만 남기고 return).
+
+**확정 정책 (사용자 결정, 2026-08-12 7차 세션):**
+- **로비에 있을 때만** 자동 이동(현재 방 정리 → 초대받은 방으로). **인게임 중에는 무시.**
+- **Host여도 확인 팝업 없이 바로 허용** — 방 폭파는 기존 §12 정책 그대로.
+
+**Fix 적용 완료 (3파일):**
+- `Assets/Scripts/Network/NetworkManagerSetup.cs`: `public static bool RestartWithConnectLobby(SteamId)` 신설 — `TitleMenuController`의 private static 안에 갇혀 있던 `+connect_lobby` 재실행 로직을 공용으로 승격.
+- `Assets/Scripts/UI/TitleMenuController.cs`: `TryRestartForWarmReconnect`가 위 공용 메서드를 호출하도록 변경(동작 동일, 중복 제거).
+- `Assets/Scripts/UI/LobbyMenuController.cs`: `SteamLobbyManager.OnInviteAccepted`를 기존 `SubscribeAll()`/`UnsubscribeAll()` 짝에 추가(`_inviteSubscribed`, Steam 경로에서만). 핸들러 `OnSteamInviteAccepted` → 코루틴 `MoveToInvitedLobby`: Host면 `NotifyHostQuit()`으로 남은 인원에게 먼저 알리고 → 한 프레임 양보(ClientRpc 전송 보장) → `NetworkManagerSetup.Shutdown()`(Steam Lobby leave 포함) → `RestartWithConnectLobby()`. 재실행 실패 시 `TitleReturnFlow`로 타이틀 복귀 폴백. `_invitePending`으로 중복 수락 차단.
+
+**이동 수단으로 프로세스 재실행을 택한 이유:** 5차 세션에서 실사용 검증된 유일한 경로이고, 세션 정리와 Steam 릴레이 상태 초기화가 동시에 해결된다. 인프로세스로 방을 옮기면 이슈 F(`Server Scene Handle already exist`) 조건에 그대로 들어간다.
+
+**정책이 코드 구조로 보장되는 지점:** 구독자가 로비 씬에만 존재하므로, 인게임에서는 기존과 동일하게 `OnInviteAccepted` 구독자 없음 경고만 남고 무시된다 — 별도 씬 판정 분기가 필요 없다.
+
+**Verify (다음 세션 / 사용자):** 재빌드 + Depot 업로드 후 계정 B(노트북)로 2인 재현 — ① A가 방을 만들어 로비에 있는 상태에서 B가 초대 → A가 초대받은 방으로 이동하는지 ② 회귀 확인: 타이틀에서 초대 수락(온기동) ③ 회귀 확인: 게임 꺼진 상태에서 초대 수락(냉기동).
+
+### 부수 발견 (미수정, 조건만 남아 있음) — `TryRestartForWarmReconnect` 가드 범위
+
+`TryRestartForWarmReconnect`는 `HasConnectedAsClientSteamThisProcess`, 즉 "이 프로세스에서 **Client로** 접속한 적 있는지"만 본다. 따라서 **Host를 했다가 방을 폭파하고 같은 프로세스에서 Client로 처음 접속하는 경로는 우회가 발동하지 않는다** — 4차 세션에서 이슈 F(`Server Scene Handle already exist`)를 재현했던 조건과 정확히 같다. 4인 플레이의 "방장이 방을 닫고 다른 사람이 방장을 맡아 재모집" 패턴에서 걸릴 수 있다. 이번 테스트에서 해당 증상 보고가 없었으므로 **미확정 리스크로만 기록하고 수정하지 않음.** 재현되면 가드를 "이 프로세스에서 Steam 세션(Host든 Client든)을 한 번이라도 시작한 적 있는지"로 넓히는 것이 1순위 후보.
+
+### 인수인계 요약 (2026-08-12 7차 세션 기준, 최신)
+
+1. **크래시 — 원인 확정(D3D12 디바이스 제거). 코드 변경 없음.** 현재 Depot의 `24693223`(D3D11) 빌드로 **친구 재검증만 남음.** 검증 시 `Direct3D 11.0` 로그 확인이 선행 조건 — 확인 없이 결과를 신뢰하지 말 것(6차 세션이 그래서 틀렸음).
+2. **온기동 — 원인 확정·수정 완료(3파일). 재빌드 후 위 Verify 3항목 검증 필요.**
+3. **`TryRestartForWarmReconnect` 가드 범위 — 미수정 리스크로 기록.** 재현 시에만 착수.
+4. 크래시 보고를 받을 때는 항상 `Crashes` 폴더(덤프+세션 로그)를 먼저 요청할 것 — `Player.log`만으로는 네이티브 크래시를 못 본다.
+
+**Files changed (이번 세션):** `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Docs/SteamworksIntegrationDesign.md`.
+
+**Files read (이번 세션):** 크래시 덤프 8건의 `Player.log`(`%LOCALAPPDATA%\Temp\DefaultCompany\Kkul-tteok!\Crashes\`), `Player.log` / `Player-prev.log`(최신), `ProjectSettings/ProjectSettings.asset`(타임스탬프), `appmanifest_5029890.acf`(buildid/LastUpdated), `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Docs/NetworkDesign.md`(M/T 분류 grep — `TitleMenuController`/`SteamLobbyManager`는 `0.Title` 전용이라 M/T 라운드 분류 대상 아님).
+
+---
+
+## 트랙 6 — 8차 세션 (2026-08-13): 크래시 진짜 원인 확정 — 비ASCII(한글) 경로 + libvosk 모델 로드 실패 (**재현 성공 · 수정 완료**)
+
+> **이 절이 최신 상태.** 7차 세션의 "크래시 원인 확정 = D3D12" 결론은 **절반만 옳았다.** D3D12는 **호스트 PC의 "실행 직후" 크래시**만 설명하고, 친구의 **"로비 진입 후" 크래시는 완전히 다른 원인**이었다.
+
+### 7차 세션 오진 정정 — 서로 다른 두 크래시를 하나로 묶어 봤다
+
+7차 세션은 타임라인 분석으로 "친구는 D3D11 빌드를 받아본 적이 없다"고 결론했으나, **사용자가 직접 정정했다: 친구는 D3D11 전환 후에도 테스트했고 동일하게 크래시했다.** 이 정정을 받아들이면 크래시가 두 종류였음이 드러난다.
+
+| | 호스트(본인) PC | 친구 PC |
+|---|---|---|
+| 타이밍 | **실행 직후** (매니지드 로그 0줄) | **로비 진입 후** |
+| 원인 | D3D12 디바이스 제거 (`DXGI_ERROR_INVALID_CALL`) | **libvosk 모델 로드 실패 → 네이티브 즉사** |
+| 조치 | D3D11 고정 (유효 — 유지) | 이 절의 수정 |
+
+**교훈 1 — 크래시 타이밍이 다르면 다른 버그로 취급할 것.** 확보한 증거(덤프 8건)는 전부 호스트 PC 것이었는데 그걸로 친구 크래시까지 설명하려 했다. 7차 세션은 덤프의 "실행 직후"가 6차 세션 기록의 "로비 진입 후"와 어긋나는 것을 **인지하고 문장으로 남겨두기까지 했으면서도** 같은 원인으로 묶었다.
+
+**교훈 2 — 6차 세션의 "마이크를 뽑아도 재현되니 Vosk/마이크 네이티브 크래시 가설 배제"는 잘못된 추론이었다.** 모델 압축 해제 · `new Model()` · `vosk_model_find_word` · `VoskRecognizer` 생성은 **전부 마이크 유무와 무관하게 로비 진입만으로 실행된다.** 마이크 제거로는 Vosk 가설을 배제할 수 없다. 이 오배제가 6→7차 세션 내내 정답을 후보에서 지워놨다.
+
+### 진짜 원인 — 비ASCII 경로에서 libvosk가 모델을 열지 못한다
+
+**기존 구조:** 130MB `vosk-model-en-us-0.22-lgraph.zip`을 StreamingAssets에 넣고, 로비 `Start()`에서 `Application.persistentDataPath`(= `C:\Users\<사용자명>\AppData\LocalLow\DefaultCompany\Kkul-tteok!`)로 압축 해제(해제 후 204MB)한 뒤 그 경로로 `new Model()`.
+
+**결함 1 — 비ASCII 경로를 못 읽는다.** libvosk 내부 Kaldi는 `std::ifstream`으로 모델 파일을 여는데, Windows에서 이는 비ASCII 경로를 열지 못한다. C#은 경로를 UTF-8 바이트로 넘기고 CRT는 시스템 코드페이지(한국어 = CP949)로 해석하므로 바이트가 어긋나 "존재하지 않는 경로"가 된다. **Windows 사용자명이 한글인 플레이어는 모델 로드가 100% 실패한다.** 업스트림 미해결: [alphacep/vosk-api#1072](https://github.com/alphacep/vosk-api/issues/1072) — "Kaldi를 고쳐야 한다" 상태로 정체, 어떤 마샬링을 써도 크래시한다는 보고까지 달려 있다. **우리가 우회하는 수밖에 없다.**
+
+**결함 2 — 실패가 감지되지 않는다.** `VoskPINVOKE.new_Model`은 실패 시 예외 없이 `IntPtr.Zero`를 반환하고(SWIG 예외 체크 코드가 없다), 래퍼 `new Model(path)`는 그 NULL을 그대로 감싼 **C# 객체**를 돌려준다. 따라서 `model != null` 체크는 무의미하다. 그 객체로 네이티브를 호출하는 순간 프로세스가 즉사한다(access violation). 호출 지점 두 곳:
+
+- `CheerLexiconBuilder.IsKnownWord` → `model.vosk_model_find_word(...)` — **로비 슬롯 갱신 경로에서 동기 호출** = 로비 진입 직후 첫 사망 지점
+- `CheerKeywordEngine.WorkerLoop` → `new VoskRecognizer(m, ...)` — 워커 스레드
+
+동일 사례: [alphacep/vosk-api#955](https://github.com/alphacep/vosk-api/issues/955) — `new VoskRecognizer` 라인에서 `0xC0000005`, 메인테이너 답변도 "모델이 제대로 초기화되지 않았다".
+
+**결함 3 — 손상된 모델이 영구 고착된다.** `EnsureModel()`이 `Directory.Exists`만 확인했다. 압축 해제가 중간에 실패하면 폴더는 남고 내용은 불완전한데, 다음 실행부터 "모델 이미 존재"로 통과한다. `ExtractExistingFileAction.DoNotOverwrite`라 자가 복구도 안 된다 → **매번 같은 지점에서 죽는다**(보고된 "재현성: 고정"과 일치).
+
+**모든 관측치가 설명된다:** 로비 진입 후 타이밍(= 모델 최초 해제·로드 시점) / 4명 중 2명(= 한글 사용자명 여부) / 마이크 무관 / 재현성 고정(= 사용자명은 안 바뀐다) / 호스트 본인은 무사(사용자명 `u` = ASCII).
+
+### 재현 성공 (2026-08-13, 에디터)
+
+사용자 계정을 건드리지 않고 **`companyName`만 한글로 바꿔** `persistentDataPath`에 한글을 주입하는 방법으로 재현했다. 압축 해제 실패 변수를 배제하려고 정상 모델 폴더(17파일 / 204.1MB)를 한글 경로에 미리 복사한 뒤 테스트.
+
+1. Player Settings → Company Name: `DefaultCompany` → `한글테스트`
+2. 정상 모델을 `%USERPROFILE%\AppData\LocalLow\한글테스트\Kkul-tteok!\vosk-model-en-us-0.22-lgraph`에 복사
+3. 에디터 Play → 로비 진입 → **에디터 프로세스 즉사** = 원인 확정 (사용자 확인: "맞다 찾았다. 이거다. 정확해.")
+
+> **재현 도구로 재사용 가능:** 비ASCII 경로 관련 네이티브 이슈는 `companyName`을 한글로 바꾸면 계정을 건드리지 않고 재현할 수 있다. 테스트 후 원복 필수(`PlayerPrefs` 경로가 함께 바뀌어 설정이 초기화된 것처럼 보인다).
+
+### 수정 — 모델을 StreamingAssets에 풀린 상태로 배포 (런타임 압축 해제 제거)
+
+**배포 변경 (사용자 작업 완료·검증됨):** `Assets/StreamingAssets/vosk-model-en-us-0.22-lgraph/` 폴더로 모델을 그대로 포함하고 `vosk-model-en-us-0.22-lgraph.zip`은 삭제. 실측 확인: 17파일 204.1MB, 필수 파일 10개 크기 일치, 폴더 중첩 없음.
+
+- **모델 경로가 Steam 설치 경로가 되어 사용자명과 무관해진다** → 근본 원인 소멸 (`...\steamapps\common\KKUL-TTEOK!\Kkul-tteok!_Data\StreamingAssets\...`)
+- 런타임 압축 해제 소멸 → 로비 진입 시 수십 초 메인 스레드 정지 제거 + 해제 실패 경로(결함 3) 제거
+- 플레이어 디스크 사용량 334MB(zip 130 + 해제본 204) → **204MB**. 설치 용량은 순증 74MB (Steam 전송은 압축되므로 다운로드 증가는 더 작다)
+- zip이 애초에 있었던 이유는 Vosk 공식 유니티 예제가 **Android**(StreamingAssets가 APK 내부라 파일 경로 접근 불가)를 전제로 하기 때문 — **PC 전용인 이 프로젝트에는 해당되지 않는다.** 예제를 그대로 따라온 것이 원인의 뿌리였다
+- `.gitignore`에 `Assets/StreamingAssets/vosk-model-en-us-0.22-lgraph/` 추가 (204MB 커밋 방지). 폴더 `.meta`만 추적된다
+
+**코드 변경 — `Assets/Scripts/Cheer/VoskModelLoader.cs` (재작성):**
+
+| 항목 | 내용 |
+|---|---|
+| 압축 해제 | **제거** (`Ionic.Zip` 의존 제거, `EnsureModel()` 삭제 — 외부 호출처 없었음) |
+| 무결성 검증 | 필수 파일 10개의 **존재 + 최소 크기** 확인(`ValidateModel`). 폴더 존재만으로 판단하지 않음 |
+| 비ASCII 방어 | 경로에 비ASCII가 섞이면 `C:\Users\Public\Documents\KkulTteok`(항상 ASCII·관리자 권한 불필요)로 복사 후 사용. 폴백도 비ASCII면 포기 |
+| **네이티브 실패 감지** | `Model.getCPtr(model).Handle == IntPtr.Zero` 확인 → NULL이면 `_sharedModel` 미설정. Vosk에 `.asmdef`가 없어 `internal getCPtr`을 같은 어셈블리에서 접근 가능 |
+| 실패 시 동작 | **음성 인식만 비활성화, 게임 진행은 정상.** `_loadAttempted`로 재시도 차단(로그 스팸·반복 크래시 방지) |
+
+`CheerKeywordEngine`은 헤더 주석의 초기화 순서만 갱신(`EnsureModel` → `GetSharedModel`). `CheerLexiconBuilder`는 **변경 없음** — `model == null`이면 `true` 반환(경고 미표시)으로 이미 안전하고, 이제 유효한 모델만 전달된다.
+
+**핵심 원칙 (신규):** 응원(음성 인식)은 부가 기능이다. **모델 로드 실패가 게임을 죽여서는 안 된다.** 이번 수정으로 실패는 `LogError` 한 줄 + 기능 비활성화로 끝난다.
+
+M/T 분류: Cheer(음성 인식) 계열은 로비 + 전 스테이지 공통 서브시스템이라 M/T 라운드 분류 대상이 아니다.
+
+### Verify (다음 세션 / 사용자)
+
+1. 에디터 로비 진입 → `[VoskModelLoader] 공유 Model 로드 완료: .../StreamingAssets/vosk-model-en-us-0.22-lgraph` 확인, 압축 해제 로그가 사라졌는지
+2. Company Name 원복(`DefaultCompany`) — 테스트 잔여물 `%USERPROFILE%\AppData\LocalLow\한글테스트`(204MB)와 구 해제본 `...\DefaultCompany\Kkul-tteok!\vosk-model-en-us-0.22-lgraph`(204MB) 삭제 가능
+3. 재빌드 + Depot 업로드 → **한글 사용자명 친구**가 로비 진입 시 크래시 없는지 (**최종 확정 조건**)
+4. 음성 인식이 실제로 동작하는지도 함께 확인 (경로 변경 회귀 여부)
+5. 또 크래시하면 `Crashes` 폴더 + `Player.log`의 `[VoskModelLoader]` 라인 확인 — 이제 모델 실패는 크래시가 아니라 `LogError`로 남으므로, 크래시가 나면 **다른 원인**이다
+
+### 남은 리스크 / 미검증
+
+- **Steam 라이브러리 폴더를 한글 경로에 만든 플레이어**: 폴백 복사 경로로 처리되지만 실환경 미검증. `[VoskModelLoader] 설치 경로에 비ASCII 문자 포함` 경고가 그 신호다
+- **libvosk 호출부를 새로 추가할 때**는 반드시 `GetSharedModel()`의 null 반환을 존중할 것. 핸들 검증은 로더에서 1회만 수행한다
+- **D3D11 고정은 유지한다.** 호스트 PC의 실행 직후 D3D12 크래시는 실재했고 덤프 8건으로 증명됐다 — 이번 발견이 그 결론을 뒤집지는 않는다
+- 7차 세션에서 수정한 **온기동(로비에서 초대 수락) 검증은 여전히 미완료** — 위 7차 절의 Verify 3항목 그대로 남아 있다
+
+**Files changed (이번 세션):** `Assets/Scripts/Cheer/VoskModelLoader.cs`(재작성), `Assets/Scripts/Cheer/CheerKeywordEngine.cs`(헤더 주석), `.gitignore`, `Assets/Docs/SteamworksIntegrationDesign.md`.
+
+**Files read (이번 세션):** `Assets/Scripts/Cheer/VoskModelLoader.cs`, `Assets/Scripts/Cheer/CheerKeywordEngine.cs`, `Assets/Scripts/Cheer/CheerLexiconBuilder.cs`, `Assets/ThirdParty/Vosk/Model.cs`, `Assets/ThirdParty/Vosk/VoskPINVOKE.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, 크래시 덤프 `Player.log`(스택·로드된 모듈 목록), 빌드 산출물 `Plugins/x86_64` + `StreamingAssets` 실측, `ProjectSettings/ProjectSettings.asset`(company/product name), `Assets/Docs/CheerAndTutorialDesign.md`(모델 배포 방식 grep).

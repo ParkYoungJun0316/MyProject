@@ -208,12 +208,19 @@ public class OptionsMenuController : MonoBehaviour
         Resolution native = GameSettingsManager.Instance != null
             ? GameSettingsManager.Instance.NativeResolution
             : Screen.currentResolution;
+
+        // 창모드(타이틀바+테두리가 있는 창)는 클라이언트 영역이 네이티브와 완전히 같으면
+        // chrome이 들어갈 자리가 없어 Windows가 창을 화면에 억지로 맞추면서 전체화면처럼
+        // 보이는 문제가 있음 — 창모드일 땐 네이티브와 정확히 같은 해상도를 목록에서 제외.
+        bool isWindowed = Screen.fullScreenMode == FullScreenMode.Windowed;
+
         var seen = new HashSet<(int w, int h)>();
         var merged = new List<Resolution>();
 
         void TryAdd(int w, int h)
         {
             if (w > native.width || h > native.height) return;
+            if (isWindowed && w == native.width && h == native.height) return;
             if (!seen.Add((w, h))) return;
             merged.Add(new Resolution { width = w, height = h });
         }
@@ -227,6 +234,14 @@ public class OptionsMenuController : MonoBehaviour
         resolutionDropdown.AddOptions(_resolutions.Select(r => $"{r.width} x {r.height}").ToList());
 
         int index = _resolutions.FindIndex(r => r.width == Screen.width && r.height == Screen.height);
+        if (index < 0 && isWindowed && _resolutions.Count > 0)
+        {
+            // 창모드인데 현재 적용된 해상도(네이티브 등)가 필터로 제외된 경우(과거 저장값 등) —
+            // 목록 최상단 해상도로 자동 보정해서 깨진 창모드 상태가 남아있지 않게 함.
+            Resolution corrected = _resolutions[0];
+            GameSettingsManager.Instance?.ApplyDisplay(corrected.width, corrected.height, Screen.fullScreenMode);
+            index = 0;
+        }
         resolutionDropdown.value = Mathf.Max(0, index);
         resolutionDropdown.RefreshShownValue();
     }
@@ -294,10 +309,29 @@ public class OptionsMenuController : MonoBehaviour
         int width  = hasResSelection ? _resolutions[resolutionDropdown.value].width  : Screen.width;
         int height = hasResSelection ? _resolutions[resolutionDropdown.value].height : Screen.height;
 
+        // 창모드로 바꾸는데 현재 선택이 네이티브(타이틀바 자리 없음)면 한 단계 낮은 해상도로 보정.
+        if (mode == FullScreenMode.Windowed)
+        {
+            Resolution native = GameSettingsManager.Instance != null
+                ? GameSettingsManager.Instance.NativeResolution
+                : Screen.currentResolution;
+            if (width == native.width && height == native.height)
+            {
+                Resolution? fallback = _resolutions
+                    .Where(r => r.width < native.width || r.height < native.height)
+                    .OrderByDescending(r => r.width * r.height)
+                    .Cast<Resolution?>()
+                    .FirstOrDefault();
+                if (fallback.HasValue) { width = fallback.Value.width; height = fallback.Value.height; }
+            }
+        }
+
         GameSettingsManager.Instance?.ApplyDisplay(width, height, mode);
 
         if (resolutionDropdown != null)
             resolutionDropdown.interactable = mode != FullScreenMode.FullScreenWindow;
+
+        WithRefreshGuard(RefreshResolutionDropdown);
     }
 
     void OnResolutionChanged(int index)

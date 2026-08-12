@@ -1,4 +1,5 @@
 using System.Collections;
+using Steamworks;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -89,6 +90,8 @@ public class LobbyMenuController : MonoBehaviour
     bool        _lnmSubscribed;        // LobbyNetworkManager 이벤트 구독 여부
     bool        _nmSubscribed;         // NetworkManager.OnClientDisconnectCallback 구독 여부
     bool        _cheerSubscribed;      // CheerKeywordEngine.OnKeywordDetected 구독 여부
+    bool        _inviteSubscribed;     // SteamLobbyManager.OnInviteAccepted 구독 여부
+    bool        _invitePending;        // 초대 이동 처리 중 — 중복 수락 무시용
     LobbySlotUI _localSlotUI;          // 로컬 플레이어 슬롯 캐시 — CheerName 결과 전달용
 
     // ── 초기화 ────────────────────────────────────────────────────
@@ -140,6 +143,14 @@ public class LobbyMenuController : MonoBehaviour
             _cheerSubscribed = true;
         }
 
+        // 로비에 있는 동안 도착하는 Steam 초대는 여기서만 받는다 — 인게임 씬엔 구독자가 없어
+        // 확정 정책(로비에서만 이동, 인게임은 무시)이 구조적으로 보장된다.
+        if (!_inviteSubscribed && !NetworkManagerSetup.UseLocalNetworkPath && SteamLobbyManager.Instance != null)
+        {
+            SteamLobbyManager.Instance.OnInviteAccepted += OnSteamInviteAccepted;
+            _inviteSubscribed = true;
+        }
+
         if (_lnmSubscribed || LobbyNetworkManager.Instance == null) return;
 
         LobbyNetworkManager.Instance.OnSlotsChanged        += RefreshAllSlots;
@@ -170,6 +181,50 @@ public class LobbyMenuController : MonoBehaviour
             lobbyCheerEngine.OnKeywordDetected -= OnLobbyCheerDetected;
             _cheerSubscribed = false;
         }
+
+        if (_inviteSubscribed && SteamLobbyManager.Instance != null)
+        {
+            SteamLobbyManager.Instance.OnInviteAccepted -= OnSteamInviteAccepted;
+            _inviteSubscribed = false;
+        }
+    }
+
+    // ── Steam 초대 (로비에서 수락) ────────────────────────────────
+
+    /// <summary>
+    /// 로비에 있는 동안 Steam 초대를 수락한 경우 — 현재 방을 정리하고 초대받은 방으로 이동한다.
+    /// 초대 소비자가 타이틀 씬(TitleMenuController)에만 있어서 로비에서는 초대가 조용히 소멸했던
+    /// 버그의 대응 경로(SteamworksIntegrationDesign.md 트랙6).
+    /// Host가 수락하면 이 방은 종료된다 — 기존 §12 정책 그대로이며 별도 확인 절차는 두지 않는다.
+    /// </summary>
+    void OnSteamInviteAccepted(SteamId lobbyId)
+    {
+        if (_invitePending) return;
+        _invitePending = true;
+        StartCoroutine(MoveToInvitedLobby(lobbyId));
+    }
+
+    IEnumerator MoveToInvitedLobby(SteamId lobbyId)
+    {
+        Debug.Log($"[LobbyMenuController] 로비에서 초대 수락 — 현재 방을 종료하고 lobbyId={lobbyId}로 이동합니다.");
+
+        if (LobbyNetworkManager.Instance != null && LobbyNetworkManager.Instance.IsHost)
+            LobbyNetworkManager.Instance.NotifyHostQuit();
+
+        // 위 ClientRpc가 실제로 전송된 뒤에 Shutdown이 오도록 한 프레임 양보한다.
+        yield return null;
+
+        NetworkManagerSetup.Instance?.Shutdown();
+
+        if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId)) yield break;
+
+        Debug.LogError("[LobbyMenuController] 재실행 실패 — 초대 이동을 중단하고 타이틀로 복귀합니다.");
+        _invitePending = false;
+        TitleReturnFlow.Instance?.Request(new TitleReturnOptions
+        {
+            Reason = TitleReturnReason.LobbyQuit,
+            Scope  = TitleReturnScope.SessionOnly,
+        });
     }
 
     // ── Cheer / Heard 핸들러 ──────────────────────────────────────

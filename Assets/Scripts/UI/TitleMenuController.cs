@@ -167,26 +167,10 @@ public class TitleMenuController : MonoBehaviour
         Debug.Log($"[TitleMenuController] 이 프로세스에서 이미 Steam Client로 접속한 적 있음 — " +
                   $"트랜스포트 중복 메시지 버그 회피를 위해 프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
 
-        try
-        {
-            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-            var startInfo = new System.Diagnostics.ProcessStartInfo(exePath, $"+connect_lobby {lobbyId.Value}")
-            {
-                UseShellExecute = true,
-            };
-            System.Diagnostics.Process.Start(startInfo);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"[TitleMenuController] 재시작 실패 — {e}. 인프로세스 접속으로 폴백합니다(재현될 수 있음).");
-            return false;
-        }
+        if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId)) return true;
 
-        Application.Quit();
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#endif
-        return true;
+        Debug.LogWarning("[TitleMenuController] 재시작 실패 — 인프로세스 접속으로 폴백합니다(재현될 수 있음).");
+        return false;
     }
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
