@@ -45,12 +45,17 @@ public class PlayerPunch : NetworkBehaviour
     [SerializeField] float knockbackForceMax = 10f;
 
     Player _player;
+    Animator _anim;
     float _nextPunchTime;
     bool _swingActive;
     bool _hitThisSwing;
     Coroutine _swingRoutine;
 
-    void Awake() => _player = GetComponent<Player>();
+    void Awake()
+    {
+        _player = GetComponent<Player>();
+        _anim = GetComponentInChildren<Animator>();
+    }
 
     /// <summary>PlayerInput SendMessages — InputSystem_Actions의 Attack 액션과 매핑.</summary>
     public void OnAttack(InputValue value)
@@ -58,6 +63,9 @@ public class PlayerPunch : NetworkBehaviour
         if (!value.isPressed) return;
         if (!IsOwner || _player == null || _player.IsDead) return;
         SFXManager.Instance?.Play(SFXId.Player_Punch);
+        // Owner 로컬에서 직접 트리거 — NetworkAnimator(Owner Authority)가 다른 클라이언트에 자동 동기화
+        // (Player.cs의 doHit/doDie와 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)
+        _anim?.SetTrigger("doPunch");
         PunchServerRpc();
     }
 

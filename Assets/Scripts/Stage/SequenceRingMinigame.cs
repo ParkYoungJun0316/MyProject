@@ -11,7 +11,9 @@ using UnityEngine.Serialization;
 public class SequenceFloatEvent : UnityEvent<float> { }
 
 /// <summary>
-/// 5×5 링 16칸 순서 협동 미니게임 (1인: 키 1~4 / Space 시뮬).
+/// 5×5 링 16칸 순서 협동 미니게임. 입력은 Space 키 하나뿐 — 누른 사람의 "실제 배정색"을
+/// PlayerSpawnCoordinator에서 조회해 그대로 판정에 쓴다. 즉 자기 색 스텝일 때만 Space가 통과하고,
+/// 다른 색 플레이어가 눌러도 오입력(패널티)으로 처리된다(다인 네트워크 전제).
 ///
 /// [축 SSOT: NetworkDesign.md §11B — 챌린지 축(C 패턴) + §11B.1(Client→Host 입력 제출)]
 /// Trigger(StartMinigame, Host만) → RoundStart(Host가 시드 NV 배포) → Generate(전 머신 각자 동일
@@ -44,13 +46,6 @@ public class SequenceRingMinigame : MonoBehaviour
     {
         public StepKind kind;
         public PlayerColorType color;
-    }
-
-    [Serializable]
-    public class SimPlayerBinding
-    {
-        public PlayerColorType colorType = PlayerColorType.Blue;
-        public Key submitKey = Key.Digit1;
     }
 
     [Serializable]
@@ -101,12 +96,6 @@ public class SequenceRingMinigame : MonoBehaviour
     [SerializeField] Color dangerDisplayColor = Color.black;
 
     [SerializeField] ColorDisplayEntry[] uniqueColorDisplays = new ColorDisplayEntry[0];
-
-    [Header("1인 테스트 — 플레이어 시뮬")]
-    [SerializeField] SimPlayerBinding[] simPlayers = new SimPlayerBinding[0];
-
-    [Tooltip("Space = Common/Danger any-key, Normal 스텝에서는 오입력(패널티)")]
-    [SerializeField] bool spaceActsAsAnyKey = true;
 
     [Header("시작")]
     [SerializeField] bool startOnAwake = false;
@@ -226,7 +215,7 @@ public class SequenceRingMinigame : MonoBehaviour
         }
 
         // 로컬 키 입력 감지는 전 머신 공통 — Host는 즉시 판정, Client는 제출만(§11B.1)
-        PollSimInput();
+        PollSpaceInput();
     }
 
     // ── 공개 API ─────────────────────────────────────────────────
@@ -404,27 +393,39 @@ public class SequenceRingMinigame : MonoBehaviour
         }
     }
 
-    // ── 입력 (1인 시뮬 + 네트워크 제출, §11B.1) ────────────────────
+    // ── 입력 (Space 단일 키, 자기 색 판정 + 네트워크 제출, §11B.1) ──
 
-    void PollSimInput()
+    /// <summary>
+    /// Space 하나로 통일. 현재 스텝이 Common/Danger면 색 구분 없는 any-key로 제출하고,
+    /// Normal(색) 스텝이면 PlayerSpawnCoordinator에서 조회한 "내 실제 배정색"으로 제출한다.
+    /// 누른 사람의 색이 아니면 TrySubmit()의 기존 색 비교에서 자동으로 오입력(패널티) 처리된다 —
+    /// 어느 플레이어든 자기 색 스텝에서만 통과할 수 있다(4인 네트워크 전제).
+    /// </summary>
+    void PollSpaceInput()
     {
         if (Keyboard.current == null) return;
+        if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
+        if (_currentStepIndex < 0 || _currentStepIndex >= _steps.Length) return;
 
-        if (spaceActsAsAnyKey && Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (_steps[_currentStepIndex].kind != StepKind.Normal)
         {
             SubmitAnyKeyInput();
             return;
         }
 
-        if (simPlayers == null) return;
+        if (!TryGetLocalPlayerColor(out PlayerColorType myColor)) return;
+        SubmitColorInput(myColor);
+    }
 
-        for (int i = 0; i < simPlayers.Length; i++)
-        {
-            Key key = simPlayers[i].submitKey;
-            if (!WasKeyPressed(key)) continue;
+    /// <summary>clientId→색 SSOT(PlayerSpawnCoordinator)에서 이 머신의 실제 배정색을 조회.</summary>
+    static bool TryGetLocalPlayerColor(out PlayerColorType color)
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening)
+            return PlayerSpawnCoordinator.TryGetColor(nm.LocalClientId, out color);
 
-            SubmitColorInput(simPlayers[i].colorType);
-        }
+        color = default;
+        return false;
     }
 
     /// <summary>Host는 TrySubmit()으로 즉시 판정, Client는 SubmitStepServerRpc로 요청만 (§11B.1).</summary>
@@ -443,13 +444,6 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState?.SubmitAnyKeyStepServerRpc();
         else
             TrySubmitAnyKey();
-    }
-
-    static bool WasKeyPressed(Key key)
-    {
-        if (Keyboard.current == null) return false;
-        var control = Keyboard.current[key];
-        return control != null && control.wasPressedThisFrame;
     }
 
     // ── 타이머·Danger ────────────────────────────────────────────
@@ -615,11 +609,10 @@ public class SequenceRingMinigame : MonoBehaviour
     }
 
     /// <summary>
-    /// [버그 수정 2026-08-06] 이번 판 실제 활성 색만 반환 — 이전엔 simPlayers(1인 로컬 테스트용
-    /// 키 매핑)/기본 4색만 봐서 실제 접속 인원과 무관하게 항상 4색이 나왔다(1인은 존재하지도 않는
-    /// 3색이 섞여 못 깨고, 3인은 미접속 1색이 섞여 그 스텝을 아무도 못 눌렀음).
-    /// ColorTileChallenge/GridColorChallenge 등 다른 챌린지와 동일한 SSOT 체인으로 통일
-    /// (architecture.mdc: "Prefer extending existing systems").
+    /// [버그 수정 2026-08-06] 이번 판 실제 활성 색만 반환 — 이전엔 기본 4색만 봐서 실제 접속
+    /// 인원과 무관하게 항상 4색이 나왔다(1인은 존재하지도 않는 3색이 섞여 못 깨고, 3인은 미접속
+    /// 1색이 섞여 그 스텝을 아무도 못 눌렀음). ColorTileChallenge/GridColorChallenge 등 다른
+    /// 챌린지와 동일한 SSOT 체인으로 통일(architecture.mdc: "Prefer extending existing systems").
     /// </summary>
     PlayerColorType[] GetUniqueColorPool()
     {
@@ -635,19 +628,6 @@ public class SequenceRingMinigame : MonoBehaviour
                 for (int i = 0; i < active.Count; i++) arr[i] = active[i];
                 return arr;
             }
-        }
-
-        // 둘 다 없을 때만 순수 로컬 테스트용 simPlayers로 fallback (씬 없이 컴포넌트만 단독 Play 등)
-        if (simPlayers != null && simPlayers.Length > 0)
-        {
-            var list = new List<PlayerColorType>();
-            for (int i = 0; i < simPlayers.Length; i++)
-            {
-                PlayerColorType t = simPlayers[i].colorType;
-                if (t == PlayerColorType.Common || t == PlayerColorType.Danger) continue;
-                if (!list.Contains(t)) list.Add(t);
-            }
-            if (list.Count > 0) return list.ToArray();
         }
 
         return new[]
@@ -831,14 +811,6 @@ public class SequenceRingMinigame : MonoBehaviour
 
     void Reset()
     {
-        simPlayers = new[]
-        {
-            new SimPlayerBinding { colorType = PlayerColorType.Blue,   submitKey = Key.Digit1 },
-            new SimPlayerBinding { colorType = PlayerColorType.Green,  submitKey = Key.Digit2 },
-            new SimPlayerBinding { colorType = PlayerColorType.Yellow, submitKey = Key.Digit3 },
-            new SimPlayerBinding { colorType = PlayerColorType.Purple, submitKey = Key.Digit4 },
-        };
-
         uniqueColorDisplays = new[]
         {
             new ColorDisplayEntry { colorType = PlayerColorType.Blue,   displayColor = Color.blue },

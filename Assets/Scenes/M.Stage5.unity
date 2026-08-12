@@ -417,7 +417,7 @@ MonoBehaviour:
   autoStart: 0
   autoStartDelay: 0
   roundDuration: 4
-  totalRounds: 2
+  totalRounds: 7
   cooldownBetweenRounds: 7
   requiredAliveCount: 0
   individualDamageOnFail: 1
@@ -3105,7 +3105,7 @@ MonoBehaviour:
   autoStart: 0
   autoStartDelay: 0
   roundDuration: 4
-  totalRounds: 2
+  totalRounds: 10
   cooldownBetweenRounds: 8
   safeTilePhases:
   - afterRound: 0
@@ -3519,6 +3519,10 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 1630310084}
   pullParticle: {fileID: 456466537}
+  windSpatialBlend: 1
+  windMinDistance: 1
+  windMaxDistance: 0
+  windRolloffMode: 0
 --- !u!65 &1666308660
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3786,6 +3790,10 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 1630310084}
   pullParticle: {fileID: 456466537}
+  windSpatialBlend: 1
+  windMinDistance: 1
+  windMaxDistance: 0
+  windRolloffMode: 0
 --- !u!65 &1795203687
 BoxCollider:
   m_ObjectHideFlags: 0
