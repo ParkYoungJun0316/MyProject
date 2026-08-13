@@ -52,6 +52,13 @@ public class SceneFlowManager : MonoBehaviour
     public int  CurrentSceneIndex => _currentSceneIndex;
     public bool IsTransitioning   => _isTransitioning;
 
+    /// <summary>sceneSequence 총 개수. 스테이지 선택 UI 등에서 순회용.</summary>
+    public int SceneCount => sceneSequence?.Length ?? 0;
+
+    /// <summary>sceneSequence[index]의 씬 이름. 범위 밖이면 null.</summary>
+    public string GetSceneName(int index) =>
+        (sceneSequence != null && index >= 0 && index < sceneSequence.Length) ? sceneSequence[index] : null;
+
     /// <summary>sceneSequence 범위 내 index의 클리어 여부.</summary>
     public bool IsCleared(int index)
     {

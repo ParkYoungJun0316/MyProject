@@ -22,6 +22,8 @@ using UnityEngine.UI;
 /// - resolutionDropdown  : TMP_Dropdown — Screen.resolutions 기반 자동 채움
 /// - displayModeExclusiveLabel / WindowedLabel / BorderlessLabel : LocalizedString — 화면모드 3항목
 ///   라벨의 String Table 엔트리 연결(OXQuizManager와 동일 패턴). 미연결 시 한국어 기본값 폴백.
+/// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
+///   (Inspector에서 Slider의 minValue/maxValue를 10~24로 설정).
 ///
 /// 패널이 열릴 때(OnEnable)마다 현재 GameSettingsManager / Screen / LocalizationSettings 값을
 /// 읽어 UI에 반영함.
@@ -46,6 +48,11 @@ public class OptionsMenuController : MonoBehaviour
     [SerializeField] private Toggle micMuteToggle;
     [Tooltip("Dissonance.GetMicrophoneDevices() 기반 자동 채움. 첫 항목은 '시스템 기본'.")]
     [SerializeField] private TMP_Dropdown micDeviceDropdown;
+
+    [Header("채팅")]
+    [Tooltip("인게임 채팅 글자 크기. Slider의 minValue/maxValue를 " +
+             "GameSettingsManager.MinChatFontSize~MaxChatFontSize(10~24)로 맞춰서 배치할 것.")]
+    [SerializeField] private Slider chatFontSizeSlider;
 
     [Header("화면모드 라벨 (Localization)")]
     [Tooltip("String Table 엔트리 연결용 — 문자열 직접 입력 아님(OXQuizManager와 동일 패턴). " +
@@ -94,6 +101,7 @@ public class OptionsMenuController : MonoBehaviour
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
         if (micMuteToggle       != null) micMuteToggle.onValueChanged.AddListener(OnMicMuteChanged);
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.AddListener(OnMicDeviceChanged);
+        if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.AddListener(OnChatFontSizeChanged);
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
     }
 
@@ -107,6 +115,7 @@ public class OptionsMenuController : MonoBehaviour
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.RemoveListener(OnResolutionChanged);
         if (micMuteToggle       != null) micMuteToggle.onValueChanged.RemoveListener(OnMicMuteChanged);
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.RemoveListener(OnMicDeviceChanged);
+        if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.RemoveListener(OnChatFontSizeChanged);
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
     }
 
@@ -125,6 +134,7 @@ public class OptionsMenuController : MonoBehaviour
         RefreshDisplayModeDropdown();
         RefreshResolutionDropdown();
         RefreshMicRow();
+        RefreshChatFontSizeSlider();
     });
 
     /// <summary>
@@ -199,6 +209,17 @@ public class OptionsMenuController : MonoBehaviour
             resolutionDropdown.interactable = Screen.fullScreenMode != FullScreenMode.FullScreenWindow;
     }
 
+    /// <summary>
+    /// 순수 읽기 — 목록/선택값만 UI에 반영하고 실제 화면 상태(Screen.SetResolution 등)는
+    /// 절대 건드리지 않음(Refresh 함수가 부작용을 가지면 패널을 여는 것만으로 화면이
+    /// 바뀌는 사고가 남 — 과거 실측 버그 이력).
+    ///
+    /// 해상도는 화면모드(전체화면/창모드/테두리없는 창모드)와 완전히 독립적으로 동작함 —
+    /// 창모드에서 네이티브 해상도를 골라도 목록에서 빼거나 다른 값으로 강제로 바꾸지 않음.
+    /// 창모드+네이티브 조합은 타이틀바/테두리 자리가 없어 시각적으로 전체화면과 거의
+    /// 구분이 안 될 수 있는데, 이는 Windows 자체 특성이라 코드로 해결 불가 — 사용자가
+    /// 해상도를 낮추면 되므로 UI가 강제로 값을 바꾸는 쪽보다 이 편이 낫다고 결정함.
+    /// </summary>
     void RefreshResolutionDropdown()
     {
         if (resolutionDropdown == null) return;
@@ -209,18 +230,12 @@ public class OptionsMenuController : MonoBehaviour
             ? GameSettingsManager.Instance.NativeResolution
             : Screen.currentResolution;
 
-        // 창모드(타이틀바+테두리가 있는 창)는 클라이언트 영역이 네이티브와 완전히 같으면
-        // chrome이 들어갈 자리가 없어 Windows가 창을 화면에 억지로 맞추면서 전체화면처럼
-        // 보이는 문제가 있음 — 창모드일 땐 네이티브와 정확히 같은 해상도를 목록에서 제외.
-        bool isWindowed = Screen.fullScreenMode == FullScreenMode.Windowed;
-
         var seen = new HashSet<(int w, int h)>();
         var merged = new List<Resolution>();
 
         void TryAdd(int w, int h)
         {
             if (w > native.width || h > native.height) return;
-            if (isWindowed && w == native.width && h == native.height) return;
             if (!seen.Add((w, h))) return;
             merged.Add(new Resolution { width = w, height = h });
         }
@@ -234,14 +249,6 @@ public class OptionsMenuController : MonoBehaviour
         resolutionDropdown.AddOptions(_resolutions.Select(r => $"{r.width} x {r.height}").ToList());
 
         int index = _resolutions.FindIndex(r => r.width == Screen.width && r.height == Screen.height);
-        if (index < 0 && isWindowed && _resolutions.Count > 0)
-        {
-            // 창모드인데 현재 적용된 해상도(네이티브 등)가 필터로 제외된 경우(과거 저장값 등) —
-            // 목록 최상단 해상도로 자동 보정해서 깨진 창모드 상태가 남아있지 않게 함.
-            Resolution corrected = _resolutions[0];
-            GameSettingsManager.Instance?.ApplyDisplay(corrected.width, corrected.height, Screen.fullScreenMode);
-            index = 0;
-        }
         resolutionDropdown.value = Mathf.Max(0, index);
         resolutionDropdown.RefreshShownValue();
     }
@@ -268,6 +275,17 @@ public class OptionsMenuController : MonoBehaviour
         int index = string.IsNullOrEmpty(current) ? 0 : _micDevices.IndexOf(current) + 1;
         micDeviceDropdown.value = Mathf.Max(0, index);
         micDeviceDropdown.RefreshShownValue();
+    }
+
+    void RefreshChatFontSizeSlider()
+    {
+        if (chatFontSizeSlider == null) return;
+
+        chatFontSizeSlider.minValue = GameSettingsManager.MinChatFontSize;
+        chatFontSizeSlider.maxValue = GameSettingsManager.MaxChatFontSize;
+
+        GameSettingsManager settings = GameSettingsManager.Instance;
+        if (settings != null) chatFontSizeSlider.value = settings.ChatFontSize;
     }
 
     // ── 콜백 ──────────────────────────────────────────────────────
@@ -297,6 +315,11 @@ public class OptionsMenuController : MonoBehaviour
         GameSettingsManager.Instance?.SetLocale(_locales[index]);
     }
 
+    /// <summary>
+    /// 화면모드만 바꾸고 해상도는 그대로 유지(모드-해상도 완전 독립 원칙).
+    /// 창모드+네이티브 조합이 시각적으로 전체화면과 구분이 안 되는 것은 Windows 특성이라
+    /// 여기서 임의로 다른 해상도로 바꿔치기하지 않음 — 필요하면 사용자가 직접 해상도를 낮춤.
+    /// </summary>
     void OnDisplayModeChanged(int index)
     {
         if (_refreshing) return;
@@ -308,23 +331,6 @@ public class OptionsMenuController : MonoBehaviour
 
         int width  = hasResSelection ? _resolutions[resolutionDropdown.value].width  : Screen.width;
         int height = hasResSelection ? _resolutions[resolutionDropdown.value].height : Screen.height;
-
-        // 창모드로 바꾸는데 현재 선택이 네이티브(타이틀바 자리 없음)면 한 단계 낮은 해상도로 보정.
-        if (mode == FullScreenMode.Windowed)
-        {
-            Resolution native = GameSettingsManager.Instance != null
-                ? GameSettingsManager.Instance.NativeResolution
-                : Screen.currentResolution;
-            if (width == native.width && height == native.height)
-            {
-                Resolution? fallback = _resolutions
-                    .Where(r => r.width < native.width || r.height < native.height)
-                    .OrderByDescending(r => r.width * r.height)
-                    .Cast<Resolution?>()
-                    .FirstOrDefault();
-                if (fallback.HasValue) { width = fallback.Value.width; height = fallback.Value.height; }
-            }
-        }
 
         GameSettingsManager.Instance?.ApplyDisplay(width, height, mode);
 
@@ -355,6 +361,12 @@ public class OptionsMenuController : MonoBehaviour
         // index 0 = "시스템 기본" → 빈 문자열
         string device = index <= 0 || index - 1 >= _micDevices.Count ? "" : _micDevices[index - 1];
         GameSettingsManager.Instance?.SetMicDevice(device);
+    }
+
+    void OnChatFontSizeChanged(float value)
+    {
+        if (_refreshing) return;
+        GameSettingsManager.Instance?.SetChatFontSize(value);
     }
 
     /// <summary>"기본값" 버튼(Btn_Reset)의 onClick에 연결. 기본값 적용 후 UI를 새로 반영.</summary>

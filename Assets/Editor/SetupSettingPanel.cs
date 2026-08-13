@@ -102,6 +102,8 @@ public static class SetupSettingPanel
         var resolutionDd = CreateDropdownRow(cGeneral.transform, "Row_Resolution", "해상도", fontKr, dropdownBg, dropdownArrow);
         var displayModeDd = CreateDropdownRow(cGeneral.transform, "Row_DisplayMode", "화면 모드", fontKr, dropdownBg, dropdownArrow);
         var languageDd = CreateDropdownRow(cGeneral.transform, "Row_Language", "언어", fontKr, dropdownBg, dropdownArrow);
+        CreateSliderRow(cGeneral.transform, "Row_ChatFontSize", "채팅 글자 크기", fontKr, out var chatFontSlider, out var chatFontValue);
+        ConvertSliderRowToInteger(chatFontSlider, chatFontValue, GameSettingsManager.MinChatFontSize, GameSettingsManager.MaxChatFontSize, 14f);
 
         // --- Sound (wired volumes + mic) ---
         // 출력 장치(헤드셋) 선택은 Unity 표준 API로 불가능(OS 기본 출력 장치로만 재생, 네이티브 플러그인
@@ -155,6 +157,7 @@ public static class SetupSettingPanel
         optSo.FindProperty("resolutionDropdown").objectReferenceValue = resolutionDd;
         optSo.FindProperty("micMuteToggle").objectReferenceValue = micMuteToggle;
         optSo.FindProperty("micDeviceDropdown").objectReferenceValue = micDeviceDd;
+        optSo.FindProperty("chatFontSizeSlider").objectReferenceValue = chatFontSlider;
         optSo.ApplyModifiedPropertiesWithoutUndo();
 
         // Wire TitleMenuController
@@ -417,6 +420,24 @@ public static class SetupSettingPanel
         var pctSo = new SerializedObject(pct);
         pctSo.FindProperty("label").objectReferenceValue = valueText;
         pctSo.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    static void ConvertSliderRowToInteger(Slider slider, TextMeshProUGUI valueText, float min, float max, float value)
+    {
+        var pct = slider.GetComponent<SliderValuePercentLabel>();
+        if (pct != null) Object.DestroyImmediate(pct);
+
+        slider.minValue = min;
+        slider.maxValue = max;
+        slider.wholeNumbers = true;
+        slider.value = value;
+        if (valueText != null) valueText.text = Mathf.RoundToInt(value).ToString();
+
+        var num = slider.GetComponent<SliderValueIntegerLabel>();
+        if (num == null) num = slider.gameObject.AddComponent<SliderValueIntegerLabel>();
+        var numSo = new SerializedObject(num);
+        numSo.FindProperty("label").objectReferenceValue = valueText;
+        numSo.ApplyModifiedPropertiesWithoutUndo();
     }
 
     static TMP_Dropdown CreateDropdownRow(Transform parent, string name, string label, TMP_FontAsset font,

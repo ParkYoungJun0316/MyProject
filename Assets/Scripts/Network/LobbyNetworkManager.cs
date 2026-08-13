@@ -16,6 +16,7 @@ using UnityEngine;
 /// - 접속 순으로 슬롯 할당 (Host = Slot0)
 /// - Ready·색 변경 ServerRpc
 /// - Host: Kick / StartGame (SceneFlowManager.LoadNextScene 경유)
+///   / StartGameAtStage (테스트용 스테이지 선택, SceneFlowManager.LoadSceneByIndex 경유)
 /// - GameSession.SetActiveColors() 적용 후 SceneFlowManager.sceneSequence의
 ///   "1.Lobby" 다음 씬으로 이동 — 어떤 씬이 첫 스테이지인지는 이 클래스가 정하지 않음
 ///
@@ -590,7 +591,21 @@ public class LobbyNetworkManager : NetworkBehaviour
     /// 여기서 씬 이름을 직접 정하지 않는다 (단일 SSOT: SceneFlowManager).
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void StartGameServerRpc(RpcParams rpcParams = default)
+    public void StartGameServerRpc(RpcParams rpcParams = default) => StartGameInternal(-1);
+
+    /// <summary>
+    /// 게임 시작 — 테스트용 스테이지 선택(디버그 QA 목적).
+    /// StartGameServerRpc와 조건·초기화 로직은 동일하되, 마지막 씬 전환만
+    /// SceneFlowManager.sceneSequence의 지정 인덱스(overrideSceneIndex)로 직접 이동한다.
+    /// 이후 진행(클리어 → 다음 씬)은 그대로 SceneFlowManager.LoadNextScene()이 이어받아
+    /// 정상 순서로 진행된다 — 별도 "로비 Start" 문(NetworkDesign.md §6A)을 새로 만드는 게 아니라
+    /// 같은 문의 시작 인덱스만 바꾸는 것.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void StartGameAtStageServerRpc(int sceneIndex, RpcParams rpcParams = default) => StartGameInternal(sceneIndex);
+
+    /// <summary>overrideSceneIndex &lt; 0 이면 sceneSequence 상 다음 씬(정상 진행), 아니면 해당 인덱스로 직접 이동.</summary>
+    void StartGameInternal(int overrideSceneIndex)
     {
         if (!IsHost) return;
         if (!CanStart())
@@ -698,14 +713,21 @@ public class LobbyNetworkManager : NetworkBehaviour
         // Client에 배포
         SyncVoiceIdsClientRpc(sessionVoiceIds[0], sessionVoiceIds[1], sessionVoiceIds[2], sessionVoiceIds[3]);
 
-        // 씬 전환은 SceneFlowManager 단일 SSOT로 위임 — sceneSequence 상 "1.Lobby" 다음 항목이 로드된다.
+        // 씬 전환은 SceneFlowManager 단일 SSOT로 위임.
+        // overrideSceneIndex < 0: sceneSequence 상 "1.Lobby" 다음 항목(정상 진행).
+        // overrideSceneIndex >= 0: 지정 인덱스로 직접 이동(테스트용 스테이지 선택) —
+        // 이후 클리어 시 LoadNextScene()이 이 인덱스+1부터 정상 순서로 이어간다.
         if (SceneFlowManager.Instance == null)
         {
             Debug.LogError("[LobbyNetworkManager] SceneFlowManager.Instance null — " +
                            "0.Title에 SceneFlowManager가 없거나 DontDestroyOnLoad 실패. 게임 시작 중단.");
             return;
         }
-        SceneFlowManager.Instance.LoadNextScene();
+
+        if (overrideSceneIndex >= 0)
+            SceneFlowManager.Instance.LoadSceneByIndex(overrideSceneIndex);
+        else
+            SceneFlowManager.Instance.LoadNextScene();
     }
 
     // ── 공개 읽기 API ─────────────────────────────────────────────

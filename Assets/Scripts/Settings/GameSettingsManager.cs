@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Dissonance;
 using UnityEngine;
@@ -5,7 +6,7 @@ using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 
 /// <summary>
-/// 게임 설정(볼륨 · 화면 · 언어) SSOT. 싱글턴, DontDestroyOnLoad.
+/// 게임 설정(볼륨 · 화면 · 언어 · 채팅) SSOT. 싱글턴, DontDestroyOnLoad.
 ///
 /// [배치 방법]
 /// 0.Title 씬의 NetworkManager GameObject(SteamManager / GameLocalizationBootstrap과 같은 자리)에 부착.
@@ -35,12 +36,18 @@ public class GameSettingsManager : MonoBehaviour
     const string KeyResHeight    = "Settings.ResHeight";
     const string KeyMicMuted     = "Settings.MicMuted";
     const string KeyMicDevice    = "Settings.MicDevice";
+    const string KeyChatFontSize = "Settings.ChatFontSize";
+
+    /// <summary>채팅 글자 크기 슬라이더 min/max — OptionsMenuController Slider Inspector 값과 맞춰야 함.</summary>
+    public const float MinChatFontSize = 10f;
+    public const float MaxChatFontSize = 24f;
 
     [Header("기본값(Reset) 값")]
     [Tooltip("옵션 메뉴 '기본값' 버튼을 누르면 이 값들로 되돌아감. 최초 실행 기본값이기도 함.")]
     [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
+    [Range(MinChatFontSize, MaxChatFontSize)] [SerializeField] float defaultChatFontSize = 14f;
 
     public float  MasterVolume  { get; private set; } = 1f;
     public float  BgmVolume     { get; private set; } = 1f;
@@ -48,6 +55,21 @@ public class GameSettingsManager : MonoBehaviour
     public bool   MicMuted      { get; private set; }
     /// <summary>빈 문자열 = 시스템 기본 마이크(Dissonance/Microphone API의 null과 동일 취급).</summary>
     public string MicDeviceName { get; private set; } = "";
+    public float  ChatFontSize  { get; private set; } = 14f;
+
+    /// <summary>
+    /// 채팅 글자 크기가 바뀔 때 발생(옵션 슬라이더 조작 + 기본값 리셋 공통 경로).
+    /// InGameChatUI가 구독해서 이미 떠 있는 채팅 메시지들에도 즉시 반영함.
+    ///
+    /// [§1 pull 원칙의 유일한 예외 — 왜 push인가]
+    /// 볼륨(§1)이 push를 금지한 이유는 "초기값 적용 시점"이 Awake 순서 비결정성에 걸려있기
+    /// 때문(다른 오브젝트의 Awake가 아직 안 끝났을 수 있음). 이 이벤트는 그 케이스가 아님 —
+    /// 양쪽 다 초기화가 끝난 뒤 사용자가 슬라이더를 조작하는 "런타임 중" 에만 발동하므로 그
+    /// race가 없음. 그리고 pull만으로는 이미 생성된 TMP 메시지 오브젝트의 글자 크기를 바꿀
+    /// 방법이 없어서(누가 "다시 읽어라"라고 알려줘야 함) push가 구조적으로 필요함 — 새 메시지는
+    /// InGameChatUI.CurrentFontSize로 여전히 pull(§1과 동일 패턴), 기존 메시지 갱신만 이 이벤트로 push.
+    /// </summary>
+    public event Action<float> ChatFontSizeChanged;
 
     /// <summary>
     /// 모니터의 진짜 네이티브(최대) 해상도. 저장된 해상도를 적용하기 전(ApplySavedDisplay 호출 전)
@@ -89,6 +111,7 @@ public class GameSettingsManager : MonoBehaviour
         SfxVolume     = PlayerPrefs.GetFloat(KeySfxVolume, defaultSfxVolume);
         MicMuted      = PlayerPrefs.GetInt(KeyMicMuted, 0) == 1;
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
+        ChatFontSize  = PlayerPrefs.GetFloat(KeyChatFontSize, defaultChatFontSize);
 
         NativeResolution = QueryNativeResolution();
         ApplySavedDisplay();
@@ -159,6 +182,17 @@ public class GameSettingsManager : MonoBehaviour
         PlayerPrefs.SetFloat(KeySfxVolume, SfxVolume);
     }
 
+    // ── 채팅 ──────────────────────────────────────────────────────
+
+    /// <summary>옵션 메뉴 채팅 글자 크기 슬라이더에서 호출. 즉시 적용 + 저장.
+    /// InGameChatUI가 ChatFontSizeChanged를 구독해 이미 떠 있는 메시지에도 즉시 반영함.</summary>
+    public void SetChatFontSize(float value)
+    {
+        ChatFontSize = Mathf.Clamp(value, MinChatFontSize, MaxChatFontSize);
+        PlayerPrefs.SetFloat(KeyChatFontSize, ChatFontSize);
+        ChatFontSizeChanged?.Invoke(ChatFontSize);
+    }
+
     // ── 화면 ──────────────────────────────────────────────────────
 
     void ApplySavedDisplay()
@@ -195,8 +229,8 @@ public class GameSettingsManager : MonoBehaviour
     // ── 초기화(Reset) ─────────────────────────────────────────────
 
     /// <summary>
-    /// 옵션 메뉴 "기본값" 버튼에서 호출. 볼륨은 Inspector 기본값, 화면은 현 모니터 네이티브
-    /// 해상도 + 전체화면(독점), 언어는 수동 선택 해제 후 Steam/systemLanguage 자동감지로 되돌림.
+    /// 옵션 메뉴 "기본값" 버튼에서 호출. 볼륨·채팅 글자 크기는 Inspector 기본값, 화면은 현 모니터
+    /// 네이티브 해상도 + 전체화면(독점), 언어는 수동 선택 해제 후 Steam/systemLanguage 자동감지로 되돌림.
     /// 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
     /// </summary>
     public void ResetToDefaults()
@@ -204,6 +238,7 @@ public class GameSettingsManager : MonoBehaviour
         SetMasterVolume(defaultMasterVolume);
         SetBgmVolume(defaultBgmVolume);
         SetSfxVolume(defaultSfxVolume);
+        SetChatFontSize(defaultChatFontSize);
 
         ApplyDisplay(NativeResolution.width, NativeResolution.height, FullScreenMode.ExclusiveFullScreen);
 

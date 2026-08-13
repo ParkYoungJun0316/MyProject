@@ -47,6 +47,7 @@ public class PlayerPunch : NetworkBehaviour
     Player _player;
     Animator _anim;
     float _nextPunchTime;
+    float _nextLocalPunchTime;
     bool _swingActive;
     bool _hitThisSwing;
     Coroutine _swingRoutine;
@@ -57,11 +58,19 @@ public class PlayerPunch : NetworkBehaviour
         _anim = GetComponentInChildren<Animator>();
     }
 
-    /// <summary>PlayerInput SendMessages — InputSystem_Actions의 Attack 액션과 매핑.</summary>
+    /// <summary>
+    /// PlayerInput SendMessages — InputSystem_Actions의 Attack 액션과 매핑.
+    /// 쿨다운 게이트를 Owner 로컬에서도 먼저 걸어 애니메이션/SFX가 서버 판정과 별개로
+    /// 연타마다 나가는 것을 막는다 (실제 넉백 판정 쿨다운은 PunchServerRpc가 별도로 검증).
+    /// </summary>
     public void OnAttack(InputValue value)
     {
         if (!value.isPressed) return;
         if (!IsOwner || _player == null || _player.IsDead) return;
+        if (Time.time < _nextLocalPunchTime) return;
+
+        _nextLocalPunchTime = Time.time + cooldown;
+
         SFXManager.Instance?.Play(SFXId.Player_Punch);
         // Owner 로컬에서 직접 트리거 — NetworkAnimator(Owner Authority)가 다른 클라이언트에 자동 동기화
         // (Player.cs의 doHit/doDie와 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)

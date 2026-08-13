@@ -37,6 +37,7 @@ public static class SetupSettingUILocalization
         { "Row_Resolution", "Settings.Resolution" },
         { "Row_DisplayMode", "Settings.DisplayMode" },
         { "Row_Language", "Settings.Language" },
+        { "Row_ChatFontSize", "Settings.ChatFontSize" },
         { "Row_Master", "Settings.MasterVolume" },
         { "Row_BGM", "Settings.BgmVolume" },
         { "Row_SFX", "Settings.SfxVolume" },
@@ -359,6 +360,9 @@ public static class SetupSettingUILocalization
         Add("Settings.Language",
             "Language", "언어", "言語", "语言", "語言",
             "Язык", "Sprache", "Langue", "Idioma", "Idioma", "Idioma", "Język");
+        Add("Settings.ChatFontSize",
+            "Chat Font Size", "채팅 글자 크기", "チャット文字サイズ", "聊天字号", "聊天字級",
+            "Размер шрифта чата", "Chat-Schriftgröße", "Taille du chat", "Tamaño del chat", "Tamaño del chat", "Tamanho do chat", "Rozmiar czatu");
 
         Add("Settings.MasterVolume",
             "Master Volume", "마스터 볼륨", "マスター音量", "主音量", "主音量",

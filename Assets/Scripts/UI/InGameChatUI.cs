@@ -59,6 +59,8 @@ public class InGameChatUI : NetworkBehaviour
 
     [Header("메시지 설정")]
     [SerializeField] int   maxMessages     = 50;
+    [Tooltip("GameSettingsManager가 아직 준비 안 됐을 때(비정상 상황)만 쓰이는 폴백값. " +
+             "실제 크기는 옵션 메뉴 '채팅 글자 크기' 슬라이더 → GameSettingsManager.ChatFontSize 기준.")]
     [SerializeField] float messageFontSize = 14f;
     [Tooltip("채팅 기록 글자 색상 (이름 색상은 아래 플레이어 색상 기준)")]
     [SerializeField] Color messageTextColor = Color.black;
@@ -92,6 +94,8 @@ public class InGameChatUI : NetworkBehaviour
     bool      _inputOpen;
     bool      _skipNextSubmit;
     Coroutine _autoHideRoutine;
+    Coroutine _subscribeFontSizeRoutine;
+    bool      _subscribedToFontSize;
 
     /// <summary>채팅 입력창이 열려 있는지 여부. Player.cs가 이동 차단에 사용.</summary>
     public static bool IsChatOpen { get; private set; }
@@ -99,6 +103,39 @@ public class InGameChatUI : NetworkBehaviour
     readonly List<TMP_Text> _messages = new();
 
     // ── 초기화 ────────────────────────────────────────────────────
+
+    void OnEnable()
+    {
+        _subscribeFontSizeRoutine = StartCoroutine(SubscribeToFontSizeWhenReady());
+    }
+
+    void OnDisable()
+    {
+        if (_subscribeFontSizeRoutine != null)
+        {
+            StopCoroutine(_subscribeFontSizeRoutine);
+            _subscribeFontSizeRoutine = null;
+        }
+
+        if (_subscribedToFontSize && GameSettingsManager.Instance != null)
+            GameSettingsManager.Instance.ChatFontSizeChanged -= OnChatFontSizeChanged;
+        _subscribedToFontSize = false;
+    }
+
+    /// <summary>
+    /// GameSettingsManager는 0.Title에서 DontDestroyOnLoad로 먼저 생성되므로 정상 플로우에서는
+    /// OnEnable 시점에 이미 준비돼 있지만, 만약을 대비해 GameSettingsManager.Awake의
+    /// ApplySavedMicSettingsWhenReady와 동일한 폴링 패턴으로 구독을 보장함 —
+    /// 구독이 조용히 누락되면 이미 떠 있는 채팅 메시지가 옵션 변경에 영원히 반응하지 않게 됨.
+    /// </summary>
+    IEnumerator SubscribeToFontSizeWhenReady()
+    {
+        while (GameSettingsManager.Instance == null)
+            yield return null;
+
+        GameSettingsManager.Instance.ChatFontSizeChanged += OnChatFontSizeChanged;
+        _subscribedToFontSize = true;
+    }
 
     void Start()
     {
@@ -108,6 +145,17 @@ public class InGameChatUI : NetworkBehaviour
         // 이전 씬의 채팅 히스토리 복원
         if (s_history.Count > 0)
             StartCoroutine(RebuildHistoryRoutine());
+    }
+
+    /// <summary>현재 적용해야 할 채팅 글자 크기. GameSettingsManager 미준비 시에만 Inspector 폴백값 사용.</summary>
+    float CurrentFontSize =>
+        GameSettingsManager.Instance != null ? GameSettingsManager.Instance.ChatFontSize : messageFontSize;
+
+    /// <summary>옵션 메뉴에서 채팅 글자 크기를 바꾸면 이미 떠 있는 메시지들에도 즉시 반영.</summary>
+    void OnChatFontSizeChanged(float size)
+    {
+        foreach (TMP_Text msg in _messages)
+            if (msg != null) msg.fontSize = size;
     }
 
     IEnumerator RebuildHistoryRoutine()
@@ -315,7 +363,7 @@ public class InGameChatUI : NetworkBehaviour
 
         var tmp           = msgObj.AddComponent<TextMeshProUGUI>();
         tmp.text          = $"<color=#{hex}><b>{cheerName}</b></color>: {message}";
-        tmp.fontSize      = messageFontSize;
+        tmp.fontSize      = CurrentFontSize;
         tmp.color         = messageTextColor;
         tmp.raycastTarget = false;
 

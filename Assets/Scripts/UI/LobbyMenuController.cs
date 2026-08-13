@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Steamworks;
 using TMPro;
 using Unity.Netcode;
@@ -13,8 +14,8 @@ using UnityEngine.UI;
 /// 로비 씬의 Canvas 또는 빈 GameObject에 부착.
 ///
 /// [Inspector — 공통]
-/// - characterPortraits : [0]Blue [1]Purple [2]Green [3]Yellow 순 Sprite
-///                        RefreshAllSlots 에서 LobbySlotUI.Refresh() 로 전달됨
+/// - 캐릭터 표시는 3D 프리뷰(LobbyCharacterPreview, 슬롯당 1개)로 처리 — 색은 LobbySlotUI.Refresh()가
+///   state.ColorIndex를 그대로 넘겨 각 슬롯이 자기 프리뷰에 반영. 이 컨트롤러는 관여하지 않음.
 ///
 /// [Inspector — 온라인 전용]
 /// - onlineOnlyRoot     : 룸코드·슬롯1~3·Kick·SteamInvite 등 묶은 부모 GameObject
@@ -42,13 +43,14 @@ using UnityEngine.UI;
 /// (설정 패널 내부 닫기(X) 버튼은 OptionsMenuController.OnClickClose()에 직결 — 패널 자신을 SetActive(false).
 ///  OnClickCloseSettings()는 코드에서 강제로 닫아야 할 때 쓰는 보조 API.)
 /// Slot1~3 Kick    → 각 LobbySlotUI.OnClickKick()
+///
+/// [디버그: 스테이지 선택 (테스트 전용, Host만 노출)]
+/// stageSelectRoot 하위에 stageDropdown(TMP_Dropdown) + startAtStageButton(Btn) 배치.
+/// Btn_StartAtStage → OnClickStartAtStage() — 드롭다운에서 고른 M./T. 스테이지로 바로 시작.
+/// 정식 스테이지 선택 UX가 아니라 친구 테스트/QA용 — 필요 없으면 stageSelectRoot를 비워두면 비활성.
 /// </summary>
 public class LobbyMenuController : MonoBehaviour
 {
-    [Header("캐릭터 초상화")]
-    [Tooltip("드롭다운 인덱스 순: [0]Blue [1]Purple [2]Green [3]Yellow. RefreshAllSlots에서 SlotUI로 전달됨.")]
-    [SerializeField] private Sprite[] characterPortraits = new Sprite[4];
-
     [Header("설정 패널")]
     [Tooltip("Option 버튼 클릭 시 열릴 패널 (OptionsMenuController 부착). 비워두면 클릭 무시.")]
     [SerializeField] private GameObject settingsPanel;
@@ -79,6 +81,17 @@ public class LobbyMenuController : MonoBehaviour
              "예) TMP_Text: '같은 색을 선택한 플레이어가 있습니다. 다른 색을 선택해주세요.'")]
     [SerializeField] private GameObject duplicateColorWarning;
 
+    [Header("디버그: 스테이지 선택 (테스트 전용)")]
+    [Tooltip("Host에게만 표시할 스테이지 선택 UI 묶음 (드롭다운+버튼 부모). 비워두면 기능 비활성.\n" +
+             "친구 테스트 등 QA 목적 — 정식 스테이지 선택 UX가 아님. 릴리즈 전 startButtonRoot만 쓰려면 비워두면 됨.")]
+    [SerializeField] private GameObject stageSelectRoot;
+
+    [Tooltip("SceneFlowManager.sceneSequence 중 M./T. 접두사 씬만 채워지는 드롭다운.")]
+    [SerializeField] private TMP_Dropdown stageDropdown;
+
+    [Tooltip("드롭다운에서 고른 스테이지로 바로 시작하는 버튼 (CanStart() 조건은 Start와 동일하게 적용됨).")]
+    [SerializeField] private Button startAtStageButton;
+
     [Header("로비 Cheer Say Test (Vosk)")]
     [Tooltip("로비 씬에 배치한 CheerKeywordEngine. _lobbyTestMode=true로 설정할 것.\n" +
              "null이면 Vosk 피드백 비활성.")]
@@ -93,6 +106,9 @@ public class LobbyMenuController : MonoBehaviour
     bool        _inviteSubscribed;     // SteamLobbyManager.OnInviteAccepted 구독 여부
     bool        _invitePending;        // 초대 이동 처리 중 — 중복 수락 무시용
     LobbySlotUI _localSlotUI;          // 로컬 플레이어 슬롯 캐시 — CheerName 결과 전달용
+
+    // stageDropdown.value → SceneFlowManager.sceneSequence 인덱스 매핑 (M./T. 접두사만 필터링해 담음)
+    readonly List<int> _stageSceneIndices = new();
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -286,7 +302,35 @@ public class LobbyMenuController : MonoBehaviour
         if (onlineOnlyRoot  != null) onlineOnlyRoot.SetActive(true);
         if (readyRoot       != null) readyRoot.SetActive(LobbyContext.IsOnlineClient);
         if (startButtonRoot != null) startButtonRoot.SetActive(LobbyContext.IsOnlineHost);
+        if (stageSelectRoot != null) stageSelectRoot.SetActive(LobbyContext.IsOnlineHost);
         RefreshReadyVisual();
+        PopulateStageDropdown();
+    }
+
+    /// <summary>
+    /// SceneFlowManager.sceneSequence 중 "M." / "T." 접두사 씬(스테이지·보스)만 골라 드롭다운을 채운다.
+    /// 0.Title / 1.Lobby / End.Demo 등은 테스트 시작 대상이 아니라 제외.
+    /// </summary>
+    void PopulateStageDropdown()
+    {
+        if (stageDropdown == null) return;
+        _stageSceneIndices.Clear();
+        stageDropdown.ClearOptions();
+
+        if (SceneFlowManager.Instance == null) return;
+
+        var labels = new List<string>();
+        for (int i = 0; i < SceneFlowManager.Instance.SceneCount; i++)
+        {
+            string name = SceneFlowManager.Instance.GetSceneName(i);
+            if (string.IsNullOrEmpty(name)) continue;
+            if (!name.StartsWith("M.") && !name.StartsWith("T.")) continue;
+
+            _stageSceneIndices.Add(i);
+            labels.Add(name);
+        }
+
+        stageDropdown.AddOptions(labels);
     }
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
@@ -303,6 +347,31 @@ public class LobbyMenuController : MonoBehaviour
         }
 
         LobbyNetworkManager.Instance.StartGameServerRpc();
+    }
+
+    /// <summary>
+    /// 디버그 스테이지 선택 버튼. Host만 호출.
+    /// stageDropdown에서 고른 씬으로 바로 시작 — 조건(전원 Ready 등)은 OnClickStart와 동일하게
+    /// LobbyNetworkManager.CanStart()가 서버 측에서 검증한다. 테스트/QA 목적.
+    /// </summary>
+    public void OnClickStartAtStage()
+    {
+        if (!LobbyContext.IsOnlineHost) return;
+
+        if (LobbyNetworkManager.Instance == null)
+        {
+            Debug.LogWarning("[LobbyMenuController] LobbyNetworkManager를 찾을 수 없습니다.");
+            return;
+        }
+
+        if (stageDropdown == null || stageDropdown.value < 0 || stageDropdown.value >= _stageSceneIndices.Count)
+        {
+            Debug.LogWarning("[LobbyMenuController] stageDropdown 선택값이 유효하지 않습니다.");
+            return;
+        }
+
+        int sceneIndex = _stageSceneIndices[stageDropdown.value];
+        LobbyNetworkManager.Instance.StartGameAtStageServerRpc(sceneIndex);
     }
 
     /// <summary>
@@ -418,7 +487,7 @@ public class LobbyMenuController : MonoBehaviour
                 Debug.Log($"[LobbyMenuController][DIAG] Slot[{i}] clientId={s.ClientId} color={s.ColorIndex} " +
                           $"ready={s.IsReady} isLocalSlot={isLocalSlot} isHostSlot={isHostSlot}");
 
-                allSlotUIs[i].Refresh(s, GetPortrait(s.ColorIndex), canKick, isHostSlot, isLocalSlot);
+                allSlotUIs[i].Refresh(s, canKick, isHostSlot, isLocalSlot);
 
                 if (isLocalSlot)
                 {
@@ -439,6 +508,7 @@ public class LobbyMenuController : MonoBehaviour
         bool hasDuplicate = LobbyNetworkManager.Instance.HasDuplicateColors();
 
         if (startButton          != null) startButton.interactable   = canStart;
+        if (startAtStageButton   != null) startAtStageButton.interactable = canStart;
         if (waitingTextObject    != null) waitingTextObject.SetActive(!canStart);
         if (duplicateColorWarning != null) duplicateColorWarning.SetActive(hasDuplicate);
 
@@ -468,13 +538,6 @@ public class LobbyMenuController : MonoBehaviour
     {
         if (checkImage != null)
             checkImage.sprite = _isReady ? readySprite : notReadySprite;
-    }
-
-    Sprite GetPortrait(int colorIndex)
-    {
-        if (characterPortraits == null || characterPortraits.Length == 0) return null;
-        int i = Mathf.Clamp(colorIndex, 0, characterPortraits.Length - 1);
-        return characterPortraits[i];
     }
 
     // ── 네트워크 이벤트 핸들러 ────────────────────────────────────
