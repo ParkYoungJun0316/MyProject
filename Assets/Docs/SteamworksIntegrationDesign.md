@@ -913,3 +913,92 @@ M/T 분류: Cheer(음성 인식) 계열은 로비 + 전 스테이지 공통 서�
 **Files changed (이번 세션):** `Assets/Scripts/Cheer/VoskModelLoader.cs`(재작성), `Assets/Scripts/Cheer/CheerKeywordEngine.cs`(헤더 주석), `.gitignore`, `Assets/Docs/SteamworksIntegrationDesign.md`.
 
 **Files read (이번 세션):** `Assets/Scripts/Cheer/VoskModelLoader.cs`, `Assets/Scripts/Cheer/CheerKeywordEngine.cs`, `Assets/Scripts/Cheer/CheerLexiconBuilder.cs`, `Assets/ThirdParty/Vosk/Model.cs`, `Assets/ThirdParty/Vosk/VoskPINVOKE.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, 크래시 덤프 `Player.log`(스택·로드된 모듈 목록), 빌드 산출물 `Plugins/x86_64` + `StreamingAssets` 실측, `ProjectSettings/ProjectSettings.asset`(company/product name), `Assets/Docs/CheerAndTutorialDesign.md`(모델 배포 방식 grep).
+
+---
+
+## 트랙 6 — 9차 세션 (2026-08-13 밤): "공개 방 목록" 방향 논의 → 보류 + 접속 실패 진단 계측 추가 (코드 수정 없음, 다음 세션 로그 대기)
+
+> **이 절이 최신 상태.** 이번 세션은 **버그를 고치지 않았다** — 확정 진단에 필요한 로그가 아직 없어서 Bug Hunter 원칙상 추정 수정을 하지 않고, 대신 다음 재현에서 확정 진단이 가능하도록 진단 로그/워치독만 추가했다.
+
+### 재현 보고 (사용자 원본)
+
+4명과 실사용 테스트 진행 중(3-4인은 이제 불가, 본인 계정 + 부계정 B 2인으로 재테스트 예정):
+1. **온기동(타이틀 화면에 대기 중인 상태에서 Invite Overlay로 초대) — 여전히 실패.** 트랙 5 6차 세션·트랙 6 7차 세션에서 각각 다른 원인으로 "해결 확인"까지 했던 바로 그 증상이 재발.
+2. 친구들 사이에서 "Steam 친구만 초대할 수 있는 구조가 불편하다 — 방을 아예 목록으로 보여주고 아무나(친구 아니어도) 골라서 코드 입력 후 입장하게 해달라"는 요청 → **"공개 방 목록(Public Lobby List)" 신규 기능 아이디어**로 논의 시작.
+3. 논의 중 사용자가 결정적 정보 제공: **"코드를 직접 입력해서 들어가는 것도 초대랑 똑같이 로비로 안 들어가고 타이틀에 그대로 머문다."**
+
+### 핵심 발견 — "공개 방 목록"은 이 버그의 우회책이 될 수 없다
+
+코드 추적 결과, 아래 3개 진입 경로가 전부 **정확히 같은 함수**로 합류한다:
+
+```
+Invite Overlay 수락   → TitleMenuController.OnSteamInviteAccepted(lobbyId)
+코드 직접 입력        → TitleMenuController.ConfirmJoinSteam(code)
+(구상 중이던) 방 목록 클릭 → 결국 같은 lobbyId를 얻어 동일 지점으로 합류
+                     ↓ (셋 다 동일)
+              TitleMenuController.JoinGameSteamAsync(lobbyId)
+                     ↓
+              SteamLobbyManager.JoinLobbyAsync → NetworkManagerSetup.StartClientSteam
+                     ↓
+              NGO NetworkSceneManager가 "1.Lobby"로 클라이언트 씬 동기화
+```
+
+사용자가 확인해준 "코드 입력도 똑같이 실패"는, 실패 지점이 **초대 콜백 구독(트랙5/7에서 다뤘던 부분)이 아니라 `JoinGameSteamAsync` 이후 공유 구간**이라는 뜻이다. 방 목록 UI를 새로 만들어도 마지막엔 같은 `JoinGameSteamAsync`를 타므로, **겉모습만 다른 입구 3개를 만들어도 안쪽 복도가 막혀있으면 셋 다 똑같이 막힌다.** 이 근거로 방 목록 작업은 **보류**하고, 공유 구간의 확정 진단을 먼저 하기로 사용자와 합의함.
+
+**용의자로 지목된 지점(미확정, 다음 로그로 검증 필요):** `TitleMenuController.TryRestartForWarmReconnect()` — "이 프로세스에서 이미 한 번이라도 Client로 접속에 성공한 적 있으면(2번째 이상 시도), 트랜스포트 중복 메시지 버그를 피하려고 프로세스를 통째로 재시작(`Process.Start`+`Application.Quit`)"하는 트랙5 우회 로직. 이 재시작 자체가 실패/불안정할 수 있고, 초대·코드입력 가리지 않고 모든 2번째 이상 시도에 걸리는 공용 지점이라 유력한 후보다. **다만 이번 재현이 "완전 최초 시도"였는지 "2번째 이상 시도"였는지 구분이 안 된 채로 보고돼서, 이번 세션엔 이걸 특정할 수 없었다** — 아래 진단 계측이 바로 이 구분을 위한 것.
+
+### "공개 방 목록" 아이디어 자체는 기각이 아니라 보류 — 설계 초안(참고용, 미확정)
+
+친구가 아닌 사람과도 하고 싶다는 요구 자체는 타당하다고 판단함. `SteamMatchmaking.LobbyList.WithMaxResults(n).RequestAsync()`(Facepunch API 존재 확인됨, 웹 검색)로 기술적 실현 가능성도 확인함. 접속 실패가 확정 진단·수정된 **이후** 재개할 것 — 논의된 초안만 기록:
+
+- Lobby 타입 `Private` → `Public` 전환 필요(§3 재검토 대상 — "공개 매칭 요구사항 없음"으로 확정했던 결정을 뒤집는 것).
+- 호스트가 방 제목(커스텀 텍스트) 입력 → `lobby.SetData("roomName", title)`으로 목록에 노출.
+- 목록 화면: `[방 제목] [인원 X/4]` 행 나열, Steam 로비 목록은 실시간 push가 아니라 스냅샷이라 수동 새로고침 필요.
+- 입장 방식은 3안 중 미정 — (A) 목록 클릭 시 원클릭 입장 / (B) 클릭 시 코드가 입력창에 자동으로 채워지고 한 번 더 확인 버튼(기존 코드입력 파이프라인 재사용, 사용자 발언 "코드를 입력한 다음 입장"과 가장 가까움) / (C) 목록엔 제목만, 코드는 안 보여주고 방장이 별도 공유.
+- 비공개방 옵션 유지 여부, 꽉 찬 방/게임 시작된 방 표시 여부, 방 제목 자유입력 여부도 미정.
+
+### 이번 세션에 추가한 것 — 진단 로그 + 정체 감지 워치독 (동작 변경 없음, 로그만 추가)
+
+**`Assets/Scripts/UI/TitleMenuController.cs`:**
+- `JoinGameSteamAsync(SteamId lobbyId)` → `JoinGameSteamAsync(SteamId lobbyId, string source = "미상")`로 시그니처 확장. 호출부 3곳이 각각 `"온기동초대"`(`OnSteamInviteAccepted`) / `"코드입력"`(`ConfirmJoinSteam`) / `"냉기동"`(`TryAutoJoinFromLaunchArgs`) 태그를 넘기도록 수정 — **이제 로그만 보고도 어느 경로였는지 100% 구분 가능**(지금까지는 이게 안 돼서 "코드입력도 똑같다"는 걸 사용자 구두 확인에만 의존했음).
+- 각 단계(진입 / `TryRestartForWarmReconnect` 결과 / `JoinLobbyAsync` 호출 전후 / `StartClientSteam` 반환)에 `System.Diagnostics.Stopwatch` 경과시간을 실어 로그.
+- `TryRestartForWarmReconnect()` — 트리거될 때만 로그하던 것을 **진입 시 항상**(트리거 여부와 무관하게) `HasConnectedAsClientSteamThisProcess` 값과 함께 로그하도록 변경. **이 로그 한 줄이 위 "용의자" 가설을 바로 검증한다** — `true`면 이번이 그 프로세스의 2번째 이상 시도라는 뜻.
+- **`JoinWatchdog` 코루틴 신설** — 접속 시도(`JoinGameSteamAsync`) 시작 시 같이 기동, 10초 안에 "1.Lobby" 씬으로 전환되지 않으면 `[WATCHDOG]` 태그로 NGO/Steam 전체 상태(ActiveScene, IsListening, IsConnectedClient, LocalClientId, ConnectedClients.Count, SteamLobby.IsInLobby, HasConnectedAsClientSteamThisProcess)를 한 번에 덤프. 접속이 성공하면 "0.Title" 씬이 언로드되며 이 컴포넌트 자체가 파괴돼 코루틴이 조용히 멈춘다(정상 — 성공 시 별도 로그 없음, WATCHDOG 로그가 없으면 성공했다는 뜻).
+
+**`Assets/Scripts/Network/NetworkManagerSetup.cs`:**
+- **`NetworkManager.SceneManager.OnSceneEvent` 신규 구독** (`SubscribeSceneDiag`/`DiagOnSceneEvent`) — `StartHostSteam`/`StartClientSteam` 성공 직후 구독. Load/LoadComplete/Synchronize/SynchronizeComplete 등 NGO 씬 동기화 이벤트 전부를 `[DIAG][SceneEvent] Type=... SceneName=... ClientId=...`로 로그. **지금까지 "Steam Client 접속은 됐는데 그 다음 씬 전환이 어디서 막히는지"를 볼 방법이 전혀 없었던 구멍을 메우는 게 이번 계측의 핵심.** `NetworkSceneManager`는 세션마다 새로 생성되므로 매 `StartHostSteam`/`StartClientSteam` 호출 후 재구독(직전 구독 인스턴스를 기억해뒀다가 중복 방지).
+- `ApproveConnection`에 **승인 성공 로그**도 추가(기존엔 거부 시에만 로그 있었음) — `clientId`, 승인 전후 인원수 포함.
+
+**`Assets/Scripts/UI/LobbyMenuController.cs`:**
+- `Start()` 최상단에 `[LobbyMenuController][DIAG] Start() 진입 — 로비 씬 로드 완료` 로그 추가. **클라이언트가 실제로 로비 씬에 도달했는지 확인하는 최종 판정 지점**(이 로그가 있으면 성공, 없으면 그 앞 어딘가에서 막힌 것).
+
+### 다음 세션 액션 — 재현 가이드 (본인 + 부계정 B, 2인 전용)
+
+**반드시 아래 두 케이스를 구분해서 각각 재현하고, 어느 쪽인지 명시해서 로그와 함께 전달할 것:**
+
+1. **케이스 1(최초 시도)** — B가 게임을 새로 켜고 처음으로 접속 시도(초대든 코드든 상관없음). `HasConnectedAsClientSteamThisProcess=False`로 찍혀야 정상.
+2. **케이스 2(재시도)** — 케이스 1 시도 직후(성공/실패 무관), **같은 프로세스에서 종료하지 않고** 다시 한번 접속 시도. `HasConnectedAsClientSteamThisProcess=True`로 찍히고 `TryRestartForWarmReconnect`가 트리거되어야 정상 — 이게 안 되거나 재시작 후에도 실패하면 위 "용의자"가 확정됨.
+
+각 케이스마다 아래 필터로 B(접속 시도한 쪽)의 `Player.log`를 캡처:
+
+```powershell
+Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log" -Pattern "\[DIAG\]|\[NetworkManagerSetup\]|\[SteamLobbyManager\]|\[TitleMenuController\]|\[SteamManager\]|\[LobbyMenuController\]" | Select-Object -ExpandProperty Line
+```
+
+**판정 방법:**
+- `[LobbyMenuController][DIAG] Start() 진입` 로그가 있으면 → **성공**(그 케이스는 정상 동작, 다른 케이스를 의심).
+- 없고 `[WATCHDOG]` 경고가 있으면 → 그 로그 한 줄의 상태 덤프로 실패 지점이 좁혀짐:
+  - `NGO.IsListening=False` → `StartClientSteam` 자체가 실패했거나 `JoinLobbyAsync`에서 이미 멈춘 것 (그 위의 `[DIAG]` 로그로 어디까지 갔는지 확인).
+  - `NGO.IsListening=True`인데 `IsConnectedClient=False` → 트랜스포트 레벨 연결이 안 됨(Steam 릴레이/virtual port 불일치 의심).
+  - `IsConnectedClient=True`인데 씬 전환이 안 됨 → `[NetworkManagerSetup][DIAG][SceneEvent]` 로그가 있는지 확인. 아예 없으면 Host가 씬 로드 자체를 안 보낸 것, `Load`는 있는데 `LoadComplete`가 없으면 클라이언트 쪽 씬 로드 도중 예외(과거 이슈 F류 — "Server Scene Handle already exist" 등) 의심.
+- 이 판정 트리 그대로 따라가면 다음 세션은 추측 없이 원인을 하나로 좁힐 수 있다.
+
+### 인수인계 요약 (2026-08-13 밤 9차 세션 기준, 최신)
+
+1. **온기동/코드입력 공통 실패 — 원인 미확정. 코드 수정 없음, 진단 계측만 추가.** 다음 세션은 위 케이스 1/2 재현 로그부터 받고 시작.
+2. **공개 방 목록 — 설계 논의만 하고 보류.** 재개 조건: 위 접속 실패가 확정 진단·수정된 이후. 논의된 초안은 위 절 참고.
+3. 크래시(D3D12)/한글 사용자명 libvosk 이슈(8차 세션) — 이번 세션과 무관, 상태 변경 없음.
+
+**Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`(source 태그·Stopwatch·`JoinWatchdog` 추가), `Assets/Scripts/Network/NetworkManagerSetup.cs`(`SceneManager.OnSceneEvent` 구독·승인 로그 추가), `Assets/Scripts/UI/LobbyMenuController.cs`(`Start()` 진입 로그), `Assets/Docs/SteamworksIntegrationDesign.md`.
+
+**Files read (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Scenes/0.Title.unity`(버튼 배선 확인), `.cursor/rules/bug-hunter.mdc`, `.cursor/rules/plan-first.mdc`, `.cursor/rules/diff-only.mdc`, 웹 검색(Steamworks `ELobbyType` 공식 문서, Facepunch.Steamworks lobbyId 우회 이슈 #648, `SteamMatchmaking.LobbyList` API, NGO `NetworkSceneManager.OnSceneEvent`/`SceneEvent`/`ConnectionApprovalRequest.ClientNetworkId` 공식 문서).
