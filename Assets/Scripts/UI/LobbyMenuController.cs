@@ -125,6 +125,8 @@ public class LobbyMenuController : MonoBehaviour
 
     void Start()
     {
+        Debug.Log($"[LobbyMenuController][DIAG] Start() 진입 — 로비 씬 로드 완료. Mode={LobbyContext.Mode}, " +
+                  $"LocalClientId={(NetworkManager.Singleton != null ? NetworkManager.Singleton.LocalClientId.ToString() : "null")}");
         ApplyModeUI();
         RefreshRoomCode();
         try { VoskModelLoader.LoadSync(); }

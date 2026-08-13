@@ -554,18 +554,12 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             if (kind == "final")
             {
                 if (!string.IsNullOrEmpty(node["text"]?.Value))
-                {
-                    Debug.Log($"[CheerKeywordEngine] Final JSON: {json}");
                     ParseAndSubmit(node, "text");
-                }
             }
             else
             {
                 if (!string.IsNullOrEmpty(node["partial"]?.Value))
-                {
-                    Debug.Log($"[CheerKeywordEngine] Partial JSON: {json}");
                     ParseAndSubmit(node, "partial");
-                }
             }
         }
     }

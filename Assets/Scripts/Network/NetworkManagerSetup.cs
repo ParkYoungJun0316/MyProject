@@ -236,6 +236,7 @@ public class NetworkManagerSetup : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(roomCode)) RoomCode = roomCode;
             LastHostVirtualPort = vport;
+            SubscribeSceneDiag();
             Debug.Log($"[NetworkManagerSetup] Steam Host 시작됨 — SteamId {SteamClient.SteamId}, virtualPort {vport}");
         }
         else
@@ -282,6 +283,7 @@ public class NetworkManagerSetup : MonoBehaviour
         if (ok)
         {
             s_hasConnectedAsClientSteamThisProcess = true;
+            SubscribeSceneDiag();
             Debug.Log($"[NetworkManagerSetup] Steam Client 시작됨 — target {hostId}, virtualPort {virtualPort}");
         }
         else
@@ -347,6 +349,38 @@ public class NetworkManagerSetup : MonoBehaviour
                   $"ConnectedClients.Count={_net.ConnectedClients.Count}");
     }
 
+    // NGO NetworkSceneManager는 세션(StartHost/StartClient)마다 새로 만들어지므로, OnClientConnectedCallback류와
+    // 달리 매번 다시 구독해야 한다. 직전에 구독한 SceneManager 인스턴스를 기억해뒀다가 중복 구독을 막는다.
+    // "온기동" 진단 목적: 접속(StartClientSteam=true)까지는 됐는데 로비 씬 전환이 어디서 멈추는지
+    // 지금까지 로그로 전혀 안 보였던 구간 — Load/LoadComplete/Synchronize/SynchronizeComplete 등
+    // 이벤트가 실제로 오가는지, 어느 단계까지 오고 그 다음이 끊기는지를 그대로 보여준다.
+    private Unity.Netcode.NetworkSceneManager _diagSceneManagerSubscribed;
+
+    private void SubscribeSceneDiag()
+    {
+        if (_net == null || _net.SceneManager == null)
+        {
+            Debug.LogWarning("[NetworkManagerSetup][DIAG] SubscribeSceneDiag — _net.SceneManager가 null이라 씬 이벤트 구독 실패.");
+            return;
+        }
+
+        if (_diagSceneManagerSubscribed == _net.SceneManager) return; // 이 세션에서 이미 구독함
+
+        if (_diagSceneManagerSubscribed != null)
+            _diagSceneManagerSubscribed.OnSceneEvent -= DiagOnSceneEvent;
+
+        _net.SceneManager.OnSceneEvent += DiagOnSceneEvent;
+        _diagSceneManagerSubscribed = _net.SceneManager;
+        Debug.Log("[NetworkManagerSetup][DIAG] SceneManager.OnSceneEvent 구독 완료.");
+    }
+
+    private void DiagOnSceneEvent(SceneEvent sceneEvent)
+    {
+        Debug.Log($"[NetworkManagerSetup][DIAG][SceneEvent] Type={sceneEvent.SceneEventType}, " +
+                  $"SceneName={sceneEvent.SceneName}, ClientId={sceneEvent.ClientId}, " +
+                  $"LoadSceneMode={sceneEvent.LoadSceneMode}");
+    }
+
     // ── Connection Approval ───────────────────────────────────────
 
     void ApproveConnection(
@@ -360,8 +394,10 @@ public class NetworkManagerSetup : MonoBehaviour
         resp.CreatePlayerObject = false; // Player Prefab은 스테이지 진입 시 수동 스폰
         resp.Pending           = false;
 
-        if (!approved)
-            Debug.Log($"[NetworkManagerSetup] 접속 거부 — 현재 {current}명 / 최대 {maxConnections}명");
+        if (approved)
+            Debug.Log($"[NetworkManagerSetup][DIAG] 접속 승인 — clientId={req.ClientNetworkId}, 현재 {current}명 → {current + 1}명 / 최대 {maxConnections}명");
+        else
+            Debug.Log($"[NetworkManagerSetup][DIAG] 접속 거부 — clientId={req.ClientNetworkId}, 현재 {current}명 / 최대 {maxConnections}명");
     }
 
     // ── 프로퍼티 ──────────────────────────────────────────────────

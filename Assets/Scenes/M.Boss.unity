@@ -1404,7 +1404,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 150, y: 150, z: 150}
+  m_LocalScale: {x: 300, y: 300, z: 300}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1438379755}
@@ -3492,16 +3492,6 @@ MonoBehaviour:
     displayColor: {r: 0.8509804, g: 0.6431373, b: 0.25490198, a: 1}
   - colorType: 2
     displayColor: {r: 0.43137255, g: 0.23137255, b: 0.43137255, a: 1}
-  simPlayers:
-  - colorType: 1
-    submitKey: 41
-  - colorType: 3
-    submitKey: 42
-  - colorType: 4
-    submitKey: 43
-  - colorType: 2
-    submitKey: 44
-  spaceActsAsAnyKey: 1
   startOnAwake: 0
   OnMinigameStarted:
     m_PersistentCalls:
@@ -6688,6 +6678,10 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 0}
   pullParticle: {fileID: 0}
+  windSpatialBlend: 1
+  windMinDistance: 1
+  windMaxDistance: 0
+  windRolloffMode: 0
 --- !u!65 &1381137487
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -9157,6 +9151,10 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 0}
   pullParticle: {fileID: 0}
+  windSpatialBlend: 1
+  windMinDistance: 1
+  windMaxDistance: 0
+  windRolloffMode: 0
 --- !u!65 &1649205420
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10692,6 +10690,10 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 0}
   pullParticle: {fileID: 0}
+  windSpatialBlend: 1
+  windMinDistance: 1
+  windMaxDistance: 0
+  windRolloffMode: 0
 --- !u!65 &1935744893
 BoxCollider:
   m_ObjectHideFlags: 0

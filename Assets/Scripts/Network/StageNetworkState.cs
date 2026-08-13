@@ -260,9 +260,12 @@ public class StageNetworkState : NetworkBehaviour
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
     // SequenceRing 전원 즉사 루프, Breakable 데미지+넉백)은 전부 yield 없는 동기 코드라
     // 같은 프레임 안에서 이미 끝난다 — 1프레임만 미뤄도 그 뒤에야 Despawn이 일어나
-    // RpcException이 해소됨. 프레임 지연은 fps에 반비례해 체감 시간이 늘어나므로(예:
-    // ParrelSync 2인 동시 구동 시 fps 저하) 필요한 최소치만 유지.
-    const int DeathReloadDelayFrames = 1;
+    // RpcException이 해소됨(이 최소 요구치는 아래 초 단위 딜레이가 그보다 훨씬 크므로
+    // 항상 만족됨).
+    // [UX 개선 2026-08] 플레이테스트 피드백 — 리로드가 너무 빨라 "죽었다"는 사실 자체를
+    // 인지하지 못함. 사망 연출(DeathOverlayUI)을 볼 여유를 초 단위로 확보.
+    [SerializeField, Tooltip("사망 판정부터 씬 리로드까지 대기 시간(초). 사망 연출/문구를 인지할 여유.")]
+    float deathReloadDelay = 1.75f;
 
     // Client-side 캐시 — SyncSurvivalRemainingClientRpc 매 틱 Find 방지
     private SurviveTimeObjective _surviveObjective;
@@ -424,8 +427,7 @@ public class StageNetworkState : NetworkBehaviour
 
     IEnumerator ReloadAfterDeathAnim()
     {
-        for (int i = 0; i < DeathReloadDelayFrames; i++)
-            yield return null;
+        yield return new WaitForSeconds(deathReloadDelay);
 
         string sceneName = SceneManager.GetActiveScene().name;
         Debug.Log($"[StageNetworkState] 사망 감지 — '{sceneName}' 리로드 (새 시드: {NetworkSessionData.Seed})");
@@ -436,6 +438,32 @@ public class StageNetworkState : NetworkBehaviour
     void BroadcastNewSeedClientRpc(int seed)
     {
         NetworkSessionData.Seed = seed;
+    }
+
+    // ── 스테이지 클리어 배너 동기화 (연출 전용, §11A.0 Host 레인 브릿지) ──
+
+    /// <summary>
+    /// 스테이지(Phase) 내 목표 세트가 클리어될 때마다(중간 Phase 포함) 발동 — 배너 연출 전용 신호.
+    /// StageManager.Update()의 클리어 판정은 Host 레인에서만 실행되므로(§11A.0), 이 브릿지 없이
+    /// Client UI가 StageManager.OnStageClear를 직접 구독하면 MemoryRoundObjective와 동일한 계열의
+    /// 버그(Client에서는 절대 발동하지 않음)가 재발한다. ChallengeCleared와 동일한
+    /// "Host 로컬 즉시 + ClientRpc 보장 전달" 패턴.
+    /// </summary>
+    public event Action OnAnyStageClearedPulse;
+
+    /// <summary>Host: StageManager.Update() 클리어 판정 직후 호출.</summary>
+    public void NotifyStageCleared()
+    {
+        if (!IsServer) return;
+        OnAnyStageClearedPulse?.Invoke();
+        NotifyStageClearedClientRpc();
+    }
+
+    [ClientRpc]
+    void NotifyStageClearedClientRpc()
+    {
+        if (IsServer) return;
+        OnAnyStageClearedPulse?.Invoke();
     }
 
     // ── Breakable 파괴 동기화 ─────────────────────────────────────

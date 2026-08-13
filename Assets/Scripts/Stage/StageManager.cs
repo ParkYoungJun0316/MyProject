@@ -104,6 +104,7 @@ public class StageManager : MonoBehaviour
             DeactivateAllTraps();
             DestroyAllProjectiles();
             OnStageClear?.Invoke();
+            StageNetworkState.Instance?.NotifyStageCleared(); // Client에도 클리어 배너 브로드캐스트
         }
     }
 
@@ -185,6 +186,7 @@ public class StageManager : MonoBehaviour
         DeactivateAllTraps();
         DestroyAllProjectiles();
         OnStageClear?.Invoke();
+        StageNetworkState.Instance?.NotifyStageCleared();
     }
 
     [ContextMenu("테스트: 스테이지 실패")]

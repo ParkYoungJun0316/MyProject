@@ -845,7 +845,7 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 | 카메라 안 붙음 | ④ Ready 발행 | ⑤ bind 구독 타이밍 |
 | UI/패드 일부만 깨짐 | ⑤ 해당 Consumer만 | ④ OK 확인 |
 | 죽어도 리로드 없음 | 사망 문 (Owner 가드 → ServerRpc → Host) | — |
-| `Deferred OnSpawn`/`PurgeTrigger` 경고 (Player NetworkObjectId 관련 의심 시) | §9.0.1-b 축 분류표로 Axis A/B 먼저 분류 | Axis B면 사망 문 1프레임 지연(`DeathReloadDelayFrames`) 또는 ② Spawn `destroyWithScene:true` 타이밍 재현 |
+| `Deferred OnSpawn`/`PurgeTrigger` 경고 (Player NetworkObjectId 관련 의심 시) | §9.0.1-b 축 분류표로 Axis A/B 먼저 분류 | Axis B면 사망 문 리로드 딜레이(`StageNetworkState.deathReloadDelay`, 초 단위 — 2026-08 UX 개선으로 1프레임 상수에서 전환, 필요 최소치보다 훨씬 큼) 또는 ② Spawn `destroyWithScene:true` 타이밍 재현 |
 | 챌린지 콘텐츠(타일 등)가 한쪽 머신에서만 조용히 하나도 안 생김(에러/경고 無) | §11.7 — 해당 Consumer가 §11.3 표준 구독 패턴(`IsReady` 늦은 구독 가드) 지키는지 | ④ Ready 발행 자체는 정상인지(다른 Consumer는 정상 동작하는지) |
 
 규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer(+같은 가정 Consumer)만 고침. 칸에 복구 if 추가 금지. 코드 수정 전 Broken step/근거/Fix plan 제시.

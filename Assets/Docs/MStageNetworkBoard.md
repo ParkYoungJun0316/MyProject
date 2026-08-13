@@ -9,6 +9,40 @@
 
 ---
 
+## 🚨 M.Stage 스폰 위치 버그 (진행 중 — 다음 에이전트는 이 절부터 읽을 것, M.Boss보다 우선)
+
+**증상 (2026-08-13, 친구들과 Steam 빌드 3~4인 테스트):**
+1. `M.Stage`(2~5, Boss 포함) 진입 시 스폰이 고정 4좌표가 아닌 완전히 다른 곳에서 됨.
+2. 특히 **그 씬 최초 진입(콜드 로드) 시에만** 낙사 지점에 스폰돼 바닥이 없어 낙사 → 사망으로 인한 씬 리로드 후에는 정상 위치로 스폰됨.
+- 리포터(사용자) 역할: **Client**. 항상(매번) 재현됨. M.Stage2/3/4/5 전부 해당한다고 응답.
+- 이제 친구 재테스트/로그 확보 불가 — **사용자가 본인 2번째 Steam 계정으로 2계정(Host+Client) 테스트하며 로그를 직접 수집할 예정.**
+
+**지금까지 조사한 것 (근거 있음):**
+- `PlayerSpawnManager.cs`의 스폰 좌표는 색깔당 절대 월드좌표 4개(`(0,0,5)/(5,0,0)/(-5,0,0)/(0,0,-5)`)를 모든 스테이지에 동일 재사용 — "모든 스테이지 씬 원점(0,0,0) 정렬" 전제가 코드 주석에 명시돼 있음.
+- `M.Stage2.unity`를 직접 열어 `Ground`(Stage2.1 하위) 위치·부모 체인을 확인 — 로컬좌표 전부 (0,0,0), 원점 정렬 정상. **이 씬 자체는 정적 배치 문제가 아님.** (M.Stage3/4/5/Boss는 아직 미확인)
+- T측(`T.Stage1`) Player.log 대조: 동일 코드 경로로 여러 번 사망→재로드를 거쳐도 스폰 좌표가 항상 정확 — **스폰 메커니즘 자체는 정상 동작 확인됨 (대조군).**
+- "최초 진입만 실패, 재로드는 성공" 패턴은 정적 배치 문제로는 설명 안 됨(재로드도 동일 좌표·동일 코드 경로 재사용) → **콜드 씬 로드에서만 발생하는 타이밍 경합**일 가능성이 유력. 이 프로젝트에 유사 계열 선례 있음: `GameSession.cs`의 "M.Stage3 ColorTile 미생성" 버그(구독 순서 레이스, 2026-07-28 수정), `StageNetworkState.cs`의 "M.Stage2 Stage2.1 컨테이너 비활성 상태에서 OnNetworkSpawn 시점 null 캐시" 버그.
+- 로그로 직접 확증은 못 함 — 사건 당시 Player.log가 이후 세션(T측 재테스트)으로 덮어써져 사라짐. Editor.log에는 M.Stage3 **1인 솔로** 테스트 기록만 있고 거기선 문제 없었음(스폰 항상 `(0.00, 0.30, 5.00)` 정확).
+
+**추가한 임시 진단 로그 (원인 확정되면 반드시 제거 — 코드에 `// ===== TEMP DIAG` 주석으로 표시돼 있어 grep 가능):**
+
+`grep -r "TEMP DIAG" Assets/Scripts` 로 전부 찾을 수 있음.
+
+1. `Assets/Scripts/Network/PlayerSpawnManager.cs` `SpawnNetworkPlayers()`:
+   - `[DIAG-Spawn] scene=... 진입횟수=N` — 이 씬을 이번 세션에서 몇 번째 로드하는지(1=최초 콜드, 2 이상=재로드). **콜드 vs 재로드 구분의 핵심 로그.**
+   - `[DIAG-Spawn] Host 레이캐스트 — color=... spawnPos=... 바닥=...` — Host 기준 고정 스폰좌표 4개 아래에 실제 바닥 콜라이더가 있는지(Instantiate 직전).
+2. `Assets/Scripts/Network/NetworkPlayerSetup.cs` `VerifySpawnPosition()` + 신규 `DiagTrackSpawnPlacement()` 코루틴:
+   - Owner 스폰 직후 최대 90프레임(~1.5초) 동안 매 프레임 `[DIAG-Spawn] clientId=... frame=... pos=... 바닥=...` 로그.
+   - 낙사 임계값(`fallDeathY`) 아래로 내려가는 순간 `*** 낙사 임계값 이탈 감지 ***` 강조 로그 1회 남기고 코루틴 종료.
+
+**다음 에이전트가 할 일 (사용자가 2계정 테스트 후 Player.log를 주면):**
+1. `C:\Users\u\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log`(Host)와 Client 쪽 로그를 받아서 `[DIAG-Spawn]` 줄만 시간순으로 대조.
+2. **진입횟수=1(콜드)** 일 때와 **진입횟수=2 이상(재로드)** 일 때 프레임별 `pos`/`바닥` 값이 어떻게 다른지 비교 — 콜드 로드에서만 `바닥=없음(NONE)`이 몇 프레임 나오는지, 또는 `pos`가 기대값(`expected`)과 처음부터 다른지(레이스가 아니라 좌표 자체 문제) 확인.
+3. `*** 낙사 임계값 이탈 감지 ***` 로그의 frame 번호로, 이게 스폰 즉시(frame 0~2)인지 몇 프레임 지난 후인지 확정.
+4. 원인 확정되면: 위 "TEMP DIAG" 블록 전체 제거(`grep -r "TEMP DIAG" Assets/Scripts`로 찾아서 삭제) + 실제 수정 진행 + 이 절을 "해결" 처리하고 `NetworkDesign.md`에 postmortem 한 줄 남기기(Bug Hunter 규칙 — M/T 공유 컴포넌트면 공유 절에도 기록).
+
+---
+
 ## 현재 상태 (다음 세션 시작점 — 여기부터 읽을 것)
 
 **요약:** 축 #4 골격 확정(§1) → OX 코드 구현 완료 → ParrelSync 2인 발테스트에서 문제 동기화 버그 1건 발견·수정 → **재테스트 통과 (2026-07-21) → `NetworkDesign.md` §11B로 승급 완료.** → `ColorTileChallenge` 동일 축 복제 코드 반영 (2026-07-22) → **ParrelSync 2인 재테스트 통과 (2026-07-22)**: 동일 스폰 위치/색, 성공·실패 동시 판정, 실패 시 벽 전진 동기화 전부 확인됨. → `GridBWTileChallenge`/`GridColorChallenge`/`SequenceRingMinigame` 동일 축 복제 코드 반영 (2026-07-22, 아래 상세) → `Floor` 마이그레이션(`NetworkBehaviour`→`MonoBehaviour`, `SyncTilesClientRpc(byte[])` 폐기 → 시드 전용 슬롯) 코드 반영 (2026-07-25, 아래 `### Floor 마이그레이션 반영 내용` 참고) → **이 4개 전부 ParrelSync 2인 검증 통과 (2026-07-25)** → `NetworkDesign.md` §11B.7(챌린지 3개)·§11B.8(Floor)로 승급 완료. **OX/ColorTile/GridBW/GridColor/SequenceRing/Floor 전부 완료 — 이 보드가 추적하던 축 작업은 종료.**
