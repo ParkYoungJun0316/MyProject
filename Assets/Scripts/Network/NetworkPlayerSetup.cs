@@ -217,13 +217,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     // ===== TEMP DIAG (M.Stage 스폰 위치 버그, 2026-08-13 추가) =====
-    // Owner 스폰 직후 90프레임(약 1.5초) 동안 위치·바닥 레이캐스트를 매 프레임 기록.
+    // Owner 스폰 직후 10프레임만 위치·바닥 레이캐스트를 매 프레임 기록.
+    // 씬 전환 직후 그 짧은 순간에 낙사가 나는지가 관심사라 범위를 좁혔음(원래 90프레임 → 10프레임).
     // 최초 콜드 로드 vs 사망 재로드에서 이 로그가 어떻게 다른지 비교하는 용도.
     // 원인 확정되면 이 메서드 전체 삭제.
+    const int DiagTrackFrames = 10;
+
     System.Collections.IEnumerator DiagTrackSpawnPlacement(Vector3 expected)
     {
         float t0 = Time.realtimeSinceStartup;
-        for (int frame = 0; frame < 90; frame++)
+        for (int frame = 0; frame < DiagTrackFrames; frame++)
         {
             Vector3 pos = transform.position;
             bool grounded = Physics.Raycast(pos + Vector3.up * 0.1f, Vector3.down, out RaycastHit hit, 5f);

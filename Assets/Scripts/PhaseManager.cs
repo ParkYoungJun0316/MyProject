@@ -94,7 +94,7 @@ public class PhaseManager : MonoBehaviour
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer)
         {
-            // Client: EnterPhase() 호출 금지 — Host SyncPhase → EnterPhaseOnClient()만 따름
+            // Client: EnterPhase() 호출 금지 — Host MarkAndSyncPhase → EnterPhaseOnClient()만 따름
             var sns = StageNetworkState.Instance;
             if (sns != null && sns.CurrentPhase >= 0)
                 EnterPhaseOnClient(sns.CurrentPhase);
@@ -110,7 +110,7 @@ public class PhaseManager : MonoBehaviour
         if (phases == null || _currentPhaseIndex < 0 || _currentPhaseIndex >= phases.Length) return;
 
         // Client는 타이머를 돌리지 않음 — Phase 진행은 Host가 결정하고
-        // StageNetworkState._currentPhase NetworkVariable → EnterPhaseOnClient() 경로로 수신
+        // StageNetworkState._phaseStartSignal(PhaseStartSignal) NetworkVariable → EnterPhaseOnClient() 경로로 수신
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
@@ -145,20 +145,24 @@ public class PhaseManager : MonoBehaviour
             foreach (GameObject obj in phase.objectsToEnable)
                 if (obj != null) obj.SetActive(true);
 
-        // 이 Phase가 발동하는 함정(ArrowTrap/DropTrap 등)의 스케줄 기준 시각을 여기서 기록.
-        // onPhaseEnter가 StageManager.StartStage() → trap.Activate()를 호출하므로 그 직전에 찍어야
-        // Host/Client가 같은 절대 시각을 앵커로 쓴다 (StageStartGate.CompleteCountdown()과 동일 순서).
-        // Phase마다 다시 찍으므로 앞 Phase가 길어져도 스케줄이 과거로 밀리지 않는다.
+        // 이 Phase의 인덱스 + 발동 함정(ArrowTrap/DropTrap 등)의 스케줄 기준 시각을 여기서
+        // 원자적으로 같이 기록 + 전파(PhaseStartSignal). onPhaseEnter가 StageManager.StartStage()
+        // → trap.Activate()를 호출하므로 그 직전에 찍어야 Host/Client가 같은 절대 시각을 앵커로
+        // 쓴다 (StageStartGate.CompleteCountdown()과 동일 순서). Phase마다 다시 찍으므로 앞
+        // Phase가 길어져도 스케줄이 과거로 밀리지 않는다.
         // [버그 수정 2026-07-21] MarkStageStart()(StageStartServerTime)를 여기서 같이 쓰면
         // StageStartGate가 그 값을 "이 방 게이트 완료" 1회성 신호로 쓰는 것과 충돌해서
         // Phase 0이 씬 로드 즉시 그 값을 건드려버리는 문제가 있었다. 완전히 별개인
-        // MarkPhaseStart()(PhaseStartServerTime)로 분리.
-        StageNetworkState.Instance?.MarkPhaseStart();
+        // PhaseStartSignal(StageNetworkState.MarkAndSyncPhase)로 분리.
+        // [버그 수정 2026-08] 예전엔 여기서 MarkPhaseStart()(시간)만 찍고, Phase 인덱스는
+        // onPhaseEnter 호출 이후에 SyncPhase(index)로 따로 보냈다 — 인덱스와 시간이 별도 NV라
+        // Client 도착 순서가 보장 안 돼, WindTrap/ArrowTrap/DropTrap/SpikeTrap/SpikeLaneField가
+        // Client에서만 직전 Phase의 낡은 시작 시각을 앵커로 잡아 Host보다 1~2초 어긋나는 버그가
+        // 있었다. MarkAndSyncPhase() 하나로 합쳐 인덱스+시각을 항상 같이, 항상 onPhaseEnter보다
+        // 먼저 보낸다(PhaseStartSignal 참고).
+        StageNetworkState.Instance?.MarkAndSyncPhase(index);
 
         phase.onPhaseEnter?.Invoke();
-
-        // 온라인 Host → Phase 변경을 다른 클라이언트에 동기화
-        StageNetworkState.Instance?.SyncPhase(index);
 
         // Client는 여기서 종료 — 완료 판단은 Host만 수행
         var nm = NetworkManager.Singleton;

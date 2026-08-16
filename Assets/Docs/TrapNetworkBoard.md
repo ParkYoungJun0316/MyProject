@@ -13,10 +13,10 @@
 | `TrapBase.cs` | MonoBehaviour | 로컬 | 하위 클래스가 `TrapLoop()` 오버라이드 안 하면 로컬 프레임 타이머(`WaitForSeconds`) 그대로 씀 — ServerTime 앵커 없음 |
 | `ArrowTrap.cs` | `TrapBase` | 로컬 | `TrapLoop` 오버라이드해서 `StageStartServerTime` 앵커드 — 발사체(`arrowPrefab`)만 `NetworkObject` 필요 |
 | `DropTrap.cs` | `TrapBase` | 로컬 | 동일하게 `StageStartServerTime` 앵커드 — `dropPrefab`만 `NetworkObject` 필요 |
-| `WindTrap.cs` | `TrapBase` | 로컬 | **2026-07-23 수정 완료** — 스케줄 앵커를 로컬 `Activate()` 시각 → `PhaseStartServerTime`으로 교체(ArrowTrap/DropTrap과 동일 패턴), Random 모드는 `NetworkSessionData.Seed ^ salt ^ fireCount` 결정적 시드로 동기화(RPC 없음), `AddForce`는 `IsLocalOwnerRigidbody()` 필터로 자기 Owner 캐릭터에만 적용. **실기 검증 완료(ParrelSync 2인)** |
-| `SpikeTrap.cs` | `TrapBase` | 로컬 | 데미지는 `nm.IsServer` 가드로 보호(OK). **앵커 결함 수정 완료 (2026-07-24, 커밋 `2706cf4`)** — `TrapLoop()`가 `WindTrap`과 동일하게 `PhaseStartServerTime` 앵커로 교체됨(코드 재확인, 2026-08). §5 참조 — **ParrelSync 2인 실기 검증 통과 완료 (2026-08)**. **별도 NRE 수정 완료 (2026-08)** — §6 참조 |
+| `WindTrap.cs` | `TrapBase` | 로컬 | **2026-07-23 수정 완료** — 스케줄 앵커를 로컬 `Activate()` 시각 → `PhaseStartServerTime`으로 교체(ArrowTrap/DropTrap과 동일 패턴), Random 모드는 `NetworkSessionData.Seed ^ salt ^ fireCount` 결정적 시드로 동기화(RPC 없음), `AddForce`는 `IsLocalOwnerRigidbody()` 필터로 자기 Owner 캐릭터에만 적용. ~~실기 검증 완료(ParrelSync 2인)~~ → **stale였음, §8 참조** — `PhaseStartServerTime` 자체가 Client에서 낡은 값일 수 있던 NV 분리 결함을 §8에서 수정 |
+| `SpikeTrap.cs` | `TrapBase` | 로컬 | 데미지는 `nm.IsServer` 가드로 보호(OK). **앵커 결함 수정 완료 (2026-07-24, 커밋 `2706cf4`)** — `TrapLoop()`가 `WindTrap`과 동일하게 `PhaseStartServerTime` 앵커로 교체됨(코드 재확인, 2026-08). §5 참조. **별도 NRE 수정 완료 (2026-08)** — §6 참조. §8 수정으로 `PhaseStartServerTime` 자체의 NV 분리 결함도 해소됨 — **재검증 필요** |
 | `ContactDamage.cs` | MonoBehaviour | 로컬 | 데미지는 `nm.IsServer` 가드로 보호(OK) |
-| `SpikeLaneField.cs` | `TrapBase` | 로컬 | 레인 선택 시드(`NetworkSessionData.Seed ^ salt ^ fireCount`)는 정상. **앵커 결함 수정 완료 (2026-07-24, 커밋 `2706cf4`)** — `TrapLoop()`가 `PhaseStartServerTime` 앵커로 교체됨(코드 재확인, 2026-08). §5 참조. **ParrelSync 2인 실기 검증 통과 완료 (2026-08)** |
+| `SpikeLaneField.cs` | `TrapBase` | 로컬 | 레인 선택 시드(`NetworkSessionData.Seed ^ salt ^ fireCount`)는 정상. **앵커 결함 수정 완료 (2026-07-24, 커밋 `2706cf4`)** — `TrapLoop()`가 `PhaseStartServerTime` 앵커로 교체됨(코드 재확인, 2026-08). §5 참조. §8 수정으로 `PhaseStartServerTime` 자체의 NV 분리 결함도 해소됨 — **재검증 필요** |
 | `SpikeLane.cs` | MonoBehaviour | 로컬 | 단순 Activate/Deactivate 릴레이 |
 | `CeilingTrap.cs` | MonoBehaviour | 로컬 | `TrapBase` 아님, `Update()` 감지형. 데미지는 별도 컴포넌트(`ContactDamage` 등)가 처리할 것으로 **추정 — 미확인, §3 논의 필요** |
 | `TrapPlayerTracker.cs` | MonoBehaviour | 로컬 | — |
@@ -139,6 +139,24 @@ else
 **영향 범위:** `BoulderSpawnManager`를 쓰는 다른 씬(`T.Stage1` 등)에도 코드가 공유되므로 동일하게 적용됨 — T1은 애초에 이 레이스를 안 밟는 배치라 회귀 위험 낮음.
 
 **테스트:** **ParrelSync 2인(Host+Client) 검증 통과(2026-08).** **Build(Editor+Build 조합) 검증은 아직 안 됨** — 남은 항목.
+
+---
+
+## 8. WindTrap — Host보다 Client가 1~2초 늦게 발동·종료 (수정 완료, 2026-08)
+
+**증상:** 실기 다인원 테스트(ParrelSync 아님, 실제 지연 있는 네트워크)에서 WindTrap이 Host보다 Client에서 1~2초 늦게 발동/종료. Client끼리는 서로 맞음. §1/§5에서 "실기 검증 완료(ParrelSync 2인)"로 적었던 것은 ParrelSync 근거리 테스트라 이 레이스가 안 드러난 것 — stale 문서였음.
+
+**원인:** `WindTrap`(및 동일 앵커 패턴을 쓰는 `ArrowTrap`/`DropTrap`/`SpikeTrap`/`SpikeLaneField`)은 스케줄 앵커로 `StageNetworkState.PhaseStartServerTime`을 쓰는데, 이게 예전엔 `_currentPhase`(int NV)와 `_phaseStartServerTime`(double NV)으로 **분리**돼 있었다. `PhaseManager.EnterPhase()`가 `MarkPhaseStart()`(시간 갱신) → `onPhaseEnter.Invoke()` → `SyncPhase(index)`(인덱스 갱신, 제일 마지막) 순서로 두 NV를 따로 썼는데, NGO는 별도 NetworkVariable 간 Client 도착 순서를 보장하지 않는다(`_currentPhase`+`_challengeStep`과 동일 클래스의 문제 — §11B.9). Client에서 `_currentPhase`의 `OnValueChanged`(→`EnterPhaseOnClient()`→`StageManager.StartStage()`→`trap.Activate()`→`TrapLoop()`)가 `_phaseStartServerTime`이 새 값으로 갱신되기 전에 먼저 발동하면, `TrapLoop()`이 **직전 Phase의 낡은 시작 시각**을 스케줄 기준으로 잡아버린다. Host는 이 NV 콜백 경로를 안 타고 `EnterPhase()`에서 갱신된 값을 직접 순서대로 쓰므로 항상 정확 — Client만 어긋났다.
+
+**수정 내용:** `_currentPhase`(int)+`_phaseStartServerTime`(double)을 `PhaseStartSignal{phaseIndex, serverTime}` 구조체 NV(`_phaseStartSignal`) 하나로 병합(`ChallengeStepState`/`StageStartSignal`과 동일 원칙 — 연관 데이터는 하나의 NV로 원자적 전달). `MarkPhaseStart()`+`SyncPhase(index)` 두 메서드를 `MarkAndSyncPhase(index)` 하나로 통합, `PhaseManager.EnterPhase()`가 `onPhaseEnter.Invoke()` **이전에** 이 메서드 한 번만 호출하도록 변경(예전엔 인덱스 갱신이 `onPhaseEnter` **이후**였음). `CurrentPhase`/`PhaseStartServerTime` 프로퍼티는 이름 그대로 유지 — `WindTrap`/`ArrowTrap`/`DropTrap`/`SpikeTrap`/`SpikeLaneField`는 이 프로퍼티만 읽으므로 코드 변경 불필요.
+
+**손댄 파일:** `Assets/Scripts/Network/StageNetworkState.cs`(`PhaseStartSignal` 구조체 신설, `_currentPhase`+`_phaseStartServerTime`→`_phaseStartSignal`, `MarkPhaseStart()`+`SyncPhase()`→`MarkAndSyncPhase()`), `Assets/Scripts/PhaseManager.cs`(`EnterPhase()` 호출 순서 변경). `Assets/Scripts/Traps/{WindTrap,ArrowTrap,DropTrap,SpikeTrap,SpikeLaneField}.cs`는 주석만 갱신(코드 변경 없음).
+
+**2번(챌린지) 관련 참고:** `_currentPhase`+`_challengeStep`(§11B.9) 레이스는 **이번 수정 범위 아님** — 이미 `ChallengeOwnerType` 가드로 안전하게 막혀 있어 별도 구조체 병합 없이 그대로 유지하기로 결정(블라스트 반경 — OX/ColorTile/GridColor/GridBW/SequenceRing/DirectionalBarrier 5개+ 챌린지 매니저 전부 영향).
+
+**테스트 (미완료 — 실기 다인원 필요):** ParrelSync는 지연이 작아 이 레이스가 잘 안 드러나므로, **실제 인터넷 지연이 있는 Build+Build 환경**에서 WindTrap이 있는 Phase 전환 시(`M.Boss`) Host/Client 발동·종료 타이밍 육안 확인 필요. 함께 확인: `ArrowTrap`/`DropTrap`/`SpikeTrap`/`SpikeLaneField`가 있는 다른 Phase 전환 스테이지도 동일 증상 없는지 회귀 스모크.
+
+**영향 범위:** `PhaseStartServerTime` 앵커를 쓰는 모든 트랩(`WindTrap`/`ArrowTrap`/`DropTrap`/`SpikeTrap`/`SpikeLaneField`)에 해당 — 위 표(§1)의 "실기 검증 완료(ParrelSync 2인)" 메모들은 이 레이스를 반영 못 한 stale 상태였음, 재검증 필요.
 
 ---
 

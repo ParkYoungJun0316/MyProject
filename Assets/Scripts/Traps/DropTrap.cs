@@ -146,7 +146,7 @@ public class DropTrap : TrapBase
         // ── 스케줄 기준 시각 결정 ─────────────────────────────────────────
         // ArrowTrap과 동일한 이유로 PhaseStartServerTime(Host가 이 Phase 진입 직전에 기록한
         // 절대 ServerTime) 을 앵커로 사용. StageStartServerTime(StageStartGate 전용 1회성
-        // 신호)과는 별개 슬롯. PhaseManager.EnterPhase()가 Phase마다 다시 MarkPhaseStart()를
+        // 신호)과는 별개 슬롯. PhaseManager.EnterPhase()가 Phase마다 다시 MarkAndSyncPhase()를
         // 찍으므로 앞 Phase가 길어져도 과거로 밀리는 문제는 없다.
         // StageNetworkState가 없는 씬에서는 로컬 Activate() 시각으로 폴백.
         if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)

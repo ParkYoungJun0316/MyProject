@@ -7,12 +7,17 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// ChallengeStepState가 어느 챌린지 매니저 것인지 식별하는 태그.
 /// [버그 수정 2026-07-28] _challengeStep은 씬당 여러 챌린지 종류가 공유하는 슬롯인데(§11B.2),
-/// "이 컴포넌트를 꺼라"(_currentPhase NV)와 "이번 라운드 데이터"(_challengeStep NV)가 서로 다른
+/// "이 컴포넌트를 꺼라"(Phase 인덱스 NV)와 "이번 라운드 데이터"(_challengeStep NV)가 서로 다른
 /// NetworkVariable이라 Client 도착 순서가 NGO에서 보장되지 않는다. 순서가 뒤집히면 아직
 /// SetActive(false) 안 된 이전 챌린지가 새 챌린지의 stepIndex를 자기 것으로 오인해 반응했다
 /// (A 챌린지를 고치면 활성화 타이밍이 바뀌어 B가 깨지는 회귀의 실제 원인 — PhaseManager.EnterPhase()가
-/// onPhaseEnter(챌린지 시작)→SyncPhase(오브젝트 on/off) 순서로 별도 NV 2개를 쓰기 때문).
+/// onPhaseEnter(챌린지 시작)→Phase 인덱스 갱신(오브젝트 on/off) 순서로 별도 NV 2개를 쓰기 때문).
 /// 각 매니저가 이 태그로 "내 것이 아니면 무시"를 판단하면 활성화 타이밍이 완벽히 맞지 않아도 안전하다.
+/// [2026-08 재확인] Phase 인덱스 NV는 이후 PhaseStartSignal(phaseIndex+serverTime)로 교체됐고
+/// PhaseManager.EnterPhase()의 쓰기 순서도 onPhaseEnter보다 먼저로 바뀌었지만(WindTrap 타이밍
+/// 버그 수정, 위 struct 주석 참고), _challengeStep과는 여전히 별도 NV라 도착 순서는 여전히
+/// 보장되지 않는다 — 이 owner 가드가 계속 유효한 안전장치다(구조체 완전 통합은 블라스트 반경
+/// 문제로 보류, 아래 NetworkDesign.md §11B.9 참고).
 /// </summary>
 public enum ChallengeOwnerType
 {
@@ -126,6 +131,36 @@ public struct StageStartSignal : INetworkSerializable, IEquatable<StageStartSign
 }
 
 /// <summary>
+/// Phase 인덱스 + 그 Phase가 시작된 서버 시각을 하나로 묶은 값.
+/// [버그 수정 2026-08 — WindTrap Host/Client 발동 타이밍 1~2초 불일치] phaseIndex(옛 _currentPhase)와
+/// serverTime(옛 _phaseStartServerTime)을 별도 NetworkVariable 2개로 나눠뒀을 때, Client에서
+/// phaseIndex 변경 콜백(→ PhaseManager.EnterPhaseOnClient() → StageManager.StartStage() →
+/// trap.Activate())이 serverTime이 새 값으로 갱신되기 전에 먼저 발동할 수 있었다(NGO가 별도 NV
+/// 간 도착 순서를 보장하지 않음 — ChallengeStepState/StageStartSignal과 동일 원인). 그러면
+/// PhaseStartServerTime 앵커를 쓰는 WindTrap/ArrowTrap/DropTrap/SpikeTrap/SpikeLaneField가
+/// Client에서만 직전 Phase의 낡은 시작 시각을 스케줄 기준으로 잡아버려 Host보다 발동·종료가
+/// 어긋났다(실기 다인원 테스트에서 재현 — ParrelSync 근거리 테스트는 지연이 작아 안 드러남).
+/// ChallengeStepState/StageStartSignal과 동일한 원칙으로 하나의 NV로 합쳐 원자적으로 전달한다.
+/// </summary>
+public struct PhaseStartSignal : INetworkSerializable, IEquatable<PhaseStartSignal>
+{
+    public int    phaseIndex;
+    public double serverTime;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref phaseIndex);
+        serializer.SerializeValue(ref serverTime);
+    }
+
+    public bool Equals(PhaseStartSignal other) =>
+        phaseIndex == other.phaseIndex && serverTime.Equals(other.serverTime);
+
+    public override bool Equals(object obj) => obj is PhaseStartSignal other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(phaseIndex, serverTime);
+}
+
+/// <summary>
 /// 스테이지 네트워크 상태 중앙 허브. NetworkBehaviour.
 /// M.Stage1 / T.Stage1 씬 내 NetworkObject GameObject에 부착.
 ///
@@ -138,16 +173,22 @@ public struct StageStartSignal : INetworkSerializable, IEquatable<StageStartSign
 ///
 /// [연결]
 /// - StageResetOnPlayerDeath.DoReset() → NotifyPlayerDeathServerRpc()
-/// - PhaseManager.EnterPhase() → MarkPhaseStart() + SyncPhase(index) (Host에서만 호출)
+/// - PhaseManager.EnterPhase() → MarkAndSyncPhase(index) (Host에서만 호출 — Phase 인덱스 +
+///   시작 서버시간을 PhaseStartSignal로 원자적 전달, 2026-08 버그 수정. 옛 MarkPhaseStart()+
+///   SyncPhase(index) 분리 방식은 폐기됨)
 /// - StageStartGate.CompleteCountdown() → MarkStageStart(gateId) (PhaseManager와 별개 슬롯)
 /// </summary>
 public class StageNetworkState : NetworkBehaviour
 {
     public static StageNetworkState Instance { get; private set; }
 
-    // 현재 Phase 인덱스 (Host가 쓰고 전원이 읽음)
-    private readonly NetworkVariable<int> _currentPhase = new(
-        -1,
+    // 현재 Phase 인덱스 + 그 Phase 시작 서버 시간 (Host가 원자적으로 같이 기록, 전원이 읽음).
+    // [버그 수정 2026-08] 예전엔 _currentPhase(int)와 _phaseStartServerTime(double)이 별도 NV라
+    // Client 도착 순서가 보장 안 됐다 — WindTrap 등 PhaseStartServerTime 앵커 트랩이 Host보다
+    // 1~2초 어긋나는 버그의 원인이었다. PhaseStartSignal 구조체로 합쳐 원자적으로 전달한다
+    // (위 struct 주석 참고).
+    private readonly NetworkVariable<PhaseStartSignal> _phaseStartSignal = new(
+        new PhaseStartSignal { phaseIndex = -1, serverTime = -1.0 },
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
@@ -174,16 +215,6 @@ public class StageNetworkState : NetworkBehaviour
     // (2026-08 버그 수정 — 위 StageStartSignal 주석 참고).
     private readonly NetworkVariable<StageStartSignal> _stageStartSignal = new(
         new StageStartSignal { serverTime = -1.0, gateId = -1 },
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
-
-    // Phase 시작 서버 시간 (PhaseManager.EnterPhase() 직전 Host 기록).
-    // PhaseManager가 발동하는 함정(ArrowTrap/DropTrap 등)의 스케줄 앵커 전용.
-    // StageStartServerTime과 별개 슬롯 — Phase마다 다시 찍혀도 StageStartGate 쪽 로직에
-    // 영향 없음.
-    private readonly NetworkVariable<double> _phaseStartServerTime = new(
-        -1.0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
@@ -272,12 +303,12 @@ public class StageNetworkState : NetworkBehaviour
 
     // ── 프로퍼티 ──────────────────────────────────────────────────
 
-    public int    CurrentPhase            => _currentPhase.Value;
+    public int    CurrentPhase            => _phaseStartSignal.Value.phaseIndex;
     public bool   IsCountdownActive        => _isCountdownActive.Value;
     public double CountdownStartServerTime => _countdownStartServerTime.Value;
     public double StageStartServerTime     => _stageStartSignal.Value.serverTime;
     public int    StageStartGateId         => _stageStartSignal.Value.gateId;
-    public double PhaseStartServerTime     => _phaseStartServerTime.Value;
+    public double PhaseStartServerTime     => _phaseStartSignal.Value.serverTime;
 
     public int    ChallengeSeed               => _challengeStep.Value.seed;
     public int    ChallengeStepIndex           => _challengeStep.Value.stepIndex;
@@ -375,7 +406,7 @@ public class StageNetworkState : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        _currentPhase.OnValueChanged += OnPhaseChanged;
+        _phaseStartSignal.OnValueChanged += OnPhaseChanged;
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
@@ -391,7 +422,7 @@ public class StageNetworkState : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        _currentPhase.OnValueChanged -= OnPhaseChanged;
+        _phaseStartSignal.OnValueChanged -= OnPhaseChanged;
         _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
@@ -587,36 +618,36 @@ public class StageNetworkState : NetworkBehaviour
         _isCountdownActive.Value = false;
     }
 
-    /// <summary>
-    /// Host: PhaseManager.EnterPhase() 진입 직전 서버 시간 기록.
-    /// ArrowTrap/DropTrap 등이 이 Phase에서 Activate()될 때 스케줄 앵커로 사용.
-    /// StageStartServerTime과 별개 — StageStartGate의 1회성 신호를 건드리지 않는다.
-    /// </summary>
-    public void MarkPhaseStart()
-    {
-        if (!IsServer) return;
-        _phaseStartServerTime.Value = NetworkManager.Singleton.ServerTime.Time;
-    }
-
     // ── Phase 동기화 ──────────────────────────────────────────────
 
     /// <summary>
-    /// Host에서 Phase가 바뀔 때 호출. NetworkVariable로 전원에 전달.
-    /// PhaseManager.EnterPhase() 호출 후 호출.
+    /// Host: PhaseManager.EnterPhase() 진입 시 Phase 인덱스 + 그 시각의 서버 시간을 원자적으로
+    /// 같이 기록 + 전파(PhaseStartSignal). ArrowTrap/DropTrap/WindTrap 등이 이 Phase에서
+    /// Activate()될 때 스케줄 앵커로 PhaseStartServerTime을 사용.
+    /// StageStartServerTime(별도 슬롯)과 무관 — StageStartGate의 1회성 신호를 건드리지 않는다.
+    /// [버그 수정 2026-08] 예전엔 MarkPhaseStart()(시간)와 SyncPhase()(인덱스) 두 메서드로 나눠
+    /// 별도 NV 2개에 썼는데, Client 도착 순서가 보장 안 돼 WindTrap 등의 트랩이 Client에서만
+    /// Host와 다른(직전 Phase의) 시각을 스케줄 앵커로 잡는 버그가 있었다. 반드시
+    /// phase.onPhaseEnter?.Invoke() 이전에 호출할 것 — 그 안에서 트랩이 Activate()될 때 이미
+    /// 갱신된 앵커를 읽어야 한다(PhaseManager.EnterPhase() 참고).
     /// </summary>
-    public void SyncPhase(int phaseIndex)
+    public void MarkAndSyncPhase(int phaseIndex)
     {
         if (!IsServer) return;
-        _currentPhase.Value = phaseIndex;
+        _phaseStartSignal.Value = new PhaseStartSignal
+        {
+            phaseIndex = phaseIndex,
+            serverTime = NetworkManager.Singleton.ServerTime.Time
+        };
     }
 
-    void OnPhaseChanged(int prev, int next)
+    void OnPhaseChanged(PhaseStartSignal prev, PhaseStartSignal next)
     {
         // 비오너(Client)에서도 Phase 변경을 받을 수 있도록 PhaseManager에 알림
         if (!IsServer && PhaseManager.Instance != null)
-            PhaseManager.Instance.EnterPhaseOnClient(next);
+            PhaseManager.Instance.EnterPhaseOnClient(next.phaseIndex);
 
-        Debug.Log($"[StageNetworkState] Phase 변경: {prev} → {next}");
+        Debug.Log($"[StageNetworkState] Phase 변경: {prev.phaseIndex} → {next.phaseIndex}");
     }
 
     // ── 보스 진행 동기화 (D축) ──────────────────────────────────────
@@ -926,6 +957,6 @@ public class StageNetworkState : NetworkBehaviour
     void Debug_Death() => NotifyPlayerDeathServerRpc();
 
     [ContextMenu("테스트: Phase 0으로 초기화")]
-    void Debug_Phase0() => SyncPhase(0);
+    void Debug_Phase0() => MarkAndSyncPhase(0);
 #endif
 }

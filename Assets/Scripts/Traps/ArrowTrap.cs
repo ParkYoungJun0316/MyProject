@@ -201,7 +201,7 @@ public class ArrowTrap : TrapBase
         // [버그 수정 2026-07-21] 예전엔 이 앵커를 자기 로컬 Activate() 시각으로 대체했었는데,
         // Client의 Activate()가 Host보다 항상 늦게(Phase NV 도착 후) 실행되는 걸 반영하지
         // 못해 입 벌림 애니메이션 등 코스메틱 타이밍이 Host와 계속 어긋나는 문제가 있었다.
-        // PhaseManager.EnterPhase()가 Phase마다 MarkPhaseStart()를 다시 찍으므로, 앞 Phase가
+        // PhaseManager.EnterPhase()가 Phase마다 MarkAndSyncPhase()를 다시 찍으므로, 앞 Phase가
         // 길어져도 스케줄이 과거로 밀려 한 번도 발사 안 되는 예전 버그는 재발하지 않는다.
         // StageNetworkState가 없는 씬(테스트 등)에서는 로컬 Activate() 시각으로 폴백.
         if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
