@@ -21,9 +21,9 @@
 | 씬 흐름 | Title → Lobby → **Tutorial** → M1…5→M.Boss → T1…5→T.Boss → End.Demo |
 | Tutorial 씬 | **필수 경로** (연습 구간은 경험자 생략 가능) |
 | **인게임 보이스챗** | **Dissonance + NGO** (4인 Global, Voice Activation). Steam 시 **Dissonance Steam P2P** transport 검토 |
-| CheerName | **로비 커스텀** (§3). 빈칸 = 색 기본값 + Tutorial 연습 |
-| 이름 커스텀 | **Lobby 슬롯 인라인** + Host 확정 + `LobbyPlayerState` · `PlayerPrefs` 기억 |
-| **로비 불러보기** | **Must** — 이름 확정 후 Vosk ✓/다시, **최초 1회 등록 확인 수준** (Start 강제 아님, §3.2). 반복 인식·인식률 검증은 Tutorial(§5.5)에서 |
+| CheerName | **Tutorial 씬 커스텀** (§3). 빈칸 = 색 기본값 |
+| 이름 커스텀 | **Tutorial 자유 입력·자유 재변경** (Player별 `NetworkVariable`) + Host 검증·확정. 잠금 없음, `PlayerPrefs` 기억 없음(매 판 재입력) |
+| **말해보기** | **Must** — Tutorial에서 확정↔재변경 반복 가능, 매 확정마다 Vosk grammar 재빌드 → 즉시 재테스트 (§5.5) |
 | **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (사전 검증 + 발음 변형 대체 단어, §5) |
 | 채팅 응원 | `/cheer {name}` **필수 폴백** |
 | 스테이지 버프 | M = **Shield** (`Invincibility`), T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
@@ -31,7 +31,7 @@
 | **멀티 연결** | **Steam P2P + Lobby** (`NetworkDesign` ④) |
 | **목표** | **2026-09-01** 원격 협동 + 보이스 + 응원 + Tutorial (텔레메트리는 출시 후 OK) |
 | **개발자 테스트** | PC **2대** → Steam **2인** Must; **4인 1회** 권장 |
-| 음성 인식 정확도 | 100% 불필요. 로비 불러보기(최초 1회) → **Tutorial 말해보기(반복 인식·인식률 최종 검증)**로 확인 |
+| 음성 인식 정확도 | 100% 불필요. **Tutorial 말해보기(확정↔재변경 자유 반복, 인식률 검증)**로 확인 |
 
 > **데모 / Playtest 없음.** 원격 IP Join / UDP discovery **미사용**. 개발=ParrelSync·localhost, 배포=Steam (`ReleaseRoadmap.md` §3).
 
@@ -77,8 +77,8 @@
 └──────────────────────────────────────────────────────┘
 ```
 
-**규모 오해 방지:** 전 세계 50로비 × 4명 = 200개 이름이 **한 PC에서 200개를 동시 인식**하는 구조가 **아님**.  
-각 클라이언트는 **현재 로비의 CheerName 3~4개만** grammar/lexicon에 넣는다.
+**규모 오해 방지:** 전 세계 50세션 × 4명 = 200개 이름이 **한 PC에서 200개를 동시 인식**하는 구조가 **아님**.  
+각 클라이언트는 **현재 세션(Tutorial에서 확정된) CheerName 3~4개만** grammar/lexicon에 넣는다.
 
 ---
 
@@ -154,31 +154,38 @@
 저장·비교 시 **소문자 통일**.
 
 **빈칸 = 기본값 취급 (확정):**  
-`LobbyPlayerState.CheerName`이 **빈 문자열**이면 저장값으로 기본명을 넣지 않는다.  
+Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자열**이면 저장값으로 기본명을 넣지 않는다.  
 표시·`/cheer`·Vosk grammar·버프 대상은 **현재 `ColorIndex`의 기본 CheerName**으로 해석한다.
 
-### 3.2 어디에 설정하나 **[Ship Must]**
+### 3.2 어디에 설정하나 **[Ship Must — 2026-08-17 갱신: Lobby → Tutorial]**
 
-- **씬:** Tutorial 신설 없이 **`1.Lobby` 슬롯 UI**.
-- **UI:** 기존 슬롯 `nameText`(BERRY 등) 자리 — **로컬 슬롯만** `TMP_InputField`(또는 클릭 시 편집). 타인 슬롯은 읽기 전용.
+> **변경 배경:** 기존엔 Lobby 슬롯 인라인 편집으로 확정하고 Tutorial은 반복 인식 검증(말해보기)만 담당했으나, 2026-08-17 사용자 결정으로 **입력·확정·말해보기 전부를 Tutorial 씬 하나로 통합**한다. Lobby는 색/캐릭터 선택 + Ready + Kick만 담당하고 CheerName 관련 UI·네트워크 로직을 **전부 제거**한다.
+
+- **씬:** `2.Tutorial`. Lobby(`1.Lobby`)에는 CheerName UI가 **없다.**
+- **대상:** Tutorial 진입 시 이미 스폰되어 있는 **Player별로 독립된 이름** — Lobby 슬롯 같은 "슬롯" 개념 없음. 각자 자기 화면에서 자기 캐릭터의 이름만 입력.
+- **UI:** Tutorial 전용 이름 입력 UI(신규, §8.3) — 로컬 입력창 1개. 확정 시 자기 캐릭터 머리 위 이름표(`PlayerNameTagUI`)·팀원 화면에 **즉시** 반영.
 - **채팅 UI로 닉네임 설정하지 않음.** 인게임 `/cheer` 폴백만 채팅.
-- **타이틀에서 입력하지 않음.** (로컬 기억용 `PlayerPrefs`는 정식에서 검토)
+- **타이틀에서 입력하지 않음.**
+- **`PlayerPrefs` 기억 없음 (2026-08-17 확정, 폐기).** 매 판 Tutorial 진입 시 항상 새로 입력. "경험자 스킵" 없음 — 과잉 설계로 판단, 드롭.
 
-#### 로비 불러보기 (Say Test) **[Ship Must — 범위 축소, 2026-08-07]**
+#### 확정 → 말해보기 → 재변경 (자유 반복) **[Ship Must]**
 
-인게임 첫 실패 고통을 줄이기 위해, **로비에서 CheerName 인식이 되는지 최초 1회 정도** 확인한다.
+로비의 "최초 1회 등록 확인"과 Tutorial의 "반복 검증" 이원화는 **폐기**. Tutorial 하나에서 다음 루프를 몇 번이든 반복할 수 있다.
+
+```
+입력 → Enter(확정 제출) → Host 검증 → 통과 시 전원에 즉시 반영 + Vosk grammar 재빌드
+  → 말해보기(육안·청각 확인) → 마음에 안 들면 다시 입력 → …(반복)
+```
 
 | 항목 | 규칙 |
 |------|------|
-| 시점 | CheerName **Host 확정 후** (빈칸이면 현재 색 기본값으로 테스트) |
-| UI | 로컬 슬롯 옆 **TEST** / “불러보세요” — Heard ✓ / Try again |
-| 인식 | 로컬 Vosk + 유효 CheerName grammar. 가능하면 **팀원 슬롯 이름**도 같은 엔진으로 불러보기 |
-| 강제 | **Ready/Start 강제 통과 아님.** 실패해도 진행 가능. 안내만 (“안 되면 이름 고쳐라”) |
-| 저장 | **녹음·lexicon 학습 없음.** 검증 UI만 |
-| 숫자 테스트 | `b_4nana` 등 §3.5 잠정 숫자 — 최초 등록 확인만 여기서, **인식률 최종 판단은 Tutorial 말해보기(§5.5)** |
+| 잠금 | **없음.** Ready 같은 상태가 Tutorial엔 없으므로 언제든 재확정 가능 |
+| "최종 확정" | 별도 단계 없음 — **StageStartGate 통과 시점의 값이 곧 최종값** |
+| 강제 | 말해보기 실패해도 진행 가능. 안내만 |
+| 저장 | 녹음·lexicon 학습 없음. 검증 UI만 |
+| 숫자 테스트 | `b_4nana` 등 §3.5 잠정 숫자 — 실패율 높으면 §3.5에서 `0-9` 제거로 갱신 |
 
-> **2026-08-07 Dev Build 2인 테스트 결과 + 결론:** libvosk 네이티브 DLL(+ 종속 DLL 3종) 빌드 미포함 문제 수정 후, **로비 불러보기·인게임 음성 응원 모두 인식 자체는 정상 동작 확인.** 다만 로비 쪽에서 **최초 1회만 인식되고 이후 같은 슬롯에서 재시도하면 인식이 안 되는 증상**이 새로 발견됨 — 원인 미조사.
-> **결정(사용자 확정):** 이 증상은 **지금 조사·수정하지 않는다.** CheerName 등록·**반복 인식 안정성 검증·인식률 테스트**의 최종 무대는 **로비가 아니라 `2.Tutorial` 씬**으로 확정했기 때문 (§3.6 갱신). 로비 불러보기는 "최초 1회 등록 확인" 수준이면 충분하고, 그 이상의 반복 안정성 폴리싱은 Tutorial 구현 시로 이관한다. 다음 세션에서 이 로비 1회-한정 증상을 다시 "버그"로 재조사하지 말 것 — 필요해지면 사용자가 먼저 꺼낼 것.
+> **2026-08-07 Dev Build 2인 테스트에서 발견된 "로비 최초 1회만 인식, 재시도 시 인식 안 됨" 증상**은 이 구조 변경으로 **자연 해소**된다(로비에 이름 관련 로직이 없어지므로). 재조사 불필요.
 
 ### 3.3 소유·색 변경 (확정)
 
@@ -187,16 +194,18 @@
 - Blue 슬롯이 “berry를 회수”하지 않는다. Blue인 **다른** 플레이어가 빈칸이면 그때만 `berry`.
 - 커스텀을 지우고 확정(또는 빈칸 유지) → 다시 **현재 색 기본값** 취급.
 
-### 3.4 확정·동시성 · Ready · Start (확정)
+### 3.4 확정·동시성 — 자유 재변경 (2026-08-17 갱신)
+
+> Tutorial엔 Ready/Start 게이트가 없다. 이름은 **StageStartGate 통과 전까지 몇 번이든 재확정 가능** — "Ready 중 잠금" 개념 자체가 없다.
 
 | 단계 | 규칙 |
 |------|------|
-| 타이핑 중 | **로컬만.** 남에게 중간 글자 동기화 안 함. 슬롯에는 **직전 Host 확정값**(또는 빈칸→기본값 표시) |
-| Enter / 확정 | Client → **ServerRpc** → **Host 최종 검증** 후 `LobbyPlayerState` 반영 |
+| 타이핑 중 | **로컬만.** 남에게 중간 글자 동기화 안 함. 확정 전까지 내 화면에만 보임 |
+| Enter / 확정 | Client → **ServerRpc** → **Host 최종 검증** 후 통과 시 해당 Player의 `NetworkVariable`에 반영 → 전원 즉시 표시 갱신 |
 | 동시 확정 | **먼저 처리된 Rpc 승.** 나중 동일/위반 이름은 **거절**. UI: 치던 글자 유지 + 에러(테두리/짧은 문구) |
-| Ready 중 | **색·이름 변경 불가** (기존 색 Ready 잠금과 동일) |
-| Ready + 빈칸 | **자동으로 `berry` 등을 문자열로 넣지 않음.** 빈칸 = §3.1 기본값 취급 |
-| `CanStart` | 색 유일 **AND** (해석 후) CheerName 유일 **AND** 클라이언트 Ready. Host Start만 |
+| 재확정 | **언제든 가능.** 확정 후에도 다시 입력 → 다시 Enter로 재제출 가능(잠금 없음) |
+| 빈칸 | **자동으로 `berry` 등을 문자열로 넣지 않음.** 빈칸 = §3.1 기본값 취급 |
+| 최종값 | 별도 "확정 완료" 단계 없음 — **StageStartGate 통과 시점**의 각자 최신값이 그대로 세션 최종값 |
 
 해석 후 유일: 빈칸 플레이어의 유효 이름은 `ColorIndex` 기본값.  
 예: A가 Blue+빈칸(`berry`), B가 `berry` 커스텀 확정 시도 → Host 거절.
@@ -222,15 +231,12 @@
 
 | # | 규칙 |
 |---|------|
-| 5 | 같은 로비 세션에서 **해석 후 CheerName 중복 불가** |
-| 6 | Ready 중 이름 변경 불가 |
-| 7 | `CanStart`에 이름 유일 포함 (§3.4) |
+| 5 | 같은 게임 세션(Tutorial에 스폰된 현재 플레이어들) 안에서 **해석 후 CheerName 중복 불가** |
+| 6 | ~~Ready 중 이름 변경 불가~~ — **폐기 (2026-08-17).** Tutorial엔 Ready 잠금이 없음 (§3.4) |
+| 7 | ~~`CanStart`에 이름 유일 포함~~ — **폐기 (2026-08-17).** 대신 매 확정 시마다 현재 활성 플레이어 기준 중복 검사 (§3.4) |
 | 8 | 예약어 불가: `cheer`, `admin`, `host`, `server`, `system`, `bot`, `null` 등 |
 
-> **알려진 구현 갭 (2026-08-05 발견, 의도적으로 미수정 — 재조사·재제안 금지):**
-> `LobbyNetworkManager.SetCheerNameServerRpc`의 "taken" 중복 검사와 `HasDuplicateColors()`는 **현재 점유된 슬롯끼리만** 비교함(`_slots` 순회). 미점유 색(아무도 안 앉은 색)의 기본 이름(`DefaultCheerNames[ci]`)은 비교 대상에 없음.
-> 예: 1인 플레이(Blue)가 커스텀 이름을 `sook`(Green 기본값)으로 확정해도 통과됨 → Start 시 세션 배열에 `sook`이 2번 들어감(`GameSession.SetSessionCheerNames`). `GameSession.GetSessionColorIndex`는 선형 탐색 첫 매치 반환이라 **colorIndex가 낮은 쪽이 항상 이김** — 반대 경우(낮은 색이 높은 색 기본값을 뺏음)엔 실제 응원 오작동으로 이어질 수 있음.
-> 이 갭은 규칙 #5(문서상 의도)와 실제 구현이 다르다는 걸 확인한 것이며, **사용자가 "지금처럼 점유 슬롯만 비교"로 유지하기로 명시적으로 결정함(2026-08-05)**. 다음 세션에서 이 항목을 다시 "버그"로 재보고하지 말 것 — 재논의 필요 시 사용자가 먼저 꺼낼 것.
+> **구현 갭 노트 갱신 (2026-08-17):** 2026-08-05에 기록된 "미점유 슬롯의 기본 이름은 중복 검사 대상 아님" 갭은 **Lobby 구현(`LobbyNetworkManager.SetCheerNameServerRpc`, `_slots` 순회) 전제**였음. Lobby에서 CheerName 로직이 제거되므로 이 갭은 자동 소멸. Tutorial 신규 구현 시 동일한 함정(미접속/미확정 색의 기본 이름을 중복 검사에서 빠뜨리는 것)을 다시 만들지 않도록 확인만 하고, 별도 "버그"로 재조사하지 말 것.
 
 #### 금칙어 **[Ship Must]**
 
@@ -248,16 +254,15 @@
 | # | 규칙 |
 |---|------|
 | 13 | 발음 유사 (`bac` / `bek`) 경고 또는 차단 |
-| 14 | Tutorial 연습 맵 + 말해보기 — **반복 인식·인식률 최종 검증** (2026-08-07 확정, §5.5). 로비 불러보기는 최초 1회 등록 확인만 |
-| 15 | `PlayerPrefs`로 로컬 이름 기억 · 경험자 Tutorial 이름 UI 생략 (§9.3) |
+| 14 | Tutorial 연습 맵 + 말해보기 — 입력·확정·**반복 인식·인식률 최종 검증**을 Tutorial 하나로 통합 (2026-08-17, §5.5) |
+| 15 | ~~`PlayerPrefs`로 로컬 이름 기억 · 경험자 Tutorial 이름 UI 생략~~ — **폐기 (2026-08-17).** 매 판 새로 입력 |
 
 ### 3.6 **[Ship Must]** Tutorial과의 관계
 
-- **CheerName 입력 UI 자체는 Lobby 유지** (이미 구현·동작 확인됨 — 슬롯 인라인 편집 + Host 확정).
-- **⭐ 결정 (2026-08-07, "구현 시 택1" 해소):** CheerName **등록 확인 + 반복 인식 안정성 검증 + 인식률 테스트**의 최종 무대는 **Lobby가 아니라 `2.Tutorial` 씬**으로 확정. 로비 불러보기(§3.2)는 "최초 1회 등록 확인" 수준까지만 책임지고, 그 이상의 폴리싱(반복 인식·인식률)은 Tutorial 구현 시 다룬다 — 지금 로비 쪽 증상에 매달리지 않기로 함(§3.2 각주).
-- `2.Tutorial`은 **조작 연습 + CheerName 말해보기(반복 인식·인식률 검증)** 중심.
-- 인게임 이름 변경 = **Post-Launch**.
-- ⚠️ `PlayerPrefs` / TutorialCompleted는 **네트워크 재접속이 아님.** 세션 정책은 `NetworkDesign.md` §12.
+- **⭐ 결정 (2026-08-17, Lobby 방식 완전 대체):** CheerName **입력 + 확정 + 재변경 + 말해보기 전부**를 `2.Tutorial` 씬 하나로 통합. Lobby(`1.Lobby`)엔 CheerName UI·네트워크 로직이 **더 이상 없음**.
+- `2.Tutorial`은 **조작 연습 + CheerName 입력·확정·말해보기(자유 반복)** 중심.
+- 인게임(M/T 스테이지 진입 후) 이름 변경 = **Post-Launch** (Tutorial 안에서의 자유 재변경과는 별개 — Tutorial 종료 후엔 그대로 잠김).
+- `PlayerPrefs` 기반 경험자 스킵은 **완전 폐기 (2026-08-17)**. `TutorialCompleted` 플래그(연습 구간 Stealth/색 패드 스킵용)는 CheerName과 무관하게 그대로 유지 — 세션 정책은 `NetworkDesign.md` §12.
 
 ### 3.7 발음·인식 정책 (확정)
 
@@ -376,7 +381,7 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 
 | 데이터 | 저장 | 용도 |
 |--------|------|------|
-| **CheerName** (텍스트) | `PlayerPrefs` **[Ship Must]**, Network 동기화 | UI, `/cheer`, grammar 토큰 |
+| **CheerName** (텍스트) | 로컬 저장 없음 (`PlayerPrefs` 기억 폐기, 2026-08-17) — Player별 `NetworkVariable`만, 매 판 재입력 | UI, `/cheer`, grammar 토큰 |
 | **대체 발음 후보** (텍스트 목록, 사전 검증됨) | **저장 안 함** — 코드 테이블 | grammar JSON에 원래 이름과 함께 포함 |
 | **Vosk 모델** | `StreamingAssets/vosk-model-en-us-0.22-lgraph/` (폴더 204MB) | 빌드에 포함 — 런타임 압축 해제·다운로드 **없음** |
 
@@ -393,14 +398,14 @@ Vosk grammar(`vosk_recognizer_new_grm`/`set_grm`)는 **모델 사전(words.txt)�
 **A. 사전 검증 (`Model.vosk_model_find_word`)**
 
 ```
-입력: CheerName 후보 (로비 커스텀 입력 또는 고정 4종)
+입력: CheerName 후보 (Tutorial 커스텀 입력 또는 고정 4종)
   ↓
 Model.vosk_model_find_word(word) → -1 이면 모델 사전에 없음
   ↓
-사전에 없으면: 로비 "불러보기"(§3.2/§5.4) UI에서 경고 표시 (강제 변경은 아님)
+사전에 없으면: Tutorial "말해보기"(§3.2/§5.5) UI에서 경고 표시 (강제 변경은 아님)
 ```
 
-`vosk_model_find_word`는 `Assets/ThirdParty/Vosk/Model.cs`에 이미 바인딩돼 있음 — 새 네이티브 API 불필요, `CheerLexiconBuilder`/로비 검증 플로우에서 호출만 추가하면 됨.
+`vosk_model_find_word`는 `Assets/ThirdParty/Vosk/Model.cs`에 이미 바인딩돼 있음 — 새 네이티브 API 불필요, `CheerLexiconBuilder`/Tutorial 검증 플로우에서 호출만 추가하면 됨.
 
 **B. 발음 변형 대체 단어 (grammar 배열 확장)**
 
@@ -427,7 +432,7 @@ grammar JSON: [원래 이름, 대체 단어..., "[unk]"]
 
 > **2026-08-05 변경 배경:** 기존 `hobo`는 "hobak"을 순수 영어 철자 G2P로 근사(HH OW B 공유)한 것이라 실제 발화와 무관했음. `hobak`(호박)의 실제 구어 원형은 한국어 "단호박"(danhobak, 단맛 호박)이고, 그 앞 음절 "dan"이 모델 `words.txt`에 실제 등재된 단어로 확인됨 → 실발화 기반 대체 단어로 교체. **트레이드오프:** `dan`은 영어에서 매우 흔한 인명·단어라 인게임 자유 대화(Dissonance) 중 우연히 언급되면 오탐(false positive) 응원 소지가 `hobo`보다 높을 수 있음 — 플레이테스트로 재확인 필요.
 
-**[Ship Must]:** 로비 확정 시 Host → 전 Client에 CheerName 브로드캐스트 → 각 Client **동일 매핑 테이블**로 grammar 재생성(§5.3 그대로).
+**[Ship Must]:** Tutorial에서 (재)확정 시마다 Host → 전 Client에 최신 CheerName 배열 브로드캐스트 → 각 Client **동일 매핑 테이블**로 grammar 재생성(§5.3 그대로).
 
 **C. 커스텀 이름 발음 변형 — 혼합 방식 [설계 확정 2026-08-05, 구현 미착수]**
 
@@ -438,7 +443,7 @@ B는 고정 4종에만 적용됨(사람이 직접 `words.txt`를 찾아서 표�
 2. IsKnownWord(사전 검증, §5.2 A) → 사전에 없으면:
    a. 발음 근사 알고리즘(Metaphone/Soundex 계열 — 텍스트 스펠링 기반, Vosk G2P 아님)으로
       모델 words.txt 전체에서 발음이 비슷한 실제 사전 단어 N개 후보 산출
-   b. 로비 UI에 후보 리스트 표시 → 플레이어가 그중 선택
+   b. Tutorial UI에 후보 리스트 표시 → 플레이어가 그중 선택
    c. 플레이어가 후보 밖 단어를 직접 입력해도 허용 — 단 그 단어도 IsKnownWord 통과해야 함
       (Vosk grammar는 사전에 없는 단어를 원리상 출력 불가 — 어떤 방식이든 이 제약은 못 피함)
 3. 최종 선택된 "인식 대상 단어" → CheerName과 별도로 저장 (커스텀 VariantMap 엔트리로 취급)
@@ -457,27 +462,34 @@ B는 고정 4종에만 적용됨(사람이 직접 `words.txt`를 찾아서 표�
 
 → 흔한 영어 단어·이름은 대부분 이미 사전에 있음(모델이 30만+ 단어). 문제는 조어·외래어 계열만.
 
-### 5.3 네트워크 — grammar 동기화
+### 5.3 네트워크 — grammar 동기화 (2026-08-17 갱신)
 
 ```
-Host: CheerName 4개 확정 (검증·중복)
-  → ClientRpc / NetworkList
-Each Client: CheerLexiconBuilder.BuildGrammarJson(names) → Vosk Apply (로컬)
-Each Client: 자기 마이크 → 감지 → SubmitCheerServerRpc
+[Tutorial] Client: 이름 입력 → Enter → SubmitCheerNameServerRpc(candidate)
+[Host]     검증(형식·중복·금칙어) → 통과 시 해당 Player NetworkVariable 갱신
+             → 전 Client에 최신 세션 이름 배열 전파 (GameSession 갱신)
+[Each Client] 받은 이름 배열로 CheerLexiconBuilder.BuildGrammarJson(names)
+             → CheerKeywordEngine.ApplySessionGrammar(names)로 로컬 Vosk 즉시 재적용
+[Each Client] 자기 마이크 → 감지 → SubmitCheerServerRpc (응원 제출, 별개 RPC)
 ```
+
+**확정 1회성이 아니라 매 확정마다 반복** — 누군가 이름을 바꿀 때마다 이 사이클이 다시 돈다. Lobby 시절의 "Start 시 1회 배포"는 폐기.
 
 grammar/매핑 테이블 **파일을 서버 DB에 모을 필요 없음**.
 
-### 5.4 로비 불러보기 **[Ship Must — 범위: 최초 1회 등록 확인만]**
+### 5.4 (폐기 — §5.5로 통합) **[2026-08-17]**
 
-§3.2 동일. 로비에서 이름 확정 → `[TEST]` → Vosk 토큰 ✓/다시. 사전 미등재(§5.2 A) 시 경고 표시.  
-**녹음 파일을 저장하지 않음.**  
-2026-08-07 결정: 반복 인식·인식률 검증은 이 단계 책임이 아님 — §5.5로 이관.
+> 기존 "로비 불러보기"(최초 1회 등록 확인)는 Lobby에 CheerName 로직이 없어지면서 **폐기**. 입력·확정·반복 검증을 전부 Tutorial 하나(§5.5)에서 담당한다.
 
-### 5.5 Tutorial 말해보기 **[Ship Must — "구현 시 택1" 해소: Tutorial로 확정, 2026-08-07]**
+### 5.5 Tutorial 말해보기 — 확정·검증 통합 지점 **[Ship Must — 2026-08-17 최종 확정]**
 
-CheerName **반복 인식 안정성 + 인식률 테스트**의 최종 검증 지점. (과거 "로비 불러보기만으로 충분하면 생략 가능" 문구는 폐기 — 로비에서 최초 1회 인식 후 재시도 시 인식 안 되는 증상이 발견됐고, 그 검증·튜닝을 여기서 담당하기로 확정.)  
-실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝).
+CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무대. 확정마다 §5.3 사이클이 돌아 grammar가 즉시 갱신되므로, 다음 루프를 몇 번이든 반복할 수 있다.
+
+```
+입력 → 확정 → grammar 갱신 → 말해보기(테스트) → 불만족 시 다시 입력 → …
+```
+
+실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝). 강제 아님 — 실패해도 StageStartGate 진행 가능.
 
 ---
 
@@ -569,7 +581,7 @@ CheerName **반복 인식 안정성 + 인식률 테스트**의 최종 검증 지
 
 ### 8.3 Tutorial UI **[Ship Must]**
 
-- CheerName 입력 + **말해보기 테스트**
+- CheerName **입력·확정(자유 재변경) + 말해보기 테스트** — 신규 컴포넌트(§3.4/5.3, Player 프리팹에 부착)
 - Gate 카운트다운 — `TimerUI` / `OnCountdownTick` 재사용
 
 ### 8.4 채팅 입력 **[Ship Must]**
@@ -592,7 +604,7 @@ Title → Lobby → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.
 
 | 구간 | 신규 | 경험자 |
 |------|------|--------|
-| 이름 설정 + **말해보기(반복 인식·인식률 검증, §5.5)** | CheerName UI | PlayerPrefs 있으면 **생략** |
+| 이름 설정 + **말해보기(자유 재변경 반복, §5.5)** | CheerName UI | **항상 표시** — `PlayerPrefs` 스킵 없음 (2026-08-17 폐기) |
 | 연습 | Stealth, 색 패드, **응원 1회** | **생략** |
 | StageStartGate | **필수** | **필수** |
 
@@ -725,12 +737,13 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 - [ ] `CheerService` + `SubmitCheerServerRpc`
 - [ ] `/cheer {세션 CheerName}` (빈칸→색 기본값)
-- [ ] **Lobby CheerName 인라인 편집** + Host `SetCheerNameServerRpc`
-- [ ] `LobbyPlayerState.CheerName` (빈칸 = 기본값 취급) + 슬롯 UI 동기화
+- [ ] ~~Lobby CheerName 인라인 편집 + Host `SetCheerNameServerRpc`~~ — **폐기 (2026-08-17), Tutorial로 이동**
+- [ ] ~~`LobbyPlayerState.CheerName` + 슬롯 UI 동기화~~ — **폐기.** `LobbyPlayerState`에서 `CheerName` 필드 제거
 - [ ] **[필수] Lobby 씬 UI 로컬라이제이션** — `TitleMenuController`/Lobby 상태 메시지 등 하드코딩된 한국어 문자열(예: "찾는 중...", "방을 찾을 수 없습니다.", "6자리 숫자를 입력해주세요." 등)을 String Table 방식으로 전환. DialogueUI/OXQuiz와 동일한 패턴 적용
-- [ ] CheerName 검증 (§3.5) + `CanStart` 이름 유일
-- [x] **로비 불러보기** (§3.2 / §5.4) — TEST → Vosk ✓/다시 (Ready/Start 강제 아님). 2026-08-07 Dev Build 2인 확인: 최초 1회 인식 정상, **반복 재시도 시 인식 안 되는 증상** 있으나 조사 보류 (§3.2 각주) — 반복 인식·인식률 검증은 §5.5 Tutorial 항목으로 이관
-- [ ] **Dissonance + NGO** (4인 Global 보이스) — 로비에서도 마이크 공유 가능해야 불러보기 가능
+- [ ] **신규:** Tutorial CheerName 컴포넌트 (Player 프리팹 부착) — `NetworkVariable<FixedString32Bytes>` + `SubmitCheerNameServerRpc` + Host 검증(§3.5 로직 재사용) + 자유 재변경
+- [ ] CheerName 검증 (§3.5, Tutorial 활성 플레이어 기준 중복 검사로 변경)
+- [ ] ~~로비 불러보기~~ — **폐기 (2026-08-17).** §5.5 Tutorial 말해보기로 완전 통합
+- [ ] **Dissonance + NGO** (4인 Global 보이스)
 - [ ] **Vosk** grammar (세션 3~4명) + `CheerKeywordEngine`
 - [x] `CheerLexiconBuilder` — §5.2 A(사전 검증) 구현 완료, 동작 확인됨 (2026-08-05)
 - [x] `CheerLexiconBuilder` — §5.2 B(고정 4종 발음 변형 대체 단어 매핑) 구현 완료 — 실제 인식 플레이테스트는 아직
@@ -741,10 +754,10 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] 채팅 입력 UI
 - [ ] 솔로 `/cheer` + 로컬 CheerService
 - [ ] **숫자 포함 이름** — Tutorial 말해보기(§5.5)로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
-- [ ] `2.Tutorial` — 조작 연습 + CheerName **말해보기(반복 인식·인식률 최종 검증)**; 경험자 생략 OK. **[Ship Must, 최종 검증 무대 확정 2026-08-07]**
-- [ ] CheerName `PlayerPrefs` 기억 + TutorialCompleted 스킵 + Gate → M.Stage1
+- [ ] `2.Tutorial` — 조작 연습 + CheerName **입력·확정·자유 재변경·말해보기(반복 검증)**; **경험자도 스킵 없음** (2026-08-17). **[Ship Must, 2026-08-17 최종 확정]**
+- [ ] ~~CheerName `PlayerPrefs` 기억 + TutorialCompleted 스킵~~ — **폐기.** `TutorialCompleted`(연습 구간 스킵용)만 유지, CheerName엔 미적용
 - [ ] 연습 구역 (Stealth / Pad / Cheer)
-- [ ] Dev Build ② **2인** (중간) — 로비 이름+불러보기+인게임 응원
+- [ ] Dev Build ② **2인** (중간) — Tutorial 이름+말해보기+인게임 응원
 - [ ] **Steam P2P ④ 2인** (2PC — **출시 게이트**)
 - [ ] Steam **4인 1회** (권장)
 - [ ] (선택) Dissonance Steam P2P 음성 transport
@@ -781,8 +794,8 @@ A. **아니오.** Ship Must = **인게임 보이스 (Dissonance)**. Discord 링�
 **Q. 음성을 서버로 보내서 인식하나?**  
 A. **아니오.** 키워드는 **각 Client 로컬 Vosk**. 서버는 RPC·집계만. 팀 대화는 **Dissonance P2P**.
 
-**Q. 50로비면 grammar 200단어?**  
-A. **아니오.** Client당 **현재 로비 3~4 CheerName**(+대체 단어)만.
+**Q. 50개 세션이면 grammar 200단어?**  
+A. **아니오.** Client당 **현재 세션 3~4 CheerName**(+대체 단어)만.
 
 **Q. `bec`를 back처럼 발음해도 되나?**  
 A. **OK.** grammar 4택1 + §5.2 B 발음 변형 대체 단어. 100% 불필요.
@@ -818,12 +831,12 @@ A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P
 A. `/cheer {자기 CheerName}`. 빈칸이면 색 기본값 (`berry` 등).
 
 **Q. CheerName은 로비에서? Tutorial에서?**  
-A. **입력 자체는 로비 슬롯 인라인**이 기본(구현됨). 하지만 **반복 인식·인식률 검증(말해보기)의 최종 무대는 Tutorial**로 확정(2026-08-07) — 로비 불러보기는 최초 1회 등록 확인 수준만 책임진다. §3.2·§3.6·§5.5.
+A. **Tutorial.** 입력·확정·재변경·말해보기 전부 Tutorial 씬에서 처리(2026-08-17 확정). Lobby엔 CheerName UI가 없다. §3.2·§3.6·§5.5.
 
-**Q. 로비 불러보기 실패하면 Start 막나?**  
-A. **아니오.** 강제 아님. 이름 수정 안내만. §3.2.
+**Q. 말해보기 실패하면 진행 못 막나?**  
+A. **아니오.** 강제 아님. 이름 수정 안내만, 몇 번이든 다시 시도 가능. §3.2.
 
-**Q. 빈 이름에 Ready하면 berry가 저장되나?**  
+**Q. 빈 이름에 확정하면 berry가 저장되나?**  
 A. **아니오.** 빈칸 유지·기본값 **취급**만. §3.1·§3.4.
 
 **Q. 숫자가 들어간 이름?**  

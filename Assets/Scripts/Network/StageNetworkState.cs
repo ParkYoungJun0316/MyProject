@@ -22,12 +22,13 @@ using UnityEngine.SceneManagement;
 public enum ChallengeOwnerType
 {
     None,
-    OX,
+    OX, // [삭제됨] OXQuizManager 제거(MinigameDesign.md §0) — 과거 세션 값과의 숫자 충돌 방지를 위해 자리만 유지, 재사용 금지
     ColorTile,
     GridColor,
     GridBW,
     SequenceRing,
     DirectionalBarrier,
+    SideSplit, // 좌/우 분기 인원+색상 미니게임 — MinigameDesign.md §1, SideSplitChallenge
 }
 
 /// <summary>

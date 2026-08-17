@@ -2,44 +2,26 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// OX 퀴즈 발판 하나.
-/// OXQuizManager.Start()에서 quizManager, rowIndex를 자동 주입.
+/// 좌/우 분기 미니게임의 판정 볼륨 하나 (왼쪽 또는 오른쪽).
+/// SideSplitChallenge가 타이머 종료 시점에 이 볼륨의 점유 인원을 물리 오버랩으로 스냅샷 판정한다.
 ///
-/// [상태] (_BaseColor 곱셈 — 흰=원본 텍스처, 검정=안 보임)
-///  Danger  : 검정 틴트 — 오답·대기 전 연출(아이콘 숨김).
-///  Pending : 답변 대기(기본 흰=양쪽 아이콘 표시).
-///  Safe    : 흰 틴트 — 정답 칸, PNG 원색 그대로 표시.
-///
-/// [변경 사항]
-///  - Is Trigger = true 강제 설정 (Awake에서 자동 적용)
-///  - OnTriggerEnter/Exit로 목록 유지 (선택)
-///  - 판정은 OXQuizManager 타이머 종료 시 GetPlayersInVolume() 물리 오버랩으로 수행
-///  - OnCollisionEnter 기반 즉시 판정 제거
+/// [설계 원칙 — OXQuizTile과 동일]
+///  - 판정은 트리거 이벤트가 아니라 SideSplitChallenge가 타이머 종료 시 호출하는
+///    GetPlayersInVolume()의 물리 오버랩으로 수행 (이미 영역 안에 있어도 인식).
+///  - OnTriggerEnter/Exit는 참고용 occupant 목록만 유지, 판정에는 사용하지 않음.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class OXQuizTile : MonoBehaviour
+public class SideSplitZone : MonoBehaviour
 {
-    public enum TileState { Danger, Pending, Safe }
-
-    [Header("답변 설정")]
-    [Tooltip("true = O 발판, false = X 발판")]
-    public bool isOSide = true;
+    public enum VisualState { Neutral, Success, Fail }
 
     [Header("색상 (Inspector에서 조정)")]
-    [Tooltip("Pending — 흰(1,1,1)이면 텍스처 원본 그대로. 답 선택 중 양쪽 표시용.")]
-    public Color pendingColor = Color.white;
-    [Tooltip("Safe — 정답 칸. 흰(1,1,1) = PNG 원색만 보임.")]
-    public Color safeColor    = Color.white;
-    [Tooltip("Danger — 오답 칸. 검정(0,0,0) = 화면에서 숨김.")]
-    public Color dangerColor  = Color.black;
-
-    TileState _state;
-
-    // OXQuizManager.Start()에서 자동 주입
-    [HideInInspector] public OXQuizManager quizManager;
-    [HideInInspector] public int           rowIndex;
-
-    public TileState State => _state;
+    [Tooltip("판정 전 기본 상태.")]
+    public Color neutralColor = Color.white;
+    [Tooltip("판정 성공 시 잠깐 표시.")]
+    public Color successColor = new Color(0.2f, 0.9f, 0.3f, 1f);
+    [Tooltip("판정 실패 시 잠깐 표시.")]
+    public Color failColor = new Color(0.95f, 0.2f, 0.2f, 1f);
 
     readonly List<Player> _occupants = new List<Player>();
 
@@ -54,31 +36,28 @@ public class OXQuizTile : MonoBehaviour
         _rend = GetComponentInChildren<Renderer>();
         _mpb  = new MaterialPropertyBlock();
 
-        // 항상 Trigger로 강제 설정
         Collider col = GetComponent<Collider>();
         col.isTrigger = true;
 
-        ApplyColor(dangerColor);
+        ApplyColor(neutralColor);
     }
 
     // ── 공개 API ─────────────────────────────────────────────────
 
-    public void SetState(TileState newState)
+    public void SetState(VisualState state)
     {
-        _state = newState;
-        Color c = newState switch
+        Color c = state switch
         {
-            TileState.Pending => pendingColor,
-            TileState.Safe    => safeColor,
-            TileState.Danger  => dangerColor,
-            _                 => dangerColor
+            VisualState.Success => successColor,
+            VisualState.Fail    => failColor,
+            _                   => neutralColor,
         };
         ApplyColor(c);
     }
 
     /// <summary>
-    /// 타이머 종료 시점 기준, 이 발판 Collider.bounds 와 겹치는 살아있는 Player 목록.
-    /// 트리거 이벤트에 의존하지 않음 (이미 영역 안에 있어도 인식).
+    /// 타이머 종료 시점 기준, 이 볼륨 Collider.bounds 와 겹치는 살아있는 Player 목록.
+    /// 트리거 이벤트에 의존하지 않음 (이미 영역 안에 있어도 인식) — OXQuizTile.GetPlayersInVolume과 동일 원칙.
     /// </summary>
     public List<Player> GetPlayersInVolume(LayerMask playerLayers)
     {
@@ -106,9 +85,7 @@ public class OXQuizTile : MonoBehaviour
         return list;
     }
 
-    /// <summary>
-    /// 트리거 기반 목록 (판정에는 사용하지 않음).
-    /// </summary>
+    /// <summary>트리거 기반 목록 (판정에는 사용하지 않음, 디버그/보조용).</summary>
     public List<Player> GetOccupants()
     {
         for (int i = _occupants.Count - 1; i >= 0; i--)
@@ -118,10 +95,7 @@ public class OXQuizTile : MonoBehaviour
         return _occupants;
     }
 
-    /// <summary>점유자 목록 초기화. ResetQuiz 시 호출.</summary>
-    public void ClearOccupants() => _occupants.Clear();
-
-    // ── Trigger 감지 ─────────────────────────────────────────────
+    // ── Trigger 감지 (참고용) ────────────────────────────────────
 
     void OnTriggerEnter(Collider other)
     {
@@ -150,9 +124,12 @@ public class OXQuizTile : MonoBehaviour
 
     // ── 에디터 Gizmo ─────────────────────────────────────────────
 
+    [Tooltip("Gizmo 색 구분용 — 실제 판정과 무관, 왼쪽/오른쪽 구분 표시만.")]
+    public bool isLeftSide = true;
+
     void OnDrawGizmos()
     {
-        Color gc = isOSide
+        Color gc = isLeftSide
             ? new Color(0.1f, 0.5f, 1.0f, 0.35f)
             : new Color(1.0f, 0.4f, 0.1f, 0.35f);
         Gizmos.color = gc;

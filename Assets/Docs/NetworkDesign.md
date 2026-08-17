@@ -465,7 +465,7 @@ F·D 공통은 **검증 완료** 전제. 이후 **씬 단위**로 C(·필요 시
 
 | 순 | 씬 | C (챌린지) | B / E (같이 볼 것) |
 |----|-----|------------|-------------------|
-| 1 | `M.Stage2` | **OXQuiz** — **완료 (§11B로 승격)** | Drop |
+| 1 | `M.Stage2` | ~~OXQuiz~~ → **SideSplit** — 코드 작성 완료, 씬 배치·검증 대기 (§11B.3) | Drop |
 | 2 | `M.Stage3` | ColorTile | Drop, Contact, **E: AdvancingWall** |
 | 3 | `M.Stage4` | SequenceRing | Drop |
 | 4 | `M.Stage5` | GridColor + GridBW | Drop, Wind(Should), Mouth |
@@ -870,6 +870,19 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 - **ParrelSync 2인 재검증 통과 (2026-07-28)**: 콘솔 `[GameSession] N인 모드 적용` 로그가 스테이지 진입마다 찍히고, `M.Stage3` Client 화면에 타일 정상 생성 확인.
 - 상세 반영 내용: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
 
+### 11.8 Client 스폰 1프레임 워프 — 프리팹 저장 좌표 + Rigidbody 미동기화 (2026-08-17)
+
+**증상:** `M.Stage`(2~5, Boss 포함) Client 스폰 직후 1프레임 만에 스폰 좌표와 무관한 임의 좌표로 튀어 낙사. Host는 재현 안 됨.
+
+**원인:** `Player1.prefab` 루트 `m_LocalPosition`이 `(-167.18423, 0, -20.28356)`으로 저장돼 있었다(과거 `2.Tutorial.unity` 인스턴스를 Apply to Prefab하며 그 씬 좌표가 프리팹 원본에 박제됨). Host는 `Instantiate(prefab, e.SpawnPos)`로 위치를 직접 지정해 이 값을 거치지 않지만, Client는 프리팹 기본 포즈로 인스턴스화 후 스폰 메시지로 **Transform만** 보정한다 — `Rigidbody`(`isKinematic=false`, `Interpolate=on`)의 물리 포즈는 프리팹에 박힌 좌표에 남아있다가 다음 물리 틱에 Transform을 그 값으로 되돌렸다. `NetworkPlayerSetup.EnablePhysics()`가 velocity만 리셋하고 `rb.position`을 스폰 Transform에 맞추지 않은 게 직접 원인.
+
+**수정:**
+1. `Player1.prefab` 루트 좌표 `(0,0,0)` 원복(사용자, 에디터 — 프리팹 파일은 에이전트가 직접 쓰지 않음).
+2. `NetworkPlayerSetup.EnablePhysics()`에 `_rb.position = transform.position; _rb.rotation = transform.rotation;` 추가 — ②Spawn이 이미 확정한 `e.SpawnPos`에 물리 바디를 맞춤. **Writer는 여전히 `PlayerSpawnManager` 하나** — 좌표 재계산·워프 분기 없음, `VerifySpawnPosition`은 계속 검증만.
+
+**영향 범위:** Player 스폰/물리 계층 — M/T 공유. 다른 프리팹(예: 챌린지 소품)도 씬에서 Apply to Prefab 하면 같은 방식으로 재발 가능 — 프리팹 원본은 원점 기준으로만 저장할 것.
+- 상세: [`MStageNetworkBoard.md`](MStageNetworkBoard.md) "M.Stage 스폰 위치 버그" 절.
+
 ---
 
 ## 11A. 스테이지 진행 축 (SSOT)
@@ -1034,7 +1047,8 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 | 챌린지 | ①Trigger | ②RoundStart 시드로 대체할 것 | ④Judge | 상태 |
 |--------|----------|------------------------------|--------|------|
-| **OX Quiz** | 배리어 진입 트리거 | `RegenerateQuestionOrder()`(`System.Random(seed)`) | `JudgeByPosition()`(물리 오버랩) | **잠김·검증 완료** (`OXQuizManager`, `M.Stage2`) |
+| ~~OX Quiz~~ | ~~배리어 진입 트리거~~ | ~~`RegenerateQuestionOrder()`~~ | ~~`JudgeByPosition()`~~ | **제거됨 (2026-08)** — 플레이테스트 피드백("지루함")으로 삭제, `SideSplit`로 교체. 상세: [`MinigameDesign.md`](MinigameDesign.md) §0/§3 |
+| **SideSplit** (좌/우 분기) | 배리어 진입 트리거 | `RegenerateRoundPlan()`(`System.Random(seed)`, 좌/우 인원+색상 조건) | `Judge()`(좌/우 볼륨 물리 오버랩, 정확 인원+색상 일치) | **코드 작성 완료 — ParrelSync 2인 검증 대기.** `SideSplitChallenge`/`SideSplitZone`/`SideSplitObjective`/`SideSplitUI`. OX 축을 그대로 복제(설계: [`MinigameDesign.md`](MinigameDesign.md) §1/§2) |
 | ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | **완료 — ParrelSync 2인 검증 통과(2026-07-22, `M.Stage3`)**. 동일 위치/색, 성공·실패 동시, 실패 시 벽 전진 동기화 확인 |
 | GridBW | `Activate()` 호출 시점 | `PickRandomSafeTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Boss`/`M.Stage5`)**. stepIndex=라운드 번호, 데미지 버그(`ReceiveDamage` 직접 호출) 수정 포함. 동일 라운드 배치·판정·데미지 동기화, 라운드 반복 진행 확인 |
 | GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Stage5`)**. 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19). 동일 라운드 배치·판정·데미지 동기화 확인 |

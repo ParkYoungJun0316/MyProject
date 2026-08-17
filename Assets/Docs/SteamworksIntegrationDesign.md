@@ -2,8 +2,8 @@
 
 > ## ⭐⭐⭐ 다음 에이전트(새 채팅) 시작 지침 — 여기부터 읽을 것
 >
-> **트랙 6 9차 세션이 최신 — 맨 아래 "트랙 6 — 9차 세션" 절부터 읽을 것.**
-> 0. 9차 세션은 **코드 수정이 아니라 진단 로그 계측만** 추가했다 — 아직 근본 원인 미확정. 다음 세션은 사용자가 가져올 Player.log/버그 리포트로 확정 진단부터 시작할 것.
+> **트랙 6 10차 세션이 최신 — 맨 아래 "트랙 6 — 10차 세션" 절부터 읽을 것.**
+> 0. 10차 세션에서 온기동/코드입력 공통 실패의 근본 원인을 확정하고 수정 완료했다("호스트 종료 후 같은 프로세스에서 첫 클라이언트 접속" 시 NGO 씬 핸들 충돌 — `Server Scene Handle already exist!`). 다음 세션은 재현 검증 결과부터 받을 것.
 > 1. 트랙 5(6차 세션까지)는 전부 해결 확인된 히스토리 — 재조사 불필요.
 > 2. **크래시는 두 종류였다 (8차 세션에서 정정 — 7차 세션의 "D3D12 단독 원인" 결론은 절반만 옳았다):**
 >    - ① 호스트 PC **"실행 직후"** = D3D12 디바이스 제거(덤프 8건으로 증명). **D3D11 고정으로 조치 — 유지한다.**
@@ -1002,3 +1002,49 @@ Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok
 **Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`(source 태그·Stopwatch·`JoinWatchdog` 추가), `Assets/Scripts/Network/NetworkManagerSetup.cs`(`SceneManager.OnSceneEvent` 구독·승인 로그 추가), `Assets/Scripts/UI/LobbyMenuController.cs`(`Start()` 진입 로그), `Assets/Docs/SteamworksIntegrationDesign.md`.
 
 **Files read (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Scenes/0.Title.unity`(버튼 배선 확인), `.cursor/rules/bug-hunter.mdc`, `.cursor/rules/plan-first.mdc`, `.cursor/rules/diff-only.mdc`, 웹 검색(Steamworks `ELobbyType` 공식 문서, Facepunch.Steamworks lobbyId 우회 이슈 #648, `SteamMatchmaking.LobbyList` API, NGO `NetworkSceneManager.OnSceneEvent`/`SceneEvent`/`ConnectionApprovalRequest.ClientNetworkId` 공식 문서).
+
+## 트랙 6 — 10차 세션 (2026-08-17): 온기동/코드입력 공통 실패 — "Server Scene Handle already exist" 확정 진단·수정 완료
+
+> **이 절이 최신 상태.** 9차 세션에서 추가한 진단 계측(`source` 태그, `[DIAG][SceneEvent]`, `JoinWatchdog`, `LobbyMenuController.Start()` 진입 로그)이 실제로 원인을 특정하는 데 성공했다.
+
+### 재현 로그 확보 경위
+
+사용자가 계정 B(부계정, 다른 PC)와 계정 A(본인 데스크탑, "Young") 둘로 반복 테스트하며 `Player.log`/`Player-prev.log`를 여러 차례 캡처해서 제공:
+
+1. **B가 냉기동(`+connect_lobby`)으로 A의 방에 접속** — 정상 성공(로비 씬 진입, 슬롯 정상). 이후 A가 `NotifyHostQuit`으로 방을 나가서 B가 타이틀로 복귀 — **이건 버그 아님, 정상 동작.**
+2. **A가 호스트로 방을 열었다 종료(`NotifyHostQuit`) → 그 직후 같은 프로세스에서 B의 초대(`source=온기동초대`)를 받아 클라이언트로 접속 시도** — 여기서 진짜 문제 재현. `HasConnectedAsClientSteamThisProcess=False`로 찍혀서(직전엔 호스트였지 클라이언트였던 적은 없으므로) `TryRestartForWarmReconnect`가 **트리거되지 않고** 인프로세스로 접속을 시도했고, 그 결과:
+   ```
+   [NetworkManagerSetup][DIAG][SceneEvent] Type=Synchronize, ClientId=1
+   [NetworkManagerSetup][DIAG][SceneEvent] Type=Load, SceneName=1.Lobby, ClientId=1
+   [NetworkManagerSetup][DIAG][SceneEvent] Type=Synchronize, ClientId=1     ← 중복 발생
+   [NetworkManagerSetup][DIAG][SceneEvent] Type=Load, SceneName=1.Lobby, ClientId=1   ← 중복 발생
+   ...
+   Exception: Server Scene Handle (Unity.Netcode.NetworkSceneHandle) already exist!
+   Happened during scene load of 1.Lobby with Client Handle (-1754)
+   NullReferenceException (연쇄 3회)
+   [LobbyMenuController][DIAG] RefreshAllSlots 실행 — SlotCount=0, hostId=18446744073709551615(없음)
+   ```
+   호스트 슬롯까지 화면에서 사라지고("완전히 0명") 이후 화면이 멈춤 — 사용자가 "타이틀 씬에서 아예 꼼짝도 안 한다"고 보고한 증상의 정체.
+
+### 근본 원인 (확정)
+
+`TryRestartForWarmReconnect()`의 재시작 가드가 `NetworkManagerSetup.HasConnectedAsClientSteamThisProcess`(= "이 프로세스에서 **Client**로 접속한 적 있는지")만 체크했다. 이 프로세스가 **호스트**로 한 번 방을 열었다 `Shutdown()`한 경우는 이 플래그가 여전히 `False`라서 감지되지 않았다. 하지만 실측 결과 이전 세션(호스트든 클라이언트든)의 NGO `NetworkSceneManager` 씬 핸들이 `Shutdown()` 이후에도 완전히 정리되지 않고 남아있다가, 같은 프로세스로 다시 네트워킹(이번엔 클라이언트)을 시작하면 "1.Lobby" 씬 동기화 시 씬 핸들이 충돌해 `Server Scene Handle already exist!` 예외 → 연쇄 `NullReferenceException` → 슬롯 데이터 붕괴로 이어진다. 즉 트랙5에서 이미 알려진 "2번째 이상 Client 접속" 충돌과 **완전히 동일한 메커니즘**이지만, 트리거 조건이 "Client 재접속"뿐 아니라 **"Host였다가 Client로 최초 전환"** 케이스에도 적용된다는 게 이번에 새로 확인된 사실.
+
+### 수정 완료
+
+- `Assets/Scripts/Network/NetworkManagerSetup.cs`: `s_hasConnectedAsClientSteamThisProcess`(`HasConnectedAsClientSteamThisProcess`) → `s_hasStartedSteamNetworkingThisProcess`(`HasStartedSteamNetworkingThisProcess`)로 개명·확장. `StartClientSteam()` 성공 시뿐 아니라 **`StartHostSteam()` 성공 시에도** 이 플래그를 `true`로 세팅하도록 추가.
+- `Assets/Scripts/UI/TitleMenuController.cs`: `TryRestartForWarmReconnect()` / `JoinGameSteamAsync()` / `JoinWatchdog()` 세 곳의 참조를 새 플래그명으로 교체 — 호스트였다가 클라이언트로 전환하는 시도도 이제 프로세스 재시작(`+connect_lobby`) 경로를 타도록 함.
+
+**Verify (다음 세션/사용자 재현):** 정확히 이번에 재현했던 순서(A가 호스트로 방 생성 → 누군가 접속·이탈 반복 → `NotifyHostQuit`으로 방 종료 → 그 직후 같은 프로세스로 초대/코드입력 접속 시도)를 다시 재현해서 `TryRestartForWarmReconnect 진입 — HasStartedSteamNetworkingThisProcess=True`가 찍히고 프로세스 재시작 후 정상적으로 로비에 입장되는지 확인. 기존에 정상이었던 "완전 최초 실행 → 접속"(케이스 1), "Client로 이미 접속했다가 재접속"(케이스 2, 트랙5부터 정상)도 회귀 없는지 같이 확인.
+
+**Impact:** 재시작 워크어라운드가 걸리는 시나리오가 늘어남(호스트 종료 후 첫 접속도 이제 재시작됨) — 재시작 자체는 트랙5부터 검증된 안전한 경로라 새로운 리스크는 아니고, 해당 유저는 접속 시 창이 한 번 재실행되는 지연(수백 ms~1초)이 추가로 생김.
+
+**Files changed (이번 세션):** `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Docs/SteamworksIntegrationDesign.md`.
+
+**Files read (이번 세션):** `Assets/Scripts/Network/LobbyNetworkManager.cs`, `Assets/Scripts/UI/LobbyMenuController.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Docs/NetworkDesign.md`(로비 관련 항목), 사용자 제공 `Player.log`/`Player-prev.log`(계정 A "Young", 계정 B "youngjun0316") 직접 읽음.
+
+### 인수인계 요약 (2026-08-17 10차 세션 기준, 최신)
+
+1. **온기동/코드입력 공통 실패 — 원인 확정·수정 완료.** "호스트 종료 후 같은 프로세스에서 첫 클라이언트 접속" 케이스가 재시작 가드에서 빠져있던 게 원인. 다음 세션은 위 Verify 시나리오 재현 결과부터 받을 것.
+2. **공개 방 목록 — 여전히 보류.** 이번 접속 버그 수정이 검증된 뒤 재개.
+3. 크래시(D3D12)/한글 사용자명 libvosk 이슈(8차 세션) — 이번 세션과 무관, 상태 변경 없음.

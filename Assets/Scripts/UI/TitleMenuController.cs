@@ -153,22 +153,24 @@ public class TitleMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 이 프로세스에서 이미 Steam Client로 접속한 적이 있으면(=이번이 2번째 이상 시도) 게임을
+    /// 이 프로세스에서 이미 Steam 네트워킹(호스트든 클라이언트든)을 시작한 적이 있으면(=이번이 2번째
+    /// 이상 시도, 혹은 호스트로 방을 열었다 종료한 뒤 처음 접속하는 경우) 게임을
     /// <c>+connect_lobby &lt;lobbyId&gt;</c> 인자로 재실행하고 현재 프로세스를 종료한다.
-    /// 재시작이 곧 "냉기동" 경로를 그대로 다시 타는 것이므로, SteamNetworkingSockets 릴레이 세션이
-    /// 누적되어 발생하는 중복 메시지/Server Scene Handle 충돌을 근본적으로 회피한다.
+    /// 재시작이 곧 "냉기동" 경로를 그대로 다시 타는 것이므로, SteamNetworkingSockets 릴레이 세션 /
+    /// NGO NetworkSceneManager 씬 핸들이 누적되어 발생하는 중복 메시지·Server Scene Handle 충돌을
+    /// 근본적으로 회피한다.
     /// 재시작 트리거 시 true 반환(호출부는 곧바로 return해야 함). 재실행 실패 시 false를 반환해
     /// 인프로세스 접속으로 폴백한다.
     /// </summary>
     static bool TryRestartForWarmReconnect(SteamId lobbyId)
     {
         Debug.Log($"[TitleMenuController][DIAG] TryRestartForWarmReconnect 진입 — lobbyId={lobbyId}, " +
-                  $"HasConnectedAsClientSteamThisProcess={NetworkManagerSetup.HasConnectedAsClientSteamThisProcess}");
+                  $"HasStartedSteamNetworkingThisProcess={NetworkManagerSetup.HasStartedSteamNetworkingThisProcess}");
 
-        if (!NetworkManagerSetup.HasConnectedAsClientSteamThisProcess) return false;
+        if (!NetworkManagerSetup.HasStartedSteamNetworkingThisProcess) return false;
 
-        Debug.Log($"[TitleMenuController] 이 프로세스에서 이미 Steam Client로 접속한 적 있음 — " +
-                  $"트랜스포트 중복 메시지 버그 회피를 위해 프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
+        Debug.Log($"[TitleMenuController] 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있음 — " +
+                  $"트랜스포트 중복 메시지/씬 핸들 충돌 버그 회피를 위해 프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
 
         if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId)) return true;
 
@@ -348,11 +350,12 @@ public class TitleMenuController : MonoBehaviour
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync 진입 — source={source}, lobbyId={lobbyId}, " +
-                  $"HasConnectedAsClientSteamThisProcess={NetworkManagerSetup.HasConnectedAsClientSteamThisProcess}");
+                  $"HasStartedSteamNetworkingThisProcess={NetworkManagerSetup.HasStartedSteamNetworkingThisProcess}");
 
-        // "온기동" 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5):
-        // 이 프로세스에서 이미 한 번이라도 Steam Client로 접속한 적이 있으면, 인프로세스 재접속은
-        // Server Scene Handle 충돌로 항상 실패하는 것으로 실측 확인됨. 검증된 "냉기동" 경로
+        // "온기동" 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5·6):
+        // 이 프로세스에서 이미 한 번이라도 Steam 네트워킹(호스트든 클라이언트든)을 시작한 적이
+        // 있으면, 인프로세스 재접속은 Server Scene Handle 충돌로 항상 실패하는 것으로 실측 확인됨
+        // (호스트 종료 후 첫 Client 접속도 포함 — 트랙6 세션10). 검증된 "냉기동" 경로
         // (+connect_lobby 커맨드라인 재실행)로 우회한다.
         if (TryRestartForWarmReconnect(lobbyId))
         {
@@ -432,7 +435,7 @@ public class TitleMenuController : MonoBehaviour
             $"NGO.LocalClientId={(net != null ? net.LocalClientId.ToString() : "null")}, " +
             $"NGO.ConnectedClients.Count={(net != null ? net.ConnectedClients.Count.ToString() : "null")}, " +
             $"SteamLobby.IsInLobby={SteamLobbyManager.Instance?.IsInLobby}, " +
-            $"HasConnectedAsClientSteamThisProcess={NetworkManagerSetup.HasConnectedAsClientSteamThisProcess}");
+            $"HasStartedSteamNetworkingThisProcess={NetworkManagerSetup.HasStartedSteamNetworkingThisProcess}");
     }
 
     /// <summary>

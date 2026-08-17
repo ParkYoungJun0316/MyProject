@@ -53,11 +53,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     readonly List<NetworkPlayerSetup> _spawnedSetups = new();
     string _lastHandledScene;
 
-    // ===== TEMP DIAG (M.Stage 스폰 위치 버그, 2026-08-13 추가) =====
-    // 원인 확정되면 이 블록 전체 삭제. Assets/Docs/MStageNetworkBoard.md "M.Stage 스폰 위치 버그" 절 참고.
-    readonly Dictionary<string, int> _diagSceneEnterCount = new();
-    // ===== TEMP DIAG END =====
-
     // ── 초기화 ────────────────────────────────────────────────────────
 
     void Awake()
@@ -219,24 +214,6 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         }
 
         _spawnedSetups.Clear();
-
-        // ===== TEMP DIAG (M.Stage 스폰 위치 버그, 2026-08-13 추가) =====
-        // 이 씬을 이번 세션에서 몇 번째로 진입하는지(콜드 최초 로드=1 vs 사망 재로드=2,3...)
-        // + Host 기준 각 고정 스폰 좌표 아래에 실제로 바닥 콜라이더가 있는지 레이캐스트로 확인.
-        // 원인 확정되면 이 블록 전체 삭제. Assets/Docs/MStageNetworkBoard.md 참고.
-        string diagScene = SceneManager.GetActiveScene().name;
-        _diagSceneEnterCount.TryGetValue(diagScene, out int diagEnterCount);
-        diagEnterCount++;
-        _diagSceneEnterCount[diagScene] = diagEnterCount;
-        Debug.Log($"[DIAG-Spawn] scene={diagScene} 진입횟수={diagEnterCount} (1=최초 콜드 로드, 2 이상=재로드)");
-        for (int i = 0; i < _entries.Length; i++)
-        {
-            Vector3 checkPos = _entries[i].SpawnPos;
-            bool hitGround = Physics.Raycast(checkPos + Vector3.up * 0.5f, Vector3.down, out RaycastHit diagHit, 10f);
-            Debug.Log($"[DIAG-Spawn] Host 레이캐스트 — color={_entries[i].ColorType} spawnPos={checkPos} " +
-                      $"바닥={(hitGround ? $"{diagHit.collider.name} (거리={diagHit.distance:F2})" : "없음(NONE)")}");
-        }
-        // ===== TEMP DIAG END =====
 
         for (int i = 0; i < _entries.Length; i++)
         {

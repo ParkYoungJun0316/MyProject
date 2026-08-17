@@ -9,37 +9,18 @@
 
 ---
 
-## 🚨 M.Stage 스폰 위치 버그 (진행 중 — 다음 에이전트는 이 절부터 읽을 것, M.Boss보다 우선)
+## ✅ M.Stage 스폰 위치 버그 — 해결 (2026-08-17)
 
-**증상 (2026-08-13, 친구들과 Steam 빌드 3~4인 테스트):**
-1. `M.Stage`(2~5, Boss 포함) 진입 시 스폰이 고정 4좌표가 아닌 완전히 다른 곳에서 됨.
-2. 특히 **그 씬 최초 진입(콜드 로드) 시에만** 낙사 지점에 스폰돼 바닥이 없어 낙사 → 사망으로 인한 씬 리로드 후에는 정상 위치로 스폰됨.
-- 리포터(사용자) 역할: **Client**. 항상(매번) 재현됨. M.Stage2/3/4/5 전부 해당한다고 응답.
-- 이제 친구 재테스트/로그 확보 불가 — **사용자가 본인 2번째 Steam 계정으로 2계정(Host+Client) 테스트하며 로그를 직접 수집할 예정.**
+**증상 (2026-08-13, Steam 빌드 3~4인 테스트):** `M.Stage`(2~5, Boss 포함) Client 진입 시 스폰 직후 1프레임 만에 `(-167.18, *, -20.28)`(월드 원점과 무관한 임의 좌표)로 튀어 낙사.
 
-**지금까지 조사한 것 (근거 있음):**
-- `PlayerSpawnManager.cs`의 스폰 좌표는 색깔당 절대 월드좌표 4개(`(0,0,5)/(5,0,0)/(-5,0,0)/(0,0,-5)`)를 모든 스테이지에 동일 재사용 — "모든 스테이지 씬 원점(0,0,0) 정렬" 전제가 코드 주석에 명시돼 있음.
-- `M.Stage2.unity`를 직접 열어 `Ground`(Stage2.1 하위) 위치·부모 체인을 확인 — 로컬좌표 전부 (0,0,0), 원점 정렬 정상. **이 씬 자체는 정적 배치 문제가 아님.** (M.Stage3/4/5/Boss는 아직 미확인)
-- T측(`T.Stage1`) Player.log 대조: 동일 코드 경로로 여러 번 사망→재로드를 거쳐도 스폰 좌표가 항상 정확 — **스폰 메커니즘 자체는 정상 동작 확인됨 (대조군).**
-- "최초 진입만 실패, 재로드는 성공" 패턴은 정적 배치 문제로는 설명 안 됨(재로드도 동일 좌표·동일 코드 경로 재사용) → **콜드 씬 로드에서만 발생하는 타이밍 경합**일 가능성이 유력. 이 프로젝트에 유사 계열 선례 있음: `GameSession.cs`의 "M.Stage3 ColorTile 미생성" 버그(구독 순서 레이스, 2026-07-28 수정), `StageNetworkState.cs`의 "M.Stage2 Stage2.1 컨테이너 비활성 상태에서 OnNetworkSpawn 시점 null 캐시" 버그.
-- 로그로 직접 확증은 못 함 — 사건 당시 Player.log가 이후 세션(T측 재테스트)으로 덮어써져 사라짐. Editor.log에는 M.Stage3 **1인 솔로** 테스트 기록만 있고 거기선 문제 없었음(스폰 항상 `(0.00, 0.30, 5.00)` 정확).
+**원인:** `Player1.prefab` 루트 `m_LocalPosition`이 `(-167.18423, 0, -20.28356)`으로 저장돼 있었음(과거 `2.Tutorial.unity`에 배치한 인스턴스를 Apply to Prefab 하면서 그 씬 좌표가 프리팹 원본에 박제됨). Host는 `Instantiate(prefab, e.SpawnPos)`로 위치를 직접 지정해 이 값을 거치지 않지만, Client는 프리팹 기본 포즈로 인스턴스화 후 스폰 메시지로 Transform만 보정한다 — 이때 `Rigidbody`(`isKinematic=false`, `Interpolate=on`)의 물리 포즈가 프리팹에 박힌 좌표에 남아있다가 다음 물리 틱에 Transform을 그 값으로 되돌리는 1프레임 워프가 발생했다. `NetworkPlayerSetup.EnablePhysics()`가 `velocity`만 리셋하고 `rb.position`을 스폰 위치에 맞추지 않았던 게 원인.
 
-**추가한 임시 진단 로그 (원인 확정되면 반드시 제거 — 코드에 `// ===== TEMP DIAG` 주석으로 표시돼 있어 grep 가능):**
+**수정:**
+1. `Player1.prefab` 루트 좌표 `(0,0,0)`으로 원복 (사용자, 에디터).
+2. `Assets/Scripts/Network/NetworkPlayerSetup.cs` `EnablePhysics()`에 `_rb.position = transform.position; _rb.rotation = transform.rotation;` 추가 — 스폰 메시지로 이미 확정된 Transform에 물리 바디를 맞춤(Writer는 여전히 `PlayerSpawnManager` 하나, 좌표 재계산 없음).
+3. 조사용 `TEMP DIAG` 블록(`PlayerSpawnManager.SpawnNetworkPlayers()`의 진입횟수/레이캐스트 로그, `NetworkPlayerSetup`의 `DiagTrackSpawnPlacement()` 코루틴 전체) 제거 완료.
 
-`grep -r "TEMP DIAG" Assets/Scripts` 로 전부 찾을 수 있음.
-
-1. `Assets/Scripts/Network/PlayerSpawnManager.cs` `SpawnNetworkPlayers()`:
-   - `[DIAG-Spawn] scene=... 진입횟수=N` — 이 씬을 이번 세션에서 몇 번째 로드하는지(1=최초 콜드, 2 이상=재로드). **콜드 vs 재로드 구분의 핵심 로그.**
-   - `[DIAG-Spawn] Host 레이캐스트 — color=... spawnPos=... 바닥=...` — Host 기준 고정 스폰좌표 4개 아래에 실제 바닥 콜라이더가 있는지(Instantiate 직전).
-2. `Assets/Scripts/Network/NetworkPlayerSetup.cs` `VerifySpawnPosition()` + 신규 `DiagTrackSpawnPlacement()` 코루틴:
-   - Owner 스폰 직후 최대 90프레임(~1.5초) 동안 매 프레임 `[DIAG-Spawn] clientId=... frame=... pos=... 바닥=...` 로그.
-   - 낙사 임계값(`fallDeathY`) 아래로 내려가는 순간 `*** 낙사 임계값 이탈 감지 ***` 강조 로그 1회 남기고 코루틴 종료.
-
-**다음 에이전트가 할 일 (사용자가 2계정 테스트 후 Player.log를 주면):**
-1. `C:\Users\u\AppData\LocalLow\DefaultCompany\Kkul-tteok!\Player.log`(Host)와 Client 쪽 로그를 받아서 `[DIAG-Spawn]` 줄만 시간순으로 대조.
-2. **진입횟수=1(콜드)** 일 때와 **진입횟수=2 이상(재로드)** 일 때 프레임별 `pos`/`바닥` 값이 어떻게 다른지 비교 — 콜드 로드에서만 `바닥=없음(NONE)`이 몇 프레임 나오는지, 또는 `pos`가 기대값(`expected`)과 처음부터 다른지(레이스가 아니라 좌표 자체 문제) 확인.
-3. `*** 낙사 임계값 이탈 감지 ***` 로그의 frame 번호로, 이게 스폰 즉시(frame 0~2)인지 몇 프레임 지난 후인지 확정.
-4. 원인 확정되면: 위 "TEMP DIAG" 블록 전체 제거(`grep -r "TEMP DIAG" Assets/Scripts`로 찾아서 삭제) + 실제 수정 진행 + 이 절을 "해결" 처리하고 `NetworkDesign.md`에 postmortem 한 줄 남기기(Bug Hunter 규칙 — M/T 공유 컴포넌트면 공유 절에도 기록).
+**postmortem:** `NetworkDesign.md` §11.8에 기록 (Player 스폰/물리 계층이라 M/T 공유 — 라운드 보드가 아닌 §11에 직접 기재).
 
 ---
 

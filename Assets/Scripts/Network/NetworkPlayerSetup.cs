@@ -208,45 +208,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
             Debug.LogWarning($"[NetworkPlayerSetup] 스폰 위치 불일치 감지 — clientId={OwnerClientId} " +
                               $"color={myColor} expected={expected} actual={transform.position} " +
                               "(Writer=PlayerSpawnManager만 허용 — 재조정하지 않음)");
-
-        // ===== TEMP DIAG (M.Stage 스폰 위치 버그, 2026-08-13 추가) =====
-        // 원인 확정되면 이 줄 + 아래 DiagTrackSpawnPlacement() 코루틴 전체 삭제.
-        // Assets/Docs/MStageNetworkBoard.md "M.Stage 스폰 위치 버그" 절 참고.
-        StartCoroutine(DiagTrackSpawnPlacement(expected));
-        // ===== TEMP DIAG END =====
     }
-
-    // ===== TEMP DIAG (M.Stage 스폰 위치 버그, 2026-08-13 추가) =====
-    // Owner 스폰 직후 10프레임만 위치·바닥 레이캐스트를 매 프레임 기록.
-    // 씬 전환 직후 그 짧은 순간에 낙사가 나는지가 관심사라 범위를 좁혔음(원래 90프레임 → 10프레임).
-    // 최초 콜드 로드 vs 사망 재로드에서 이 로그가 어떻게 다른지 비교하는 용도.
-    // 원인 확정되면 이 메서드 전체 삭제.
-    const int DiagTrackFrames = 10;
-
-    System.Collections.IEnumerator DiagTrackSpawnPlacement(Vector3 expected)
-    {
-        float t0 = Time.realtimeSinceStartup;
-        for (int frame = 0; frame < DiagTrackFrames; frame++)
-        {
-            Vector3 pos = transform.position;
-            bool grounded = Physics.Raycast(pos + Vector3.up * 0.1f, Vector3.down, out RaycastHit hit, 5f);
-            Debug.Log($"[DIAG-Spawn] clientId={OwnerClientId} scene={gameObject.scene.name} frame={frame} " +
-                      $"t={Time.realtimeSinceStartup - t0:F3}s pos=({pos.x:F2},{pos.y:F2},{pos.z:F2}) " +
-                      $"expected=({expected.x:F2},{expected.y:F2},{expected.z:F2}) " +
-                      $"바닥={(grounded ? $"{hit.collider.name} 거리={hit.distance:F2}" : "없음(NONE)")}");
-
-            // 낙사 임계값 아래로 내려가면 즉시 강조 로그 + 조기 종료 (버그 재현 확정 지점)
-            if (_player != null && _player.enableFallDeath && pos.y < _player.fallDeathY)
-            {
-                Debug.LogWarning($"[DIAG-Spawn] *** 낙사 임계값 이탈 감지 *** clientId={OwnerClientId} " +
-                                  $"frame={frame} t={Time.realtimeSinceStartup - t0:F3}s pos={pos} fallDeathY={_player.fallDeathY}");
-                yield break;
-            }
-            yield return null;
-        }
-    }
-    // ===== TEMP DIAG END =====
-
 
     void EnablePhysics()
     {

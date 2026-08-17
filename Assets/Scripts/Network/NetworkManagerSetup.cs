@@ -61,17 +61,19 @@ public class NetworkManagerSetup : MonoBehaviour
     /// <summary>가장 최근 StartHostSteam()에서 발급한 virtual port. Lobby 데이터에 실어 Client에 전달할 때 사용.</summary>
     public int LastHostVirtualPort { get; private set; }
 
-    // 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5 — "온기동" 이슈):
-    // 이 프로세스에서 StartClientSteam()을 이미 성공적으로 호출한 적이 있으면, 이후 재접속 시도는
-    // Steam 릴레이/SteamNetworkingSockets 세션 상태가 누적되어 ConnectionApprovedMessage 등이
-    // 중복 전달되고 "Server Scene Handle already exist!"까지 유발하는 것으로 실측 확인됨
-    // (SteamClient.Shutdown()을 호출하지 않는 이슈 D 우회와 트레이드오프 관계).
-    // 완전한 재현 방지를 위해 TitleMenuController가 이 플래그를 보고 두 번째 이상 Client 접속
+    // 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5·6 — "온기동" 이슈):
+    // 이 프로세스에서 StartHostSteam()/StartClientSteam() 중 하나라도 이미 성공적으로 호출된 적이
+    // 있으면(호스트였다가 종료 후 클라이언트로 전환하는 경우 포함), 이후 접속 시도는 NGO
+    // NetworkSceneManager의 씬 핸들이 이전 세션 것과 충돌해 "Server Scene Handle already exist!" +
+    // 연쇄 NullReferenceException을 유발하는 것으로 실측 확인됨(트랙6 세션10 — 호스트 종료 후
+    // 첫 Client 접속에서도 동일 크래시 재현. HasConnectedAsClientSteamThisProcess가 "Client로
+    // 접속한 적 있는지"만 보던 시절엔 이 케이스를 못 잡았음).
+    // 완전한 재현 방지를 위해 TitleMenuController가 이 플래그를 보고 두 번째 이상 네트워킹
     // 시도부터는 인프로세스 접속 대신 프로세스 재시작(+connect_lobby)으로 우회한다.
-    private static bool s_hasConnectedAsClientSteamThisProcess;
+    private static bool s_hasStartedSteamNetworkingThisProcess;
 
-    /// <summary>이 프로세스에서 StartClientSteam()이 이미 한 번이라도 성공한 적이 있는지.</summary>
-    public static bool HasConnectedAsClientSteamThisProcess => s_hasConnectedAsClientSteamThisProcess;
+    /// <summary>이 프로세스에서 StartHostSteam() 또는 StartClientSteam()이 이미 한 번이라도 성공한 적이 있는지.</summary>
+    public static bool HasStartedSteamNetworkingThisProcess => s_hasStartedSteamNetworkingThisProcess;
 
     /// <summary>
     /// true면 기존 로컬 IP 경로(LanDiscovery/StartHost/StartClient) 사용.
@@ -236,6 +238,7 @@ public class NetworkManagerSetup : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(roomCode)) RoomCode = roomCode;
             LastHostVirtualPort = vport;
+            s_hasStartedSteamNetworkingThisProcess = true;
             SubscribeSceneDiag();
             Debug.Log($"[NetworkManagerSetup] Steam Host 시작됨 — SteamId {SteamClient.SteamId}, virtualPort {vport}");
         }
@@ -282,7 +285,7 @@ public class NetworkManagerSetup : MonoBehaviour
         bool ok = _net.StartClient();
         if (ok)
         {
-            s_hasConnectedAsClientSteamThisProcess = true;
+            s_hasStartedSteamNetworkingThisProcess = true;
             SubscribeSceneDiag();
             Debug.Log($"[NetworkManagerSetup] Steam Client 시작됨 — target {hostId}, virtualPort {virtualPort}");
         }

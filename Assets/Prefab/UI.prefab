@@ -4634,9 +4634,9 @@ GameObject:
   m_Component:
   - component: {fileID: 9129746498127195937}
   - component: {fileID: 178417388203337127}
-  - component: {fileID: 3479792593597239330}
+  - component: {fileID: 7304521213500652860}
   m_Layer: 5
-  m_Name: OXQuiz_Panel
+  m_Name: SideSplit_Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4671,7 +4671,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5681381260902060633}
   m_CullTransparentMesh: 1
---- !u!114 &3479792593597239330
+--- !u!114 &7304521213500652860
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4680,20 +4680,111 @@ MonoBehaviour:
   m_GameObject: {fileID: 5681381260902060633}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3a642a3507f5614c9ff797c554fdf78, type: 3}
+  m_Script: {fileID: 11500000, guid: 77220db2d5bc7c548a67332ac06b0d0b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OXQuizUI
-  quizManager: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::SideSplitUI
+  challenge: {fileID: 0}
   mainText: {fileID: 7652728863982384788}
   timerText: {fileID: 377218782396561647}
-  answerDisplayDuration: 1
-  explanationDisplayDuration: 5
+  promptNoColor:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Prompt.NoColor
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  promptColorLeft:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Prompt.ColorLeft
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  promptColorRight:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Prompt.ColorRight
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  successText:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Result.Success
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  failText:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Result.Fail
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  clearText:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Result.Clear
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  colorNameBlue:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Color.Blue
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  colorNamePurple:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Color.Purple
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  colorNameGreen:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Color.Green
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  colorNameYellow:
+    m_TableReference:
+      m_TableCollectionName: SideSplit
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: Color.Yellow
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  resultDisplayDuration: 1.5
   clearDisplayDuration: 2
-  questionColor: {r: 1, g: 1, b: 1, a: 1}
-  trueColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
-  falseColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
-  explanationColor: {r: 1, g: 0.9, b: 0.4, a: 1}
-  clearColor: {r: 0.9333334, g: 0.509804, b: 0.9333334, a: 1}
+  promptColor: {r: 1, g: 1, b: 1, a: 1}
+  successColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
+  failColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+  clearColor: {r: 1, g: 1, b: 1, a: 1}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5948791844144693517
 GameObject:
   m_ObjectHideFlags: 0
