@@ -253,6 +253,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_rb == null) return;
         _rb.linearVelocity  = Vector3.zero;
         _rb.angularVelocity = Vector3.zero;
+        // 스폰 메시지로 이미 확정된 Transform(e.SpawnPos)에 물리 바디를 맞춘다.
+        // 안 맞추면 Rigidbody가 프리팹 저장 포즈에 남아있다가 다음 물리 틱에
+        // Transform을 그 포즈로 되돌리는 1프레임 워프가 발생할 수 있음(Writer는 여전히
+        // PlayerSpawnManager 하나 — 여기서는 물리 동기화만, 좌표 재계산 없음).
+        _rb.position = transform.position;
+        _rb.rotation = transform.rotation;
         // isKinematic는 ApplyPhysicsAuthority()에서 IsServer 기준으로 설정
     }
 
