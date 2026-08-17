@@ -27,30 +27,31 @@
 
 ### 2.1 멀티플레이
 
+> **⭐ 2026-08-17 확정 — `1.Lobby` 씬 폐지.** 로비가 하던 일(Kick·색 선택·Ready·Start·Steam Invite UI)은 전부 `Tutorial` 씬 앞부분(사전 게이트 구간)으로 흡수됐다. **상세 SSOT는 §6B** — 이 절 표는 씬 시퀀스 개요만. 씬 파일명도 숫자 prefix 없이 `Title`/`Tutorial`로 정리(실제 리네임은 에디터 작업, 사용자 담당).
+
 ```
-0.Title → 1.Lobby → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo → 0.Title
+Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo → Title
 ```
 
 | 씬 | 역할 |
 |----|------|
-| `0.Title` | `NetworkManager`, `GameSession`, `SceneFlowManager` (DDoL), Host/Join |
-| `1.Lobby` | Steam Lobby, Ready, 캐릭터 선택(선착순), Host Start |
-| Tutorial | **Ship Must** — 조작·말해보기 (경험자 생략 가능 UX OK) |
+| `Title` | `NetworkManager`, `GameSession`, `SceneFlowManager` (DDoL), Host/Join, Steam Invite 수락(아직 방 안 만든 상태에서만) |
+| `Tutorial` | **Ship Must** — **사전 게이트 구간(구 Lobby 역할 흡수, §6B)** + 조작·CheerName·응원 체험 + `TutorialGatherZone` |
 | `M.Stage1`…`M.Stage5` / `M.Boss` | M 바이옴 + 보스 |
 | `T.Stage1`…`T.Stage5` / `T.Boss` | T 바이옴 + 보스 |
 | `End.Demo` | 클리어 UI → 타이틀 복귀 (씬명 레거시) |
 
 `SceneFlowManager.sceneSequence` 권장 순서:  
-`M.Stage1`…`M.Stage5`, `M.Boss`, `T.Stage1`…`T.Stage5`, `T.Boss`, `End.Demo`.
+`Tutorial`, `M.Stage1`…`M.Stage5`, `M.Boss`, `T.Stage1`…`T.Stage5`, `T.Boss`, `End.Demo`.
 
 ### 2.2 솔로 (1인 Host)
 
 ```
-0.Title → 1.Lobby (Host 1인, 즉시 CanStart) → (동일 스테이지 시퀀스) → End.Demo → 0.Title
+Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스테이지 시퀀스) → End.Demo → Title
 ```
 
 - **NGO 사용.** `LobbyMode.OnlineHost` + `partySize=1`. 멀티와 동일 코드 경로.
-- 로비에서 Start 즉시 가능 (`LobbyNetworkManager.CanStart()` — Host 1인이면 즉시 true).
+- `TutorialGatherZone`은 헤드카운트 비교 방식(§6B.3)이라 Host 1인이면 "존 안 인원 1 == 접속 인원 1"이 즉시 성립 → 카운트다운 즉시 시작.
 - 1인 전용 규칙: `GameSession.ActivePlayerCount == 1`
   - `CheerService.ValidateCheer`: self-cheer 허용
   - `GetRequiredVotes()`: `max(1, 0) = 1` → 1표로 버프 발동
@@ -59,7 +60,7 @@
 
 ## 3. DontDestroyOnLoad (Title부터)
 
-`0.Title`에 배치 후 세션 종료까지 유지:
+`Title`에 배치 후 세션 종료까지 유지:
 
 | 오브젝트 | 비고 |
 |----------|------|
@@ -89,8 +90,8 @@
 ### 4.2 Steam P2P + Lobby (**Ship Must**, `ReleaseRoadmap.md` §3 ④)
 
 - **Steamworks** 초기화 + **Steam Networking** transport + **Steam Lobby**.
-- Join: Lobby 코드 / 친구 초대.
-- UI 마스킹 예: 식별자 `7**1` 형태.
+- **Join: Steam 초대 전용, 룸코드 없음 (2026-08-17 확정).** 친구 목록에서 "Join Game" 또는 게임 내 Invite 버튼(`ActivateGameOverlayInviteDialog`류) → 오버레이 초대 수락. 비친구는 오버레이 "Copy Link"로 얻은 `steam://joinlobby/...` 링크 공유로 대체(Discord 등) — 코드 타이핑 UI 자체가 없음.
+- **근거:** 이 게임은 사적 파티 초대 전용(공개 매칭 없음) — Deep Rock Galactic(Friends Only)/Risk of Rain 2/Overcooked 2 등 동일 조건의 Steam 코업 게임들도 전부 오버레이 초대만 쓰고 코드 UI가 없다. 이 프로젝트의 `TitleMenuController.OnSteamInviteAccepted`(온기동)/`TryAutoJoinFromLaunchArgs`(`+connect_lobby`, 냉기동)가 이미 코드 없는 조인 경로를 완성해뒀다 — 룸코드 입력(`ConfirmJoinSteam`, 64비트 Lobby Id 직접 타이핑)은 그 위에 얹힌 중복 백업 경로였을 뿐.
 - **Depot 업로드** 후 Steam 클라이언트에서 실행 — **원격 2~4인** 협동·응원·보이스 검증 환경.
 - **개발자 2PC:** 일상 QA = **2인** Steam Join. 출시 전 **4인 1회** 권장 (`ReleaseRoadmap.md` §3.1).
 
@@ -98,27 +99,22 @@
 
 ## 5. 타이틀 UI
 
+> **2026-08-17 갱신 — `1.Lobby` 폐지로 목적지가 `Tutorial`로 변경.** Host/Client 구분 없이 접속하면 즉시 `Tutorial`에 캐릭터가 스폰되고 자유 이동 가능(§6B). Room code·Steam Invite 버튼은 더 이상 로비 UI가 아니라 `Tutorial` 내 상시 HUD로 이동. 아직 방을 만들기 **전**(Title 화면 대기 중) Invite 수락 흐름은 기존과 동일하게 `TitleMenuController` 경유.
+
 | 버튼 | 동작 |
 |------|------|
-| 게임 만들기 | Host → `1.Lobby` |
-| 게임 참여 | Client, 룸코드 입력 → `1.Lobby` |
-| **게임 만들기 (솔로 포함)** | Host 시작 → `1.Lobby` (NGO OnlineHost) |
+| 게임 만들기 | Host → `Tutorial` (즉시 캐릭터 스폰, NGO `OnlineHost`) |
+| 게임 참여 (로컬 ①②만) | Client, 6자리 룸코드 입력 → `Tutorial` (즉시 캐릭터 스폰). **Steam(④) 경로에는 이 버튼이 없다** — §4.2 |
+
+> **솔로 전용 버튼 없음 (2026-08-17 정리).** 이전 버전에 "게임 만들기 (솔로 포함)"이 별도 행으로 있었으나 "게임 만들기"와 동작이 동일해 중복이었다 — 삭제. 솔로/멀티는 버튼으로 나뉘지 않고 `TutorialGatherZone` 통과 시점의 접속 인원수로 자동 결정된다(§2.2, §6B.3) — Host 혼자면 솔로, 누가 더 합류하면 멀티.
+>
+> **Steam 경로 "게임 참여" 버튼·룸코드 입력 UI 완전 제거 (2026-08-17 확정, §4.2).** `TitleMenuController`의 `joinPanel`/`roomCodeInputField`/`ConfirmJoinSteam`은 Steam(④) 빌드에서 아예 쓰지 않는다 — 조인은 오버레이 초대 수락(`OnSteamInviteAccepted`) 또는 `+connect_lobby` 냉기동(`TryAutoJoinFromLaunchArgs`)으로만 발생, 둘 다 이미 구현되어 있어 기능 손실 없음. **로컬 ①②(ParrelSync/Dev Build) 경로는 그대로 유지** — Steamworks가 없는 순수 개발 테스트 인프라라 이번 결정과 무관.
 
 ---
 
-## 6. 로비 규칙 (`1.Lobby`)
+## 6. 로비 규칙 — **폐지 (2026-08-17, `1.Lobby` 씬 삭제)**
 
-| 규칙 | 내용 |
-|------|------|
-| 인원 | **1~4인 가변** (빈 슬롯 허용. 2인이면 2슬롯만 사용 가능) |
-| Ready | **클라이언트 전원** Ready. **호스트는 Ready 불필요** (Start 조건에서 제외) |
-| Ready 취소 | 가능 |
-| Start | **호스트만**. 클라이언트 전원 Ready + **4색 중복 없음** + **CheerName 중복 없음** |
-| 캐릭터 | 자유 선택 (중복 허용). **Start 시 색·CheerName 중복 없어야 활성화**. **Ready 후 변경 불가** |
-| 빈 슬롯 UI | `Empty` |
-| Kick (**로비 전용**) | **호스트만**, Ready 전/후 모두. **즉시 해당 슬롯만 비움** — **방은 유지**, 남은 인원 계속 Ready |
-| (참고) 인게임 이탈 | 로비 Start **이후** 누구든 끊기면 §12 — **방 전체 종료**. 로비 Kick과 다름 |
-| 호스트 | Host는 readyRoot 숨김. 드롭다운으로 캐릭터·색 자유 선택 |
+> `1.Lobby` 씬 자체가 없어졌으므로 이 절의 Ready/Kick/캐릭터 선택 UI 규칙은 전부 폐기. **후속 SSOT는 §6B(Tutorial 사전 게이트 구간)** — 신규 작업·진단은 §6B를 본다. 이 절 번호는 상위 문서 상호참조 보존을 위해 자리만 유지.
 
 ---
 
@@ -126,22 +122,24 @@
 
 > **한 줄:** 진입(Connect) → 로비(Lobby) → 시작 게이트(Start Gate) → 인게임(InGame — 내부에서 §11 플레이어 축이 씬마다 반복 재진입) → 종료(Leave/SessionEnd) → ①로 재진입.
 > 이탈·클리어·Host Quit **전부 같은 종료 문(⑤)**으로 들어간다. 평행 종료 경로 없음.
-> §4·§5·§6·§12는 각 칸의 **세부 규칙**이고, 이 절은 그 위의 **축 골격**이다. 세부는 해당 절 참조, 중복 서술하지 않음.
+> §4·§5·§6(폐지)·§6B·§12는 각 칸의 **세부 규칙**이고, 이 절은 그 위의 **축 골격**이다. 세부는 해당 절 참조, 중복 서술하지 않음.
+>
+> **⭐ 2026-08-17 확정 — `1.Lobby` 씬 폐지.** 축 이름(①②③④⑤)은 그대로 유지되지만, **②Lobby 칸의 물리적 위치가 `Tutorial` 씬 안으로 이동**했다. 즉 `Tutorial` 씬에 들어가서 `TutorialGatherZone`을 통과하기 **전까지**는 전부 ②Lobby 칸(자유이동 + 연습 3존 포함)이고, 그 게이트를 통과하는 순간이 ③Start Gate이며 그 뒤(M.Stage1~)부터 ④InGame이다. **Tutorial 자체를 ④InGame으로 착각하지 말 것** — 상세는 §6B.
 
 ### 6A.0 축 (5칸 · 일방통행)
 
 ```
-① Connect → ② Lobby → ③ Start Gate → ④ InGame → ⑤ Leave/SessionEnd
+① Connect → ② Lobby(= Tutorial 사전 게이트 구간, §6B) → ③ Start Gate(= TutorialGatherZone) → ④ InGame(M.Stage1~) → ⑤ Leave/SessionEnd
                                                         │
-                          (이탈·Host Quit·클리어 전부 여기로 재진입) ── ①로 (0.Title)
+                          (이탈·Host Quit·클리어 전부 여기로 재진입) ── ①로 (Title)
 ```
 
 | 칸 | 불변식 (칸이 끝나면 참) | Writer (여기만 진실) | 상세 |
 |----|------------------------|----------------------|------|
-| ① Connect | Host 시작 또는 Client 룸코드 접속 완료 | `NetworkManagerSetup` (`StartHost`/`StartClient`) — `TitleMenuController` 경유만 | §4, §5 |
-| ② Lobby | 슬롯 배정, Ready/색/CheerName 반영. 로비 이탈=슬롯만 비움(**방 유지**) | `LobbyNetworkManager` 유일 (`OnClientJoined`/`OnClientLeft`/`SetReadyServerRpc`/`SetColorServerRpc`/`SetCheerNameServerRpc`/`KickPlayerServerRpc`) | §6 |
-| ③ Start Gate | Host만 발동. `CanStart`(클라 전원 Ready + 색·CheerName 중복 없음, 1인이면 즉시 true) 통과해야 진행. 통과 시점부터 인원/색/CheerName **동결** | `LobbyNetworkManager.StartGameServerRpc` 유일 | §6 |
-| ④ InGame | 세션 진행 중(M/T 스테이지+보스). 룸 구성(인원/색) **불변** — 이 구간엔 kick/late join/재접속 없음 | 없음(룸 레벨) — 씬 단위 진실은 §11 플레이어 축이 담당 | §11 |
+| ① Connect | Host 시작 또는 Client 접속 완료(로컬: 룸코드, Steam: 초대 수락/`+connect_lobby`) | `NetworkManagerSetup` (`StartHost`/`StartClient`류) — `TitleMenuController` 경유만 | §4, §5 |
+| ② Lobby | `Tutorial` 씬 진입 즉시 캐릭터 스폰, 색 자동배정(중복없음), 자유이동 + 연습 3존. 이 구간 이탈=슬롯(캐릭터)만 제거(**방 유지**) | `TutorialNetworkManager`(가칭, 구 `LobbyNetworkManager` 역할 이전) 유일 | §6B |
+| ③ Start Gate | 접속 중인 전원이 `TutorialGatherZone`에 동시 체류 → 카운트다운 완료. 통과 시점부터 인원 **동결** | `TutorialNetworkManager`(게이트 컴포넌트) 유일 | §6B.3 |
+| ④ InGame | 세션 진행 중(M/T 스테이지+보스). 룸 구성(인원) **불변** — 이 구간엔 kick/late join/재접속 없음 | 없음(룸 레벨) — 씬 단위 진실은 §11 플레이어 축이 담당 | §11 |
 | ⑤ Leave/SessionEnd | 이탈(Host/Client 누구든)·Host Quit·클리어 전부 같은 문. `Shutdown` + 세션 리셋 후 ①로 재진입 | `TitleReturnFlow.Request` 유일 (`ExecuteReturn`은 내부) | §12 |
 
 ### 6A.1 ⑤로 들어오는 문 — 전부 `TitleReturnFlow.Request` 경유
@@ -151,21 +149,24 @@
 | 클리어 | `EndDemoController` → `End.Demo` 복귀 버튼 | `EndDemo` (`FullRunReset`) |
 | Client 이탈(본인이 끊김을 감지) | `DisconnectManager.OnClientLeft` | `ClientDisconnected` |
 | Host 이탈/Quit | `DisconnectManager.OnClickLeaveRoom` → 타 Client에 `NotifyAllReturnClientRpc` 통지 | `HostQuitRoom` |
-| 로비 Quit | `LobbyMenuController.OnClickQuit` | `LobbyQuit` |
-| 로비 중 연결 끊김 | `LobbyMenuController.OnNetworkDisconnected` | `ClientDisconnected` |
+| Tutorial 사전 게이트 구간 Quit | Tutorial 상시 HUD의 나가기 버튼 (구 `LobbyMenuController.OnClickQuit` 역할 이전, 클래스명은 구현 시 확정) | `LobbyQuit` |
+| Tutorial 사전 게이트 구간 중 연결 끊김 | 위와 동일 컴포넌트의 `OnNetworkDisconnected` 역할 | `ClientDisconnected` |
 
 이 문들 **외**에 `NetworkManager.Shutdown()` 직접 호출 금지 — 전부 `NetworkManagerSetup.Shutdown()`을 거치고, 그 호출은 `TitleReturnFlow.ExecuteReturn` 내부 1곳뿐이어야 한다.
 
-### 6A.2 로비 Kick vs 인게임 이탈 — 구분 (혼동 금지)
+### 6A.2 Tutorial 사전 게이트 구간 이탈 vs 인게임 이탈 — 구분 (혼동 금지)
 
-| | 로비 Kick (②) | 인게임 이탈 (⑤) |
+> **2026-08-17 확정 — Kick 기능 자체를 완전히 폐지한다.** 구 로비의 "Host가 대상을 지정해 강퇴" 기능은 Tutorial 사전 게이트 구간에도 이식하지 않는다. Host는 특정 Client를 강제로 내보낼 수 없다 — 있는 것은 **자연 이탈**(연결 끊김/본인 Quit)뿐이다.
+
+| | Tutorial 사전 게이트 구간 이탈 (②) | 인게임 이탈 (⑤) |
 |--|--|--|
-| 트리거 | **Host가 대상을 지정**해 강퇴 | 누구든 연결 끊김/Quit (본인 의사와 무관해도 발생) |
-| 결과 | 슬롯만 비움, **방 유지**, 남은 인원 계속 Ready | **방 전체 종료** → 전원 타이틀 |
-| API | `LobbyNetworkManager.KickPlayerServerRpc` | `DisconnectManager` → `TitleReturnFlow` |
-| 인게임에 존재하는가 | **아니오** — 로비 전용 | 이게 인게임에서 "누가 빠지는" **유일한** 경로 |
+| 트리거 | 누구든 연결 끊김/Quit (Host가 강제로 내보낼 수 없음) | 누구든 연결 끊김/Quit |
+| 결과 | 캐릭터(슬롯)만 제거, **방 유지**, 남은 인원은 계속 자유이동/게이트 대기 | **방 전체 종료** → 전원 타이틀 |
+| API | `TutorialNetworkManager`의 `OnClientLeft`류 (구 `LobbyNetworkManager.OnClientLeft` 역할 이전) | `DisconnectManager` → `TitleReturnFlow` |
+| Host 이탈 시 | **방 전체 종료** (Host는 ②에서도 예외 없음 — 6A.2-표와 별개로 6B.4 참조) | **방 전체 종료** |
+| 인게임에 존재하는가 | **아니오** — Tutorial 사전 구간 전용 | 이게 인게임에서 "누가 빠지는" **유일한** 경로 |
 
-**인게임 Kick(강퇴/Ban)은 존재하지 않고, 앞으로도 추가하지 않는다.** Host가 인게임 중 특정 Client를 강제로 내보내는 기능은 로비에만 있다. 인게임에서 누군가 빠지면(자의든 타의든, 인터넷 문제·개인 사정 등) 이는 **"이탈"**이며, §12 규칙대로 **방 전체가 종료**된다 — "Kick"이라는 별도 기능이 아니다.
+**Kick(강퇴/Ban)은 존재하지 않고, 앞으로도 추가하지 않는다** — 로비였을 때도, 지금 Tutorial 사전 구간이 되어서도 마찬가지다. 인게임에서 누군가 빠지면(자의든 타의든, 인터넷 문제·개인 사정 등) 이는 **"이탈"**이며, §12 규칙대로 **방 전체가 종료**된다 — "Kick"이라는 별도 기능이 아니다.
 
 ### 6A.3 개발 환경 연결 방식 — 실제 가능한 것만 (§4.1 보강)
 
@@ -184,33 +185,216 @@
 
 | 항목 | 이유 |
 |------|------|
-| 인게임 Kick(강퇴) 기능 추가 | 로비 전용 (§6A.2). 인게임에 만들지 않음 |
+| Kick(강퇴) 기능 추가 (로비였을 때도, Tutorial 사전 구간에도) | 완전 폐지 (§6A.2, §6B.4). 어디에도 만들지 않음 |
 | Late Join / 재접속 / 호스트 마이그레이션 | §12 미지원 정책. 코드에도 없음(확인됨) — 추가 금지 |
+| **Tutorial 사전 게이트 구간의 동적 합류를 "Late Join"으로 착각** | 이는 ②Lobby 칸의 정상 동작(§6B) — Late Join은 ④InGame(M/T 스테이지) 중 재접속을 뜻함. 서로 다른 개념, 혼동 금지 |
 | `NetworkManager.Shutdown()` 직접 호출 | ⑤ Writer(`TitleReturnFlow`) 우회 — 금지 |
-| `LobbyNetworkManager`의 로비 이탈/Kick 경로를 인게임 이탈에 재사용 | ②/⑤ 별도 유지, 섞지 말 것 |
-| 인게임(④) 중 인원/색/CheerName 변경 | ③ Start Gate 통과 후 동결 |
+| `TutorialNetworkManager`의 사전 구간 이탈 경로를 인게임 이탈에 재사용 | ②/⑤ 별도 유지, 섞지 말 것 |
+| 인게임(④) 중 인원/색 변경 | ③ Start Gate 통과 후 동결 |
 | 실사용 LAN 2PC 연결을 정식 테스트/배포 수단으로 취급 | §6A.3 — 미지원. ①②만 |
 
 ### 6A.5 증상 → 볼 칸 (진단 사다리)
 
 | 증상 | 먼저 볼 칸 |
 |------|-----------|
-| Ready 눌러도 Start 안 됨 | ③ `CanStart` (Ready 전원? 색·CheerName 중복?) |
-| 로비에서 나갔는데 방이 통째로 터짐 | ②/⑤ 혼동 — 지금 로비인지 인게임인지, 호출된 게 `LobbyNetworkManager.OnClientLeft`인지 `DisconnectManager`인지 확인 |
+| `TutorialGatherZone`에 다 모였는데 카운트다운 안 시작 | ③ 헤드카운트 비교 로직 (접속 인원 수 vs 존 안 인원 수 불일치, §6B.3) |
+| Tutorial에서 나갔는데 방이 통째로 터짐 | ②/⑤ 혼동 — 지금 게이트 통과 전인지 후인지, 호출된 게 `TutorialNetworkManager`의 사전구간 이탈 경로인지 `DisconnectManager`인지 확인 |
 | 인게임 중 한 명 나갔는데 계속 진행됨 | ⑤ `DisconnectManager.OnClientLeft` 콜백 등록 여부 |
 | 타이틀로 안 돌아가고 멈춤 | ⑤ `TitleReturnFlow.Request` 호출 여부 / `Shutdown` 완료 여부 |
 | "인게임에서 Kick하고 싶다"는 요청 | 의도된 미지원(§6A.2) — 버그 아님, 구현하지 않음 |
-| 재접속/Late Join 요청 | 의도된 미지원(§12) — 버그 아님, 구현하지 않음 |
+| 재접속/Late Join 요청 (M/T 스테이지 중) | 의도된 미지원(§12) — 버그 아님, 구현하지 않음. **Tutorial 사전 구간의 동적 합류와 다른 개념** |
 | 개발 중 다른 PC로 접속이 안 됨 | §6A.3 — 의도된 제약. ①②만 사용, LAN 실사용 기대하지 말 것 |
 
 ### 6A.6 검증 (ParrelSync 2인)
 
-1. Title → Host 생성 → Client 룸코드 접속 → Lobby 슬롯 반영 (①→②)
-2. 색·CheerName 중복 상태에서 Start 시도 → 막힘 확인 → 해소 후 Start (③)
+1. Title → Host 생성 → Client 룸코드 접속 → `Tutorial` 진입 즉시 캐릭터 스폰 확인, 색 중복 없음 확인 (①→②)
+2. 전원 `TutorialGatherZone`에 진입 → 카운트다운 → M.Stage1 전환 확인 (③)
 3. 인게임 중 Client 강제 종료(연결 끊기) → Host 포함 전원 타이틀 복귀 확인 (⑤)
 4. 인게임 중 Host 종료 → Client `NotifyAllReturnClientRpc` 수신 후 타이틀 복귀 확인 (⑤)
 5. 클리어(`End.Demo`) → 타이틀 복귀 버튼 → `GameSession`/`SceneFlowManager` 리셋 확인 (⑤→①)
 6. `grep`: 게임 코드 내 `NetworkManager.Shutdown()` 직접 호출 — `NetworkManagerSetup` 내부 1곳 제외 **0건**
+
+---
+
+## 6B. Tutorial 사전 게이트 구간 (구 Lobby 흡수 — 2026-08-17 확정)
+
+> **SSOT.** `1.Lobby` 씬이 하던 일(Kick·색 선택·Ready·Start·Steam Invite UI)의 후속 규칙은 전부 이 절에 모은다. Tutorial 세부 콘텐츠(연습 존 배치·CheerName UX 등)는 `CheerAndTutorialDesign.md` §9가 SSOT이고, 이 절은 **네트워크·수명주기 관점**만 다룬다 — 중복 서술 금지.
+
+### 6B.1 배경 · 왜 없앴나
+
+- 로비가 실질적으로 하던 일은 "인원 모이기 + 색 배정 + Start 대기"뿐이었고, 이 3가지 모두 Tutorial 진입 시점부터 자연스럽게 해결 가능(§6B.2~3).
+- Kick은 파티가 사적·초대 전용이라 실사용 가치가 낮다고 판단해 **기능 자체를 폐지**(§6A.2).
+- Steam Invite UI(룸코드 없음, §4.2·§6B.5)만 별도 씬 없이도 상시 HUD로 대체 가능.
+- 씬 하나(로드/언로드, 전용 NetworkManager, 별도 UI 세트)를 통째로 없애 흐름을 단순화: `Title → Tutorial → M.Stage1…`.
+
+### 6B.2 진입 · 스폰 · 색 배정
+
+> **구현 참고 (2026-08-17 확인) — 이 절의 스폰 메커니즘은 신규 설계다.** 기존 `LobbyNetworkManager`는 실제 Player `NetworkObject`를 스폰한 적이 없다 — 로비는 `NetworkList<LobbyPlayerState>`(색·Ready·이름 데이터)만 관리했고, 실제 캐릭터는 `StartGameServerRpc` 시점에 `PlayerSpawnManager.InitializeOnline()` + 스테이지 씬 진입 시 `SpawnNetworkPlayers()`(4색 고정 좌표 배치 스폰)로만 생성됐다(`NetworkManagerSetup.ApproveConnection`의 `CreatePlayerObject = false` 주석이 이를 증명). 따라서 **"구 로비 로직 이전"은 색 배정(`GetNextFreeColorIndex()`류)에만 해당** — 접속 즉시 캐릭터 스폰 자체는 아래 표대로 새로 구현한다.
+
+| 항목 | 규칙 |
+|------|------|
+| 캐릭터 스폰 시점 | Host/Client가 `Tutorial`에 접속(=Connect 완료)하는 **즉시** — 대기 없음 |
+| 스폰 Writer/트리거 | **Host** `NetworkManager.OnClientConnectedCallback`(기존 `LobbyNetworkManager.OnClientJoined`와 동일 지점 재사용 — `EnableSceneManagement` 하에서 이 콜백은 해당 클라이언트의 씬 동기화 완료 후 발생하므로 안전) → `Instantiate` + `SpawnWithOwnership(clientId, destroyWithScene:true)` |
+| `destroyWithScene` | **`true`** (2026-08-17 확정) — §11(M/T 스테이지)과 동일 원칙, §11.4 "DDOL 플레이어 가정 폐기"와 일치. `TutorialGatherZone` 통과 후 `M.Stage1` 로드 시 씬 언로드로 자동 Despawn되어 §11 ②Spawn(배치 스폰)과 충돌 없음 |
+| 색 배정 | **자동, 접속 순서대로 겹치지 않는 색 1개** 할당 (기존 `LobbyNetworkManager.GetNextFreeColorIndex()`류 로직을 이전) |
+| 색 해제 시점 | 이탈(`OnClientDisconnectCallback`) **즉시** — 기존 `OnClientLeft`가 슬롯을 즉시 제거하던 패턴과 동일, 유예 없음 |
+| 색 재선택 UI | **없음** — 색 선택 화면 자체가 사라짐 (구 로비 캐릭터 선택 드롭다운 폐지) |
+| 이동 | Owner + `ClientNetworkTransform`, §7.3과 동일. 스폰 즉시 자유이동 가능 |
+| 이후 인원 추가 합류 | `TutorialGatherZone` 통과 **전까지** 언제든 가능 (Steam Invite 수락 시, §6B.5) — 이는 "Late Join"이 아니라 ②Lobby 칸의 정상 동작(§6A.4) |
+| 최대 인원(4인) 시행 위치 | **이미 해결됨.** `NetworkManagerSetup.ApproveConnection()`이 `ConnectionApprovalCallback`에서 `current < maxConnections(4)`를 체크해 5번째 접속을 거부 — 씬과 무관하게 항상 적용되므로 Tutorial 전용 추가 로직 불필요 |
+
+### 6B.3 `TutorialGatherZone` — 단일 색-무관 게이트
+
+기존 §9.4/§11A의 `StageStartGate`+`ColoredStartZone`(색별 지정 구역) 방식이 아니라, **색 구분 없는 단일 트리거 존**으로 단순화한다.
+
+| 항목 | 규칙 |
+|------|------|
+| 존 개수 | **1개** (색별 4구역 아님) |
+| 트리거 조건 | 존 안에 있는 플레이어 수 == **현재 접속 중인 플레이어 수** (헤드카운트 비교, 색 무관) |
+| 통과 시 | 카운트다운(수 초) 시작 → 카운트다운 중 누가 이탈/신규 합류하면 **카운트다운 리셋** → 완료되면 인원 **동결**, `M.Stage1` 로드 |
+| 동적 인원 대응 | 헤드카운트 비교라 인원이 늘거나 줄어도 별도 로직 불필요 — "존 안 인원 == 접속 인원"만 보면 됨 |
+| Writer | `TutorialNetworkManager`(가칭) 내 게이트 컴포넌트. NGO 스타트 로직(시드 생성, `SceneFlowManager.LoadNextScene` 호출)도 여기서 수행 — 구 `LobbyNetworkManager.StartGameServerRpc` 역할 이전 |
+| 솔로 | 1인이면 "존 안 1 == 접속 1"이 즉시 성립 → 카운트다운 즉시 시작 (§2.2) |
+
+### 6B.4 이탈 정책 (게이트 통과 전)
+
+| 상황 | 결과 |
+|------|------|
+| Client가 연결 끊김/Quit | 캐릭터(슬롯)만 제거, **방 유지** — 남은 인원은 계속 자유이동/게이트 대기 (구 로비 정책과 동일) |
+| **Host**가 연결 끊김/Quit | **방 전체 종료** (호스트 마이그레이션 없음 — §12와 동일 원칙, 예외 없음) |
+| Kick | **없음** — §6A.2 |
+
+게이트 통과 **후**(= ④InGame 진입 후)는 이 절이 아니라 §12(이탈 → 방 전체 종료)가 적용된다.
+
+### 6B.5 Steam Invite UI (**룸코드 없음** — 2026-08-17 확정, §4.2)
+
+| 항목 | 규칙 |
+|------|------|
+| 위치 | `Tutorial` 씬 내 **상시 HUD 패널** (구 로비 전용 화면이 아님 — 플레이 중에도 계속 보임) |
+| Steam(④) 경로 표시 내용 | **Invite 버튼만.** 룸코드 표시 없음 — 클릭 시 오버레이 초대 다이얼로그(`ActivateGameOverlayInviteDialog`류) 오픈 |
+| 로컬(①②) 경로 표시 내용 | 6자리 룸코드 텍스트만(개발 편의) — Steam Invite 버튼은 로컬 경로에 없음 |
+| 표시 시점 | Tutorial 진입 ~ `TutorialGatherZone` 통과 전까지 |
+| 게이트 통과 후 | HUD 숨김 (더 이상 인원 늘어날 수 없으므로) |
+| 초대 수락 처리 | 게이트 통과 **전**까지 수락 가능 → 수락 시 §6B.2대로 즉시 스폰. 통과 **후** 수락은 무시(이미 인원 동결, §6B.3) |
+| Title 화면에서 수락 | 기존과 동일 — `TitleMenuController.OnSteamInviteAccepted`/`TryAutoJoinFromLaunchArgs`가 처리 (Tutorial HUD와 무관, 이미 구현됨) |
+
+### 6B.6 관련 코드 (이전 대상)
+
+| 구 컴포넌트(로비) | 신 위치/이름 | 비고 |
+|---|---|---|
+| `LobbyNetworkManager` | `TutorialNetworkManager`(가칭, 리네임 확정) | `Tutorial` 씬에 배치. `OnClientJoined/Left`, 색 자동배정, 게이트 트리거, Start 로직 통합 |
+| `LobbyMenuController` | Tutorial 상시 HUD 컨트롤러(가칭) | Steam 경로: Invite 버튼 + 나가기 버튼. 로컬 경로: 룸코드 표시 + 나가기 버튼 (§6B.5). Ready/색선택/Kick UI 전부 삭제 |
+| `TitleMenuController`의 `joinPanel`/`roomCodeInputField`/`ConfirmJoinSteam` | **Steam 경로 삭제** | 로컬 경로(`ConfirmJoinLocal`)는 유지. Steam 조인은 오버레이 초대/`+connect_lobby`로만(§4.2) |
+| `1.Lobby` 씬 | **삭제** | 사용자가 에디터에서 삭제 |
+| `StageStartGate` / `ColoredStartZone` (Tutorial용) | `TutorialGatherZone` | 색 구분 없는 단일 존으로 대체. **M/T 스테이지의 색별 게이트는 영향 없음** — 그쪽은 계속 `StageStartGate`/`ColoredStartZone` 유지 |
+
+**주의 (2026-08-17 확인):** 위 표의 "이전"은 `LobbyNetworkManager`가 실제로 갖고 있던 로직(색 자동배정 `GetNextFreeColorIndex()`, 접속/이탈 콜백 등록 패턴)에만 해당한다. **캐릭터 스폰 자체(`Instantiate`+`SpawnWithOwnership`)는 구 로비에 없던 신규 로직**이다 — §6B.2 참고.
+
+### 6B.7 구현 순서 (실행용 체크리스트 — 2026-08-17 확정)
+
+> **이 절의 목적:** §6B(+§4.2 Steam 룸코드 폐지, §5 Title UI) 전체를 실제로 구현할 때 따라갈 순서. 세부 규칙은 여기서 다시 설명하지 않고 각 항목이 해당 절을 참조한다 — 이 체크리스트는 "무엇을 언제 하는지"만 다룬다. **다음 세션(새 에이전트)이 컨텍스트 없이 이어서 작업할 수 있도록 이 절 하나로 자기완결적으로 순서를 파악할 수 있게 쓴다.**
+>
+> **전제:** §6B.2(스폰 트리거·위치·`destroyWithScene`·색 배정/해제), §6B.3(`TutorialGatherZone`), §6B.4(이탈 정책), §6B.5(Steam Invite UI, 룸코드 없음), §6B.6(코드 이전 매핑표), §4.2(Steam 룸코드 폐지 근거), §5(Title UI 버튼 정리)는 **이미 확정·문서화 완료** — 구현 중 헷갈리면 이 절들을 먼저 본다.
+
+**P1 — 캐릭터 스폰 골격 (신규 로직, §6B.2)** — **코드 완료 + ParrelSync 2인(Host+Client) 검증 통과 (2026-08-17)**
+
+- [x] `TutorialNetworkManager` 신설 — `Assets/Scripts/Network/TutorialNetworkManager.cs`. **Tutorial 씬 배치 완료(사용자, §15)** — `Tutorial.unity`에 `NetworkObject`+`TutorialNetworkManager` GameObject 존재, `coordinatorPrefab` 연결 확인됨
+- [x] `NetworkManager.OnClientConnectedCallback` 구독 → 색 배정(`GetNextFreeColor()`, `LobbyNetworkManager.ColorOrder` 재사용 — 아직 이전 아님) → `Instantiate` + `SpawnWithOwnership(clientId, destroyWithScene:true)` at `PlayerSpawnManager.GetFixedSpawnPos(colorType)`
+- [x] Host 자신도 `OnNetworkSpawn`에서 동일 경로로 스폰(`AssignColorAndSpawn(LocalClientId)`)
+- [x] `OnClientDisconnectCallback` 구독 → 색 즉시 해제(`PlayerSpawnCoordinator.RemoveColorEntry`)
+- [x] (부수 작업) `PlayerSpawnCoordinator`에 `AddColorEntry`/`RemoveColorEntry` 신설 — 기존 `PrepareColors`(배치 1회용)와 별개로 접속자 1명씩 증분 갱신. `PlayerSpawnManager`에 `PlayerPrefab` 읽기 전용 프로퍼티 추가(같은 프리팹 재사용)
+- [x] **ParrelSync 1인(Host) 검증 통과 (2026-08-17):** Title → Host 생성 → `Tutorial` 진입 즉시 캐릭터 스폰 확인
+- [x] **ParrelSync 2인(Host+Client) 검증 통과 (2026-08-17):** 아래 "P1/P2 2인 검증 통과" 참고 — 버그 2건 발견·수정 후 통과
+
+**P2 — 이탈 정책 이식 (§6A.2, §6B.4)** — **코드 완료 + ParrelSync 2인 검증 통과 (2026-08-17)**
+
+- [x] Client 이탈 → 캐릭터(슬롯) 제거만, **방 유지** (`TutorialNetworkManager.OnClientLeft`) — **ParrelSync 2인 검증 통과 (2026-08-17)**, 아래 버그 수정 내역 참고
+- [x] Host 이탈 → `TitleReturnFlow.Request`(방 전체 종료) — 구 `OnClientDisconnectedSelf`/`NotifyHostQuit` 패턴 이전(`OnClientDisconnectedSelf`/`NotifyHostQuitClientRpc`)
+- [x] Tutorial 상시 HUD "나가기" 버튼 → 위와 동일 종료 경로 호출 — `TutorialNetworkManager.OnClickLeaveRoom()` (Reason=`LobbyQuit`). **`DisconnectManager.OnClickLeaveRoom()`과 동일 시그니처로 맞춤 — ESC 메뉴 Quit 버튼 Inspector 연결을 이 메서드로 재배선 완료(사용자, §15)**
+- [x] **ParrelSync 1인 검증 통과 (2026-08-17):** Host가 ESC 메뉴 나가기 클릭 → 방 종료(타이틀 복귀) 확인
+
+#### P1/P2 2인 검증 통과 (2026-08-17) — 룸코드 표시 + 버그 2건 수정
+
+**블로커 해소:** 2인 검증 전, Client를 초대할 방법 자체가 없었다 — `Tutorial`에 Host 자신의 룸코드를 보여줄 UI가 없어서(§6B.5 "Tutorial 상시 HUD"가 P7 체크리스트로 아직 미착수 상태) Client 쪽 입력창에 넣어줄 값이 없었다. **§6B.5/P7 전체를 앞당기지 않고, 룸코드는 어차피 Steam 정식 배포에서 폐지될 예정(§4.2)이라 최소 구현만 추가:** `Assets/Scripts/UI/TutorialRoomCodeDisplay.cs` 신설 — `NetworkManagerSetup.RoomCode`(Host가 `StartHost()` 시점에 이미 로컬로 들고 있는 값, NV 신설 없음)를 그대로 텍스트로 표시. Client는 `RoomCode`가 항상 빈 문자열이라 자동으로 숨겨짐. 개발 전용 표시라 `LanDiscovery.FormatDisplayCode`의 마스킹(`12**56`)은 쓰지 않고 6자리 원본 그대로 노출 — Client가 그대로 옮겨 적어야 하므로. 이걸로 P3 "룸코드" 항목은 완료 처리(아래 P3 참고).
+
+**버그 1 — Client 카메라 안 잡힘:**
+- **증상:** ParrelSync 2인에서 Host는 카메라가 정상 바인드되는데 Client는 자기 캐릭터에 카메라가 안 붙음. 콘솔 대조 결과 Host에는 `[NetworkPlayerSetup] 카메라 바인드 완료 (OnPlayersReady)` 로그가 있고 Client에는 이 로그 자체가 없음.
+- **원인:** `PlayerSpawnCoordinator.NotifyPlayersReady()`는 `ClientRpc`로 구현되어 **호출 시점에 접속 중인 Client에게만** 전달된다. `TutorialNetworkManager.AssignColorAndSpawn`은 **Host 자신이 스폰되는 시점**(아직 아무 Client도 접속 전)에 `if (!PlayerSpawnCoordinator.IsReady) NotifyPlayersReady();`를 호출해버려, 그 뒤에 순차 합류하는 Client는 이 ClientRpc를 영원히 못 받는다 — `M.Stage1`(전원 접속 후 배치 스폰+1회 발행)과 달리 Tutorial은 "한 명씩 순차 합류" 구조라 이 가정이 깨진다.
+- **수정:** `PlayerSpawnCoordinator`에 `CatchUpReadyFor(clientId)` + `CatchUpReadyClientRpc`(대상 지정 `ClientRpcParams`) 신설 — 이미 `IsReady`가 true로 확정된 뒤 합류하는 Client 1명에게만 개별 재전송. `TutorialNetworkManager.OnClientJoined`에서 `AssignColorAndSpawn(clientId)` 직후 호출. 기존 §11.3 늦은 구독 패턴(`if (PlayerSpawnCoordinator.IsReady) BindCameraOnPlayersReady();`)은 그대로 재사용 — 신호가 개별로 도착하기만 하면 나머지는 이미 있던 로직이 처리한다.
+
+**버그 2 — Client가 나가면 방 전체 종료:**
+- **증상:** §6B.4는 게이트 통과 전 Client 이탈 = 슬롯만 제거·방 유지라고 확정했는데, 실제로는 Client가 나가는 순간 Host를 포함해 전원이 타이틀로 튕김.
+- **원인:** 코드 버그가 아니라 **씬 정리 누락** — `Tutorial.unity`에 `DisconnectManager`라는 이름의 GameObject가 `DisconnectManager` 컴포넌트(인게임 §12 "누구든 나가면 방 종료" 정책 전용, 원래 `M.Stage1`/`T.Stage1` 전용)를 붙인 채 활성 상태로 남아있었다. 이게 `TutorialNetworkManager.OnClientLeft`와 **같은** `NetworkManager.OnClientDisconnectCallback`에 동시 구독돼 있어서, Client 이탈 시 "슬롯만 제거"(정상)와 "전원 타이틀 복귀"(§12 오적용)가 동시에 발동했다.
+- **수정:** 사용자가 `Tutorial.unity`에서 `DisconnectManager` GameObject를 삭제(에디터 작업, 코드 변경 없음). §6A.2/§6B.4가 원래 요구하던 "Tutorial 사전 구간 이탈≠인게임 이탈" 구분이 이제 실제로도 지켜짐.
+
+**검증 결과 (2026-08-17, ParrelSync 2인):** 위 2건 수정 후 Client 카메라 정상 바인드 확인, Client 이탈 시 슬롯만 제거되고 방 유지·Host 계속 진행 확인.
+
+**P3 — 세션 메타데이터**
+
+- [x] 룸코드 표시 — **로컬(①②) 경로 전용, 최소 구현으로 완료** (위 "P1/P2 2인 검증 통과" 참고). 구 `_sharedRoomCode` NetworkVariable 패턴은 채택하지 않음 — `NetworkManagerSetup.RoomCode`(Host 로컬 프로퍼티)를 그대로 표시하는 것으로 충분(Client는 표시 대상 아님, §6B.5). 어차피 Steam 정식 배포에서 룸코드 자체가 폐지되므로(§4.2) 이 이상 정교화하지 않는다.
+- [ ] DisplayName/VoiceId 보고 — 구 `SubmitDisplayNameServerRpc`/`SubmitVoiceIdServerRpc` + 버퍼링 방어 이전(슬롯 귀속 → Player 인스턴스 귀속으로 변경)
+
+**P4 — `TutorialGatherZone` (§6B.3, 신규)** — **코드 완료 + 씬 배치·검증 통과 (2026-08-18, 솔로+ParrelSync 2인)**
+
+- [x] 색 무관 단일 트리거 존 — 헤드카운트 비교(존 안 인원 == 접속 인원), 카운트다운, 이탈/합류 시 리셋. `TutorialGatherZone.cs`(순수 로컬 트리거 감지, clientId 기준 점유 목록) + `TutorialNetworkManager.Update()`(Host 전용, 헤드카운트 비교·카운트다운·리셋). `ColoredStartZone`/`StageStartGate`와 동일 "트리거 감지 vs 판정" 역할 분리 원칙 재사용.
+
+**P5 — 게이트 완료 처리 (구 `StartGameServerRpc` 책임 이전, §6B.3)** — **코드 완료 + 검증 통과 (2026-08-18, 솔로+ParrelSync 2인)**
+
+- [x] `clientColorDict` 확정(그때까지 배정된 색 그대로) — `PlayerSpawnCoordinator.GetAllEntries()`로 읽음(Tutorial 접속마다 이미 누적돼 있던 값, 별도 확정 로직 불필요)
+- [x] `PlayerSpawnCoordinator` 스폰(DDOL, 기존 그대로) — Tutorial 접속 시점(`EnsureCoordinatorSpawned`)에 이미 스폰돼 있어 재스폰 불필요(§6B.2와 동일 인스턴스)
+- [x] `PlayerSpawnManager.InitializeOnline(clientColorDict)` 호출
+- [x] 세션 시드 생성+배포(`BroadcastSeedClientRpc`류), 세션 시작 서버시각 배포
+- [x] `GameSession.SetActiveColors` 확정+배포
+- [ ] `SetSessionCheerNames`/`SetSessionDisplayNames`/`SetSessionVoiceIds` 확정+배포 — **P3 두 번째 항목(DisplayName/VoiceId 보고)·P6(CheerName Tutorial 통합) 완료 후로 미룸.** 그때까지는 `GameSession`의 기본 폴백값(`GetSessionCheerName`→`LobbyNetworkManager.DefaultCheerNames`, `GetSessionDisplayName`→`"Player"`, `GetSessionVoiceId`→`null`)으로 동작 — NPE 등 하드 실패 없음, 표시 이름/음성 매칭만 부정확
+- [x] `SceneFlowManager.LoadNextScene()` 호출 → `M.Stage1`
+
+**P6 — CheerName Tutorial 통합** — **네트워크 동기화 코어 코드 완료 (2026-08-18), ParrelSync 검증 대기**
+
+> **별도 SSOT** — `CheerAndTutorialDesign.md` §11 Phase 7 / §13 체크리스트를 따라 진행. 여기서 중복 서술하지 않음. 아래는 이번 라운드에서 실제로 반영한 범위만 기록.
+
+- [x] `PlayerCheerNameSync`(`Assets/Scripts/Cheer/PlayerCheerNameSync.cs`) 신설 — Player 프리팹 부착 대상. `NetworkVariable<FixedString32Bytes>`(Server write) + `SubmitCheerNameServerRpc`(본인 소유 NetworkObject만 제출 가능 가드) + 형식·예약어·세션 내 중복 검증(§3.5) + 결과 통보 이벤트(`OnSubmitResult`)
+- [x] `CheerNameValidator`(`Assets/Scripts/Cheer/CheerNameValidator.cs`) 신설 — 구 `LobbyNetworkManager.IsValidCheerNameFormat`/`ReservedNames`를 추출한 공용 검증 유틸. `LobbyNetworkManager`도 이제 이걸 재사용 — P8에서 구 로비 코드를 지워도 검증 규칙은 남는다
+- [x] CheerName 변경 시 로컬 `CheerKeywordEngine.ApplySessionGrammar()` 재빌드 훅 연결 — 어느 Player의 이름이 바뀌었든 "내 로컬 인식기(Owner 인스턴스)" 하나만 매번 전체 이름 목록으로 재적용(§5.3)
+- [x] `TutorialNetworkManager.CompleteGate()`에 세션 CheerName 확정 추가 — 게이트 통과 시점 각자 최신값을 colorIndex 배열로 확정해 `GameSession.SetSessionCheerNames()` + `BroadcastSessionCheerNamesClientRpc`로 전원 배포(§6B.7 P3 두 번째 항목 중 CheerName 부분은 이걸로 완료 처리 — DisplayName/VoiceId는 여전히 미구현)
+- [ ] **입력 UI**(TMP_InputField 연결, 확정 버튼) — 미착수. `PlayerCheerNameSync.SubmitCheerNameServerRpc`/`OnSubmitResult`에 연결할 컨트롤러 스크립트 필요(§8.3)
+- [ ] **"말해보기" 테스트 UI** — 미착수(§5.5)
+- [ ] 금칙어 blocklist(§3.5 #9~12, 욕설/성적/혐오/우회표현) — 구 로비에도 없던 갭, 이번에도 미구현(형식·예약어만 검증)
+- [ ] ParrelSync 2인 검증 — 접속 시 CheerName 확정/재변경/중복 거절/색 변경 후 이름 유지 확인 필요
+
+**P7 — UI**
+
+- [ ] Tutorial 상시 HUD 컨트롤러(가칭) — Steam: Invite 버튼만 / 로컬: 룸코드 표시만, 공통: 나가기 버튼. 게이트 통과 후 숨김 (§6B.5)
+- [ ] Gate 카운트다운 UI(`TimerUI`/`OnCountdownTick` 재사용)
+- [ ] Title: Steam 빌드에서 `OnClickJoinGame`/`joinPanel`/`roomCodeInputField`/`ConfirmJoinSteam` 경로 숨김/미사용 처리 (§5). **로컬 경로(`ConfirmJoinLocal`)는 그대로 유지**
+
+**P8 — Kick 제거 + 구 코드 삭제**
+
+- [ ] `KickPlayerServerRpc` + Kick UI 완전 삭제
+- [ ] `LobbyNetworkManager.cs` / `LobbyMenuController.cs` / `LobbyPlayerState.cs` 삭제 (대체 완료 확인 후)
+- [ ] `TitleMenuController`의 Steam 룸코드 입력 경로(`ConfirmJoinSteam`) 삭제 (§4.2, §5)
+
+**P9 — 에디터 작업 (사용자 담당, §15)** — **부분 진행 (2026-08-17)**
+
+- [x] `Title`/`Tutorial` 씬 신설 완료(내용 있음, 실제 사용 중) — **단, `0.Title.unity`/`2.Tutorial.unity`/`1.Lobby.unity` 구버전 파일이 아직 삭제 안 되고 남아있음** (`Assets/Scenes/` 확인, 2026-08-17). 리네임이라기보다 "새 씬 생성 + 구씬 방치" 상태 — 구씬 삭제는 대체 완료(P8) 이후 정리 권장
+- [x] `Tutorial.unity`에 `TutorialNetworkManager` 배치 + `coordinatorPrefab` 연결 완료
+- [x] Tutorial ESC 메뉴 Quit 버튼 → `TutorialNetworkManager.OnClickLeaveRoom()` 재배선 완료
+- [x] `TitleMenuController.lobbySceneName` → `"Tutorial"`로 갱신 완료 (`Title.unity` 확인됨)
+- [x] `Tutorial.unity` 상시 HUD에 `TutorialRoomCodeDisplay` 텍스트 오브젝트 추가 완료 (2026-08-17, 위 "P1/P2 2인 검증 통과" 참고)
+- [x] `Tutorial.unity`의 leftover `DisconnectManager` GameObject 삭제 완료 (2026-08-17, 버그 2 수정 — 위 참고)
+- [x] `SceneFlowManager.sceneSequence` 갱신 — **확인 완료 (2026-08-18)**. `Title.unity`의 직렬화 값이 `Title, Tutorial, M.Stage1~5, M.Boss, T.Stage1~5, T.Boss` 순으로 이미 정상 배치돼 있음(1.Lobby 없음)
+- [x] `Tutorial.unity`에 `TutorialGatherZone` GameObject 신규 배치 완료 — **검증 통과 (2026-08-18)**
+
+**P10 — 검증 (ParrelSync 2인 기준)** — **P1/P2/P4/P5 관련 검증 통과, P6은 별도 SSOT 대기**
+
+- [x] Title → Host 생성 → `Tutorial` 진입 즉시 캐릭터 스폰 확인 (1인)
+- [x] Host가 ESC 나가기 → 방 종료(타이틀 복귀) 확인 (1인)
+- [x] Client 룸코드 접속 → 색 중복 없이 합류 스폰 확인 — **ParrelSync 2인 통과 (2026-08-17)**
+- [x] 접속 → 색별 고정좌표 스폰 → 게이트 통과 → `M.Stage1` 정상 진입(캐릭터 정상 스폰) — **솔로 + ParrelSync 2인 모두 통과 (2026-08-18).** CheerName 확정/재변경/말해보기 부분만 P6(CheerName Tutorial 통합) 미구현이라 아직 검증 범위 밖
+- [x] Client 이탈(게이트 전) → 슬롯만 제거, 방 유지 확인 — **ParrelSync 2인 통과 (2026-08-17)**, 버그 2 수정 후
+- [x] Host 이탈(게이트 전) → 방 전체 종료 확인 — **1인 기준 통과.** 2인 상태 재확인은 아직 별도 실시 안 함(다음 라운드 권장)
+- [x] 솔로(Host 1인) → 게이트 즉시 통과 확인 (§2.2) — **통과 (2026-08-18)**
+- [ ] Steam Invite 수락(온기동 `OnSteamInviteAccepted` / 냉기동 `TryAutoJoinFromLaunchArgs`) — 룸코드 UI 없이도 정상 조인되는지 확인 (§4.2)
+- [ ] 위 항목 통과 후 §6A.6/§11.6 기존 검증 체크리스트와 통합 실행
 
 ---
 
@@ -224,9 +408,10 @@
 
 ### 7.2 스폰 위치
 
-- **`ColoredStartZone.spawnPoint`** (존 **위**)에 배치.
+- **`ColoredStartZone.spawnPoint`** (존 **위**)에 배치. — **M/T 스테이지 전용.**
 - 리스폰 좌표는 `PlayerSpawnManager.fixedSpawnPositions`가 전담 (§11). Zone은 시작 게이트 판정만.
-- 존 트리거 진입 → 점유 → `StageStartGate` 카운트다운 (전원 점유 시 진행).
+- **`Tutorial`도 동일한 `PlayerSpawnManager.fixedSpawnPositions`(색별 4개 고정 좌표, `GetFixedSpawnPos(colorType)`)를 재사용한다 (2026-08-17 확정).** 별도의 Tutorial 전용 스폰 포인트를 새로 만들지 않음 — 색 배정 즉시 그 색의 고정 좌표에 스폰되므로 4명이 자동으로 흩어져 시작하고, 겹침 방지용 별도 로직이 필요 없다. (Tutorial 씬도 다른 스테이지 씬과 동일하게 원점(0,0,0) 기준으로 그 주변이 이동 가능한 지형인지 배치 확인 필요 — 에디터 작업.)
+- 존 트리거 진입 → 점유 → `StageStartGate` 카운트다운 (전원 점유 시 진행). — Tutorial의 게이트는 `TutorialGatherZone`(§6B.3, 색 무관 단일 존)으로 별도 로직.
 - **씬 지형(T.Stage) 이동 불필요.** 존·spawnPoint는 씬마다 에디터 배치.
 
 ### 7.3 입력 · 카메라 · 이동 (**확정** = Owner + CNT)
@@ -256,9 +441,9 @@
 
 ## 8. 씬 로드 · 진행
 
-- Host가 `NetworkSceneManager.LoadScene` (로비→스테이지, 스테이지 전환, 리로드).
+- Host가 `NetworkSceneManager.LoadScene` (Tutorial 게이트 통과→`M.Stage1`, 스테이지 전환, 리로드).
 - `SceneFlowManager.LoadNextScene`: `sceneSequence` 순서  
-  (`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`).
+  (`Tutorial` → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`).
 - `T.Boss` 클리어 → **`End.Demo`**.
 - `End.Demo`: 클리어 UI → **타이틀 복귀**.
 
@@ -761,7 +946,7 @@ T.Stage 신규 코드(예: T 라운드에서 새로 작성/수정하는 스크�
 | 상황 | 시드 |
 |------|------|
 | **사망 리로드** | **매번 새 시드** (퍼즐 배치·랜덤 연출 변경) |
-| 로비 Start (첫 진입) | Host가 세션 시드 생성 |
+| Tutorial 게이트 통과 (첫 진입) | Host가 세션 시드 생성 |
 
 > **참고:** 인원 변경 후 리로드는 **없음**. 플레이어 이탈 = §12 방 종료.
 
@@ -794,9 +979,11 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 ### 11.1 ① Load 로 들어오는 문 — 3개 (전부 Host만)
 
+> 이 축(§11)은 **M/T 스테이지 씬**의 배치 스폰(씬 로드 시 인원수만큼 한 번에 `SpawnWithOwnership`)을 다룬다. **`Tutorial` 씬 내부의 개별 접속자 스폰(§6B.2)은 이 축과 다르다** — 배치가 아니라 접속 시마다 1명씩 즉시 스폰되고, `OnPlayersReady`류의 "씬당 1회 배치 완료 신호" 개념이 없다. Tutorial→M.Stage1 전환 시점(`TutorialGatherZone` 통과)부터는 아래 문 목록대로 이 축이 정상 적용된다.
+
 | 문 | 경로 | 비고 |
 |----|------|------|
-| 로비 Start | `LobbyNetworkManager.StartGameServerRpc` → `LoadScene("M.Stage1")` | Coordinator 스폰(DDOL) 포함 |
+| Tutorial 게이트 통과 | `TutorialNetworkManager`(가칭) → `LoadScene("M.Stage1")` | Coordinator 스폰(DDOL) 포함. 구 `LobbyNetworkManager.StartGameServerRpc` 역할 이전 |
 | **사망 · ESC Reset** | Owner `RaiseDied` → `StageResetOnPlayerDeath` → `StageNetworkState.NotifyPlayerDeathServerRpc` → Host `LoadScene(현재씬)` | **1명 사망 = 전원 리로드** + **새 시드** 배포. ESC Reset(`EscMenuController.OnClickReset`, Host 버튼)도 **같은 문** 사용 (2026-07-17 통일) |
 | 클리어 | `StageManager.OnStageClear` / `PhaseManager.onAllPhasesComplete` → **`SceneFlowRelay.LoadNextScene`** → `SceneFlowManager` | **확정 배선: Relay 경유** (씬에서 SceneFlowManager 직결 금지 — DDOL이라 Inspector 연결 불가) |
 
@@ -852,7 +1039,7 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 
 ### 11.6 검증 (Foundation — ParrelSync 2인)
 
-1. Title → Lobby → M.Stage 진입: 이동·카메라·HP UI
+1. Title → Tutorial → M.Stage 진입: 이동·카메라·HP UI
 2. Host 사망 1회 → 리로드 → 인원수 스폰 → Ready → 카메라/HP 정상
 3. Client 사망 1회 → 동일
 4. 클리어 1회 → 다음 씬 → 같은 축 재통과
@@ -1128,11 +1315,11 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | **호스트 마이그레이션** | **없음** (Host 나가면 방 폭파) |
 | **Late Join** | **없음** |
 | **Kick (인게임)** | **기능 자체가 없음** (§6A.2). Host가 인게임 중 특정 Client를 강제로 내보내는 UI/API 없음 — 앞으로도 추가 안 함. 있는 건 **이탈**(연결 끊김/Quit)뿐이며 발생 시 §12 규칙대로 **방 종료** |
-| **Kick (로비)** | §6 — **슬롯만 비움**, 방 유지. §12(인게임 이탈)와 **다름** |
+| **Kick (Tutorial 사전 게이트 구간)** | **기능 자체가 없음** (§6A.2, §6B.4 — 2026-08-17 확정, 구 로비 Kick도 함께 폐지). 이 구간의 이탈은 슬롯만 제거, 방 유지 |
 
 ### 12.1 구현 시 주의
 
-- **로비 Kick(§6)** = 슬롯만 비움. **인게임 이탈/Kick(§12)** = 방 전체 종료. 섞지 말 것.
+- **Tutorial 사전 게이트 구간 이탈(§6B.4)** = 슬롯만 비움, 방 유지. **인게임 이탈/Kick(§12)** = 방 전체 종료. 섞지 말 것.
 - 인게임 이탈 후 **남은 인원으로 스테이지 계속**·인원만 줄이는 리로드·재입장 UI **금지**.
 - Host/`DisconnectManager` (인게임) → **세션 정리 → 전원 타이틀**.
 - “60초 유예 / 스냅샷 / 3인 계속” 구 스펙 **되살리지 말 것**.
@@ -1160,11 +1347,13 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 | 작업 | 담당 |
 |------|------|
-| `GameSession`, `SceneFlowManager` → `0.Title` | **수동 (기획/에디터)** |
+| `GameSession`, `SceneFlowManager` → `Title` | **수동 (기획/에디터)** |
+| `1.Lobby` 씬 삭제, `0.Title`→`Title`/`2.Tutorial`→`Tutorial` 리네임 | **수동 (기획/에디터, 2026-08-17 확정)** |
+| `TutorialGatherZone` 구현 (§6B.3) | 구현 시 |
 | 스테이지 씬 내 Player 프리팹 인스턴스 제거 | 구현 시 |
 | Network Player Prefab 생성 + NetworkManager 등록 | 구현 시 |
 | `End.Demo` 씬 (Build Settings 등록) | 구현 시 |
-| `sceneSequence`에 M1–5·M.Boss·T1–5·T.Boss·`End.Demo` | `SceneFlowManager` |
+| `sceneSequence`에 `Tutorial`·M1–5·M.Boss·T1–5·T.Boss·`End.Demo` | `SceneFlowManager` |
 
 ---
 
@@ -1177,7 +1366,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 > **목표:** **2026-09-01** 정식 (`ReleaseRoadmap.md`).
 
 1. NGO + `UnityTransport` + Title `NetworkManager`
-2. 로비 Ready / 캐릭터 / Start 동기화
+2. Tutorial 사전 게이트 구간 — 접속 스폰/색 자동배정/`TutorialGatherZone` 동기화 (§6B, 구 "로비 Ready/캐릭터/Start 동기화") — **실행용 체크리스트는 §6B.7**
 3. Player Network Prefab + 존 스폰 + Owner 입력·카메라·**Owner 이동(CNT)**
 4. **§9A Phase 1** — 데미지·함정 Host 파이프라인 (ParrelSync / Dev Build 2인)
 5. **§9.0.1 발사체 B안** — Host Spawn+velocity / Client 비행 / Client 보고→Host 피격
@@ -1211,10 +1400,10 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 ## 18. FAQ (설계 중 합의)
 
 **Q. 솔로 로비 씬이 따로 필요한가?**  
-A. **아니오.** Lobby Host 1인(`partySize=1`)과 동일 경로.
+A. **아니오.** 로비 씬 자체가 없다(§6B). `Tutorial` Host 1인(`partySize=1`)과 동일 경로 — 접속 즉시 스폰, 게이트 즉시 통과.
 
 **Q. 솔로 색상은 어디서 고르나?**  
-A. **Lobby** 캐릭터/슬롯 선택 (멀티와 동일).
+A. 선택 UI 없음. `Tutorial` 진입 즉시 **자동 배정**(§6B.2) — 멀티와 동일 로직.
 
 **Q. 다른 플레이어를 내 PC에서 조종하나?**  
 A. **아니오.** Owner는 자기 캐릭터 **이동·입력·카메라·연출**. **HP·함정·피격 최종**은 Host (§9.0).
@@ -1243,8 +1432,14 @@ A. **연결·Transport·응원 골격**은 2인에서 대부분 검증. **4인 �
 **Q. discovery / 원격 IP로 테스트하나?**  
 A. **안 함.** 실제 검증 가능한 건 **ParrelSync · Dev Build(같은 PC) 뿐** (§6A.3). 물리적으로 분리된 2PC 간 LAN 연결은 미지원·미검증. Steamworks 붙으면 그때부터 ④ Steam P2P.
 
-**Q. 로비 Kick이면 방이 터지나?**  
-A. **아니오.** 로비 Kick=슬롯만 비움(§6), 방 유지. **인게임에는 Kick 기능 자체가 없다** (§6A.2) — 있는 건 이탈뿐이고, 발생 시 방 종료(§12).
+**Q. Kick 기능은 어디에 있나?**  
+A. **어디에도 없다.** 로비였을 때도 Tutorial 사전 게이트 구간이 된 지금도 Kick은 완전히 폐지됐다(§6A.2, §6B.4, 2026-08-17). 있는 건 자연 이탈뿐 — Tutorial 사전 구간 이탈은 슬롯만 제거(방 유지), 인게임 이탈은 방 종료(§12).
+
+**Q. `1.Lobby` 씬 없이 Steam 초대는 어떻게 받나?**  
+A. `Tutorial` 씬 내 **상시 HUD**(Invite 버튼, §6B.5 — **룸코드 없음**, §4.2)로 받는다. `TutorialGatherZone` 통과 전까지 수락 가능, 통과 후엔 무시된다. 아직 방을 안 만든 Title 화면에서의 수락은 기존과 동일하게 `TitleMenuController.OnSteamInviteAccepted`/`TryAutoJoinFromLaunchArgs`가 처리.
+
+**Q. Steam에서도 룸코드로 참여하나?**  
+A. **아니오 (2026-08-17 확정).** Steam(④) 경로는 오버레이 초대 수락 또는 초대 링크(`steam://joinlobby/...`)로만 조인한다 — 코드 입력 UI 자체가 없다. Deep Rock Galactic/Risk of Rain 2/Overcooked 2 등 같은 조건(사적 파티 전용, 공개 매칭 없음)의 Steam 코업 게임들도 전부 이 방식이다. 룸코드는 **로컬 개발(①②) 전용**으로만 남는다(§4.1).
 
 **Q. 컷씬·관전·이모트를 출시 전에 넣나?**  
 A. **컷씬: 안 넣음(영구).** 관전·이모트: **Post-Launch**. 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). Ship Must·순서는 `ReleaseRoadmap.md` §4 (텔레메트리는 출시 후 OK).

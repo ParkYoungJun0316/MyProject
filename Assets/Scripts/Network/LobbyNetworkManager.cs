@@ -50,10 +50,6 @@ public class LobbyNetworkManager : NetworkBehaviour
     // ColorIndex 순 기본 CheerName — GameSession.GetSessionCheerName 등 전 시스템의 단일 소스.
     public static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
 
-    // 예약어 (Host 검증)
-    static readonly string[] ReservedNames =
-        { "cheer", "admin", "host", "server", "system", "bot", "null" };
-
     [Header("DontDestroyOnLoad 시스템 Prefab")]
     [Tooltip("PlayerSpawnCoordinator prefab (NetworkObject 포함).\n" +
              "게임 시작 시 Host가 destroyWithScene:false로 스폰 → 세션 내 씬 간 유지.\n" +
@@ -362,7 +358,7 @@ public class LobbyNetworkManager : NetworkBehaviour
             }
 
             // 형식 검사
-            if (!IsValidCheerNameFormat(lower, out string reason))
+            if (!CheerNameValidator.IsValidFormat(lower, out string reason))
             {
                 SendCheerNameResult(sender, false, reason);
                 return;
@@ -558,20 +554,6 @@ public class LobbyNetworkManager : NetworkBehaviour
             return DefaultCheerNames[ci];
         }
         return custom;
-    }
-
-    static bool IsValidCheerNameFormat(string lower, out string reason)
-    {
-        reason = "";
-        if (lower.Length < 2 || lower.Length > 12) { reason = "format"; return false; }
-        foreach (char c in lower)
-        {
-            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'))
-            { reason = "format"; return false; }
-        }
-        foreach (string reserved in ReservedNames)
-            if (lower == reserved) { reason = "reserved"; return false; }
-        return true;
     }
 
     /// <summary>Kick. 호스트만 호출. 즉시 슬롯 비움.</summary>

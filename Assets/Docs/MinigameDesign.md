@@ -114,10 +114,10 @@
 - [ ] `Assets/Docs/OXQuizTranslations.md` — 삭제하지 않고 보존(과거 번역 작업 기록). 필요 없어지면 별도 요청 시 정리
 
 **씬/프리팹 (사용자가 에디터에서 직접 — 체크리스트만 제공)**
-- [ ] `M.Stage2.unity` — 기존 `OXQuizManager`/`OXQuizObjective`/`OXQuizTile` GameObject 제거, `SideSplitChallenge`/`SideSplitZone`×2/`SideSplitObjective` 배치 + `StageStartGate.OnCountdownComplete` 연결을 `SideSplitChallenge.StartChallenge()`로 교체
-- [ ] `T.Stage4.unity` — 동일
+- [x] `M.Stage2.unity` — SideSplit 교체 완료 (사용자 에디터 작업)
+- [x] `T.Stage4.unity` **Stage4.1만** — OXQuiz missing script 제거 후 `SideSplitChallenge`/`SideSplitZone`×2/`SideSplitObjective` 배치, `StageStartGate.OnCountdownComplete` → `StartChallenge()` 연결 (2026-08-17). Stage4.2는 미변경
 - [ ] `Assets/Prefab/UI.prefab` — `OXQuiz_Panel`(`OXQuizUI` 부착) 제거, `SideSplitUI` 부착 패널로 교체 + `mainText`/`timerText`/`LocalizedString` 필드 연결
-- [ ] String Table `OXQuiz` / `M.Stage.Quiz` — 사용 종료 시 정리 (신규는 별도 String Table 권장, 예: `SideSplit`)
+- [x] String Table `M.Stage.Quiz` / `T.Stage.Quiz` — 컬렉션·로케일 테이블 28개 삭제 + Addressables 엔트리 26개 제거 (2026-08-17)
 - [ ] `Assets/Audio/SFX/OXQuiz_Timer.wav`, `OXQuiz_Correct.wav` — 신규 미니게임에서 재사용할지 결정 (현재 `SideSplitChallenge`/`SideSplitUI`에는 SFX 연동 코드 없음 — 필요 시 `OnTimerTick`/`OnRoundSuccess`/`OnRoundFailed` UnityEvent에 연결)
 
 **문서**

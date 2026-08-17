@@ -956,7 +956,7 @@ GameObject:
   - component: {fileID: 217953223}
   - component: {fileID: 217953224}
   m_Layer: 0
-  m_Name: OXQuizManager
+  m_Name: SideSplitChallenge
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -988,269 +988,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 217953222}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d03038af81819cd46b24eff87a25452b, type: 3}
+  m_Script: {fileID: 11500000, guid: 83e69c100724e6b4c9786f8fbbafe301, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OXQuizManager
-  row:
-    oTile: {fileID: 1230327369}
-    xTile: {fileID: 763371451}
-  questions:
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q1.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 0
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q1.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q2.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 0
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q2.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q3.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 0
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q3.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q4.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 0
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q4.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q5.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q5.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q6.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 0
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q6.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q7.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 0
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q7.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q8.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q8.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q9.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q9.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q10.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q10.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q11.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q11.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q12.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q12.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - questionText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q13.Question
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    correctAnswerIsO: 1
-    explanationText:
-      m_TableReference:
-        m_TableCollectionName: T.Stage.Quiz
-      m_TableEntryReference:
-        m_KeyId: 0
-        m_Key: T.Q13.Explanation
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  questionsPerRun: 5
-  answerTimeLimit: 10
-  correctAnswerDelay: 6
+  m_EditorClassIdentifier: Assembly-CSharp::SideSplitChallenge
+  leftZone: {fileID: 1230327373}
+  rightZone: {fileID: 763371455}
+  totalRounds: 5
+  minColorRounds: 3
+  maxColorRounds: 4
+  roundTimeLimit: 10
+  resolveDelay: 2
   wrongDamage: 1
   playerOverlapLayers:
     serializedVersion: 2
     m_Bits: 384
   barrierDoor: {fileID: 240463070}
-  OnQuestionReady:
+  OnRoundReady:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 818711158}
@@ -1259,7 +1012,7 @@ MonoBehaviour:
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -1268,25 +1021,7 @@ MonoBehaviour:
   OnTimerTick:
     m_PersistentCalls:
       m_Calls: []
-  OnCorrectAnswer:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 818711159}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnWrongAnswer:
-    m_PersistentCalls:
-      m_Calls: []
-  OnAnswerRevealed:
+  OnRoundSuccess:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 818711158}
@@ -1295,7 +1030,34 @@ MonoBehaviour:
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 818711159}
+        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnRoundFailed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 818711158}
+        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+        m_MethodName: Stop
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -1310,15 +1072,12 @@ MonoBehaviour:
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  references:
-    version: 2
-    RefIds: []
 --- !u!1001 &223582493
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2029,6 +1788,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageNetworkState
   ShowTopMostFoldoutHeaderGroup: 1
+  deathReloadDelay: 1.75
 --- !u!114 &327500350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3357,18 +3117,6 @@ MonoBehaviour:
   OnCountdownComplete:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 217953224}
-        m_TargetAssemblyTypeName: OXQuizManager, Assembly-CSharp
-        m_MethodName: StartQuiz
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
       - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: DoorController, Assembly-CSharp
         m_MethodName: Close
@@ -3388,6 +3136,18 @@ MonoBehaviour:
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 217953224}
+        m_TargetAssemblyTypeName: SideSplitChallenge, Assembly-CSharp
+        m_MethodName: StartChallenge
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -3973,9 +3733,9 @@ GameObject:
   - component: {fileID: 763371454}
   - component: {fileID: 763371453}
   - component: {fileID: 763371452}
-  - component: {fileID: 763371451}
+  - component: {fileID: 763371455}
   m_Layer: 0
-  m_Name: X
+  m_Name: SideSplitZone_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3996,24 +3756,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 217953223}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &763371451
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 763371449}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9be00fabc815374e865b1654b0bbaa6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OXQuizTile
-  isOSide: 0
-  pendingColor: {r: 1, g: 1, b: 1, a: 1}
-  safeColor: {r: 1, g: 1, b: 1, a: 1}
-  dangerColor: {r: 0, g: 0, b: 0, a: 1}
-  quizManager: {fileID: 0}
-  rowIndex: 0
 --- !u!65 &763371452
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4092,6 +3834,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 763371449}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &763371455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763371449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caad72495c1b5404abbefa13586f6d54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SideSplitZone
+  neutralColor: {r: 1, g: 1, b: 1, a: 1}
+  successColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
+  failColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+  isLeftSide: 0
 --- !u!1 &774435087
 GameObject:
   m_ObjectHideFlags: 0
@@ -6302,7 +6060,7 @@ GameObject:
   - component: {fileID: 1133857333}
   - component: {fileID: 1133857334}
   m_Layer: 0
-  m_Name: QuizObjective
+  m_Name: SideSplitObjective
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6332,10 +6090,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1133857330}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af5c20fab2800b747a32fd110da88861, type: 3}
+  m_Script: {fileID: 11500000, guid: 8bf37a90ddb8d1744935f947c165cecb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OXQuizObjective
-  objectiveName: Objective
+  m_EditorClassIdentifier: Assembly-CSharp::SideSplitObjective
+  objectiveName: Split
   OnCompleted:
     m_PersistentCalls:
       m_Calls: []
@@ -6345,7 +6103,7 @@ MonoBehaviour:
   OnProgressChanged:
     m_PersistentCalls:
       m_Calls: []
-  quizManager: {fileID: 217953224}
+  challenge: {fileID: 217953224}
 --- !u!1001 &1216244755
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6589,9 +6347,9 @@ GameObject:
   - component: {fileID: 1230327372}
   - component: {fileID: 1230327371}
   - component: {fileID: 1230327370}
-  - component: {fileID: 1230327369}
+  - component: {fileID: 1230327373}
   m_Layer: 0
-  m_Name: O
+  m_Name: SideSplitZone_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6612,24 +6370,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 217953223}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1230327369
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1230327367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9be00fabc815374e865b1654b0bbaa6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OXQuizTile
-  isOSide: 1
-  pendingColor: {r: 1, g: 1, b: 1, a: 1}
-  safeColor: {r: 1, g: 1, b: 1, a: 1}
-  dangerColor: {r: 0, g: 0, b: 0, a: 1}
-  quizManager: {fileID: 0}
-  rowIndex: 0
 --- !u!65 &1230327370
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6708,6 +6448,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1230327367}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1230327373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230327367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caad72495c1b5404abbefa13586f6d54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SideSplitZone
+  neutralColor: {r: 1, g: 1, b: 1, a: 1}
+  successColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
+  failColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+  isLeftSide: 1
 --- !u!4 &1233485961 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7439852234368383809, guid: 42137a658e80dc84ab72655e8e7d16b6, type: 3}
@@ -9782,7 +9538,7 @@ PrefabInstance:
     - target: {fileID: 3479792593597239330, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: quizManager
       value: 
-      objectReference: {fileID: 217953224}
+      objectReference: {fileID: 0}
     - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_text
       value: 0

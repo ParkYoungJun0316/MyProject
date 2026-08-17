@@ -256,6 +256,9 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
 
     // ── 공개 유틸 ─────────────────────────────────────────────────────
 
+    /// <summary>Network Player Prefab 참조. TutorialNetworkManager 등 다른 스포너가 동일 프리팹을 재사용할 때 사용.</summary>
+    public GameObject PlayerPrefab => playerPrefab;
+
     public Vector3 GetFixedSpawnPos(PlayerColorType colorType)
     {
         int idx = LobbyNetworkManager.ColorTypeToIndex(colorType);

@@ -98,6 +98,37 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Host: 이미 스폰된 코디네이터에 접속자 1명의 색을 개별 추가.
+    /// Tutorial 사전 게이트 구간(NetworkDesign.md §6B.2)처럼 인원이 한 명씩 순차 합류하는
+    /// 상황 전용 — PrepareColors(전체 dict, Spawn 직전 1회)와 달리 이미 Spawn된 뒤에도 호출 가능.
+    /// 같은 clientId가 이미 있으면 갱신(중복 접속 콜백 방어).
+    /// </summary>
+    public void AddColorEntry(ulong clientId, PlayerColorType color)
+    {
+        if (!IsServer) return;
+        for (int i = 0; i < _clientColors.Count; i++)
+        {
+            if (_clientColors[i].ClientId != clientId) continue;
+            _clientColors[i] = new ClientColorEntry { ClientId = clientId, Color = color };
+            return;
+        }
+        _clientColors.Add(new ClientColorEntry { ClientId = clientId, Color = color });
+    }
+
+    /// <summary>
+    /// Host: 접속자 1명의 색 엔트리 제거. Tutorial 사전 게이트 구간 이탈(§6B.4) — 슬롯만 비움.
+    /// </summary>
+    public void RemoveColorEntry(ulong clientId)
+    {
+        if (!IsServer) return;
+        for (int i = _clientColors.Count - 1; i >= 0; i--)
+        {
+            if (_clientColors[i].ClientId != clientId) continue;
+            _clientColors.RemoveAt(i);
+        }
+    }
+
     public override void OnNetworkDespawn()
     {
         IsReady = false;
@@ -201,6 +232,33 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
     void BroadcastPlayersReadyClientRpc()
     {
         if (IsServer) return;   // Host는 이미 위에서 발행
+        IsReady = true;
+        OnPlayersReady?.Invoke();
+    }
+
+    /// <summary>
+    /// Host: 이미 전체 Ready(NotifyPlayersReady)가 확정된 뒤 새로 합류한 Client 1명에게
+    /// Ready 신호를 개별 재전송한다. Tutorial 사전 게이트 구간(§6B.2)처럼 인원이 한 명씩
+    /// 순차 합류하면 최초 접속자(Host) 스폰 시점에 이미 NotifyPlayersReady()가 발행돼버려,
+    /// 그 뒤 합류하는 Client는 당시의 BroadcastPlayersReadyClientRpc를 놓친다
+    /// (NGO ClientRpc는 호출 시점에 접속 중인 대상에게만 가고 이후 합류자에게 재전달되지 않음).
+    /// 이 메서드가 그 개별 보충만 한다. 아직 아무도 Ready 전이면(IsReady=false) 호출해도
+    /// 아무 일 없음 — 그 경우는 이후 NotifyPlayersReady()의 전체 브로드캐스트가 정상 전달한다.
+    /// </summary>
+    public void CatchUpReadyFor(ulong clientId)
+    {
+        if (!IsServer || !IsReady) return;
+
+        CatchUpReadyClientRpc(new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+        });
+    }
+
+    [ClientRpc]
+    void CatchUpReadyClientRpc(ClientRpcParams rpcParams = default)
+    {
+        if (IsServer || IsReady) return; // Host 자신 제외 + 중복 Invoke 방지
         IsReady = true;
         OnPlayersReady?.Invoke();
     }

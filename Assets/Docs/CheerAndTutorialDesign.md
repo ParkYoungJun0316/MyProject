@@ -18,8 +18,8 @@
 
 | 항목 | **[Ship Must]** |
 |------|-----------------|
-| 씬 흐름 | Title → Lobby → **Tutorial** → M1…5→M.Boss → T1…5→T.Boss → End.Demo |
-| Tutorial 씬 | **필수 경로** (연습 구간은 경험자 생략 가능) |
+| 씬 흐름 | Title → **Tutorial** → M1…5→M.Boss → T1…5→T.Boss → End.Demo (`1.Lobby` 폐지, 2026-08-17. SSOT: `NetworkDesign.md` §6B) |
+| Tutorial 씬 | **필수 경로** (연습 구간은 경험자 생략 가능). **구 Lobby 역할(색 배정·Invite·Start) 흡수** — §9 |
 | **인게임 보이스챗** | **Dissonance + NGO** (4인 Global, Voice Activation). Steam 시 **Dissonance Steam P2P** transport 검토 |
 | CheerName | **Tutorial 씬 커스텀** (§3). 빈칸 = 색 기본값 |
 | 이름 커스텀 | **Tutorial 자유 입력·자유 재변경** (Player별 `NetworkVariable`) + Host 검증·확정. 잠금 없음, `PlayerPrefs` 기억 없음(매 판 재입력) |
@@ -159,10 +159,12 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 
 ### 3.2 어디에 설정하나 **[Ship Must — 2026-08-17 갱신: Lobby → Tutorial]**
 
-> **변경 배경:** 기존엔 Lobby 슬롯 인라인 편집으로 확정하고 Tutorial은 반복 인식 검증(말해보기)만 담당했으나, 2026-08-17 사용자 결정으로 **입력·확정·말해보기 전부를 Tutorial 씬 하나로 통합**한다. Lobby는 색/캐릭터 선택 + Ready + Kick만 담당하고 CheerName 관련 UI·네트워크 로직을 **전부 제거**한다.
+> **변경 배경 (2026-08-17 오전):** 기존엔 Lobby 슬롯 인라인 편집으로 확정하고 Tutorial은 반복 인식 검증(말해보기)만 담당했으나, **입력·확정·말해보기 전부를 Tutorial 씬 하나로 통합**했다. 당시엔 Lobby가 색/캐릭터 선택 + Ready + Kick만 담당하는 것으로 정리.
+>
+> **추가 변경 (2026-08-17 저녁, 더 큰 결정) — `1.Lobby` 씬 자체를 폐지.** 색 선택·Ready·Kick·Steam Invite까지 전부 `Tutorial` 앞부분(사전 게이트 구간)으로 흡수됐다. 즉 이제 "Lobby가 없다"가 아니라 **"Lobby가 Tutorial의 일부가 됐다"**. SSOT는 `NetworkDesign.md` §6B, 이 문서 §9.
 
-- **씬:** `2.Tutorial`. Lobby(`1.Lobby`)에는 CheerName UI가 **없다.**
-- **대상:** Tutorial 진입 시 이미 스폰되어 있는 **Player별로 독립된 이름** — Lobby 슬롯 같은 "슬롯" 개념 없음. 각자 자기 화면에서 자기 캐릭터의 이름만 입력.
+- **씬:** `Tutorial` 하나. 별도 로비 씬 없음.
+- **대상:** Tutorial 진입(=접속) 즉시 스폰되어 있는 **Player별로 독립된 이름** — "슬롯" 개념 없음. 각자 자기 화면에서 자기 캐릭터의 이름만 입력.
 - **UI:** Tutorial 전용 이름 입력 UI(신규, §8.3) — 로컬 입력창 1개. 확정 시 자기 캐릭터 머리 위 이름표(`PlayerNameTagUI`)·팀원 화면에 **즉시** 반영.
 - **채팅 UI로 닉네임 설정하지 않음.** 인게임 `/cheer` 폴백만 채팅.
 - **타이틀에서 입력하지 않음.**
@@ -180,7 +182,7 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 | 항목 | 규칙 |
 |------|------|
 | 잠금 | **없음.** Ready 같은 상태가 Tutorial엔 없으므로 언제든 재확정 가능 |
-| "최종 확정" | 별도 단계 없음 — **StageStartGate 통과 시점의 값이 곧 최종값** |
+| "최종 확정" | 별도 단계 없음 — **`TutorialGatherZone` 통과 시점의 값이 곧 최종값** (§9.4) |
 | 강제 | 말해보기 실패해도 진행 가능. 안내만 |
 | 저장 | 녹음·lexicon 학습 없음. 검증 UI만 |
 | 숫자 테스트 | `b_4nana` 등 §3.5 잠정 숫자 — 실패율 높으면 §3.5에서 `0-9` 제거로 갱신 |
@@ -196,7 +198,7 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 
 ### 3.4 확정·동시성 — 자유 재변경 (2026-08-17 갱신)
 
-> Tutorial엔 Ready/Start 게이트가 없다. 이름은 **StageStartGate 통과 전까지 몇 번이든 재확정 가능** — "Ready 중 잠금" 개념 자체가 없다.
+> Tutorial엔 Ready/Start 같은 잠금식 게이트가 없다. 이름은 **`TutorialGatherZone` 통과 전까지 몇 번이든 재확정 가능** — "Ready 중 잠금" 개념 자체가 없다.
 
 | 단계 | 규칙 |
 |------|------|
@@ -205,7 +207,7 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 | 동시 확정 | **먼저 처리된 Rpc 승.** 나중 동일/위반 이름은 **거절**. UI: 치던 글자 유지 + 에러(테두리/짧은 문구) |
 | 재확정 | **언제든 가능.** 확정 후에도 다시 입력 → 다시 Enter로 재제출 가능(잠금 없음) |
 | 빈칸 | **자동으로 `berry` 등을 문자열로 넣지 않음.** 빈칸 = §3.1 기본값 취급 |
-| 최종값 | 별도 "확정 완료" 단계 없음 — **StageStartGate 통과 시점**의 각자 최신값이 그대로 세션 최종값 |
+| 최종값 | 별도 "확정 완료" 단계 없음 — **`TutorialGatherZone` 통과 시점**의 각자 최신값이 그대로 세션 최종값 |
 
 해석 후 유일: 빈칸 플레이어의 유효 이름은 `ColorIndex` 기본값.  
 예: A가 Blue+빈칸(`berry`), B가 `berry` 커스텀 확정 시도 → Host 거절.
@@ -259,8 +261,8 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 
 ### 3.6 **[Ship Must]** Tutorial과의 관계
 
-- **⭐ 결정 (2026-08-17, Lobby 방식 완전 대체):** CheerName **입력 + 확정 + 재변경 + 말해보기 전부**를 `2.Tutorial` 씬 하나로 통합. Lobby(`1.Lobby`)엔 CheerName UI·네트워크 로직이 **더 이상 없음**.
-- `2.Tutorial`은 **조작 연습 + CheerName 입력·확정·말해보기(자유 반복)** 중심.
+- **⭐ 결정 (2026-08-17, Lobby 방식 완전 대체):** CheerName **입력 + 확정 + 재변경 + 말해보기 전부**를 `Tutorial` 씬 하나로 통합. **`1.Lobby` 씬 자체가 이후 완전히 폐지**됐으므로(§9, `NetworkDesign.md` §6B) 이 문장은 이제 자명함 — CheerName UI·네트워크 로직은 원래부터 로비라는 곳이 없음.
+- `Tutorial`은 **사전 게이트 구간(구 Lobby 흡수) + 조작 연습 + CheerName 입력·확정·말해보기(자유 반복)** 중심.
 - 인게임(M/T 스테이지 진입 후) 이름 변경 = **Post-Launch** (Tutorial 안에서의 자유 재변경과는 별개 — Tutorial 종료 후엔 그대로 잠김).
 - `PlayerPrefs` 기반 경험자 스킵은 **완전 폐기 (2026-08-17)**. `TutorialCompleted` 플래그(연습 구간 Stealth/색 패드 스킵용)는 CheerName과 무관하게 그대로 유지 — 세션 정책은 `NetworkDesign.md` §12.
 
@@ -325,7 +327,7 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 | 항목 | 위치 | 비고 |
 |------|------|------|
 | `AcceptWaveform` (Vosk 인식) | **백그라운드 워커** | 메인에서 돌리면 프레임 히치 |
-| `VoskModelLoader.LoadSync` | **메인 동기** (로비 1회) | 로비 진입 순간 히치 **가능** — 감수 또는 추후 비동기 |
+| `VoskModelLoader.LoadSync` | **메인 동기** (Tutorial 진입 1회) | Tutorial 진입 순간 히치 **가능** — 감수 또는 추후 비동기 |
 | Cheer 제출 / UI | **메인만** | |
 
 ### 4.5 Dissonance 버퍼 경고 — 원인 · 결론 · 해결 방향
@@ -489,7 +491,7 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 입력 → 확정 → grammar 갱신 → 말해보기(테스트) → 불만족 시 다시 입력 → …
 ```
 
-실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝). 강제 아님 — 실패해도 StageStartGate 진행 가능.
+실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝). 강제 아님 — 실패해도 `TutorialGatherZone` 진행 가능.
 
 ---
 
@@ -592,33 +594,42 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 
 ## 9. Tutorial (**[Ship Must]**)
 
+> **⭐ 2026-08-17 확정 — `1.Lobby` 씬 폐지, 역할 전부 Tutorial로 흡수.** 네트워크·수명주기 관점 SSOT는 `NetworkDesign.md` §6B (이탈 정책, Kick 폐지, Invite HUD, 게이트 동작). 이 절은 **Tutorial 콘텐츠·구역 배치** 관점만 다룬다 — 중복 서술 금지.
+
 ### 9.1 씬 흐름
 
 ```
-Title → Lobby → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo
+Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo
 ```
 
-정식 경로에 Tutorial **포함**. 경험자는 연습 생략 가능 (§9.3).
+정식 경로에 Tutorial **포함**. `1.Lobby`는 더 이상 존재하지 않는다 — 접속 즉시 `Tutorial`에 캐릭터가 스폰된다(색 자동배정, `NetworkDesign.md` §6B.2). 연습 콘텐츠(Stealth/응원 등)는 경험자가 생략 가능하지만(§9.3), **사전 게이트 구간 자체(스폰·게이트 통과)는 누구도 생략 불가**.
 
-### 9.2 Tutorial 역할
+### 9.2 Tutorial 구역 (4구역, 2026-08-17 확정)
 
-| 구간 | 신규 | 경험자 |
-|------|------|--------|
-| 이름 설정 + **말해보기(자유 재변경 반복, §5.5)** | CheerName UI | **항상 표시** — `PlayerPrefs` 스킵 없음 (2026-08-17 폐기) |
-| 연습 | Stealth, 색 패드, **응원 1회** | **생략** |
-| StageStartGate | **필수** | **필수** |
+Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없이 자유롭게 오가다, 마지막에 `TutorialGatherZone`에 모이면 `M.Stage1`로 넘어간다.
+
+| # | 구역 | 내용 | 신규 | 경험자 |
+|---|------|------|------|--------|
+| (사전) | 접속/스폰 | 접속 즉시 스폰 + 색 자동배정(중복없음) + Invite HUD(구 로비 흡수, `NetworkDesign.md` §6B) | 필수 | 필수 (생략 불가) |
+| 1 | 스텔스 체험 | 은신 플레이 감 잡기 | 있음 | **생략 가능** |
+| 2 | CheerName 설정 | 이름 입력·확정·말해보기(자유 반복, §3.2·§5.5) | CheerName UI **항상 표시** — `PlayerPrefs` 스킵 없음 (2026-08-17 폐기) | **생략 불가** (매 판 재입력) |
+| 3 | 응원 1회 체험 | 실제 응원 키워드 발화 → 버프 발동 감 잡기 | 있음 | **생략 가능** |
+| 4 | `TutorialGatherZone` | 전원이 존에 모이면 카운트다운 → `M.Stage1` (§9.4) | **필수** | **필수** |
+
+> **색 패드 연습(4번째 후보로 검토했던 것):** 2026-08-17 **보류**. 필요성이 재확인되면 별도 구역으로 추가 논의.
 
 ### 9.3 경험자 판정
 
 | 방식 | 설명 |
 |------|------|
-| `PlayerPrefs TutorialCompleted = 1` | Gate 통과 후 저장 |
+| `PlayerPrefs TutorialCompleted = 1` | `TutorialGatherZone` 통과 후 저장 — Stealth/응원 1회 구역 스킵 판단용 (CheerName·게이트는 이 값과 무관하게 항상 수행) |
 | (선택) 「연습 건너뛰기」 | 첫 판 숙련자 |
 
-### 9.4 레이아웃 · Gate · Dialogue
+### 9.4 `TutorialGatherZone` · Dialogue
 
-§6 Tutorial 레이아웃 — 기존 설계 유지 (`StageStartGate`, `ColoredStartZone`, `StageNetworkState`).  
-DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
+- **`TutorialGatherZone`**: 색 구분 없는 **단일** 트리거 존. 존 안 인원 == 접속 중인 전체 인원이면 카운트다운 → 통과 시 인원 동결 → `M.Stage1` 로드. **동적 인원(중간 합류/이탈)에도 헤드카운트 비교라 별도 로직 불필요.** 네트워크 세부(이탈 정책, Writer, 솔로 케이스)는 `NetworkDesign.md` §6B.3~4가 SSOT.
+- 구 `StageStartGate`/`ColoredStartZone`(색별 지정 구역) 방식은 Tutorial에서 **`TutorialGatherZone`으로 대체**됐다. **M/T 스테이지의 색별 게이트는 영향 없음** — 그쪽은 계속 `StageStartGate`/`ColoredStartZone`/`StageNetworkState` 유지.
+- DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 ---
 
@@ -684,7 +695,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 | NGO | Host/Client Steam Join |
 | Dissonance | Steam 세션 위 보이스 |
 
-**테스트 (2PC):** Steam **2인** 원격 — Title→Lobby→M→T + 보이스 + 응원. **출시 최소 게이트.**
+**테스트 (2PC):** Steam **2인** 원격 — Title→Tutorial→M→T + 보이스 + 응원. **출시 최소 게이트.**
 
 ### Phase 6 — Steam 4인 검증 (출시 전 권장)
 
@@ -712,7 +723,7 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 **Steam 2인 (2PC — 출시 최소 게이트):**
 
-- [ ] Steam Lobby Join → Lobby → Tutorial → M 풀코스(+Boss) → T 풀코스(+Boss)
+- [ ] Steam Lobby Join → Tutorial(사전 게이트 구간 통과) → M 풀코스(+Boss) → T 풀코스(+Boss)
 - [ ] Dissonance 보이스 양방향
 - [ ] 대화 중 `"berry go go"` → Shield/SpeedUp (2인: **1표**면 발동)
 - [ ] `/cheer berry` 폴백
@@ -739,7 +750,12 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] `/cheer {세션 CheerName}` (빈칸→색 기본값)
 - [ ] ~~Lobby CheerName 인라인 편집 + Host `SetCheerNameServerRpc`~~ — **폐기 (2026-08-17), Tutorial로 이동**
 - [ ] ~~`LobbyPlayerState.CheerName` + 슬롯 UI 동기화~~ — **폐기.** `LobbyPlayerState`에서 `CheerName` 필드 제거
-- [ ] **[필수] Lobby 씬 UI 로컬라이제이션** — `TitleMenuController`/Lobby 상태 메시지 등 하드코딩된 한국어 문자열(예: "찾는 중...", "방을 찾을 수 없습니다.", "6자리 숫자를 입력해주세요." 등)을 String Table 방식으로 전환. DialogueUI/OXQuiz와 동일한 패턴 적용
+- [ ] **[필수] Title/Tutorial UI 로컬라이제이션** — `TitleMenuController`/Tutorial 상시 HUD 상태 메시지 등 하드코딩된 한국어 문자열(예: "찾는 중...", "방을 찾을 수 없습니다.", "6자리 숫자를 입력해주세요." 등)을 String Table 방식으로 전환. DialogueUI/OXQuiz와 동일한 패턴 적용
+- [ ] **[신규, 2026-08-17] `1.Lobby` 씬 삭제** + `0.Title`→`Title`, `2.Tutorial`→`Tutorial` 리네임 (에디터 작업, 사용자 담당)
+- [ ] **[신규] `TutorialNetworkManager`(가칭)** — 구 `LobbyNetworkManager` 역할 이전: 접속 즉시 스폰, 색 자동배정, 사전구간 이탈 처리, 게이트 통과 시 Start 로직. SSOT: `NetworkDesign.md` §6B
+- [ ] **[신규] `TutorialGatherZone`** — 색 무관 단일 헤드카운트 게이트 (§9.4, `NetworkDesign.md` §6B.3)
+- [ ] **[신규] Tutorial 상시 HUD** — 룸코드 표시 + Steam Invite 버튼 (구 로비 UI 역할, §6B.5). 게이트 통과 후 숨김
+- [ ] Kick UI/API **완전 제거** (`LobbyMenuController`/`LobbyNetworkManager`의 `KickPlayerServerRpc` 등) — 2026-08-17 폐지 확정
 - [ ] **신규:** Tutorial CheerName 컴포넌트 (Player 프리팹 부착) — `NetworkVariable<FixedString32Bytes>` + `SubmitCheerNameServerRpc` + Host 검증(§3.5 로직 재사용) + 자유 재변경
 - [ ] CheerName 검증 (§3.5, Tutorial 활성 플레이어 기준 중복 검사로 변경)
 - [ ] ~~로비 불러보기~~ — **폐기 (2026-08-17).** §5.5 Tutorial 말해보기로 완전 통합
@@ -754,9 +770,9 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 - [ ] 채팅 입력 UI
 - [ ] 솔로 `/cheer` + 로컬 CheerService
 - [ ] **숫자 포함 이름** — Tutorial 말해보기(§5.5)로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
-- [ ] `2.Tutorial` — 조작 연습 + CheerName **입력·확정·자유 재변경·말해보기(반복 검증)**; **경험자도 스킵 없음** (2026-08-17). **[Ship Must, 2026-08-17 최종 확정]**
+- [ ] `Tutorial` — 조작 연습 + CheerName **입력·확정·자유 재변경·말해보기(반복 검증)**; **경험자도 스킵 없음** (2026-08-17). **[Ship Must, 2026-08-17 최종 확정]**
 - [ ] ~~CheerName `PlayerPrefs` 기억 + TutorialCompleted 스킵~~ — **폐기.** `TutorialCompleted`(연습 구간 스킵용)만 유지, CheerName엔 미적용
-- [ ] 연습 구역 (Stealth / Pad / Cheer)
+- [ ] 연습 구역 (Stealth / 응원 1회) — **색 패드는 보류** (§9.2, 2026-08-17)
 - [ ] Dev Build ② **2인** (중간) — Tutorial 이름+말해보기+인게임 응원
 - [ ] **Steam P2P ④ 2인** (2PC — **출시 게이트**)
 - [ ] Steam **4인 1회** (권장)
@@ -768,15 +784,18 @@ DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 
 | 항목 | 경로 / 비고 |
 |------|-------------|
-| 게이트 | `Assets/Scripts/Stage/StageStartGate.cs` |
-| 발판 | `Assets/Scripts/Stage/ColoredStartZone.cs` |
+| 게이트 (M/T 스테이지) | `Assets/Scripts/Stage/StageStartGate.cs` |
+| 발판 (M/T 스테이지) | `Assets/Scripts/Stage/ColoredStartZone.cs` |
+| `TutorialGatherZone` | **신규, 미구현** — 색 무관 단일 게이트 (§9.4) |
 | 버프 | `Assets/Scripts/PlayerBuffSystem.cs` |
 | 네트워크 플레이어 | `Assets/Scripts/Network/NetworkPlayerSetup.cs` |
 | 스테이지 네트워크 | `Assets/Scripts/Network/StageNetworkState.cs` |
 | 팀 UI | `Assets/Scripts/UI/TeamStatusUI.cs` |
 | 대화 | `Assets/Scripts/UI/DialogueUI.cs` |
-| 네트워크 설계 | `Assets/Docs/NetworkDesign.md` |
-| Tutorial 씬 | `Assets/Scenes/2.Tutorial.unity` |
+| 네트워크 설계 | `Assets/Docs/NetworkDesign.md` (§6B = Lobby 흡수 SSOT) |
+| `1.Lobby` 씬 | **삭제 대상** (2026-08-17 확정) |
+| `LobbyNetworkManager.cs` / `LobbyMenuController.cs` | **역할 이전 대상** → `TutorialNetworkManager`(가칭)/Tutorial 상시 HUD 컨트롤러(가칭). Ready/색선택/Kick 로직은 이전하지 않고 삭제 |
+| Tutorial 씬 | `Assets/Scenes/Tutorial.unity` (리네임 예정, 현재는 `2.Tutorial.unity`) |
 | **Dissonance** | Asset Store + NGO integration |
 | **Vosk** | GitHub `alphacep/vosk-unity-asr`, 모델 alphacephei.com |
 | 응원 구현 | `CheerService`, `CheerKeywordEngine`, `CheerLexiconBuilder`, `CheerProgressUI`, `VoskModelLoader` |
@@ -831,7 +850,13 @@ A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P
 A. `/cheer {자기 CheerName}`. 빈칸이면 색 기본값 (`berry` 등).
 
 **Q. CheerName은 로비에서? Tutorial에서?**  
-A. **Tutorial.** 입력·확정·재변경·말해보기 전부 Tutorial 씬에서 처리(2026-08-17 확정). Lobby엔 CheerName UI가 없다. §3.2·§3.6·§5.5.
+A. **Tutorial.** 입력·확정·재변경·말해보기 전부 Tutorial 씬에서 처리(2026-08-17 확정). 로비 씬 자체가 없어졌으니 애초에 다른 선택지가 없다. §3.2·§3.6·§5.5.
+
+**Q. `1.Lobby` 씬을 없애면 색 선택·Ready·Kick·초대는 어떻게 하나?**  
+A. 전부 `Tutorial`로 흡수됐다(2026-08-17 확정, SSOT `NetworkDesign.md` §6B). 색은 접속 시 **자동 배정**(선택 UI 없음), Ready/Start는 `TutorialGatherZone`(§9.4)이 대신하고, Kick은 **완전 폐지**, 초대는 Tutorial 상시 HUD로 이동.
+
+**Q. Tutorial에서 사람이 계속 늘거나 줄면 게이트가 이상해지지 않나?**  
+A. 안 그런다. `TutorialGatherZone`은 색별 지정이 아니라 **"존 안 인원 == 현재 접속 인원"** 헤드카운트 비교라 인원 변동에 자동으로 맞춰진다(§9.4, `NetworkDesign.md` §6B.3). 별도 동적 로직이 필요 없다.
 
 **Q. 말해보기 실패하면 진행 못 막나?**  
 A. **아니오.** 강제 아님. 이름 수정 안내만, 몇 번이든 다시 시도 가능. §3.2.
@@ -846,4 +871,4 @@ A. **잠정 허용.** Vosk 테스트 후 막을 수 있음. §3.5.
 A. **표 안 쌓임**, 발동 불가.
 
 **Q. Tutorial 매 판 5~8분?**  
-A. **아니오.** `TutorialCompleted` 시 Gate 직행.
+A. **아니오.** `TutorialCompleted` 시 Stealth/응원 1회 구역은 스킵하고 CheerName 입력 + `TutorialGatherZone` 직행.
