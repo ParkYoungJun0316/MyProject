@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1137640828725993142}
   - component: {fileID: 9066285204652824339}
-  - component: {fileID: 5946637730186219778}
+  - component: {fileID: 6848854778523277943}
   m_Layer: 17
   m_Name: GameObject
   m_TagString: Untagged
@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 63531821084716126}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -40,9 +40,9 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 63531821084716126}
-  m_Mesh: {fileID: -6749749494342408323, guid: 0ae39b1bf1c500843b09a98e95e10e90, type: 3}
---- !u!137 &5946637730186219778
-SkinnedMeshRenderer:
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &6848854778523277943
+MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -56,7 +56,7 @@ SkinnedMeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 3
+  m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
@@ -89,18 +89,7 @@ SkinnedMeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  serializedVersion: 2
-  m_Quality: 0
-  m_UpdateWhenOffscreen: 0
-  m_SkinnedMotionVectors: 1
-  m_Mesh: {fileID: -6749749494342408323, guid: 0ae39b1bf1c500843b09a98e95e10e90, type: 3}
-  m_Bones: []
-  m_BlendShapeWeights: []
-  m_RootBone: {fileID: 0}
-  m_AABB:
-    m_Center: {x: -0.0008318126, y: -0.1654605, z: 0.001036644}
-    m_Extent: {x: 0.5584587, y: 0.7903632, z: 0.5589811}
-  m_DirtyAABB: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &7264827689938741534
 GameObject:
   m_ObjectHideFlags: 0
@@ -111,9 +100,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8041752074285233060}
   - component: {fileID: -7339962320874818259}
-  - component: {fileID: -8728739258250062649}
   - component: {fileID: -8067900518808113261}
   - component: {fileID: 3009577291987957344}
+  - component: {fileID: 9135479602277319121}
   m_Layer: 17
   m_Name: BossDrop5.2
   m_TagString: EnemyBullet
@@ -129,9 +118,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7264827689938741534}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 6, y: 6, z: 5}
+  m_LocalScale: {x: 6, y: 6, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1137640828725993142}
@@ -164,27 +153,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &-8728739258250062649
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7264827689938741534}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.9, y: 0.9, z: 1.2}
-  m_Center: {x: 0, y: 0, z: 0.3}
 --- !u!114 &-8067900518808113261
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -228,3 +196,24 @@ MonoBehaviour:
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 0
   hitEffectPrefab: {fileID: 0}
+--- !u!135 &9135479602277319121
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7264827689938741534}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}

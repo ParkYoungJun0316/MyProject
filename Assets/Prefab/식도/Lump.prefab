@@ -64,6 +64,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c3d038da2da8e6140a5c5ae1a905e996, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 3d08d14437328a24fa9f0749b6391610, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 3660110586964168040, guid: 8a113a03a94df6449b59c5ef3cc39d61, type: 3}
     - target: {fileID: 919132149155446097, guid: 3d08d14437328a24fa9f0749b6391610, type: 3}
       propertyPath: m_Name
       value: Lump
@@ -112,7 +116,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 8777139954052135742, guid: 3d08d14437328a24fa9f0749b6391610, type: 3}
+  m_Mesh: {fileID: 3660110586964168040, guid: 8a113a03a94df6449b59c5ef3cc39d61, type: 3}
 --- !u!135 &3027475732360618308
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -150,17 +154,18 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 896
   breakDelay: 2
-  breakDelaySound: {fileID: 0}
-  breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  breakSound: {fileID: 0}
-  breakSoundVolume: 1
-  killPlayerOnBreak: 1
-  killRadius: 10
+  useMouthTeethBreakSfx: 0
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 10
   playerLayer:
     serializedVersion: 2
     m_Bits: 896
+  syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
