@@ -15,8 +15,8 @@ GameObject:
   - component: {fileID: 6939982195569991878}
   - component: {fileID: 8193296700298324424}
   - component: {fileID: -2506312403868327951}
-  - component: {fileID: 4556244405209333337}
   - component: {fileID: 3663840966531284043}
+  - component: {fileID: 5249791097018439024}
   m_Layer: 16
   m_Name: Watermelon
   m_TagString: Untagged
@@ -34,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 8, y: 5, z: 9}
+  m_LocalScale: {x: 9.496401, y: 9.496401, z: 9.496401}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -46,7 +46,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8038905161578336231}
-  m_Mesh: {fileID: -3500872997411817233, guid: 869a73ce76960094fa1167003cc612f5, type: 3}
+  m_Mesh: {fileID: 2519597968918171194, guid: f9bec50f8595338488477583e4dd1675, type: 3}
 --- !u!23 &3144104772144362662
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -72,7 +72,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a3e82839dd88b6f469f93d89c79cc36c, type: 2}
+  - {fileID: 2100000, guid: 47ff6219c3dfbd14c82df2b3ac1199e3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -110,7 +110,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
   spinSpeed: 2
   rollSfxId: 40
-  rollVolume: 0
   rollSpatialBlend: 1
   rollMinDistance: 1
   rollMaxDistance: 0
@@ -184,11 +183,21 @@ MonoBehaviour:
   lifetime: 5
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
-  destroyOnWall: 0
-  destroyOnFloor: 0
   hitEffectPrefab: {fileID: 0}
---- !u!136 &4556244405209333337
-CapsuleCollider:
+--- !u!114 &3663840966531284043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8038905161578336231}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
+--- !u!135 &5249791097018439024
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -205,20 +214,6 @@ CapsuleCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.23
-  m_Height: 0.6
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3663840966531284043
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8038905161578336231}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
+  serializedVersion: 3
+  m_Radius: 0.23176591
+  m_Center: {x: 0.0018745959, y: 0.1609303, z: -0.024856567}

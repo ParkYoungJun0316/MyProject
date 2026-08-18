@@ -14,8 +14,8 @@ GameObject:
   - component: {fileID: -3813914505298805592}
   - component: {fileID: 3269176173345606277}
   - component: {fileID: -2642114884920234078}
-  - component: {fileID: 3884554224511164123}
   - component: {fileID: 4580672255112518932}
+  - component: {fileID: 8316433925162416048}
   m_Layer: 16
   m_Name: Drop4_Avocado
   m_TagString: Untagged
@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 20, y: 18, z: 20}
+  m_LocalScale: {x: 18.91923, y: 18.91923, z: 18.91923}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -45,7 +45,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3717695987514568031}
-  m_Mesh: {fileID: 798035055718525027, guid: 869a73ce76960094fa1167003cc612f5, type: 3}
+  m_Mesh: {fileID: -7933162930324847187, guid: 27a49607565e1f44e90ab50d20152898, type: 3}
 --- !u!23 &4521003690999208249
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -71,7 +71,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a3e82839dd88b6f469f93d89c79cc36c, type: 2}
+  - {fileID: 2100000, guid: 47ff6219c3dfbd14c82df2b3ac1199e3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -164,10 +164,20 @@ MonoBehaviour:
   lifetime: 5
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
-  destroyOnWall: 0
-  destroyOnFloor: 0
   hitEffectPrefab: {fileID: 0}
---- !u!136 &3884554224511164123
+--- !u!114 &4580672255112518932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3717695987514568031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
+--- !u!136 &8316433925162416048
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -186,19 +196,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.1
-  m_Height: 0.3
+  m_Radius: 0.09189538
+  m_Height: 0.29067233
   m_Direction: 1
-  m_Center: {x: 0, y: 0.01, z: 0}
---- !u!114 &4580672255112518932
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3717695987514568031}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
+  m_Center: {x: 0.0096300505, y: 0.17097269, z: -0.009482585}
