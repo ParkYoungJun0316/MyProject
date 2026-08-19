@@ -31,6 +31,10 @@
 
 단색만 강제하지는 않음 — 필요한 오브젝트는 위 4가지 중 어울리는 방식을 골라 쓴다.
 
+**제작 위치 구분:**
+- 버텍스 컬러 → 페인팅은 **블렌더**(Vertex Paint) + 실제 반영은 **유니티** Shader Graph에서 "Vertex Color" 노드를 Base Color에 연결해야 화면에 보임(URP Lit 기본 셰이더는 버텍스컬러 무시함).
+- 절차적 노이즈 → **유니티**에서만 가능(Shader Graph는 유니티 전용, 블렌더 셰이더 노드는 임포트 안 됨). 프로젝트에 Shader Graph 패키지 설치돼 있고 `Assets/Blender/식도/Throat.shadergraph`에 기존 노이즈 예시 있음 — 참고해서 만들 것.
+
 ## 작업 패턴 (중요 — 다음 작업자가 알아야 함)
 
 - 씬의 GameObject는 그대로 `Assets/Prefab/**` 하위 기존 래퍼 프리팹을 참조 유지.
@@ -104,7 +108,7 @@
 |---|---|
 | Chaser | `NoAI/Chaser/Chaser1.fbx`, `Chaser2.fbx` 있음, 프리팹 미배선 |
 | Runner | `NoAI/Runner/Runner.fbx` 있음, 프리팹 미배선 |
-| Mouth / MouthTrap | `NoAI/Mouth/Mouth.fbx` 있음. 프리팹 `MouthTrap1`~`4`, `MouthBarrier.*`, `RealMouth`는 아직 Meshy |
+| Mouth / MouthTrap | `NoAI/Mouth/Mouth.fbx` 있음. 프리팹 `MouthTrap1`~`4`, `MouthBarrier.*`, `RealMouth`는 아직 Meshy. **에셋스토어 입 추출 순서:** `MouthAssetPipeline.md` (닫기 = 입 안 `F` 금지. 뒷벽 복제 + 입술 끝 연결 fill) |
 | 식도 본관 | `NoAI/Esophagus/Esophagus.fbx` 있음, 미배선 (연동운동/블렌드셰이프 가능) |
 
 ---
