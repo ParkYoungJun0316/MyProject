@@ -103,7 +103,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsDead || !isOwnerControlled) return;
         if (fallAnimTriggered) { moveInput = Vector2.zero; return; }
-        if (InGameChatUI.IsChatOpen) { moveInput = Vector2.zero; return; }
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { moveInput = Vector2.zero; return; }
         moveInput = value.Get<Vector2>();
     }
 
@@ -206,7 +206,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
-        if (!isOwnerControlled || InGameChatUI.IsChatOpen) { bwDown = altDown = false; return; }
+        if (!isOwnerControlled || InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { bwDown = altDown = false; return; }
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
     }

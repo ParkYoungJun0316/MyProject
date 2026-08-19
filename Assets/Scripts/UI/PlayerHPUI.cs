@@ -117,7 +117,7 @@ public class PlayerHPUI : MonoBehaviour
     void RefreshSelfName()
     {
         if (selfNameLabel == null || player == null) return;
-        int ci = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
+        int ci = System.Array.IndexOf(PlayerColorUtil.ColorOrder, player.playerColorType);
         string name = CheerService.GetCheerName(ci);
         selfNameLabel.text = selfNamePrefix + (string.IsNullOrEmpty(name) ? "???" : name.ToUpper());
     }

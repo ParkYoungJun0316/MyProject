@@ -132,6 +132,35 @@ FBX: 메시+아마추어만, Selected Objects, Add Leaf Bones 끄기, Bake Anima
 
 ---
 
+## 배선 완료 (2026-08-19)
+
+MCP로 아래 표대로 전부 갈아끼움. 씬 인스턴스는 래퍼 프리팹 참조 그대로 유지(프리팹 자체 asset guid 불변, 루트 fileID 보존). 스크립트(`ArrowTrap`, `MouthTrapAnimatorAnim`)는 그대로 두고 메시/재질/스케일/Animator만 교체.
+
+**방식:** `PrefabUtility.LoadPrefabContents` → 기존 메시/본 자식 전부 삭제(+wrapper는 기존 Animator도 삭제) → 새 FBX를 같은 임시 씬에 `InstantiatePrefab(fbx, root.scene)`으로 인스턴스화 → `UnpackPrefabInstance(Completely)`로 완전 언팩 → 자식들을 루트 밑으로 `SetParent(root.transform, false)` 재부모 지정 → 재질/스케일/Animator 재배선 → `SaveAsPrefabAsset`. (주의: `InstantiatePrefab`을 임시 씬이 아닌 활성 씬에 하면 `SetParent`가 조용히 무시된다 — 반드시 같은 씬 + Unpack 필요.)
+
+**컨트롤러:** 기존 `MouthTrap1~4.controller`는 그대로 재사용, 4개 State(Open/Hold/Close/Idle)의 Motion만 새 FBX의 동일 이름 클립으로 교체. ArrowTrap용은 `MouthTrap2.controller`를 복제해 `Assets/Animator/MouthTrapArrow2.controller` 신규 생성 후 Mouth2 클립으로 교체.
+
+**스케일:** 코드에서 실측 계산(기존 SMR localBounds × 기존 scale = 월드 크기, 그 값 ÷ 새 SMR localBounds = 새 scale). 아래는 결과값.
+
+### 매핑 (완료)
+
+| 대상 프리팹 | 새 메시 | 재질 | 결과 스케일 |
+|---|---|---|---|
+| `Prefab/입/MouthTrap1` | `NoAI/Mouth/Mouth3` | `Mouth3.mat` | (0.59, 0.79, 0.53) |
+| `Prefab/입/MouthTrap4` | `NoAI/Mouth/Mouth3` | `Mouth3.mat` | (0.59, 0.82, 0.51) |
+| `Prefab/입/MouthTrap2` | `NoAI/Mouth/Mouth1` | `Mouth1.mat` | (2.57, 3.15, 1.95) |
+| `Prefab/입/MouthTrap3` | `NoAI/Mouth/Mouth0` | `Mouth0.mat` | (0.26, 0.83, 0.51) |
+| `Prefab/ArrowTrap` | `NoAI/Mouth/Mouth2` | `Mouth2.mat` | (0.66, 0.43, 0.53) |
+| `Prefab/입/MouthBarrier.B/G/Y/P` | `NoAI/Mouth/Mouth3` | **기존 캐릭터색 mat 유지** (`MouthTrap4_B/G/Y/P`) | (0.98, 1.37, 0.77) |
+
+`RealMouth`는 이번 라운드 밖 (미배선).
+
+ArrowTrap: 기존 `MouthTrapAnimator`(BlendShape) + `MeshFilter` + `SkinnedMeshRenderer`(루트 직속) 제거 → `FirePoint` 자식은 유지 → Mouth2 자식(메시+아마추어) 추가 → 루트에 `Animator`(`MouthTrapArrow2.controller`) + `MouthTrapAnimatorAnim` 신규 부착. `ArrowTrap.cs`는 그대로.
+
+Hold 클립은 FBX에서 이미 Loop Time = true로 익스포트됨. `openClipLength`/`closeClipLength`는 각 FBX의 Open/Close 클립 실제 길이로 자동 반영(Mouth0/1/3 = 0.583s, Mouth2 = 0.467s). `holdDuration`은 기존 값(0.2s) 유지.
+
+---
+
 ## 한 줄 체크 (에이전트 완료 조건)
 
 - [ ] 오브젝트 1개 (천장·이빨·혀·바닥 포함)

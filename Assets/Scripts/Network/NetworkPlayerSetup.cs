@@ -285,12 +285,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
     void ApplyColor(int index)
     {
         if (_player == null) return;
-        if (index < 0 || index >= LobbyNetworkManager.ColorOrder.Length) return;
+        if (index < 0 || index >= PlayerColorUtil.ColorOrder.Length) return;
 
-        PlayerColorUtil.ApplyToPlayer(_player, LobbyNetworkManager.ColorOrder[index]);
+        PlayerColorUtil.ApplyToPlayer(_player, PlayerColorUtil.ColorOrder[index]);
         // 색 동기화 완료 이벤트 발행 (TeamStatusUI 등 UI 갱신)
         if (_events == null) _events = GetComponent<PlayerEvents>();
-        _events?.RaiseColorTypeChanged(LobbyNetworkManager.ColorOrder[index]);
+        _events?.RaiseColorTypeChanged(PlayerColorUtil.ColorOrder[index]);
     }
 
     // ── 색 상태 동기화 (isBlack / isUniqueColor) ──────────────────

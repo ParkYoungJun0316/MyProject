@@ -340,14 +340,14 @@ public class CheerProgressUI : MonoBehaviour
             ulong myId = NetworkManager.Singleton.LocalClientId;
             // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
             if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
         }
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {
             var net      = p.GetComponent<NetworkObject>();
             bool isOwner = (net != null && net.IsOwner) || p.isOwnerControlled;
             if (isOwner)
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
+                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, p.playerColorType);
         }
         return -1;
     }

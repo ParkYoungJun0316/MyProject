@@ -23,8 +23,8 @@ using UnityEngine;
 /// 각자 최신값이 그대로 최종값. GameSession.SetSessionCheerNames(...)로 그 시점에 1회 옮겨진다.
 ///
 /// [이 컴포넌트가 아직 하지 않는 것]
-/// 입력 UI(TMP_InputField 연결)·"말해보기" 테스트 UI·금칙어 blocklist(§3.5 #9~12)는 별도 작업
-/// (§6B.7 P6 UI 파트/P7) — 이 컴포넌트는 네트워크 동기화 코어(형식·예약어·중복·그래머 재빌드)만 담당.
+/// "말해보기" 테스트 UI는 별도 작업(§6B.7 P6 UI 파트/P7). 입력 UI·형식·예약어·금칙어(§3.5 #9~12,
+/// CheerNameValidator.ContainsBlockedWord)·중복·그래머 재빌드는 이 컴포넌트가 전부 담당.
 /// </summary>
 [RequireComponent(typeof(NetworkObject))]
 public class PlayerCheerNameSync : NetworkBehaviour
@@ -56,7 +56,7 @@ public class PlayerCheerNameSync : NetworkBehaviour
 
     /// <summary>
     /// Client → Host. candidate가 빈 문자열이면 커스텀 해제(기본값 취급)로 처리.
-    /// LobbyNetworkManager.SetCheerNameServerRpc와 동일 규칙 — 다만 슬롯이 아니라 "이 NetworkObject"
+    /// 구 LobbyNetworkManager.SetCheerNameServerRpc와 동일 규칙 — 다만 슬롯이 아니라 "이 NetworkObject"
     /// 자신의 OwnerClientId 기준으로 검증한다(Ready 잠금 없음, §3.4).
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -76,6 +76,12 @@ public class PlayerCheerNameSync : NetworkBehaviour
         if (!CheerNameValidator.IsValidFormat(lower, out string reason))
         {
             SendResult(false, reason);
+            return;
+        }
+
+        if (CheerNameValidator.ContainsBlockedWord(lower))
+        {
+            SendResult(false, "blocked");
             return;
         }
 
@@ -140,8 +146,8 @@ public class PlayerCheerNameSync : NetworkBehaviour
 
         if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color))
         {
-            int ci = LobbyNetworkManager.ColorTypeToIndex(color);
-            if (ci >= 0) return LobbyNetworkManager.DefaultCheerNames[ci];
+            int ci = PlayerColorUtil.ColorTypeToIndex(color);
+            if (ci >= 0) return PlayerColorUtil.DefaultCheerNames[ci];
         }
         return "";
     }

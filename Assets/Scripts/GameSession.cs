@@ -52,7 +52,7 @@ public class GameSession : MonoBehaviour
     private readonly HashSet<string> _seenIntroKeys = new HashSet<string>();
 
     // 이번 판 확정 CheerName. 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
-    // 미설정 시 LobbyNetworkManager.DefaultCheerNames 기본값 반환.
+    // 미설정 시 PlayerColorUtil.DefaultCheerNames 기본값 반환.
     private string[] _sessionCheerNames;
 
     // 이번 판 확정 Steam 표시 이름(DisplayName). 인덱스 = colorIndex.
@@ -154,6 +154,14 @@ public class GameSession : MonoBehaviour
     // ── 세션 CheerName ─────────────────────────────────────────────
 
     /// <summary>
+    /// true = SetSessionCheerNames가 이미 호출됨(Tutorial 게이트 통과 후, §6B.7 P5).
+    /// CheerService.GetCheerName/GetColorIndex가 "확정 세션값 vs 게이트 전 실시간값" 중 어느 쪽을
+    /// 우선할지 판단하는 용도 — GetSessionCheerName 자체는 미확정 시에도 기본값으로 폴백해버려서
+    /// 값만으로는 확정 여부를 구분할 수 없기 때문에 별도 플래그가 필요하다.
+    /// </summary>
+    public bool HasSessionCheerNames => _sessionCheerNames != null;
+
+    /// <summary>
     /// 이번 판 확정 CheerName 배열 저장.
     /// 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
     /// StartGame 직전 Host 로컬·Client 양쪽에서 동일하게 호출.
@@ -164,18 +172,18 @@ public class GameSession : MonoBehaviour
         Debug.Log($"[GameSession] 세션 CheerName 적용: {string.Join(", ", names)}");
     }
 
-    /// <summary>colorIndex → 이번 판 CheerName. 세션 미설정 시 LobbyNetworkManager.DefaultCheerNames 기본값.</summary>
+    /// <summary>colorIndex → 이번 판 CheerName. 세션 미설정 시 PlayerColorUtil.DefaultCheerNames 기본값.</summary>
     public string GetSessionCheerName(int colorIndex)
     {
         if (_sessionCheerNames != null && colorIndex >= 0 && colorIndex < _sessionCheerNames.Length)
             return _sessionCheerNames[colorIndex];
-        var defaults = LobbyNetworkManager.DefaultCheerNames;
+        var defaults = PlayerColorUtil.DefaultCheerNames;
         if (colorIndex >= 0 && colorIndex < defaults.Length)
             return defaults[colorIndex];
         return string.Empty;
     }
 
-    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 LobbyNetworkManager.DefaultCheerNames 기본값. 미매칭 시 -1.</summary>
+    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 PlayerColorUtil.DefaultCheerNames 기본값. 미매칭 시 -1.</summary>
     public int GetSessionColorIndex(string cheerName)
     {
         string lower = cheerName.Trim().ToLower();
@@ -184,7 +192,7 @@ public class GameSession : MonoBehaviour
             for (int i = 0; i < _sessionCheerNames.Length; i++)
                 if (_sessionCheerNames[i] == lower) return i;
         }
-        return System.Array.IndexOf(LobbyNetworkManager.DefaultCheerNames, lower);
+        return System.Array.IndexOf(PlayerColorUtil.DefaultCheerNames, lower);
     }
 
     // ── 세션 Steam 표시 이름 ───────────────────────────────────────
@@ -314,7 +322,7 @@ public class GameSession : MonoBehaviour
 
     static int ColorIndex(PlayerColorType type)
     {
-        int i = LobbyNetworkManager.ColorTypeToIndex(type);
+        int i = PlayerColorUtil.ColorTypeToIndex(type);
         return i >= 0 ? i : int.MaxValue;
     }
 

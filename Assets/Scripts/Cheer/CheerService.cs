@@ -48,7 +48,7 @@ public class CheerService : NetworkBehaviour
 
     // ── CheerName 매핑 ────────────────────────────────────────────
 
-    // LobbyNetworkManager.DefaultCheerNames 및 CheerLexiconBuilder 와 순서 동일하게 유지.
+    // PlayerColorUtil.DefaultCheerNames 및 CheerLexiconBuilder 와 순서 동일하게 유지.
     // 0=berry(Blue) 1=guma(Purple) 2=sook(Green) 3=hobak(Yellow)
     static readonly string[] CheerNames = { "berry", "guma", "sook", "hobak" };
 
@@ -168,7 +168,7 @@ public class CheerService : NetworkBehaviour
         foreach (var p in players)
         {
             if (!PlayerSpawnCoordinator.TryGetColor(p.OwnerClientId, out var color)) continue;
-            int idx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+            int idx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
             if (idx != targetColorIndex) continue;
 
             p.ApplyCheerBuff(stageBuffType, buffDuration);
@@ -238,7 +238,7 @@ public class CheerService : NetworkBehaviour
         // (fail-closed — 조회 실패를 "자기 응원 아님"으로 취급해 통과시키면 안 됨).
         if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor)) return false;
 
-        int myIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, myColor);
+        int myIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, myColor);
         if (myIdx == targetColorIndex)
         {
             // 1인 세션에서는 자기 자신 응원 허용 (partySize==1 규칙)
@@ -311,7 +311,7 @@ public class CheerService : NetworkBehaviour
         foreach (ulong id in voters)
         {
             if (!PlayerSpawnCoordinator.TryGetColor(id, out var color)) continue;
-            int idx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+            int idx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
             if (idx >= 0) result.Add(idx);
         }
         return result.ToArray();
@@ -341,26 +341,56 @@ public class CheerService : NetworkBehaviour
 
     // ── 공개 유틸 (CheerChatInput / CheerProgressUI 사용) ─────────
 
-    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 기본값. 미매칭 시 -1.</summary>
+    /// <summary>
+    /// 이름 → colorIndex. 우선순위: ①GameSession 확정 세션 이름(게이트 통과 후, §6B.7 P5)
+    /// → ②PlayerCheerNameSync 실시간 값(게이트 통과 전 Tutorial에서도 존재, §6B.2) → ③정적 기본값.
+    /// 미매칭 시 -1.
+    ///
+    /// [②가 필요한 이유] Tutorial 게이트 통과 전엔 GameSession._sessionCheerNames가 아직 null이라
+    /// ①이 항상 실패한다. 이때 커스텀 CheerName으로 응원(zone 3 체험 등)을 외쳐도 grammar는 인식하지만
+    /// (PlayerCheerNameSync가 이미 로컬 grammar를 실시간 갱신함) 이 함수가 -1을 돌려주면 "인식됐으나
+    /// 불일치"로 조용히 씹힌다 — NetworkDesign.md §6B.7 다음 에이전트 시작점 3번 갭.
+    /// </summary>
     public static int GetColorIndex(string cheerName)
     {
         string lower = cheerName.Trim().ToLower();
+
         if (GameSession.Instance != null)
         {
             int idx = GameSession.Instance.GetSessionColorIndex(lower);
             if (idx >= 0) return idx;
         }
+
+        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
+        {
+            if (name != lower) continue;
+            if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color))
+                return PlayerColorUtil.ColorTypeToIndex(color);
+        }
+
         return System.Array.IndexOf(CheerNames, lower);
     }
 
-    /// <summary>colorIndex → CheerName. 세션 이름 우선, 없으면 기본값. 범위 밖이면 빈 문자열.</summary>
+    /// <summary>colorIndex → CheerName. ①GameSession 확정 세션 이름(게이트 통과 후) → ②PlayerCheerNameSync
+    /// 실시간 값(게이트 전) → ③정적 기본값. 범위 밖이면 빈 문자열. 우선순위 근거는 <see cref="GetColorIndex"/> 참고.
+    ///
+    /// [왜 GameSession.HasSessionCheerNames로 먼저 분기하나] GameSession.GetSessionCheerName은
+    /// 세션 미확정(null) 상태에서도 자체적으로 PlayerColorUtil.DefaultCheerNames로 폴백해 항상
+    /// 비어있지 않은 값을 돌려준다 — 그래서 "비어있으면 다음 우선순위로" 방식으로는 게이트 전 커스텀
+    /// 이름을 절대 못 본다(항상 ①에서 기본값으로 조용히 성공해버림). 그래서 값 자체가 아니라
+    /// "세션이 확정됐는지"로 먼저 분기해야 한다.</summary>
     public static string GetCheerName(int colorIndex)
     {
-        if (GameSession.Instance != null)
+        if (GameSession.Instance != null && GameSession.Instance.HasSessionCheerNames)
+            return GameSession.Instance.GetSessionCheerName(colorIndex);
+
+        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
         {
-            string name = GameSession.Instance.GetSessionCheerName(colorIndex);
-            if (!string.IsNullOrEmpty(name)) return name;
+            if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color) &&
+                PlayerColorUtil.ColorTypeToIndex(color) == colorIndex)
+                return name; // 이미 GetAllEffectiveNames 안에서 커스텀/기본값까지 해석된 값
         }
+
         if (colorIndex < 0 || colorIndex >= CheerNames.Length) return string.Empty;
         return CheerNames[colorIndex];
     }

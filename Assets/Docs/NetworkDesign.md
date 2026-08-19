@@ -348,7 +348,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [ ] `SetSessionCheerNames`/`SetSessionDisplayNames`/`SetSessionVoiceIds` 확정+배포 — **P3 두 번째 항목(DisplayName/VoiceId 보고)·P6(CheerName Tutorial 통합) 완료 후로 미룸.** 그때까지는 `GameSession`의 기본 폴백값(`GetSessionCheerName`→`LobbyNetworkManager.DefaultCheerNames`, `GetSessionDisplayName`→`"Player"`, `GetSessionVoiceId`→`null`)으로 동작 — NPE 등 하드 실패 없음, 표시 이름/음성 매칭만 부정확
 - [x] `SceneFlowManager.LoadNextScene()` 호출 → `M.Stage1`
 
-**P6 — CheerName Tutorial 통합** — **네트워크 동기화 코어 코드 완료 (2026-08-18), ParrelSync 검증 대기**
+**P6 — CheerName Tutorial 통합** — **네트워크 동기화 코어 코드 완료 (2026-08-18), 자기응원 피드백 UI 코드 완료 (2026-08-19), 테스트는 이번 라운드 전체 보류 (사용자 지시 2026-08-19) → 아래 남은 작업 다 끝내고 한 번에 검증**
 
 > **별도 SSOT** — `CheerAndTutorialDesign.md` §11 Phase 7 / §13 체크리스트를 따라 진행. 여기서 중복 서술하지 않음. 아래는 이번 라운드에서 실제로 반영한 범위만 기록.
 
@@ -356,10 +356,112 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [x] `CheerNameValidator`(`Assets/Scripts/Cheer/CheerNameValidator.cs`) 신설 — 구 `LobbyNetworkManager.IsValidCheerNameFormat`/`ReservedNames`를 추출한 공용 검증 유틸. `LobbyNetworkManager`도 이제 이걸 재사용 — P8에서 구 로비 코드를 지워도 검증 규칙은 남는다
 - [x] CheerName 변경 시 로컬 `CheerKeywordEngine.ApplySessionGrammar()` 재빌드 훅 연결 — 어느 Player의 이름이 바뀌었든 "내 로컬 인식기(Owner 인스턴스)" 하나만 매번 전체 이름 목록으로 재적용(§5.3)
 - [x] `TutorialNetworkManager.CompleteGate()`에 세션 CheerName 확정 추가 — 게이트 통과 시점 각자 최신값을 colorIndex 배열로 확정해 `GameSession.SetSessionCheerNames()` + `BroadcastSessionCheerNamesClientRpc`로 전원 배포(§6B.7 P3 두 번째 항목 중 CheerName 부분은 이걸로 완료 처리 — DisplayName/VoiceId는 여전히 미구현)
-- [ ] **입력 UI**(TMP_InputField 연결, 확정 버튼) — 미착수. `PlayerCheerNameSync.SubmitCheerNameServerRpc`/`OnSubmitResult`에 연결할 컨트롤러 스크립트 필요(§8.3)
-- [ ] **"말해보기" 테스트 UI** — 미착수(§5.5)
-- [ ] 금칙어 blocklist(§3.5 #9~12, 욕설/성적/혐오/우회표현) — 구 로비에도 없던 갭, 이번에도 미구현(형식·예약어만 검증)
-- [ ] ParrelSync 2인 검증 — 접속 시 CheerName 확정/재변경/중복 거절/색 변경 후 이름 유지 확인 필요
+- [x] **입력 UI**(TMP_InputField 연결, 확정 버튼) — **코드+씬 배치 완료 (2026-08-19), ParrelSync 검증 대기.** 아래 "입력 UI 반영 내용" 참고
+- [x] **"내가 지금 응원 중" 자기 확인 UI** (신규, 2026-08-19) — `PlayerNameTagUI`의 로컬 오너 전용 슬롯(`hideForLocalOwner`로 원래 비워두던 자리, 항상 시야에 있음 — 응원 중엔 화면만 보고 음성만 쓰기 때문에 타겟 머리 위 표시는 응원자 본인에겐 안 보인다는 문제 해결용)을 재사용. `CheerService.OnCheerersChanged`에서 내 colorIndex가 낀 target을 찾아 그 target의 `CheerName`을 **타겟 색상 텍스트**로 표시(하트 아이콘 없음 — 사용자 결정, 2026-08-19). `OnVoteReset`/타겟 변경 시 자동 숨김. 새 스크립트·프리팹 변경 없이 `PlayerNameTagUI.cs`만 수정. **ParrelSync 검증 대기** (아래 체크리스트 참고)
+- [x] `CheerKeywordEngine` Tutorial 연동 + 게이트 전 커스텀 이름 인식 갭 수정 — **구현 완료 (2026-08-19)**
+  - `CheerKeywordEngine`의 `_lobbyTestMode`→`_sayTestMode` 리네임, `GetLobbyColorIndex`/`BuildLobbyGrammarJson`(둘 다 `LobbyNetworkManager.Instance` 슬롯 순회)을 `GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`(`PlayerCheerNameSync.GetAllEffectiveNames()` + `PlayerSpawnCoordinator.TryGetColor` 기반)으로 교체 — 로비 의존 제거. `_sayTestMode=true`일 때는 여전히 `SubmitCheerServerRpc` 호출 안 함(로컬 인식 확인만). 영향 확인: `_lobbyTestMode=true`였던 곳은 삭제 대상 `1.Lobby.unity` 1곳뿐, 실사용 `Player1.prefab`은 `false`라 리네임으로 인한 동작 영향 없음
+  - **Tutorial 게이트 통과 전 커스텀 이름 인식 갭 수정** — 원인은 `CheerService.GetColorIndex`/`GetCheerName`이 `GameSession._sessionCheerNames`(게이트 통과 시에만 설정)만 보고, 미설정 시 고정 4종 기본값으로만 폴백했던 것. `GameSession`에 `HasSessionCheerNames` 프로퍼티 신설(`GetSessionCheerName` 자체는 미확정 시에도 기본값으로 폴백해버려 "비어있으면 다음 우선순위" 방식으로는 구분 불가) + `CheerService.GetColorIndex`/`GetCheerName`에 우선순위 폴백 추가: ①`GameSession` 확정 세션값(게이트 후) → ②`PlayerCheerNameSync.GetAllEffectiveNames()` 실시간값(게이트 전) → ③정적 기본값. Vosk grammar 자체는 이미 `PlayerCheerNameSync.RebuildOwnerLocalGrammar()`가 실시간 반영해서 문제없었음 — 갭은 인식된 단어를 colorIndex로 바꾸는 이 매핑 단계였음
+- [x] "말해보기" UX 설계 변경 (2026-08-19, 사용자 결정) — **상시 노출 → Tutorial 구역 2 상호작용 표지판으로 개폐.** 상시 패널은 화면을 계속 가리고, DialogueUI식 1회성 노출은 나중에 이름을 바꾸려 해도 타이밍을 놓칠 수 있다는 문제로, `TutorialCheerNameSignboard`(신규, `Assets/Scripts/Stage/`) 상호작용 표지판이 `TutorialCheerNameUI.Open()/Close()/Toggle()`을 호출해 게이트 통과 전까지 언제든 여닫는 방식으로 확정. 상세는 §9(체크리스트) 및 `CheerAndTutorialDesign.md` §8.3/§9.2 참고
+  - `TutorialCheerNameUI`: 패널 GameObject 자체를 활성/비활성으로 토글(`Open`/`Close`/`Toggle`), `IsOpen` 정적 플래그 신설(`InGameChatUI.IsChatOpen`과 동일 패턴), 닫기 버튼 추가
+  - `Player.cs`의 `OnMove`/`GetInput`에 `TutorialCheerNameUI.IsOpen` 이동 잠금 가드 추가(`InGameChatUI.IsChatOpen`과 나란히) — 타이핑 중 WASD가 이동으로 새는 문제 방지, 채팅 입력과 동일 해법 재사용
+  - **1개(재방문 가능)로 배치, 표지판 3D 비주얼은 사용자가 나중에 교체 — 지금은 플레이스홀더로 진행. 상호작용 키는 프로젝트 기존 관례(`Keyboard.current` 직접 폴링)대로 E키, `InputSystem_Actions`의 미사용 `Interact` 액션(Hold 인터랙션 붙어있어 그대로 쓰기 부적합)은 손대지 않음**
+  - [x] 사용자 에디터 작업 — **완료 (2026-08-19, MCP).** `CheerNamePanel` 기본 비활성 + `CloseButton`/`ExamplesText` 추가·연결, `CheerNameSignboard`(트리거+플레이스홀더 Visual+`[E] 이름 설정` 프롬프트) 구역 2 근처 `(10, 0, 8)`에 배치. `Tutorial.unity` 저장됨
+- [x] "말해보기" 브로드캐스트 미결정 항목 — **모두 필요 없음으로 결론 (2026-08-19, 사용자 판단).** 두 차례 물었던 "팀원 화면에도 인식 결과를 보여줄지" 자체가 잘못된 질문이었음 — 실제 응원 제출 경로(`_sayTestMode=false`, 기본값)로 이름을 외치면 이미 **전원에게** 실시간으로 보인다:
+  - `PlayerCheerHeartsUI` — 응원받는 사람 머리 위에 응원 중인 팀원 색 하트(네트워크 전체 브로드캐스트, 기존 구현)
+  - `PlayerNameTagUI` — 응원하는 사람 본인 화면에 "지금 응원 중인 대상의 CheerName" 표시 → 내 발화가 인식돼 올바른 대상에 매칭됐는지 즉시 확인 가능
+  - `TeamStatusUI` — 나를 응원 중인 팀원에 "Cheering" 라벨
+  
+  즉 "말해보기"는 **별도 모드가 아니라 진짜 응원 제출 그 자체**로 이미 충족된다. 별도 로컬 전용 인식 확인 UI(`TutorialCheerSayTestUI`)는 만들지 않기로 확정
+- [x] ~~"말해보기" 테스트 UI 자체(`TutorialCheerSayTestUI`)~~ — **폐기 (2026-08-19).** 위 근거로 신규 컴포넌트 불필요. 대신 `CheerNamePanel`의 `ExamplesText`에 "확정 후에는 팀원에게 이 이름을 외쳐달라 해서 실제로 인식되는지 확인해보세요!" 안내 문구 추가(2026-08-19, MCP 반영·씬 저장 완료)로 대체. `CheerKeywordEngine`의 `_sayTestMode`/`GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`/`OnKeywordDetected`는 로비 의존 제거 과정에서 이미 만들어둔 코드라 남겨두되(부작용 없음, 어떤 컴포넌트도 `_sayTestMode=true`로 설정 안 함), 이걸 소비하는 UI는 더 만들지 않음
+  - **후속(지금 착수 안 함):** 구역 3(응원 1회 체험) 자체가 아직 미구현(§9.2, 체크리스트 미착수)이라 그 Dialogue에 같은 안내를 넣을 자리가 아직 씬에 없음. 구역 3 구현 시 Dialogue 문구에 "실제로 외쳐서 확인" 안내를 같이 넣을 것 — 그때 처리
+- [x] 금칙어 blocklist(`CheerNameValidator.cs`, §3.5 #9~12) — **구현 완료 (2026-08-19).** `CheerNameValidator.Blocklist`(부분 문자열 매칭) + `ContainsBlockedWord()` 추가, `PlayerCheerNameSync.SubmitCheerNameServerRpc`에서 형식·예약어 통과 후 호출 → 거절 시 `"blocked"` 사유 반환, `TutorialCheerNameUI.ResolveErrorMessage`에 메시지 매핑 추가. 스코프는 아래 표 그대로("완벽 필터 아님, 대놓고 심한 단어만"):
+
+  | # | 카테고리 | 포함 | 제외 |
+  |---|---|---|---|
+  | 9 | 욕설 | 흔한 영문 비속어 (`fuck`/`shit`/`bitch`/`ass`/`damn`/`bastard`/`whore`/`slut` 등) | 지역/은어 방언 전부 |
+  | 10 | 성/신체 | 성기·성행위 직접 지칭 소수 | 의학 용어·은유 표현 |
+  | 11 | 혐오·차별 | 대표적 슬러 몇 개만 | 전 세계 모든 혐오 표현 |
+  | 12 | 숫자 치환 우회 | `f4ck`/`fuk`/`sh1t`/`a55`/`b1tch` 등 가장 뻔한 패턴만 | 정교한 leetspeak 전체, `$` 등 기호(형식검증이 이미 막음) |
+
+  코드 테이블 방식이라 플레이테스트 후 걸리는 단어는 `Blocklist` 배열에 추가하면 됨(AI 필터 없음, §3.5 기존 방침 그대로 유지). **ParrelSync 검증 대기** (아래 통합 검증 체크리스트 그룹 A).
+- [ ] ParrelSync 2인 검증 — **이번 라운드 전체 보류 (2026-08-19, 사용자 지시).** 위 미착수 항목들 다 끝낸 뒤 아래 "통합 검증 체크리스트"로 한 번에 진행
+
+> **⚠️ 크리티컬 블로커 — 정정 (2026-08-19 재조사) — 실제로는 이미 해결된 상태로 보임.**
+> 이전 기록은 `Player.Network.prefab`을 기준으로 "미부착"이라 판단했으나, 이는 잘못된 프리팹을 지목한 것이었다. `Tutorial`이 실제로 스폰에 쓰는 프리팹은 `PlayerSpawnManager.playerPrefab` 필드(`Title.unity`에서 직렬화됨)가 가리키는 **`Player1.prefab`**이고(`TutorialNetworkManager.AssignColorAndSpawn` → `PlayerSpawnManager.Instance.PlayerPrefab` 경로로 확인), `Player.Network.prefab`은 `NetworkManager.NetworkConfig.PlayerPrefab`에만 연결돼 있을 뿐 `ApproveConnection`의 `CreatePlayerObject=false`로 인해 실제로는 쓰이지 않는다(§6B.2 구현 참고 각주와 동일 사실). 확인해보니 `Player1.prefab`에는 이미 `PlayerCheerNameSync` 컴포넌트가 부착돼 있다(현재 미커밋 변경사항).
+> **남은 것: 실기 확인뿐.** ParrelSync로 Tutorial에 들어가 CheerNamePanel이 정상 동작하는지(대상을 찾는지) 1회 확인 필요 — 통합 검증 체크리스트 그룹 A에서 같이 확인하면 됨. 별도 에디터 작업은 필요 없어 보임.
+
+#### 다음 에이전트 시작점 (2026-08-19 갱신 — 블록리스트 + CheerKeywordEngine Tutorial 연동 + 말해보기 UX 설계 완료 후)
+
+1. ~~금칙어 blocklist 구현~~ — **완료**
+2. ~~`CheerKeywordEngine` Tutorial 연동 + 게이트 전 커스텀 이름 인식 갭 수정~~ — **완료 (2026-08-19)**
+3. **크리티컬 블로커 실기 확인** — 위 정정 내용대로 `Player1.prefab`의 `PlayerCheerNameSync`가 ParrelSync에서 실제로 동작하는지 1회 확인(아래 통합 검증 체크리스트 그룹 A와 겸해서 진행 가능)
+4. ~~에디터 작업~~ — **완료 (2026-08-19, MCP).** `CheerNamePanel` 기본 비활성 + Close/Examples(+실제 테스트 안내 문구) + `CheerNameSignboard` 배치·연결, `Tutorial.unity` 저장
+5. ~~"말해보기" 테스트 UI~~ — **폐기 (2026-08-19).** 실제 응원 제출 자체가 곧 테스트(위 §6B.7 P6 참고), 신규 컴포넌트 불필요
+6. 남은 건 위 3번(크리티컬 블로커 실기 확인)뿐 — 이제 아래 "통합 검증 체크리스트"(입력 UI + 자기응원 UI + 블록리스트)를 ParrelSync 2인으로 한 번에 실행 가능
+
+#### 입력 UI 반영 내용 (2026-08-19, 상시 표시 → 상호작용 표지판 개폐로 재변경)
+
+**코드:** `Assets/Scripts/UI/TutorialCheerNameUI.cs` + 신규 `Assets/Scripts/Stage/TutorialCheerNameSignboard.cs`. `PlayerCheerNameSync`(§6B.2 이미 완료)를 그대로 사용 — 새 네트워크 로직 없음, 로컬 입력 UI + 로컬 트리거만.
+
+- 씬의 모든 `PlayerCheerNameSync`를 훑어 `NetworkObject.IsOwner`로 내 캐릭터만 탐색(`RebuildOwnerLocalGrammar()`와 동일 패턴) — 찾을 때까지만 `Update()`에서 재시도, 찾으면 폴링 중단
+- Enter(`TMP_InputField.onSubmit`) 또는 확정 버튼 → `SubmitCheerNameServerRpc` 호출 → 응답 오기 전까지 입력창/버튼 비활성화 → `OnSubmitResult`로 성공/실패(`format`/`reserved`/`taken`/`blocked`) 메시지 표시
+- `PlayerCheerNameSync.GetAllEffectiveNames()`(기존 public static)로 내 clientId의 "실제 적용중인 이름"(커스텀 없으면 색 기본값)을 그대로 읽어 표시 — 별도 기본값 계산 로직 없음
+- 타이핑 중엔 로컬만(§3.4) — 확정 전까지 ServerRpc 호출 자체가 없어 이 구조로 자동 충족
+- **개폐 방식 (2026-08-19 변경):** `CheerNamePanel`(패널 루트 GameObject) 자체를 `Open()`/`Close()`/`Toggle()`로 활성/비활성 토글. `IsOpen` 정적 플래그(`InGameChatUI.IsChatOpen`과 동일 패턴)로 `Player.cs`가 이동 잠금. 게이트 통과 전까지 몇 번이든 다시 열어 재확정 가능(§3.4)
+- `TutorialCheerNameSignboard`: Tutorial 구역 2의 상호작용 표지판 — 로컬 플레이어가 트리거 범위에 들어오면 프롬프트 표시, E키로 `cheerNameUI.Toggle()` 호출. 순수 로컬(네트워크 판정 없음, 각자 자기 화면 UI만 여닫으므로 충돌 없음)
+
+**씬 배치 (2026-08-19 MCP 반영 완료):** `Assets/Scenes/Tutorial.unity`
+
+```
+UI (Canvas)
+└─ CheerNamePanel          ← TutorialCheerNameUI 부착, 기본 비활성(SetActive false)으로 변경
+   ├─ TitleText             "응원 이름을 정해보세요"
+   ├─ NameInputField        TMP_InputField, Single Line, characterLimit=12, placeholder="예: hobak"
+   ├─ ConfirmButton          "확정"
+   ├─ CloseButton            "닫기" (신규, closeButton 필드 연결)
+   ├─ CurrentNameText        "현재 이름: ..."
+   ├─ FeedbackText           성공/실패 메시지 (초기 비활성)
+   └─ ExamplesText           (신규, 순수 텍스트) "이렇게는 안 돼요: fuck, admin, ab, 한글이름 🎉" 등 예시 — 코드 없이 고정 텍스트로 작성
+
+(Tutorial 구역 2, 월드) SignboardObject   ← TutorialCheerNameSignboard 부착 + Collider(Is Trigger)
+└─ PromptRoot                              "[E] 이름 설정" 안내, 기본 비활성
+```
+
+Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 필요(나머지는 완료), `TutorialCheerNameSignboard`의 `cheerNameUI`(CheerNamePanel 참조) + `promptRoot` 연결 필요. `CheerNamePanel` 자체는 씬에서 기본 비활성으로 바꿔야 함(현재 활성 상태로 남아있으면 상시 노출되던 예전 동작 그대로 유지됨).
+
+#### 통합 검증 체크리스트 (ParrelSync 2인, 전체 미실시 — 2026-08-19 사용자 지시로 한 번에 모아서 진행)
+
+> 아래 두 그룹 전부 **위 "다음 에이전트 시작점" 1~4번 작업이 끝난 뒤** 한 번에 실행할 것. 순서상 이 파일에서 관련 항목이 전부 `[x]`가 된 다음이 적절함. (구 그룹 C "말해보기" 테스트 UI는 폐기 — 위 §6B.7 P6 참고, 실제 응원 제출 자체로 검증됨. 그 시나리오는 아래 그룹 A 마지막 항목에 통합)
+
+**A. CheerName 입력 UI**
+
+- [ ] Host + Client 접속 → `Tutorial` 진입 → `CheerNamePanel`이 기본적으로 안 보이는지(구 상시 표시 아님)
+- [ ] 표지판(구역 2) 근처에 가면 "[E] 이름 설정" 프롬프트가 뜨고, E키로 `CheerNamePanel`이 열리는지
+- [ ] 패널이 열려있는 동안 WASD를 눌러도 캐릭터가 이동하지 않는지(`TutorialCheerNameUI.IsOpen` 이동 잠금)
+- [ ] 닫기 버튼 또는 표지판 재상호작용(E) → 패널이 닫히고 다시 이동 가능해지는지
+- [ ] 게이트 통과 전이면 몇 번이든 다시 열어 이름을 재확정할 수 있는지(§3.4)
+- [ ] 이름 입력 후 확정 → "이름이 확정되었습니다" + `현재 이름:` 갱신 확인
+- [ ] 팀원 화면에도 그 이름이 반영되는지(같은 Player의 `PlayerCheerNameSync.CustomCheerName`을 다른 클라이언트가 읽을 때)
+- [ ] 같은 이름으로 둘 다 확정 시도 → 나중 시도한 쪽이 "이미 다른 팀원이 사용 중" 거절되는지
+- [ ] 한글/공백/이모지 입력 시도 → 타이핑 자체가 막히는지(`onValidateInput` 필터)
+- [ ] 13자 이상 입력 시도 → `characterLimit=12`로 막히는지
+- [ ] 예약어(`cheer`, `admin`, `host`, `server`, `system`, `bot`, `null`) 입력 → "시스템 예약어" 거절 확인
+- [ ] 빈칸으로 확정 → 색 기본값으로 돌아가는지(`현재 이름:`에 기본 이름 표시)
+- [ ] 같은 사람이 여러 번 재확정(잠금 없음, §3.4) → 매번 반영되는지
+- [ ] 색 변경 후에도 커스텀 이름이 유지되는지(§3.3, CheerName은 색이 아니라 플레이어에 귀속)
+- [ ] 금칙어(`fuck`/`fuk`/`sh1t` 등 `CheerNameValidator.Blocklist`) 입력 → "사용할 수 없는 단어가 포함되어 있어요" 거절 확인
+- [ ] 금칙어를 포함한 긴 단어(예: `fuckboy`) → 부분 문자열 매칭으로도 거절되는지
+- [ ] **게이트 통과 전** 커스텀 이름 확정 후 zone 3(응원 1회 체험)에서 그 이름을 외쳐도 정상 인식되는지(`CheerService.GetColorIndex` 게이트 전 폴백 검증)
+- [ ] "확정 후 실제로 외쳐서 확인해보세요" 안내 문구(`ExamplesText`)가 잘 보이는지 — 이게 "말해보기"의 실제 구현체(별도 UI 없음, 2026-08-19 결정)이므로 팀원에게 이름을 외쳐달라고 부탁 → 아래 그룹 B로 인식 확인이 이어지는 흐름이 매끄러운지
+
+**B. "내가 지금 응원 중" 자기 확인 UI (`PlayerNameTagUI`, 신규)**
+
+- [ ] A가 B를 응원 시작 → **A 자신의 화면**에서 A 캐릭터 머리 위에 B의 CheerName이 B의 색으로 뜨는지
+- [ ] 그 텍스트가 다른 팀원(C) 화면에서도 A 머리 위에 동일하게 보이는지(월드 스페이스, 전원 공통)
+- [ ] A가 타겟을 B→C로 바꾸면 즉시 텍스트가 C 이름/색으로 바뀌는지(깜빡임 없이)
+- [ ] 버프 발동(표 충족) 또는 타임아웃으로 표 초기화 → A 머리 위 텍스트가 사라지는지
+- [ ] 응원을 아예 안 하고 있을 때 A 머리 위엔 아무것도 안 뜨는지(기존처럼 빈 상태)
+- [ ] 자기 자신 응원(솔로 1인 규칙, `ActivePlayerCount==1`) 상황에서도 자연스럽게 동작하는지(또는 의도적으로 숨김 처리할지 확인)
 
 **P7 — UI**
 
@@ -369,13 +471,14 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 **P8 — Kick 제거 + 구 코드 삭제**
 
-- [ ] `KickPlayerServerRpc` + Kick UI 완전 삭제
-- [ ] `LobbyNetworkManager.cs` / `LobbyMenuController.cs` / `LobbyPlayerState.cs` 삭제 (대체 완료 확인 후)
-- [ ] `TitleMenuController`의 Steam 룸코드 입력 경로(`ConfirmJoinSteam`) 삭제 (§4.2, §5)
+- [x] `KickPlayerServerRpc` + Kick UI 완전 삭제 (2026-08-19) — `LobbyNetworkManager.KickPlayerServerRpc`, `LobbySlotUI.OnClickKick()`/`kickButtonRoot`, `LobbyMenuController`의 `canKick` 계산 전부 삭제. 참조가 `LobbySlotUI` 1곳뿐이라 다른 파일 영향 없음
+- [x] `LobbyNetworkManager.cs` / `LobbyMenuController.cs` / `LobbyPlayerState.cs` / `LobbySlotUI.cs` / `LobbyCharacterPreview.cs` 삭제 (2026-08-20 완료) — 공용 상수(`ColorOrder`/`DefaultCheerNames`/`ColorTypeToIndex`)를 먼저 `PlayerColorUtil.cs`(기존 색 유틸)로 이전한 뒤, 이 상수를 참조하던 20여개 파일(`GameSession`/`CheerService`/`CheerKeywordEngine`/`PlayerCheerNameSync`/`TutorialNetworkManager`/`PlayerSpawnManager`/`NetworkPlayerSetup`/`TeamStatusUI`/`PlayerHPUI`/`PlayerNameTagUI`/`PlayerCheerHeartsUI`/`DeathOverlayUI`/`CheerProgressUI`/`InGameChatUI`/`ColorTileChallenge`/`OptionsTeamVoicePanel` 등)의 참조를 `PlayerColorUtil.XXX`로 교체 후 삭제. `OptionsTeamVoicePanel`의 죽은 로비 슬롯 폴백 분기(`TryCollectFromLobby`)도 함께 제거 — 이제 `GameSession` 세션 데이터 하나만 본다(단, Tutorial 게이트 통과 전에는 DisplayName/VoiceId 세션 확정이 아직 미구현이라 팀원 목록이 비어 보일 수 있음 — P3 두 번째 항목 참고, 별개 이슈). `GetEffectiveCheerName`은 로비 UI 전용이라 이전 없이 함께 삭제(다른 참조 없음 확인).
+- [x] `TitleMenuController`의 Steam 룸코드 입력 경로(`ConfirmJoinSteam`) 삭제 (2026-08-19, §4.2, §5) — `OnClickConfirmJoin()`이 로컬(①②) 경로만 수행, Steam 빌드에서는 경고 로그만 남기고 무시
+- [ ] **사용자 에디터 작업 (남음):** `Assets/Scenes/1.Lobby.unity` 삭제 + Build Settings에서 제거 (§15) — 코드 쪽 의존성은 위에서 전부 제거 완료, 씬 파일 자체만 남음
 
 **P9 — 에디터 작업 (사용자 담당, §15)** — **부분 진행 (2026-08-17)**
 
-- [x] `Title`/`Tutorial` 씬 신설 완료(내용 있음, 실제 사용 중) — **단, `0.Title.unity`/`2.Tutorial.unity`/`1.Lobby.unity` 구버전 파일이 아직 삭제 안 되고 남아있음** (`Assets/Scenes/` 확인, 2026-08-17). 리네임이라기보다 "새 씬 생성 + 구씬 방치" 상태 — 구씬 삭제는 대체 완료(P8) 이후 정리 권장
+- [x] `Title`/`Tutorial` 씬 신설 완료(내용 있음, 실제 사용 중). `0.Title.unity`/`2.Tutorial.unity`는 이미 정리됨 — **`Assets/Scenes/1.Lobby.unity`만 남음.** 코드 쪽 대체(P8)는 2026-08-20 완료 — 남은 건 씬 파일 삭제 + Build Settings 제거뿐(사용자 에디터 작업)
 - [x] `Tutorial.unity`에 `TutorialNetworkManager` 배치 + `coordinatorPrefab` 연결 완료
 - [x] Tutorial ESC 메뉴 Quit 버튼 → `TutorialNetworkManager.OnClickLeaveRoom()` 재배선 완료
 - [x] `TitleMenuController.lobbySceneName` → `"Tutorial"`로 갱신 완료 (`Title.unity` 확인됨)

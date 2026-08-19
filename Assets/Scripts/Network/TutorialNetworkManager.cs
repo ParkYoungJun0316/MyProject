@@ -289,12 +289,12 @@ public class TutorialNetworkManager : NetworkBehaviour
     static string[] BuildSessionCheerNames(Dictionary<ulong, PlayerColorType> clientColorDict)
     {
         var names = new string[4];
-        for (int i = 0; i < 4; i++) names[i] = LobbyNetworkManager.DefaultCheerNames[i];
+        for (int i = 0; i < 4; i++) names[i] = PlayerColorUtil.DefaultCheerNames[i];
 
         foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
         {
             if (!clientColorDict.TryGetValue(clientId, out var color)) continue;
-            int ci = LobbyNetworkManager.ColorTypeToIndex(color);
+            int ci = PlayerColorUtil.ColorTypeToIndex(color);
             if (ci >= 0) names[ci] = name;
         }
         return names;
@@ -351,7 +351,7 @@ public class TutorialNetworkManager : NetworkBehaviour
         _spawnedPlayers[clientId] = netObj;
 
         var setup = go.GetComponent<NetworkPlayerSetup>();
-        setup?.SetColorIndex(LobbyNetworkManager.ColorTypeToIndex(color));
+        setup?.SetColorIndex(PlayerColorUtil.ColorTypeToIndex(color));
 
         // §11.3 Ready 늦은 구독 패턴 재사용: 최초 1명만 발행하면, 이후 합류자는 자기 OnNetworkSpawn에서
         // IsReady==true를 보고 즉시 카메라 바인드 — 매 접속마다 재호출할 필요 없음.
@@ -368,11 +368,11 @@ public class TutorialNetworkManager : NetworkBehaviour
         foreach (var entry in PlayerSpawnCoordinator.GetAllEntries())
             used.Add(entry.Color);
 
-        foreach (var color in LobbyNetworkManager.ColorOrder)
+        foreach (var color in PlayerColorUtil.ColorOrder)
             if (!used.Contains(color)) return color;
 
         Debug.LogWarning("[TutorialNetworkManager] 빈 색 없음(4인 초과?) — Blue 폴백");
-        return LobbyNetworkManager.ColorOrder[0];
+        return PlayerColorUtil.ColorOrder[0];
     }
 
     // ── 이탈 감지 (Client 전용) ───────────────────────────────────

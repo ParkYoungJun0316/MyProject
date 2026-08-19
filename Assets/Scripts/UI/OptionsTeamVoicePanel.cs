@@ -7,10 +7,14 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 옵션 패널 "팀 보이스" 탭 — CheerName(guma/danho/sook)이 아니라
-/// 팀원의 Steam 표시 이름(LobbyPlayerState.DisplayName / GameSession 세션 이름)을 슬롯에 표시.
-/// 수신 볼륨 슬라이더는 LobbyPlayerState.VoiceId(Dissonance LocalPlayerName self-report,
+/// 팀원의 Steam 표시 이름(GameSession 세션 이름)을 슬롯에 표시.
+/// 수신 볼륨 슬라이더는 GameSession 세션 VoiceId(Dissonance LocalPlayerName self-report,
 /// SoundAndSettingsDesign.md §6-8)로 DissonanceComms.FindPlayer(voiceId)를 조회해
 /// VoicePlayerState.Volume에 실제 반영한다.
+///
+/// 구 로비(1.Lobby, LobbyNetworkManager) 슬롯 폴백은 로비 씬 삭제로 제거됨(NetworkDesign.md §6B.7 P8,
+/// 2026-08-20) — 이제 GameSession 세션 데이터 하나만 본다. Tutorial 사전 게이트 통과 전에는
+/// DisplayName/VoiceId 세션 확정이 아직 미구현이라(§6B.7 P3) 그 구간에서는 팀원 목록이 비어 보일 수 있음 — 의도된 상태, 버그 아님.
 /// </summary>
 public class OptionsTeamVoicePanel : MonoBehaviour
 {
@@ -84,30 +88,22 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     static List<Teammate> CollectTeammates()
     {
         var teammates = new List<Teammate>(3);
-
-        // 1) 인게임: GameSession 세션 데이터 (로비에서 확정된 Steam 표시 이름 + VoiceId)
-        if (TryCollectFromGameSession(teammates))
-            return teammates;
-
-        // 2) 로비: LobbyNetworkManager 슬롯
-        if (TryCollectFromLobby(teammates))
-            return teammates;
-
+        TryCollectFromGameSession(teammates);
         return teammates;
     }
 
-    static bool TryCollectFromGameSession(List<Teammate> teammates)
+    static void TryCollectFromGameSession(List<Teammate> teammates)
     {
         GameSession session = GameSession.Instance;
-        if (session == null || session.ActivePlayerCount <= 0) return false;
+        if (session == null || session.ActivePlayerCount <= 0) return;
 
         int localColor = ResolveLocalColorIndex();
         IReadOnlyList<PlayerColorType> colors = session.GetActiveColors();
-        if (colors == null || colors.Count == 0) return false;
+        if (colors == null || colors.Count == 0) return;
 
         for (int i = 0; i < colors.Count; i++)
         {
-            int ci = LobbyNetworkManager.ColorTypeToIndex(colors[i]);
+            int ci = PlayerColorUtil.ColorTypeToIndex(colors[i]);
             if (ci < 0) continue;
             if (localColor >= 0 && ci == localColor) continue;
 
@@ -116,33 +112,6 @@ public class OptionsTeamVoicePanel : MonoBehaviour
             teammates.Add(new Teammate { Name = name, VoiceId = session.GetSessionVoiceId(ci) });
             if (teammates.Count >= 3) break;
         }
-
-        // ActiveColors는 있는데 이름이 전부 비어 있어도 "세션 경로로 처리됨"으로 간주
-        // (솔로 1인이면 팀원 0명 → emptyState 표시가 맞음)
-        return true;
-    }
-
-    static bool TryCollectFromLobby(List<Teammate> teammates)
-    {
-        LobbyNetworkManager lobby = LobbyNetworkManager.Instance;
-        if (lobby == null || lobby.SlotCount <= 0) return false;
-
-        ulong localId = NetworkManager.Singleton != null
-            ? NetworkManager.Singleton.LocalClientId
-            : ulong.MaxValue;
-
-        for (int i = 0; i < lobby.SlotCount; i++)
-        {
-            LobbyPlayerState slot = lobby.GetSlot(i);
-            if (slot.ClientId == localId) continue;
-
-            string name = slot.DisplayName.ToString();
-            if (string.IsNullOrEmpty(name)) continue;
-            teammates.Add(new Teammate { Name = name, VoiceId = slot.VoiceId.ToString() });
-            if (teammates.Count >= 3) break;
-        }
-
-        return true;
     }
 
     static int ResolveLocalColorIndex()
@@ -150,6 +119,6 @@ public class OptionsTeamVoicePanel : MonoBehaviour
         if (NetworkManager.Singleton == null) return -1;
         if (!PlayerSpawnCoordinator.TryGetColor(NetworkManager.Singleton.LocalClientId, out PlayerColorType color))
             return -1;
-        return LobbyNetworkManager.ColorTypeToIndex(color);
+        return PlayerColorUtil.ColorTypeToIndex(color);
     }
 }

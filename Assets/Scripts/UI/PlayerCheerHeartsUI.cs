@@ -95,8 +95,8 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     {
         var net = GetComponent<NetworkObject>();
         if (net != null && PlayerSpawnCoordinator.TryGetColor(net.OwnerClientId, out var sessionColor))
-            return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, sessionColor);
-        return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, _player.playerColorType);
+            return System.Array.IndexOf(PlayerColorUtil.ColorOrder, sessionColor);
+        return System.Array.IndexOf(PlayerColorUtil.ColorOrder, _player.playerColorType);
     }
 
     // ── CheerService 구독 (TeamStatusUI와 동일 패턴) ───────────────
@@ -142,12 +142,12 @@ public class PlayerCheerHeartsUI : MonoBehaviour
 
         var set = new HashSet<int>(cheererColorIndices);
         int shown = 0;
-        for (int ci = 0; ci < LobbyNetworkManager.ColorOrder.Length; ci++)
+        for (int ci = 0; ci < PlayerColorUtil.ColorOrder.Length; ci++)
         {
             if (!set.Contains(ci)) continue;
             if (shown >= _heartIcons.Length) break; // 풀 초과 방어 (최대 팀원 수만큼만 존재)
 
-            _heartIcons[shown].sprite = GetHeartSprite(LobbyNetworkManager.ColorOrder[ci]);
+            _heartIcons[shown].sprite = GetHeartSprite(PlayerColorUtil.ColorOrder[ci]);
             _heartIcons[shown].gameObject.SetActive(true);
             shown++;
         }
@@ -196,7 +196,7 @@ public class PlayerCheerHeartsUI : MonoBehaviour
         rowRt.offsetMax = Vector2.zero;
 
         // 최대 팀원 수(자기 자신 제외) = ColorOrder 전체 - 1
-        int maxIcons = LobbyNetworkManager.ColorOrder.Length - 1;
+        int maxIcons = PlayerColorUtil.ColorOrder.Length - 1;
         _heartIcons = new Image[maxIcons];
         for (int i = 0; i < maxIcons; i++)
         {

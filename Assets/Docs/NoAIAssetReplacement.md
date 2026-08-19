@@ -46,25 +46,22 @@
 에셋팩으로 메시+재질을 통째로 갈아낀 것만 완료.  
 우리가 그리거나 큐브/스피어로 바꾼 것은 **재질이 남았다.** Thron은 사용자 직접 제작 → 건드리지 않음. SpikeTrap·초록함정은 파티클화 → 건드리지 않음.
 
-플레이어/UI/카메라(`Player*`, `UI`, `Setting_Panel`, `LocalPlayerCamera`)는 범위 밖.
+**범위 안 (2026-08-19 확정):** 플레이어(`Player*`, `GGul`)와 UI(`Assets/Figma/**`, `Setting_Panel` 스프라이트)도 Meshy/AI 이미지면 교체. 카메라 리그(`LocalPlayerCamera`)만 범위 밖 — 메시/텍스처가 아님.
 
 ---
 
-## 1. 안 그린 오브젝트
+## 1. 안 그린 오브젝트 (남은 메시)
 
 | 대상 | 비고 |
 |---|---|
-| 이빨 변형 | `Tooth`, `Tooth_Stage2`, `Tooth1_2.5`, `tooth2_0.5` |
-| BossBox | `식도/BossBox` |
-| Framework | `식도/Framework` |
-| Stage5Wall | `식도/Stage5Wall` |
-| Fiber | `fiber.Side` / `fiber.Top` — 씬·프리팹 참조 없음. **그래도 만들어야 함** (사용자 확정) |
-| ArrowTrap | `TrapFire1.fbx` (Meshy) 사용 중 |
-| Food 채소 잔여 | 아래 17개와 별개. 아직 `Blender/Food/Food.fbx`(Meshy)를 씀: Strawberry, Tomato, Pumpkin, Cucumber, Potato, Corn, AppleMango, Drop4_Cabbage, Broccoli (+ Unused/Mangoi, Unused/Radish) |
+| Player | `Blender/Player/Player.fbx`, `Player1.fbx`, `GGul.fbx` + 기존 mat. NoAI 메시·재질 새로 제작. 뼈 이름 유지하면 기존 클립 재사용 가능, 리그 새로 짜면 애니도 다시 |
+| UI 스프라이트 | `Assets/Figma/**` (Title / Lobby / Setting / Ingame / Boss / Stage4 / EndDemo). `Setting_Panel`이 이 스프라이트를 씀. `Figma/Materials/Gemini_Generated_Image_*`는 AI 이미지 — 교체 대상 |
+| BackgroundMouth (`RealMouth`) | 배경 입. 이번 MouthTrap 라운드 밖이었음. 아직 Meshy `Blender/Mouth/RealMouth.fbx`. 새로 그려서 `Prefab/RealMouth`에 배선 |
+| BossBox | `식도/BossBox` — 아직 Meshy `BossBox.fbx` + `BossBox.mat`. **안 그린 목록에 남아 있음** (2026-08-20 사용자 정리에서 언급 안 됨) |
 
 **벽 초창기 확인 결과:** `Assets/Blender/Box&Wall/벽/벽 초창기/Wall_1.fbx` + `벽면1.mat`. 씬·프리팹에서 **한 번도 안 씀.** 초기 벽 실험 잔재. 안 그려도 됨. 파일 삭제만 결정하면 됨.
 
-**그리지 않음 (확정):** Thron(사용자 제작), SpikeTrap(파티클), 초록함정(파티클), Bowl(에셋), Box 메시(사용자 제작).
+**그리지 않음 (확정):** Thron(사용자 제작), SpikeTrap(파티클), 초록함정(파티클), Bowl(에셋), Box 메시(사용자 제작), **Framework(안 씀 — 대체 안 함)**. Fiber는 큐브로 대체(그리지 않음, mat만).
 
 ---
 
@@ -76,13 +73,14 @@
 |---|---|
 | NoAI 메시 끼움, 재질은 옛 Meshy | Boulder, BreakableBoulder, Lump, Nodular, FrontTooth, FrontTooth_Stage5, BackTooth, BackTooth_Stage2 |
 | 블렌더에서 그림, 미익스포트 | StageStartGate(도넛+바닥), StageStartPad, PressurePad |
-| 프리미티브로 교체 | FloorTile, Ground, Ground 1, 입/Tile.*, Drop_*, DropTrap3, BossDrop5.*, BossPhase2 |
+| 프리미티브로 교체 | FloorTile, Ground, Ground 1, 입/Tile.*, Drop_*, DropTrap3, BossDrop5.*, BossPhase2, Fiber(`fiber.Side`/`fiber.Top` → 큐브, 프리팹 없음) |
 | 게이트/타일로 쓸 예정 | ColorTile_B/G/Y/P, ColorStartZone.* (메시 교체 후 mat) |
 | Door | Door, Door.B/G/Y/P/C — 스피어 교체 후 mat |
 | Box | FixedBox — 메시는 사용자 제작, **mat는 확인/작업** |
 | Ring | 캡슐/스피어 교체 후 mat |
 | MemoryPath | MemoryPath_Safe, MemoryPath_Trap, ColoredFloor, Memorypath |
-| 앞으로 그릴 것 | 이빨 변형, BossBox, Framework, Stage5Wall, Fiber, ArrowTrap — 그린 뒤 mat |
+| 앞으로 그릴 것 | Player, UI, BackgroundMouth(`RealMouth`), BossBox — 그린 뒤 mat |
+| UI | `Assets/Figma/**` 스프라이트·`Setting_Panel` 배경. 손그림/단색/uGUI 기본 그래픽만. AI 생성 이미지 금지 |
 | Vessel / Muscle | `NoAI/Ground` 배선 후 mat |
 
 ---
@@ -108,8 +106,8 @@
 |---|---|
 | Chaser | `NoAI/Chaser/Chaser1.fbx`, `Chaser2.fbx` 있음, 프리팹 미배선 |
 | Runner | `NoAI/Runner/Runner.fbx` 있음, 프리팹 미배선 |
-| Mouth / MouthTrap | `NoAI/Mouth/Mouth.fbx` 있음. 프리팹 `MouthTrap1`~`4`, `MouthBarrier.*`, `RealMouth`는 아직 Meshy. **에셋스토어 입 추출 순서:** `MouthAssetPipeline.md` (닫기 = 입 안 `F` 금지. 뒷벽 복제 + 입술 끝 연결 fill) |
 | 식도 본관 | `NoAI/Esophagus/Esophagus.fbx` 있음, 미배선 (연동운동/블렌드셰이프 가능) |
+| Player | NoAI 메시 아직 없음. 새 메시 나온 뒤 `Player1.prefab` 메시·mat 교체. 애니컨트롤러(`Player1.controller`)는 유지, 클립만 새 FBX에 다시 연결 |
 
 ---
 
@@ -119,6 +117,12 @@
 |---|---|
 | Food 17개 (원래 목록) | PolyOne 과일: Apple, Banana, Cherry, Grape, Pineapple, Watermelon, Drop4_Avocado. ithappy: Burger, Chips, Cookie, Croissant, Donut, IceCream, Sandwich, Mushroom, Pepper, Drop4_Onion |
 | Bowl | 에셋팩 |
+| Mouth / MouthTrap (`MouthTrap1~4`, `MouthBarrier.B/G/Y/P`, `ArrowTrap`) | `NoAI/Mouth/Mouth0`~`3` 메시+애니(Open/Hold/Close/Idle) + 자체 mat. MCP로 배선 완료(2026-08-19). 상세: `MouthAssetPipeline.md` §배선 완료. `RealMouth`는 미배선(범위 밖) |
+| Tooth / Tooth_Stage2 | `NoAI/Tooth/Tooth.fbx` 메시 + `ToothIvory` mat. 루트 스케일 유지(`2.5` / `3.3,3,3`). BoxCollider는 새 메시 AABB에 맞춤 |
+| Tooth2_0.5 | `NoAI/Tooth/BackTooth.fbx` + `BackTooth_Mat`. Breakable/TrapProjectile 유지. BoxCollider 맞춤. 스케일 `10` 유지 |
+| Tooth1_2.5 | Drop3와 동일: builtin Sphere + `Drop3.mat`. 씬 인스턴스(M.Stage3 AdvancingWall/ContactDamage)는 래퍼 참조 유지 |
+| Stage5Wall | `NoAI/Lump/Lump2.fbx`로 메시 교체. 옛 월드 박스에 맞춤 스케일 `(1.45, 2.26, 1.29)`. MeshCollider도 Lump2. mat는 URP Lit 기본(이미지 없음) — 나중에 손보면 됨 |
+| Fiber | 그리지 않음. 쓸 거면 큐브. 씬·프리팹 참조 없음 |
 | Thron | 사용자 직접 제작 — 유지 |
 | SpikeTrap | 파티클화 — 유지 |
 | 초록함정 | 파티클화 — 유지 |
@@ -126,10 +130,12 @@
 ## 🗑️ 삭제됨
 
 - `Boulder2.prefab`, `DamageWall.prefab`, `SpeedBuff.prefab`
+- Framework: **안 씀, 대체 안 함** (T.Boss에 인스턴스가 남아 있으면 나중에 지우면 됨)
 
 ## 다음 작업 순서
 
-1. 안 그린 메시 (이빨 변형, BossBox, Framework, Stage5Wall, Fiber).
+1. 안 그린 메시 (**Player**, **UI 스프라이트**, **BackgroundMouth/`RealMouth`**, BossBox).
 2. 에디터 교체 (Ring, ColorTile/게이트, Door, 채소 잔여).
-3. Mat — 섹션 2 전부.
-4. 애니 끝난 뒤 Chaser/Runner/Mouth/식도 배선.
+3. Mat — 섹션 2 전부 (Player·UI·Fiber 큐브 포함).
+4. 애니 끝난 뒤 Chaser/Runner/식도/**Player** 배선.
+5. UI 스프라이트 (`Assets/Figma/**`, `Setting_Panel`) 손그림/단색으로 교체.

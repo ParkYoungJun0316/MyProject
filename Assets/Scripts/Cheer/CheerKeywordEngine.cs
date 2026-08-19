@@ -43,10 +43,10 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 {
     // ── Inspector ─────────────────────────────────────────────────
 
-    [Header("로비 테스트 모드")]
-    [Tooltip("true: ServerRpc 미제출, OnKeywordDetected 이벤트만 발행.\n" +
-             "로비 씬에 직접 배치할 때 체크. 인게임 플레이어 프리팹은 false.")]
-    [SerializeField] bool _lobbyTestMode = false;
+    [Header("말해보기 테스트 모드")]
+    [Tooltip("true: ServerRpc 미제출, OnKeywordDetected 이벤트만 발행(로컬 인식 확인용).\n" +
+             "Tutorial \"말해보기\" 테스트 UI가 이 컴포넌트를 쓸 때 체크. 인게임(응원 실제 제출)은 false.")]
+    [SerializeField] bool _sayTestMode = false;
 
     [Header("솔로 마이크 게인")]
     [Tooltip("autoNormalizeMic=true 이면 이 값은 무시되고 자동 보정만 사용됨.\n" +
@@ -97,11 +97,11 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     float[] _accumBuf;
     int     _accumCount;
 
-    // ── 이벤트 (로비 테스트 모드 전용) ───────────────────────────
+    // ── 이벤트 (말해보기 테스트 모드 전용) ───────────────────────
     /// <summary>
-    /// 로비 테스트 모드(_lobbyTestMode=true)에서 키워드 감지 시 발행.
+    /// 말해보기 테스트 모드(_sayTestMode=true)에서 키워드 감지 시 발행.
     /// arg = targetColorIndex (해당 CheerName 소유자의 ColorIndex).
-    /// ServerRpc 미제출. LobbyMenuController 에서 구독.
+    /// ServerRpc 미제출. Tutorial "말해보기" 테스트 UI에서 구독.
     /// </summary>
     public event System.Action<int> OnKeywordDetected;
 
@@ -149,8 +149,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             yield break;
         }
 
-        _grammarJson = _lobbyTestMode
-            ? BuildLobbyGrammarJson()
+        _grammarJson = _sayTestMode
+            ? BuildTutorialTestGrammarJson()
             : BuildInGameGrammarJson();
 
         DissonanceComms comms = null;
@@ -582,8 +582,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
                 Time.time - lastTime < KeywordCooldown)
                 continue;
 
-            int colorIndex = _lobbyTestMode
-                ? GetLobbyColorIndex(word)
+            int colorIndex = _sayTestMode
+                ? GetTutorialColorIndex(word)
                 : CheerService.GetColorIndex(word);
 
             if (colorIndex < 0)
@@ -595,8 +595,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             _lastDetected[word] = Time.time;
             Debug.Log($"[CheerKeywordEngine] 키워드 감지: '{word}' → colorIndex={colorIndex}");
 
-            // 로비 테스트 모드: 이벤트만 발행, ServerRpc 미제출
-            if (_lobbyTestMode)
+            // 말해보기 테스트 모드: 이벤트만 발행, ServerRpc 미제출(로컬 인식 확인만이므로 네트워크 불필요)
+            if (_sayTestMode)
             {
                 OnKeywordDetected?.Invoke(colorIndex);
                 continue;
@@ -607,28 +607,24 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         }
     }
 
-    // ── 로비 모드 헬퍼 ───────────────────────────────────────────
+    // ── 말해보기 테스트 모드 헬퍼 ─────────────────────────────────
 
     /// <summary>
-    /// 세션 슬롯의 유효 CheerName으로 colorIndex 역탐색.
-    /// CheerService 없이 로비에서 사용.
+    /// 현재 Tutorial에 스폰된 PlayerCheerNameSync 전원의 유효 CheerName으로 colorIndex 역탐색.
+    /// 구 GetLobbyColorIndex(LobbyNetworkManager.Instance 슬롯 순회)를 대체 — 로비 의존 제거
+    /// (NetworkDesign.md §6B.7 "CheerKeywordEngine에 Tutorial 전용 판정 분기 신설").
+    /// CheerService.SubmitCheerServerRpc를 부르지 않는 로컬 전용 조회라 CheerService.GetColorIndex는
+    /// 쓰지 않는다(그건 실제 응원 제출 경로).
     /// </summary>
-    static int GetLobbyColorIndex(string lower)
+    static int GetTutorialColorIndex(string lower)
     {
-        var lnm = LobbyNetworkManager.Instance;
-        if (lnm != null)
+        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
         {
-            for (int i = 0; i < lnm.SlotCount; i++)
-            {
-                var s = lnm.GetSlot(i);
-                if (!s.IsOccupied) continue;
-                if (LobbyNetworkManager.GetEffectiveCheerName(s) == lower)
-                    return s.ColorIndex;
-            }
-            return -1;
+            if (name != lower) continue;
+            if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color))
+                return PlayerColorUtil.ColorTypeToIndex(color);
         }
-        // 솔로(LNM 없음): GameSession 세션 이름 → 기본값 순 fallback
-        return CheerService.GetColorIndex(lower);
+        return -1;
     }
 
     /// <summary>
@@ -644,18 +640,20 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         _workerNextModel   = _model;
         _workerNextGrammar = newJson;
         Interlocked.Exchange(ref _resetSignal, 1);
-        Debug.Log($"[CheerKeywordEngine] 로비 grammar 갱신: {newJson}");
+        Debug.Log($"[CheerKeywordEngine] 세션 grammar 갱신: {newJson}");
     }
 
-    static string BuildLobbyGrammarJson()
+    /// <summary>말해보기 테스트 모드 초기 grammar — 구 BuildLobbyGrammarJson(LobbyNetworkManager 슬롯 순회) 대체.
+    /// PlayerCheerNameSync.GetAllEffectiveNames() 기반. 이후 갱신은 PlayerCheerNameSync가
+    /// RebuildOwnerLocalGrammar()로 ApplySessionGrammar를 호출해 자동으로 처리한다(§5.3).</summary>
+    static string BuildTutorialTestGrammarJson()
     {
-        var lnm = LobbyNetworkManager.Instance;
-        if (lnm == null) return CheerLexiconBuilder.BuildDemoGrammarJson();
-        int count = lnm.SlotCount;
-        var names = new string[count];
-        for (int i = 0; i < count; i++)
-            names[i] = LobbyNetworkManager.GetEffectiveCheerName(lnm.GetSlot(i));
-        return CheerLexiconBuilder.BuildGrammarJson(names);
+        var names = new List<string>();
+        foreach (var (_, name) in PlayerCheerNameSync.GetAllEffectiveNames())
+            if (!string.IsNullOrEmpty(name)) names.Add(name);
+        return names.Count > 0
+            ? CheerLexiconBuilder.BuildGrammarJson(names.ToArray())
+            : CheerLexiconBuilder.BuildDemoGrammarJson();
     }
 
     /// <summary>인게임 Vosk grammar — GameSession 세션 이름 우선, 없으면 기본값.</summary>

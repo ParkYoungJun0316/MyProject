@@ -251,6 +251,8 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 
 공개 영문 blocklist 파일 + Host 재검증. AI 필터 없음.
 
+> **진행 상태 (2026-08-19):** **구현 완료.** `CheerNameValidator.Blocklist`(부분 문자열 매칭) + `ContainsBlockedWord()`, `PlayerCheerNameSync.SubmitCheerNameServerRpc`에서 형식·예약어 다음 순서로 호출. 위 스코프(9~12) 그대로 — "완벽 필터 아님, 대놓고 심한 단어만" 원칙. ParrelSync 검증은 아직 대기(`NetworkDesign.md` §6B.7 P6 통합 검증 체크리스트 그룹 A).
+
 #### 정식에서 강화 **[Ship Must]**
 
 | # | 규칙 |
@@ -493,6 +495,13 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 
 실패 시 철자 변경 안내·대체 단어(§5.2 B) 추가(개발 튜닝). 강제 아님 — 실패해도 `TutorialGatherZone` 진행 가능.
 
+> **"말해보기"의 구현체 — 별도 UI 없음 (2026-08-19 확정).** 전용 로컬 테스트 컴포넌트를 만들지 않기로 했다 — **실제 응원 제출(`SubmitCheerServerRpc`) 자체가 이미 테스트다.** 이름을 외치면 다음 세 가지가 이미 전원(또는 본인)에게 실시간으로 보이므로, 별도 "인식됐습니다" 표시가 중복이다:
+> - `PlayerCheerHeartsUI` — 응원받는 사람 머리 위 하트(전원에게 브로드캐스트)
+> - `PlayerNameTagUI` — 응원하는 사람 본인 화면에 "지금 응원 중인 대상 이름" 표시 → 내 발화가 맞게 인식됐는지 즉시 확인
+> - `TeamStatusUI` — 응원받는 사람의 팀원 슬롯에 "Cheering" 라벨
+>
+> 대신 `TutorialCheerNameUI`(구역 2 이름 설정 패널)에 "확정 후에는 팀원에게 이 이름을 외쳐달라 해서 실제로 인식되는지 확인해보세요!" 안내 문구만 추가(§8.3). 구역 3(응원 1회 체험) 구현 시 그 Dialogue에도 동일 안내를 넣을 것(§9.2, 구역 3 자체가 아직 미구현).
+
 ---
 
 ## 6. 입력 — 음성 · 채팅
@@ -583,7 +592,7 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 
 ### 8.3 Tutorial UI **[Ship Must]**
 
-- CheerName **입력·확정(자유 재변경) + 말해보기 테스트** — 신규 컴포넌트(§3.4/5.3, Player 프리팹에 부착)
+- CheerName **입력·확정(자유 재변경)** — `TutorialCheerNameUI`(§3.4/5.3, Tutorial 상시 HUD Canvas에 부착, Player 프리팹 아님) + 구역 2 상호작용 표지판(`TutorialCheerNameSignboard`)이 개폐. **상시 표시 아님 — 2026-08-19 변경**, 표지판 상호작용으로 게이트 통과 전까지 언제든 열어 재확정(§9.2). "말해보기"는 별도 테스트 기능이 아니라 패널의 안내 문구(§5.5)로 대체 — 실제 응원 제출이 곧 테스트
 - Gate 카운트다운 — `TimerUI` / `OnCountdownTick` 재사용
 
 ### 8.4 채팅 입력 **[Ship Must]**
@@ -612,7 +621,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 |---|------|------|------|--------|
 | (사전) | 접속/스폰 | 접속 즉시 스폰 + 색 자동배정(중복없음) + Invite HUD(구 로비 흡수, `NetworkDesign.md` §6B) | 필수 | 필수 (생략 불가) |
 | 1 | 스텔스 체험 | 은신 플레이 감 잡기 | 있음 | **생략 가능** |
-| 2 | CheerName 설정 | 이름 입력·확정·말해보기(자유 반복, §3.2·§5.5) | CheerName UI **항상 표시** — `PlayerPrefs` 스킵 없음 (2026-08-17 폐기) | **생략 불가** (매 판 재입력) |
+| 2 | CheerName 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → 이름 입력·확정·말해보기(자유 반복, §3.2·§5.5) | 표지판 상호작용으로 개폐(2026-08-19, 구 "항상 표시"에서 변경) — `PlayerPrefs` 스킵 없음 (2026-08-17 폐기) | **생략 불가** (매 판 재입력) |
 | 3 | 응원 1회 체험 | 실제 응원 키워드 발화 → 버프 발동 감 잡기 | 있음 | **생략 가능** |
 | 4 | `TutorialGatherZone` | 전원이 존에 모이면 카운트다운 → `M.Stage1` (§9.4) | **필수** | **필수** |
 
@@ -755,8 +764,8 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [ ] **[신규] `TutorialNetworkManager`(가칭)** — 구 `LobbyNetworkManager` 역할 이전: 접속 즉시 스폰, 색 자동배정, 사전구간 이탈 처리, 게이트 통과 시 Start 로직. SSOT: `NetworkDesign.md` §6B
 - [ ] **[신규] `TutorialGatherZone`** — 색 무관 단일 헤드카운트 게이트 (§9.4, `NetworkDesign.md` §6B.3)
 - [ ] **[신규] Tutorial 상시 HUD** — 룸코드 표시 + Steam Invite 버튼 (구 로비 UI 역할, §6B.5). 게이트 통과 후 숨김
-- [ ] Kick UI/API **완전 제거** (`LobbyMenuController`/`LobbyNetworkManager`의 `KickPlayerServerRpc` 등) — 2026-08-17 폐지 확정
-- [ ] **신규:** Tutorial CheerName 컴포넌트 (Player 프리팹 부착) — `NetworkVariable<FixedString32Bytes>` + `SubmitCheerNameServerRpc` + Host 검증(§3.5 로직 재사용) + 자유 재변경
+- [x] Kick UI/API **완전 제거** (`LobbyMenuController`/`LobbyNetworkManager`의 `KickPlayerServerRpc` 등) — 2026-08-17 폐지 확정, **코드 삭제 완료 2026-08-19**
+- [ ] **신규:** Tutorial CheerName 컴포넌트 (Player 프리팹 부착) — `NetworkVariable<FixedString32Bytes>` + `SubmitCheerNameServerRpc` + Host 검증(§3.5 로직 재사용) + 자유 재변경. **코드(`PlayerCheerNameSync.cs`)는 완성됐으나 `Player.Network.prefab`에 실제 부착이 안 돼 있음 (2026-08-19 확인) — 사용자 에디터 작업으로 남음, 상세는 `NetworkDesign.md` §6B.7 P6 블로커 참고**
 - [ ] CheerName 검증 (§3.5, Tutorial 활성 플레이어 기준 중복 검사로 변경)
 - [ ] ~~로비 불러보기~~ — **폐기 (2026-08-17).** §5.5 Tutorial 말해보기로 완전 통합
 - [ ] **Dissonance + NGO** (4인 Global 보이스)

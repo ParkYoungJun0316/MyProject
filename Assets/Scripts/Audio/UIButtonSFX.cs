@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 
 /// <summary>
 /// UI 버튼 클릭 시 SFX 를 자동 재생하는 경량 컴포넌트.
-/// TitleMenuController / LobbyMenuController 를 수정하지 않고,
+/// TitleMenuController / TutorialNetworkManager 를 수정하지 않고,
 /// 버튼 GameObject 에 이 컴포넌트를 추가하기만 하면 동작한다.
 ///
 /// [사용 방법]

@@ -13,8 +13,8 @@ using UnityEngine;
 /// - §8: Facepunch Lobby의 Owner 자동 이전 콜백은 로그만 남기고 무시한다.
 ///   방 종료 판단은 기존 DisconnectManager → TitleReturnFlow 경로만 담당 — 여기서 별도 조치하지 않는다.
 /// - 룸코드 표시는 마스킹(`7**1` 형태, §3) — <see cref="MaskLobbyId"/> 참고.
-///   실제 전체 코드는 <see cref="NetworkManagerSetup.RoomCode"/> → LobbyNetworkManager.SharedRoomCode 경유로
-///   그대로 전달되어 기존 "복사" 버튼(LobbyMenuController.OnClickCopy)이 변경 없이 재사용된다.
+///   실제 전체 코드는 <see cref="NetworkManagerSetup.RoomCode"/>를 경유해 Tutorial 사전 게이트의
+///   `TutorialRoomCodeDisplay`/복사 버튼으로 그대로 전달된다(구 로비 삭제 후에도 동일 경로 유지).
 ///
 /// [배치 방법]
 /// 0.Title 씬 NetworkManager GameObject(또는 SteamManager와 같은 오브젝트)에 부착.

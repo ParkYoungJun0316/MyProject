@@ -74,7 +74,7 @@ public class TeamStatusUI : MonoBehaviour
         public Player           player;
         public PlayerBuffSystem buffSystem;
         public PlayerEvents     events;
-        public int              colorIndex;   // LobbyNetworkManager.ColorOrder 기준
+        public int              colorIndex;   // PlayerColorUtil.ColorOrder 기준
         public Image            slotBg;
         public TextMeshProUGUI  nameText;
         public Image[]          heartImages;
@@ -132,9 +132,9 @@ public class TeamStatusUI : MonoBehaviour
         // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
         if (net != null
             && PlayerSpawnCoordinator.TryGetColor(net.OwnerClientId, out var sessionColor))
-            return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, sessionColor);
+            return System.Array.IndexOf(PlayerColorUtil.ColorOrder, sessionColor);
 
-        return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
+        return System.Array.IndexOf(PlayerColorUtil.ColorOrder, player.playerColorType);
     }
 
     static int GetMyColorIndex()
@@ -143,7 +143,7 @@ public class TeamStatusUI : MonoBehaviour
         {
             ulong myId = NetworkManager.Singleton.LocalClientId;
             if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
         }
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {

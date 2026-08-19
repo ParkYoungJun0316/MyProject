@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 ///         별도 리셋 코드 불필요 — OnNetworkSpawn이 항상 초기 상태로 시작 (NetworkDesign §11).
 ///
 /// [온라인 흐름]
-/// LobbyNetworkManager.StartGameServerRpc
+/// 구 LobbyNetworkManager.StartGameServerRpc
 ///   → InitializeOnline(clientColors) : _entries 확정 + NGO SceneEvent 구독
 ///   → 스테이지 씬 LoadEventCompleted → SpawnNetworkPlayers (씬마다)
 ///
@@ -30,7 +30,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     [SerializeField] private GameObject playerPrefab;
 
     [Header("고정 스폰 좌표 (Blue / Purple / Green / Yellow)")]
-    [Tooltip("LobbyNetworkManager.ColorOrder 인덱스 순서 일치 필수.\n모든 스테이지 씬 원점(0,0,0) 정렬 후 설정.")]
+    [Tooltip("PlayerColorUtil.ColorOrder 인덱스 순서 일치 필수.\n모든 스테이지 씬 원점(0,0,0) 정렬 후 설정.")]
     [SerializeField] private Vector3[] fixedSpawnPositions = new Vector3[]
     {
         new Vector3( 0f, 0f,  5f),
@@ -231,7 +231,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
             netObj.SpawnWithOwnership(e.ClientId, destroyWithScene: true);
 
             var setup = go.GetComponent<NetworkPlayerSetup>();
-            setup?.SetColorIndex(LobbyNetworkManager.ColorTypeToIndex(e.ColorType));
+            setup?.SetColorIndex(PlayerColorUtil.ColorTypeToIndex(e.ColorType));
             if (setup != null) _spawnedSetups.Add(setup);
 
             Debug.Log($"[PlayerSpawnManager] 스폰 — clientId={e.ClientId} color={e.ColorType} pos={e.SpawnPos} netId={netObj.NetworkObjectId}");
@@ -261,7 +261,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
 
     public Vector3 GetFixedSpawnPos(PlayerColorType colorType)
     {
-        int idx = LobbyNetworkManager.ColorTypeToIndex(colorType);
+        int idx = PlayerColorUtil.ColorTypeToIndex(colorType);
         if (fixedSpawnPositions != null && idx >= 0 && idx < fixedSpawnPositions.Length)
         {
             Vector3 pos = fixedSpawnPositions[idx];
@@ -288,7 +288,7 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     [ContextMenu("테스트: 고정 좌표 출력")]
     void Debug_SpawnPositions()
     {
-        foreach (var color in LobbyNetworkManager.ColorOrder)
+        foreach (var color in PlayerColorUtil.ColorOrder)
             Debug.Log($"  {color} → {GetFixedSpawnPos(color)}");
     }
 #endif

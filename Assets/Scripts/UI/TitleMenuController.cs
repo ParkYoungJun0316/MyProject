@@ -14,7 +14,7 @@ using UnityEngine.SceneManagement;
 /// TitleCanvas 또는 별도 빈 GameObject에 부착.
 ///
 /// [Inspector 연결]
-/// - lobbySceneName         : 로비 씬 이름 (기본 "1.Lobby")
+/// - lobbySceneName         : Host/Client 접속 후 이동할 씬 이름 (기본 "Tutorial" — 구 로비 역할을 흡수함, NetworkDesign.md §6B)
 /// - discordUrl             : Discord 초대 링크
 /// - screenFader            : 선택. 씬 전환 전 페이드아웃
 /// - settingsPanel          : 설정/옵션 패널 GameObject
@@ -38,13 +38,14 @@ using UnityEngine.SceneManagement;
 /// 에디터(①ParrelSync) 또는 Development Build(②)면 기존 LanDiscovery/StartHost/StartClient
 /// 로컬 IP 경로를 그대로 사용한다. 그 외(정식 릴리스 빌드, ④)는 Steam Lobby 경로
 /// (SteamLobbyManager + StartHostSteam/StartClientSteam)를 사용한다.
-/// roomCodeInputField는 두 경로에서 의미가 다르다 — 로컬: 6자리 룸코드, Steam: Lobby Id 전체 숫자.
+/// roomCodeInputField/joinPanel은 **로컬(①②) 경로 전용**이다 — Steam(④)은 룸코드 입력 UI 자체가 없고
+/// 오버레이 초대 수락/+connect_lobby로만 조인한다(2026-08-17 확정, NetworkDesign.md §4.2/§5).
 /// </summary>
 public class TitleMenuController : MonoBehaviour
 {
     [Header("씬 전환")]
-    [Tooltip("로드할 로비 씬 이름.")]
-    [SerializeField] private string lobbySceneName = "1.Lobby";
+    [Tooltip("접속 후 이동할 씬 이름 (구 로비 역할을 흡수한 Tutorial 사전 게이트 구간, NetworkDesign.md §6B).")]
+    [SerializeField] private string lobbySceneName = "Tutorial";
 
     [Header("Discord")]
     [Tooltip("Discord 초대 링크 (예: https://discord.gg/abc123)")]
@@ -214,7 +215,7 @@ public class TitleMenuController : MonoBehaviour
 
         if (ok)
         {
-            // in-scene NetworkObject(LobbyNetworkManager)가 OnNetworkSpawn을 받으려면
+            // in-scene NetworkObject(TutorialNetworkManager)가 OnNetworkSpawn을 받으려면
             // NetworkSceneManager를 통해 씬을 로드해야 한다.
             NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
         }
@@ -290,23 +291,24 @@ public class TitleMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 확인 버튼.
-    /// 로컬 경로: 6자리 룸코드 검증 후 LAN Discovery 시작.
-    /// Steam 경로: Lobby Id(숫자) 검증 후 SteamLobbyManager.JoinLobbyAsync → StartClientSteam(§4).
-    /// joinPanel 내 확인 버튼에 연결.
+    /// 확인 버튼. joinPanel 내 확인 버튼에 연결.
+    /// 로컬(①②) 경로 전용 — 6자리 룸코드 검증 후 LAN Discovery 시작.
+    /// Steam(④) 경로에는 이 버튼/패널 자체가 없다 — 오버레이 초대 수락(OnSteamInviteAccepted) 또는
+    /// +connect_lobby 냉기동(TryAutoJoinFromLaunchArgs)으로만 조인한다. 코드 입력으로 Steam Lobby에
+    /// 참여하는 경로(구 ConfirmJoinSteam)는 2026-08-17 확정으로 완전히 삭제됨
+    /// (NetworkDesign.md §4.2/§5, CheerAndTutorialDesign.md §6B.6).
     /// </summary>
     public void OnClickConfirmJoin()
     {
-        string code = roomCodeInputField != null ? roomCodeInputField.text.Trim() : string.Empty;
+        if (!UseLocalNetworkPath)
+        {
+            Debug.LogWarning("[TitleMenuController] Steam 빌드에서는 룸코드 참여 UI를 쓰지 않습니다. " +
+                             "오버레이 초대 수락 또는 +connect_lobby로만 조인하세요.");
+            return;
+        }
 
-        if (UseLocalNetworkPath)
-        {
-            ConfirmJoinLocal(code);
-        }
-        else
-        {
-            ConfirmJoinSteam(code);
-        }
+        string code = roomCodeInputField != null ? roomCodeInputField.text.Trim() : string.Empty;
+        ConfirmJoinLocal(code);
     }
 
     void ConfirmJoinLocal(string code)
@@ -327,19 +329,6 @@ public class TitleMenuController : MonoBehaviour
         SetJoinStatus("Searching...");
         LanDiscovery.Instance.StartDiscovery(code, OnDiscoveryFound);
         _discoveryTimeoutCoroutine = StartCoroutine(DiscoveryTimeout());
-    }
-
-    void ConfirmJoinSteam(string code)
-    {
-        if (code.Length == 0 || !IsDigitsOnly(code) || !ulong.TryParse(code, out ulong lobbyIdValue))
-        {
-            SetJoinStatus("Wrong code.");
-            return;
-        }
-
-        Debug.Log($"[TitleMenuController] ConfirmJoinSteam — lobbyId={lobbyIdValue}");
-        SetJoinStatus("Joining...");
-        _ = JoinGameSteamAsync(lobbyIdValue, "코드입력");
     }
 
     /// <param name="source">

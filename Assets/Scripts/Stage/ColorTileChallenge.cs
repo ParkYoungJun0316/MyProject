@@ -292,7 +292,7 @@ public class ColorTileChallenge : MonoBehaviour
         // 등이 이미 쓰는 SSOT로 통일 (2026-07-28 버그 수정, M.Stage3 색 반전 재현).
         IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
             ? GameSession.Instance.GetActiveColors()
-            : (IReadOnlyList<PlayerColorType>)LobbyNetworkManager.ColorOrder;
+            : (IReadOnlyList<PlayerColorType>)PlayerColorUtil.ColorOrder;
 
         var colors = new List<PlayerColorType>();
         foreach (PlayerColorType color in activeColors)

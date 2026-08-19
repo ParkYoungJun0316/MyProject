@@ -176,8 +176,8 @@ public class DeathOverlayUI : MonoBehaviour
         if (player == null) return -1;
         NetworkObject net = player.GetComponent<NetworkObject>();
         if (net != null && PlayerSpawnCoordinator.TryGetColor(net.OwnerClientId, out var sessionColor))
-            return Array.IndexOf(LobbyNetworkManager.ColorOrder, sessionColor);
-        return Array.IndexOf(LobbyNetworkManager.ColorOrder, player.playerColorType);
+            return Array.IndexOf(PlayerColorUtil.ColorOrder, sessionColor);
+        return Array.IndexOf(PlayerColorUtil.ColorOrder, player.playerColorType);
     }
 
     static string GetPlayerDisplayName(int colorIndex)

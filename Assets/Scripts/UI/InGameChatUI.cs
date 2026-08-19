@@ -313,7 +313,7 @@ public class InGameChatUI : NetworkBehaviour
         int colorIdx   = -1;
         // PlayerSpawnCoordinator(NetworkList) — 서버·클라이언트 공통 단일 소스
         if (PlayerSpawnCoordinator.TryGetColor(senderId, out var color))
-            colorIdx = System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+            colorIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
 
         ReceiveMessageClientRpc(message, colorIdx);
     }
@@ -431,13 +431,13 @@ public class InGameChatUI : NetworkBehaviour
             ulong myId = NetworkManager.Singleton.LocalClientId;
             // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
             if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, color);
+                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
         }
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {
             var net = p.GetComponent<NetworkObject>();
             if ((net != null && net.IsOwner) || p.isOwnerControlled)
-                return System.Array.IndexOf(LobbyNetworkManager.ColorOrder, p.playerColorType);
+                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, p.playerColorType);
         }
         return -1;
     }
