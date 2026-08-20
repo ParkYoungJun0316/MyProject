@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8485926564054477293}
   - component: {fileID: 8010234829467193693}
   - component: {fileID: -6776919644280396002}
+  - component: {fileID: -1687276050310684789}
   m_Layer: 16
   m_Name: BackTooth_Boss
   m_TagString: EnemyBullet
@@ -122,12 +123,12 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1.2}
-  m_Center: {x: 0, y: 0, z: 0.6}
+  m_Size: {x: 1, y: 1, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 1}
 --- !u!114 &-6776919644280396002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -159,6 +160,27 @@ MonoBehaviour:
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
+--- !u!135 &-1687276050310684789
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5552744629662109250}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.4
+  m_Center: {x: 0, y: 0, z: 0.6}
 --- !u!1 &8269213449265016853
 GameObject:
   m_ObjectHideFlags: 0

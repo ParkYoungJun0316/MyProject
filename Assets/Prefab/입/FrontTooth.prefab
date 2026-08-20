@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: -1827310791468374134}
   - component: {fileID: -4258960777310804593}
   - component: {fileID: -2074980784461102029}
+  - component: {fileID: 99245861147446145}
   m_Layer: 16
   m_Name: FrontTooth
   m_TagString: EnemyBullet
@@ -125,8 +126,29 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.8, y: 0.5, z: 1.3}
-  m_Center: {x: 0, y: 0, z: -0.8}
+  m_Size: {x: 0.8, y: 0.5, z: 0.6}
+  m_Center: {x: 0, y: 0, z: -1.1}
+--- !u!135 &99245861147446145
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2956632214223315457}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.25
+  m_Center: {x: 0, y: 0, z: -0.5}
 --- !u!1 &8640778902409089975
 GameObject:
   m_ObjectHideFlags: 0

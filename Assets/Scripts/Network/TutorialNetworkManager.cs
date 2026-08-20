@@ -56,6 +56,28 @@ public class TutorialNetworkManager : NetworkBehaviour
     bool  _isCounting;
     float _countdown;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    // ── DEV 전용: 스테이지 바로가기 (구 LobbyMenuController 스테이지 드롭다운 대체) ──
+    // Build Settings의 "Development Build" 체크 여부로 자동 on/off — 정식 출시(체크 해제) 빌드에는
+    // 이 필드/메서드 자체가 컴파일되지 않아 코드가 남지 않는다. TutorialDevStageJumpUI가 호출.
+    int _devTargetStageIndex = -1;
+
+    /// <summary>
+    /// 테스트용: 게이트 통과 시 이동할 목표 스테이지 인덱스(SceneFlowManager.sceneSequence 기준)를
+    /// 지정한다. Host 전용 — Client가 호출해도 무시. CompleteGate() 호출 전까지 몇 번이든 재지정 가능.
+    /// </summary>
+    public void SetDevTargetStage(int index)
+    {
+        if (!IsHost)
+        {
+            Debug.LogWarning("[TutorialNetworkManager] SetDevTargetStage — Host가 아니라 무시됨");
+            return;
+        }
+        _devTargetStageIndex = index;
+        Debug.Log($"[TutorialNetworkManager] DEV 목표 스테이지 지정 — index={index}");
+    }
+#endif
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -264,6 +286,15 @@ public class TutorialNetworkManager : NetworkBehaviour
             Debug.LogError("[TutorialNetworkManager] 게이트 완료 — SceneFlowManager.Instance null, 씬 전환 중단");
             return;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (_devTargetStageIndex >= 0)
+        {
+            Debug.Log($"[TutorialNetworkManager] DEV 목표 스테이지로 진입 — index={_devTargetStageIndex}");
+            SceneFlowManager.Instance.LoadSceneByIndex(_devTargetStageIndex);
+            return;
+        }
+#endif
         SceneFlowManager.Instance.LoadNextScene();
     }
 

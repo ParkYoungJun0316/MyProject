@@ -134,6 +134,16 @@ public class StageManager : MonoBehaviour
         if (_isStarted) return;
         _isStarted = true;
 
+        // 트랩 스케줄 앵커(PhaseStartServerTime) 재확정.
+        // PhaseManager.EnterPhase()의 onPhaseEnter와 이 StartStage() 호출 사이에 대화(PhaseDialogueGate)/
+        // Gate 대기 같은 비동기 구간이 끼면, 앵커가 실제 발동 시점보다 먼저 찍혀 있어 트랩
+        // fireAtSeconds 스케줄의 앞부분이 "이미 지난 이벤트"로 스킵되는 문제가 있었다
+        // (M.Stage1, 2026-08). onPhaseEnter가 StartStage()를 곧바로 호출하는 씬(M.Stage2 등)에서는
+        // 거의 동시 시각으로 재기록될 뿐이라 영향 없음. MarkAndSyncPhase 내부에 IsServer 가드가
+        // 있어 Client에서 호출돼도 무해.
+        if (PhaseManager.Instance != null)
+            StageNetworkState.Instance?.MarkAndSyncPhase(PhaseManager.Instance.CurrentPhaseIndex);
+
         foreach (var obj in objectives)
             if (obj != null) obj.Begin();
 
