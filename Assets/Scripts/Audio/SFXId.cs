@@ -31,8 +31,7 @@ public enum SFXId
     Door_Open                      = 8,
 
     // ── Minigame / Quiz ──────────────────────────────────────────
-    Minigame_OX_Correct            = 9,
-    Minigame_OX_TimerTick          = 10,
+    // 9, 10: 삭제됨 (Minigame_OX_Correct / Minigame_OX_TimerTick) — 번호 재사용 금지
     Minigame_SequenceRing_Correct  = 12,
     Minigame_SequenceRing_Wrong    = 39,
 

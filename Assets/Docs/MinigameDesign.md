@@ -118,7 +118,7 @@
 - [x] `T.Stage4.unity` **Stage4.1만** — OXQuiz missing script 제거 후 `SideSplitChallenge`/`SideSplitZone`×2/`SideSplitObjective` 배치, `StageStartGate.OnCountdownComplete` → `StartChallenge()` 연결 (2026-08-17). Stage4.2는 미변경
 - [ ] `Assets/Prefab/UI.prefab` — `OXQuiz_Panel`(`OXQuizUI` 부착) 제거, `SideSplitUI` 부착 패널로 교체 + `mainText`/`timerText`/`LocalizedString` 필드 연결
 - [x] String Table `M.Stage.Quiz` / `T.Stage.Quiz` — 컬렉션·로케일 테이블 28개 삭제 + Addressables 엔트리 26개 제거 (2026-08-17)
-- [ ] `Assets/Audio/SFX/OXQuiz_Timer.wav`, `OXQuiz_Correct.wav` — 신규 미니게임에서 재사용할지 결정 (현재 `SideSplitChallenge`/`SideSplitUI`에는 SFX 연동 코드 없음 — 필요 시 `OnTimerTick`/`OnRoundSuccess`/`OnRoundFailed` UnityEvent에 연결)
+- [x] `SFXId.Minigame_OX_Correct` / `Minigame_OX_TimerTick` + `SFXLibrary` 슬롯 삭제 (2026-08-20). 번호 9·10은 재사용 금지. `M.Stage2`/`T.Stage4`의 `SFXEventManager`(sfxId 9/10)는 씬에서 직접 제거
 
 **문서**
 - [x] `NetworkDesign.md` §9.1.4 매핑표 갱신 (`M.Stage2` 행 — OX 취소선 + SideSplit 교체 표기)

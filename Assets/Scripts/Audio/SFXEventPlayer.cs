@@ -23,8 +23,7 @@ using UnityEngine;
 ///   Play()는 PlayOneShot 방식이라 한 번 쏘면 클립이 끝날 때까지 멈출 방법이 없다(클립이
 ///   실제 재생 시간보다 길면 다음 상황에서도 계속 들림). 시작 이벤트보다 먼저 끝내야 하는
 ///   경우(예: 타이머 사운드가 정답 공개 전에 끝나야 함)는 PlayUntilStopped()/Stop() 사용.
-///   예: OXQuizManager.OnQuestionReady → PlayUntilStopped()  (sfxId = 타이머 사운드)
-///       OXQuizManager.OnAnswerRevealed → Stop()
+///   예: 타이머 시작 이벤트 → PlayUntilStopped()  /  타이머 종료 이벤트 → Stop()
 ///   PlayUntilStopped() 중복 호출은 무시됨(이미 재생 중이면 재시작 안 함).
 ///   이 오브젝트가 비활성화/파괴되면(씬 리로드, Phase 전환 등) 자동으로 Stop() 처리되어
 ///   AudioSource가 고아로 남지 않음.

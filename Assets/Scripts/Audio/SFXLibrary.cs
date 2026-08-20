@@ -51,9 +51,6 @@ public class SFXLibrary : ScriptableObject
 
     // ── Minigame / Quiz ──────────────────────────────────────────
     [Header("Minigame / Quiz")]
-    public AudioClip Minigame_OX_Correct;
-    [Tooltip("문제 시작~정답 공개까지 도는 타이머 틱 루프 사운드")]
-    public AudioClip Minigame_OX_TimerTick;
     public AudioClip Minigame_SequenceRing_Correct;
     public AudioClip Minigame_SequenceRing_Wrong;
 
@@ -94,6 +91,7 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Trap_Ceiling;
     public AudioClip Trap_Drop;
     public AudioClip Trap_SpikeRaise;
+    public AudioClip Trap_SpikeWarn;
 
     // ── UI / Menu ────────────────────────────────────────────────
     [Header("UI / Menu")]
@@ -148,8 +146,6 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Door_Close:                        return Door_Close;
             case SFXId.Door_Open:                         return Door_Open;
 
-            case SFXId.Minigame_OX_Correct:               return Minigame_OX_Correct;
-            case SFXId.Minigame_OX_TimerTick:             return Minigame_OX_TimerTick;
             case SFXId.Minigame_SequenceRing_Correct:     return Minigame_SequenceRing_Correct;
             case SFXId.Minigame_SequenceRing_Wrong:       return Minigame_SequenceRing_Wrong;
 
@@ -175,6 +171,7 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Trap_Ceiling:                      return Trap_Ceiling;
             case SFXId.Trap_Drop:                         return Trap_Drop;
             case SFXId.Trap_SpikeRaise:                   return Trap_SpikeRaise;
+            case SFXId.Trap_SpikeWarn:                    return Trap_SpikeWarn;
 
             case SFXId.UI_Click:                          return UI_Click;
 

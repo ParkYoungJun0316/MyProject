@@ -1318,321 +1318,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &794936804
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 794936808}
-  - component: {fileID: 794936807}
-  - component: {fileID: 794936806}
-  - component: {fileID: 794936805}
-  - component: {fileID: 794936809}
-  - component: {fileID: 794936811}
-  - component: {fileID: 794936810}
-  - component: {fileID: 794936812}
-  - component: {fileID: 794936813}
-  - component: {fileID: 794936814}
-  - component: {fileID: 794936815}
-  - component: {fileID: 794936816}
-  - component: {fileID: 794936818}
-  - component: {fileID: 794936817}
-  m_Layer: 0
-  m_Name: NetworkManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &794936805
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d4f017159ace1d4eb9efeb44bc6b83d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkManagerSetup
-  port: 7777
-  maxConnections: 4
-  steamTransport: {fileID: 794936813}
-  debugTargetSteamId: 0
---- !u!114 &794936806
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Transports.UTP.UnityTransport
-  m_ProtocolType: 0
-  m_UseWebSockets: 0
-  m_UseEncryption: 0
-  m_MaxPacketQueueSize: 128
-  m_MaxPayloadSize: 6144
-  m_HeartbeatTimeoutMS: 500
-  m_ConnectTimeoutMS: 1000
-  m_MaxConnectAttempts: 60
-  m_DisconnectTimeoutMS: 30000
-  ConnectionData:
-    Address: 127.0.0.1
-    Port: 7777
-    ServerListenAddress: 0.0.0.0
-    ClientBindPort: 0
-  DebugSimulator:
-    PacketDelayMS: 0
-    PacketJitterMS: 0
-    PacketDropRate: 0
---- !u!114 &794936807
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkManager
-  NetworkManagerExpanded: 0
-  NetworkConfig:
-    ProtocolVersion: 0
-    NetworkTransport: {fileID: 794936806}
-    PlayerPrefab: {fileID: 5933153780236534023, guid: 22a34ecf8fee91f4496e7ace0639125c, type: 3}
-    Prefabs:
-      NetworkPrefabsLists:
-      - {fileID: 11400000, guid: af79ca4696ac3d04da66c448240eaa19, type: 2}
-    TickRate: 30
-    ClientConnectionBufferTimeout: 10
-    ConnectionApproval: 1
-    ConnectionData: 
-    EnableTimeResync: 0
-    TimeResyncInterval: 30
-    EnsureNetworkVariableLengthSafety: 0
-    EnableSceneManagement: 1
-    ForceSamePrefabs: 1
-    RecycleNetworkIds: 1
-    NetworkIdRecycleDelay: 120
-    RpcHashSize: 0
-    LoadSceneTimeOut: 120
-    SpawnTimeout: 10
-    EnableNetworkLogs: 1
-    NetworkTopology: 0
-    UseCMBService: 0
-    AutoSpawnPlayerPrefabClientSide: 1
-    NetworkMessageMetrics: 1
-    NetworkProfilingMetrics: 1
-    OldPrefabList: []
-  RunInBackground: 1
-  LogLevel: 1
---- !u!4 &794936808
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &794936809
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6df4dc646ce899f4d82e379899835dd5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LanDiscovery
-  discoveryPort: 47777
-  broadcastInterval: 1
---- !u!114 &794936810
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a05b4a5c23af3f46bba3aabc3dbf6a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Dissonance.Integrations.Unity_NFGO.NfgoCommsNetwork
---- !u!114 &794936811
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cb4dc319de88dc4cb76c47aafb46b1c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DissonanceVoip::Dissonance.DissonanceComms
-  _lastPrefabError: 
-  _isMuted: 0
-  _isDeafened: 0
-  _oneMinusBaseRemoteVoiceVolume: 0
-  _playbackPrefab: {fileID: 0}
-  _playbackPrefab2: {fileID: 0}
-  _micName: 
-  _playerPriority: 0
-  _tokens:
-    _tokens: []
---- !u!114 &794936812
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3737438748cf23f448d18cd2c6192e95, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DissonanceVoip::Dissonance.VoiceReceiptTrigger
-  _tokens:
-    _tokens: []
-  _roomExpanded: 1
-  _tokensExpanded: 0
-  _colliderExpanded: 1
-  _roomName: Global
-  _useTrigger: 0
---- !u!114 &794936813
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44dd247a00edbfa44b77868d755af6ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Facepunch Transport for Netcode for GameObjects::Netcode.Transports.Facepunch.FacepunchTransport
-  steamAppId: 5029890
-  targetSteamId: 0
-  virtualPort: 0
-  userSteamId: 0
---- !u!114 &794936814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 746d7471b67781c4d8ce45266005e715, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SteamLobbyManager
-  maxMembers: 4
---- !u!114 &794936815
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c328d51492d23f34eab0be5208e6e095, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SteamManager
-  appId: 5029890
---- !u!114 &794936816
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14317687e934a8f4994a1378928b6e33, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameLocalizationBootstrap
---- !u!114 &794936817
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3898946058d2984b968ced4d4b66fdf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BGMManager
-  zoneClips:
-  - scenePrefix: M
-    clips:
-    - {fileID: 8300000, guid: c74214d5866cfc544ac408eafb6d71c0, type: 3}
-    - {fileID: 8300000, guid: 17696c19c8e5e894a8950bef03a5110e, type: 3}
-    - {fileID: 8300000, guid: 4a128b3720dba1b41b6b4e998b3cc63f, type: 3}
-    - {fileID: 8300000, guid: 912d813fd7c937340a8a441b180aeec3, type: 3}
-    - {fileID: 8300000, guid: 6ef2aadc7529c88498e0e1fde2145253, type: 3}
-  - scenePrefix: M.Boss
-    clips:
-    - {fileID: 8300000, guid: 0bdd48398468e6a41b34a1585bb11b1f, type: 3}
-    - {fileID: 8300000, guid: d4ffc17705720a243af6e108f4aed231, type: 3}
-    - {fileID: 8300000, guid: 28e9a530bd35b4447aeabbcb3621eb37, type: 3}
-  - scenePrefix: T.Stage1
-    clips:
-    - {fileID: 8300000, guid: 1fed3c0bf7f266c4bac97218d4bd5717, type: 3}
-  - scenePrefix: T.Stage2
-    clips:
-    - {fileID: 8300000, guid: cf838ab0d01e5b7429a38dbee7adc21b, type: 3}
-  - scenePrefix: T.Stage3
-    clips:
-    - {fileID: 8300000, guid: 1fed3c0bf7f266c4bac97218d4bd5717, type: 3}
-  - scenePrefix: T.Stage4
-    clips:
-    - {fileID: 8300000, guid: 008f3ccf2c0047145883334cce891c98, type: 3}
-  - scenePrefix: T.Stage5
-    clips:
-    - {fileID: 8300000, guid: b26146ba87593174aa2fcb97180b23db, type: 3}
-  - scenePrefix: T.Boss
-    clips:
-    - {fileID: 8300000, guid: 383fc420188d53f438098c84673e33b1, type: 3}
-    - {fileID: 8300000, guid: 4a36f6a1cde4c574a82855e37fb676da, type: 3}
-  fadeDuration: 1.5
---- !u!114 &794936818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794936804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b62dd9f41c7de3942bf29ff681d440d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameSettingsManager
-  defaultMasterVolume: 1
-  defaultBgmVolume: 1
-  defaultSfxVolume: 1
-  defaultChatFontSize: 14
 --- !u!1 &817844834
 GameObject:
   m_ObjectHideFlags: 0
@@ -4067,6 +3752,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2055522098}
   m_CullTransparentMesh: 1
+--- !u!1001 &7414505729305446382
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4024931820611632669, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_Name
+      value: NetworkManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4537954772908808980, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
 --- !u!1001 &8176476818035888223
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4177,4 +3919,4 @@ SceneRoots:
   - {fileID: 1708256978}
   - {fileID: 783154052}
   - {fileID: 119301081}
-  - {fileID: 794936808}
+  - {fileID: 7414505729305446382}
