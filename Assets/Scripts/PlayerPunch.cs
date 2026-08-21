@@ -73,7 +73,7 @@ public class PlayerPunch : NetworkBehaviour
 
         SFXManager.Instance?.Play(SFXId.Player_Punch);
         // Owner 로컬에서 직접 트리거 — NetworkAnimator(Owner Authority)가 다른 클라이언트에 자동 동기화
-        // (Player.cs의 doHit/doDie와 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)
+        // (Player.cs의 doHit/doFall과 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)
         _anim?.SetTrigger("doPunch");
         PunchServerRpc();
     }

@@ -431,7 +431,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _rb?.AddForce(direction * force, ForceMode.Impulse);
     }
 
-    // ── 문 즉사 (Jammed 애니) ──────────────────────────────────────
+    // ── 문 즉사 (Fall 애니로 통일) ──────────────────────────────────
 
     /// <summary>
     /// 서버에서 즉사 확정. HP를 0으로 내리고 Owner에게 KillInstantly() 전달.
@@ -445,7 +445,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         ForceInstantKillClientRpc();
     }
 
-    /// <summary>오너 클라이언트에 Jammed 즉사 전달. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
+    /// <summary>오너 클라이언트에 즉사(Fall 애니) 전달. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
     [ClientRpc]
     void ForceInstantKillClientRpc()
     {
@@ -518,8 +518,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>
-    /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doDie 애니).
-    /// doFall 애니는 Owner Update에서 이미 재생됐으므로 여기서는 기본 사망 처리만.
+    /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doFall 애니, Jammed/Die와 통일).
+    /// doFall 애니는 Owner Update에서 낙하 중에도 이미 1회 재생됐으므로 여기서는 기본 사망 처리만.
     /// </summary>
     void ApplyFallDeathFromServer()
     {

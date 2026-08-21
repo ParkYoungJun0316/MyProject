@@ -31,7 +31,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public Color whiteColor = Color.white;
 
     [Header("즉사 판정")]
-    [Tooltip("이 수치 이상의 데미지를 받으면 Jammed 애니메이션 재생. 0이면 비활성")]
+    [Tooltip("이 수치 이상의 데미지를 받으면 즉사(Fall 애니메이션 재생). 0이면 비활성")]
     public int instantKillThreshold = 0;
 
     [Header("피격 무적")]
@@ -81,7 +81,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     // Owner→Host 낙사 신고 1회 가드 (ReportFallDeathServerRpc 스팸 방지)
     bool fallDeathReported;
     bool fallAnimTriggered = false;
-    // 즉사 판정 시 Die()에서 doJammed 재생 여부 결정
+    // 즉사 판정 시 Die()에서 OnInstantKilled 이벤트 발생 여부 결정 (애니메이션은 일반 사망과 동일하게 doFall 통일)
     bool isInstantKill = false;
 
     float nextBWTime = 0f;
@@ -287,7 +287,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (!IsDead) Die();
     }
 
-    /// <summary>버프·무적 무시 즉사. Die()에서 doJammed 연동.</summary>
+    /// <summary>버프·무적 무시 즉사. Die()에서 OnInstantKilled 이벤트 연동 (애니메이션은 일반 사망과 동일한 doFall).</summary>
     public void KillInstantly()
     {
         if (IsDead) return;
@@ -419,10 +419,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (anim != null)
         {
             anim.SetBool("isRun", false);
-            anim.ResetTrigger("doDie");
-            anim.ResetTrigger("doJammed");
             anim.ResetTrigger("doFall");
-            anim.SetTrigger(isInstantKill ? "doJammed" : "doDie");
+            anim.SetTrigger("doFall");
         }
         if (isInstantKill) events?.RaiseInstantKilled();
         isInstantKill = false;

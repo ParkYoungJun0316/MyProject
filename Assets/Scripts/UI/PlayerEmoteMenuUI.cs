@@ -3,26 +3,26 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// T키로 이모트 선택 패널을 열고 닫고, 숫자 1~6 또는 버튼 클릭으로 이모트 애니메이션을 재생.
+/// T키로 이모트 선택 패널을 열고 닫고, 숫자 1~8 또는 버튼 클릭으로 이모트 애니메이션을 재생.
 /// 로컬 오너 Player를 찾아 그 Animator에 직접 SetBool/SetTrigger — NetworkAnimator(Owner Authority)가
-/// 자동으로 다른 클라이언트에 동기화한다 (Player.cs의 doHit/doDie, isRun과 동일한 방식).
+/// 자동으로 다른 클라이언트에 동기화한다 (Player.cs의 doHit/doFall, isRun과 동일한 방식).
 ///
 /// [번호 배정]
-/// 1 Yes, 2 No, 3 Thanks, 4 Wing, 5 SplitLeg, 6 Bat
+/// 1 Yes, 2 No, 3 Thanks, 4 Wing, 5 SplitLeg, 6 Stare, 7 What, 8 Mad
 ///
 /// [루프 vs 원샷]
-/// Yes/No/Wing/Bat: 루프 클립 → Bool 파라미터(isYes/isNo/isWing/isBat)로 재생, 이동 입력이 들어오면 즉시 취소.
-/// Thanks/SplitLeg: 원샷 클립 → Trigger 파라미터(doThanks/doSplitLeg) 그대로 사용.
+/// Yes/No/Wing: 루프 클립 → Bool 파라미터(isYes/isNo/isWing)로 재생, 이동 입력이 들어오면 즉시 취소.
+/// Thanks/SplitLeg/Stare/What/Mad: 원샷 클립 → Trigger 파라미터(doThanks/doSplitLeg/doStare/doWhat/doMad) 그대로 사용.
 ///
 /// [배치]
 /// UI.prefab(로컬 HUD) 빈 오브젝트에 부착.
-/// emoteMenuPanel: 6개 버튼이 든 패널 GameObject 연결.
-/// 각 버튼 OnClick() → PlayYes()/PlayNo()/PlayThanks()/PlayWing()/PlaySplitLeg()/PlayBat() 연결.
+/// emoteMenuPanel: 8개 버튼이 든 패널 GameObject 연결.
+/// 각 버튼 OnClick() → PlayYes()/PlayNo()/PlayThanks()/PlayWing()/PlaySplitLeg()/PlayStare()/PlayWhat()/PlayMad() 연결.
 /// </summary>
 public class PlayerEmoteMenuUI : MonoBehaviour
 {
     [Header("패널")]
-    [Tooltip("T키로 열고 닫을 이모트 선택 패널 (6개 버튼 포함)")]
+    [Tooltip("T키로 열고 닫을 이모트 선택 패널 (8개 버튼 포함)")]
     [SerializeField] GameObject emoteMenuPanel;
 
     [Header("커서")]
@@ -104,7 +104,9 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         else if (Keyboard.current.digit3Key.wasPressedThisFrame) PlayThanks();
         else if (Keyboard.current.digit4Key.wasPressedThisFrame) PlayWing();
         else if (Keyboard.current.digit5Key.wasPressedThisFrame) PlaySplitLeg();
-        else if (Keyboard.current.digit6Key.wasPressedThisFrame) PlayBat();
+        else if (Keyboard.current.digit6Key.wasPressedThisFrame) PlayStare();
+        else if (Keyboard.current.digit7Key.wasPressedThisFrame) PlayWhat();
+        else if (Keyboard.current.digit8Key.wasPressedThisFrame) PlayMad();
     }
 
     void OpenMenu()
@@ -140,8 +142,12 @@ public class PlayerEmoteMenuUI : MonoBehaviour
     public void PlayWing() => PlayLoopEmote("isWing");
     /// <summary>5번 / SplitLeg 버튼 (원샷).</summary>
     public void PlaySplitLeg() => PlayOneShotEmote("doSplitLeg");
-    /// <summary>6번 / Bat 버튼 (루프 — 이동 시 자동 취소).</summary>
-    public void PlayBat() => PlayLoopEmote("isBat");
+    /// <summary>6번 / Stare 버튼 (원샷).</summary>
+    public void PlayStare() => PlayOneShotEmote("doStare");
+    /// <summary>7번 / What 버튼 (원샷).</summary>
+    public void PlayWhat() => PlayOneShotEmote("doWhat");
+    /// <summary>8번 / Mad 버튼 (원샷).</summary>
+    public void PlayMad() => PlayOneShotEmote("doMad");
 
     /// <summary>루프 이모트 시작. 다른 루프가 재생 중이면 먼저 끄고 교체.</summary>
     void PlayLoopEmote(string boolParam)

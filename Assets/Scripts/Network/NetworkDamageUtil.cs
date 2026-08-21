@@ -28,7 +28,7 @@ public static class NetworkDamageUtil
     }
 
     /// <summary>
-    /// 즉사 판정. Jammed 애니메이션 포함(NetworkPlayerSetup 있을 때).
+    /// 즉사 판정. Fall 애니메이션 포함(NetworkPlayerSetup 있을 때, 일반 사망과 동일한 애니로 통일).
     /// 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
     /// </summary>
     public static void ApplyInstantKill(Player p)
