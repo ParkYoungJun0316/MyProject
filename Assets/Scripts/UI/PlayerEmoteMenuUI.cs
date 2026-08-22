@@ -69,6 +69,13 @@ public class PlayerEmoteMenuUI : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= FindAndInit;
+
+        // 씬 파괴(TitleReturnFlow의 SceneManager.LoadScene 등) 시 메뉴가 열려 있던 채로
+        // 파괴돼도(CloseMenu 없이) 요청 목록에 잔여 참조가 새지 않도록 하는 안전장치.
+        // Release가 아니라 Forget을 쓴다 — 여기서 실제 Cursor를 잠그면 TitleReturnFlow가 그
+        // 직전에 이미 풀어둔 커서를 도로 잠가 "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다
+        // (2026-08-22 수정, EscMenuController와 동일 원인).
+        if (_isOpen) CursorUnlockRequestUtil.Forget(this);
     }
 
     void Update()
@@ -80,6 +87,14 @@ public class PlayerEmoteMenuUI : MonoBehaviour
             CancelActiveLoop();
 
         if (InGameChatUI.IsChatOpen) return;
+
+        // CheerName 설정 패널이 열려 있으면 이모트 메뉴는 완전히 양보한다(우선순위: cheername > 이모트).
+        // 이미 열려 있었다면 강제로 닫아 겹침·숫자키 충돌(치어네임 문자 중 0~9와 이모트 1~8번 트리거)을 없앤다.
+        if (TutorialCheerNameUI.IsOpen)
+        {
+            if (_isOpen) CloseMenu();
+            return;
+        }
 
         if (_player.IsDead)
         {
@@ -114,8 +129,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         _isOpen = true;
         if (emoteMenuPanel != null) emoteMenuPanel.SetActive(true);
 
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        CursorUnlockRequestUtil.Request(this);
     }
 
     void CloseMenu()
@@ -123,11 +137,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         _isOpen = false;
         if (emoteMenuPanel != null) emoteMenuPanel.SetActive(false);
 
-        if (lockCursorOnClose)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
+        CursorUnlockRequestUtil.Release(this, lockCursorOnClose);
     }
 
     // ── 버튼 OnClick 전용 (숫자키 핸들러도 동일 메서드 재사용) ─────────────

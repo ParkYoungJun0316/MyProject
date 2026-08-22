@@ -332,7 +332,8 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 **P3 — 세션 메타데이터**
 
 - [x] 룸코드 표시 — **로컬(①②) 경로 전용, 최소 구현으로 완료** (위 "P1/P2 2인 검증 통과" 참고). 구 `_sharedRoomCode` NetworkVariable 패턴은 채택하지 않음 — `NetworkManagerSetup.RoomCode`(Host 로컬 프로퍼티)를 그대로 표시하는 것으로 충분(Client는 표시 대상 아님, §6B.5). 어차피 Steam 정식 배포에서 룸코드 자체가 폐지되므로(§4.2) 이 이상 정교화하지 않는다.
-- [ ] DisplayName/VoiceId 보고 — 구 `SubmitDisplayNameServerRpc`/`SubmitVoiceIdServerRpc` + 버퍼링 방어 이전(슬롯 귀속 → Player 인스턴스 귀속으로 변경)
+- [x] DisplayName 보고 (2026-08-22) — 구 `SubmitDisplayNameServerRpc`(슬롯 귀속)를 `PlayerDisplayNameSync`(Player 인스턴스 귀속, `PlayerCheerNameSync`와 동일 패턴)로 재구현. `OnNetworkSpawn`에서 Owner가 자기 표시 이름(Steam 경로: `SteamClient.Name`, 로컬 경로: OS 계정 이름)을 1회 자동 보고 → `TutorialNetworkManager.CompleteGate()`에서 `GameSession.SetSessionDisplayNames()` + `BroadcastSessionDisplayNamesClientRpc`로 전원 배포. **원인 회귀:** 2026-08-20 구 로비 삭제(아래 항목) 때 `SubmitDisplayNameServerRpc`가 함께 삭제된 뒤 새 Tutorial 게이트 구조로 이식되지 않아 `TeamStatusUI` 등에서 전원 `"Player"` 폴백만 표시되고 있었음 — 이번 수정으로 해소. **ParrelSync 검증 대기.**
+- [ ] VoiceId 보고 — 구 `SubmitVoiceIdServerRpc` + 버퍼링 방어 이전(슬롯 귀속 → Player 인스턴스 귀속으로 변경) 아직 미구현. 확정 전까지 `GameSession.GetSessionVoiceId`는 기본 폴백값(`null`)으로 동작.
 
 **P4 — `TutorialGatherZone` (§6B.3, 신규)** — **코드 완료 + 씬 배치·검증 통과 (2026-08-18, 솔로+ParrelSync 2인)**
 
@@ -345,7 +346,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [x] `PlayerSpawnManager.InitializeOnline(clientColorDict)` 호출
 - [x] 세션 시드 생성+배포(`BroadcastSeedClientRpc`류), 세션 시작 서버시각 배포
 - [x] `GameSession.SetActiveColors` 확정+배포
-- [ ] `SetSessionCheerNames`/`SetSessionDisplayNames`/`SetSessionVoiceIds` 확정+배포 — **P3 두 번째 항목(DisplayName/VoiceId 보고)·P6(CheerName Tutorial 통합) 완료 후로 미룸.** 그때까지는 `GameSession`의 기본 폴백값(`GetSessionCheerName`→`LobbyNetworkManager.DefaultCheerNames`, `GetSessionDisplayName`→`"Player"`, `GetSessionVoiceId`→`null`)으로 동작 — NPE 등 하드 실패 없음, 표시 이름/음성 매칭만 부정확
+- [x] `SetSessionCheerNames`/`SetSessionDisplayNames` 확정+배포 완료 (2026-08-22, 위 P3 DisplayName 항목·P6 참고). `SetSessionVoiceIds`만 여전히 미확정 — `GetSessionVoiceId`는 기본 폴백값(`null`)으로 동작, 음성 매칭만 부정확(NPE 등 하드 실패 없음)
 - [x] `SceneFlowManager.LoadNextScene()` 호출 → `M.Stage1`
 
 **P6 — CheerName Tutorial 통합** — **네트워크 동기화 코어 코드 완료 (2026-08-18), 자기응원 피드백 UI 코드 완료 (2026-08-19), 테스트는 이번 라운드 전체 보류 (사용자 지시 2026-08-19) → 아래 남은 작업 다 끝내고 한 번에 검증**

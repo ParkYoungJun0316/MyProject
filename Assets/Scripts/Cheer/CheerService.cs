@@ -241,9 +241,15 @@ public class CheerService : NetworkBehaviour
         int myIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, myColor);
         if (myIdx == targetColorIndex)
         {
-            // 1인 세션에서는 자기 자신 응원 허용 (partySize==1 규칙)
+            // Tutorial: 실제 응원 표 집계가 아니라 "말해보기" 인식 테스트이므로 인원수와 무관하게
+            // 자기 응원(자기 이름 부르기)을 항상 허용한다 — 구 Lobby 시절 동작과 동일
+            // (CheerAndTutorialDesign.md §5.5, 실제 SubmitCheerServerRpc 제출 자체가 테스트).
+            bool isTutorial = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Tutorial");
+
+            // 실제 게임(M/T 스테이지)에서는 1인 세션(파티 사이즈 1)일 때만 자기 응원 허용 (§2.6).
             bool isSolo = GameSession.Instance != null && GameSession.Instance.ActivePlayerCount == 1;
-            if (!isSolo) return false;
+
+            if (!isTutorial && !isSolo) return false;
         }
 
         // 수혜자 버프 중 → 표 차단

@@ -1,7 +1,10 @@
+using System.Collections;
 using TMPro;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -17,6 +20,22 @@ using UnityEngine.UI;
 /// 1회성 노출의 단점을 피하고자 Tutorial 씬의 상호작용 표지판(TutorialCheerNameSignboard)이
 /// Open()/Close()를 호출해 여닫는 방식으로 변경. 이 GameObject 자체(패널 루트)가 활성/비활성으로
 /// 토글된다 — 씬에는 기본 비활성 상태로 배치할 것(사용자 에디터 작업).
+///
+/// [입력 우선권, 2026-08-22]
+/// 열려있는 동안 키보드 입력의 최우선권을 가진다 — Enter는 확정 제출(InGameChatUI는 무시/자동 닫힘),
+/// Esc는 이 패널을 닫음(EscMenuController는 무시). 같은 프레임에 Esc가 눌렸을 때 "패널이 닫히자마자
+/// Esc 메뉴가 같이 뜨는" 이중 소비를 막기 위해, 실행 순서에 의존하지 않고 <see cref="ConsumedEscThisFrame"/>
+/// 명시적 플래그로 "이번 프레임에 Esc를 이미 이 패널이 소비했음"을 알린다(스크립트 실행 순서 가정 대신
+/// 명시적 상태로 — Bug Hunter 리뷰 3항목 중 3번 수정).
+///
+/// [커서 공유, 2026-08-22]
+/// 커서 lock/visible을 직접 건드리지 않고 <see cref="CursorUnlockRequestUtil"/>에 요청만 한다 —
+/// EscMenu·이모트 메뉴가 동시에 열려 있을 때 "마지막에 닫은 UI가 무조건 잠금"으로 서로 덮어쓰지
+/// 않도록(Bug Hunter 리뷰 3항목 중 2번 수정). 요청/해제는 Open()/Close()가 아니라 OnEnable/OnDisable에
+/// 걸어, 씬 리로드로 패널이 열린 채 파괴돼도(Close() 호출 없이) Unity가 파괴 직전 자동 호출하는
+/// OnDisable에서 요청이 반드시 정리된다. 다만 그 파괴가 씬 통째 언로드(TitleReturnFlow 등)로 인한
+/// 것이면 실제 Cursor는 건드리지 않고 목록에서만 빠진다(<see cref="CursorUnlockRequestUtil.Forget"/>) —
+/// 그렇지 않으면 타이틀 복귀 시 이미 풀어둔 커서를 도로 잠가버리는 회귀가 생긴다(2026-08-22 재수정).
 /// </summary>
 public class TutorialCheerNameUI : MonoBehaviour
 {
@@ -34,9 +53,19 @@ public class TutorialCheerNameUI : MonoBehaviour
     [SerializeField] TMP_Text feedbackText;
     [SerializeField] float feedbackDisplaySeconds = 2.5f;
 
+    [Header("커서")]
+    [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요 " +
+             "(EscMenuController/PlayerEmoteMenuUI와 동일 패턴).")]
+    [SerializeField] bool lockCursorOnClose = true;
+
     /// <summary>패널이 열려있는 동안 true — Player.cs가 이동 입력을 잠그는 데 사용
     /// (InGameChatUI.IsChatOpen과 동일 패턴, §7.3 타이핑 중 WASD 새는 문제 방지).</summary>
     public static bool IsOpen { get; private set; }
+
+    /// <summary>이번 프레임에 Esc로 이 패널이 막 닫혔는지 — EscMenuController가 같은 프레임에
+    /// 자기 메뉴를 열지 않도록 확인하는 명시적 플래그(실행 순서 비의존).</summary>
+    public static bool ConsumedEscThisFrame => s_escClosedFrame == Time.frameCount;
+    static int s_escClosedFrame = -1;
 
     PlayerCheerNameSync _mySync;
     ulong _myClientId;
@@ -60,8 +89,31 @@ public class TutorialCheerNameUI : MonoBehaviour
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
 
-    void OnEnable()  => IsOpen = true;
-    void OnDisable() => IsOpen = false;
+    void OnEnable()
+    {
+        IsOpen = true;
+        // Esc를 눌러야만 커서가 풀리던 문제 — 패널이 열리면 즉시 커서를 풀어 마우스로 바로
+        // 입력창/확정 버튼을 클릭할 수 있게 한다. OnEnable/OnDisable 짝으로 걸어 씬 파괴 시에도
+        // Release가 보장된다(클래스 doc [커서 공유] 참고).
+        CursorUnlockRequestUtil.Request(this);
+    }
+
+    void OnDisable()
+    {
+        IsOpen = false;
+
+        // 씬이 통째로 언로드되는 중(예: TitleReturnFlow의 SceneManager.LoadScene)이면 자동으로
+        // OnDisable이 불려도 목록 제거만 하고 실제 Cursor는 건드리지 않는다 — 그 시점엔 이미
+        // TitleReturnFlow 등이 최종 커서 상태를 정해뒀으므로 여기서 다시 잠그면 그걸 덮어써버려
+        // "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다(2026-08-22 수정). 사용자가 직접 닫은
+        // 경우(씬은 그대로 로드된 채 SetActive(false)만 됨)만 실제로 Release해서 잠근다.
+        if (!gameObject.scene.isLoaded)
+        {
+            CursorUnlockRequestUtil.Forget(this);
+            return;
+        }
+        CursorUnlockRequestUtil.Release(this, lockCursorOnClose);
+    }
 
     // ── 상호작용 표지판에서 호출 (TutorialCheerNameSignboard) ────────
 
@@ -70,13 +122,24 @@ public class TutorialCheerNameUI : MonoBehaviour
     {
         if (gameObject.activeSelf) return;
         gameObject.SetActive(true);
+        StartCoroutine(FocusInputNextFrame());
+    }
+
+    /// <summary>InGameChatUI.ActivateInputNextFrame과 동일 패턴 — SetActive 직후 바로 활성화하면
+    /// interactable=false 상태(첫 오픈 시 _mySync 미발견)일 수 있어 1프레임 대기 후 포커스한다.</summary>
+    IEnumerator FocusInputNextFrame()
+    {
+        yield return null;
+        if (nameInputField == null || !gameObject.activeSelf) yield break;
+        nameInputField.ActivateInputField();
+        EventSystem.current?.SetSelectedGameObject(nameInputField.gameObject);
     }
 
     /// <summary>패널 닫기 — 확정 여부와 무관, 타이핑 중이던 미확정 글자는 버려짐(§3.4상 문제 없음, 확정 전엔 로컬일 뿐).</summary>
     public void Close()
     {
         if (!gameObject.activeSelf) return;
-        gameObject.SetActive(false);
+        gameObject.SetActive(false); // 커서 Release는 OnDisable에서 처리
     }
 
     /// <summary>열려있으면 닫고, 닫혀있으면 연다 — 표지판 상호작용 1개 입력으로 개폐 겸용.</summary>
@@ -93,6 +156,15 @@ public class TutorialCheerNameUI : MonoBehaviour
 
     void Update()
     {
+        // Esc는 닫기 버튼 대신 이 패널을 최우선으로 닫는다(§요청 3) — EscMenuController는
+        // ConsumedEscThisFrame 플래그를 확인해 같은 프레임엔 자기 메뉴를 열지 않는다(실행 순서 비의존).
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            s_escClosedFrame = Time.frameCount;
+            Close();
+            return;
+        }
+
         if (_mySync == null)
         {
             TryFindLocalSync();
@@ -151,12 +223,15 @@ public class TutorialCheerNameUI : MonoBehaviour
 
         if (success)
         {
-            ShowFeedback("이름이 확정되었습니다.");
+            // 확정되면 닫기 버튼 대신 바로 닫는다(§요청 3) — 확정 결과는 패널 밖 닉네임 표시(예:
+            // PlayerHPUI selfNameLabel)로 바로 반영되므로 패널 안에서 문구를 보여줄 필요가 없다.
             nameInputField.text = "";
+            Close();
         }
         else
         {
             ShowFeedback(ResolveErrorMessage(errorKey));
+            StartCoroutine(FocusInputNextFrame()); // 실패 시 바로 다시 고쳐 쓸 수 있게 재포커스
         }
     }
 

@@ -58,8 +58,16 @@ public class TutorialCheerNameSignboard : MonoBehaviour
     {
         if (!_localPlayerInRange || cheerNameUI == null) return;
 
+        bool isOpen = TutorialCheerNameUI.IsOpen;
+
         // 패널이 열려있는 동안엔 프롬프트를 숨겨 중복 안내를 피하고, 닫히면 다시 보이게 한다.
-        SetPromptVisible(!TutorialCheerNameUI.IsOpen);
+        SetPromptVisible(!isOpen);
+
+        // 패널이 열려있으면 E 키 감지를 건너뛴다 — 그대로 두면 이름에 'e'가 들어간 단어를
+        // 타이핑할 때마다 이 표지판이 그 키 입력을 상호작용으로도 오인해 Toggle() → Close()가
+        // 되어버린다(입력창이 포커스를 가져도 전역 Keyboard 폴링은 걸러지지 않음, 2026-08-22 수정).
+        // 닫기는 Esc/확정 성공/닫기 버튼이 이미 담당하므로 여기서 막아도 닫을 방법이 없어지지 않는다.
+        if (isOpen) return;
 
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             cheerNameUI.Toggle();

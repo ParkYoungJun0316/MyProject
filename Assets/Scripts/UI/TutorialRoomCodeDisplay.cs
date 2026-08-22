@@ -11,6 +11,10 @@ using UnityEngine;
 ///
 /// [배치] Tutorial 씬 상시 HUD의 부모 GameObject(계속 활성 상태 유지)에 부착 —
 /// roomCodeText는 그 자식의 TMP_Text를 연결(코드 없을 때 이 자식만 숨김).
+///
+/// [Steam 경로와의 상호배타, §6B.5]
+/// Steam(④ 정식 릴리스) 경로는 룸코드 UI 자체가 없다 — <see cref="TutorialSteamInviteUI"/>(Invite 버튼)만 보인다.
+/// <see cref="NetworkManagerSetup.UseLocalNetworkPath"/>가 false면 항상 빈 코드로 취급해 텍스트를 숨긴다.
 /// </summary>
 public class TutorialRoomCodeDisplay : MonoBehaviour
 {
@@ -22,7 +26,9 @@ public class TutorialRoomCodeDisplay : MonoBehaviour
     {
         if (roomCodeText == null) return;
 
-        string code = NetworkManagerSetup.Instance != null ? NetworkManagerSetup.Instance.RoomCode : string.Empty;
+        string code = (NetworkManagerSetup.UseLocalNetworkPath && NetworkManagerSetup.Instance != null)
+            ? NetworkManagerSetup.Instance.RoomCode
+            : string.Empty;
         if (code == _lastCode) return;
         _lastCode = code;
 

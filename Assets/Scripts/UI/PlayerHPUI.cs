@@ -43,6 +43,7 @@ public class PlayerHPUI : MonoBehaviour
     [SerializeField] string selfNamePrefix = "YOU · ";
 
     Image[] heartImages;
+    PlayerCheerNameSync _cheerNameSync;
 
     void Start()
     {
@@ -79,6 +80,7 @@ public class PlayerHPUI : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= FindAndSubscribe;
+        if (_cheerNameSync != null) _cheerNameSync.OnSubmitResult -= HandleCheerNameSubmitResult;
     }
 
     /// <summary>
@@ -109,8 +111,20 @@ public class PlayerHPUI : MonoBehaviour
             events.OnColorTypeChanged += _ => RefreshSelfName();
         }
 
+        // Tutorial CheerName 확정(PlayerCheerNameSync.SubmitCheerNameServerRpc 응답) 순간에도
+        // 색 변경 이벤트 없이 이름만 바뀌므로, 그 결과를 직접 구독해야 "YOU · 이름" 라벨이
+        // 확정 즉시(별도 색 변경 없이도) 갱신된다 — TutorialCheerNameUI가 겪던 것과 같은 문제.
+        _cheerNameSync = player.GetComponent<PlayerCheerNameSync>();
+        if (_cheerNameSync != null)
+            _cheerNameSync.OnSubmitResult += HandleCheerNameSubmitResult;
+
         RefreshHearts();
         RefreshSelfName();
+    }
+
+    void HandleCheerNameSubmitResult(bool success, string errorKey)
+    {
+        if (success) RefreshSelfName();
     }
 
     /// <summary>selfNameLabel에 "YOU · BERRY" 형태 텍스트를 반영.</summary>

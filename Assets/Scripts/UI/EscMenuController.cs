@@ -21,8 +21,9 @@ using UnityEngine.UI;
 /// [동작]
 /// Esc 키   : 설정 패널이 열려 있으면 그것부터 닫고, 아니면 ESC 메뉴 열기/닫기 토글
 ///           (Setting_Panel은 ESC_Panel과 형제 GameObject라 Resume은 서로 건드리지 않음)
-/// 패널 열림 : 커서 표시·잠금 해제, Reset 버튼 활성 여부 갱신
-/// 패널 닫힘 : 커서 숨김·잠금 (lockCursorOnClose = true 일 때)
+/// 패널 열림 : CursorUnlockRequestUtil에 커서 해제 요청, Reset 버튼 활성 여부 갱신
+/// 패널 닫힘 : CursorUnlockRequestUtil에 해제 통보 — 치어네임/이모트 메뉴 등 다른 UI가 아직
+///           커서를 요청 중이면 실제로는 잠기지 않는다(공유 카운트, 2026-08-22).
 ///
 /// [Reset 동작]
 /// Host만 씬 리로드 가능 (NGO 정책).
@@ -59,11 +60,27 @@ public class EscMenuController : MonoBehaviour
             settingsPanel.SetActive(false);
     }
 
+    /// <summary>씬 파괴(TitleReturnFlow의 SceneManager.LoadScene 등) 시 패널이 열려 있던 채로
+    /// 파괴돼도(OnClickResume 없이) 요청 목록에 잔여 참조가 새지 않도록 하는 안전장치.
+    /// Release가 아니라 Forget을 쓴다 — OnClickLeaveRoom()은 Esc 메뉴를 먼저 닫지 않고 바로
+    /// TitleReturnFlow.Request를 호출하므로 Quit을 누르는 순간엔 항상 _isOpen==true인 채로 이
+    /// 씬이 통째로 파괴된다. 여기서 Release로 실제 Cursor를 잠그면, TitleReturnFlow가 그 직전에
+    /// 이미 풀어둔 커서를 도로 잠가 "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다(2026-08-22 수정).</summary>
+    void OnDestroy()
+    {
+        if (_isOpen) CursorUnlockRequestUtil.Forget(this);
+    }
+
     // ── 입력 ──────────────────────────────────────────────────────
 
     void Update()
     {
         if (Keyboard.current == null) return;
+
+        // CheerName 설정 패널이 열려 있으면 Esc 최우선권을 그쪽에 넘긴다(우선순위: cheername > esc 메뉴).
+        // IsOpen뿐 아니라 ConsumedEscThisFrame도 함께 확인 — 실행 순서와 무관하게 "이번 프레임에
+        // Esc를 CheerName 패널이 이미 처리했음"을 명시적으로 알 수 있어 이중 소비를 막는다.
+        if (TutorialCheerNameUI.IsOpen || TutorialCheerNameUI.ConsumedEscThisFrame) return;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
@@ -89,8 +106,7 @@ public class EscMenuController : MonoBehaviour
 
         RefreshResetButton();
 
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible   = true;
+        CursorUnlockRequestUtil.Request(this);
     }
 
     // ── Reset 버튼 활성 여부 ──────────────────────────────────────
@@ -113,11 +129,7 @@ public class EscMenuController : MonoBehaviour
         if (escPanel != null)
             escPanel.SetActive(false);
 
-        if (lockCursorOnClose)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible   = false;
-        }
+        CursorUnlockRequestUtil.Release(this, lockCursorOnClose);
     }
 
     /// <summary>

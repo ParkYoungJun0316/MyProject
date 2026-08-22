@@ -210,7 +210,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &116291108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1826,6 +1826,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: UI
       objectReference: {fileID: 0}
+    - target: {fileID: 6238628592825684599, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: maxAlpha
+      value: 0.9
+      objectReference: {fileID: 0}
     - target: {fileID: 6305786061873140881, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0.00087359233
@@ -1979,6 +1983,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7fa11587663e764ca83e432bf6341d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EscMenuController
+--- !u!114 &1293583617 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6238628592825684599, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1293583613}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8f3c21e9b4d6e2489012ab3c4d5e6f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenFader
 --- !u!1 &1293583620 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4652287179021543480, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
@@ -2250,7 +2265,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1425081341
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2271,11 +2286,11 @@ MonoBehaviour:
   closeClipLength: 2
   holdDuration: 2
   openClipLength: 2
-  randomIntervalMin: 5
+  randomIntervalMin: 10
   randomIntervalMax: 15
   initialDelay: 0
   startOnAwake: 1
-  screenFader: {fileID: 0}
+  screenFader: {fileID: 1293583617}
   seedSalt: 1297044820
 --- !u!4 &1425081342
 Transform:

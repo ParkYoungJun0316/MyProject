@@ -226,9 +226,9 @@ public class TutorialNetworkManager : NetworkBehaviour
     /// <summary>
     /// 게이트 통과 확정. 구 LobbyNetworkManager.StartGameServerRpc의 세션 확정 로직을 그대로 옮김 —
     /// PlayerSpawnCoordinator는 Tutorial 접속 시점에 이미 스폰돼 색 데이터를 들고 있으므로
-    /// 재스폰은 불필요(§6B.2). CheerName 세션 확정은 이 메서드에서 처리(§6B.7 P6, 아래 참고).
-    /// DisplayName/VoiceId 세션 확정은 아직 미구현(§6B.7 P3 두 번째 항목 대기) — 확정 전까지
-    /// GameSession의 기본 폴백값("Player"/null)으로 동작한다.
+    /// 재스폰은 불필요(§6B.2). CheerName/DisplayName 세션 확정은 이 메서드에서 처리
+    /// (§6B.7 P6·P3 두 번째 항목, 아래 참고). VoiceId 세션 확정은 여전히 미구현 —
+    /// 확정 전까지 GameSession의 기본 폴백값(null)으로 동작한다.
     /// </summary>
     void CompleteGate()
     {
@@ -280,6 +280,15 @@ public class TutorialNetworkManager : NetworkBehaviour
         BroadcastSessionCheerNamesClientRpc(
             new FixedString32Bytes(sessionNames[0]), new FixedString32Bytes(sessionNames[1]),
             new FixedString32Bytes(sessionNames[2]), new FixedString32Bytes(sessionNames[3]));
+
+        // §6B.7 P3 두 번째 항목 — 세션 DisplayName 확정. CheerName과 동일 패턴(게이트 통과 시점의
+        // 각자 최신 보고값이 그대로 최종값). PlayerDisplayNameSync NV도 이미 Everyone-read지만,
+        // CheerName과 동일하게 정확히 같은 시점에 적용되도록 Host가 명시적으로 계산해 배포한다.
+        var sessionDisplayNames = BuildSessionDisplayNames(clientColorDict);
+        GameSession.Instance?.SetSessionDisplayNames(sessionDisplayNames);
+        BroadcastSessionDisplayNamesClientRpc(
+            new FixedString64Bytes(sessionDisplayNames[0]), new FixedString64Bytes(sessionDisplayNames[1]),
+            new FixedString64Bytes(sessionDisplayNames[2]), new FixedString64Bytes(sessionDisplayNames[3]));
 
         if (SceneFlowManager.Instance == null)
         {
@@ -338,6 +347,37 @@ public class TutorialNetworkManager : NetworkBehaviour
     {
         if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
         GameSession.Instance?.SetSessionCheerNames(
+            new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() });
+    }
+
+    /// <summary>
+    /// 게이트 완료 시점의 각 플레이어 보고된 DisplayName을 colorIndex 순 배열로 확정(§6B.7 P3).
+    /// PlayerDisplayNameSync.GetAllEffectiveNames()가 (clientId, 보고값) 전체를 훑어주므로,
+    /// clientColorDict로 clientId→colorIndex만 매칭하면 된다 — 미보고/빈 값은 "Player" 폴백
+    /// (GameSession.GetSessionDisplayName 기본 폴백과 동일 값).
+    /// </summary>
+    static string[] BuildSessionDisplayNames(Dictionary<ulong, PlayerColorType> clientColorDict)
+    {
+        var names = new string[4];
+        for (int i = 0; i < 4; i++) names[i] = "Player";
+
+        foreach (var (clientId, name) in PlayerDisplayNameSync.GetAllEffectiveNames())
+        {
+            if (!clientColorDict.TryGetValue(clientId, out var color)) continue;
+            if (string.IsNullOrEmpty(name)) continue;
+            int ci = PlayerColorUtil.ColorTypeToIndex(color);
+            if (ci >= 0) names[ci] = name;
+        }
+        return names;
+    }
+
+    /// <summary>세션 확정 DisplayName을 모든 클라이언트의 GameSession에 배포(§6B.7 P3).</summary>
+    [ClientRpc]
+    void BroadcastSessionDisplayNamesClientRpc(FixedString64Bytes n0, FixedString64Bytes n1,
+                                                FixedString64Bytes n2, FixedString64Bytes n3)
+    {
+        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
+        GameSession.Instance?.SetSessionDisplayNames(
             new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() });
     }
 

@@ -191,6 +191,14 @@ public class InGameChatUI : NetworkBehaviour
         var kb = Keyboard.current;
         if (kb == null) return;
 
+        // CheerName 설정 패널이 열려 있는 동안엔 채팅이 Enter를 가져가면 안 된다(우선순위: cheername > chat).
+        // 이미 채팅 입력창이 열려 있던 상태에서 패널이 열렸다면 강제로 닫아 포커스 충돌을 없앤다.
+        if (TutorialCheerNameUI.IsOpen)
+        {
+            if (_inputOpen) CloseInput();
+            return;
+        }
+
         bool enterPressed  = kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame;
         bool escapePressed = kb.escapeKey.wasPressedThisFrame;
 
