@@ -9,7 +9,7 @@ using TMPro;
 
 /// <summary>
 /// 인게임 채팅 시스템 (NetworkBehaviour).
-/// New Input System (activeInputHandler=1) 전용.
+/// New Input System(Keyboard.current) 직접 폴링 + activeInputHandler=Both(legacy IME 병행, §IME 참고).
 ///
 /// [히스토리 유지]
 /// 씬 재로드·전환이 되어도 static s_history로 메시지가 유지됨.
@@ -23,11 +23,22 @@ using TMPro;
 ///   └── ChatInputPanel            ← chatInputPanel 연결
 ///         └── InputField          ← inputField 연결
 ///
-/// [키 흐름]
+/// [키 흐름 — 2026-08-22 변경]
 /// Enter (입력창 닫힘) → 입력창 열기
-/// Enter (입력창 열림, 텍스트 있음) → 전송 + 재포커스 (창 유지)
-/// Enter (입력창 열림, 텍스트 없음) → 입력창 닫기
+/// Enter (입력창 열림) → 텍스트 있으면 전송 후 입력창 닫기, 없으면 그냥 닫기
+///   (Enter 한 번의 열기~전송 사이클이 끝나면 항상 정상 플레이로 복귀 — 이전엔 전송 후에도
+///   입력창이 계속 열려있어 이동키가 계속 막혀있었음)
 /// Escape → 입력창 닫기
+///
+/// [IME — 2026-08-22 수정]
+/// 한글 등 조합형 입력 중 Enter를 누르면 TMP_InputField.text가 조합 문자를 아직 커밋하기 전이라
+/// 마지막 음절이 잘려서 전송되는 Unity 버그(Windows IME, Issue Tracker UUM-100241, Won't Fix) —
+/// Enter 처리 직전에 Input.compositionString을 강제로 텍스트에 붙여 우회.
+///
+/// [커서 — 2026-08-22 수정]
+/// 입력창 열림/닫힘에 맞춰 CursorUnlockRequestUtil로 커서 해제/재요청(EscMenu 등과 동일 패턴).
+/// ThirdPersonCamera는 이 유틸의 IsRequested(커서 해제 SSOT)를 보고 시점 회전을 멈추므로
+/// Esc메뉴/이모트메뉴/치어네임패널과 동일하게 여기서도 자동으로 카메라 회전이 멎는다.
 ///
 /// [자동 숨김]
 /// 마지막 메시지 후 autoHideSeconds 동안 새 메시지 없으면 히스토리 패널 숨김.
@@ -122,6 +133,14 @@ public class InGameChatUI : NetworkBehaviour
         _subscribedToFontSize = false;
     }
 
+    /// <summary>씬 언로드 등으로 입력창이 열린 채로 파괴돼도 커서 요청 목록에 잔여 참조가 새지
+    /// 않도록 하는 안전장치(EscMenuController/TutorialCheerNameUI와 동일 패턴). 정상적으로 닫힐 때는
+    /// CloseInput()의 Release가 처리하므로, 여긴 그 경로를 타지 못한 비정상 파괴에서만 의미 있다.</summary>
+    void OnDestroy()
+    {
+        if (_inputOpen) CursorUnlockRequestUtil.Forget(this);
+    }
+
     /// <summary>
     /// GameSettingsManager는 0.Title에서 DontDestroyOnLoad로 먼저 생성되므로 정상 플로우에서는
     /// OnEnable 시점에 이미 준비돼 있지만, 만약을 대비해 GameSettingsManager.Awake의
@@ -193,7 +212,10 @@ public class InGameChatUI : NetworkBehaviour
 
         // CheerName 설정 패널이 열려 있는 동안엔 채팅이 Enter를 가져가면 안 된다(우선순위: cheername > chat).
         // 이미 채팅 입력창이 열려 있던 상태에서 패널이 열렸다면 강제로 닫아 포커스 충돌을 없앤다.
-        if (TutorialCheerNameUI.IsOpen)
+        // ConsumedEnterThisFrame도 같이 확인 — Host 자체 테스트처럼 확정 ServerRpc 왕복이 같은
+        // 프레임에 끝나 IsOpen이 false로 바뀌어도, 같은 물리 Enter로 채팅이 열려버리는 걸 막는다
+        // (ConsumedEscThisFrame·EscMenuController와 동일 이유의 명시적 플래그, 2026-08-22 수정).
+        if (TutorialCheerNameUI.IsOpen || TutorialCheerNameUI.ConsumedEnterThisFrame)
         {
             if (_inputOpen) CloseInput();
             return;
@@ -211,14 +233,23 @@ public class InGameChatUI : NetworkBehaviour
 
         if (_inputOpen)
         {
-            // Enter → 전송 or 닫기
+            // Enter → 텍스트 있으면 전송, 어느 쪽이든 입력창은 닫고 정상 플레이로 복귀
             if (enterPressed && !_skipNextSubmit)
             {
-                string text = inputField != null ? inputField.text.Trim() : string.Empty;
-                if (string.IsNullOrEmpty(text))
-                    CloseInput();
-                else
-                    SendAndStay(text);
+                string text = string.Empty;
+                if (inputField != null)
+                {
+                    // 한글 IME 조합 중 Enter를 누르면 TMP_InputField.text가 아직 조합 문자를
+                    // 반영하기 전이라 마지막 음절이 통째로 잘려서 전송되는 Unity 버그
+                    // (Windows IME + TMP_InputField, Unity Issue Tracker UUM-100241, Won't Fix).
+                    // 여기서 강제로 조합 문자열을 텍스트에 커밋한 뒤 읽어서 우회한다.
+                    if (!string.IsNullOrEmpty(Input.compositionString))
+                        inputField.text += Input.compositionString;
+                    text = inputField.text.Trim();
+                }
+                if (!string.IsNullOrEmpty(text))
+                    SendChat(text);
+                CloseInput();
                 return;
             }
 
@@ -251,6 +282,7 @@ public class InGameChatUI : NetworkBehaviour
         IsChatOpen = true;
         if (chatInputPanel   != null) chatInputPanel.SetActive(true);
         if (chatHistoryPanel != null) chatHistoryPanel.SetActive(true);
+        CursorUnlockRequestUtil.Request(this);
         StartCoroutine(ActivateInputNextFrame());
     }
 
@@ -258,6 +290,9 @@ public class InGameChatUI : NetworkBehaviour
     {
         _skipNextSubmit = true;
         yield return null;
+        // 1프레임 유예 사이에 CheerName 패널 등이 끼어들어 이미 CloseInput()으로 닫혔다면
+        // 여기서 도로 포커스를 뺏어오면 안 된다(RefocusNextFrame이 예전에 하던 것과 동일 가드).
+        if (!_inputOpen) yield break;
         if (inputField != null)
         {
             inputField.text = string.Empty;
@@ -272,30 +307,17 @@ public class InGameChatUI : NetworkBehaviour
         IsChatOpen = false;
         if (inputField     != null) { inputField.DeactivateInputField(); inputField.text = string.Empty; }
         if (chatInputPanel != null) chatInputPanel.SetActive(false);
+        CursorUnlockRequestUtil.Release(this);
 
         RestartAutoHide();
     }
 
     // ── 메시지 전송 ───────────────────────────────────────────────
 
-    void SendAndStay(string trimmed)
+    void SendChat(string trimmed)
     {
         TrySubmitCheer(trimmed);
-
         SendMessageServerRpc(trimmed);
-
-        if (inputField != null) inputField.text = string.Empty;
-        StartCoroutine(RefocusNextFrame());
-    }
-
-    IEnumerator RefocusNextFrame()
-    {
-        yield return null;
-        if (_inputOpen && inputField != null)
-        {
-            inputField.ActivateInputField();
-            EventSystem.current?.SetSelectedGameObject(inputField.gameObject);
-        }
     }
 
     // ── /cheer 파싱 ───────────────────────────────────────────────
@@ -431,22 +453,4 @@ public class InGameChatUI : NetworkBehaviour
         3 => colorDanho,
         _ => Color.white,
     };
-
-    static int GetMyColorIndex()
-    {
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-        {
-            ulong myId = NetworkManager.Singleton.LocalClientId;
-            // PlayerSpawnCoordinator(NetworkList) — 클라이언트에서도 레이스 없이 항상 최신값
-            if (PlayerSpawnCoordinator.TryGetColor(myId, out var color))
-                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
-        }
-        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
-        {
-            var net = p.GetComponent<NetworkObject>();
-            if ((net != null && net.IsOwner) || p.isOwnerControlled)
-                return System.Array.IndexOf(PlayerColorUtil.ColorOrder, p.playerColorType);
-        }
-        return -1;
-    }
 }

@@ -1,4 +1,3 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -6,9 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 테스트용 dev 전용 UI — 구 LobbyMenuController 스테이지 드롭다운을 Tutorial 게이트로 이전.
-/// Build Settings의 "Development Build" 체크 여부로 자동 on/off — 정식 출시(체크 해제) 빌드에는
-/// 이 파일 전체가 컴파일되지 않는다(TutorialNetworkManager의 대응 필드/메서드도 동일 조건).
+/// 스테이지 바로가기 UI — 구 LobbyMenuController 스테이지 드롭다운을 Tutorial 게이트로 이전.
+/// 2026-08-22 확정: Dev Build 여부와 무관하게 모든 빌드(Release 포함)에서 항상 사용 가능
+/// — Steam 베타 테스트 중 스테이지 스킵이 필요해서 완전 노출로 결정(TutorialNetworkManager도 동일).
 ///
 /// [배치 방법]
 /// Tutorial 씬에 빈 GameObject 하나 만들고 이 컴포넌트만 부착하면 끝.
@@ -176,4 +175,3 @@ public class TutorialDevStageJumpUI : MonoBehaviour
     static Color ParseColor(string hex) =>
         ColorUtility.TryParseHtmlString(hex, out var c) ? c : Color.gray;
 }
-#endif

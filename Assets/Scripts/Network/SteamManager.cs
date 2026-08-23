@@ -40,6 +40,16 @@ public class SteamManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // 온기동 버그 수정 (2026-08-22, SteamworksIntegrationDesign.md 트랙6 11차 세션):
+        // 이전엔 GameLocalizationBootstrap의 Steam 언어 조회가 Steam 초기화를 앞당기는 유일한
+        // 통로였다. 유저가 옵션에서 언어를 수동 저장하면 그 조회 자체를 건너뛰어(우선순위 0)
+        // 타이틀 화면 내내 Steam이 미초기화 상태로 남았고, 그 상태에서는 Update()의
+        // SteamClient.RunCallbacks()가 돌지 않아 Invite Overlay 수락 콜백이 로그 한 줄 없이
+        // 씹혔다. 다른 기능(언어 감지 등)과 무관하게 릴리스 경로에서는 여기서 직접 초기화한다 —
+        // 로컬 경로(①②)는 §5 "이 메서드를 호출하지 않는 것 자체가 스킵" 원칙 그대로 유지.
+        if (!NetworkManagerSetup.UseLocalNetworkPath)
+            EnsureInitialized();
     }
 
     void Update()

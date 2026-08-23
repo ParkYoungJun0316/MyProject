@@ -142,9 +142,16 @@ public class ThirdPersonCamera : MonoBehaviour
             _activePitchMax = maxPitch;
         }
 
-        Vector2 mouseDelta = Mouse.current.delta.ReadValue();
-        _yaw   += mouseDelta.x * _activeSensX;
-        _pitch  = Mathf.Clamp(_pitch - mouseDelta.y * _activeSensY, _activePitchMin, _activePitchMax);
+        // 마우스가 필요한 UI(Esc메뉴/이모트메뉴/치어네임패널/채팅 등)가 하나라도 떠서 커서가
+        // 풀려있는 동안엔 시점 회전을 멈춘다 — 특정 UI를 여기서 하드코딩해서 체크하지 않고
+        // CursorUnlockRequestUtil(커서 해제 요청의 SSOT) 하나만 보면 전부 커버된다
+        // (2026-08-22 수정 — 이전엔 InGameChatUI.IsChatOpen만 체크해서 나머지 UI는 안 걸렸음).
+        if (!CursorUnlockRequestUtil.IsRequested)
+        {
+            Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+            _yaw   += mouseDelta.x * _activeSensX;
+            _pitch  = Mathf.Clamp(_pitch - mouseDelta.y * _activeSensY, _activePitchMin, _activePitchMax);
+        }
 
         Quaternion targetRot = Quaternion.Euler(_pitch, _yaw, 0f);
 

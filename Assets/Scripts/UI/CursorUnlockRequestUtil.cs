@@ -25,6 +25,11 @@ public static class CursorUnlockRequestUtil
 {
     static readonly HashSet<object> _requesters = new();
 
+    /// <summary>지금 마우스가 필요한 UI(Esc메뉴/이모트메뉴/치어네임패널/채팅 등)가 하나라도 떠 있는지 —
+    /// 커서 해제 상태의 SSOT. ThirdPersonCamera 등 "이 UI 켜져있나?"를 개별로 알 필요 없이 이 값 하나만
+    /// 보면 되는 소비자가 쓴다(2026-08-22, 특정 UI를 하드코딩해서 체크하던 걸 이걸로 대체).</summary>
+    public static bool IsRequested => _requesters.Count > 0;
+
     /// <summary>이 UI가 커서 해제를 요청. 이미 다른 UI가 요청 중이어도 안전(중복 Add 무시).</summary>
     public static void Request(object requester)
     {

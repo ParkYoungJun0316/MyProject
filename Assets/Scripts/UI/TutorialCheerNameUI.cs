@@ -67,6 +67,14 @@ public class TutorialCheerNameUI : MonoBehaviour
     public static bool ConsumedEscThisFrame => s_escClosedFrame == Time.frameCount;
     static int s_escClosedFrame = -1;
 
+    /// <summary>이번 프레임에 Enter로 이름 확정을 시도했는지 — InGameChatUI가 같은 프레임에
+    /// 채팅을 열지 않도록 확인하는 명시적 플래그. Host 자체 테스트 등에서 ServerRpc 왕복이
+    /// 같은 프레임 안에 끝나 확정 성공과 동시에 IsOpen이 false로 바뀌어버리면, InGameChatUI가
+    /// "입력창 닫힌 상태에서 Enter"로 오인해 같은 물리 Enter로 채팅을 열어버리는 문제를 막는다
+    /// (ConsumedEscThisFrame과 동일 패턴, 2026-08-22 수정).</summary>
+    public static bool ConsumedEnterThisFrame => s_enterConfirmFrame == Time.frameCount;
+    static int s_enterConfirmFrame = -1;
+
     PlayerCheerNameSync _mySync;
     ulong _myClientId;
     string _lastShownName;
@@ -212,6 +220,7 @@ public class TutorialCheerNameUI : MonoBehaviour
     {
         if (_mySync == null || nameInputField == null) return;
 
+        s_enterConfirmFrame = Time.frameCount;
         _mySync.SubmitCheerNameServerRpc(new FixedString32Bytes(nameInputField.text));
         SetInteractable(false); // 응답 오기 전까지 중복 제출 방지
         ShowFeedback("확인 중...", persistent: true);

@@ -61,15 +61,10 @@ public class NetworkManagerSetup : MonoBehaviour
     /// <summary>가장 최근 StartHostSteam()에서 발급한 virtual port. Lobby 데이터에 실어 Client에 전달할 때 사용.</summary>
     public int LastHostVirtualPort { get; private set; }
 
-    // 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5·6 — "온기동" 이슈):
-    // 이 프로세스에서 StartHostSteam()/StartClientSteam() 중 하나라도 이미 성공적으로 호출된 적이
-    // 있으면(호스트였다가 종료 후 클라이언트로 전환하는 경우 포함), 이후 접속 시도는 NGO
-    // NetworkSceneManager의 씬 핸들이 이전 세션 것과 충돌해 "Server Scene Handle already exist!" +
-    // 연쇄 NullReferenceException을 유발하는 것으로 실측 확인됨(트랙6 세션10 — 호스트 종료 후
-    // 첫 Client 접속에서도 동일 크래시 재현. HasConnectedAsClientSteamThisProcess가 "Client로
-    // 접속한 적 있는지"만 보던 시절엔 이 케이스를 못 잡았음).
-    // 완전한 재현 방지를 위해 TitleMenuController가 이 플래그를 보고 두 번째 이상 네트워킹
-    // 시도부터는 인프로세스 접속 대신 프로세스 재시작(+connect_lobby)으로 우회한다.
+    // "웜 리커넥트는 항상 재시작" 정책의 판정 플래그(SteamworksIntegrationDesign.md 트랙6 확정).
+    // 이 프로세스에서 StartHostSteam()/StartClientSteam()이 한 번이라도 성공하면, 이후 접속
+    // 시도는 상류 Facepunch 트랜스포트 버그로 Server Scene Handle 충돌이 재현되므로 TitleMenuController가
+    // 이 플래그를 보고 인프로세스 재접속 대신 프로세스 재시작(+connect_lobby)으로 우회한다.
     private static bool s_hasStartedSteamNetworkingThisProcess;
 
     /// <summary>이 프로세스에서 StartHostSteam() 또는 StartClientSteam()이 이미 한 번이라도 성공한 적이 있는지.</summary>
@@ -84,9 +79,8 @@ public class NetworkManagerSetup : MonoBehaviour
 
     /// <summary>
     /// 현재 실행 파일을 <c>+connect_lobby &lt;lobbyId&gt;</c> 인자로 다시 실행하고 이 프로세스를 종료한다.
-    /// 새 프로세스는 검증된 "냉기동" 경로(TitleMenuController.TryAutoJoinFromLaunchArgs)를 그대로 타므로,
-    /// 같은 프로세스에서 Steam 릴레이 세션이 누적되어 생기는 중복 메시지 / Server Scene Handle 충돌을
-    /// 구조적으로 회피한다(SteamworksIntegrationDesign.md 트랙5·트랙6).
+    /// 새 프로세스는 검증된 "냉기동" 경로(TitleMenuController.TryAutoJoinFromLaunchArgs)를 그대로 타므로
+    /// 인프로세스 재접속의 Server Scene Handle 충돌을 구조적으로 회피한다(SteamworksIntegrationDesign.md 트랙6).
     /// 재실행 실패 시 false를 반환하고 프로세스를 유지한다 — 호출부가 폴백을 결정할 수 있다.
     /// </summary>
     public static bool RestartWithConnectLobby(SteamId lobbyId)
@@ -231,8 +225,6 @@ public class NetworkManagerSetup : MonoBehaviour
         int vport = s_nextVirtualPort++;
         steamTransport.virtualPort = vport;
 
-        SubscribeDiagCallbacksOnce();
-
         bool ok = _net.StartHost();
         if (ok)
         {
@@ -280,8 +272,6 @@ public class NetworkManagerSetup : MonoBehaviour
         steamTransport.targetSteamId = hostId;
         steamTransport.virtualPort   = virtualPort;
 
-        SubscribeDiagCallbacksOnce();
-
         bool ok = _net.StartClient();
         if (ok)
         {
@@ -319,54 +309,15 @@ public class NetworkManagerSetup : MonoBehaviour
             _net.NetworkConfig.NetworkTransport = _transport; // 다음 세션은 기본적으로 로컬 경로
     }
 
-    // ── 진단용 로그 (SteamworksIntegrationDesign.md 트랙5 — 로비 로스터 미갱신/중복 Connect 원인 확인용) ──
+    // ── 씬 이벤트 로그 (Steam 접속 후 씬 전환 추적용 — 트랜스포트 버그 재발 시 최소 단서) ──
 
-    private bool _diagSubscribed;
-
-    /// <summary>
-    /// NGO의 원본 OnClientConnectedCallback/OnClientDisconnectCallback을 LobbyNetworkManager와
-    /// 무관하게 직접 후킹 — 구독 타이밍 문제(LobbyNetworkManager가 늦게 구독해서 이벤트를 놓치는지)와
-    /// 무관하게 NGO가 실제로 이 콜백을 몇 번, 언제 호출하는지 그 자체를 확인하기 위한 진단 전용 로그.
-    /// 여러 번 Start/Shutdown을 반복해도 중복 구독되지 않도록 1회만 구독.
-    /// </summary>
-    private void SubscribeDiagCallbacksOnce()
-    {
-        if (_diagSubscribed || _net == null) return;
-        _net.OnClientConnectedCallback    += DiagOnClientConnected;
-        _net.OnClientDisconnectCallback   += DiagOnClientDisconnected;
-        _diagSubscribed = true;
-    }
-
-    private void DiagOnClientConnected(ulong clientId)
-    {
-        Debug.Log($"[NetworkManagerSetup][DIAG] OnClientConnectedCallback — clientId={clientId}, " +
-                  $"IsHost={_net.IsHost}, IsClient={_net.IsClient}, LocalClientId={_net.LocalClientId}, " +
-                  $"ConnectedClients.Count={_net.ConnectedClients.Count}, " +
-                  $"ConnectedClientsIds=[{string.Join(",", _net.ConnectedClientsIds)}]");
-    }
-
-    private void DiagOnClientDisconnected(ulong clientId)
-    {
-        Debug.Log($"[NetworkManagerSetup][DIAG] OnClientDisconnectCallback — clientId={clientId}, " +
-                  $"IsHost={_net.IsHost}, IsClient={_net.IsClient}, LocalClientId={_net.LocalClientId}, " +
-                  $"ConnectedClients.Count={_net.ConnectedClients.Count}");
-    }
-
-    // NGO NetworkSceneManager는 세션(StartHost/StartClient)마다 새로 만들어지므로, OnClientConnectedCallback류와
-    // 달리 매번 다시 구독해야 한다. 직전에 구독한 SceneManager 인스턴스를 기억해뒀다가 중복 구독을 막는다.
-    // "온기동" 진단 목적: 접속(StartClientSteam=true)까지는 됐는데 로비 씬 전환이 어디서 멈추는지
-    // 지금까지 로그로 전혀 안 보였던 구간 — Load/LoadComplete/Synchronize/SynchronizeComplete 등
-    // 이벤트가 실제로 오가는지, 어느 단계까지 오고 그 다음이 끊기는지를 그대로 보여준다.
+    // NetworkSceneManager는 세션(StartHost/StartClient)마다 새로 만들어지므로 매번 다시 구독해야 한다.
+    // 직전에 구독한 인스턴스를 기억해뒀다가 중복 구독을 막는다.
     private Unity.Netcode.NetworkSceneManager _diagSceneManagerSubscribed;
 
     private void SubscribeSceneDiag()
     {
-        if (_net == null || _net.SceneManager == null)
-        {
-            Debug.LogWarning("[NetworkManagerSetup][DIAG] SubscribeSceneDiag — _net.SceneManager가 null이라 씬 이벤트 구독 실패.");
-            return;
-        }
-
+        if (_net == null || _net.SceneManager == null) return;
         if (_diagSceneManagerSubscribed == _net.SceneManager) return; // 이 세션에서 이미 구독함
 
         if (_diagSceneManagerSubscribed != null)
@@ -374,14 +325,12 @@ public class NetworkManagerSetup : MonoBehaviour
 
         _net.SceneManager.OnSceneEvent += DiagOnSceneEvent;
         _diagSceneManagerSubscribed = _net.SceneManager;
-        Debug.Log("[NetworkManagerSetup][DIAG] SceneManager.OnSceneEvent 구독 완료.");
     }
 
     private void DiagOnSceneEvent(SceneEvent sceneEvent)
     {
-        Debug.Log($"[NetworkManagerSetup][DIAG][SceneEvent] Type={sceneEvent.SceneEventType}, " +
-                  $"SceneName={sceneEvent.SceneName}, ClientId={sceneEvent.ClientId}, " +
-                  $"LoadSceneMode={sceneEvent.LoadSceneMode}");
+        Debug.Log($"[NetworkManagerSetup][SceneEvent] Type={sceneEvent.SceneEventType}, " +
+                  $"SceneName={sceneEvent.SceneName}, ClientId={sceneEvent.ClientId}");
     }
 
     // ── Connection Approval ───────────────────────────────────────
@@ -398,9 +347,9 @@ public class NetworkManagerSetup : MonoBehaviour
         resp.Pending           = false;
 
         if (approved)
-            Debug.Log($"[NetworkManagerSetup][DIAG] 접속 승인 — clientId={req.ClientNetworkId}, 현재 {current}명 → {current + 1}명 / 최대 {maxConnections}명");
+            Debug.Log($"[NetworkManagerSetup] 접속 승인 — clientId={req.ClientNetworkId}, 현재 {current}명 → {current + 1}명 / 최대 {maxConnections}명");
         else
-            Debug.Log($"[NetworkManagerSetup][DIAG] 접속 거부 — clientId={req.ClientNetworkId}, 현재 {current}명 / 최대 {maxConnections}명");
+            Debug.Log($"[NetworkManagerSetup] 접속 거부 — clientId={req.ClientNetworkId}, 현재 {current}명 / 최대 {maxConnections}명");
     }
 
     // ── 프로퍼티 ──────────────────────────────────────────────────

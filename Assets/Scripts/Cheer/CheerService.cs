@@ -233,6 +233,10 @@ public class CheerService : NetworkBehaviour
     {
         if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return false;
 
+        // 이번 세션에 실제로 접속 중인 색만 타겟 가능 — 인원수(<4)만큼만 색이 쓰이므로
+        // 미사용 슬롯(예: 3인 세션의 Yellow/hobak)은 음성/채팅이 잘못 인식해도 표에 반영되지 않는다.
+        if (!PlayerSpawnCoordinator.IsColorInSession(PlayerColorUtil.ColorOrder[targetColorIndex])) return false;
+
         // 자기 자신 응원 불가 (단, 1인 세션에서는 허용).
         // 색 조회(TryGetColor) 실패 시 자기 응원 여부를 확정할 수 없으므로 안전하게 거부한다
         // (fail-closed — 조회 실패를 "자기 응원 아님"으로 취급해 통과시키면 안 됨).

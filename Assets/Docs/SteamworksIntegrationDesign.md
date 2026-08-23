@@ -1,9 +1,12 @@
-# Steamworks 연동 · 다국어 — 확정 기준 (2026-08-04 전략적 결정 11개 확정 + 트랙 1~3 구현·스모크 테스트 완료, 2026-08-05 트랙 4 다국어 파일럿 완료, 2026-08-06/07 트랙 5 Depot 실사용 스모크 테스트 — 버그 4건 발견, 2026-08-07 2차 세션 이슈 A 수정 + 3차 세션 이슈 D 근본원인 수정·이슈 B 절반 수정 + 4차 세션 이슈 D 실제 수정(virtual port)·이슈 E 신규 발견·수정·이슈 F 신규 발견 + 5차 세션 이슈 F 진짜 원인 확정·유령슬롯 근본수정·이슈 B 온기동 프로세스 재시작 우회 구현 + 6차 세션 이슈 B 온기동 진짜 근본원인 확정·수정 완료·사용자 검증 통과 — 트랙 5 전 이슈 종료 + **2026-08-12 트랙 6 재개 — 4인 Depot 실사용 테스트에서 크래시 + 온기동 재발 보고, 6차 세션 컨텍스트 소진으로 인계 → 7차 세션에서 크래시 원인 확정(D3D12 디바이스 제거, 크래시 덤프 8건으로 증명·"D3D11도 실패" 보고는 구빌드 오데이터로 정정) + 온기동 근본원인 확정·수정 완료(로비 씬에서 초대 이벤트 소멸) — 둘 다 친구/2인 재검증 대기** + **2026-08-13 8차 세션 — 크래시 진짜 원인 확정: 친구 크래시는 D3D12가 아니라 비ASCII(한글) 사용자명 경로에서 libvosk가 모델을 열지 못한 것. 재현 성공(companyName 한글화) + 수정 완료(모델을 StreamingAssets에 풀린 상태로 배포, 런타임 압축 해제 제거, 네이티브 핸들 NULL 검증, 실패 시 음성 인식만 비활성화). 7차 세션의 "D3D12 단독 원인" 결론 정정 — 크래시는 두 종류였다. 한글 사용자명 친구 재검증 대기** + **2026-08-13 밤 9차 세션 — 4인 실사용 재발 보고(온기동 여전히 실패) 후 "공개 방 목록" 아이디어 논의 → 코드 직접입력도 초대와 동일하게 실패한다는 사실 확인, 방 목록은 같은 파이프라인을 공유해 우회책이 안 됨을 근거로 제시하고 보류 → 대신 접속 실패 지점을 특정하기 위한 진단 로그/정체 감지 워치독을 3개 파일에 계측만 추가(코드 수정 없음), 2계정(본인+부계정 B) 재현 대기**)
+# Steamworks 연동 · 다국어 — 확정 기준
+
+**상태 요약:** 전략적 결정 11개(§1~§11) 확정 + 트랙 1~4(부트스트랩/Transport/Lobby/다국어) 구현 완료. 트랙 5(2인 Depot 스모크, 버그 A~F)는 전부 해결·검증 완료된 종료 히스토리. 트랙 6(4인 실사용, 크래시·온기동 재발)도 12차 세션까지 전부 해결 완료 — 상세 경위는 아래 각 트랙 세션 절 참고. **다음 에이전트는 바로 아래 포인터 블록만 읽고 시작할 것.**
 
 > ## ⭐⭐⭐ 다음 에이전트(새 채팅) 시작 지침 — 여기부터 읽을 것
 >
-> **트랙 6 10차 세션이 최신 — 맨 아래 "트랙 6 — 10차 세션" 절부터 읽을 것.**
-> 0. 10차 세션에서 온기동/코드입력 공통 실패의 근본 원인을 확정하고 수정 완료했다("호스트 종료 후 같은 프로세스에서 첫 클라이언트 접속" 시 NGO 씬 핸들 충돌 — `Server Scene Handle already exist!`). 다음 세션은 재현 검증 결과부터 받을 것.
+> **트랙 6 12차 세션이 최신 — 맨 아래 "트랙 6 — 12차 세션" 절부터 읽을 것.**
+> -1. 12차 세션은 **코드 정리만** — 동작 변경 없음. 9차 세션에서 추가했던 진단 전용 계측(`JoinWatchdog` 워치독, `[DIAG]` 태그 로그, `SubscribeDiagCallbacksOnce`류)을 제거했다. 혹시 예전 로그에서 `[DIAG]`/`WATCHDOG` 태그를 찾고 있다면 이제 코드에 없다 — 정상.
+> 0. 11차 세션에서 전략을 바꿨다 — "Host 종료 후 같은 프로세스 재접속"은 더 이상 버그가 아니라 **프로세스 재시작이 정상 동작인 정책**으로 확정(상류 Facepunch 트랜스포트 패키지의 미해결 버그, contrib#267 때문에 인프로세스 재접속 자체가 구조적으로 안전하지 않음을 확인). 10차 세션의 재시작 아키텍처는 그대로 유지·정식화. 대신 이번 세션엔 그것과 무관한 온기동 신규 원인 2건(언어설정이 Steam 초기화를 스킵시킴 / Tutorial 게이트 전 초대 구독 누락)을 찾아 수정 완료 — **다음 세션은 11차 세션 절의 Verify 4항목 결과부터 받을 것 (아직 사용자 검증 대기 중).**
 > 1. 트랙 5(6차 세션까지)는 전부 해결 확인된 히스토리 — 재조사 불필요.
 > 2. **크래시는 두 종류였다 (8차 세션에서 정정 — 7차 세션의 "D3D12 단독 원인" 결론은 절반만 옳았다):**
 >    - ① 호스트 PC **"실행 직후"** = D3D12 디바이스 제거(덤프 8건으로 증명). **D3D11 고정으로 조치 — 유지한다.**
@@ -1049,3 +1052,66 @@ Select-String -Path "$env:USERPROFILE\AppData\LocalLow\DefaultCompany\Kkul-tteok
 1. **온기동/코드입력 공통 실패 — 원인 확정·수정 완료.** "호스트 종료 후 같은 프로세스에서 첫 클라이언트 접속" 케이스가 재시작 가드에서 빠져있던 게 원인. 다음 세션은 위 Verify 시나리오 재현 결과부터 받을 것.
 2. **공개 방 목록 — 여전히 보류.** 이번 접속 버그 수정이 검증된 뒤 재개.
 3. 크래시(D3D12)/한글 사용자명 libvosk 이슈(8차 세션) — 이번 세션과 무관, 상태 변경 없음.
+
+## 트랙 6 — 11차 세션 (2026-08-22): "재접속=프로세스 재시작" 정책 확정 + 온기동 신규 원인 2건 수정
+
+### 전략적 결정 — 트랜스포트 자체 패치는 보류, "Host 종료 후 인프로세스 재접속"은 더 이상 버그로 취급하지 않음
+
+10차 세션 수정(Verify 미완료 상태)의 근본 전제를 재검토했다. 웹 조사 결과, 우리가 겪어온 `Server Scene Handle already exist`/중복 접속 메시지 계열 문제는 이 프로젝트만의 문제가 아니라 **`com.community.netcode.transport.facepunch`(현재 버전 2.0.0, 내장 Facepunch.Steamworks 2.3.2 — 2020년 버전) 자체의 공개된 상류 버그**임을 확인했다:
+
+- [multiplayer-community-contributions#267 "Facepunch: SteamClient.Shutdown does not work"](https://github.com/Unity-Technologies/multiplayer-community-contributions/issues/267) (2026-02 등록, **아직 미해결**) — 우리가 "재접속 시 SteamClient.Shutdown()을 호출하지 않는다"는 우회를 만들게 된 근본 원인과 정확히 일치.
+- [NGO#2704](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/2704) / [contrib#245](https://github.com/Unity-Technologies/multiplayer-community-contributions/issues/245) — Steam 트랜스포트가 접속/해제 메시지를 중복 전달해 NGO가 씬 핸들 충돌을 일으키는 것으로 NGO 팀이 공식 확인(써드파티 트랜스포트 버그로 분류, NGO 코어 이슈 아님).
+- [contrib#264 "Update Facepunch Transport to Facepunch.Steamworks 2.4.1"](https://github.com/Unity-Technologies/multiplayer-community-contributions/issues/264) (2025-08, 아직 열림) — 번들 라이브러리가 6년째 구버전인 것도 커뮤니티 공통 불만.
+
+**사용자 결정:** "Host가 방을 폭파한 뒤 같은 프로세스에서 바로 Client로 재접속"은 정상 동작에서 지원하지 않는다 — 재시작이 필요한 것을 의도된 동작으로 확정한다(위 트랜스포트 패키지 자체의 미해결 버그이므로, 우리 쪽에서 억지로 인프로세스 재접속을 되살리려 하지 않는다). 트랜스포트 버전 패치(2.3.2→2.4.1 교체)도 이번엔 보류 — ① 그 패치가 `SteamClient.Shutdown` 버그(#267)를 고쳐준다는 근거가 없고 ② 현재 버전으로 일반 플레이(2~4인 세션, 스폰/데미지/씬 전환)는 이미 정상 동작 중이라 지금 당장 올릴 필요가 없다. 10차 세션에서 구현한 `HasStartedSteamNetworkingThisProcess` + 프로세스 재시작 아키텍처(`TryRestartForWarmReconnect`/`RestartWithConnectLobby`)는 **임시 우회가 아니라 이 트랜스포트를 쓰는 한 계속 유지할 정식 정책**으로 격상한다. 재시작 발생 시 창이 잠깐 재실행되는 지연(수백 ms~1초)은 유저 안내(로딩 문구 등)로 대응하되, 이번 세션 범위 밖.
+
+### 온기동 신규 원인 2건 — 위 트랜스포트 이슈와 무관한 별개의 앱 코드 버그, 수정 완료
+
+Bug Hunter 진단 결과, 이번에 사용자가 재보고한 "타이틀에서 온기동 안 됨"은 트랜스포트 문제가 아니라 **`1.Lobby` 폐지(2026-08-17) 이후 이관되지 않은 앱 로직 두 군데**였다.
+
+**원인 1 — 언어 자동감지 경로가 Steam 초기화를 사실상 독점.** `GameLocalizationBootstrap.ApplyStartupLocale()`이 Steam 언어를 읽으려고 호출하는 `SteamManager.EnsureInitialized()`가, 릴리스 경로에서 Steam을 앞당겨 켜는 유일한 통로였다. 유저가 옵션 메뉴에서 언어를 수동 저장해두면 이 경로 자체를(우선순위 0 — 수동값이 있으면 자동감지 스킵) 건너뛰어, 타이틀 화면 내내 Steam이 미초기화 상태로 남는다. `SteamManager.Update()`는 `IsInitialized`일 때만 `SteamClient.RunCallbacks()`를 돌리므로, 미초기화 상태에서는 `SteamFriends.OnGameLobbyJoinRequested` 콜백 자체가 게임에 전달되지 않는다 — 로그 한 줄도 안 남고 초대가 씹힘.
+
+- **Cause site:** `Assets/Scripts/Localization/GameLocalizationBootstrap.cs` `ApplyStartupLocale()`(수동 locale 우선순위 분기), `Assets/Scripts/Network/SteamManager.cs` `Update()`(Init 전 콜백 펌프 없음).
+- **수정:** `SteamManager.Awake()`에서 `!NetworkManagerSetup.UseLocalNetworkPath`면 다른 기능과 무관하게 `EnsureInitialized()`를 직접 호출하도록 변경. 로컬 경로(①②)는 기존처럼 호출 자체를 안 함(§5 스킵 원칙 유지). `GameLocalizationBootstrap`의 기존 호출은 idempotent라 그대로 둬도 안전.
+
+**원인 2 — Tutorial 사전 게이트 구간 초대 수락 구독 누락.** 7차 세션에서 `LobbyMenuController`에 구현했던 "로비에 있을 때도 초대 수락 가능"(`OnInviteAccepted` 구독 → 기존 방 정리 → 재접속) 로직이, `1.Lobby` 폐지로 `LobbyMenuController` 자체가 삭제되면서 **Tutorial 쪽으로 이관되지 않고 통째로 유실**됐다. `NetworkDesign.md` §6B.5는 "게이트 통과 전까지 수락 가능"이라고 명시하지만, 실제로 그 구간을 담당하는 `TutorialSteamInviteUI`는 초대를 보내는(오버레이 열기) 기능만 있고 받는 기능이 없었다.
+
+- **Cause site:** `Assets/Scripts/UI/TutorialSteamInviteUI.cs`(구독 자체가 없음), 구 `Assets/Scripts/UI/LobbyMenuController.cs`(삭제됨, 대체 없음).
+- **수정:** `TutorialSteamInviteUI`에 `OnEnable`/`OnDisable`로 `SteamLobbyManager.OnInviteAccepted` 구독을 추가. 수락 시 `NetworkManagerSetup.Instance.Shutdown()`(NGO 종료 + 기존 Lobby leave, 별도 TitleReturnFlow 씬 전환 없이 바로) → `NetworkManagerSetup.RestartWithConnectLobby(lobbyId)`(프로세스 재시작, 위 정책과 동일 경로)로 이동. `_invitePending` 가드로 중복 수락 차단. 게이트 통과 후 무시는 별도 상태 분기 없이 — `TutorialHUDGate`가 게이트 완료 시 이 컴포넌트가 속한 Steam HUD 패널을 `SetActive(false)`하면 `OnDisable`이 자동으로 구독을 해제해 자연스럽게 성립.
+
+**Verify (다음 세션/사용자):** 릴리스(Steam) 빌드, 옵션에서 언어를 수동 저장해둔 계정 기준 — ① 방을 만든 적 없는 최초 타이틀 화면에서 초대 Accept → 정상 Tutorial 스폰 ② Tutorial 게이트 통과 전(대기 중) 초대 Accept → 기존 방 정리 후 재시작을 거쳐 새 방으로 이동 ③ 게이트 통과 후(M/T 진입) 수락은 여전히 무시되는지 ④ 냉기동(`+connect_lobby`) 회귀 없는지.
+
+**Files changed (이번 세션):** `Assets/Scripts/Network/SteamManager.cs`, `Assets/Scripts/UI/TutorialSteamInviteUI.cs`, `Assets/Docs/SteamworksIntegrationDesign.md`.
+
+**Files read (이번 세션):** `Assets/Docs/NetworkDesign.md`(§4.2·§5·§6B.5·FAQ·§9.1.3), 본인 PC `Player.log`/`Player-prev.log`(Kkul-tteok! Steam 빌드), `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/SteamLobbyManager.cs`, `Assets/Scripts/Network/SteamManager.cs`(수정 전), `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/Localization/GameLocalizationBootstrap.cs`, `Assets/Scripts/UI/TutorialSteamInviteUI.cs`(수정 전), `Assets/Scripts/UI/TutorialHUDGate.cs`, `Assets/Scripts/Network/TutorialNetworkManager.cs`, `Assets/Scripts/Flow/TitleReturnFlow.cs`, `Assets/Scenes/Tutorial.unity`(HUD 계층 확인), 웹 검색(multiplayer-community-contributions #267/#264/#245/#239/#217, NGO #2704/#2601/#2781/#2797, Facepunch vs SteamNetworkingSockets 비교).
+
+---
+
+## 트랙 6 — 12차 세션 (2026-08-22): 전체 코드 정리 — 진단 계측 제거 + 회고 주석 축약
+
+11차 세션에서 온기동 실제 버그 2건을 수정 완료한 뒤, 사용자가 "버그 찾는 과정에서 쌓인 임시 코드를 전체적으로 정리해달라"고 요청. **동작 변경 없음** — 로그·주석만 정리.
+
+### 제거한 것 — 목적을 다한 진단 전용 계측
+
+원인 규명이 끝난 문제를 조사하려고 9차 세션(§"진단 로그 + 정체 감지 워치독")·트랙5에서 심어둔 임시 계측. 재시작 정책(11차 세션)으로 근본 우회가 확정된 지금은 불필요:
+
+- `TitleMenuController.JoinWatchdog` 코루틴 + `Stopwatch` 타이밍 로그 — "씬 전환이 어디서 멈추는지" 찾던 정체 감지용, 원인(트랜스포트 중복 메시지) 확정됐으므로 삭제.
+- `TitleMenuController`/`NetworkManagerSetup`의 `[DIAG]` 태그 로그 다수 — 평상시 운영 로그 수준으로 축약(태그 제거, 핵심 상태만 남김).
+- `NetworkManagerSetup.SubscribeDiagCallbacksOnce`/`DiagOnClientConnected`/`DiagOnClientDisconnected` — "NGO가 OnClientConnected를 몇 번 호출하는지" 확인용 진단 전용 로그, 완전 삭제(연결 수 변화는 `ApproveConnection` 로그로 이미 충분히 보임).
+- `NetworkManagerSetup.SubscribeSceneDiag`/`DiagOnSceneEvent` — 씬 전환 이벤트 추적은 향후 트랜스포트 재발 시에도 최소 단서로 유용해 **완전 삭제 대신 최소화**: 태그에서 `[DIAG]` 제거, 로그 1줄로 축약, 거대 설명 주석 축약(사용자 결정).
+
+### 축약한 것 — 코드에 박힌 세션 회고 주석
+
+`TryRestartForWarmReconnect`/`JoinGameSteamAsync`/`s_hasStartedSteamNetworkingThisProcess`/`RestartWithConnectLobby`의 다중 문단짜리 "트랙5 세션10에서 실측 확인됨..." 식 주석을 1~2줄 핵심 + 이 문서 링크로 축약. 상세 조사 경위는 이 문서(트랙5·6 각 세션 절)에만 남기고, 코드 주석은 "왜 이 분기가 필요한지"만 남긴다.
+
+### 문서(이 파일) 정리
+
+최상단 제목의 거대한 한 줄 요약(모든 세션 이력을 이어붙인 문장)을 짧은 상태 요약으로 교체 — 상세 이력은 어차피 각 트랙 세션 절에 이미 있어 중복이었음. 포인터 블록은 유지(다음 에이전트 진입점으로 계속 필요).
+
+### 유지한 것 (정리 대상 아님)
+
+- `s_hasStartedSteamNetworkingThisProcess` 플래그, `TryRestartForWarmReconnect`, `RestartWithConnectLobby` — 실제 동작하는 정책 로직, 그대로 유지.
+- `roomCodeInputField`/`joinPanel` 등 로컬(①②) 경로 전용 UI — 죽은 코드 아님, 로컬 경로에서 계속 사용.
+- 11차 세션 수정분(`SteamManager.Awake()`, `TutorialSteamInviteUI` 초대 구독) — 로직 변경 없이 그대로.
+
+**Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Docs/SteamworksIntegrationDesign.md`.

@@ -154,24 +154,17 @@ public class TitleMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 이 프로세스에서 이미 Steam 네트워킹(호스트든 클라이언트든)을 시작한 적이 있으면(=이번이 2번째
-    /// 이상 시도, 혹은 호스트로 방을 열었다 종료한 뒤 처음 접속하는 경우) 게임을
-    /// <c>+connect_lobby &lt;lobbyId&gt;</c> 인자로 재실행하고 현재 프로세스를 종료한다.
-    /// 재시작이 곧 "냉기동" 경로를 그대로 다시 타는 것이므로, SteamNetworkingSockets 릴레이 세션 /
-    /// NGO NetworkSceneManager 씬 핸들이 누적되어 발생하는 중복 메시지·Server Scene Handle 충돌을
-    /// 근본적으로 회피한다.
-    /// 재시작 트리거 시 true 반환(호출부는 곧바로 return해야 함). 재실행 실패 시 false를 반환해
-    /// 인프로세스 접속으로 폴백한다.
+    /// 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있으면 인프로세스 재접속 대신
+    /// <c>+connect_lobby &lt;lobbyId&gt;</c>로 프로세스를 재시작한다 — "웜 리커넥트는 항상 재시작"
+    /// 정책(SteamworksIntegrationDesign.md 트랙6 11차 세션 확정, 상류 Facepunch 트랜스포트 버그 회피).
+    /// 재시작 트리거 시 true(호출부는 곧바로 return). 재실행 실패 시 false — 인프로세스 접속 폴백.
     /// </summary>
     static bool TryRestartForWarmReconnect(SteamId lobbyId)
     {
-        Debug.Log($"[TitleMenuController][DIAG] TryRestartForWarmReconnect 진입 — lobbyId={lobbyId}, " +
-                  $"HasStartedSteamNetworkingThisProcess={NetworkManagerSetup.HasStartedSteamNetworkingThisProcess}");
-
         if (!NetworkManagerSetup.HasStartedSteamNetworkingThisProcess) return false;
 
         Debug.Log($"[TitleMenuController] 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있음 — " +
-                  $"트랜스포트 중복 메시지/씬 핸들 충돌 버그 회피를 위해 프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
+                  $"프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
 
         if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId)) return true;
 
@@ -331,55 +324,32 @@ public class TitleMenuController : MonoBehaviour
         _discoveryTimeoutCoroutine = StartCoroutine(DiscoveryTimeout());
     }
 
-    /// <param name="source">
-    /// 진단용 태그 — 어느 진입 경로에서 호출됐는지 로그로 구분하기 위함
-    /// ("온기동초대"/"코드입력"/"냉기동"). 실제 로직 분기에는 쓰이지 않는다.
-    /// </param>
+    /// <param name="source">로그 구분용 태그("온기동초대"/"냉기동"). 로직 분기에는 쓰이지 않는다.</param>
     async System.Threading.Tasks.Task JoinGameSteamAsync(SteamId lobbyId, string source = "미상")
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync 진입 — source={source}, lobbyId={lobbyId}, " +
-                  $"HasStartedSteamNetworkingThisProcess={NetworkManagerSetup.HasStartedSteamNetworkingThisProcess}");
+        Debug.Log($"[TitleMenuController] JoinGameSteamAsync — source={source}, lobbyId={lobbyId}");
 
-        // "온기동" 트랜스포트 중복 메시지 버그 우회(SteamworksIntegrationDesign.md 트랙5·6):
-        // 이 프로세스에서 이미 한 번이라도 Steam 네트워킹(호스트든 클라이언트든)을 시작한 적이
-        // 있으면, 인프로세스 재접속은 Server Scene Handle 충돌로 항상 실패하는 것으로 실측 확인됨
-        // (호스트 종료 후 첫 Client 접속도 포함 — 트랙6 세션10). 검증된 "냉기동" 경로
-        // (+connect_lobby 커맨드라인 재실행)로 우회한다.
+        // 웜 리커넥트는 항상 재시작(SteamworksIntegrationDesign.md 트랙6 확정 정책) — 인프로세스
+        // 재접속은 상류 Facepunch 트랜스포트 버그로 Server Scene Handle 충돌이 재현됨.
         if (TryRestartForWarmReconnect(lobbyId))
-        {
-            Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, 프로세스 재시작 경로로 위임" +
-                      $"({sw.ElapsedMilliseconds}ms 경과, 이 프로세스는 곧 종료됨)");
             return;
-        }
 
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
-            Debug.LogError($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, " +
+            Debug.LogError($"[TitleMenuController] JoinGameSteamAsync — source={source}, " +
                            "SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
             SetJoinStatus("Failed to join.");
             return;
         }
 
-        // 정체(먹통) 감지용 워치독 — timeoutSeconds 안에 로비 씬으로 전환 안 되면 전체 상태를 한 번에 덤프.
-        // 접속이 성공하면 0.Title 씬이 언로드되며 이 컴포넌트 자체가 파괴돼 코루틴이 조용히 멈춘다(정상, 별도 성공 로그 없음).
-        StartCoroutine(JoinWatchdog(source, lobbyId));
-
         try
         {
-            Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, JoinLobbyAsync 호출 시작 " +
-                      $"({sw.ElapsedMilliseconds}ms 경과)");
             Steamworks.Data.Lobby? lobby = await SteamLobbyManager.Instance.JoinLobbyAsync(lobbyId);
-            Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, JoinLobbyAsync 반환 " +
-                      $"({sw.ElapsedMilliseconds}ms 경과) — lobby={(lobby.HasValue ? lobby.Value.Id.ToString() : "null")}");
             if (lobby == null)
             {
                 SetJoinStatus("Room not found.");
                 return;
             }
-
-            Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, " +
-                      $"Lobby 멤버 {lobby.Value.MemberCount}/{lobby.Value.MaxMembers}, Owner={lobby.Value.Owner.Id}");
 
             if (joinPanel != null) joinPanel.SetActive(false);
 
@@ -392,39 +362,13 @@ public class TitleMenuController : MonoBehaviour
 
             // 로컬 경로와 동일하게 StartClient 후 씬 전환은 NGO SceneManager가 자동 처리 — 수동 LoadScene 금지.
             bool ok = NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id, vport);
-            Debug.Log($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, StartClientSteam 반환 " +
-                      $"({sw.ElapsedMilliseconds}ms 경과) — ok={ok}, virtualPort={vport}. " +
-                      "이후 씬 전환 진행 상황은 [NetworkManagerSetup][DIAG][SceneEvent] 로그로 추적됨.");
+            Debug.Log($"[TitleMenuController] JoinGameSteamAsync — source={source}, StartClientSteam ok={ok}, virtualPort={vport}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[TitleMenuController][DIAG] JoinGameSteamAsync — source={source}, 예외 " +
-                           $"({sw.ElapsedMilliseconds}ms 경과) — {e}");
+            Debug.LogError($"[TitleMenuController] JoinGameSteamAsync — source={source}, 예외 — {e}");
             SetJoinStatus("Failed to join.");
         }
-    }
-
-    /// <summary>
-    /// 접속 시도 후 일정 시간 안에 로비 씬(<see cref="lobbySceneName"/>)으로 전환됐는지 확인하는 정체 감지 워치독.
-    /// 성공하면 0.Title 씬이 언로드되며 이 컴포넌트가 파괴돼 코루틴이 조용히 중단되므로 별도 성공 로그는 없다.
-    /// 실패(정체)했을 때만 전체 네트워크/Steam 상태를 한 번에 덤프해서, 다음 재현에서 로그 한 번으로
-    /// 실패 지점을 좁힐 수 있게 한다("초대"/"코드입력"/"냉기동" 중 어느 source에서도 동일하게 동작).
-    /// </summary>
-    IEnumerator JoinWatchdog(string source, SteamId lobbyId, float timeoutSeconds = 10f)
-    {
-        yield return new WaitForSeconds(timeoutSeconds);
-
-        var net = NetworkManager.Singleton;
-        Debug.LogWarning(
-            $"[TitleMenuController][DIAG][WATCHDOG] source={source}, lobbyId={lobbyId} — " +
-            $"{timeoutSeconds}s 경과했는데도 '{lobbySceneName}' 씬으로 전환되지 않음(정체 의심). " +
-            $"ActiveScene={SceneManager.GetActiveScene().name}, " +
-            $"NGO.IsListening={(net != null ? net.IsListening.ToString() : "null")}, " +
-            $"NGO.IsConnectedClient={(net != null ? net.IsConnectedClient.ToString() : "null")}, " +
-            $"NGO.LocalClientId={(net != null ? net.LocalClientId.ToString() : "null")}, " +
-            $"NGO.ConnectedClients.Count={(net != null ? net.ConnectedClients.Count.ToString() : "null")}, " +
-            $"SteamLobby.IsInLobby={SteamLobbyManager.Instance?.IsInLobby}, " +
-            $"HasStartedSteamNetworkingThisProcess={NetworkManagerSetup.HasStartedSteamNetworkingThisProcess}");
     }
 
     /// <summary>
