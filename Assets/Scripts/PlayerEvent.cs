@@ -6,7 +6,7 @@ public class PlayerEvents : MonoBehaviour
     public event Action<bool> OnBlackWhiteChanged; // true=black
     public event Action<bool> OnDamaged;           // bool isBossAtk
     public event Action OnDied;
-    public event Action OnInstantKilled;           // 즉사 판정 (doFall 애니와 동시)
+    public event Action OnInstantKilled;           // 즉사 판정 (doDie 애니와 동시)
     public event Action OnFallDeath;               // 추락 사망 애니 시작 시점
     public event Action OnRespawned;
     public event Action<int> OnUniqueColorChanged; // -1=해제, 그 외=고유색 활성

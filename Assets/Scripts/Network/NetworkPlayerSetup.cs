@@ -431,7 +431,27 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _rb?.AddForce(direction * force, ForceMode.Impulse);
     }
 
-    // ── 문 즉사 (Fall 애니로 통일) ──────────────────────────────────
+    /// <summary>
+    /// Host에서 직접 호출해 Punch 피격 연출(doPunchHit)만 요청. HP·넉백과 완전히 분리(연출 전용).
+    /// PlayerPunch.TryRegisterHit(대상의 NetworkPlayerSetup)에서 사용.
+    /// </summary>
+    public void NotifyPunchHitFromServer()
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead) return;
+
+        NotifyPunchHitClientRpc();
+    }
+
+    /// <summary>오너 클라이언트에 Punch 피격 연출만 전달. HP·데미지와 무관.</summary>
+    [ClientRpc]
+    void NotifyPunchHitClientRpc()
+    {
+        if (!IsOwner) return;
+        _player?.PlayPunchHitReaction();
+    }
+
+    // ── 문 즉사 (Die 애니로 통일) ──────────────────────────────────
 
     /// <summary>
     /// 서버에서 즉사 확정. HP를 0으로 내리고 Owner에게 KillInstantly() 전달.
@@ -445,7 +465,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         ForceInstantKillClientRpc();
     }
 
-    /// <summary>오너 클라이언트에 즉사(Fall 애니) 전달. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
+    /// <summary>오너 클라이언트에 즉사(Die 애니) 전달. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
     [ClientRpc]
     void ForceInstantKillClientRpc()
     {
@@ -518,8 +538,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>
-    /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doFall 애니, Jammed/Die와 통일).
-    /// doFall 애니는 Owner Update에서 낙하 중에도 이미 1회 재생됐으므로 여기서는 기본 사망 처리만.
+    /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doDie 애니로 통일).
+    /// doDie 애니는 Owner Update에서 낙하 중에도 이미 1회 재생됐으므로 여기서는 기본 사망 처리만.
     /// </summary>
     void ApplyFallDeathFromServer()
     {

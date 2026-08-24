@@ -31,7 +31,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public Color whiteColor = Color.white;
 
     [Header("즉사 판정")]
-    [Tooltip("이 수치 이상의 데미지를 받으면 즉사(Fall 애니메이션 재생). 0이면 비활성")]
+    [Tooltip("이 수치 이상의 데미지를 받으면 즉사(Die 애니메이션 재생). 0이면 비활성")]
     public int instantKillThreshold = 0;
 
     [Header("피격 무적")]
@@ -50,7 +50,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public bool enableFallDeath = false;
     [Tooltip("사망 기준 Y 좌표. enableFallDeath가 켜진 경우에만 적용")]
     public float fallDeathY = 0f;
-    [Tooltip("Fall 애니메이션 시작 Y 좌표. fallDeathY보다 높게 설정 (예: fallDeathY=-10 이면 -5 정도). enableFallDeath가 켜진 경우에만 적용")]
+    [Tooltip("Die 애니메이션 시작 Y 좌표. fallDeathY보다 높게 설정 (예: fallDeathY=-10 이면 -5 정도). enableFallDeath가 켜진 경우에만 적용")]
     public float fallAnimY = 0f;
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
@@ -77,11 +77,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     bool bwDown, altDown;
 
-    // 낙사 Fall 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
+    // 낙사 Die 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
     // Owner→Host 낙사 신고 1회 가드 (ReportFallDeathServerRpc 스팸 방지)
     bool fallDeathReported;
     bool fallAnimTriggered = false;
-    // 즉사 판정 시 Die()에서 OnInstantKilled 이벤트 발생 여부 결정 (애니메이션은 일반 사망과 동일하게 doFall 통일)
+    // 즉사 판정 시 Die()에서 OnInstantKilled 이벤트 발생 여부 결정 (애니메이션은 일반 사망과 동일하게 doDie 통일)
     bool isInstantKill = false;
 
     float nextBWTime = 0f;
@@ -130,17 +130,17 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void Update()
     {
-        // Fall 애니: Owner 로컬. 낙사 확정: Owner Y → ReportFallDeathServerRpc → Host ApplyFallDeath.
+        // Die 애니: Owner 로컬. 낙사 확정: Owner Y → ReportFallDeathServerRpc → Host ApplyFallDeath.
         // (Host-only Y는 Owner+CNT void에서 Client를 놓칠 수 있음 — Host Update는 Host-as-Owner 폴백)
         if (!IsDead && enableFallDeath && isOwnerControlled)
         {
             float y = transform.position.y;
-            // fallAnimY 통과 시 Fall 애니메이션 1회 재생 (fallDeathY보다 높은 지점에서 미리 트리거)
+            // fallAnimY 통과 시 Die 애니메이션 1회 재생 (fallDeathY보다 높은 지점에서 미리 트리거)
             if (!fallAnimTriggered && y < fallAnimY)
             {
                 fallAnimTriggered = true;
                 moveInput = Vector2.zero;
-                anim?.SetTrigger("doFall");
+                anim?.SetTrigger("doDie");
                 events?.RaiseFallDeath();
             }
 
@@ -277,6 +277,16 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         StartCoroutine(OnDamage(knockback));
     }
 
+    /// <summary>
+    /// 같은 플레이어의 Punch에 맞았을 때 재생하는 피격 연출. HP·무적과 완전히 무관(PlayerPunch는 넉백만 적용).
+    /// NetworkPlayerSetup.NotifyPunchHitClientRpc → 여기로 연결.
+    /// </summary>
+    public void PlayPunchHitReaction()
+    {
+        if (IsDead) return;
+        anim?.SetTrigger("doPunchHit");
+    }
+
     /// <summary>피격 무적 지속 시간. NetworkPlayerSetup에서 서버 무적 타이머 계산에 사용.</summary>
     public float InvulnerabilityDuration =>
         damageInvulnerabilityDuration > 0f ? damageInvulnerabilityDuration : 0.5f;
@@ -287,7 +297,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (!IsDead) Die();
     }
 
-    /// <summary>버프·무적 무시 즉사. Die()에서 OnInstantKilled 이벤트 연동 (애니메이션은 일반 사망과 동일한 doFall).</summary>
+    /// <summary>버프·무적 무시 즉사. Die()에서 OnInstantKilled 이벤트 연동 (애니메이션은 일반 사망과 동일한 doDie).</summary>
     public void KillInstantly()
     {
         if (IsDead) return;
@@ -419,8 +429,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (anim != null)
         {
             anim.SetBool("isRun", false);
-            anim.ResetTrigger("doFall");
-            anim.SetTrigger("doFall");
+            anim.ResetTrigger("doDie");
+            anim.SetTrigger("doDie");
         }
         if (isInstantKill) events?.RaiseInstantKilled();
         isInstantKill = false;

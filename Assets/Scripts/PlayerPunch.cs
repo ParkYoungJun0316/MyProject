@@ -10,7 +10,9 @@ using UnityEngine.InputSystem;
 /// [흐름]
 /// Owner 입력(Attack) → PunchServerRpc → Host가 쿨다운·생존 여부만 체크
 /// → 스윙 판정 윈도우를 염 → 자식 PlayerPunchHitbox의 OnTriggerEnter(Host 로컬 물리)가
-/// 실제 피격을 판정 → TryRegisterHit()로 1스윙 1히트 넉백 적용.
+/// 실제 피격을 판정 → TryRegisterHit()로 1스윙 1히트 넉백 적용 +
+/// 대상의 NetworkPlayerSetup.NotifyPunchHitFromServer()로 doPunchHit 연출 요청
+/// (HP 데미지 경로를 타지 않으므로 doHit과는 별개).
 /// 스윙을 여는 순간 PlayerPunchHitbox.CheckAlreadyOverlapping()도 함께 호출해
 /// 이미 겹쳐 있던 대상(가만히 붙어 있다가 펀치)까지 즉시 판정한다
 /// (OnTriggerEnter는 새로 겹치는 순간에만 발생해 이 케이스를 놓치기 때문).
@@ -73,7 +75,7 @@ public class PlayerPunch : NetworkBehaviour
 
         SFXManager.Instance?.Play(SFXId.Player_Punch);
         // Owner 로컬에서 직접 트리거 — NetworkAnimator(Owner Authority)가 다른 클라이언트에 자동 동기화
-        // (Player.cs의 doHit/doFall과 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)
+        // (Player.cs의 doHit/doDie과 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)
         _anim?.SetTrigger("doPunch");
         PunchServerRpc();
     }
@@ -128,5 +130,8 @@ public class PlayerPunch : NetworkBehaviour
 
         float force = Random.Range(knockbackForceMin, knockbackForceMax);
         NetworkDamageUtil.ApplyKnockback(target, dir, force);
+
+        // 피격자 쪽 doPunchHit 연출 (HP 데미지 경로와 무관 — Hit 애니와 별개).
+        target.GetComponent<NetworkPlayerSetup>()?.NotifyPunchHitFromServer();
     }
 }
