@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ffb01048b24e910449eb1248a4b0510a, type: 2}
+  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -157,15 +157,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  breakDelaySound: {fileID: 0}
-  breakDelaySoundVolume: 1
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
   useMouthTeethBreakSfx: 0
-  breakSound: {fileID: 0}
-  breakSoundVolume: 1
-  killPlayerOnBreak: 0
-  killRadius: 0
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
