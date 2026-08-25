@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 좌/우 분기 미니게임의 판정 볼륨 하나 (왼쪽 또는 오른쪽).
+/// 방향 분기 미니게임의 판정 볼륨 하나 (좌/우 2방향 또는 좌/우/앞/뒤 4방향 중 하나).
 /// SideSplitChallenge가 타이머 종료 시점에 이 볼륨의 점유 인원을 물리 오버랩으로 스냅샷 판정한다.
 ///
 /// [설계 원칙 — OXQuizTile과 동일]
@@ -124,18 +124,41 @@ public class SideSplitZone : MonoBehaviour
 
     // ── 에디터 Gizmo ─────────────────────────────────────────────
 
-    [Tooltip("Gizmo 색 구분용 — 실제 판정과 무관, 왼쪽/오른쪽 구분 표시만.")]
-    public bool isLeftSide = true;
+    /// <summary>Gizmo 색 구분용 표시 방향. 판정 로직(SideSplitChallenge)은 이 값을 전혀 참조하지 않음 —
+    /// 어느 방향(좌/우/앞/뒤)에 배치했는지는 SideSplitChallenge의 leftZone/rightZone/frontZone/backZone
+    /// 필드 연결로만 결정된다.</summary>
+    public enum GizmoDirection { Left, Right, Front, Back }
 
+    [Tooltip("Gizmo 색 구분용 — 실제 판정과 무관, 방향 구분 표시만.")]
+    public GizmoDirection gizmoDirection = GizmoDirection.Left;
+
+    /// <summary>
+    /// [버그 수정] 기존 코드는 transform.position + transform.lossyScale로 축정렬 박스를 그려서
+    /// 회전이 없는 존(좌/우)에서는 우연히 맞아 보였지만, 90도 회전된 존(앞/뒤)에서는 실제 Collider
+    /// bounds와 완전히 다른 모양(가로/세로가 뒤바뀐 형태)으로 표시되는 문제가 있었다.
+    /// Gizmos.matrix를 transform.localToWorldMatrix로 설정해 로컬 단위 큐브를 그리면 위치·회전·스케일이
+    /// 모두 반영돼 실제 BoxCollider(size 1,1,1 기준) 모양과 항상 일치한다.
+    /// </summary>
     void OnDrawGizmos()
     {
-        Color gc = isLeftSide
-            ? new Color(0.1f, 0.5f, 1.0f, 0.35f)
-            : new Color(1.0f, 0.4f, 0.1f, 0.35f);
+        Color gc = gizmoDirection switch
+        {
+            GizmoDirection.Left  => new Color(0.1f, 0.5f, 1.0f, 0.35f),
+            GizmoDirection.Right => new Color(1.0f, 0.4f, 0.1f, 0.35f),
+            GizmoDirection.Front => new Color(0.2f, 0.9f, 0.3f, 0.35f),
+            GizmoDirection.Back  => new Color(0.9f, 0.2f, 0.9f, 0.35f),
+            _                    => Color.white,
+        };
+
+        Matrix4x4 prevMatrix = Gizmos.matrix;
+        Gizmos.matrix = transform.localToWorldMatrix;
+
         Gizmos.color = gc;
-        Gizmos.DrawCube(transform.position, transform.lossyScale * 0.90f);
+        Gizmos.DrawCube(Vector3.zero, Vector3.one * 0.90f);
         gc.a = 1f;
         Gizmos.color = gc;
-        Gizmos.DrawWireCube(transform.position, transform.lossyScale * 0.95f);
+        Gizmos.DrawWireCube(Vector3.zero, Vector3.one * 0.95f);
+
+        Gizmos.matrix = prevMatrix;
     }
 }

@@ -74,6 +74,35 @@
 - [ ] `StageStartGate.OnCountdownComplete` → `SideSplitChallenge.StartChallenge()` 연결(기존 `OXQuizManager.StartQuiz` 연결 대체)
 - [ ] 몇 개 스테이지(오버월드)에 배치할지 결정 (OX퀴즈처럼 `M.Stage2` + `T.Stage4` 1곳씩만? 여러 곳?)
 
+### 1.7 4방향 확장 (T.Stage4 전용) **[확정]**
+
+`M.Stage2`는 좌/우 2방향 그대로 유지. `T.Stage4`는 좌/우/앞/뒤 4방향으로 확장 — 이미 있는 앞/뒤 분기 통로 지형을 그대로 사용(레벨 블록아웃 추가 불필요).
+
+**확정 규칙**
+
+| 항목 | 규칙 |
+|---|---|
+| 활성 방향 결정 | `SideSplitChallenge.frontZone`/`backZone`을 **둘 다** Inspector에 연결하면 4방향 모드로 자동 전환. 코드 분기 없음 — `leftZone`/`rightZone`만 연결된 인스턴스(`M.Stage2`)는 그대로 2방향 |
+| 인원 분배 | 활성 방향(2개 또는 4개) 전원이 반드시 다 나뉨 — 2방향과 동일 원칙의 N방향 일반화. 고정 순서(좌→우→앞→뒤)로 순차 소진하며 배정, 일부 방향이 0명이 되는 것도 정상(그 자체가 유효한 조건) |
+| 판정 | 기존과 동일 — 활성 방향 전부 정확히 일치해야 통과. 2개 이상 zone 동시 점유·어느 zone에도 없는 생존자가 있으면 그 자체로 실패 |
+| 색상 조건 | 인원이 0이 아닌 활성 방향들 중에서만 배정(기존 좌/우 로직의 직접 확장) |
+| UI 문구 | 2방향 문장형 템플릿(`promptColorLeft`/`Right`)은 그대로 유지. 4방향은 별도 템플릿 5종(`promptNoColor4` + 방향별 색상 템플릿 4종) 신설 — 인자 순서 항상 앞/뒤/좌/우 고정 |
+
+**구현 완료 (코드)**
+
+- `SideSplitChallenge` — `frontZone`/`backZone` 필드 추가, `SideSplitRound`/`RoundInfo`에 `frontCount`/`backCount` 추가, `colorOnLeft(bool)` → `colorDirection(SideSplitDirection enum)`으로 확장. `RegenerateRoundPlan()`/`Judge()`는 활성 zone 리스트 기반으로 일반화(2방향일 때 결과는 기존과 완전히 동일)
+- `SideSplitZone` — Gizmo 색 구분용 `isLeftSide(bool)` → `gizmoDirection(GizmoDirection enum: Left/Right/Front/Back)`으로 교체(판정 로직과 무관, 순수 표시용)
+- `SideSplitUI` — 4방향 전용 템플릿 필드 5개 추가, `challenge.IsFourDirection`으로 2방향/4방향 문구 분기
+
+**남은 작업 (에디터 — 사용자)**
+
+- [ ] `T.Stage4`에 `SideSplitZone` 2개(앞/뒤) 배치, `SideSplitChallenge.frontZone`/`backZone`에 연결
+- [ ] 기존 `SideSplitZone_Left`/`Right`(및 신규 앞/뒤 2개)의 Gizmo 표시 필드가 `isLeftSide`→`gizmoDirection`으로 바뀜 — 필요하면 Inspector에서 방향 재선택(순수 표시용, 판정에는 영향 없음)
+- [ ] `T.Stage4`의 `SideSplitUI`에 4방향 템플릿 필드 5개(`promptNoColor4`/`promptColorFront4`/`Back4`/`Left4`/`Right4`) 연결
+- [ ] String Table에 4방향 템플릿 엔트리 5개 신규 생성("앞 {0}명 / 뒤 {1}명 / 좌 {2}명 / 우 {3}명" 형식 + 색상 버전 4종)
+- [ ] `T.Stage4`의 `totalRounds`/`minColorRounds`/`maxColorRounds`는 인원 수 대비 4방향 분배 체감 난이도를 실제 플레이해보고 튜닝(코드 변경 불필요, Inspector 값만 조정)
+- [ ] ParrelSync 2인 검증(4방향 분배·판정·UI 동기화)
+
 ---
 
 ## 2. 구현 매핑 — 기존 챌린지 축 재사용 (구현 완료)
@@ -133,5 +162,5 @@
 | 이름 | 상태 | 배치 스테이지 | 비고 |
 |---|---|---|---|
 | ~~OX퀴즈~~ | **삭제 완료** | ~~`M.Stage2`, `T.Stage4`~~ | §0, §3 참고 |
-| SideSplit (좌우 분기) | **코드 작성 완료 — 씬 배치·검증 대기** | 미확정 (§1.6) | §1/§2 참고 |
+| SideSplit (좌우 분기, T.Stage4는 4방향) | **코드 작성 완료 — 씬 배치·검증 대기** | `M.Stage2`(좌우), `T.Stage4`(좌우앞뒤) | §1/§2/§1.7 참고 |
 | 미니게임 B | **미정** | — | 사용자 언급: "미니게임 1개 더 추가될 수 있음" — 아이디어 확정 시 §5로 추가 |

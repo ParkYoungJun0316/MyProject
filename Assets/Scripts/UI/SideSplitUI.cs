@@ -4,7 +4,7 @@ using UnityEngine.Localization;
 using TMPro;
 
 /// <summary>
-/// 좌/우 분기 미니게임 전용 UI. 진행도(3/5)는 ObjectiveUI Count 모드가 담당한다.
+/// 좌/우(+선택적 앞/뒤) 분기 미니게임 전용 UI. 진행도(3/5)는 ObjectiveUI Count 모드가 담당한다.
 ///
 /// [Inspector 연결]
 ///   challenge    : SideSplitChallenge
@@ -13,10 +13,15 @@ using TMPro;
 ///
 /// [문구 템플릿 — String Table 참조, OXQuizManager.OXQuestion과 동일 원칙(Inspector에서 문자열
 /// 직접 입력이 아니라 Table+Entry 연결)]
-///   promptNoColor    : {0}=왼쪽 인원, {1}=오른쪽 인원
+///   promptNoColor    : {0}=왼쪽 인원, {1}=오른쪽 인원 (2방향 모드 — M.Stage2)
 ///   promptColorLeft  : {0}=왼쪽 인원, {1}=오른쪽 인원, {2}=필수 색상명 (왼쪽에 색 조건)
 ///   promptColorRight : {0}=왼쪽 인원, {1}=오른쪽 인원, {2}=필수 색상명 (오른쪽에 색 조건)
 ///   colorName*       : PlayerColorType.Blue/Purple/Green/Yellow 각각의 로컬라이즈된 색상명
+///
+/// [4방향 확장 템플릿 — challenge.IsFourDirection == true일 때만 사용, T.Stage4]
+///   promptNoColor4      : {0}=앞, {1}=뒤, {2}=왼쪽, {3}=오른쪽 인원
+///   promptColorFront4/Back4/Left4/Right4 : {0}=앞, {1}=뒤, {2}=왼쪽, {3}=오른쪽 인원, {4}=필수 색상명
+///                                          (색 조건이 걸린 방향에 대응하는 템플릿 하나만 선택돼 사용됨)
 ///
 /// [표시 흐름]
 ///   안내 문구 표시
@@ -38,10 +43,17 @@ public class SideSplitUI : MonoBehaviour
     [Header("타이머")]
     [SerializeField] TextMeshProUGUI timerText;
 
-    [Header("안내 문구 템플릿 (String Table 엔트리 연결)")]
+    [Header("안내 문구 템플릿 — 2방향 모드 (String Table 엔트리 연결)")]
     [SerializeField] LocalizedString promptNoColor;
     [SerializeField] LocalizedString promptColorLeft;
     [SerializeField] LocalizedString promptColorRight;
+
+    [Header("안내 문구 템플릿 — 4방향 모드 (challenge.IsFourDirection일 때만 사용, T.Stage4)")]
+    [SerializeField] LocalizedString promptNoColor4;
+    [SerializeField] LocalizedString promptColorFront4;
+    [SerializeField] LocalizedString promptColorBack4;
+    [SerializeField] LocalizedString promptColorLeft4;
+    [SerializeField] LocalizedString promptColorRight4;
 
     [Header("결과 텍스트 (String Table 엔트리 연결)")]
     [SerializeField] LocalizedString successText;
@@ -173,14 +185,40 @@ public class SideSplitUI : MonoBehaviour
 
     string BuildPromptText(SideSplitRoundInfo info)
     {
+        if (challenge != null && challenge.IsFourDirection)
+            return BuildPromptText4(info);
+
         if (!info.hasColorRequirement)
         {
             promptNoColor.Arguments = new object[] { info.leftCount, info.rightCount };
             return promptNoColor.GetLocalizedString();
         }
 
-        LocalizedString template = info.colorOnLeft ? promptColorLeft : promptColorRight;
+        LocalizedString template = info.colorDirection == SideSplitDirection.Left ? promptColorLeft : promptColorRight;
         template.Arguments = new object[] { info.leftCount, info.rightCount, GetColorName(info.requiredColor) };
+        return template.GetLocalizedString();
+    }
+
+    /// <summary>4방향 모드(T.Stage4) 전용 안내 문구 — 인자 순서는 항상 앞/뒤/좌/우 고정.</summary>
+    string BuildPromptText4(SideSplitRoundInfo info)
+    {
+        if (!info.hasColorRequirement)
+        {
+            promptNoColor4.Arguments = new object[] { info.frontCount, info.backCount, info.leftCount, info.rightCount };
+            return promptNoColor4.GetLocalizedString();
+        }
+
+        LocalizedString template = info.colorDirection switch
+        {
+            SideSplitDirection.Front => promptColorFront4,
+            SideSplitDirection.Back  => promptColorBack4,
+            SideSplitDirection.Left  => promptColorLeft4,
+            _                        => promptColorRight4,
+        };
+        template.Arguments = new object[]
+        {
+            info.frontCount, info.backCount, info.leftCount, info.rightCount, GetColorName(info.requiredColor),
+        };
         return template.GetLocalizedString();
     }
 

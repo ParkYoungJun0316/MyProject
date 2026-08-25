@@ -1339,7 +1339,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | 챌린지 | ①Trigger | ②RoundStart 시드로 대체할 것 | ④Judge | 상태 |
 |--------|----------|------------------------------|--------|------|
 | ~~OX Quiz~~ | ~~배리어 진입 트리거~~ | ~~`RegenerateQuestionOrder()`~~ | ~~`JudgeByPosition()`~~ | **제거됨 (2026-08)** — 플레이테스트 피드백("지루함")으로 삭제, `SideSplit`로 교체. 상세: [`MinigameDesign.md`](MinigameDesign.md) §0/§3 |
-| **SideSplit** (좌/우 분기) | 배리어 진입 트리거 | `RegenerateRoundPlan()`(`System.Random(seed)`, 좌/우 인원+색상 조건) | `Judge()`(좌/우 볼륨 물리 오버랩, 정확 인원+색상 일치) | **코드 작성 완료 — ParrelSync 2인 검증 대기.** `SideSplitChallenge`/`SideSplitZone`/`SideSplitObjective`/`SideSplitUI`. OX 축을 그대로 복제(설계: [`MinigameDesign.md`](MinigameDesign.md) §1/§2) |
+| **SideSplit** (좌/우 분기, `T.Stage4`는 좌/우/앞/뒤 4방향) | 배리어 진입 트리거 | `RegenerateRoundPlan()`(`System.Random(seed)`, 활성 방향(2 또는 4) 인원+색상 조건 — N방향 일반화) | `Judge()`(활성 zone 전체 물리 오버랩, 정확 인원+색상 일치) | **코드 작성 완료 — ParrelSync 2인 검증 대기.** `SideSplitChallenge`/`SideSplitZone`/`SideSplitObjective`/`SideSplitUI`. OX 축을 그대로 복제(설계: [`MinigameDesign.md`](MinigameDesign.md) §1/§2/§1.7) |
 | ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | **완료 — ParrelSync 2인 검증 통과(2026-07-22, `M.Stage3`)**. 동일 위치/색, 성공·실패 동시, 실패 시 벽 전진 동기화 확인 |
 | GridBW | `Activate()` 호출 시점 | `PickRandomSafeTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Boss`/`M.Stage5`)**. stepIndex=라운드 번호, 데미지 버그(`ReceiveDamage` 직접 호출) 수정 포함. 동일 라운드 배치·판정·데미지 동기화, 라운드 반복 진행 확인 |
 | GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Stage5`)**. 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19). 동일 라운드 배치·판정·데미지 동기화 확인 |

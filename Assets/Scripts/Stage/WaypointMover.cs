@@ -30,7 +30,7 @@ public class WaypointMover : MonoBehaviour
     [Tooltip("순서대로 이동할 웨이포인트. 비어있으면 transform.forward 방향으로 직진")]
     [SerializeField] Transform[] waypoints;
 
-    [Tooltip("웨이포인트 도달 판정 거리 (m). 0이면 속도에 따라 자동 계산")]
+    [Tooltip("레거시 필드. 더 이상 도착 판정에 사용되지 않음(현재는 스텝 이동거리 기준으로 정확히 스냅). 하위호환을 위해 남겨둠")]
     [SerializeField] float waypointReachDistance = 0f;
 
     [Tooltip("마지막 웨이포인트 도달 후 동작")]
@@ -99,9 +99,12 @@ public class WaypointMover : MonoBehaviour
     void ApplyInitialVelocity()
     {
         if (rb == null || initialSpeed <= 0f) return;
-        Vector3 dir = GetMoveDir();
-        if (dir != Vector3.zero)
-            rb.linearVelocity = dir * initialSpeed;
+        Vector3 v = rb.linearVelocity;
+        Vector3 velXZ = ComputeVelocityXZ();
+        v.x = velXZ.x;
+        v.z = velXZ.z;
+        if (lockYVelocity) v.y = 0f;
+        rb.linearVelocity = v;
     }
 
     bool HasWaypoints => _usePositionWaypoints
@@ -119,28 +122,30 @@ public class WaypointMover : MonoBehaviour
         return wp != null ? wp.position : transform.position;
     }
 
-    Vector3 GetMoveDir()
+    /// <summary>
+    /// 이번 FixedUpdate에 적용할 XZ 속도를 계산.
+    /// 이번 스텝 이동거리(initialSpeed * fixedDeltaTime) 안에 목표 웨이포인트가 들어오면,
+    /// 오버슈트 없이 좌표에 정확히 도착하도록 그 스텝만 속도를 남은 거리만큼 줄여서 스냅한다
+    /// (예전엔 waypointReachDistance만큼 미리 다음 웨이포인트로 꺾여서 중심이 좌표에 못 미쳤음).
+    /// </summary>
+    Vector3 ComputeVelocityXZ()
     {
-        if (!HasWaypoints) return transform.forward;
+        if (!HasWaypoints) return transform.forward * initialSpeed;
         if (_waypointFinished) return Vector3.zero;
 
         Vector3 toWp = GetWaypointPos(_waypointIndex) - transform.position;
         toWp.y = 0f;
 
-        float threshold = waypointReachDistance > 0f
-            ? waypointReachDistance
-            : Mathf.Max(0.1f, initialSpeed * Time.fixedDeltaTime * 2f);
+        float stepDist = initialSpeed * Time.fixedDeltaTime;
 
-        if (toWp.magnitude <= threshold)
+        if (toWp.magnitude <= stepDist)
         {
+            Vector3 exactVelocity = stepDist > 0f ? toWp / Time.fixedDeltaTime : Vector3.zero;
             AdvanceWaypoint();
-            if (_waypointFinished) return Vector3.zero;
-
-            toWp = GetWaypointPos(_waypointIndex) - transform.position;
-            toWp.y = 0f;
+            return exactVelocity;
         }
 
-        return toWp.sqrMagnitude > 0.0001f ? toWp.normalized : Vector3.zero;
+        return toWp.normalized * initialSpeed;
     }
 
     void AdvanceWaypoint()
@@ -181,14 +186,11 @@ public class WaypointMover : MonoBehaviour
     {
         if (!_isActive || rb == null || initialSpeed <= 0f) return;
 
-        Vector3 dir = GetMoveDir();
+        Vector3 velXZ = ComputeVelocityXZ();
 
         Vector3 v = rb.linearVelocity;
-        if (dir != Vector3.zero)
-        {
-            v.x = dir.x * initialSpeed;
-            v.z = dir.z * initialSpeed;
-        }
+        v.x = velXZ.x;
+        v.z = velXZ.z;
         if (lockYVelocity) v.y = 0f;
         rb.linearVelocity = v;
     }

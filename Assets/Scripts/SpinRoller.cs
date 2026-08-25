@@ -50,7 +50,7 @@ public class SpinRoller : MonoBehaviour
 
         if (moving && spinSpeed != 0f)
         {
-            Vector3 spinAxis = Vector3.Cross(vel.normalized, Vector3.up).normalized;
+            Vector3 spinAxis = Vector3.Cross(Vector3.up, vel.normalized).normalized;
             if (spinAxis.sqrMagnitude >= 0.001f)
                 rb.angularVelocity = spinAxis * spinSpeed;
         }

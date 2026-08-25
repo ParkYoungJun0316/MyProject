@@ -1375,13 +1375,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MouthController
   mouthAnimator: {fileID: 1848763723}
-  openTrigger: doTransOpen
-  holdTrigger: doTransHold
-  closeTrigger: doTransClose
+  openTrigger: doOpen
+  holdTrigger: doHold
+  closeTrigger: doClose
   idleTrigger: doIdle
-  closeClipLength: 1
+  closeClipLength: 2
   holdDuration: 2
-  openClipLength: 1
+  openClipLength: 2
   randomIntervalMin: 10
   randomIntervalMax: 15
   initialDelay: 0
@@ -3904,6 +3904,50 @@ MonoBehaviour:
   startOnAwake: 1
   screenFader: {fileID: 0}
   seedSalt: 1297044820
+--- !u!1 &2033275564
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2033275566}
+  - component: {fileID: 2033275565}
+  m_Layer: 0
+  m_Name: dev
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2033275565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2033275564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47a801c4ff1a63645abe7ffc12d974d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DevStageHostBootstrap
+--- !u!4 &2033275566
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2033275564}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2078363739
 GameObject:
   m_ObjectHideFlags: 0
@@ -5301,3 +5345,4 @@ SceneRoots:
   - {fileID: 796540932}
   - {fileID: 1848763721}
   - {fileID: 715085643}
+  - {fileID: 2033275566}
