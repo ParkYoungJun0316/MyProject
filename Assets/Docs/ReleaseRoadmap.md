@@ -175,7 +175,7 @@
 | # | 작업 | 비고 |
 |---|------|------|
 | 0-1 | Vosk zip 정합 | `VoskModelLoader` ↔ `StreamingAssets` |
-| 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `hobak` |
+| 0-2 | CheerName 최종화 | `berry` / `guma` / `sook` / `dan` |
 | 0-3 | AudioListener | `LocalPlayerCamera` 1개 |
 
 ### Phase 1 — 로컬 빌드 게이트

@@ -6,10 +6,9 @@ using UnityEngine;
 /// Vosk grammar JSON 문자열 생성.
 ///
 /// [실측 — 2026-08, 모델 words.txt 직접 확인 (CheerAndTutorialDesign.md §5.2)]
-/// berry / guma / sook : 모델 사전에 이미 등재됨 → 변형 불필요 (과거 "사전 미포함" 주석은 오기, 실측으로 정정).
-/// hobak               : 모델 사전에 없음 → §5.2 B 변형 단어 "dan" 추가 (VariantMap 참고).
-///   실제 발음 원형은 한국어 "단호박"(danhobak) — 앞 음절 "dan"이 모델 사전에 실제 등재된 단어라
-///   "hobo"(순수 영어 G2P 근사, 실발화와 무관) 대신 채택 (2026-08-05).
+/// berry / guma / sook / dan : 모델 사전에 이미 등재됨 → 변형 불필요 (과거 "사전 미포함" 주석은 오기, 실측으로 정정).
+/// (구 기본값 "hobak"은 사전 미등재라 대체 단어 "dan"을 썼었으나, 2026-08-25 기본 CheerName 자체를
+///  "dan"으로 교체하면서 hobak/VariantMap 항목은 완전히 제거됨.)
 ///
 /// [테스트 키워드 세트 — 인식률 비교용]
 /// Set1 (현재): worcestershire / colonel / anemone / mischievous
@@ -18,7 +17,7 @@ using UnityEngine;
 /// Set3: Antidisestablishmentarianism / Floccinaucinihilipilification / Pneumonoultramicroscopicsilicovolcanoconiosis  (3종)
 ///
 /// [확정 키워드 후 원상복구]
-/// BuildDemoGrammarJson() 의 배열을 berry/guma/sook/hobak 으로 유지.
+/// BuildDemoGrammarJson() 의 배열을 berry/guma/sook/dan 으로 유지.
 /// CheerService.CheerNames 도 동일하게 맞출 것.
 /// </summary>
 public static class CheerLexiconBuilder
@@ -28,13 +27,9 @@ public static class CheerLexiconBuilder
     /// key=원래 CheerName(소문자), value=사전에 실제 등재된 대체 단어 목록(소문자).
     /// grammar에는 원래 이름 + 대체 단어를 모두 넣고, 대체 단어가 인식되면
     /// <see cref="ResolveVariant"/>로 원래 CheerName으로 되돌린다.
+    /// 고정 4종(berry/guma/sook/dan) 전부 사전 등재 확인됨 → 현재 빈 테이블.
     /// </summary>
-    static readonly Dictionary<string, string[]> VariantMap = new()
-    {
-        // hobak 사전 미등재 → 실제 발화 원형 "단호박"(danhobak)의 앞 음절 "dan"이
-        // 모델 사전에 실제 등재된 단어(words.txt: dan)라 대체 단어로 채택 (2026-08-05).
-        { "hobak", new[] { "dan" } },
-    };
+    static readonly Dictionary<string, string[]> VariantMap = new();
 
     /// <summary>
     /// 인식된 단어가 §5.2 B 대체 단어 목록에 있으면 원래 CheerName으로 되돌린다.
@@ -56,13 +51,13 @@ public static class CheerLexiconBuilder
 
     /// <summary>
     /// 데모 기본 4종 grammar JSON (커스텀 미설정 시 폴백용).
-    /// 결과 예: ["berry","guma","sook","hobak","dan","[unk]"]
+    /// 결과 예: ["berry","guma","sook","dan","[unk]"]
     ///
     /// 커스텀 이름이 있을 때는 BuildGrammarJson(세션이름[]) 을 사용할 것.
     /// </summary>
     public static string BuildDemoGrammarJson()
     {
-        return BuildGrammarJson(new[] { "berry", "guma", "sook", "hobak" });
+        return BuildGrammarJson(new[] { "berry", "guma", "sook", "dan" });
     }
 
     /// <summary>

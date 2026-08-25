@@ -26,7 +26,7 @@
 | **말해보기** | **Must** — Tutorial에서 확정↔재변경 반복 가능, 매 확정마다 Vosk grammar 재빌드 → 즉시 재테스트 (§5.5) |
 | **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (사전 검증 + 발음 변형 대체 단어, §5) |
 | 채팅 응원 | `/cheer {name}` **필수 폴백** |
-| 스테이지 버프 | M = **Shield** (`Invincibility`), T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
+| 스테이지 버프 | M = **Shield**, T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
 | 인게임 설명 | Tutorial(핵심 메카) + **DialogueUI** (M/T 구역별) |
 | **멀티 연결** | **Steam P2P + Lobby** (`NetworkDesign` ④) |
 | **목표** | **2026-09-01** 원격 협동 + 보이스 + 응원 + Tutorial (텔레메트리는 출시 후 OK) |
@@ -55,7 +55,7 @@
 
 | 스테이지 | 버프 | `PlayerBuffSystem` |
 |----------|------|---------------------|
-| M.Stage1 | Shield | `Invincibility` |
+| M.Stage1 | Shield | `Shield` |
 | T.Stage1 | SpeedUp | `SpeedUp` |
 
 ### 1.3 두 개의 독립 시스템
@@ -149,7 +149,7 @@
 | Blue | berry |
 | Purple | guma |
 | Green | sook |
-| Yellow | hobak |
+| Yellow | dan |
 
 저장·비교 시 **소문자 통일**.
 
@@ -397,7 +397,7 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 
 ### 5.2 확정 방향 — A(사전 검증) + B(발음 변형 대체 단어) **[Ship Must]**
 
-Vosk grammar(`vosk_recognizer_new_grm`/`set_grm`)는 **모델 사전(words.txt)에 이미 있는 단어만** 인식 가능. 조어(`guma`/`sook`/`hobak` 등)는 모델에 없으면 원리상 인식이 잘 안 됨. 이를 아래 두 방법으로 보완한다.
+Vosk grammar(`vosk_recognizer_new_grm`/`set_grm`)는 **모델 사전(words.txt)에 이미 있는 단어만** 인식 가능. 조어(`guma`/`sook` 등)는 모델에 없으면 원리상 인식이 잘 안 됨. 이를 아래 두 방법으로 보완한다.
 
 **A. 사전 검증 (`Model.vosk_model_find_word`)**
 
@@ -423,18 +423,18 @@ grammar JSON: [원래 이름, 대체 단어..., "[unk]"]
 인식 결과가 대체 단어여도 CheerLexiconBuilder.ResolveVariant()로 원래 CheerName으로 매핑 → SubmitCheerServerRpc
 ```
 
-**[Ship Must — 구현 완료, 2026-08]:** 고정 4종(`berry`/`guma`/`sook`/`hobak`)을 모델 `words.txt`에서 실측한 결과:
+**[Ship Must — 구현 완료, 2026-08]:** 고정 4종(`berry`/`guma`/`sook`/`dan`)을 모델 `words.txt`에서 실측한 결과:
 
 | CheerName | 사전 등재 | 대체 단어 |
 |---|---|---|
 | `berry` | ✅ 있음 | 불필요 |
 | `guma`  | ✅ 있음 *(과거 "미포함" 기록은 오기 — 실측으로 정정)* | 불필요 |
 | `sook`  | ✅ 있음 *(과거 "미포함" 기록은 오기 — 실측으로 정정)* | 불필요 |
-| `hobak` | ❌ 없음 | `dan` (실발화 원형 "단호박"(danhobak)의 앞 음절, 사전 등재 확인 — 2026-08-05, `hobo` 근사 대체) |
+| `dan`   | ✅ 있음 | 불필요 |
 
-`CheerLexiconBuilder.VariantMap`(코드 테이블)에 반영 완료. `ResolveVariant()`로 인식된 대체 단어를 원래 CheerName으로 되돌림.
+고정 4종 전부 사전 등재 확인되어 `CheerLexiconBuilder.VariantMap`은 현재 빈 테이블. `ResolveVariant()`는 커스텀 이름용 대체 단어가 추가될 경우를 위해 유지.
 
-> **2026-08-05 변경 배경:** 기존 `hobo`는 "hobak"을 순수 영어 철자 G2P로 근사(HH OW B 공유)한 것이라 실제 발화와 무관했음. `hobak`(호박)의 실제 구어 원형은 한국어 "단호박"(danhobak, 단맛 호박)이고, 그 앞 음절 "dan"이 모델 `words.txt`에 실제 등재된 단어로 확인됨 → 실발화 기반 대체 단어로 교체. **트레이드오프:** `dan`은 영어에서 매우 흔한 인명·단어라 인게임 자유 대화(Dissonance) 중 우연히 언급되면 오탐(false positive) 응원 소지가 `hobo`보다 높을 수 있음 — 플레이테스트로 재확인 필요.
+> **2026-08-25 변경:** 기존 기본 CheerName `hobak`(Yellow)은 모델 사전에 없어 대체 단어 `dan`("단호박"의 앞 음절)을 거쳐 인식시켰으나, 그럴 거면 처음부터 `dan`을 기본 CheerName으로 쓰는 게 더 단순하다고 판단해 `hobak`을 완전히 폐기하고 `dan`을 기본값으로 승격. 캐릭터 머티리얼도 이미 `Dan.mat`으로 명명돼 있어 기존 에셋 네이밍과도 일치. **트레이드오프(기존 §5.2 우려 유지):** `dan`은 영어에서 매우 흔한 인명·단어라 인게임 자유 대화(Dissonance) 중 우연히 언급되면 오탐(false positive) 응원 소지가 있음 — 플레이테스트로 재확인 필요.
 
 **[Ship Must]:** Tutorial에서 (재)확정 시마다 Host → 전 Client에 최신 CheerName 배열 브로드캐스트 → 각 Client **동일 매핑 테이블**로 grammar 재생성(§5.3 그대로).
 
@@ -461,8 +461,8 @@ B는 고정 4종에만 적용됨(사람이 직접 `words.txt`를 찾아서 표�
 **실측 참고 (2026-08-05, `graph/words.txt` 직접 확인):**
 | 예시 이름 | 사전 등재 |
 |---|---|
-| `berry`/`guma`/`sook`/`jun`/`jack`/`saha`/`sahar`/`sahara` | ✅ 있음 |
-| `hobak`/`sahur` | ❌ 없음 |
+| `berry`/`guma`/`sook`/`dan`/`jun`/`jack`/`saha`/`sahar`/`sahara` | ✅ 있음 |
+| `sahur` | ❌ 없음 |
 
 → 흔한 영어 단어·이름은 대부분 이미 사전에 있음(모델이 30만+ 단어). 문제는 조어·외래어 계열만.
 
@@ -668,7 +668,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 |------|------|
 | `CheerService` | Host, M/T 씬. 집계·타임아웃·쿨·버프 |
 | `SubmitCheerServerRpc` | `/cheer berry` 등 |
-| 버프 | M=`Invincibility`, T=`SpeedUp`, `NetworkPlayerSetup` 미러링 |
+| 버프 | M=`Shield`, T=`SpeedUp`, `NetworkPlayerSetup` 미러링 |
 | UI | `CheerProgressUI`, `TeamStatusUI`, 채팅 입력 |
 
 **테스트:** ParrelSync **2인** — 채팅만 버프·쿨·타임아웃.
@@ -774,7 +774,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [x] `CheerLexiconBuilder` — §5.2 B(고정 4종 발음 변형 대체 단어 매핑) 구현 완료 — 실제 인식 플레이테스트는 아직
 - [ ] `CheerLexiconBuilder` — §5.2 C(커스텀 이름 혼합 방식 대체 발음) — 설계만 확정, 구현 안 함
 - [ ] Dissonance ↔ Vosk 마이크 공유
-- [ ] M=Invincibility, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
+- [ ] M=Shield, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
 - [ ] `CheerProgressUI` + `TeamStatusUI`
 - [ ] 채팅 입력 UI
 - [ ] 솔로 `/cheer` + 로컬 CheerService
@@ -835,7 +835,7 @@ A. **아니오 (2026-08-04 확정).** `vosk_recognizer_set_grm_with_lexicon`은 
 A. 상용·커스텀 파이프라인 부담. **Vosk grammar + §5.2 사전 검증/대체 단어**가 기본.
 
 **Q. `jun`, `jack`처럼 흔한 이름도 경고 뜨나?**  
-A. **아니오.** 모델(`vosk-model-en-us-0.22-lgraph`)이 30만+ 단어라 흔한 영어 이름·단어는 대부분 이미 사전에 있음. `hobak`, `sahur`처럼 조어·외래어만 경고 대상.
+A. **아니오.** 모델(`vosk-model-en-us-0.22-lgraph`)이 30만+ 단어라 흔한 영어 이름·단어는 대부분 이미 사전에 있음. `sahur`처럼 조어·외래어만 경고 대상.
 
 **Q. 사전 검증(A)만 빼고 대체 발음(B/C)만 쓰면 사전에 없는 단어도 인식되나?**  
 A. **아니오.** Vosk grammar 모드는 모델 사전에 없는 단어를 원리상 출력 불가 — 이건 UI 경고를 끄고 끌 수 있는 옵션이 아니라 기술적 제약. 대체 발음도 결국 "사전에 있는 다른 단어"로 바꿔치기하는 것일 뿐, 원래 이름 자체가 인식되는 게 아님.

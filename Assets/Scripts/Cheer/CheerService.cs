@@ -20,7 +20,7 @@ using UnityEngine;
 /// 씬 시작 시 자동으로 동작. 사망 씬 리로드 시 자동 초기화됨.
 ///
 /// [CheerName ↔ colorIndex]
-/// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=hobak(Yellow)
+/// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=dan(Yellow)
 /// </summary>
 public class CheerService : NetworkBehaviour
 {
@@ -49,8 +49,8 @@ public class CheerService : NetworkBehaviour
     // ── CheerName 매핑 ────────────────────────────────────────────
 
     // PlayerColorUtil.DefaultCheerNames 및 CheerLexiconBuilder 와 순서 동일하게 유지.
-    // 0=berry(Blue) 1=guma(Purple) 2=sook(Green) 3=hobak(Yellow)
-    static readonly string[] CheerNames = { "berry", "guma", "sook", "hobak" };
+    // 0=berry(Blue) 1=guma(Purple) 2=sook(Green) 3=dan(Yellow)
+    static readonly string[] CheerNames = { "berry", "guma", "sook", "dan" };
 
     // ── Host 내부 상태 ─────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ public class CheerService : NetworkBehaviour
         if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return false;
 
         // 이번 세션에 실제로 접속 중인 색만 타겟 가능 — 인원수(<4)만큼만 색이 쓰이므로
-        // 미사용 슬롯(예: 3인 세션의 Yellow/hobak)은 음성/채팅이 잘못 인식해도 표에 반영되지 않는다.
+        // 미사용 슬롯(예: 3인 세션의 Yellow/dan)은 음성/채팅이 잘못 인식해도 표에 반영되지 않는다.
         if (!PlayerSpawnCoordinator.IsColorInSession(PlayerColorUtil.ColorOrder[targetColorIndex])) return false;
 
         // 자기 자신 응원 불가 (단, 1인 세션에서는 허용).

@@ -417,7 +417,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 UI (Canvas)
 └─ CheerNamePanel          ← TutorialCheerNameUI 부착, 기본 비활성(SetActive false)으로 변경
    ├─ TitleText             "응원 이름을 정해보세요"
-   ├─ NameInputField        TMP_InputField, Single Line, characterLimit=12, placeholder="예: hobak"
+   ├─ NameInputField        TMP_InputField, Single Line, characterLimit=12, placeholder="예: dan"
    ├─ ConfirmButton          "확정"
    ├─ CloseButton            "닫기" (신규, closeButton 필드 연결)
    ├─ CurrentNameText        "현재 이름: ..."

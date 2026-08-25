@@ -26,7 +26,7 @@ public static class PlayerColorUtil
     };
 
     // ColorIndex 순 기본 CheerName — GameSession.GetSessionCheerName 등 전 시스템의 단일 소스.
-    public static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "hobak" };
+    public static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "dan" };
 
     /// <summary>PlayerColorType → ColorOrder 인덱스 변환. 미매칭 시 -1 반환.</summary>
     public static int ColorTypeToIndex(PlayerColorType colorType)
