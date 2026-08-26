@@ -362,10 +362,14 @@ public class NetworkPlayerSetup : NetworkBehaviour
             amount -= absorbed;
         }
 
+        _damageInvulnEndTime = Time.time + (_player?.InvulnerabilityDuration ?? 0.5f);
+
+        // Shield가 데미지를 전부 흡수 — HP 불변. 실제로 맞지 않았으므로 피격 연출도 내보내지 않는다
+        // (예전엔 여기서도 무조건 NotifyHitClientRpc를 호출해 안 맞았는데 맞은 것처럼 보이는 버그가 있었음).
+        if (amount <= 0) return;
+
         int newHp = Mathf.Max(0, _hp.Value - amount);
         _hp.Value = newHp;
-
-        _damageInvulnEndTime = Time.time + (_player?.InvulnerabilityDuration ?? 0.5f);
 
         if (newHp > 0)
             NotifyHitClientRpc(knockback);
@@ -380,6 +384,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (!IsOwner) return;
         _player?.TakeDamageVisualOnly(knockback);
     }
+
 
     /// <summary>오너 클라이언트에 사망을 확정. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
     [ClientRpc]
