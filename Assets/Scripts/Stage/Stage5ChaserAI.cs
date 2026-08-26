@@ -213,8 +213,8 @@ public class Stage5ChaserAI : NetworkBehaviour
 
     // ── 히트박스 연동 (Stage5ChaserHitbox) ─────────────────────────
 
-    /// <summary>히트박스가 피해를 줄 수 있는지. 활성 상태면 항상 true.</summary>
-    public bool CanApplyDamage() => _isActive;
+    /// <summary>히트박스가 피해를 줄 수 있는지. 활성 상태이고 피격 후 정지(쿨다운) 중이 아닐 때만 true.</summary>
+    public bool CanApplyDamage() => _isActive && !_isPostHitStop;
 
     /// <summary>
     /// 히트박스에서 TakeDamage 직후 호출 — 정지 코루틴 시작.
