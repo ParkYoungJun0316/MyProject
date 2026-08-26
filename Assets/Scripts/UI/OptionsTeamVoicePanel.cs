@@ -13,8 +13,9 @@ using UnityEngine.UI;
 /// VoicePlayerState.Volume에 실제 반영한다.
 ///
 /// 구 로비(1.Lobby, LobbyNetworkManager) 슬롯 폴백은 로비 씬 삭제로 제거됨(NetworkDesign.md §6B.7 P8,
-/// 2026-08-20) — 이제 GameSession 세션 데이터 하나만 본다. Tutorial 사전 게이트 통과 전에는
-/// DisplayName/VoiceId 세션 확정이 아직 미구현이라(§6B.7 P3) 그 구간에서는 팀원 목록이 비어 보일 수 있음 — 의도된 상태, 버그 아님.
+/// 2026-08-20) — 이제 GameSession 세션 데이터 하나만 본다. DisplayName/VoiceId 세션 확정은
+/// TutorialNetworkManager.CompleteGate()(게이트 통과 시점)에만 이뤄지므로(§6B.7 P3/P8, PlayerDisplayNameSync),
+/// 그 전(Tutorial 사전 게이트 통과 전)에는 팀원 목록이 비어 보일 수 있음 — 의도된 상태, 버그 아님.
 /// </summary>
 public class OptionsTeamVoicePanel : MonoBehaviour
 {

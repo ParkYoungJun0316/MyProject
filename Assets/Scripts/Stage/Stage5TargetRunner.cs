@@ -21,7 +21,7 @@ using System;
 /// - 포획 판정(OnTriggerEnter)도 Host-only — 함정 본체와 동일한 기존 표준(§9A.3)을 그대로 적용.
 ///   Client 로컬 트리거는 무시된다(Client의 콜라이더는 보간 위치라 완전 정확하지 않을 수 있음 —
 ///   기존 ContactDamage 등에서도 이미 감수 중인 동일한 원격 함정 체감 이슈, 새 문제 아님).
-/// - isRun/isWalk 애니 파라미터는 NetworkVariable(byte 상태)로 전파.
+/// - isRun 애니 파라미터는 NetworkVariable(byte 상태)로 전파 (Walk 제거, 활성 중 항상 Run).
 ///
 /// [Inspector 설정]
 /// - NavMeshAgent 부착 필수
@@ -49,6 +49,8 @@ public class Stage5TargetRunner : NetworkBehaviour
     [Header("애니메이션")]
     [Tooltip("비워두면 자식에서 자동 탐색")]
     [SerializeField] Animator _anim;
+    [Tooltip("Agent 속도(m/s)가 이 값 미만이면 정지 상태로 간주해 Idle 재생.")]
+    [SerializeField] float idleSpeedThreshold = 0.05f;
 
     [Header("사운드 (Run 루프 — 3D)")]
     [Tooltip("0 = 완전 2D, 1 = 완전 3D")]
@@ -58,6 +60,12 @@ public class Stage5TargetRunner : NetworkBehaviour
     [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
     [SerializeField] float runMaxDistance = 0f;
     [SerializeField] AudioRolloffMode runRolloffMode = AudioRolloffMode.Logarithmic;
+
+    [Header("포획 VFX")]
+    [Tooltip("포획 시 재생할 파티클 프리팹(Pop 등). 비워두면 VFX 생략(사운드만 재생).")]
+    [SerializeField] GameObject captureVfxPrefab;
+    [Tooltip("VFX 인스턴스 자동 파괴까지 대기 시간(초)")]
+    [SerializeField] float captureVfxLifetime = 3f;
 
     public event Action<Stage5TargetRunner> OnCaptured;
 
@@ -76,7 +84,7 @@ public class Stage5TargetRunner : NetworkBehaviour
 
     AudioSource _runLoopSource;
 
-    // Host가 쓰고 전 머신이 읽는 이동 애니 상태 (0=Idle, 1=Walk, 2=Run) — 연출 전용, 판정 아님.
+    // Host가 쓰고 전 머신이 읽는 이동 애니 상태 (0=Idle, 2=Run — Walk 제거됨) — 연출 전용, 판정 아님.
     readonly NetworkVariable<byte> _moveStateNV = new NetworkVariable<byte>(0);
 
     void Awake()
@@ -297,28 +305,26 @@ public class Stage5TargetRunner : NetworkBehaviour
     // ── 애니메이션 ────────────────────────────────────────────────
 
     /// <summary>
-    /// isRun / isWalk 상태를 현재 추적 여부에 따라 갱신 (Host 전용 — NV에 씀).
-    /// - 플레이어 추적 중 → Run
-    /// - 랜덤 배회 중    → Walk
-    /// - 비활성/포획     → Idle (둘 다 false)
+    /// isRun 상태를 갱신 (Host 전용 — NV에 씀). Walk 제거됨, 탐지 반경 무관 —
+    /// - 활성 중 + Agent가 실제로 움직이는 중(속도 ≥ idleSpeedThreshold) → Run
+    /// - 비활성/포획, 또는 활성이어도 정지 중(도착·경로 없음 등)         → Idle
     /// </summary>
     void UpdateAnim()
     {
         if (!IsServer) return;
         bool active = _isActive && !_isCaptured;
-        byte state = !active ? (byte)0 : (_trackedPlayer != null ? (byte)2 : (byte)1);
+        bool moving = active && _agent.enabled && _agent.isOnNavMesh
+            && _agent.velocity.sqrMagnitude >= idleSpeedThreshold * idleSpeedThreshold;
+        byte state = moving ? (byte)2 : (byte)0;
         if (_moveStateNV.Value != state) _moveStateNV.Value = state;
     }
 
     void HandleMoveStateChanged(byte previous, byte current)
     {
         if (_anim != null)
-        {
-            _anim.SetBool("isRun",  current == 2);
-            _anim.SetBool("isWalk", current == 1);
-        }
+            _anim.SetBool("isRun", current == 2);
 
-        // Run(추적당해 도망치는 상태)일 때만 루프 재생 — Walk(랜덤 배회)는 무음.
+        // Run(활성 상태)일 때만 루프 재생.
         if (current == 2) StartRunLoop();
         else StopRunLoop();
     }
@@ -372,18 +378,25 @@ public class Stage5TargetRunner : NetworkBehaviour
         if (p == null || p.IsDead) return;
 
         _isCaptured = true;
-        PlayCapturedSfxClientRpc(transform.position);
+        PlayCapturedFxClientRpc(transform.position);
         Deactivate();
         OnCaptured?.Invoke(this);
     }
 
     /// <summary>
-    /// 포획 사운드를 전 머신에서 재생. Host 로컬 Play() 직접 호출은 Host만 들리는 버그였음
+    /// 포획 사운드 + VFX(Pop)를 전 머신에서 재생. Host 로컬 직접 호출은 Host만 재생되는 버그였음
     /// (OnTriggerEnter가 Host-only라서) — WindTrap/DropTrap과 동일하게 Host 판정 → 전체 브로드캐스트로 통일.
+    /// 러너 본체는 이 직후 Deactivate → 곧 디스폰되므로, VFX는 별도 인스턴스로 독립 재생·자동 파괴.
     /// </summary>
     [ClientRpc]
-    void PlayCapturedSfxClientRpc(Vector3 position)
+    void PlayCapturedFxClientRpc(Vector3 position)
     {
         SFXManager.Instance?.Play(SFXId.Stage5_Runner_Captured, position);
+
+        if (captureVfxPrefab != null)
+        {
+            GameObject vfx = Instantiate(captureVfxPrefab, position, Quaternion.identity);
+            Destroy(vfx, captureVfxLifetime);
+        }
     }
 }

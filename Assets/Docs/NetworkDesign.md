@@ -333,7 +333,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 - [x] 룸코드 표시 — **로컬(①②) 경로 전용, 최소 구현으로 완료** (위 "P1/P2 2인 검증 통과" 참고). 구 `_sharedRoomCode` NetworkVariable 패턴은 채택하지 않음 — `NetworkManagerSetup.RoomCode`(Host 로컬 프로퍼티)를 그대로 표시하는 것으로 충분(Client는 표시 대상 아님, §6B.5). 어차피 Steam 정식 배포에서 룸코드 자체가 폐지되므로(§4.2) 이 이상 정교화하지 않는다.
 - [x] DisplayName 보고 (2026-08-22) — 구 `SubmitDisplayNameServerRpc`(슬롯 귀속)를 `PlayerDisplayNameSync`(Player 인스턴스 귀속, `PlayerCheerNameSync`와 동일 패턴)로 재구현. `OnNetworkSpawn`에서 Owner가 자기 표시 이름(Steam 경로: `SteamClient.Name`, 로컬 경로: OS 계정 이름)을 1회 자동 보고 → `TutorialNetworkManager.CompleteGate()`에서 `GameSession.SetSessionDisplayNames()` + `BroadcastSessionDisplayNamesClientRpc`로 전원 배포. **원인 회귀:** 2026-08-20 구 로비 삭제(아래 항목) 때 `SubmitDisplayNameServerRpc`가 함께 삭제된 뒤 새 Tutorial 게이트 구조로 이식되지 않아 `TeamStatusUI` 등에서 전원 `"Player"` 폴백만 표시되고 있었음 — 이번 수정으로 해소. **ParrelSync 검증 대기.**
-- [ ] VoiceId 보고 — 구 `SubmitVoiceIdServerRpc` + 버퍼링 방어 이전(슬롯 귀속 → Player 인스턴스 귀속으로 변경) 아직 미구현. 확정 전까지 `GameSession.GetSessionVoiceId`는 기본 폴백값(`null`)으로 동작.
+- [x] VoiceId 보고 (2026-08-26) — 구 `SubmitVoiceIdServerRpc`(슬롯 귀속)를 별도 클래스 신설 없이 `PlayerDisplayNameSync`에 필드 추가로 재구현(DisplayName과 동일 "검증 없는 1회 자동 self-report" 뼈대라 한 컴포넌트로 합침 — CheerName은 입력·검증·재제출이 있는 별도 도메인이라 `PlayerCheerNameSync`에 그대로 분리 유지). Dissonance 초기화 지연 대비 `ReportVoiceIdRoutine` 코루틴이 `LocalPlayerName` 확정까지 최대 5회(1초 간격) 재시도 후 1회 보고 → `TutorialNetworkManager.CompleteGate()`에서 `GameSession.SetSessionVoiceIds()` + `BroadcastSessionVoiceIdsClientRpc`로 전원 배포(DisplayName과 동일 시점). **원인 회귀:** 2026-08-20 구 로비 삭제 때 `SubmitVoiceIdServerRpc`가 함께 삭제된 뒤 새 Tutorial 게이트 구조로 이식되지 않아 `OptionsTeamVoicePanel`의 팀 보이스 볼륨 슬라이더가 항상 비활성(100% 고정)이었음 — 이번 수정으로 해소. **ParrelSync/실제 멀티 검증 대기.**
 
 **P4 — `TutorialGatherZone` (§6B.3, 신규)** — **코드 완료 + 씬 배치·검증 통과 (2026-08-18, 솔로+ParrelSync 2인)**
 
@@ -346,7 +346,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [x] `PlayerSpawnManager.InitializeOnline(clientColorDict)` 호출
 - [x] 세션 시드 생성+배포(`BroadcastSeedClientRpc`류), 세션 시작 서버시각 배포
 - [x] `GameSession.SetActiveColors` 확정+배포
-- [x] `SetSessionCheerNames`/`SetSessionDisplayNames` 확정+배포 완료 (2026-08-22, 위 P3 DisplayName 항목·P6 참고). `SetSessionVoiceIds`만 여전히 미확정 — `GetSessionVoiceId`는 기본 폴백값(`null`)으로 동작, 음성 매칭만 부정확(NPE 등 하드 실패 없음)
+- [x] `SetSessionCheerNames`/`SetSessionDisplayNames`/`SetSessionVoiceIds` 확정+배포 완료 (2026-08-22 DisplayName, 2026-08-26 VoiceId — 위 P3/P8 항목 참고)
 - [x] `SceneFlowManager.LoadNextScene()` 호출 → `M.Stage1`
 
 **P6 — CheerName Tutorial 통합** — **네트워크 동기화 코어 코드 완료 (2026-08-18), 자기응원 피드백 UI 코드 완료 (2026-08-19), 테스트는 이번 라운드 전체 보류 (사용자 지시 2026-08-19) → 아래 남은 작업 다 끝내고 한 번에 검증**
@@ -356,7 +356,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [x] `PlayerCheerNameSync`(`Assets/Scripts/Cheer/PlayerCheerNameSync.cs`) 신설 — Player 프리팹 부착 대상. `NetworkVariable<FixedString32Bytes>`(Server write) + `SubmitCheerNameServerRpc`(본인 소유 NetworkObject만 제출 가능 가드) + 형식·예약어·세션 내 중복 검증(§3.5) + 결과 통보 이벤트(`OnSubmitResult`)
 - [x] `CheerNameValidator`(`Assets/Scripts/Cheer/CheerNameValidator.cs`) 신설 — 구 `LobbyNetworkManager.IsValidCheerNameFormat`/`ReservedNames`를 추출한 공용 검증 유틸. `LobbyNetworkManager`도 이제 이걸 재사용 — P8에서 구 로비 코드를 지워도 검증 규칙은 남는다
 - [x] CheerName 변경 시 로컬 `CheerKeywordEngine.ApplySessionGrammar()` 재빌드 훅 연결 — 어느 Player의 이름이 바뀌었든 "내 로컬 인식기(Owner 인스턴스)" 하나만 매번 전체 이름 목록으로 재적용(§5.3)
-- [x] `TutorialNetworkManager.CompleteGate()`에 세션 CheerName 확정 추가 — 게이트 통과 시점 각자 최신값을 colorIndex 배열로 확정해 `GameSession.SetSessionCheerNames()` + `BroadcastSessionCheerNamesClientRpc`로 전원 배포(§6B.7 P3 두 번째 항목 중 CheerName 부분은 이걸로 완료 처리 — DisplayName/VoiceId는 여전히 미구현)
+- [x] `TutorialNetworkManager.CompleteGate()`에 세션 CheerName 확정 추가 — 게이트 통과 시점 각자 최신값을 colorIndex 배열로 확정해 `GameSession.SetSessionCheerNames()` + `BroadcastSessionCheerNamesClientRpc`로 전원 배포(§6B.7 P3 두 번째 항목 중 CheerName 부분은 이걸로 완료 처리 — DisplayName은 2026-08-22, VoiceId는 2026-08-26에 각각 후속 완료, 위 P3/P8 항목 참고)
 - [x] **입력 UI**(TMP_InputField 연결, 확정 버튼) — **코드+씬 배치 완료 (2026-08-19), ParrelSync 검증 대기.** 아래 "입력 UI 반영 내용" 참고
 - [x] **"내가 지금 응원 중" 자기 확인 UI** (신규, 2026-08-19) — `PlayerNameTagUI`의 로컬 오너 전용 슬롯(`hideForLocalOwner`로 원래 비워두던 자리, 항상 시야에 있음 — 응원 중엔 화면만 보고 음성만 쓰기 때문에 타겟 머리 위 표시는 응원자 본인에겐 안 보인다는 문제 해결용)을 재사용. `CheerService.OnCheerersChanged`에서 내 colorIndex가 낀 target을 찾아 그 target의 `CheerName`을 **타겟 색상 텍스트**로 표시(하트 아이콘 없음 — 사용자 결정, 2026-08-19). `OnVoteReset`/타겟 변경 시 자동 숨김. 새 스크립트·프리팹 변경 없이 `PlayerNameTagUI.cs`만 수정. **ParrelSync 검증 대기** (아래 체크리스트 참고)
 - [x] `CheerKeywordEngine` Tutorial 연동 + 게이트 전 커스텀 이름 인식 갭 수정 — **구현 완료 (2026-08-19)**

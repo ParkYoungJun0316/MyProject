@@ -224,9 +224,8 @@ public class TutorialNetworkManager : NetworkBehaviour
     /// <summary>
     /// 게이트 통과 확정. 구 LobbyNetworkManager.StartGameServerRpc의 세션 확정 로직을 그대로 옮김 —
     /// PlayerSpawnCoordinator는 Tutorial 접속 시점에 이미 스폰돼 색 데이터를 들고 있으므로
-    /// 재스폰은 불필요(§6B.2). CheerName/DisplayName 세션 확정은 이 메서드에서 처리
-    /// (§6B.7 P6·P3 두 번째 항목, 아래 참고). VoiceId 세션 확정은 여전히 미구현 —
-    /// 확정 전까지 GameSession의 기본 폴백값(null)으로 동작한다.
+    /// 재스폰은 불필요(§6B.2). CheerName/DisplayName/VoiceId 세션 확정은 이 메서드에서 처리
+    /// (§6B.7 P6·P3·P8, 아래 참고).
     /// </summary>
     void CompleteGate()
     {
@@ -287,6 +286,14 @@ public class TutorialNetworkManager : NetworkBehaviour
         BroadcastSessionDisplayNamesClientRpc(
             new FixedString64Bytes(sessionDisplayNames[0]), new FixedString64Bytes(sessionDisplayNames[1]),
             new FixedString64Bytes(sessionDisplayNames[2]), new FixedString64Bytes(sessionDisplayNames[3]));
+
+        // §6B.7 P8 — 세션 VoiceId 확정. DisplayName과 동일 패턴(게이트 통과 시점의 각자 최신
+        // 보고값이 그대로 최종값) — PlayerDisplayNameSync가 DisplayName과 함께 들고 있는 값이다.
+        var sessionVoiceIds = BuildSessionVoiceIds(clientColorDict);
+        GameSession.Instance?.SetSessionVoiceIds(sessionVoiceIds);
+        BroadcastSessionVoiceIdsClientRpc(
+            new FixedString64Bytes(sessionVoiceIds[0]), new FixedString64Bytes(sessionVoiceIds[1]),
+            new FixedString64Bytes(sessionVoiceIds[2]), new FixedString64Bytes(sessionVoiceIds[3]));
 
         if (SceneFlowManager.Instance == null)
         {
@@ -375,6 +382,37 @@ public class TutorialNetworkManager : NetworkBehaviour
         if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
         GameSession.Instance?.SetSessionDisplayNames(
             new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() });
+    }
+
+    /// <summary>
+    /// 게이트 완료 시점의 각 플레이어 보고된 VoiceId를 colorIndex 순 배열로 확정(§6B.7 P8).
+    /// PlayerDisplayNameSync.GetAllEffectiveVoiceIds()가 (clientId, 보고값) 전체를 훑어주므로,
+    /// clientColorDict로 clientId→colorIndex만 매칭하면 된다 — 미보고/빈 값은 빈 문자열 유지
+    /// (GameSession.GetSessionVoiceId의 null 폴백과 동일하게 매칭 불가로 취급됨).
+    /// </summary>
+    static string[] BuildSessionVoiceIds(Dictionary<ulong, PlayerColorType> clientColorDict)
+    {
+        var ids = new string[4];
+        for (int i = 0; i < 4; i++) ids[i] = "";
+
+        foreach (var (clientId, voiceId) in PlayerDisplayNameSync.GetAllEffectiveVoiceIds())
+        {
+            if (!clientColorDict.TryGetValue(clientId, out var color)) continue;
+            if (string.IsNullOrEmpty(voiceId)) continue;
+            int ci = PlayerColorUtil.ColorTypeToIndex(color);
+            if (ci >= 0) ids[ci] = voiceId;
+        }
+        return ids;
+    }
+
+    /// <summary>세션 확정 VoiceId를 모든 클라이언트의 GameSession에 배포(§6B.7 P8).</summary>
+    [ClientRpc]
+    void BroadcastSessionVoiceIdsClientRpc(FixedString64Bytes id0, FixedString64Bytes id1,
+                                            FixedString64Bytes id2, FixedString64Bytes id3)
+    {
+        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
+        GameSession.Instance?.SetSessionVoiceIds(
+            new[] { id0.ToString(), id1.ToString(), id2.ToString(), id3.ToString() });
     }
 
     // ── 스폰 (색 자동배정, §6B.2) ────────────────────────────────
