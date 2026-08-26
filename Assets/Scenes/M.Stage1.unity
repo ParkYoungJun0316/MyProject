@@ -1866,7 +1866,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1320317080607085496, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1896,6 +1896,10 @@ PrefabInstance:
       propertyPath: stageManager
       value: 
       objectReference: {fileID: 816035445}
+    - target: {fileID: 3253887516200736194, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -2537,6 +2541,7 @@ MonoBehaviour:
   captureKey: 99
   superSize: 2
   folderName: Screenshots
+  openFolderAfterCapture: 1
 --- !u!114 &1441701788
 MonoBehaviour:
   m_ObjectHideFlags: 0

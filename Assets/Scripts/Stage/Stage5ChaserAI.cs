@@ -15,7 +15,7 @@ using System.Collections;
 /// - Update()의 NavMeshAgent 추적 판단은 Host 전용. Client는 프리팹의 서버 권한
 ///   NetworkTransform이 위치만 받아 재생 — NavMeshAgent는 Client에서 비활성화해
 ///   NetworkTransform과의 위치 갱신 충돌을 막는다.
-/// - isChase 애니 파라미터는 NetworkVariable로 전파(연출용, §9.0 원칙). Host가 값을 쓰면
+/// - isRun 애니 파라미터는 NetworkVariable로 전파(연출용, §9.0 원칙). Host가 값을 쓰면
 ///   OnValueChanged가 전 머신(Host 포함)에서 동일하게 Animator에 반영.
 ///
 /// [Inspector 설정]
@@ -275,7 +275,7 @@ public class Stage5ChaserAI : NetworkBehaviour
 
     void HandleChaseChanged(bool previous, bool current)
     {
-        if (_anim != null) _anim.SetBool("isChase", current);
+        if (_anim != null) _anim.SetBool("isRun", current);
 
         if (current) StartRunLoop();
         else StopRunLoop();

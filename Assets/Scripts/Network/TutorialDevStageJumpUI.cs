@@ -29,6 +29,15 @@ public class TutorialDevStageJumpUI : MonoBehaviour
     const string DefaultColorHex  = "#333333";
     const int    AutoAdvanceIndex = -1;
 
+    [Header("패널 크기 (기존 대비 가로/세로 1/2)")]
+    [SerializeField] float panelPadding    = 4f;
+    [SerializeField] float panelSpacing    = 2f;
+    [SerializeField] float titleFontSize   = 24f;
+    [SerializeField] float titleHeight     = 33f;
+    [SerializeField] float buttonWidth     = 330f;
+    [SerializeField] float buttonHeight    = 42f;
+    [SerializeField] float buttonFontSize  = 21f;
+
     struct ButtonEntry
     {
         public int   StageIndex;
@@ -63,6 +72,14 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 1000;
 
+        // 메인 HUD(UI.prefab) 캔버스와 동일한 스케일 기준 — 미설정 시 기본값(Constant Pixel Size)으로
+        // 떨어져서 해상도별로 버튼 크기가 달라지는 문제가 있었음.
+        var scaler = canvasGo.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight  = 0.5f;
+
         var panelGo = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         panelGo.transform.SetParent(canvasGo.transform, false);
 
@@ -75,8 +92,9 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         panelGo.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
 
         var layout = panelGo.GetComponent<VerticalLayoutGroup>();
-        layout.padding                = new RectOffset(8, 8, 8, 8);
-        layout.spacing                = 4f;
+        int pad = Mathf.RoundToInt(panelPadding);
+        layout.padding                = new RectOffset(pad, pad, pad, pad);
+        layout.spacing                = panelSpacing;
         layout.childForceExpandWidth  = true;
         layout.childForceExpandHeight = false;
         layout.childControlWidth      = true;
@@ -86,10 +104,10 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         fitter.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
         fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        var titleGo = CreateLabel(panelGo.transform, "스테이지 바로가기 (DEV)");
+        var titleGo = CreateLabel(panelGo.transform, "스테이지 바로가기 (DEV)", titleFontSize, titleHeight);
         titleGo.GetComponent<Text>().fontStyle = FontStyle.Bold;
 
-        var autoBtn = CreateButton(panelGo.transform, "자동 진행 (다음 스테이지)", () => OnStageButtonClicked(AutoAdvanceIndex));
+        var autoBtn = CreateButton(panelGo.transform, "자동 진행 (다음 스테이지)", buttonWidth, buttonHeight, buttonFontSize, () => OnStageButtonClicked(AutoAdvanceIndex));
         _entries.Add(new ButtonEntry { StageIndex = AutoAdvanceIndex, BackgroundImage = autoBtn.GetComponent<Image>() });
 
         int count = SceneFlowManager.Instance.SceneCount;
@@ -100,7 +118,7 @@ public class TutorialDevStageJumpUI : MonoBehaviour
             if (!sceneName.StartsWith("M.") && !sceneName.StartsWith("T.")) continue;
 
             int capturedIndex = i;
-            var buttonGo = CreateButton(panelGo.transform, sceneName, () => OnStageButtonClicked(capturedIndex));
+            var buttonGo = CreateButton(panelGo.transform, sceneName, buttonWidth, buttonHeight, buttonFontSize, () => OnStageButtonClicked(capturedIndex));
             _entries.Add(new ButtonEntry { StageIndex = capturedIndex, BackgroundImage = buttonGo.GetComponent<Image>() });
         }
 
@@ -125,7 +143,7 @@ public class TutorialDevStageJumpUI : MonoBehaviour
                 : ParseColor(DefaultColorHex);
     }
 
-    static GameObject CreateLabel(Transform parent, string text)
+    static GameObject CreateLabel(Transform parent, string text, float fontSize, float height)
     {
         var go = new GameObject("Label", typeof(RectTransform), typeof(Text), typeof(LayoutElement));
         go.transform.SetParent(parent, false);
@@ -133,15 +151,15 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         var t = go.GetComponent<Text>();
         t.text      = text;
         t.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        t.fontSize  = 48;
+        t.fontSize  = Mathf.RoundToInt(fontSize);
         t.color     = Color.white;
         t.alignment = TextAnchor.MiddleLeft;
 
-        go.GetComponent<LayoutElement>().preferredHeight = 66f;
+        go.GetComponent<LayoutElement>().preferredHeight = height;
         return go;
     }
 
-    static GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+    static GameObject CreateButton(Transform parent, string label, float width, float height, float fontSize, UnityEngine.Events.UnityAction onClick)
     {
         var go = new GameObject($"Button_{label}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         go.transform.SetParent(parent, false);
@@ -149,8 +167,8 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         go.GetComponent<Image>().color = ParseColor(DefaultColorHex);
 
         var le = go.GetComponent<LayoutElement>();
-        le.preferredHeight = 84f;
-        le.preferredWidth  = 660f;
+        le.preferredHeight = height;
+        le.preferredWidth  = width;
 
         var textGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
         textGo.transform.SetParent(go.transform, false);
@@ -164,7 +182,7 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         var t = textGo.GetComponent<Text>();
         t.text      = label;
         t.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        t.fontSize  = 42;
+        t.fontSize  = Mathf.RoundToInt(fontSize);
         t.alignment = TextAnchor.MiddleCenter;
         t.color     = Color.white;
 
