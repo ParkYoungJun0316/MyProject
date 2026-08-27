@@ -714,7 +714,7 @@ MonoBehaviour:
   - 32
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &150346693
@@ -935,12 +935,12 @@ GameObject:
   - component: {fileID: 167479388}
   - component: {fileID: 167479387}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: dev
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &167479387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -962,7 +962,7 @@ Transform:
   m_GameObject: {fileID: 167479386}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.67221, y: 0.5, z: 0.00095}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1108,7 +1108,7 @@ MonoBehaviour:
   - 16
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &201171017
@@ -1396,7 +1396,7 @@ MonoBehaviour:
   - 35
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &341441850
@@ -2866,7 +2866,7 @@ MonoBehaviour:
   - 37
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &769379016
@@ -3221,7 +3221,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &911747147
 Transform:
   m_ObjectHideFlags: 0
@@ -3540,7 +3540,7 @@ MonoBehaviour:
   - 33
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &1043272809
@@ -3690,7 +3690,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1069372010
 Transform:
   m_ObjectHideFlags: 0
@@ -4601,7 +4601,7 @@ MonoBehaviour:
   - 23
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &1303841198
@@ -4814,7 +4814,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1438379755
 Transform:
   m_ObjectHideFlags: 0
@@ -5838,7 +5838,7 @@ MonoBehaviour:
   - 36
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &1641435907
@@ -6188,7 +6188,7 @@ MonoBehaviour:
   - 34
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &1687700249
@@ -6808,11 +6808,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2879022694852666727, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: dialogueLines.Array.size
@@ -6828,15 +6828,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3463077053047590644, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: -17
       objectReference: {fileID: 0}
     - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_text
@@ -6940,7 +6940,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7621602255045670127, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 87.13
       objectReference: {fileID: 0}
     - target: {fileID: 7854442590580305213, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -7196,7 +7196,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 911747146}
+    - {fileID: 1069372009}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -7579,7 +7579,7 @@ MonoBehaviour:
   - 34
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &1916831860
@@ -7945,7 +7945,7 @@ MonoBehaviour:
   - 35
   loopSchedule: 0
   schedulePeriod: 3
-  baseSpeed: 0
+  baseSpeed: 5
   speedPhases: []
   fireSfxId: 38
 --- !u!114 &1973890256

@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 3830887627683335837}
   - component: {fileID: 280669732465397641}
-  - component: {fileID: -1701447274868530490}
+  - component: {fileID: -1827310791468374134}
   - component: {fileID: -4258960777310804593}
   - component: {fileID: -2074980784461102029}
-  - component: {fileID: -6736455320803880254}
+  - component: {fileID: 99245861147446145}
   m_Layer: 16
-  m_Name: FrontTooth_Stage5
+  m_Name: FrontTooth111
   m_TagString: EnemyBullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29,14 +29,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2956632214223315457}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalScale: {x: 11, y: 9, z: 7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7018795296104962677}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &280669732465397641
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -64,7 +64,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &-1701447274868530490
+--- !u!114 &-1827310791468374134
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 817918295
+  GlobalObjectIdHash: 3928177822
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -128,7 +128,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8, y: 0.5, z: 0.6}
   m_Center: {x: 0, y: 0, z: -1.1}
---- !u!135 &-6736455320803880254
+--- !u!135 &99245861147446145
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -215,7 +215,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: cc578fee1b038354aadf6e20e553caac, type: 2}
+  - {fileID: 2100000, guid: 1ece6e049950cc14ca5acee96435738a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

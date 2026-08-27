@@ -340,7 +340,7 @@ MonoBehaviour:
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   successColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
   failColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
-  isLeftSide: 1
+  gizmoDirection: 0
 --- !u!1001 &108346480
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -443,7 +443,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 532916847673695508, guid: 66d280c9435cd8d4b814b1e0a1fbccad, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 108346481}
   fireAtSeconds:
   - 2
@@ -1547,12 +1547,12 @@ GameObject:
   - component: {fileID: 730469138}
   - component: {fileID: 730469137}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: dev
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &730469137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2303,6 +2303,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SideSplitChallenge
   leftZone: {fileID: 60076112}
   rightZone: {fileID: 1754096123}
+  frontZone: {fileID: 0}
+  backZone: {fileID: 0}
   totalRounds: 5
   minColorRounds: 3
   maxColorRounds: 4
@@ -2729,7 +2731,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 6426607699262245006, guid: 54880badc09440f4ca36c134360057ec, type: 3}
+  arrowPrefab: {fileID: 9119674398378619937, guid: 67c2dab595ced824eb41963ded088266, type: 3}
   firePoint: {fileID: 12981235}
   fireAtSeconds:
   - 5
@@ -3671,7 +3673,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 6426607699262245006, guid: 54880badc09440f4ca36c134360057ec, type: 3}
+  arrowPrefab: {fileID: 9119674398378619937, guid: 67c2dab595ced824eb41963ded088266, type: 3}
   firePoint: {fileID: 2136635896}
   fireAtSeconds:
   - 2
@@ -3809,7 +3811,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 532916847673695508, guid: 66d280c9435cd8d4b814b1e0a1fbccad, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 623718867}
   fireAtSeconds:
   - 1
@@ -4176,7 +4178,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 6426607699262245006, guid: 54880badc09440f4ca36c134360057ec, type: 3}
+  arrowPrefab: {fileID: 9119674398378619937, guid: 67c2dab595ced824eb41963ded088266, type: 3}
   firePoint: {fileID: 2053178686}
   fireAtSeconds:
   - 8
@@ -4334,7 +4336,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 532916847673695508, guid: 66d280c9435cd8d4b814b1e0a1fbccad, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 1682967000}
   fireAtSeconds:
   - 1
@@ -4488,7 +4490,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 532916847673695508, guid: 66d280c9435cd8d4b814b1e0a1fbccad, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 936566873}
   fireAtSeconds:
   - 1
@@ -5053,7 +5055,7 @@ MonoBehaviour:
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   successColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
   failColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
-  isLeftSide: 0
+  gizmoDirection: 0
 --- !u!1 &1790906946
 GameObject:
   m_ObjectHideFlags: 0
@@ -5212,7 +5214,7 @@ MonoBehaviour:
   keepBWRatio: 0
   phases:
   - triggerTime: 35
-    changeInterval: 10
+    changeInterval: 8
     keepBWRatio: 0.5
 --- !u!4 &1852587696 stripped
 Transform:
@@ -5396,7 +5398,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 1
-  arrowPrefab: {fileID: 532916847673695508, guid: 66d280c9435cd8d4b814b1e0a1fbccad, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 1251616593}
   fireAtSeconds:
   - 3

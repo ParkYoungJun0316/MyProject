@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 8657632464347346573}
   - component: {fileID: 5380376589114929842}
   - component: {fileID: -6833914375672913844}
-  - component: {fileID: 2054550624801027155}
+  - component: {fileID: 3729342059777389196}
   m_Layer: 16
   m_Name: Croissant
   m_TagString: Untagged
@@ -196,8 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
---- !u!65 &2054550624801027155
-BoxCollider:
+--- !u!64 &3729342059777389196
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -211,9 +211,10 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.1, y: 0.05, z: 0.05}
-  m_Center: {x: 0, y: 0, z: -0.015}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -2097575193314003807, guid: 5a0f97067ac64cc49b73b7e97344cbc4, type: 3}

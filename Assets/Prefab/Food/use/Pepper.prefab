@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 9161196323387222824}
   - component: {fileID: 6638237234410483332}
   - component: {fileID: 7205995822871582755}
-  - component: {fileID: 4381091566687998017}
+  - component: {fileID: -1993565696830528861}
   m_Layer: 16
   m_Name: Pepper
   m_TagString: Untagged
@@ -32,13 +32,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2885185337365714351}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 48, y: 48, z: 48}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5016149508175339607
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -196,8 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
---- !u!136 &4381091566687998017
-CapsuleCollider:
+--- !u!64 &-1993565696830528861
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -214,8 +214,7 @@ CapsuleCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.04549011
-  m_Height: 0.1219752
-  m_Direction: 1
-  m_Center: {x: 0.00010664202, y: 0.0029532854, z: 0.0004116092}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 867960117087333920, guid: b2678069dedc8884da9fdaef1e316c28, type: 3}
