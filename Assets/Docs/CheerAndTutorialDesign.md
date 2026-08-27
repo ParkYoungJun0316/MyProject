@@ -26,7 +26,8 @@
 | **말해보기** | **Must** — Tutorial에서 확정↔재변경 반복 가능, 매 확정마다 Vosk grammar 재빌드 → 즉시 재테스트 (§5.5) |
 | **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (사전 검증 + 발음 변형 대체 단어, §5) |
 | 숫자키 응원 | **`1`~`4`** 키 (colorIndex 고정 매핑) **필수 폴백** — 채팅 `/cheer` 폐기 (2026-08-27) |
-| 스테이지 버프 | M = **Shield**, T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
+| 버프 종류 | **Shield**, **SpeedUp** + **응원 확장 2종** (출시 범위) |
+| 버프 선택 | **[2026-08-28 변경]** 스테이지 고정 아님 — **플레이어 개인이 Q키로 Shield ↔ SpeedUp 자유 전환**, M/T 전 스테이지(Boss 포함)에서 항상 둘 다 선택 가능. 스테이지값은 스폰 시 초기 기본값일 뿐 (§1.4) |
 | 인게임 설명 | Tutorial(핵심 메카) + **DialogueUI** (M/T 구역별) |
 | **멀티 연결** | **Steam P2P + Lobby** (`NetworkDesign` ④) |
 | **목표** | **2026-09-01** 원격 협동 + 보이스 + 응원 + Tutorial (텔레메트리는 출시 후 OK) |
@@ -51,12 +52,12 @@
 ### 1.2 응원 규칙 (한 줄)
 
 플레이어가 **팀원의 CheerName**을 **음성으로 외치거나**, **숫자키(1~4)**로 해당 팀원을 지목하면 응원 1표.  
-**나를 제외한 전원**이 같은 수혜자를 응원하면 **팀 버프** 발동.
+**나를 제외한 전원**이 같은 수혜자를 응원하면 **팀 버프** 발동. 어떤 버프가 발동하는지는 **수혜자 본인이 선택한 타입**을 따른다 (§1.4).
 
-| 스테이지 | 버프 | `PlayerBuffSystem` |
-|----------|------|---------------------|
-| M.Stage1 | Shield | `Shield` |
-| T.Stage1 | SpeedUp | `SpeedUp` |
+| `PlayerBuffSystem.BuffType` | 효과 |
+|------|------|
+| Shield | 피격 흡수(charge) |
+| SpeedUp | 이동 속도 증가 |
 
 ### 1.3 두 개의 독립 시스템
 
@@ -79,6 +80,23 @@
 
 **규모 오해 방지:** 전 세계 50세션 × 4명 = 200개 이름이 **한 PC에서 200개를 동시 인식**하는 구조가 **아님**.  
 각 클라이언트는 **현재 세션(Tutorial에서 확정된) CheerName 3~4개만** grammar/lexicon에 넣는다.
+
+### 1.4 버프 선택제 **[Ship Must — 2026-08-28 확정, 구 "M=Shield/T=SpeedUp 스테이지 고정" 대체]**
+
+> **변경 배경:** 기존엔 CheerService가 씬(M/T)마다 버프 타입을 하나로 고정해 전원에게 그대로 적용했으나, "팀원이 원하는 버프를 직접 고르게 하자"는 결정에 따라 **수혜자 개인이 어떤 버프를 받을지 직접 선택**하는 구조로 전환했다. 응원 집계·타임아웃·쿨타임·타겟팅(§2) 로직은 **전혀 변경 없음** — 이번 변경은 "응원이 성사됐을 때 어떤 버프를 주는가"만 바꾼다.
+
+| 항목 | 규칙 |
+|------|------|
+| 선택 주체 | **플레이어 개인** (수혜자 자신) |
+| 선택 방법 | 전용 단축키 **`Q`** — Shield ↔ SpeedUp 토글 |
+| 적용 범위 | **M/T 전 스테이지 + Boss 포함**, 항상 둘 다 선택 가능 (스테이지별 제한 없음) |
+| 스폰 시 초기값 | 그 스테이지의 `CheerService.StageBuffType`(Inspector 기본값) — 예: M스테이지 진입 시 Shield로 시작. **고정이 아니라 초기값일 뿐**, 언제든 전환 가능 |
+| 전환 제약 | **내 버프가 활성 중이면 전환 자체가 막힘** (버프 종료까지 고정). 그 외엔 언제든 자유 전환 |
+| 전환 안전성 | Host가 RPC를 단일 스레드로 순차 처리 — 버프 발동(`CheerService.ApplyBuff`) 시점 이후 도착한 전환 요청은 항상 거부되어 레이스 컨디션으로 뚫릴 여지 없음 |
+| UI 피드백 | **`CheerProgressUI` 슬롯 상시 표시** (2026-08-28 변경, §8.1) — 평소엔 선택된 타입 아이콘만 정지 표시, Q로 바꾸면 즉시 아이콘 갱신. 전환이 막힌 경우(버프 활성 중)는 **별도 UI 없이 조용히 무시** — "버프 중엔 전환 안 됨" 설명은 Tutorial에서 담당 |
+| 구현 | `NetworkPlayerSetup.SelectedBuffType`(NetworkVariable) + `RequestToggleBuffTypeServerRpc()` + `CheerService.IsBuffActive()` + `CheerProgressUI`(Idle/BuffActive/Cooldown 3상태 + Q키 입력까지 한 컴포넌트에서 담당, 2026-08-28 통합) |
+
+**밸런스 참고:** M=Shield/T=SpeedUp 매핑은 스테이지 난이도 설계(탱킹 구간 vs 회피 구간) 의도로 만들어졌던 것 — 선택제 전환 이후 팀 전원이 한쪽만 고집하면 그 의도가 옅어질 수 있음. 플레이테스트로 밸런스 재확인 필요 (강제 아님, 관찰만).
 
 ---
 
@@ -569,6 +587,8 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 
 `PlayerBuffSystem`은 로컬 MonoBehaviour → **`NetworkPlayerSetup`에 버프 NetworkVariable** 미러링 (Host Apply 후 갱신, Client HUD 일치).
 
+**버프 선택(§1.4):** `NetworkPlayerSetup.SelectedBuffType`(NetworkVariable, 전원 읽기/Host 쓰기)에 플레이어별 선택 저장. Owner가 Q키로 `RequestToggleBuffTypeServerRpc()` 호출 → Host가 `CheerService.IsBuffActive()`로 활성 중 여부 검증 후 갱신. `CheerService.ApplyBuff`는 스테이지 고정값이 아니라 수혜자의 `SelectedBuffType`을 읽어 적용한다.
+
 ### 7.4 치팅 방어 (Open 수준)
 
 - 동일 타겟 이미 응원 중 → 중복 RPC 무시.
@@ -586,7 +606,17 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 - 수혜자 **버프 중 / 쿨 중**
 - (선택) 타임아웃 잔여
 
-**연동:** `TeamStatusUI` (버프 아이콘), `CheerProgressUI` (신규).
+**연동:** `TeamStatusUI` (버프 아이콘), `CheerProgressUI`.
+
+**`CheerProgressUI` 상시 표시 (2026-08-28 변경):** 버프 중일 때만 나타나던 방식에서 **항상 표시**로 변경 — 3상태:
+
+| 상태 | 표시 |
+|------|------|
+| Idle (평소) | 지금 선택해둔 버프(Shield/SpeedUp) 아이콘, fill 없음. Q로 전환 시 즉시 갱신 |
+| BuffActive | 아이콘 + 위→아래 검정 fill-down (남은 시간) |
+| Cooldown | 아이콘 대신 숫자(잔여 초) |
+
+버프 선택제(§1.4)의 UI 피드백을 이 슬롯 하나로 통합 — 별도 토스트 없음. 전환이 막힌 경우(버프 활성 중)는 조용히 무시되며, 이 규칙 자체는 Tutorial에서 설명.
 
 ### 8.2 보이스 UI (여유)
 
@@ -671,7 +701,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 |------|------|
 | `CheerService` | Host, M/T 씬. 집계·타임아웃·쿨·버프 |
 | `SubmitCheerServerRpc` | `CheerDigitInput` 1~4 키 등 |
-| 버프 | M=`Shield`, T=`SpeedUp`, `NetworkPlayerSetup` 미러링 |
+| 버프 | `Shield`/`SpeedUp` 개인 선택제(§1.4), `NetworkPlayerSetup` 미러링, `CheerProgressUI`(Q키 입력 포함) |
 | UI | `CheerProgressUI`, `TeamStatusUI` |
 
 **테스트:** ParrelSync **2인** — 숫자키만 버프·쿨·타임아웃.
@@ -777,7 +807,8 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [x] `CheerLexiconBuilder` — §5.2 B(고정 4종 발음 변형 대체 단어 매핑) 구현 완료 — 실제 인식 플레이테스트는 아직
 - [ ] `CheerLexiconBuilder` — §5.2 C(커스텀 이름 혼합 방식 대체 발음) — 설계만 확정, 구현 안 함
 - [ ] Dissonance ↔ Vosk 마이크 공유
-- [ ] M=Shield, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
+- [x] Shield/SpeedUp 개인 선택제(§1.4) — `NetworkPlayerSetup.SelectedBuffType` + `RequestToggleBuffTypeServerRpc` + `CheerService.IsBuffActive` + `CheerProgressUI`(Q키 입력 통합) 구현 완료 (2026-08-28). Player 프리팹에 **Shield/SpeedUp `buffSettings` 둘 다** 채워져 있는지 확인 필요 — 사용자 에디터 작업으로 남음
+- [ ] **응원 확장 2종** (신규 버프 타입 — 미착수)
 - [ ] `CheerProgressUI` + `TeamStatusUI`
 - [ ] 숫자키(1~4) 입력 안내 UI (선택, 화면 피드백)
 - [ ] 솔로 숫자키 응원 + 로컬 CheerService
@@ -811,6 +842,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 | **Dissonance** | Asset Store + NGO integration |
 | **Vosk** | GitHub `alphacep/vosk-unity-asr`, 모델 alphacephei.com |
 | 응원 구현 | `CheerService`, `CheerKeywordEngine`, `CheerLexiconBuilder`, `CheerProgressUI`, `VoskModelLoader` |
+| 버프 선택제 (§1.4) | `NetworkPlayerSetup.SelectedBuffType`/`RequestToggleBuffTypeServerRpc`, `CheerService.IsBuffActive`, `CheerProgressUI`(Q키 입력 포함) |
 
 ---
 
@@ -884,3 +916,9 @@ A. **표 안 쌓임**, 발동 불가.
 
 **Q. Tutorial 매 판 5~8분?**  
 A. **아니오.** `TutorialCompleted` 시 Stealth/응원 1회 구역은 스킵하고 CheerName 입력 + `TutorialGatherZone` 직행.
+
+**Q. M스테이지에서도 SpeedUp 버프를 받을 수 있나?**  
+A. **가능 (2026-08-28 확정).** M=Shield/T=SpeedUp은 이제 "스폰 시 초기값"일 뿐, Q키로 언제든 Shield ↔ SpeedUp 전환 가능. M/T 전 스테이지(Boss 포함) 동일. §1.4.
+
+**Q. 버프 받는 도중에 다른 버프로 바꿀 수 있나?**  
+A. **아니오.** 버프가 활성 중이면 전환 요청 자체가 거부된다. 버프가 끝나야(쿨타임 진입) 다시 전환 가능. §1.4.

@@ -72,6 +72,14 @@ public class GameSettingsManager : MonoBehaviour
     public event Action<float> ChatFontSizeChanged;
 
     /// <summary>
+    /// 마이크 mute 상태가 바뀔 때 발생(옵션 패널 토글 + 인게임 M키 단축키 공통 경로).
+    /// SetMicMuted를 부르는 쪽이 어디든(OptionsMenuController.OnMicMuteChanged 또는
+    /// MicMuteHotkeyUI의 M키 핸들러) 이 이벤트로 다른 쪽 UI에 즉시 반영됨 — §1 pull 원칙의
+    /// ChatFontSizeChanged와 동일한 이유(이미 떠 있는 UI를 push로 갱신해야 함)로 예외 허용.
+    /// </summary>
+    public event Action<bool> MicMutedChanged;
+
+    /// <summary>
     /// 모니터의 진짜 네이티브(최대) 해상도. 저장된 해상도를 적용하기 전(ApplySavedDisplay 호출 전)
     /// Awake에서 딱 한 번만 캡처해서 고정함.
     /// Screen.currentResolution이 아니라 Screen.resolutions 중 최대값을 쓰는 이유: currentResolution은
@@ -149,6 +157,8 @@ public class GameSettingsManager : MonoBehaviour
 
         DissonanceComms comms = DissonanceComms.GetSingleton();
         if (comms != null) comms.IsMuted = value;
+
+        MicMutedChanged?.Invoke(value);
     }
 
     /// <summary>옵션 메뉴 마이크 입력장치 드롭다운에서 호출. 즉시 적용 + 저장.

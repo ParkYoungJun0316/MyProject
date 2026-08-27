@@ -32,6 +32,10 @@ public class PlayerEmoteMenuUI : MonoBehaviour
     [Tooltip("메뉴 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요.")]
     [SerializeField] bool lockCursorOnClose = true;
 
+    /// <summary>메뉴가 열려있는 동안 true — EmoteHintUI가 "T: 이모트" 힌트를 숨기는 데 사용
+    /// (InGameChatUI.IsChatOpen / TutorialCheerNameUI.IsOpen과 동일 패턴).</summary>
+    public static bool IsOpen { get; private set; }
+
     Player _player;
     Animator _anim;
     bool _isOpen;
@@ -79,6 +83,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         // 직전에 이미 풀어둔 커서를 도로 잠가 "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다
         // (2026-08-22 수정, EscMenuController와 동일 원인).
         if (_isOpen) CursorUnlockRequestUtil.Forget(this);
+        IsOpen = false;
     }
 
     void Update()
@@ -123,6 +128,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
     void OpenMenu()
     {
         _isOpen = true;
+        IsOpen = true;
         if (emoteMenuPanel != null) emoteMenuPanel.SetActive(true);
 
         CursorUnlockRequestUtil.Request(this);
@@ -131,6 +137,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
     void CloseMenu()
     {
         _isOpen = false;
+        IsOpen = false;
         if (emoteMenuPanel != null) emoteMenuPanel.SetActive(false);
 
         CursorUnlockRequestUtil.Release(this, lockCursorOnClose);

@@ -1,19 +1,26 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// 내 플레이어가 받은 버프 상태 UI.
+/// 내 플레이어가 받은 버프 상태 UI + 버프 선택 입력(Q키).
 ///
 /// [상태]
-/// Hidden     → 숨김 (버프/쿨타임 없음)
+/// Idle       → 상시 표시. 지금 선택해둔 버프 타입 아이콘 (fill 없음, Q로 바꾸면 즉시 갱신)
 /// BuffActive → 버프 아이콘 + 위→아래 fill (남은 시간)
-/// Cooldown   → 다음 버프까지 카운트다운 숫자
+/// Cooldown   → 다음 버프까지 카운트다운 숫자 (아이콘 대신 숫자만)
+///
+/// [버프 선택 입력 — 구 BuffSelectHotkeyInput 흡수, 2026-08-28]
+/// Q 키 → 로컬에서 "지금 내 버프 활성 중?" 확인(즉시 판정) → 활성 중 아니면
+/// NetworkPlayerSetup.RequestToggleBuffTypeServerRpc() 호출 → Host가 다시 검증
+/// (CheerService.IsBuffActive) 후 NetworkVariable 갱신 → Idle 아이콘이 즉시 갱신되는 것 자체가 피드백.
+/// 활성 중이면 조용히 무시(별도 UI 없음 — Tutorial에서 규칙 설명).
 ///
 /// [이전 역할 이동]
 /// "나를 응원 중인 플레이어" 표시 → TeamStatusUI로 이동.
-/// 이 컴포넌트는 버프 지속 시간 + 쿨타임만 담당.
+/// 이 컴포넌트는 버프 지속 시간 + 쿨타임 + 버프 선택 입력만 담당.
 ///
 /// [Inspector 연결 요소]
 /// - buffIconMap   : BuffType별 버프 아이콘
@@ -56,8 +63,8 @@ public class CheerProgressUI : MonoBehaviour
 
     // ── 상태 ──────────────────────────────────────────────────────
 
-    enum CheerState { Hidden, BuffActive, Cooldown }
-    CheerState _state = CheerState.Hidden;
+    enum CheerState { Idle, BuffActive, Cooldown }
+    CheerState _state = CheerState.Idle;
 
     // 응원으로 발동 가능한 버프 타입들. 플레이어가 선택하는 타입이 이 안에서만 정해지므로
     // "이 UI 슬롯이 반응해야 할 버프인지" 필터로 사용 (스테이지 고정 StageBuffType 대체).
@@ -112,7 +119,8 @@ public class CheerProgressUI : MonoBehaviour
 
         SubscribeBuffSystem();
         _localSetup = FindLocalNetworkPlayerSetup();
-        SetState(CheerState.Hidden);
+        if (_localSetup != null) _localSetup.OnSelectedBuffTypeChanged += HandleSelectedBuffTypeChanged;
+        SetState(CheerState.Idle);
     }
 
     void OnDestroy()
@@ -120,6 +128,7 @@ public class CheerProgressUI : MonoBehaviour
         PlayerSpawnCoordinator.OnPlayersReady -= Init;
         UnsubscribeEvents();
         UnsubscribeBuffSystem();
+        if (_localSetup != null) _localSetup.OnSelectedBuffTypeChanged -= HandleSelectedBuffTypeChanged;
     }
 
     void OnEnable()  => SubscribeEvents();
@@ -292,12 +301,19 @@ public class CheerProgressUI : MonoBehaviour
     void SetState(CheerState next)
     {
         _state = next;
-        _buffContainer.SetActive(next == CheerState.BuffActive);
+        // Idle·BuffActive 둘 다 아이콘 슬롯을 보여준다 — 차이는 fill 유무뿐.
+        _buffContainer.SetActive(next == CheerState.Idle || next == CheerState.BuffActive);
         _cooldownText.gameObject.SetActive(next == CheerState.Cooldown);
 
         if (next == CheerState.BuffActive)
         {
             _buffIconImage.sprite        = GetBuffSprite(_activeBuffType);
+            _buffOverlayImage.fillAmount = 0f;
+        }
+        else if (next == CheerState.Idle)
+        {
+            var selected = _localSetup != null ? _localSetup.SelectedBuffType : PlayerBuffSystem.BuffType.Shield;
+            _buffIconImage.sprite        = GetBuffSprite(selected);
             _buffOverlayImage.fillAmount = 0f;
         }
         else if (next == CheerState.Cooldown)
@@ -310,6 +326,8 @@ public class CheerProgressUI : MonoBehaviour
 
     void Update()
     {
+        HandleBuffSelectInput();
+
         if (_state == CheerState.BuffActive)
         {
             float elapsed = Time.time - _buffStartTime;
@@ -319,10 +337,33 @@ public class CheerProgressUI : MonoBehaviour
         {
             float remaining = _cooldownDuration - (Time.time - _cooldownStartTime);
             if (remaining <= 0f)
-                SetState(CheerState.Hidden);
+                SetState(CheerState.Idle);
             else
                 _cooldownText.text = Mathf.CeilToInt(remaining).ToString();
         }
+    }
+
+    /// <summary>
+    /// Q키 → 버프 선택 토글 (구 BuffSelectHotkeyInput 흡수).
+    /// InGameChatUI/TutorialCheerNameUI 열려있으면 무시 (CheerDigitInput과 동일 게이팅).
+    /// </summary>
+    void HandleBuffSelectInput()
+    {
+        var kb = Keyboard.current;
+        if (kb == null) return;
+
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
+        if (!kb.qKey.wasPressedThisFrame) return;
+        if (_localSetup == null) return;
+
+        // 로컬 선(先)검증 — 내 버프가 지금 활성 중이면 조용히 무시.
+        // (권위 있는 최종 판정은 여전히 Host의 RequestToggleBuffTypeServerRpc.)
+        bool isActive = _localBuffSystem != null &&
+            (_localBuffSystem.IsActive(PlayerBuffSystem.BuffType.Shield) ||
+             _localBuffSystem.IsActive(PlayerBuffSystem.BuffType.SpeedUp));
+        if (isActive) return;
+
+        _localSetup.RequestToggleBuffTypeServerRpc();
     }
 
     // ── 이벤트 핸들러 ─────────────────────────────────────────────
@@ -348,6 +389,13 @@ public class CheerProgressUI : MonoBehaviour
         _cooldownStartTime = Time.time;
         _cooldownDuration  = seconds;
         SetState(CheerState.Cooldown);
+    }
+
+    /// <summary>Q키로 버프 선택이 바뀌면(NetworkPlayerSetup) Idle 상태일 때만 아이콘 즉시 갱신.</summary>
+    void HandleSelectedBuffTypeChanged(PlayerBuffSystem.BuffType type)
+    {
+        if (_state != CheerState.Idle) return;
+        _buffIconImage.sprite = GetBuffSprite(type);
     }
 
     // ── 유틸 ─────────────────────────────────────────────────────

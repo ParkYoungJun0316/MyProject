@@ -528,6 +528,27 @@ public class StageNetworkState : NetworkBehaviour
         DropTrap.PlayWarnById(trapId, targetPos, warnDuration, startY, speed, markerScale);
     }
 
+    // ── 보스 크로스파이어 안전지대 표시 동기화 (SafeZoneWarnSign 전용, DropTrap 경고 마커와 동일 패턴) ──
+
+    /// <summary>
+    /// Host: SafeZoneWarnSign이 이번 사이클 안전 지점을 표시하는 시점에 호출.
+    /// Client: 동일 위치에 마커 연출만 재생 (트랩 발사와는 완전히 별개 채널).
+    /// </summary>
+    [ClientRpc]
+    public void SyncSafeZoneWarnClientRpc(Vector3 position)
+    {
+        if (IsServer) return;
+        SafeZoneWarnSign.Instance?.PlayWarnFromNetwork(position);
+    }
+
+    /// <summary>Host: SafeZoneWarnSign이 마커를 숨기는 시점에 호출. Client: 마커 숨김만 재생.</summary>
+    [ClientRpc]
+    public void SyncSafeZoneHideClientRpc()
+    {
+        if (IsServer) return;
+        SafeZoneWarnSign.Instance?.PlayHideFromNetwork();
+    }
+
     // ── ArrowTrap Mouth 연출 동기화 (Open/Hold, DropTrap 경고 마커와 동일 패턴) ──
 
     /// <summary>

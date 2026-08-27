@@ -103,6 +103,9 @@ public class OptionsMenuController : MonoBehaviour
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.AddListener(OnMicDeviceChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.AddListener(OnChatFontSizeChanged);
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
+
+        if (GameSettingsManager.Instance != null)
+            GameSettingsManager.Instance.MicMutedChanged += OnMicMutedChangedExternal;
     }
 
     void OnDisable()
@@ -117,7 +120,18 @@ public class OptionsMenuController : MonoBehaviour
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.RemoveListener(OnMicDeviceChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.RemoveListener(OnChatFontSizeChanged);
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
+
+        if (GameSettingsManager.Instance != null)
+            GameSettingsManager.Instance.MicMutedChanged -= OnMicMutedChangedExternal;
     }
+
+    /// <summary>
+    /// 인게임 M키 단축키(MicMuteHotkeyUI) 등 이 패널 밖에서 mute 상태가 바뀌었을 때, 패널이
+    /// 열려 있는 채로도 토글 체크박스가 즉시 따라 움직이도록 함. WithRefreshGuard로 감싸서
+    /// 이 갱신이 OnMicMuteChanged를 다시 호출해 GameSettingsManager에 되먹임하지 않게 막는다.
+    /// </summary>
+    void OnMicMutedChangedExternal(bool muted) =>
+        WithRefreshGuard(() => { if (micMuteToggle != null) micMuteToggle.isOn = muted; });
 
     /// <summary>
     /// 언어 드롭다운에서 즉시 언어를 바꿨을 때, 패널을 닫았다 열지 않아도

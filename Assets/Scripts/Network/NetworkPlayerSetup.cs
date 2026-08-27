@@ -518,7 +518,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     /// <summary>
     /// 응원으로 받을 버프 종류를 Shield ↔ SpeedUp으로 토글.
-    /// Owner만 호출 가능(InvokePermission.Owner) — BuffSelectHotkeyInput에서 호출.
+    /// Owner만 호출 가능(InvokePermission.Owner) — CheerProgressUI(Q키 입력)에서 호출.
     /// 이 플레이어의 버프가 지금 활성 중이면 무조건 거부(잠금) — Host가 RPC를 단일 스레드로
     /// 순차 처리하므로 CheerService.ApplyBuff 실행 시점 이후 도착한 전환 요청은 항상 거부된다
     /// (레이스 컨디션으로 뚫릴 여지 없음).
