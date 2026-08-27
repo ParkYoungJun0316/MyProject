@@ -316,22 +316,7 @@ public class InGameChatUI : NetworkBehaviour
 
     void SendChat(string trimmed)
     {
-        TrySubmitCheer(trimmed);
         SendMessageServerRpc(trimmed);
-    }
-
-    // ── /cheer 파싱 ───────────────────────────────────────────────
-
-    void TrySubmitCheer(string text)
-    {
-        if (!text.StartsWith("/cheer ", System.StringComparison.OrdinalIgnoreCase)) return;
-        string[] parts = text.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2) return;
-
-        int targetIdx = CheerService.GetColorIndex(parts[1]);
-        if (targetIdx < 0) return;
-
-        CheerService.Instance?.SubmitCheerServerRpc(targetIdx, false);
     }
 
     // ── 네트워크 ──────────────────────────────────────────────────

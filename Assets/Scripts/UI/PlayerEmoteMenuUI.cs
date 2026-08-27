@@ -3,12 +3,15 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// T키로 이모트 선택 패널을 열고 닫고, 숫자 1~8 또는 버튼 클릭으로 이모트 애니메이션을 재생.
+/// T키로 이모트 선택 패널을 열고 닫고, 버튼 클릭으로 이모트 애니메이션을 재생.
 /// 로컬 오너 Player를 찾아 그 Animator에 직접 SetBool/SetTrigger — NetworkAnimator(Owner Authority)가
 /// 자동으로 다른 클라이언트에 동기화한다 (Player.cs의 doHit/doDie, isRun과 동일한 방식).
 ///
-/// [번호 배정]
-/// 1 Yes, 2 No, 3 Thanks, 4 Hide, 5 Point, 6 Shame, 7 Fly, 8 Surprise
+/// [클릭 전용 — 2026-08-27 변경]
+/// 이전엔 숫자 1~8 키로도 재생 가능했으나, 응원 시스템이 전역 숫자키 1~4(CheerDigitInput,
+/// CheerAndTutorialDesign.md §6.2)를 쓰게 되면서 같은 키가 "메뉴 열림 여부"에 따라 다른 의미가
+/// 되는 상태 의존 충돌을 없애기 위해 완전히 클릭 전용으로 전환했다. 버튼 OnClick()은 그대로
+/// PlayYes()/PlayNo()/... 를 호출하므로 씬 배선은 바꿀 필요 없다.
 ///
 /// [루프 vs 원샷]
 /// Yes/No/Hide/Point: 루프 클립 → Bool 파라미터(isYes/isNo/isHide/isPoint)로 재생, 이동 입력이 들어오면 즉시 취소.
@@ -89,7 +92,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         if (InGameChatUI.IsChatOpen) return;
 
         // CheerName 설정 패널이 열려 있으면 이모트 메뉴는 완전히 양보한다(우선순위: cheername > 이모트).
-        // 이미 열려 있었다면 강제로 닫아 겹침·숫자키 충돌(치어네임 문자 중 0~9와 이모트 1~8번 트리거)을 없앤다.
+        // 이미 열려 있었다면 강제로 닫아 UI 겹침을 없앤다.
         if (TutorialCheerNameUI.IsOpen)
         {
             if (_isOpen) CloseMenu();
@@ -114,14 +117,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame) { CloseMenu(); return; }
 
-        if (Keyboard.current.digit1Key.wasPressedThisFrame) PlayYes();
-        else if (Keyboard.current.digit2Key.wasPressedThisFrame) PlayNo();
-        else if (Keyboard.current.digit3Key.wasPressedThisFrame) PlayThanks();
-        else if (Keyboard.current.digit4Key.wasPressedThisFrame) PlayHide();
-        else if (Keyboard.current.digit5Key.wasPressedThisFrame) PlayPoint();
-        else if (Keyboard.current.digit6Key.wasPressedThisFrame) PlayShame();
-        else if (Keyboard.current.digit7Key.wasPressedThisFrame) PlayFly();
-        else if (Keyboard.current.digit8Key.wasPressedThisFrame) PlaySurprise();
+        // 숫자키 트리거 제거됨(2026-08-27) — 응원 숫자키(1~4)와의 충돌 방지, 클릭 전용.
     }
 
     void OpenMenu()
@@ -140,7 +136,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         CursorUnlockRequestUtil.Release(this, lockCursorOnClose);
     }
 
-    // ── 버튼 OnClick 전용 (숫자키 핸들러도 동일 메서드 재사용) ─────────────
+    // ── 버튼 OnClick 전용 ────────────────────────────────────────
 
     /// <summary>1번 / Yes 버튼 (루프 — 이동 시 자동 취소).</summary>
     public void PlayYes() => PlayLoopEmote("isYes");

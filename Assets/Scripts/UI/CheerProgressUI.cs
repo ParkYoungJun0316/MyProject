@@ -59,13 +59,25 @@ public class CheerProgressUI : MonoBehaviour
     enum CheerState { Hidden, BuffActive, Cooldown }
     CheerState _state = CheerState.Hidden;
 
+    // 응원으로 발동 가능한 버프 타입들. 플레이어가 선택하는 타입이 이 안에서만 정해지므로
+    // "이 UI 슬롯이 반응해야 할 버프인지" 필터로 사용 (스테이지 고정 StageBuffType 대체).
+    static readonly PlayerBuffSystem.BuffType[] CheerBuffTypes =
+        { PlayerBuffSystem.BuffType.Shield, PlayerBuffSystem.BuffType.SpeedUp };
+
+    static bool IsCheerBuffType(PlayerBuffSystem.BuffType type)
+        => System.Array.IndexOf(CheerBuffTypes, type) >= 0;
+
     int   _myColorIndex    = -1;
     float _buffStartTime;
     float _buffDuration;
     float _cooldownStartTime;
     float _cooldownDuration;
 
+    // 지금 활성 중(혹은 방금 활성화된)인 버프의 실제 타입 — 플레이어 선택에 따라 달라짐.
+    PlayerBuffSystem.BuffType _activeBuffType = PlayerBuffSystem.BuffType.Shield;
+
     PlayerBuffSystem _localBuffSystem;
+    NetworkPlayerSetup _localSetup;
 
     // ── 생성된 UI ─────────────────────────────────────────────────
 
@@ -99,6 +111,7 @@ public class CheerProgressUI : MonoBehaviour
             SubscribeEvents();
 
         SubscribeBuffSystem();
+        _localSetup = FindLocalNetworkPlayerSetup();
         SetState(CheerState.Hidden);
     }
 
@@ -162,24 +175,36 @@ public class CheerProgressUI : MonoBehaviour
         return null;
     }
 
+    /// <summary>HandleBuffActivated(ClientRpc 경로) 폴백에서 "내 선택 타입"을 조회하기 위한 참조.</summary>
+    static NetworkPlayerSetup FindLocalNetworkPlayerSetup()
+    {
+        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        {
+            var net      = p.GetComponent<NetworkObject>();
+            bool isOwner = (net != null && net.IsOwner) || p.isOwnerControlled;
+            if (isOwner) return p.GetComponent<NetworkPlayerSetup>();
+        }
+        return null;
+    }
+
     /// <summary>
     /// 로컬 PlayerBuffSystem에 버프가 적용될 때 직접 감지.
     /// CheerService 이벤트 경로(colorIndex 필터·구독 타이밍)에 무관하게 동작.
     /// </summary>
     void HandleBuffApplied(PlayerBuffSystem.BuffType type, float duration)
     {
-        var stageType = CheerService.Instance?.StageBuffType ?? PlayerBuffSystem.BuffType.Shield;
-        if (type != stageType) return;
-        _buffStartTime = Time.time;
-        _buffDuration  = duration;
+        if (!IsCheerBuffType(type)) return;
+        _activeBuffType = type;
+        _buffStartTime  = Time.time;
+        _buffDuration   = duration;
         SetState(CheerState.BuffActive);
     }
 
     /// <summary>Shield charge 소모로 버프가 제거되면 즉시 Cooldown 전환.</summary>
     void HandleBuffRemoved(PlayerBuffSystem.BuffType type)
     {
-        var stageType = CheerService.Instance?.StageBuffType ?? PlayerBuffSystem.BuffType.Shield;
-        if (type != stageType) return;
+        if (!IsCheerBuffType(type)) return;
+        if (type != _activeBuffType) return; // 다른 버프 타입 제거 이벤트는 무시
         if (_state != CheerState.BuffActive) return;
         _cooldownStartTime = Time.time;
         SetState(CheerState.Cooldown);
@@ -272,8 +297,7 @@ public class CheerProgressUI : MonoBehaviour
 
         if (next == CheerState.BuffActive)
         {
-            _buffIconImage.sprite        = GetBuffSprite(CheerService.Instance?.StageBuffType
-                ?? PlayerBuffSystem.BuffType.Shield);
+            _buffIconImage.sprite        = GetBuffSprite(_activeBuffType);
             _buffOverlayImage.fillAmount = 0f;
         }
         else if (next == CheerState.Cooldown)
@@ -311,6 +335,9 @@ public class CheerProgressUI : MonoBehaviour
         _buffStartTime = Time.time;
         if (CheerService.Instance != null)
             _buffDuration = CheerService.Instance.BuffDuration;
+        // 이 폴백 경로엔 실제 타입 파라미터가 없으므로 내가 지금 선택해둔 타입으로 추정한다
+        // (버프 발동 시 CheerService.ApplyBuff가 실제로 적용하는 값과 항상 일치).
+        if (_localSetup != null) _activeBuffType = _localSetup.SelectedBuffType;
         SetState(CheerState.BuffActive);
     }
 

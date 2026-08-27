@@ -12,6 +12,7 @@ using UnityEngine.InputSystem;
 ///   비오너  : PlayerInput 비활성, Rigidbody kinematic, VoiceBroadcastTrigger 비활성
 ///   Host    : HP·함정·낙사 확정 (Owner ReportFallDeath + Host Y 폴백)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
+/// - 응원 버프 선택(SelectedBuffType) — 개인별 Shield/SpeedUp 선택, RequestToggleBuffTypeServerRpc로 전환
 ///
 /// [배치]
 /// Network Player Prefab에 추가.
@@ -54,6 +55,15 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableWritePermission.Owner
     );
 
+    // 응원으로 받을 버프 종류(개인 선택): 서버 쓰기(검증 후) / 전원 읽기(UI 표시용).
+    // 스폰 시 CheerService.StageBuffType(스테이지 기본값)으로 초기화되고, 이후 플레이어가
+    // RequestToggleBuffTypeServerRpc로 언제든 자유 전환 가능 (버프 활성 중엔 잠금, §CheerService.IsBuffActive).
+    private readonly NetworkVariable<int> _selectedBuffType = new(
+        (int)PlayerBuffSystem.BuffType.Shield,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     [SerializeField] LocalPlayerCamera _localCameraPrefab;
 
     private Player                  _player;
@@ -90,11 +100,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
                   $"ownerClientId={OwnerClientId} IsServer={IsServer} IsOwner={IsOwner} " +
                   $"scene={gameObject.scene.name}");
 
-        _colorIndex.OnValueChanged    += OnColorIndexChanged;
-        _hp.OnValueChanged            += OnHpChanged;
-        _shield.OnValueChanged        += OnShieldChanged;
-        _isBlack.OnValueChanged       += OnIsBlackChanged;
-        _isUniqueColor.OnValueChanged += OnIsUniqueColorChanged;
+        _colorIndex.OnValueChanged        += OnColorIndexChanged;
+        _hp.OnValueChanged                += OnHpChanged;
+        _shield.OnValueChanged            += OnShieldChanged;
+        _isBlack.OnValueChanged           += OnIsBlackChanged;
+        _isUniqueColor.OnValueChanged     += OnIsUniqueColorChanged;
+        _selectedBuffType.OnValueChanged  += OnSelectedBuffTypeChangedInternal;
 
         // 색 초기 적용
         ApplyColor(_colorIndex.Value);
@@ -102,6 +113,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // Host: 플레이어 초기 HP를 NetworkVariable에 설정
         if (IsServer && _player != null)
             _hp.Value = _player.maxHeart;
+
+        // Host: 버프 선택 초기값 = 이 스테이지의 기본 버프(CheerService Inspector 값).
+        // 이후엔 플레이어가 자유 전환 가능 — 이건 "고정"이 아니라 "스폰 시 기본값"일 뿐.
+        if (IsServer)
+        {
+            var defaultBuff = CheerService.Instance != null
+                ? CheerService.Instance.StageBuffType
+                : PlayerBuffSystem.BuffType.Shield;
+            _selectedBuffType.Value = (int)defaultBuff;
+        }
 
         // Client: NV 초기값은 OnValueChanged로 전달되지 않으므로 즉시 적용
         if (!IsServer && _player != null)
@@ -144,11 +165,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
                   $"ownerClientId={OwnerClientId} IsServer={IsServer} IsOwner={IsOwner} " +
                   $"scene={gameObject.scene.name}");
 
-        _colorIndex.OnValueChanged    -= OnColorIndexChanged;
-        _hp.OnValueChanged            -= OnHpChanged;
-        _shield.OnValueChanged        -= OnShieldChanged;
-        _isBlack.OnValueChanged       -= OnIsBlackChanged;
-        _isUniqueColor.OnValueChanged -= OnIsUniqueColorChanged;
+        _colorIndex.OnValueChanged        -= OnColorIndexChanged;
+        _hp.OnValueChanged                -= OnHpChanged;
+        _shield.OnValueChanged            -= OnShieldChanged;
+        _isBlack.OnValueChanged           -= OnIsBlackChanged;
+        _isUniqueColor.OnValueChanged     -= OnIsUniqueColorChanged;
+        _selectedBuffType.OnValueChanged  -= OnSelectedBuffTypeChangedInternal;
 
         if (IsOwner)
         {
@@ -481,6 +503,36 @@ public class NetworkPlayerSetup : NetworkBehaviour
             _player?.SyncDeadFlag();
             _events?.RaiseDied();
         }
+    }
+
+    // ── 응원 버프 선택 (개인별) ────────────────────────────────────
+
+    /// <summary>이 플레이어가 지금 응원으로 받을 버프 종류. 전원이 읽을 수 있음(팀 UI 등).</summary>
+    public PlayerBuffSystem.BuffType SelectedBuffType => (PlayerBuffSystem.BuffType)_selectedBuffType.Value;
+
+    /// <summary>버프 선택이 바뀔 때 발생 (UI 표시용). (새 BuffType)</summary>
+    public event System.Action<PlayerBuffSystem.BuffType> OnSelectedBuffTypeChanged;
+
+    void OnSelectedBuffTypeChangedInternal(int prev, int next)
+        => OnSelectedBuffTypeChanged?.Invoke((PlayerBuffSystem.BuffType)next);
+
+    /// <summary>
+    /// 응원으로 받을 버프 종류를 Shield ↔ SpeedUp으로 토글.
+    /// Owner만 호출 가능(InvokePermission.Owner) — BuffSelectHotkeyInput에서 호출.
+    /// 이 플레이어의 버프가 지금 활성 중이면 무조건 거부(잠금) — Host가 RPC를 단일 스레드로
+    /// 순차 처리하므로 CheerService.ApplyBuff 실행 시점 이후 도착한 전환 요청은 항상 거부된다
+    /// (레이스 컨디션으로 뚫릴 여지 없음).
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    public void RequestToggleBuffTypeServerRpc()
+    {
+        if (CheerService.Instance != null && CheerService.Instance.IsBuffActive(_colorIndex.Value))
+            return;
+
+        var next = SelectedBuffType == PlayerBuffSystem.BuffType.Shield
+            ? PlayerBuffSystem.BuffType.SpeedUp
+            : PlayerBuffSystem.BuffType.Shield;
+        _selectedBuffType.Value = (int)next;
     }
 
     // ── 응원 버프 동기화 ──────────────────────────────────────────

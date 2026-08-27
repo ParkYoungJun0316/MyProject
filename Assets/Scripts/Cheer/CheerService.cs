@@ -12,7 +12,8 @@ using UnityEngine;
 /// - SubmitCheerServerRpc 수신 → 응원 표 집계
 /// - 타임아웃(N초 내 미달) → 표 초기화
 /// - 수혜자 개인 쿨타임 관리
-/// - 조건 충족 시 버프 발동 → NetworkPlayerSetup.ApplyCheerBuff()
+/// - 조건 충족 시 버프 발동 → NetworkPlayerSetup.ApplyCheerBuff() — 버프 종류는 수혜자
+///   개인이 선택한 값(NetworkPlayerSetup.SelectedBuffType)을 따른다 (스테이지 고정 아님)
 /// - UI 동기화 → ClientRpc (OnVoteChanged, OnBuffActivated 등)
 ///
 /// [배치]
@@ -26,11 +27,11 @@ public class CheerService : NetworkBehaviour
 {
     public static CheerService Instance { get; private set; }
 
-    public enum CheerSource { Chat, Voice }
+    public enum CheerSource { Key, Voice }
 
     // ── Inspector ─────────────────────────────────────────────────
 
-    [Header("스테이지 버프 (M.Stage1 = Shield, T.Stage1 = SpeedUp)")]
+    [Header("스테이지 기본 버프 (스폰 시 초기 선택값 — 이후 플레이어가 자유 전환 가능, 고정 아님)")]
     [SerializeField] PlayerBuffSystem.BuffType stageBuffType = PlayerBuffSystem.BuffType.Shield;
 
     [Header("버프 파라미터")]
@@ -43,7 +44,7 @@ public class CheerService : NetworkBehaviour
     [Tooltip("첫 표 이후 전원 응원 타임아웃(초). 미달 시 표 전부 초기화.")]
     [SerializeField] float cheerTimeoutSeconds = 10f;
 
-    [Tooltip("채팅 /cheer 연속 입력 최소 간격(초)")]
+    [Tooltip("숫자키(1~4) 응원 연속 입력 최소 간격(초)")]
     [SerializeField] float chatRateLimitSeconds = 0.5f;
 
     // ── CheerName 매핑 ────────────────────────────────────────────
@@ -163,7 +164,8 @@ public class CheerService : NetworkBehaviour
     {
         _buffEnd[targetColorIndex] = now + buffDuration;
 
-        // 해당 색상 플레이어 찾아 버프 적용
+        // 해당 색상 플레이어 찾아 버프 적용 — 스테이지 고정 타입이 아니라
+        // 그 플레이어가 직접 선택한 타입(NetworkPlayerSetup.SelectedBuffType)을 적용한다.
         var players = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
         foreach (var p in players)
         {
@@ -171,13 +173,19 @@ public class CheerService : NetworkBehaviour
             int idx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
             if (idx != targetColorIndex) continue;
 
-            p.ApplyCheerBuff(stageBuffType, buffDuration);
+            p.ApplyCheerBuff(p.SelectedBuffType, buffDuration);
             break;
         }
 
         ResetVotes(targetColorIndex);
         BroadcastBuffActivatedClientRpc(targetColorIndex);
     }
+
+    /// <summary>
+    /// targetColorIndex 수혜자가 지금 응원 버프를 받는 중인지 (버프 선택 전환 잠금용).
+    /// NetworkPlayerSetup.RequestToggleBuffTypeServerRpc에서 참조.
+    /// </summary>
+    public bool IsBuffActive(int colorIndex) => _buffEnd.ContainsKey(colorIndex);
 
     // ── 표 초기화 (Host 전용) ─────────────────────────────────────
 
@@ -259,7 +267,7 @@ public class CheerService : NetworkBehaviour
         // 수혜자 버프 중 → 표 차단
         if (_buffEnd.ContainsKey(targetColorIndex)) return false;
 
-        // 채팅 rate limit
+        // 숫자키 rate limit
         if (!isVoice)
         {
             if (_chatRateEnd.TryGetValue(cheererId, out double rateEnd) && now < rateEnd) return false;

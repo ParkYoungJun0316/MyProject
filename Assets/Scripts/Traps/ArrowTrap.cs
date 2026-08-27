@@ -170,6 +170,7 @@ public class ArrowTrap : TrapBase
         if (t == null) return;
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayOpenFromNetwork();
         t.GetComponent<MouthTrapAnimator>()?.PlayOpenFromNetwork();
+        t.GetComponent<ArrowWarnSign>()?.PlayWarnFromNetwork();
     }
 
     /// <summary>StageNetworkState.SyncArrowFireClientRpc 수신 시 Client에서 호출. Mouth Hold 연출만 재생.</summary>
@@ -179,6 +180,7 @@ public class ArrowTrap : TrapBase
         if (t == null) return;
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayHoldFromNetwork();
         t.GetComponent<MouthTrapAnimator>()?.PlayHoldFromNetwork();
+        t.GetComponent<ArrowWarnSign>()?.PlayHideFromNetwork();
     }
 
     protected override IEnumerator TrapLoop()

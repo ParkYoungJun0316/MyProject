@@ -77,6 +77,16 @@ public class TrapPlayerTracker : MonoBehaviour
     bool           _activated;
     bool           _hasStarted;
     Quaternion     _initialRotation;
+    Player         _currentTarget;
+
+    /// <summary>현재 락온 중인(보이는) 타겟 플레이어. 없으면 null.</summary>
+    public Player CurrentTarget => _currentTarget;
+
+    /// <summary>보이는(스텔스 아닌) 플레이어를 현재 타겟으로 잡고 있는지 여부.</summary>
+    public bool IsTargetLocked => _currentTarget != null;
+
+    /// <summary>타겟이 바뀔 때(획득/변경/상실) 발생. null = 타겟 없음. TrapTrackerIndicator 등 표시용 구독자용.</summary>
+    public event System.Action<Player> OnTargetChanged;
 
     void Awake()
     {
@@ -112,11 +122,19 @@ public class TrapPlayerTracker : MonoBehaviour
     {
         _activated = false;
         StopAllCoroutines();
+        SetCurrentTarget(null);
 
         // 페이즈 리셋 시 마지막 추적 방향이 남지 않도록 초기 회전으로 복원.
         // rotateToTarget = false 이면 회전을 건드리지 않았으므로 복원도 생략.
         if (rotateToTarget)
             transform.rotation = _initialRotation;
+    }
+
+    void SetCurrentTarget(Player target)
+    {
+        if (_currentTarget == target) return;
+        _currentTarget = target;
+        OnTargetChanged?.Invoke(target);
     }
 
     void InitTracking()
@@ -188,11 +206,19 @@ public class TrapPlayerTracker : MonoBehaviour
 
     void Update()
     {
-        if (!_activated) return;
+        if (!_activated)
+        {
+            SetCurrentTarget(null);
+            return;
+        }
+
+        // 타겟 상태는 회전/DropTrap 여부와 무관하게 매 프레임 갱신 → TrapTrackerIndicator가
+        // "지금 누구를 보고 있다"를 구독할 수 있게 한다.
+        Player target = GetSingleTarget();
+        SetCurrentTarget(target);
+
         if (!rotateToTarget) return;
         if (_dropTrap != null) return; // DropTrap은 회전 불필요
-
-        Player target = GetSingleTarget();
         if (target == null) return;
 
         Vector3 dir = target.transform.position - transform.position;

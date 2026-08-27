@@ -10,7 +10,7 @@
 
 ## 목적 · 시점
 
-- **목적:** Steam **정식** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 바이옴(M/T) 체류·사망, 응원 거부·채팅 **합계**.
+- **목적:** Steam **정식** 플레이 1판당 **Google Sheets 1행(upsert)** — 이탈 구간, 바이옴(M/T) 체류·사망, 응원 거부·숫자키 사용 **합계**.
 - **시점:** **출시 이후 착수 OK.** 여유 있으면 출시 직전에도 가능.
 - **구현 순서:** ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
 
@@ -65,7 +65,7 @@ Inspector `enabled` 토글은 **로컬 디버그용**. 위 게이트가 **배포
 **복붙용 순서:**
 
 ```
-timestamp | sessionId | buildVersion | playMode | partySize | run_complete | quitAt | M_dwell_sec | M_death_count | M_buff_count | T_dwell_sec | T_death_count | T_buff_count | reject_self_cheer | reject_target_buffed | reject_timeout | reject_chat_rate_limit | reject_voice_no_match | chat_used_count
+timestamp | sessionId | buildVersion | playMode | partySize | run_complete | quitAt | M_dwell_sec | M_death_count | M_buff_count | T_dwell_sec | T_death_count | T_buff_count | reject_self_cheer | reject_target_buffed | reject_timeout | reject_key_rate_limit | reject_voice_no_match | digit_cheer_used_count
 ```
 
 | 컬럼 | 타입 | 설명 |
@@ -86,9 +86,9 @@ timestamp | sessionId | buildVersion | playMode | partySize | run_complete | qui
 | `reject_self_cheer` | int | 자기 응원 거부 **합계** (전원) |
 | `reject_target_buffed` | int | 대상 버프 중 거부 **합계** |
 | `reject_timeout` | int | 표 부족 타임아웃 **합계** |
-| `reject_chat_rate_limit` | int | 채팅 rate limit **합계** |
+| `reject_key_rate_limit` | int | 숫자키 rate limit **합계** |
 | `reject_voice_no_match` | int | Vosk 미인식 **합계** |
-| `chat_used_count` | int | `/cheer` 사용 **총 횟수** (합계) |
+| `digit_cheer_used_count` | int | 숫자키(1~4) 응원 사용 **총 횟수** (합계) |
 
 **수집 금지:** 마이크 원음, 채팅/대화 **전문**, SteamID, IP, 닉네임 등 **개인 식별 정보**.
 
@@ -100,19 +100,19 @@ timestamp | sessionId | buildVersion | playMode | partySize | run_complete | qui
 | **dwell** | 해당 씬 **로드 직후** ~ **다른 씬으로 나가기 직전**까지 Host `Time.time`(또는 `unscaledTime`)을 해당 바이옴에 누적. |
 | **death_count** | 해당 바이옴 **씬 Load마다 +1** (첫 진입 포함). 사망=전원 리로드이므로 **리로드 1회 = death 1**. 동시 다수 사망도 **+1**. |
 | **buff_count** | 버프가 **플레이어 1명에게 적용될 때마다 +1**. 4인 전원 버프 = **+4**. 적용 시점 씬의 바이옴에 가산. |
-| **reject / chat** | **4인 합계** — Client 발생 시 Host RPC로 +1 보고 후 Host가 누적. |
+| **reject / 숫자키** | **4인 합계** — Client 발생 시 Host RPC로 +1 보고 후 Host가 누적. |
 | **partySize** | 세션 시작 시 `GameSession` / `NetworkManager.ConnectedClientsIds.Count` 등 Host 기준 스냅샷. |
 
-## reject / chat — 코드 매핑
+## reject / 숫자키 — 코드 매핑
 
 | 컬럼 | +1 조건 (구현 참고) |
 |------|---------------------|
 | `reject_self_cheer` | `CheerService.ValidateCheer` — 자기 색 응원 (`myIdx == targetColorIndex`) |
 | `reject_target_buffed` | `ValidateCheer` — `_buffEnd`에 target 존재 |
 | `reject_timeout` | `CheerService.CheckTimeouts` → `ResetVotes` (표 부족). **별도 timeout 이벤트 없음 — 여기만.** |
-| `reject_chat_rate_limit` | `ValidateCheer` — `!isVoice` && rate limit (`_chatRateEnd`) |
+| `reject_key_rate_limit` | `ValidateCheer` — `!isVoice` && rate limit (`_chatRateEnd`) |
 | `reject_voice_no_match` | `CheerKeywordEngine` — Vosk 미매칭 시 **Client → Host RPC** |
-| `chat_used_count` | `InGameChatUI` — `/cheer` 파싱 성공 1회마다 +1 (Host 집계) |
+| `digit_cheer_used_count` | `CheerDigitInput` — 숫자키(1~4) 입력 1회마다 +1 (Host 집계) |
 
 **제외:** `reject_invalid_target` — **수집하지 않음**.
 
@@ -126,7 +126,7 @@ public enum TelemetryRejectReason
     SelfCheer,        // → reject_self_cheer
     TargetBuffed,     // → reject_target_buffed
     Timeout,          // → reject_timeout
-    ChatRateLimit,    // → reject_chat_rate_limit
+    KeyRateLimit,     // → reject_key_rate_limit
     VoiceNoMatch,     // → reject_voice_no_match (Client → Host RPC)
 }
 ```
@@ -153,7 +153,7 @@ Web App URL은 **Steam 정식 빌드** 설정에만 (에디터·localhost Inspec
 
 | | |
 |--|--|
-| **멀티** | **Host만** `TelemetryService` 전송. Client → Host `TelemetryReportServerRpc(reason)` 등으로 reject/chat +1만. |
+| **멀티** | **Host만** `TelemetryService` 전송. Client → Host `TelemetryReportServerRpc(reason)` 등으로 reject/숫자키 +1만. |
 | **솔로** | NGO Host 1인. `playMode=Solo`, `partySize=1`. 멀티와 동일 코드 경로. |
 | **멀티 1인** | `playMode=Multi`, `partySize=1`. |
 
@@ -167,7 +167,7 @@ Web App URL은 **Steam 정식 빌드** 설정에만 (에디터·localhost Inspec
 | 4 | **`TitleReturnFlow.ExecuteReturn()`** (Host·솔로) | `quitAt` = 현재 바이옴/`End`, **세션 끝 upsert**, 세션 상태 리셋 |
 | 5 | **`CheerService`** (Host·솔로) | reject reason별 +1, `ApplyBuff` 시 해당 바이옴 `buff_count +1`, timeout +1 |
 | 6 | **`CheerKeywordEngine`** (Client) | 미인식 → Host RPC |
-| 7 | **`InGameChatUI`** | `/cheer` 성공 시 `chat_used_count +1` |
+| 7 | **`CheerDigitInput`** | 숫자키(1~4) 입력 시 `digit_cheer_used_count +1` |
 | 8 | **`TelemetryService.Update`** | 30초 주기 flush |
 
 `TitleReturnFlow`에 직접 삽입 또는 `ISessionResettable` / 전용 콜백 등록 — **게임 코어에 Sheets URL 흩뿌리지 말 것**.
@@ -182,6 +182,6 @@ Web App URL은 **Steam 정식 빌드** 설정에만 (에디터·localhost Inspec
 ## MVP 완료 판정
 
 - [ ] Steam **정식** 빌드 1판: Sheet에 **행 1개**, `sessionId` upsert 동작 (30초·리로드·종료 시 값 갱신).
-- [ ] 멀티 Host: Client reject/chat 합산 **1행**에 반영.
+- [ ] 멀티 Host: Client reject/숫자키 합산 **1행**에 반영.
 - [ ] 에디터 Play / Dev Build localhost: **행 추가 없음**.
 - [ ] payload에 **금지 필드** 없음.

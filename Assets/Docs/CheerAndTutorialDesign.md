@@ -1,6 +1,6 @@
 # Cheer System & Tutorial Design
 
-음성·채팅 **응원 시스템**, **인게임 보이스챗**, **정식 Tutorial** 설계 문서.  
+음성·숫자키 **응원 시스템**, **인게임 보이스챗**, **정식 Tutorial** 설계 문서.  
 관련: [`NetworkDesign.md`](NetworkDesign.md) (네트워크 검증 단계·Host 권한·출시 달력).
 
 **범례**
@@ -25,7 +25,7 @@
 | 이름 커스텀 | **Tutorial 자유 입력·자유 재변경** (Player별 `NetworkVariable`) + Host 검증·확정. 잠금 없음, `PlayerPrefs` 기억 없음(매 판 재입력) |
 | **말해보기** | **Must** — Tutorial에서 확정↔재변경 반복 가능, 매 확정마다 Vosk grammar 재빌드 → 즉시 재테스트 (§5.5) |
 | **키워드 인식** | **Vosk grammar** + **CheerLexiconBuilder** (사전 검증 + 발음 변형 대체 단어, §5) |
-| 채팅 응원 | `/cheer {name}` **필수 폴백** |
+| 숫자키 응원 | **`1`~`4`** 키 (colorIndex 고정 매핑) **필수 폴백** — 채팅 `/cheer` 폐기 (2026-08-27) |
 | 스테이지 버프 | M = **Shield**, T = **SpeedUp** + **응원 확장 2종** (출시 범위) |
 | 인게임 설명 | Tutorial(핵심 메카) + **DialogueUI** (M/T 구역별) |
 | **멀티 연결** | **Steam P2P + Lobby** (`NetworkDesign` ④) |
@@ -50,7 +50,7 @@
 
 ### 1.2 응원 규칙 (한 줄)
 
-플레이어가 **팀원의 CheerName**을 **음성 또는 채팅**으로 외치면 응원 1표.  
+플레이어가 **팀원의 CheerName**을 **음성으로 외치거나**, **숫자키(1~4)**로 해당 팀원을 지목하면 응원 1표.  
 **나를 제외한 전원**이 같은 수혜자를 응원하면 **팀 버프** 발동.
 
 | 스테이지 | 버프 | `PlayerBuffSystem` |
@@ -127,15 +127,15 @@
 
 ### 2.5 응원자 쿨타임
 
-- **없음.** 타겟 1명 + 타임아웃 + (채팅) rate limit으로 충분.
-- 채팅 **rate limit:** 0.5~1초, Host (스팸 방지).
+- **없음.** 타겟 1명 + 타임아웃 + (숫자키) rate limit으로 충분.
+- 숫자키 **rate limit:** 0.5~1초, Host (스팸 방지).
 
 ### 2.6 솔로 (1인 Host, `ActivePlayerCount == 1`)
 
 - **NGO Host 1인.** 멀티와 동일 코드 경로.
 - **응원:** `CheerService.ValidateCheer` — `ActivePlayerCount==1`이면 self-cheer 허용. `GetRequiredVotes()=1` → 즉시 발동.
 - **음성:** `CheerKeywordEngine` → `SubmitCheerServerRpc` (멀티와 동일).
-- **채팅:** `/cheer {자기 CheerName}` → `InGameChatUI` → `SubmitCheerServerRpc`.
+- **숫자키:** 자기 번호(자기 colorIndex) 키 입력 → `CheerDigitInput` → `SubmitCheerServerRpc`.
 - **인게임 보이스:** 솔로 시 **비활성** 권장 (팀원 없음). Dissonance mute는 별도 구현.
 
 ---
@@ -155,7 +155,7 @@
 
 **빈칸 = 기본값 취급 (확정):**  
 Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자열**이면 저장값으로 기본명을 넣지 않는다.  
-표시·`/cheer`·Vosk grammar·버프 대상은 **현재 `ColorIndex`의 기본 CheerName**으로 해석한다.
+표시·Vosk grammar·버프 대상은 **현재 `ColorIndex`의 기본 CheerName**으로 해석한다 (숫자키 응원은 이름 대신 `ColorIndex`를 직접 지정하므로 영향 없음).
 
 ### 3.2 어디에 설정하나 **[Ship Must — 2026-08-17 갱신: Lobby → Tutorial]**
 
@@ -166,7 +166,7 @@ Tutorial에서 확정한 CheerName(Player별 `NetworkVariable`)이 **빈 문자�
 - **씬:** `Tutorial` 하나. 별도 로비 씬 없음.
 - **대상:** Tutorial 진입(=접속) 즉시 스폰되어 있는 **Player별로 독립된 이름** — "슬롯" 개념 없음. 각자 자기 화면에서 자기 캐릭터의 이름만 입력.
 - **UI:** Tutorial 전용 이름 입력 UI(신규, §8.3) — 로컬 입력창 1개. 확정 시 자기 캐릭터 머리 위 이름표(`PlayerNameTagUI`)·팀원 화면에 **즉시** 반영.
-- **채팅 UI로 닉네임 설정하지 않음.** 인게임 `/cheer` 폴백만 채팅.
+- **채팅 UI로 닉네임 설정하지 않음.** 인게임 응원 폴백은 채팅이 아니라 **숫자키(1~4)**.
 - **타이틀에서 입력하지 않음.**
 - **`PlayerPrefs` 기억 없음 (2026-08-17 확정, 폐기).** 매 판 Tutorial 진입 시 항상 새로 입력. "경험자 스킵" 없음 — 과잉 설계로 판단, 드롭.
 
@@ -385,7 +385,7 @@ Dissonance와 Vosk가 **동일 마이크**를 쓰되, OS `Microphone.Start` **�
 
 | 데이터 | 저장 | 용도 |
 |--------|------|------|
-| **CheerName** (텍스트) | 로컬 저장 없음 (`PlayerPrefs` 기억 폐기, 2026-08-17) — Player별 `NetworkVariable`만, 매 판 재입력 | UI, `/cheer`, grammar 토큰 |
+| **CheerName** (텍스트) | 로컬 저장 없음 (`PlayerPrefs` 기억 폐기, 2026-08-17) — Player별 `NetworkVariable`만, 매 판 재입력 | UI 표시, grammar 토큰 (숫자키 응원은 이름 미사용) |
 | **대체 발음 후보** (텍스트 목록, 사전 검증됨) | **저장 안 함** — 코드 테이블 | grammar JSON에 원래 이름과 함께 포함 |
 | **Vosk 모델** | `StreamingAssets/vosk-model-en-us-0.22-lgraph/` (폴더 204MB) | 빌드에 포함 — 런타임 압축 해제·다운로드 **없음** |
 
@@ -504,7 +504,7 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 
 ---
 
-## 6. 입력 — 음성 · 채팅
+## 6. 입력 — 음성 · 숫자키
 
 ### 6.1 음성 흐름
 
@@ -521,13 +521,15 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 | `keywordConfidence` | Vosk 결과 필터 (필요 시) |
 | `minVolume` / `maxVolume` | (선택) VAD 보조 |
 
-### 6.2 채팅 **[Ship Must]**
+### 6.2 숫자키 **[Ship Must]** — 2026-08-27 채팅 `/cheer` 폐기, 숫자키로 대체
 
-- **문법:** `/cheer berry` (`/cheer {CheerName}`, 공백 1개)
-- 대소문자 무시, trim.
-- 자기 이름 응원 불가. 버프 중 타겟 불가.
-- **음성 OR 채팅** = 1표 (동일 ServerRpc).
-- **마이크 없음 / Vosk 실패** → 채팅 **필수** 지원.
+- **입력:** `1`~`4` 키 = `colorIndex` 0~3 (`berry/guma/sook/dan`) 고정 매핑. 참가 순서와 무관하게 항상 동일.
+- **구현:** `CheerDigitInput` (일반 `MonoBehaviour`) → `CheerService.Instance.SubmitCheerServerRpc(targetColorIndex, false)` 직접 호출.
+- 자기 이름 응원 불가(1인 세션 예외 §2.6). 버프 중 타겟 불가 — Host `ValidateCheer`가 그대로 검사.
+- **음성 OR 숫자키** = 1표 (동일 ServerRpc, `isVoice` bool로만 구분).
+- **마이크 없음 / Vosk 실패** → 숫자키 **필수** 지원 (기존 채팅 `/cheer` 폴백 역할 대체).
+- 일반 텍스트 채팅(`InGameChatUI`)은 **잡담용으로 유지** — `/cheer` 커맨드 파싱만 제거됨.
+- 이모트 메뉴(T키)는 숫자키와 충돌 방지를 위해 **클릭 전용**으로 전환 (`PlayerEmoteMenuUI`, 더 이상 숫자 1~8 미사용).
 
 ### 6.3 응원 주체
 
@@ -544,7 +546,7 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 [각 Client]
   Dissonance: 팀 보이스 송수신
   Vosk: 로컬 키워드
-  채팅: /cheer 파싱
+  CheerDigitInput: 숫자키(1~4) 감지
   → SubmitCheerServerRpc(targetColorIndex, source)
 
 [Host]
@@ -570,7 +572,7 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 ### 7.4 치팅 방어 (Open 수준)
 
 - 동일 타겟 이미 응원 중 → 중복 RPC 무시.
-- 채팅 rate limit.
+- 숫자키 rate limit.
 - Host: 버프 중·사망·쿨·무효 target·자기 응원 거부.
 
 ---
@@ -595,9 +597,10 @@ CheerName **입력·확정·재변경·반복 인식 검증**의 유일한 무�
 - CheerName **입력·확정(자유 재변경)** — `TutorialCheerNameUI`(§3.4/5.3, Tutorial 상시 HUD Canvas에 부착, Player 프리팹 아님) + 구역 2 상호작용 표지판(`TutorialCheerNameSignboard`)이 개폐. **상시 표시 아님 — 2026-08-19 변경**, 표지판 상호작용으로 게이트 통과 전까지 언제든 열어 재확정(§9.2). "말해보기"는 별도 테스트 기능이 아니라 패널의 안내 문구(§5.5)로 대체 — 실제 응원 제출이 곧 테스트
 - Gate 카운트다운 — `TimerUI` / `OnCountdownTick` 재사용
 
-### 8.4 채팅 입력 **[Ship Must]**
+### 8.4 숫자키 입력 **[Ship Must]** — 2026-08-27 채팅 입력창 폐기
 
-- M/T 스테이지 HUD에 `/cheer`용 **최소 입력창** (TMP_InputField 등).
+- M/T 스테이지 HUD에 숫자키(1~4) 안내 표시 (여유, `CheerProgressUI`가 이미 대상별 표수를 보여주므로 최소 구현 가능).
+- 일반 텍스트 채팅용 최소 입력창(`InGameChatUI`)은 잡담 용도로 계속 유지 — `/cheer` 커맨드 문법은 제거.
 
 ---
 
@@ -649,7 +652,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 | `buffDuration` | Shield / SpeedUp 지속 | 5초 |
 | `cheerCooldownSeconds` | 수혜자 쿨 | 15초 |
 | `cheerTimeoutSeconds` | 부분 응원 타임아웃 | 10초 |
-| `chatRateLimitSeconds` | 채팅 응원 간격 | 0.5~1초 |
+| `chatRateLimitSeconds` | 숫자키 응원 간격 | 0.5~1초 |
 | `keywordConfidence` | Vosk 필터 | 플레이테스트 |
 
 ---
@@ -662,16 +665,16 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 
 - 본 문서 + NetworkDesign 확정.
 
-### Phase 1 — 응원 코어 (채팅만) **[Ship Must]**
+### Phase 1 — 응원 코어 (숫자키만) **[Ship Must]**
 
 | 작업 | 내용 |
 |------|------|
 | `CheerService` | Host, M/T 씬. 집계·타임아웃·쿨·버프 |
-| `SubmitCheerServerRpc` | `/cheer berry` 등 |
+| `SubmitCheerServerRpc` | `CheerDigitInput` 1~4 키 등 |
 | 버프 | M=`Shield`, T=`SpeedUp`, `NetworkPlayerSetup` 미러링 |
-| UI | `CheerProgressUI`, `TeamStatusUI`, 채팅 입력 |
+| UI | `CheerProgressUI`, `TeamStatusUI` |
 
-**테스트:** ParrelSync **2인** — 채팅만 버프·쿨·타임아웃.
+**테스트:** ParrelSync **2인** — 숫자키만 버프·쿨·타임아웃.
 
 ### Phase 2 — Dissonance **[Ship Must]**
 
@@ -689,7 +692,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 | Vosk | 패키지 + 모델 + `CheerLexiconBuilder` (고정 4종) |
 | `CheerKeywordEngine` | Dissonance 마이크 공유 → ServerRpc |
 
-**테스트:** Dev Build ② **2인** — `"berry go go"` + `/cheer` 중복 방지.
+**테스트:** Dev Build ② **2인** — `"berry go go"` + 숫자키 중복 방지.
 
 ### Phase 4 — Development Build 중간 게이트
 
@@ -721,7 +724,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 
 | Phase | 환경 | 인원 | 확인 |
 |-------|------|------|------|
-| 1 | ParrelSync | 2 | `/cheer` 규칙 |
+| 1 | ParrelSync | 2 | 숫자키 응원 규칙 |
 | 2~3 | Dev Build ② | **2** | 보이스 + Vosk |
 | 4 | Dev Build ② | **2** | NGO+응원 중간 게이트 |
 | 5 | **Steam P2P ④** | **2 (Must)** | **출시 게이트** — 원격+보이스+응원 |
@@ -735,7 +738,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [ ] Steam Lobby Join → Tutorial(사전 게이트 구간 통과) → M 풀코스(+Boss) → T 풀코스(+Boss)
 - [ ] Dissonance 보이스 양방향
 - [ ] 대화 중 `"berry go go"` → Shield/SpeedUp (2인: **1표**면 발동)
-- [ ] `/cheer berry` 폴백
+- [ ] 숫자키(예: berry=`1`) 폴백
 - [ ] 사망 리로드 1회
 
 **Steam 4인 (1회 권장 — 2PC만으로는 불가, 친구 필요):**
@@ -747,7 +750,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 **Dev Build / 솔로:**
 
 - [ ] localhost 2인 NGO (Phase 4)
-- [ ] 솔로 `/cheer berry`
+- [ ] 솔로 숫자키(자기 번호) 응원
 
 ---
 
@@ -756,7 +759,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 ### **[Ship Must]**
 
 - [ ] `CheerService` + `SubmitCheerServerRpc`
-- [ ] `/cheer {세션 CheerName}` (빈칸→색 기본값)
+- [ ] `CheerDigitInput` — 숫자키(1~4, colorIndex 고정 매핑) 응원 입력 (2026-08-27, `/cheer` 채팅 폴백 대체). 스크립트 작성 완료, **씬 부착은 사용자 에디터 작업으로 남음**
 - [ ] ~~Lobby CheerName 인라인 편집 + Host `SetCheerNameServerRpc`~~ — **폐기 (2026-08-17), Tutorial로 이동**
 - [ ] ~~`LobbyPlayerState.CheerName` + 슬롯 UI 동기화~~ — **폐기.** `LobbyPlayerState`에서 `CheerName` 필드 제거
 - [ ] **[필수] Title/Tutorial UI 로컬라이제이션** — `TitleMenuController`/Tutorial 상시 HUD 상태 메시지 등 하드코딩된 한국어 문자열(예: "찾는 중...", "방을 찾을 수 없습니다.", "6자리 숫자를 입력해주세요." 등)을 String Table 방식으로 전환. DialogueUI/OXQuiz와 동일한 패턴 적용
@@ -776,8 +779,8 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [ ] Dissonance ↔ Vosk 마이크 공유
 - [ ] M=Shield, T=SpeedUp + NetworkPlayerSetup 버프 미러링 + **응원 확장 2종**
 - [ ] `CheerProgressUI` + `TeamStatusUI`
-- [ ] 채팅 입력 UI
-- [ ] 솔로 `/cheer` + 로컬 CheerService
+- [ ] 숫자키(1~4) 입력 안내 UI (선택, 화면 피드백)
+- [ ] 솔로 숫자키 응원 + 로컬 CheerService
 - [ ] **숫자 포함 이름** — Tutorial 말해보기(§5.5)로 확인 → 필요 시 `0-9` 금지로 §3.5 갱신
 - [ ] `Tutorial` — 조작 연습 + CheerName **입력·확정·자유 재변경·말해보기(반복 검증)**; **경험자도 스킵 없음** (2026-08-17). **[Ship Must, 2026-08-17 최종 확정]**
 - [ ] ~~CheerName `PlayerPrefs` 기억 + TutorialCompleted 스킵~~ — **폐기.** `TutorialCompleted`(연습 구간 스킵용)만 유지, CheerName엔 미적용
@@ -855,8 +858,8 @@ A. **Transport·연결·1표 응원**은 2인에서 검증. **3표 집계·4보�
 **Q. Steam P2P 전에 응원 넣나?**  
 A. Dev Build ② NGO **후** Phase 1~3 응원 → Dev Build **2인** → Steam P2P **2인** → (권장) Steam 4인 → **9/1 정식**.
 
-**Q. 솔로 `/cheer`?**  
-A. `/cheer {자기 CheerName}`. 빈칸이면 색 기본값 (`berry` 등).
+**Q. 솔로 숫자키 응원?**  
+A. 자기 번호(자기 `colorIndex` + 1) 키를 누르면 된다. 예: berry(0)면 `1`.
 
 **Q. CheerName은 로비에서? Tutorial에서?**  
 A. **Tutorial.** 입력·확정·재변경·말해보기 전부 Tutorial 씬에서 처리(2026-08-17 확정). 로비 씬 자체가 없어졌으니 애초에 다른 선택지가 없다. §3.2·§3.6·§5.5.

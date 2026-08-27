@@ -73,7 +73,7 @@
 - **플레이 경로:** Title → Lobby → **Tutorial** → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`
 - **솔로:** 동일 경로 (**NGO Host 1인**, `partySize=1`). 오프라인 모드 없음
 - **Steamworks (전부):** Steam Networking transport + Steam Lobby + Depot/알파 빌드 + Invite — §3 ④ · §4 순위 1~3(전부 완료: 코드·Depot 실사용 테스트·빌드 검수 통과). **로컬 NGO만으로 출시 불가**
-- **응원·보이스:** Dissonance + Vosk + `/cheer` + **응원 확장 2종**
+- **응원·보이스:** Dissonance + Vosk + 숫자키(1~4) + **응원 확장 2종**
 - **Tutorial:** 조작·말해보기 (경험자 생략 가능 UX OK)
 - **난이도:** Coming Soon 2주 play test 피드백 반영 후 출시선 확정
 - **사운드:** BGM + 핵심 SFX (과투자 금지)
@@ -106,7 +106,7 @@
 ② Development Build (같은 PC localhost)
    → 빌드 전용 버그. ※ Steamworks 전 잔여 게이트.
 
-③ 응원 (CheerService + Dissonance + Vosk + /cheer)
+③ 응원 (CheerService + Dissonance + Vosk + 숫자키 1~4)
    → ② 1차, Steamworks 후 Steam에서 최종.
 
 ④ Steamworks = Steam 관련 전부
@@ -182,7 +182,7 @@
 
 | # | 작업 | 통과 기준 |
 |---|------|-----------|
-| 1 | M/T 1인 E2E | Title→Lobby→M/T. `/cheer`·음성 1회 |
+| 1 | M/T 1인 E2E | Title→Lobby→M/T. 숫자키·음성 1회 |
 | 2 | M/T **2인 Dev Build** | localhost, 보이스, 응원, 사망 리로드 |
 | 3 | 빌드 버그 수정 | |
 | 4 | 스크린샷·트레일러 소재 1차 | 스토어/Coming Soon용 |
