@@ -48,9 +48,16 @@ public class ArrowTrap : TrapBase
     [Tooltip("afterSeconds 이후 speedMultiplier 배율을 적용. afterSeconds 오름차순 입력")]
     [SerializeField] private SpeedPhase[] speedPhases = new SpeedPhase[0];
 
-    [Header("발사 사운드")]
-    [Tooltip("발사 시 재생할 SFX. None이면 무음.")]
+    [Header("발사 사운드 (3D, 근접 감쇠)")]
+    [Tooltip("발사 시 재생할 SFX. None이면 무음.\n" +
+             "맵이 작고 ArrowTrap이 여러 개 동시에 있을 수 있어 min/maxDistance를 좁게 잡아 근처에서만 " +
+             "들리게 하는 걸 권장(SoundAndSettingsDesign.md §11 참고).")]
     [SerializeField] private SFXId fireSfxId = SFXId.None;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] private float fireMinDistance = 25f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] private float fireMaxDistance = 50f;
+    [SerializeField] private AudioRolloffMode fireRolloffMode = AudioRolloffMode.Logarithmic;
 
     float scheduleStartTime;
     float _phaseSpeedMultiplier = 1f;
@@ -173,7 +180,11 @@ public class ArrowTrap : TrapBase
         t.GetComponent<ArrowWarnSign>()?.PlayWarnFromNetwork();
     }
 
-    /// <summary>StageNetworkState.SyncArrowFireClientRpc 수신 시 Client에서 호출. Mouth Hold 연출만 재생.</summary>
+    /// <summary>
+    /// StageNetworkState.SyncArrowFireClientRpc 수신 시 Client에서 호출. Mouth Hold 연출 + 발사음 재생.
+    /// (Host는 OnTrapTrigger()에서 PlayFireSfxLocal()을 직접 호출 — 이 RPC는 Host 자신에게는
+    /// 안 옴, StageNetworkState.SyncArrowFireClientRpc의 IsServer 가드 참고.)
+    /// </summary>
     public static void PlayFireById(int id)
     {
         _registry.TryGetValue(id, out ArrowTrap t);
@@ -181,6 +192,19 @@ public class ArrowTrap : TrapBase
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayHoldFromNetwork();
         t.GetComponent<MouthTrapAnimator>()?.PlayHoldFromNetwork();
         t.GetComponent<ArrowWarnSign>()?.PlayHideFromNetwork();
+        t.PlayFireSfxLocal();
+    }
+
+    /// <summary>
+    /// 발사음 재생 — Host는 OnTrapTrigger()에서 직접, Client는 PlayFireById(RPC 수신)에서 호출.
+    /// Client가 자기 로컬 TrapLoop 스케줄로 직접 재생하지 않는 이유는 위 RelayFireToClients
+    /// 주석과 동일(두 시계 어긋남 방지, Mouth 연출과 동일 타이밍 소스로 통일).
+    /// </summary>
+    void PlayFireSfxLocal()
+    {
+        if (fireSfxId == SFXId.None) return;
+        Transform spawn = firePoint != null ? firePoint : transform;
+        SFXManager.Instance?.PlayAtPoint(fireSfxId, spawn.position, fireMinDistance, fireMaxDistance, fireRolloffMode);
     }
 
     protected override IEnumerator TrapLoop()
@@ -278,8 +302,7 @@ public class ArrowTrap : TrapBase
         Transform spawn   = firePoint != null ? firePoint : transform;
         Vector3   flatFwd = spawn.forward;
 
-        if (fireSfxId != SFXId.None)
-            SFXManager.Instance?.Play(fireSfxId, spawn.position);
+        PlayFireSfxLocal();
 
         GameObject fired = Instantiate(arrowPrefab, spawn.position, spawn.rotation);
 

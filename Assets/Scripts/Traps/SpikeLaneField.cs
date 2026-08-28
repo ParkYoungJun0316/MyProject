@@ -41,9 +41,6 @@ public class SpikeLaneField : TrapBase
              "다 차는 순간 그 레인이 발동한다. 0이면 경고 없이 즉시 발동")]
     [SerializeField] float warningDuration = 0f;
 
-    [Tooltip("경고 시작 시 재생할 SFX. None이면 무음")]
-    [SerializeField] SFXId warnSfxId = SFXId.None;
-
     int[] _lastSelected;
 
     // OnPreFireCharge(경고 시작) 시점에 미리 뽑아둔 레인 — OnTrapTrigger(발동 시점)가 그대로 재사용.
@@ -139,9 +136,6 @@ public class SpikeLaneField : TrapBase
         for (int i = 0; i < _pendingSelected.Length; i++)
             if (lanes[_pendingSelected[i]] != null)
                 lanes[_pendingSelected[i]].PlayWarning(warningDuration);
-
-        if (warnSfxId != SFXId.None)
-            SFXManager.Instance?.Play(warnSfxId);
     }
 
     protected override void OnTrapTrigger()

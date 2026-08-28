@@ -46,10 +46,17 @@ public class Stage5ChaserAI : NetworkBehaviour
     [Tooltip("0 = 완전 2D, 1 = 완전 3D")]
     [SerializeField] [Range(0f, 1f)] float runSpatialBlend = 1f;
     [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
-    [SerializeField] float runMinDistance = 1f;
+    [SerializeField] float runMinDistance = 10f;
     [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
-    [SerializeField] float runMaxDistance = 0f;
+    [SerializeField] float runMaxDistance = 30f;
     [SerializeField] AudioRolloffMode runRolloffMode = AudioRolloffMode.Logarithmic;
+
+    [Header("사운드 (공격 단발음 — 3D)")]
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float attackMinDistance = 10f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float attackMaxDistance = 30f;
+    [SerializeField] AudioRolloffMode attackRolloffMode = AudioRolloffMode.Logarithmic;
 
     // ── 내부 상태 ─────────────────────────────────────────────────
 
@@ -237,7 +244,7 @@ public class Stage5ChaserAI : NetworkBehaviour
     [ClientRpc]
     void PlayAttackSfxClientRpc(Vector3 position)
     {
-        SFXManager.Instance?.Play(SFXId.Stage5_Chaser_Attack, position);
+        SFXManager.Instance?.PlayAtPoint(SFXId.Stage5_Chaser_Attack, position, attackMinDistance, attackMaxDistance, attackRolloffMode);
     }
 
     IEnumerator PostHitStopRoutine()

@@ -139,6 +139,23 @@ public class DropTrap : TrapBase
         StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, startY, speed, markerScale));
     }
 
+    /// <summary>
+    /// StageNetworkState.SyncDropFireClientRpc 수신 시 Client에서 호출. 낙하 시작음(fireSfxId)만 재생.
+    /// (Host는 DropCycle()에서 PlayFireSfxLocal()을 직접 호출 — 이 경로는 Client 전용,
+    /// SyncDropFireClientRpc의 IsServer 가드 참고.)
+    /// </summary>
+    public static void PlayFireSfxById(int id)
+    {
+        if (_registry.TryGetValue(id, out DropTrap t))
+            t?.PlayFireSfxLocal();
+    }
+
+    void PlayFireSfxLocal()
+    {
+        if (fireSfxId != SFXId.None)
+            SFXManager.Instance?.Play(fireSfxId);
+    }
+
     protected override System.Collections.IEnumerator TrapLoop()
     {
         var nm = NetworkManager.Singleton;
@@ -296,8 +313,8 @@ public class DropTrap : TrapBase
         if (warnDuration > 0f)
             yield return new WaitForSeconds(warnDuration);
 
-        if (fireSfxId != SFXId.None)
-            SFXManager.Instance?.Play(fireSfxId);
+        PlayFireSfxLocal();
+        StageNetworkState.Instance?.SyncDropFireClientRpc(_netIndex);
 
         GameObject drop = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
 

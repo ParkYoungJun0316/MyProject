@@ -116,6 +116,35 @@ public class SFXManager : MonoBehaviour
         AudioSource.PlayClipAtPoint(clip, worldPosition, EffectiveVolume * library.GetVolumeMultiplier(id));
     }
 
+    /// <summary>
+    /// 3D 1회 재생, min/maxDistance·rolloffMode를 직접 지정.
+    /// Play(id, worldPosition)이 쓰는 AudioSource.PlayClipAtPoint는 Unity 기본 감쇠(min 1m / max 500m)
+    /// 고정이라 코드로 못 바꿔서(SoundAndSettingsDesign.md §11 참고), 맵 스케일에 맞게 좁혀야 하는
+    /// 단발 SFX는 이 메서드를 사용 — 임시 AudioSource를 만들어 재생 후 클립 길이만큼 지나면 자동 정리.
+    /// </summary>
+    public void PlayAtPoint(SFXId id, Vector3 worldPosition, float minDistance, float maxDistance,
+        AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic)
+    {
+        if (library == null) return;
+        AudioClip clip = library.GetClip(id);
+        if (clip == null) return;
+
+        GameObject go = new GameObject($"SFX3D_{id}");
+        go.transform.position = worldPosition;
+
+        AudioSource src = go.AddComponent<AudioSource>();
+        src.clip         = clip;
+        src.spatialBlend = 1f;
+        src.playOnAwake  = false;
+        src.rolloffMode  = rolloffMode;
+        src.minDistance  = minDistance > 0f ? minDistance : 1f;
+        src.maxDistance  = maxDistance > 0f ? maxDistance : 500f;
+        src.volume       = EffectiveVolume * library.GetVolumeMultiplier(id);
+        src.Play();
+
+        Destroy(go, clip.length + 0.1f);
+    }
+
     // ── 1/2 교차 재생 ─────────────────────────────────────────────
 
     static int AlternateKey(SFXId a, SFXId b) => ((int)a * 397) ^ (int)b;

@@ -7,16 +7,15 @@
 마이크 음소거·입력장치 선택 구현 완료, 밝기·출력장치는 스코프 제외 확정(§8/§9.5), 팀원별 수신 볼륨
 (Dissonance 연동)도 코드 구현 완료(§9.6). 2026-08-28 세션에서 BGM 16곡 정규화(AudacityMCP) 완료,
 SFX 정규화 방침 확정, SFX 1차 22개 피크 정규화 완료(`SFX2`→`SFX3`), 압축은 최종 단계로 보류(§10),
-사운드 청음 도구(`SoundAuditionTool`) 신규(§10.3). **2026-08-29 세션에서 3D SFX 감쇠가 맵 스케일에
-안 맞는 문제 발견, 2D/3D 재분류 5곳 완료(DropTrap×2/SpikeLaneField/SpikeTrap/WindTrap 임펄스) — `ArrowTrap`
-화살 발사음 2D 여부만 사용자 답변 대기(§11, 최우선 미결 사항).**
+사운드 청음 도구(`SoundAuditionTool`) 신규(§10.3). 2026-08-29 세션에서 3D SFX 감쇠가 맵 스케일에
+안 맞는 문제 발견, 2D/3D 재분류 6곳 전부 완료(DropTrap×2/SpikeLaneField/SpikeTrap/WindTrap 임펄스 →
+2D 전환, `ArrowTrap` 화살 발사음은 논의 후 완전 제거, §11).
 
-> **다음 에이전트/세션 시작 지침 (최신, 2026-08-29):** **가장 먼저 §11의 미결 질문 — `ArrowTrap` 화살
-> 발사음(`Trap_Arrow`)을 2D로 바꿀지 3D로 남길지**를 사용자에게 물어서 답 받고 처리(나머지 5곳은 이미
-> 완료됨). 그다음 **§10 "다음 세션 체크리스트"** 순서로. 그 이전(§9.2~9.6)에 남은 옵션 메뉴/마이크
-> 작업들은 §6 "남은 작업" 참고 — 우선순위는 §11 → §10 → §6 순. 코드 쪽에 추가 변경이 필요한 상황이
-> 아니면 이 문서의 아키텍처를 재설계하지 말 것 — 사용자와 합의된 구조임(AudioMixer 미사용 등, 아래 §1
-> 참고).
+> **다음 에이전트/세션 시작 지침 (최신, 2026-08-29):** §11의 SFX 2D/3D 재분류는 전부 완료됨. 이제
+> **§10 "다음 세션 체크리스트"** 순서로 진행(BGM `zoneClips` 재배정 등). 그 이전(§9.2~9.6)에 남은 옵션
+> 메뉴/마이크 작업들은 §6 "남은 작업" 참고 — 우선순위는 §10 → §6 순. 코드 쪽에 추가 변경이 필요한
+> 상황이 아니면 이 문서의 아키텍처를 재설계하지 말 것 — 사용자와 합의된 구조임(AudioMixer 미사용 등,
+> 아래 §1 참고).
 >
 > **Unity MCP 쓰기 권한:** 워크스페이스 `.cs` 파일 수정은 항상 허용. 씬/프리팹 배치 등 에디터 MCP
 > **쓰기**는 사용자가 "MCP로 해줘"라고 명시할 때만 — `.cursor/rules/unity-mcp-readonly.mdc` 참고.
@@ -583,15 +582,145 @@ BGM처럼 LUFS로 전부 통일하면 안 됨 — SFX는 종류별로 크기가 
 - `WindTrap.cs:345` (`windSfx`, `Wind_Push`/`Wind_Pull` 임펄스) → `Play(windSfx)` **적용됨** (지속 루프는
   그대로 3D, 이 임펄스 단발음만 2D — 사용자가 "우선 windtrap은 2d"로 확정)
 
-**미결(다음 에이전트가 여기부터) — `ArrowTrap.cs:282` (`fireSfxId`, `Trap_Arrow`) 화살 발사음만 남음.**
-사용자가 "고민해보자"로 보류 — 방향성 힌트(3D)가 필요한지 아직 결정 안 됨. **코드 수정하지 말고 먼저
-사용자에게 물어볼 것.** 답이 오면: 2D면 `SFXManager.Instance?.Play(fireSfxId, spawn.position);` →
-`Play(fireSfxId);`로, 3D 유지면 아무것도 안 해도 됨(지금 이미 3D).
+**✅ 완료 (2026-08-29) — `ArrowTrap.cs` 화살 발사음(`Trap_Arrow`) 완전 제거.** 사용자와 논의: 이 맵에서
+소리로 회피하는 함정은 `DropTrap`뿐이고, 화살은 시각(궤적)으로 피하는 쪽이라 발사음이 회피에 필요한
+정보가 아님 + `ArrowTrap`이 스테이지에 여러 개 있어서 2D로 하면 겹쳐서 시끄럽고 3D로는 맵이 작아 잘 안
+들리는 딜레마였음(제거/2D 작게/3D 볼륨업/3D 커스텀 감쇠 4가지 대안 제시 후 사용자가 **완전 제거** 선택).
+`fireSfxId` 필드와 `OnTrapTrigger()`의 `SFXManager.Instance?.Play(fireSfxId, spawn.position)` 호출 삭제,
+린트 통과 확인. 프리팹(`Trap_Arrow` 값이 들어있었을 `fireSfxId` serialized 데이터)은 필드 자체가 없어져
+자동으로 무시됨 — 프리팹 직접 수정 불필요.
 
 **변경 안 함(요청대로 3D 유지, 코드 수정 없음):**
-- `AdvancingWall`/`AdvancingWallTelegraph`/`SpinRoller`(Boulder)/`Stage5ChaserAI`(런/공격)/
-  `Stage5TargetRunner`(런/포획)/`WindTrap` 지속 루프 — 전부 그대로, min/maxDistance만 사용자가 Inspector
-  에서 맵 스케일에 맞게 나중에 좁히면 됨.
+- `AdvancingWall`/`SpinRoller`(Boulder)/`Stage5ChaserAI`(런/공격)/`Stage5TargetRunner`(런/포획) — 전부
+  그대로, min/maxDistance만 사용자가 Inspector에서 맵 스케일에 맞게 나중에 좁히면 됨.
 
 **NGO 영향 없음** — 이 변경은 각 클라이언트 로컬 SFX 재생 위치 파라미터만 빼는 것이라 authority/RPC 구조는
 그대로(Chaser/Runner 쪽은 이미 `ClientRpc`로 각 클라이언트에서 재생 중, 그 구조 유지).
+
+### 11.1 추가 조정 (2026-08-29, 같은 세션) — SpikeLaneField 제거 / SpikeTrap 3D / Telegraph·WindTrap 전부 2D
+
+위 §11 1차 작업 이후 사용자가 실제로 들어보고 4곳을 추가로 조정 요청, 전부 반영·린트 통과:
+
+- **`SpikeLaneField.cs` 경고음(`warnSfxId`) — 완전 제거.** §11 1차 때는 "3D→2D 전환"만 했었는데(제거가
+  아니었음 — 착각하지 말 것, 이 문서에 그렇게 기록돼 있었음), 사용자가 재청취 후 완전 제거를 요청. 필드와
+  `HandleWarnStart()`의 `Play(warnSfxId)` 호출 삭제(`ArrowTrap`과 동일 패턴).
+- **`SpikeTrap.cs` 상승음(`raiseSfxId`) — 2D → 3D로 롤백.** `Play(raiseSfxId)` → `Play(raiseSfxId,
+  transform.position)`.
+- **`AdvancingWallTelegraph.cs` 경고 루프 — 3D(Inspector 조절형) → 2D 고정.** 원래 §11 1차 분류에서
+  "이미 Inspector로 완전 조절 가능하니 코드 수정 불필요" 그룹(루프 사운드)에 속해 안 건드렸었는데, 사용자가
+  이번에 명시적으로 2D 고정을 요청. `warnSpatialBlend`/`warnMinDistance`/`warnMaxDistance`/`warnRolloffMode`
+  필드 전부 제거, `_warnLoopSource.spatialBlend = 0f` 하드코딩.
+- **`WindTrap.cs` 바람 지속 루프 — 3D(Inspector 조절형) → 2D 고정, 임펄스와 통일.** 원래 임펄스(순간음,
+  §11 1차에서 2D 전환 완료)와 지속 루프(그때는 "이미 문제 없음" 그룹이라 3D 유지)가 나뉘어 있었던 이유는
+  "코드로 커스텀 안 되는 API(`PlayClipAtPoint`) 쓰는 것만 문제로 분류"했기 때문 — 취향(항상 2D)이 아니라
+  기술적 결함 유무로 나눈 분류였음. 사용자가 "왜 나누냐, 다 2D로" 요청해서 통일. `windSpatialBlend`/
+  `windMinDistance`/`windMaxDistance`/`windRolloffMode` 필드 전부 제거, `_windLoopSource.spatialBlend = 0f`
+  하드코딩. 임펄스 쪽 코드는 원래부터 2D라 변경 없음.
+
+### 11.2 `Breakable_Destroy` 2D → 3D (2026-08-29, 같은 세션)
+
+`Breakable.cs`에는 원래 사운드 재생 코드가 전혀 없었음 — `OnBreak`(UnityEvent)이 `M.Stage5.unity` 씬의
+**공유 `SFXEventPlayer` GameObject 단 하나**(24개 벽 전부가 같은 오브젝트를 가리킴)의 `Play()`(2D)를 호출
+하는 구조였음. 이 구조에서 단순히 리스너를 `Play3D()`로 바꾸면 24곳 벽이 전부 다른 위치에 있는데도 소리는
+그 공유 오브젝트 하나의 고정 위치에서만 재생돼 완전히 틀린 결과가 나옴 — 그래서 프로젝트 전체에 `Play3D()`
+사용처가 하나도 없었던 이유가 바로 이 구조적 한계였음.
+
+**해결:** `Breakable.cs`의 `DoBreakVisuals()`(Host `ApplyFinalBreak()` / Client `ApplyBreakFromNetwork()`
+양쪽에서 호출됨, 즉 각 머신 로컬에서 자기 위치 기준으로 재생)에 `SFXManager.Instance?.Play(SFXId
+.Breakable_Destroy, transform.position)`을 직접 추가 — 각 벽이 자기 자신의 실제 위치에서 3D로 재생.
+`SFXLibrary.asset`에 `Breakable_Destroy` 클립은 이미 배정돼 있었음(코드에서 호출하는 곳이 없었을 뿐).
+
+**⚠️ 사용자 후속 작업 필요(씬 파일, MCP 쓰기 금지 원칙상 에이전트가 직접 못 고침) — `M.Stage5.unity`
+한 곳만:** 이제 `Breakable_Destroy`가 코드에서 직접 재생되므로, 기존 `OnBreak → SFXEventPlayer.Play()`
+리스너를 그대로 두면 2D+3D가 겹쳐 재생됨(중복). 씬에서 그 공유 `SFXEventPlayer` GameObject를 찾아
+지우거나(24개 벽의 `OnBreak` 리스너가 전부 dangling 참조가 되어 조용히 무시됨), 각 벽의 `OnBreak`에서
+리스너를 제거할 것. (다른 씬은 확인 결과 `OnBreak`가 비어있어 해당 없음.)
+
+### 11.3 단발 3D SFX도 min/maxDistance Inspector 조절 가능하게 (2026-08-29, 같은 세션)
+
+§11 조사 때 확인한 제약(`AudioSource.PlayClipAtPoint`는 min/maxDistance가 Unity 기본값 1m/500m로
+고정, 코드로 커스텀 불가) 때문에 단발 3D SFX 4곳(`SpikeTrap` 상승음, `Stage5ChaserAI` 공격,
+`Stage5TargetRunner` 포획, `Breakable_Destroy`)은 지금까지 맵 스케일에 안 맞는 기본 감쇠로 재생되고
+있었음. 사용자가 이 4곳도 min/maxDistance를 조절해야 한다고 요청 — **`SFXManager`에 신규 메서드
+`PlayAtPoint(id, worldPosition, minDistance, maxDistance, rolloffMode)` 추가**(`PlayClipAtPoint` 대신
+임시 `AudioSource`를 직접 만들어 감쇠를 커스텀, 클립 길이만큼 지나면 자동 정리 — `PlayLoop()`와 같은
+패턴, 1회성이라 자동 파괴만 다름).
+
+4곳 전부 이 메서드로 전환 + 기존 루프 사운드들과 동일한 Inspector 필드 패턴(`Tooltip` + `float`
+min/maxDistance + `AudioRolloffMode`) 추가:
+- `SpikeTrap.cs`: `raiseMinDistance`/`raiseMaxDistance`/`raiseRolloffMode`
+- `Stage5ChaserAI.cs`: `attackMinDistance`/`attackMaxDistance`/`attackRolloffMode`
+- `Stage5TargetRunner.cs`: `capturedMinDistance`/`capturedMaxDistance`/`capturedRolloffMode`
+- `Breakable.cs`: `destroyMinDistance`/`destroyMaxDistance`/`destroyRolloffMode`
+
+전부 기본값 `min=1f`/`max=0f(→500 처리)`로, 기존 루프 사운드 필드들과 똑같이 동작 — **이제 3D인 7곳
+전부(단발 4 + 루프 3) Inspector에서 min/maxDistance 조절 가능.** 실제 값 튜닝은 사용자가 각 컴포넌트를
+씬/프리팹에서 선택해 Inspector에서 진행(맵 스케일에 맞게, 예: min 1~2m / max 10~20m 선에서 시작해서
+실제 플레이하며 조정 권장 — 정확한 수치는 실측 필요).
+
+**✅ 추가 (같은 세션) — `ArrowTrap` 화살 발사음 부활, 3D + 근접 감쇠로.** §11에서 `ArrowTrap`을 완전
+제거하기로 했던 이유는 "여러 개 동시에 있어서 2D면 시끄럽고, (당시) 3D는 기본 감쇠라 잘 안 들림"이라는
+딜레마였는데, 이번에 만든 `PlayAtPoint()`(근접 커스텀 감쇠)가 정확히 그 딜레마를 푸는 방식이라 사용자가
+다시 추가 요청. `fireSfxId`/`fireMinDistance`/`fireMaxDistance`/`fireRolloffMode` 필드 재추가, `PlayAtPoint`
+로 재생.
+
+**⚠️ 발견(기존 구조, 이번에 새로 만든 문제 아님) — 이 발사음은 현재 Host에서만 재생됨.**
+`ArrowTrap.OnTrapTrigger()`가 화살 스폰(B안: Host만 스폰) 때문에 `if (!nm.IsServer) return;`으로 일찍
+리턴하는데, 발사음 재생 코드가 그 리턴 다음에 있어서 Client는 이 소리가 안 들림. 다른 단발 3D
+트랩(`SpikeTrap` 등)은 `OnTrapTrigger`에 이런 얼리 리턴이 없어서 이 문제가 없음 — `ArrowTrap`만의
+구조적 특성. 원래부터 이 위치였어서 그대로 유지, Client도 들리게 하려면 별도로 다뤄야 함(예: Host가
+`ClientRpc`로 각 클라이언트에 재생 위치를 브로드캐스트하는 방식 — `WindTrap`의 Mouth 연출 동기화와
+동일 패턴). 사용자 확인 후 진행할 것.
+
+### 11.4 min/maxDistance 기본 수치 확정 (2026-08-29, 같은 세션)
+
+사용자가 각 3D 사운드를 개별 실측할 시간이 없어서, 튜닝 전 시작값을 지금 다 정함
+(실측 후 필요하면 재조정). 원칙: **단발음(이미 일어난 이벤트 알림)은 좁게, 루프(접근
+경고용)는 넓게** — 특히 `ArrowTrap`은 맵에 여러 개 동시 배치되므로 겹쳐서 시끄러워지지
+않게 가장 좁게 잡음. `SpinRoller`는 기존 코드 툴팁에 있던 "위압감 있는 boulder는 min
+15~25 권장" 가이드를 그대로 반영.
+
+| 스크립트 | 필드 프리픽스 | 종류 | min | max |
+|---|---|---|---|---|
+| `ArrowTrap` | `fire` | 단발 | 1 | 8 |
+| `SpikeTrap` | `raise` | 단발 | 1 | 10 |
+| `Breakable` | `destroy` | 단발 | 1 | 10 |
+| `Stage5ChaserAI` | `attack` | 단발 | 2 | 12 |
+| `Stage5TargetRunner` | `captured` | 단발 | 2 | 12 |
+| `AdvancingWall` | `move` | 루프 | 2 | 25 |
+| `SpinRoller`(Boulder 등) | `roll` | 루프 | 18 | 40 |
+| `Stage5ChaserAI`/`Stage5TargetRunner` | `run` | 루프 | 2 | 20 |
+
+**✅ 재조정 (같은 세션, 사용자 지정) — 위 1차 제안값이 너무 좁다고 판단, 사용자가 직접
+최종 수치를 지정.** 각 `.cs` 필드 기본값을 아래로 재갱신:
+
+| 스크립트 | 필드 프리픽스 | 종류 | min | max |
+|---|---|---|---|---|
+| `ArrowTrap` | `fire` | 단발 | 25 | 50 |
+| `SpikeTrap` | `raise` | 단발 | 5 | 25 |
+| `Breakable` | `destroy` | 단발 | 5 | 50 |
+| `Stage5ChaserAI` | `attack` | 단발 | 10 | 30 |
+| `Stage5ChaserAI` | `run` | 루프 | 10 | 30 |
+| `Stage5TargetRunner` | `captured` | 단발 | 15 | 30 |
+| `Stage5TargetRunner` | `run` | 루프 | 10 | 30 |
+| `AdvancingWall` | `move` | 루프 | 30 | 100 |
+| `SpinRoller`(Boulder 등) | `roll` | 루프 | 40 | 200 |
+
+**단, 8곳 전부 이미 씬/프리팹에
+min=1/max=0(→500) 기본값이 명시적으로 저장돼 있는 상태**(`SpikeTrap.prefab`,
+`Boulder.prefab`, `Chaser.prefab`, `Runner.prefab`, `M.Boss.unity`, `M.Stage5.unity`,
+`M.Stage3.unity`, `T.Boss.unity` 등)라 **코드 기본값만 바꿔서는 기존 배치분에 반영 안 됨**
+— MCP/에디터 쓰기는 에이전트 금지 원칙이라 사용자가 인스펙터에서 위 표 값을 직접
+입력해야 함(§10 체크리스트에 추가).
+
+**최종 상태 정리:**
+- **2D:** `DropTrap`(발동/경고), `SpikeLaneField`(경고음 제거 — 무음), `WindTrap`(임펄스+지속 루프
+  전부), `AdvancingWallTelegraph`(경고 루프).
+- **3D:** `ArrowTrap`(발사음), `SpikeTrap`(상승음), `Stage5ChaserAI`(공격), `Stage5TargetRunner`(포획),
+  `Breakable_Destroy`(벽 파괴, §11.2) — 단발음 5곳, `PlayAtPoint()`로 min/maxDistance Inspector 조절
+  가능. `AdvancingWall`(이동 루프), `SpinRoller`/Boulder_Roll(구르는 루프), `Stage5ChaserAI`/
+  `Stage5TargetRunner`(달리기 루프) — 루프 3곳, 원래부터 Inspector `spatialBlend`/`minDistance`/
+  `maxDistance` 조절 가능. **총 8곳(단발 5 + 루프 3) 다 min/maxDistance Inspector 조절 가능한 상태.**
+  코드 기본값은 §11.4 최종 표(사용자 지정)로 확정. 단, 기존에 씬/프리팹에 이미 배치된 인스턴스는
+  YAML에 구값(min=1/max=0)이 저장돼 있어 코드 기본값이 자동 반영되지 않으므로, §11.4 표대로
+  사용자가 직접 Inspector에서 입력해야 함(§10 체크리스트 이후 진행).

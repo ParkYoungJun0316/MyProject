@@ -135,9 +135,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -149,19 +151,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &94016841
 GameObject:
   m_ObjectHideFlags: 0
@@ -331,9 +321,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -345,19 +337,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &175005870
 GameObject:
   m_ObjectHideFlags: 0
@@ -406,9 +386,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -420,19 +402,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &207975599
 GameObject:
   m_ObjectHideFlags: 0
@@ -818,7 +788,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 29
+  fireSfxId: 0
+  fireMinDistance: 1
+  fireMaxDistance: 0
+  fireRolloffMode: 0
 --- !u!114 &268475148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1048,9 +1021,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -1062,19 +1037,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &429766304
 GameObject:
   m_ObjectHideFlags: 0
@@ -1187,7 +1150,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CheerService
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
-  buffDuration: 5
   cheerCooldownSeconds: 10
   cheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
@@ -1252,9 +1214,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -1266,19 +1230,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &501392159
 GameObject:
   m_ObjectHideFlags: 0
@@ -1399,7 +1351,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 29
+  fireSfxId: 0
+  fireMinDistance: 1
+  fireMaxDistance: 0
+  fireRolloffMode: 0
 --- !u!114 &512931853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1456,9 +1411,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -1470,19 +1427,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &554251966
 GameObject:
   m_ObjectHideFlags: 0
@@ -1807,9 +1752,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -1821,19 +1768,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &681261478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1850,9 +1785,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -1864,19 +1801,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &700775288
 GameObject:
   m_ObjectHideFlags: 0
@@ -1959,9 +1884,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -1973,19 +1900,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1001 &781696675
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2191,7 +2106,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 29
+  fireSfxId: 0
+  fireMinDistance: 1
+  fireMaxDistance: 0
+  fireRolloffMode: 0
 --- !u!114 &789681601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2963,9 +2881,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -2977,19 +2897,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1182669609
 GameObject:
   m_ObjectHideFlags: 0
@@ -3409,9 +3317,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -3423,19 +3333,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1001 &1283159134
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3872,7 +3770,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 29
+  fireSfxId: 0
+  fireMinDistance: 1
+  fireMaxDistance: 0
+  fireRolloffMode: 0
 --- !u!114 &1298275794
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4094,9 +3995,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4108,19 +4011,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1383278139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4137,9 +4028,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4151,19 +4044,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1425453335
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4180,9 +4061,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4194,19 +4077,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1425732281
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4223,9 +4094,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4237,19 +4110,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1436855718
 GameObject:
   m_ObjectHideFlags: 0
@@ -4615,9 +4476,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4629,19 +4492,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1472172096
 GameObject:
   m_ObjectHideFlags: 0
@@ -4796,9 +4647,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4810,19 +4663,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!198 &1630310084 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 6670375953978693229, guid: b0e04e96d50c525409fb2941f89e658c, type: 3}
@@ -4844,9 +4685,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -4858,19 +4701,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1666308656
 GameObject:
   m_ObjectHideFlags: 0
@@ -4956,10 +4787,6 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 1630310084}
   pullParticle: {fileID: 456466537}
-  windSpatialBlend: 1
-  windMinDistance: 1
-  windMaxDistance: 0
-  windRolloffMode: 0
 --- !u!65 &1666308660
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4997,9 +4824,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -5011,19 +4840,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1679405510
 GameObject:
   m_ObjectHideFlags: 0
@@ -5072,9 +4889,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -5086,19 +4905,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1779123942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5115,9 +4922,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -5129,19 +4938,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1795203683
 GameObject:
   m_ObjectHideFlags: 0
@@ -5227,10 +5024,6 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 1630310084}
   pullParticle: {fileID: 456466537}
-  windSpatialBlend: 1
-  windMinDistance: 1
-  windMaxDistance: 0
-  windRolloffMode: 0
 --- !u!65 &1795203687
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5268,9 +5061,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -5282,19 +5077,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1871857760
 GameObject:
   m_ObjectHideFlags: 0
@@ -5594,9 +5377,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -5608,19 +5393,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1884231440
 GameObject:
   m_ObjectHideFlags: 0
@@ -6136,9 +5909,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -6150,19 +5925,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &2008332028
 GameObject:
   m_ObjectHideFlags: 0
@@ -6319,9 +6082,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 1
+  destroyMaxDistance: 0
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -6333,19 +6098,7 @@ MonoBehaviour:
   syncBreakOverNetwork: 1
   OnBreak:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953028345}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!4 &58666403724751518
 Transform:
   m_ObjectHideFlags: 0

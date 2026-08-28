@@ -33,9 +33,14 @@ public class SpikeTrap : TrapBase
     [Tooltip("연속 데미지 간격(초). 0이면 닿을 때마다 즉시")]
     [SerializeField] private float damageInterval = 0f;
 
-    [Header("사운드")]
+    [Header("사운드 (3D)")]
     [Tooltip("가시가 올라올 때 재생할 SFX. None이면 무음.")]
     [SerializeField] private SFXId raiseSfxId = SFXId.None;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] private float raiseMinDistance = 5f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] private float raiseMaxDistance = 25f;
+    [SerializeField] private AudioRolloffMode raiseRolloffMode = AudioRolloffMode.Logarithmic;
 
     Collider spikeTrigger;
     BoxCollider spikeTriggerBox;
@@ -129,7 +134,7 @@ public class SpikeTrap : TrapBase
         spikeTrigger.enabled = true;
 
         if (raiseSfxId != SFXId.None)
-            SFXManager.Instance?.Play(raiseSfxId);
+            SFXManager.Instance?.PlayAtPoint(raiseSfxId, transform.position, raiseMinDistance, raiseMaxDistance, raiseRolloffMode);
 
         yield return MoveSpikeLocal(loweredLocalPos, loweredLocalPos + Vector3.up * raiseHeight);
 

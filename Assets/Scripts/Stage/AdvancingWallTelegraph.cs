@@ -31,17 +31,10 @@ public class AdvancingWallTelegraph : MonoBehaviour
     [Tooltip("흔들림 주파수(Hz). 예) 10~15 = 빠르게 잔떨림")]
     [SerializeField] float shakeFrequency = 0f;
 
-    [Header("사운드 (경고 루프 — 3D)")]
+    [Header("사운드 (경고 루프 — 2D)")]
     [Tooltip("경고 구간 동안 재생할 SFX. 기본값(Trap_AdvancingWall_Telegraph)은 일반 벽용 —\n" +
              "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId로 지정할 것.")]
     [SerializeField] SFXId warnSfxId = SFXId.Trap_AdvancingWall_Telegraph;
-    [Tooltip("경고 구간(telegraphDuration) 동안 재생되는 루프. 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
-    [SerializeField] [Range(0f, 1f)] float warnSpatialBlend = 1f;
-    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
-    [SerializeField] float warnMinDistance = 1f;
-    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
-    [SerializeField] float warnMaxDistance = 0f;
-    [SerializeField] AudioRolloffMode warnRolloffMode = AudioRolloffMode.Logarithmic;
 
     /// <summary>외부(AdvancingWall)에서 대기 시간 계산용으로 읽는 경고 구간(초).</summary>
     public float Duration => telegraphDuration;
@@ -136,10 +129,7 @@ public class AdvancingWallTelegraph : MonoBehaviour
             _warnLoopSource              = gameObject.AddComponent<AudioSource>();
             _warnLoopSource.loop         = true;
             _warnLoopSource.playOnAwake  = false;
-            _warnLoopSource.spatialBlend = warnSpatialBlend;
-            _warnLoopSource.rolloffMode  = warnRolloffMode;
-            _warnLoopSource.minDistance  = warnMinDistance > 0f ? warnMinDistance : 1f;
-            _warnLoopSource.maxDistance  = warnMaxDistance > 0f ? warnMaxDistance : 500f;
+            _warnLoopSource.spatialBlend = 0f;
         }
 
         _warnLoopSource.clip   = clip;

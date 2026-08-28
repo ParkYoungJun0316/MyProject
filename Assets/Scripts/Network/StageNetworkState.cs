@@ -528,6 +528,18 @@ public class StageNetworkState : NetworkBehaviour
         DropTrap.PlayWarnById(trapId, targetPos, warnDuration, startY, speed, markerScale);
     }
 
+    /// <summary>
+    /// Host: DropCycle이 실제 낙하체를 생성하는 시점(경고 종료 후)에 호출.
+    /// Client: 동일 DropTrap 인스턴스의 낙하 시작음(fireSfxId)만 재생 — 낙하체 스폰은 B안으로
+    /// 별도 동기화되므로 여기서는 순수 사운드만 다룬다.
+    /// </summary>
+    [ClientRpc]
+    public void SyncDropFireClientRpc(int trapId)
+    {
+        if (IsServer) return;
+        DropTrap.PlayFireSfxById(trapId);
+    }
+
     // ── 보스 크로스파이어 안전지대 표시 동기화 (SafeZoneWarnSign 전용, DropTrap 경고 마커와 동일 패턴) ──
 
     /// <summary>

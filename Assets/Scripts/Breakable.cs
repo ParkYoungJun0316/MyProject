@@ -96,6 +96,13 @@ public class Breakable : MonoBehaviour
     [Tooltip("충돌 후 최종 파괴(숨김·파편·즉사)까지 대기 시간(초). 0이면 즉시.")]
     [SerializeField] private float breakDelay = 0f;
 
+    [Header("사운드 (파괴음 — 3D)")]
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] private float destroyMinDistance = 5f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] private float destroyMaxDistance = 50f;
+    [SerializeField] private AudioRolloffMode destroyRolloffMode = AudioRolloffMode.Logarithmic;
+
     [Header("파편 / 이펙트")]
     [Tooltip("파괴 시 생성할 파편 또는 Particle 프리팹. 없으면 생략.")]
     [SerializeField] private GameObject debrisPrefab = null;
@@ -297,6 +304,7 @@ public class Breakable : MonoBehaviour
 
     void DoBreakVisuals()
     {
+        SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, transform.position, destroyMinDistance, destroyMaxDistance, destroyRolloffMode);
         OnBreak?.Invoke();
 
         if (debrisPrefab != null)

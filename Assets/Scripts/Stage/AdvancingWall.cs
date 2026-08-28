@@ -120,9 +120,9 @@ public class AdvancingWall : MonoBehaviour
     [Tooltip("전진·후퇴 이동 중에만 재생되는 루프. 이동 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
     [SerializeField] [Range(0f, 1f)] float moveSpatialBlend = 1f;
     [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
-    [SerializeField] float moveMinDistance = 1f;
+    [SerializeField] float moveMinDistance = 30f;
     [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
-    [SerializeField] float moveMaxDistance = 0f;
+    [SerializeField] float moveMaxDistance = 100f;
     [SerializeField] AudioRolloffMode moveRolloffMode = AudioRolloffMode.Logarithmic;
 
     [Header("이벤트")]

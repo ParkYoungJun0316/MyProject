@@ -62,14 +62,8 @@ public class WindTrap : TrapBase
     [Tooltip("Pull 모드일 때 재생할 파티클. 없으면 생략")]
     [SerializeField] private ParticleSystem pullParticle = null;
 
-    [Header("사운드 (바람 루프 — 3D)")]
-    [Tooltip("windDuration > 0일 때 바람이 지속되는 동안 재생되는 루프. 발동~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
-    [SerializeField] [Range(0f, 1f)] private float windSpatialBlend = 1f;
-    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
-    [SerializeField] private float windMinDistance = 1f;
-    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
-    [SerializeField] private float windMaxDistance = 0f;
-    [SerializeField] private AudioRolloffMode windRolloffMode = AudioRolloffMode.Logarithmic;
+    [Header("사운드 (바람 루프 — 2D)")]
+    [Tooltip("windDuration > 0일 때 바람이 지속되는 동안 재생되는 루프. 발동~종료에 맞춰 자동으로 켜고 끔.")]
 
     AudioSource _windLoopSource;
 
@@ -394,10 +388,7 @@ public class WindTrap : TrapBase
             _windLoopSource              = gameObject.AddComponent<AudioSource>();
             _windLoopSource.loop         = true;
             _windLoopSource.playOnAwake  = false;
-            _windLoopSource.spatialBlend = windSpatialBlend;
-            _windLoopSource.rolloffMode  = windRolloffMode;
-            _windLoopSource.minDistance  = windMinDistance > 0f ? windMinDistance : 1f;
-            _windLoopSource.maxDistance  = windMaxDistance > 0f ? windMaxDistance : 500f;
+            _windLoopSource.spatialBlend = 0f;
         }
 
         _windLoopSource.clip   = clip;

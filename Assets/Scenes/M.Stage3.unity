@@ -707,7 +707,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CheerService
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
-  buffDuration: 5
   cheerCooldownSeconds: 10
   cheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
@@ -1706,7 +1705,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 796540932}
-  - component: {fileID: 796540931}
   m_Layer: 0
   m_Name: SFXEventPlayer
   m_TagString: Untagged
@@ -1714,19 +1712,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &796540931
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 796540930}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 31
 --- !u!4 &796540932
 Transform:
   m_ObjectHideFlags: 0
@@ -4820,13 +4805,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7313805817493150150}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 788741181162483683}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &6416332503063042195
 Transform:
   m_ObjectHideFlags: 0
@@ -5458,15 +5443,15 @@ MonoBehaviour:
   penaltyMoveDuration: 0.6
   pauseReturnDuration: 0.5
   telegraph: {fileID: 0}
-  moveSfxId: 31
+  moveSfxId: 23
   moveSpatialBlend: 1
-  moveMinDistance: 1
-  moveMaxDistance: 50
+  moveMinDistance: 30
+  moveMaxDistance: 100
   moveRolloffMode: 0
   OnAdvanceStarted:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 796540931}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
