@@ -14,7 +14,8 @@ public class PlayerBuffSystem : MonoBehaviour
     public class BuffSetting
     {
         public BuffType type;
-        [Tooltip("버프 지속 시간(초)")]
+        [Tooltip("버프 지속 시간(초) — 이 타입의 유일한 지속시간 소스. " +
+                 "응원으로 발동돼도 스테이지와 무관하게 항상 이 값을 씀 (NetworkPlayerSetup.ApplyCheerBuff).")]
         public float duration = 0f;
         [Tooltip("SpeedUp: 추가 속도 / Shield: 쉴드 charge 수")]
         public float value = 0f;

@@ -539,15 +539,20 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     /// <summary>
     /// CheerService (Host)가 호출. 전 클라이언트에 버프 적용을 전달.
+    /// 지속시간(duration)은 스테이지가 아니라 버프 종류(BuffType) 소속 —
+    /// PlayerBuffSystem.buffSettings[type].duration이 유일한 소스 (2026-08-28 통일,
+    /// 같은 버프가 스테이지마다 지속시간이 달라지는 불일치 제거).
     /// Shield: _shield NV 설정 + 서버 측 duration 만료 코루틴 시작.
     /// SpeedUp: ClientRpc만으로 처리 (기존 방식).
+    /// 리턴값: 실제 적용된 duration (CheerService가 쿨타임 시작 시점 계산에 사용).
     /// </summary>
-    public void ApplyCheerBuff(PlayerBuffSystem.BuffType type, float duration)
+    public float ApplyCheerBuff(PlayerBuffSystem.BuffType type)
     {
-        if (!IsServer) return;
+        if (!IsServer) return 0f;
 
-        var setting = _player?.GetComponent<PlayerBuffSystem>()?.GetSetting(type);
-        float value = setting?.value ?? 0f;
+        var setting  = _player?.GetComponent<PlayerBuffSystem>()?.GetSetting(type);
+        float duration = setting?.duration ?? 5f;
+        float value    = setting?.value    ?? 0f;
 
         if (type == PlayerBuffSystem.BuffType.Shield)
         {
@@ -558,6 +563,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         }
 
         ApplyCheerBuffClientRpc((int)type, duration, value);
+        return duration;
     }
 
     /// <summary>전 클라이언트에서 이 플레이어의 PlayerBuffSystem에 버프를 적용 (타이머·SFX·UI용).</summary>

@@ -679,8 +679,8 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 
 | 파라미터 | 설명 | 초안값 |
 |----------|------|--------|
-| `buffDuration` | Shield / SpeedUp 지속 | 5초 |
-| `cheerCooldownSeconds` | 수혜자 쿨 | 15초 |
+| `PlayerBuffSystem.buffSettings[type].duration` | Shield / SpeedUp 지속 (버프 종류 소속, **`CheerService`엔 duration 필드 없음** — 2026-08-28 통일) | Shield 5초 / SpeedUp 10초 |
+| `cheerCooldownSeconds` | 수혜자 쿨 (CheerService 소속, 응원 자체의 파라미터) | 15초 |
 | `cheerTimeoutSeconds` | 부분 응원 타임아웃 | 10초 |
 | `chatRateLimitSeconds` | 숫자키 응원 간격 | 0.5~1초 |
 | `keywordConfidence` | Vosk 필터 | 플레이테스트 |
@@ -807,7 +807,8 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [x] `CheerLexiconBuilder` — §5.2 B(고정 4종 발음 변형 대체 단어 매핑) 구현 완료 — 실제 인식 플레이테스트는 아직
 - [ ] `CheerLexiconBuilder` — §5.2 C(커스텀 이름 혼합 방식 대체 발음) — 설계만 확정, 구현 안 함
 - [ ] Dissonance ↔ Vosk 마이크 공유
-- [x] Shield/SpeedUp 개인 선택제(§1.4) — `NetworkPlayerSetup.SelectedBuffType` + `RequestToggleBuffTypeServerRpc` + `CheerService.IsBuffActive` + `CheerProgressUI`(Q키 입력 통합) 구현 완료 (2026-08-28). Player 프리팹에 **Shield/SpeedUp `buffSettings` 둘 다** 채워져 있는지 확인 필요 — 사용자 에디터 작업으로 남음
+- [x] Shield/SpeedUp 개인 선택제(§1.4) — `NetworkPlayerSetup.SelectedBuffType` + `RequestToggleBuffTypeServerRpc` + `CheerService.IsBuffActive` + `CheerProgressUI`(Q키 입력 통합) 구현 완료 (2026-08-28). Player 프리팹(`Kkultteok.prefab`)에 Shield/SpeedUp `buffSettings` 둘 다 채워져 있음 확인 완료.
+- [x] 버프 지속시간(duration) 소유권 통일(2026-08-28) — `CheerService.buffDuration` 필드 제거, `PlayerBuffSystem.buffSettings[type].duration`이 유일한 소스. 이전엔 스테이지별 `buffDuration`(M=5초/T=10초)과 타입별 `buffSettings.duration`이 따로 있었고 실제로는 스테이지값만 쓰여 "같은 버프가 스테이지마다 지속시간이 다름 + 죽은 필드" 상태였음 — `NetworkPlayerSetup.ApplyCheerBuff(BuffType)`가 duration을 리턴해 `CheerService`가 쿨타임 시작 시점만 계산
 - [ ] **응원 확장 2종** (신규 버프 타입 — 미착수)
 - [ ] `CheerProgressUI` + `TeamStatusUI`
 - [ ] 숫자키(1~4) 입력 안내 UI (선택, 화면 피드백)

@@ -35,8 +35,9 @@ public class CheerService : NetworkBehaviour
     [SerializeField] PlayerBuffSystem.BuffType stageBuffType = PlayerBuffSystem.BuffType.Shield;
 
     [Header("버프 파라미터")]
-    [Tooltip("버프 지속 시간(초). PlayerBuffSystem.buffSettings 값과 일치시킬 것.")]
-    [SerializeField] float buffDuration = 5f;
+    // 버프 지속시간은 더 이상 스테이지별 필드가 아니라 PlayerBuffSystem.buffSettings[type].duration
+    // 소속(BuffType 기준 고정) — NetworkPlayerSetup.ApplyCheerBuff가 소유. 여기서 별도로 갖지 않는다
+    // (2026-08-28 자유 선택제 전환 후 "같은 버프인데 스테이지마다 지속시간이 다른" 불일치 제거).
 
     [Tooltip("버프 종료 후 수혜자 쿨타임(초)")]
     [SerializeField] float cheerCooldownSeconds = 15f;
@@ -92,7 +93,6 @@ public class CheerService : NetworkBehaviour
 
     // ── 공개 프로퍼티 (UI에서 타이머 계산용) ──────────────────────
 
-    public float BuffDuration                    => buffDuration;
     public float CooldownDuration                => cheerCooldownSeconds;
     public PlayerBuffSystem.BuffType StageBuffType => stageBuffType;
 
@@ -162,10 +162,11 @@ public class CheerService : NetworkBehaviour
 
     void ApplyBuff(int targetColorIndex, double now)
     {
-        _buffEnd[targetColorIndex] = now + buffDuration;
+        // 실제 지속시간은 수혜자의 버프 종류(BuffType) 소속 — NetworkPlayerSetup.ApplyCheerBuff가
+        // PlayerBuffSystem.buffSettings[type].duration을 읽어 적용하고 그 값을 돌려준다.
+        // 매칭되는 플레이어를 못 찾는 비정상 상황(색 조회 실패 등)에 대한 안전 폴백만 5초로 둔다.
+        float appliedDuration = 5f;
 
-        // 해당 색상 플레이어 찾아 버프 적용 — 스테이지 고정 타입이 아니라
-        // 그 플레이어가 직접 선택한 타입(NetworkPlayerSetup.SelectedBuffType)을 적용한다.
         var players = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
         foreach (var p in players)
         {
@@ -173,9 +174,11 @@ public class CheerService : NetworkBehaviour
             int idx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
             if (idx != targetColorIndex) continue;
 
-            p.ApplyCheerBuff(p.SelectedBuffType, buffDuration);
+            appliedDuration = p.ApplyCheerBuff(p.SelectedBuffType);
             break;
         }
+
+        _buffEnd[targetColorIndex] = now + appliedDuration;
 
         ResetVotes(targetColorIndex);
         BroadcastBuffActivatedClientRpc(targetColorIndex);

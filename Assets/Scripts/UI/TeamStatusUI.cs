@@ -30,7 +30,7 @@ public class TeamStatusUI : MonoBehaviour
     [SerializeField] Player excludePlayer;
 
     [Header("슬롯 크기")]
-    [SerializeField] float slotWidth    = 220f;
+    [SerializeField] float slotWidth    = 400f;
     [SerializeField] float slotHeight   = 50f;
     [SerializeField] float slotSpacing  = 6f;
     [SerializeField] float heartSize    = 20f;
@@ -188,11 +188,17 @@ public class TeamStatusUI : MonoBehaviour
         // ── 이름 (위쪽 절반) ──────────────────────────────────────
         var nameObj = new GameObject("Name");
         nameObj.transform.SetParent(root.transform, false);
-        slot.nameText           = nameObj.AddComponent<TextMeshProUGUI>();
-        slot.nameText.text      = GetPlayerDisplayName(slot.colorIndex);
-        slot.nameText.fontSize  = 13f;
-        slot.nameText.fontStyle = FontStyles.Bold;
-        slot.nameText.color     = Color.white;
+        slot.nameText                = nameObj.AddComponent<TextMeshProUGUI>();
+        slot.nameText.text           = GetPlayerDisplayName(slot.colorIndex);
+        slot.nameText.fontSize       = 13f;
+        slot.nameText.fontStyle      = FontStyles.Bold;
+        slot.nameText.color          = Color.white;
+        // 긴 Steam 닉네임이 줄바꿈되어 좁은 슬롯 높이에서 잘려 보이는 것을 방지:
+        // 줄바꿈 금지 + 폭에 안 맞으면 폰트를 자동 축소.
+        slot.nameText.textWrappingMode = TextWrappingModes.NoWrap;
+        slot.nameText.enableAutoSizing = true;
+        slot.nameText.fontSizeMin      = 8f;
+        slot.nameText.fontSizeMax      = 13f;
         var nameRt = nameObj.GetComponent<RectTransform>();
         nameRt.anchorMin = new Vector2(0f, 0.55f);
         nameRt.anchorMax = new Vector2(1f, 1f);

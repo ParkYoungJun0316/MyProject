@@ -107,12 +107,13 @@ public class CheerProgressUI : MonoBehaviour
         PlayerSpawnCoordinator.OnPlayersReady -= Init;
         _myColorIndex = GetMyColorIndex();
 
+        // 지속시간은 버프 종류(BuffType) 소속이라 스테이지 전역값이 없다 — 첫 활성화 전까지의
+        // 임시값일 뿐이며 HandleBuffApplied/HandleBuffActivated에서 실제 타입 기준으로 갱신된다.
+        _buffDuration = 5f;
+
         var svc = CheerService.Instance;
         if (svc != null)
-        {
-            _buffDuration     = svc.BuffDuration;
             _cooldownDuration = svc.CooldownDuration;
-        }
 
         if (gameObject.activeInHierarchy)
             SubscribeEvents();
@@ -374,11 +375,11 @@ public class CheerProgressUI : MonoBehaviour
         if (_myColorIndex < 0 || targetIdx != _myColorIndex) return;
         if (_state == CheerState.BuffActive) return; // OnBuffApplied에서 이미 처리됨
         _buffStartTime = Time.time;
-        if (CheerService.Instance != null)
-            _buffDuration = CheerService.Instance.BuffDuration;
         // 이 폴백 경로엔 실제 타입 파라미터가 없으므로 내가 지금 선택해둔 타입으로 추정한다
         // (버프 발동 시 CheerService.ApplyBuff가 실제로 적용하는 값과 항상 일치).
         if (_localSetup != null) _activeBuffType = _localSetup.SelectedBuffType;
+        var setting = _localBuffSystem?.GetSetting(_activeBuffType);
+        _buffDuration = setting?.duration ?? 5f;
         SetState(CheerState.BuffActive);
     }
 
