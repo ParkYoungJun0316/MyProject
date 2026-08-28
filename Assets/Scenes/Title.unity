@@ -787,7 +787,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a29dc799c5e7b64d8a4b4d3c00f55bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
-  sfxId: 35
+  sfxId: 28
 --- !u!1 &508085736
 GameObject:
   m_ObjectHideFlags: 0
@@ -1399,7 +1399,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a29dc799c5e7b64d8a4b4d3c00f55bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
-  sfxId: 35
+  sfxId: 28
 --- !u!1 &783154050
 GameObject:
   m_ObjectHideFlags: 0
@@ -2077,7 +2077,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a29dc799c5e7b64d8a4b4d3c00f55bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
-  sfxId: 35
+  sfxId: 28
 --- !u!1 &1058287402
 GameObject:
   m_ObjectHideFlags: 0
@@ -2372,7 +2372,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a29dc799c5e7b64d8a4b4d3c00f55bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
-  sfxId: 35
+  sfxId: 28
 --- !u!1 &1240181811
 GameObject:
   m_ObjectHideFlags: 0
@@ -3099,7 +3099,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a29dc799c5e7b64d8a4b4d3c00f55bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
-  sfxId: 35
+  sfxId: 28
 --- !u!1 &1708256976
 GameObject:
   m_ObjectHideFlags: 0
@@ -3647,7 +3647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a29dc799c5e7b64d8a4b4d3c00f55bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
-  sfxId: 35
+  sfxId: 28
 --- !u!114 &1968685050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3799,7 +3799,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Join
+  m_text: Join(Developer)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3b5f32bd2d5f53a44b6f7d13bb50e58f, type: 2}
   m_sharedMaterial: {fileID: 9187291889574711010, guid: 3b5f32bd2d5f53a44b6f7d13bb50e58f, type: 2}
@@ -3826,8 +3826,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 70
-  m_fontSizeBase: 70
+  m_fontSize: 40
+  m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -3887,6 +3887,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: zoneClips.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: zoneClips.Array.data[0].scenePrefix
+      value: Title
+      objectReference: {fileID: 0}
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: zoneClips.Array.data[1].scenePrefix
+      value: Tutorial
+      objectReference: {fileID: 0}
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: zoneClips.Array.data[0].clips.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: zoneClips.Array.data[1].clips.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: 'zoneClips.Array.data[0].clips.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 17ae2b166c613a744930104bc9cb56d9, type: 3}
+    - target: {fileID: 2035016311780280036, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
+      propertyPath: 'zoneClips.Array.data[1].clips.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: ef3b768dd41639340ae12a111d466306, type: 3}
     - target: {fileID: 4024931820611632669, guid: 8160c5706addfc64b9a673666c6b85ac, type: 3}
       propertyPath: m_Name
       value: NetworkManager

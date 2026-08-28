@@ -297,7 +297,7 @@ public class DropTrap : TrapBase
             yield return new WaitForSeconds(warnDuration);
 
         if (fireSfxId != SFXId.None)
-            SFXManager.Instance?.Play(fireSfxId, spawnPos);
+            SFXManager.Instance?.Play(fireSfxId);
 
         GameObject drop = Instantiate(dropPrefab, spawnPos, Quaternion.LookRotation(Vector3.down));
 
@@ -343,7 +343,7 @@ public class DropTrap : TrapBase
         warn.transform.localScale = markerScale;
         _pendingObjects.Add(warn);
         if (warnSfxId != SFXId.None)
-            SFXManager.Instance?.Play(warnSfxId, markerPos);
+            SFXManager.Instance?.Play(warnSfxId);
 
         DropWarnMarker marker = warn.GetComponent<DropWarnMarker>();
 

@@ -98,7 +98,7 @@ public class SceneFlowManager : MonoBehaviour
 
     /// <summary>
     /// 씬 이름 접두사로 구역 진입 SFX를 자동 재생.
-    /// M.* → Mouth 구역, T.* → Esophagus 구역. title/lobby/tutorial/Finish 등 접두사 없는 씬은 재생 안 함.
+    /// M.* → Mouth 구역. title/lobby/tutorial/Finish 및 T.* 는 재생 안 함.
     /// [주의] Host 전용 코드(TransitionTo())가 아니라 여기(OnSceneLoaded, 전 머신 로컬 실행)에 둬야
     /// Host/Client 모두 들림 — BGMManager 존 매칭과 동일한 씬 접두사 판별 패턴.
     /// 2D 재생(SFXManager.Play(id))만 사용 — 3D 재생(PlayClipAtPoint)은 임시 오브젝트가
@@ -108,8 +108,6 @@ public class SceneFlowManager : MonoBehaviour
     {
         if (sceneName.StartsWith("M."))
             SFXManager.Instance?.Play(SFXId.Stage_TransitionMouth);
-        else if (sceneName.StartsWith("T."))
-            SFXManager.Instance?.Play(SFXId.Stage_TransitionEsophagus);
     }
 
     // ── 공개 API ──────────────────────────────────────────────────

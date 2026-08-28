@@ -85,6 +85,8 @@ public class CheerProgressUI : MonoBehaviour
 
     PlayerBuffSystem _localBuffSystem;
     NetworkPlayerSetup _localSetup;
+    Player       _localPlayer;
+    PlayerEvents _localEvents;
 
     // ── 생성된 UI ─────────────────────────────────────────────────
 
@@ -161,6 +163,14 @@ public class CheerProgressUI : MonoBehaviour
         {
             _localBuffSystem.OnBuffApplied += HandleBuffApplied;
             _localBuffSystem.OnBuffRemoved += HandleBuffRemoved;
+
+            _localPlayer = _localBuffSystem.GetComponent<Player>();
+            _localEvents = _localPlayer != null ? _localPlayer.GetComponent<PlayerEvents>() : null;
+            if (_localEvents != null)
+            {
+                _localEvents.OnBlackWhiteChanged  += HandlePlayerColorChanged;
+                _localEvents.OnUniqueColorChanged += HandlePlayerColorChanged;
+            }
         }
     }
 
@@ -171,7 +181,14 @@ public class CheerProgressUI : MonoBehaviour
             _localBuffSystem.OnBuffApplied -= HandleBuffApplied;
             _localBuffSystem.OnBuffRemoved -= HandleBuffRemoved;
         }
+        if (_localEvents != null)
+        {
+            _localEvents.OnBlackWhiteChanged  -= HandlePlayerColorChanged;
+            _localEvents.OnUniqueColorChanged -= HandlePlayerColorChanged;
+        }
         _localBuffSystem = null;
+        _localPlayer     = null;
+        _localEvents     = null;
     }
 
     static PlayerBuffSystem FindLocalBuffSystem()
@@ -308,13 +325,13 @@ public class CheerProgressUI : MonoBehaviour
 
         if (next == CheerState.BuffActive)
         {
-            _buffIconImage.sprite        = GetBuffSprite(_activeBuffType);
+            SetIcon(GetBuffSprite(_activeBuffType));
             _buffOverlayImage.fillAmount = 0f;
         }
         else if (next == CheerState.Idle)
         {
             var selected = _localSetup != null ? _localSetup.SelectedBuffType : PlayerBuffSystem.BuffType.Shield;
-            _buffIconImage.sprite        = GetBuffSprite(selected);
+            SetIcon(GetBuffSprite(selected));
             _buffOverlayImage.fillAmount = 0f;
         }
         else if (next == CheerState.Cooldown)
@@ -396,10 +413,27 @@ public class CheerProgressUI : MonoBehaviour
     void HandleSelectedBuffTypeChanged(PlayerBuffSystem.BuffType type)
     {
         if (_state != CheerState.Idle) return;
-        _buffIconImage.sprite = GetBuffSprite(type);
+        SetIcon(GetBuffSprite(type));
     }
 
+    /// <summary>흑/백·고유색 전환 시 표시 중인 아이콘 색을 즉시 갱신.</summary>
+    void HandlePlayerColorChanged(bool _) => RefreshIconColor();
+    void HandlePlayerColorChanged(int _)  => RefreshIconColor();
+
     // ── 유틸 ─────────────────────────────────────────────────────
+
+    /// <summary>아이콘 스프라이트 + 플레이어 고유색(흑/백 포함) 틴트를 함께 적용.</summary>
+    void SetIcon(Sprite sprite)
+    {
+        _buffIconImage.sprite = sprite;
+        RefreshIconColor();
+    }
+
+    void RefreshIconColor()
+    {
+        if (_buffIconImage == null) return;
+        _buffIconImage.color = _localPlayer != null ? _localPlayer.GetCurrentBaseColor() : Color.white;
+    }
 
     Sprite GetBuffSprite(PlayerBuffSystem.BuffType buffType)
     {

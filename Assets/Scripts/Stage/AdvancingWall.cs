@@ -114,8 +114,8 @@ public class AdvancingWall : MonoBehaviour
     [SerializeField] AdvancingWallTelegraph telegraph;
 
     [Header("사운드 (이동 루프 — 3D)")]
-    [Tooltip("전진·후퇴 이동 중 재생할 SFX. 기본값(Trap_AdvancingWall_Move)은 일반 벽용 — 천장 낙하 등\n" +
-             "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId(예: Trap_Ceiling)로 지정할 것.")]
+    [Tooltip("전진·후퇴 이동 중 재생할 SFX. 기본값(Trap_AdvancingWall_Move)은 일반 벽용 —\n" +
+             "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId로 지정할 것.")]
     [SerializeField] SFXId moveSfxId = SFXId.Trap_AdvancingWall_Move;
     [Tooltip("전진·후퇴 이동 중에만 재생되는 루프. 이동 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
     [SerializeField] [Range(0f, 1f)] float moveSpatialBlend = 1f;

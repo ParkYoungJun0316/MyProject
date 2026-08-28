@@ -54,16 +54,13 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Minigame_SequenceRing_Correct;
     public AudioClip Minigame_SequenceRing_Wrong;
 
-    // ── Mouth ────────────────────────────────────────────────────
-    [Header("Mouth")]
-    public AudioClip Mouth_TeethBreak_1;
-
     // ── Player ───────────────────────────────────────────────────
     [Header("Player")]
     public AudioClip Player_ColorChange;
     public AudioClip Player_Death;
     public AudioClip Player_Hit;
     public AudioClip Player_Punch;
+    public AudioClip Player_PunchHit;
     [Tooltip("달리기 루프 클립. 앞뒤를 잘라서 루프가 자연스럽도록 준비할 것")]
     public AudioClip Player_Run;
 
@@ -72,8 +69,6 @@ public class SFXLibrary : ScriptableObject
     [Tooltip("M.* 씬(Mouth 구역) 진입 시 재생. SceneFlowManager.OnSceneLoaded()에서 씬 이름 접두사로 자동 재생됨.")]
     [FormerlySerializedAs("Stage_TransitionEnter")]
     public AudioClip Stage_TransitionMouth;
-    [Tooltip("T.* 씬(Esophagus 구역) 진입 시 재생. SceneFlowManager.OnSceneLoaded()에서 씬 이름 접두사로 자동 재생됨.")]
-    public AudioClip Stage_TransitionEsophagus;
 
     // ── Stage 5 ──────────────────────────────────────────────────
     [Header("Stage 5")]
@@ -88,10 +83,8 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Trap_AdvancingWall_Telegraph;
     [FormerlySerializedAs("Trap_Arrow_1")]
     public AudioClip Trap_Arrow;
-    public AudioClip Trap_Ceiling;
     public AudioClip Trap_Drop;
     public AudioClip Trap_SpikeRaise;
-    public AudioClip Trap_SpikeWarn;
 
     // ── UI / Menu ────────────────────────────────────────────────
     [Header("UI / Menu")]
@@ -149,16 +142,14 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Minigame_SequenceRing_Correct:     return Minigame_SequenceRing_Correct;
             case SFXId.Minigame_SequenceRing_Wrong:       return Minigame_SequenceRing_Wrong;
 
-            case SFXId.Mouth_TeethBreak_1:                  return Mouth_TeethBreak_1;
-
             case SFXId.Player_ColorChange:                return Player_ColorChange;
             case SFXId.Player_Death:                      return Player_Death;
             case SFXId.Player_Hit:                        return Player_Hit;
             case SFXId.Player_Punch:                      return Player_Punch;
+            case SFXId.Player_PunchHit:                   return Player_PunchHit;
             case SFXId.Player_Run:                        return Player_Run;
 
             case SFXId.Stage_TransitionMouth:             return Stage_TransitionMouth;
-            case SFXId.Stage_TransitionEsophagus:         return Stage_TransitionEsophagus;
 
             case SFXId.Stage5_Chaser_Attack:              return Stage5_Chaser_Attack;
             case SFXId.Stage5_Chaser_Run:                 return Stage5_Chaser_Run;
@@ -168,10 +159,8 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Trap_AdvancingWall_Move:           return Trap_AdvancingWall_Move;
             case SFXId.Trap_AdvancingWall_Telegraph:      return Trap_AdvancingWall_Telegraph;
             case SFXId.Trap_Arrow:                        return Trap_Arrow;
-            case SFXId.Trap_Ceiling:                      return Trap_Ceiling;
             case SFXId.Trap_Drop:                         return Trap_Drop;
             case SFXId.Trap_SpikeRaise:                   return Trap_SpikeRaise;
-            case SFXId.Trap_SpikeWarn:                    return Trap_SpikeWarn;
 
             case SFXId.UI_Click:                          return UI_Click;
 

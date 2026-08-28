@@ -141,7 +141,7 @@ public class SpikeLaneField : TrapBase
                 lanes[_pendingSelected[i]].PlayWarning(warningDuration);
 
         if (warnSfxId != SFXId.None)
-            SFXManager.Instance?.Play(warnSfxId, transform.position);
+            SFXManager.Instance?.Play(warnSfxId);
     }
 
     protected override void OnTrapTrigger()

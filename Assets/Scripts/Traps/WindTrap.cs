@@ -341,8 +341,9 @@ public class WindTrap : TrapBase
 
         if (windDuration <= 0f)
         {
-            // 순간 Impulse: 지속되는 상태가 없으므로 1회성 재생.
-            SFXManager.Instance?.Play(windSfx, transform.position);
+            // 순간 Impulse: 지속되는 상태가 없으므로 1회성 재생. 작은 맵 스케일에서 방향성보다
+            // 확실히 들리는 게 중요해서 2D로 재생(2026-08-29, SoundAndSettingsDesign.md §11).
+            SFXManager.Instance?.Play(windSfx);
             ApplyForceToAll(ForceMode.Impulse);
             _windActive = false;
             StopActiveParticle();

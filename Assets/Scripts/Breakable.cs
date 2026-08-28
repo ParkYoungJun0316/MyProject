@@ -103,11 +103,6 @@ public class Breakable : MonoBehaviour
     [Tooltip("파편 자동 소멸 시간(초). 0이면 자동 소멸 안 함.")]
     [SerializeField] private float debrisLifetime = 0f;
 
-    [Header("사운드")]
-    [Tooltip("true: SFXLibrary Mouth_TeethBreak_1 재생 (M.Stage4 이빨 등)\n" +
-             "이 외의 파괴 사운드는 OnBreak 이벤트에 SFXEventPlayer를 직접 연결해서 처리할 것.")]
-    [SerializeField] private bool useMouthTeethBreakSfx = false;
-
     [Header("범위 데미지 + 넉백 (선택)")]
     [Tooltip("최종 파괴 시점에 반경 내 플레이어에게 데미지+넉백을 적용할지 여부.\n" +
              "지연 시간이 있으면 지연이 끝난 뒤에만 판정.")]
@@ -310,9 +305,6 @@ public class Breakable : MonoBehaviour
             if (debrisLifetime > 0f)
                 Destroy(debris, debrisLifetime);
         }
-
-        if (useMouthTeethBreakSfx)
-            SFXManager.Instance?.PlayMouthTeethBreak(transform.position);
     }
 
     // ── 리셋 (함정과 동일: 부모 SetActive false→true 사이클로 자동 복원) ─────

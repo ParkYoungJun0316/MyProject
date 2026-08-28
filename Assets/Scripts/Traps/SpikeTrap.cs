@@ -129,7 +129,7 @@ public class SpikeTrap : TrapBase
         spikeTrigger.enabled = true;
 
         if (raiseSfxId != SFXId.None)
-            SFXManager.Instance?.Play(raiseSfxId, transform.position);
+            SFXManager.Instance?.Play(raiseSfxId);
 
         yield return MoveSpikeLocal(loweredLocalPos, loweredLocalPos + Vector3.up * raiseHeight);
 

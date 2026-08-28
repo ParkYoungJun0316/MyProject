@@ -6,75 +6,65 @@
 /// 씬/프리팹의 SFXEventPlayer.sfxId, ArrowTrap.fireSfxId 등은 이 enum 값을 정수로 직렬화해서
 /// 저장한다. 번호를 자동 부여(선언 순서)에 맡기면 중간 항목을 삭제/추가할 때 그 뒤 항목들의
 /// 번호가 전부 밀려서, 이미 씬에 저장된 다른 연결까지 엉뚱한 값으로 깨질 수 있다. 그래서 각
-/// 항목에 번호를 명시로 고정한다 — 새 항목은 끝에 추가하거나 안 쓰는 번호를 재사용, 삭제 시
-/// 그 번호는 그냥 비워두고 나머지는 그대로 둔다.
+/// 항목에 번호를 명시로 고정한다 — 새 항목은 끝에 추가하고, 삭제 시 그 번호는 비워두고
+/// 나머지는 그대로 둔다. 전면 재번호는 씬/프리팹 SFX 연결을 전부 다시 잡을 때만 한다.
 /// </summary>
 public enum SFXId
 {
+    None = 0,
+
     // ── Boss ─────────────────────────────────────────────────────
-    Boss_PhaseTransition_Mouth    = 0,
-    Boss_PhaseTransition_Esophagus = 1,
-    Boss_Die_Mouth                 = 41,
-    Boss_Die_Esophagus             = 42,
+    Boss_PhaseTransition_Mouth     = 1,
+    Boss_PhaseTransition_Esophagus = 2,
+    Boss_Die_Mouth                 = 3,
+    Boss_Die_Esophagus             = 4,
 
     // ── Boulder ──────────────────────────────────────────────────
-    Boulder_Roll                  = 3,
+    Boulder_Roll                   = 5,
 
     // ── Breakable ────────────────────────────────────────────────
-    Breakable_Destroy              = 4,
+    Breakable_Destroy              = 6,
 
     // ── Buff ─────────────────────────────────────────────────────
-    Buff                           = 5,
+    Buff                           = 7,
 
     // ── Door ─────────────────────────────────────────────────────
-    Door_Close                     = 7,
-    Door_Open                      = 8,
+    Door_Close                     = 8,
+    Door_Open                      = 9,
 
     // ── Minigame / Quiz ──────────────────────────────────────────
-    // 9, 10: 삭제됨 (Minigame_OX_Correct / Minigame_OX_TimerTick) — 번호 재사용 금지
-    Minigame_SequenceRing_Correct  = 12,
-    Minigame_SequenceRing_Wrong    = 39,
-
-    // ── Mouth ────────────────────────────────────────────────────
-    Mouth_TeethBreak_1             = 13,
+    Minigame_SequenceRing_Correct  = 10,
+    Minigame_SequenceRing_Wrong    = 11,
 
     // ── Player ───────────────────────────────────────────────────
-    Player_ColorChange              = 15,
-    Player_Death                    = 16,
-    Player_Hit                      = 17,
-    Player_Punch                    = 43,
-    Player_Run                      = 18,
+    Player_ColorChange             = 12,
+    Player_Death                   = 13,
+    Player_Hit                     = 14,
+    Player_Punch                   = 15,
+    Player_PunchHit                = 16,
+    Player_Run                     = 17,
 
     // ── Stage / Flow ─────────────────────────────────────────────
-    // Stage_TransitionMouth: M.* 씬(Mouth 구역) 진입 시. Stage_TransitionEsophagus: T.* 씬(Esophagus 구역) 진입 시.
-    // SceneFlowManager.OnSceneLoaded() 에서 씬 이름 접두사로 자동 재생 (코드 연결, 인스펙터 연결 아님).
-    Stage_TransitionMouth           = 21,
-    Stage_TransitionEsophagus       = 22,
+    // M.* 씬(Mouth 구역) 진입 시 SceneFlowManager.OnSceneLoaded()에서 자동 재생.
+    Stage_TransitionMouth          = 18,
 
     // ── Stage 5 ──────────────────────────────────────────────────
-    Stage5_Chaser_Attack            = 23,
-    Stage5_Chaser_Run                = 24,
-    Stage5_Runner_Captured           = 25,
-    Stage5_Runner_Run                = 26,
+    Stage5_Chaser_Attack           = 19,
+    Stage5_Chaser_Run              = 20,
+    Stage5_Runner_Captured         = 21,
+    Stage5_Runner_Run              = 22,
 
     // ── Trap / Hazard ────────────────────────────────────────────
-    Trap_AdvancingWall_Move          = 27,
-    Trap_AdvancingWall_Telegraph      = 28,
-    Trap_Arrow                       = 29,
-    Trap_Ceiling                     = 31,
-    Trap_Drop                        = 32,
-    Trap_SpikeRaise                  = 33,
+    Trap_AdvancingWall_Move        = 23,
+    Trap_AdvancingWall_Telegraph   = 24,
+    Trap_Arrow                     = 25,
+    Trap_Drop                      = 26,
+    Trap_SpikeRaise                = 27,
 
     // ── UI / Menu ────────────────────────────────────────────────
-    UI_Click                         = 35,
+    UI_Click                       = 28,
 
     // ── Wind ─────────────────────────────────────────────────────
-    Wind_Pull                        = 36,
-    Wind_Push                        = 37,
-
-    // ── 재생 없음 (Inspector 기본값용) ───────────────────────────
-    None                             = 38,
-
-    // ── Trap / Hazard (추가분) ────────────────────────────────────
-    Trap_SpikeWarn                   = 40,
+    Wind_Pull                      = 29,
+    Wind_Push                      = 30,
 }

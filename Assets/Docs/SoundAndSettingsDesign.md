@@ -1,19 +1,53 @@
 # 사운드(BGM/SFX) · 옵션(설정) 메뉴 — 설계·구현 현황
 
 `ReleaseRoadmap.md` §4 순위 5~7("BGM 추가" / "옵션·설정 메뉴" / "SFX 마무리 + BGM 음량 조절")의 상세 구현 문서.
-**옵션 패널 UI는 타이틀 씬에 실제로 배치·연결 완료(로컬라이제이션 포함). BGM 곡 배정도 완료(§5).
+**옵션 패널 UI는 타이틀 씬에 실제로 배치·연결 완료(로컬라이제이션 포함). BGM 곡 배정은 §5에 "완료"로
+기록돼 있었으나 2026-08-28에 확인해보니 실제로는 비어있음(stale, §10.1 참고) — 재배정 필요.
 2026-08-10 세션에서 발견된 버그 8개 중 7개 수정 완료, 1개는 의도적 보류(§9.2/§9.4 참고). 2026-08-11 세션에서
 마이크 음소거·입력장치 선택 구현 완료, 밝기·출력장치는 스코프 제외 확정(§8/§9.5), 팀원별 수신 볼륨
-(Dissonance 연동)도 코드 구현 완료(§9.6). ESC 메뉴 연결·SFX 볼륨 보정은 아직 진행 전** (2026-08-11 세션 기준).
+(Dissonance 연동)도 코드 구현 완료(§9.6). 2026-08-28 세션에서 BGM 16곡 정규화(AudacityMCP) 완료,
+SFX 정규화 방침 확정, SFX 1차 22개 피크 정규화 완료(`SFX2`→`SFX3`), 압축은 최종 단계로 보류(§10),
+사운드 청음 도구(`SoundAuditionTool`) 신규(§10.3). **2026-08-29 세션에서 3D SFX 감쇠가 맵 스케일에
+안 맞는 문제 발견, 2D/3D 재분류 5곳 완료(DropTrap×2/SpikeLaneField/SpikeTrap/WindTrap 임펄스) — `ArrowTrap`
+화살 발사음 2D 여부만 사용자 답변 대기(§11, 최우선 미결 사항).**
 
-> **다음 에이전트/세션 시작 지침:** §9.2 버그는 §9.4에서 대부분 수정 완료 처리됨. 마이크 음소거·입력장치는
-> §9.5, 팀원별 수신 볼륨은 §9.6에서 코드 구현 완료 — **사용자가 `Tools > Setup Setting Panel (Title)` →
-> `Tools > Setup Setting UI Localization` 재실행 필요**(§9.5 "남은 사용자 작업" 참고). 그 다음 **§6 "남은
-> 작업"**(ESC 메뉴 패널 배치, SFX 볼륨 보정 등)부터 진행할 것. 코드 쪽에 추가 변경이 필요한 상황이 아니면
-> 이 문서의 아키텍처를 재설계하지 말 것 — 사용자와 합의된 구조임(AudioMixer 미사용 등, 아래 §1 참고).
+> **다음 에이전트/세션 시작 지침 (최신, 2026-08-29):** **가장 먼저 §11의 미결 질문 — `ArrowTrap` 화살
+> 발사음(`Trap_Arrow`)을 2D로 바꿀지 3D로 남길지**를 사용자에게 물어서 답 받고 처리(나머지 5곳은 이미
+> 완료됨). 그다음 **§10 "다음 세션 체크리스트"** 순서로. 그 이전(§9.2~9.6)에 남은 옵션 메뉴/마이크
+> 작업들은 §6 "남은 작업" 참고 — 우선순위는 §11 → §10 → §6 순. 코드 쪽에 추가 변경이 필요한 상황이
+> 아니면 이 문서의 아키텍처를 재설계하지 말 것 — 사용자와 합의된 구조임(AudioMixer 미사용 등, 아래 §1
+> 참고).
 >
 > **Unity MCP 쓰기 권한:** 워크스페이스 `.cs` 파일 수정은 항상 허용. 씬/프리팹 배치 등 에디터 MCP
 > **쓰기**는 사용자가 "MCP로 해줘"라고 명시할 때만 — `.cursor/rules/unity-mcp-readonly.mdc` 참고.
+> **Audacity MCP**(`user-audacity` 네임스페이스, `~/.cursor/mcp.json`에 `audacity` 항목으로 이미 등록됨)는
+> 이 규칙의 적용 대상이 아님(Unity 에디터가 아니라 Audacity 제어용) — 오디오 정규화 작업엔 자유롭게 사용.
+> 단, Audacity를 미리 켜두고 `mod-script-pipe`가 연결돼 있어야 하며, `project_new`/`project_close`를
+> 연달아 호출하면 크래시하니 트랙 삭제(`track_select`+`track_remove`)로 대체할 것(§10.1 참고).
+
+### 다음 세션 체크리스트 (2026-08-28 세션 종료 시점, 컨텍스트 소진으로 핸드오프) — 최우선
+
+**이어서 할 순서:**
+
+1. **[사용자 작업]** SFX 원본 자르기 — **1차 22개 완료** (`C:\Users\u\Desktop\Unity\NoAISound\SFX2\`).
+   부족한 클립은 사용자가 이어서 자른 뒤 같은 폴더(또는 별도 경로)를 알려줄 것.
+2. ~~SFX 피크 정규화~~ — **✅ 1차 22개 완료(2026-08-28).** AudacityMCP `normalize`(-3dB, DC 제거,
+   LUFS/리미터 안 씀) → `C:\Users\u\Desktop\Unity\NoAISound\SFX3\`에 같은 파일명 WAV 저장. 모노 원본
+   3개(`AdvancingWall_Moving`, `BossPhasetrans_Mouth`, `Runner_Captured`)는 모노로, 나머지 19개는
+   스테레오로 export. 추가분이 오면 같은 패턴으로 SFX3에 이어서 넣으면 됨.
+3. ~~BGM 나머지 14곡을 `Assets/Audio/BGM/`으로 반입~~ — **✅ 완료 확인(2026-08-28, MD5 비교)**. 16곡
+   전부(`Assets/Audio/BGM/*.wav`)가 `BGM2\`의 정규화 결과물과 MD5 100% 일치 — §10.1에 "2곡만 반입"으로
+   적혀있던 건 stale, 실제로는 이미 전부 반입돼 있었음.
+4. `Assets/Prefab/NetworkManager.prefab`의 `BGMManager.zoneClips`가 **비어있음**(§10.1에서 발견, §5 표는
+   stale) — 사용자가 Inspector에서 직접 재배정 필요(MCP 쓰기 금지 원칙, §9.4-⑧ 당시엔 채워져 있었다고
+   기록됐으나 지금은 아님 — 원인 불명, 재조사 불필요, 그냥 다시 채우면 됨).
+5. BGM+SFX 다 넣고 실제 플레이로 같이 들어보면서 `SFXLibrary.VolumeOverride`(§4, §6-7) 밸런스 튜닝.
+6. **가장 마지막**: 전체 밸런스 확정되면 Import Settings 일괄 압축(BGM: Vorbis+Streaming, SFX: 상황별,
+   §10 참고) — 그 전에는 압축하지 말 것(음질 재작업 비효율 방지).
+
+이 순서 끝나면 §6 "남은 작업"(ESC 메뉴, SFX Volume Override 튜닝은 5번과 겹침) 마무리로 복귀.
+
+---
 
 ### 다음 세션 체크리스트 (2026-08-11 세션 종료 시점, 컨텍스트 소진으로 핸드오프)
 
@@ -436,3 +470,128 @@ Localization` 재실행해서 새 마이크 드롭다운/토글을 씬에 반영
 
 **다음 세션 시작 순서:** §7 체크리스트의 신규 항목(실제 멀티에서 수신 볼륨 슬라이더 동작 확인) → §6
 3·4번(ESC 메뉴 패널 배치) → §6-9·10(Reset 기본값/`Btn_Reset` 연결 확인) 순서로 진행.
+
+---
+
+## 10. 오디오 에셋 파이프라인 — 정규화(BGM/SFX) + 압축 타이밍 정책 (2026-08-28)
+
+**압축(Import Settings)은 지금 하지 않는다 — BGM·SFX 다 넣고 같이 들어본 다음, 최종적으로 한 번에 적용.**
+잊지 않도록 여기 기록.
+
+- **지금 단계:** BGM(16곡, WAV, 아래 처리 완료)과 앞으로 만들 SFX 전부 **비압축(WAV) 그대로** Unity에
+  끌어다 넣고 테스트. 용량은 BGM만 해도 약 327MB인데, 지금 단계에선 문제 아님 — SFX까지 다 넣고 실제
+  플레이하면서 다 같이 들어봐야 상대적 밸런스(발소리 vs 폭발음 등, §4 `VolumeOverride`로 미세 보정)를
+  제대로 잡을 수 있기 때문에, 압축(음질 손실 있는 작업)을 지금 미리 하면 나중에 다시 들어보고 재작업할
+  때 비효율적임.
+- **최종 단계(빌드 직전):** 전체 사운드 다 들어보고 밸런스 확정되면, Import Settings 일괄 변경:
+  - **BGM**: `Compression Format: Vorbis`, `Load Type: Streaming` (긴 트랙이라 메모리에 통째로 올리지
+    않음).
+  - **SFX**: 길이에 따라 다름 — 짧은 원샷은 `Decompress On Load` + `Compressed`(PCM 아님) 조합이 흔한
+    선택, 루프/긴 SFX는 BGM처럼 `Streaming` 검토. 실제 적용 시점에 다시 상의.
+  - Vorbis는 음악/효과음 음질 손실이 거의 안 들리면서 WAV 대비 10~15% 수준까지 용량 절감.
+
+### 10.1 BGM 정규화 완료 (AudacityMCP 사용)
+
+- **방법:** Audacity에 `AudacityMCP`(`mod-script-pipe` 경유 MCP 서버, `~/.cursor/mcp.json`에 `audacity`
+  항목으로 등록됨) 연결해서, 각 원본 파일을 한 곡씩 임포트 → `select_all` → `loudness_normalize`(-16
+  LUFS, `dual_mono: true`) → `limiter`(-1dB, `SoftLimit`) → `project_export_audio`(WAV) → 트랙 삭제 →
+  다음 곡 반복. (주의: `project_new`/`project_close`를 연달아 호출하면 Audacity가
+  `lib-track.dll`에서 크래시하는 버그 발견 — 트랙 삭제로 대체해서 회피.)
+- **원본:** `C:\Users\u\Desktop\Unity\NoAISound\BGM1\` (16개 mp3) → **결과:**
+  `C:\Users\u\Desktop\Unity\NoAISound\BGM2\`(정규화된 WAV, 파일명 동일) — 원본은 백업으로 남겨둠.
+- **타겟 -16 LUFS를 고른 이유:** 도구(`loudness_normalize`)가 권장하는 3개 값(-16/-14/-11) 중, 팟캐스트·
+  방송 기준인 -16이 SFX/보이스와 밸런스 잡기 좋다고 판단(스포티파이용 -14나 힙합/EDM용 -11보다 여유
+  있음).
+- **Unity 반입 상태 — ✅ 16곡 전부 완료 확인(2026-08-28, MD5 비교로 재확인).** `Assets/Audio/BGM/*.wav`
+  16개 전부가 `BGM2\`의 정규화 결과물과 MD5 100% 일치. (직전 기록엔 "2곡만 확인, 14곡 미반입"이라
+  적혀있었는데 재확인해보니 stale — 이미 전부 들어가 있었음. 언제 반입됐는지는 불명, 재조사 불필요.)
+- **⚠️ §5 배정 표는 여전히 stale — `zoneClips` 비어있음 재확인(2026-08-28, prefab YAML 직접 확인,
+  `zoneClips: []`).** §5에 "2026-08-11 MCP 조회로 확인 — zoneClips 배정 완료"라고 적혀있지만
+  `Assets/Prefab/NetworkManager.prefab`의 `BGMManager.zoneClips`는 여전히 빈 배열. **16곡이 이미 다
+  들어와 있으니 지금 바로 배정 가능한 상태** — 다음 세션(또는 사용자가 Inspector에서 직접)에서 §5 표
+  대로 `scenePrefix`↔곡 매핑을 실제로 채우고 표를 실제 상태로 갱신할 것.
+
+### 10.2 SFX 정규화 방침 (BGM과 다르게 처리)
+
+BGM처럼 LUFS로 전부 통일하면 안 됨 — SFX는 종류별로 크기가 달라야 정상(발소리 < 폭발음). 결정된 방침:
+
+- **LUFS/리미터 안 씀.** 대신 **피크(peak) 정규화**만 (`normalize` 툴, 목표 예: -3dB) — 서로 다른
+  소스에서 받아온 SFX끼리 녹음 레벨이 들쭉날쭉한 것만 통일. 피크 정규화는 목표치를 안 넘으므로 리미터
+  불필요.
+- **"멀리서/가까이" 구분 불필요.** `SFXManager.Play(id, worldPosition)`가 `AudioSource.PlayClipAtPoint`를
+  써서 Unity 엔진이 런타임에 3D 거리 감쇠를 자동 처리함(§0 AudioMixer 미사용 결정과 별개) — 파일 준비
+  단계에서 "먼 소리는 작게, 가까운 소리는 크게" 미리 만들 필요 없음. 전부 같은 피크 기준으로 정규화.
+- **종류별 상대 밸런스**(발소리 vs 폭발음 등)는 §4 `SFXLibrary.VolumeOverride`(0~2배, 줄이는 쪽은 무제한)
+  로 사후 보정 — 실제 플레이해보면서 튜닝(§6-7, 아직 미착수).
+- **작업 분담:** 자르기(원샷/루프 구분)는 사용자, 피크 정규화는 AudacityMCP.
+  **1차 22개 완료(2026-08-28):** `SFX2\` → `normalize`(-3dB) → `SFX3\`. 추가 원본이 오면 같은 파이프라인
+  재사용. Unity 반입·`SFXLibrary` 연결은 아직 아님(부족한 클립 채운 뒤).
+
+### 10.3 사운드 청음/검증 도구 (2026-08-28, 신규)
+
+`Assets/Editor/SoundAuditionTool.cs` — `Tools > Sound Audition Tool`. Play Mode에서 실제
+`SFXManager`/`BGMManager` 파이프라인(옵션 볼륨·`VolumeOverride` 반영)으로 모든 SFX/BGM을 스테이지 이동 없이
+바로 재생·확인하는 창. SFX는 `SFXId` 각각에 2D/3D(가상 거리 슬라이더) 버튼, BGM은 `Assets/Audio/BGM` 폴더
+전체를 `zoneClips` 설정과 무관하게 즉시 크로스페이드 재생. **주의:** `SFXManager`/`BGMManager`는
+`0.Title`에서만 생성되는 DontDestroyOnLoad 싱글턴이라, 3D 가상 거리 테스트는 **실제 스테이지 진입 후**
+해야 의미 있음(타이틀 화면 카메라 기준으로 재면 스케일이 안 맞음).
+
+---
+
+## 11. SFX 2D/3D 재분류 — 맵 스케일에 안 맞는 3D 감쇠 (2026-08-29, 진행 중)
+
+**배경:** 맵(스테이지) 자체가 작은데, 3D SFX 일부가 `AudioSource.PlayClipAtPoint`의 **Unity 기본 감쇠값
+그대로**(코드에서 커스텀 안 함) 재생되고 있었음 — `minDistance=1m`, `maxDistance=500m`,
+`rolloffMode=Logarithmic`(Unity 컴포넌트 기본값, 스크립트가 따로 안 정하면 이걸 씀). 이 커브는 500m 스케일
+월드 기준이라, 대략 `gain ≈ minDistance / distance` 공식상 **5m만 떨어져도 이미 -14dB, 25m면 -28dB**로
+꽤 급격히 죽음 — 작은 맵에서는 플레이어가 조금만 멀어져도 경고음이 거의 안 들리는 문제가 생길 수 있음
+(Sound Audition Tool로 실측하다가 발견, 2026-08-29).
+
+**코드 조사 결과 — 두 그룹으로 나뉨:**
+
+1. **루프(지속) 사운드는 이미 Inspector에서 완전히 조절 가능** — 코드 수정 불필요. 각 컴포넌트가 자체
+   `AudioSource`를 만들면서 `spatialBlend`/`rolloffMode`/`minDistance`/`maxDistance`를 전부 Inspector
+   필드로 노출해둠(기본값만 1f/Logarithmic/1/500, 인스턴스별 override 가능):
+   - `AdvancingWall.cs`(`moveSpatialBlend` 등), `AdvancingWallTelegraph.cs`(`warnSpatialBlend` 등)
+   - `SpinRoller.cs`(`rollSpatialBlend` 등, `Boulder_Roll`)
+   - `Stage5ChaserAI.cs`(`runSpatialBlend` 등, Chaser 달리기 루프)
+   - `Stage5TargetRunner.cs`(`runSpatialBlend` 등, Runner 달리기 루프)
+   - `WindTrap.cs`(`windSpatialBlend` 등, 바람 지속 루프)
+   → **사용자가 요청한 "AdvancingWall/Boulder_Roll/Chaser/Runner는 3D 유지"가 정확히 이 그룹과 일치.**
+   코드는 그대로 두고, 맵 스케일에 맞게 `minDistance`/`maxDistance`만 각 프리팹 Inspector에서 좁혀주면
+   됨(예: min 1~2m, max 15~30m 등 — 사용자가 직접, MCP 쓰기 금지 원칙).
+
+2. **단발(1회) 사운드 중 `SFXManager.Play(id, worldPosition)`로 재생하는 것들은 커스텀 불가능** —
+   `AudioSource.PlayClipAtPoint`가 내부적으로 임시 `AudioSource`를 만들고 `spatialBlend=1`만 지정하지
+   min/maxDistance는 그대로 Unity 기본값(1/500)이라 코드에서 못 바꿈. 대상:
+   - `ArrowTrap.cs:282` — 화살 발사(`Trap_Arrow`)
+   - `DropTrap.cs:300,346` — 발동(`Trap_Drop`) + 경고(`warnSfxId`)
+   - `SpikeLaneField.cs:144` — 경고(`warnSfxId`)
+   - `SpikeTrap.cs:132` — 상승(`raiseSfxId`)
+   - `WindTrap.cs:345` — 바람 임펄스 순간음(`Wind_Push`/`Wind_Pull`, 위 지속 루프와는 별개 호출)
+   - `Stage5ChaserAI.cs:240` — Chaser 공격(`Stage5_Chaser_Attack`)
+   - `Stage5TargetRunner.cs:394` — Runner 포획(`Stage5_Runner_Captured`)
+
+**사용자 결정(2026-08-29):** 작은 맵이니 위 2번 그룹을 전부 `Play(id)`(완전 2D, 거리 무관 항시 동일 볼륨)로
+바꾸자는 방향 제시 — **단, `Stage5_Chaser_Attack`/`Stage5_Runner_Captured`는 3D 유지**(요청에 명시).
+
+**✅ 완료 (2026-08-29) — 5곳 중 4곳 2D로 전환:**
+- `DropTrap.cs:300` (`fireSfxId`) → `Play(fireSfxId)` **적용됨**
+- `DropTrap.cs:346` (`warnSfxId`) → `Play(warnSfxId)` **적용됨**
+- `SpikeLaneField.cs:144` (`warnSfxId`) → `Play(warnSfxId)` **적용됨**
+- `SpikeTrap.cs:132` (`raiseSfxId`) → `Play(raiseSfxId)` **적용됨**
+- `WindTrap.cs:345` (`windSfx`, `Wind_Push`/`Wind_Pull` 임펄스) → `Play(windSfx)` **적용됨** (지속 루프는
+  그대로 3D, 이 임펄스 단발음만 2D — 사용자가 "우선 windtrap은 2d"로 확정)
+
+**미결(다음 에이전트가 여기부터) — `ArrowTrap.cs:282` (`fireSfxId`, `Trap_Arrow`) 화살 발사음만 남음.**
+사용자가 "고민해보자"로 보류 — 방향성 힌트(3D)가 필요한지 아직 결정 안 됨. **코드 수정하지 말고 먼저
+사용자에게 물어볼 것.** 답이 오면: 2D면 `SFXManager.Instance?.Play(fireSfxId, spawn.position);` →
+`Play(fireSfxId);`로, 3D 유지면 아무것도 안 해도 됨(지금 이미 3D).
+
+**변경 안 함(요청대로 3D 유지, 코드 수정 없음):**
+- `AdvancingWall`/`AdvancingWallTelegraph`/`SpinRoller`(Boulder)/`Stage5ChaserAI`(런/공격)/
+  `Stage5TargetRunner`(런/포획)/`WindTrap` 지속 루프 — 전부 그대로, min/maxDistance만 사용자가 Inspector
+  에서 맵 스케일에 맞게 나중에 좁히면 됨.
+
+**NGO 영향 없음** — 이 변경은 각 클라이언트 로컬 SFX 재생 위치 파라미터만 빼는 것이라 authority/RPC 구조는
+그대로(Chaser/Runner 쪽은 이미 `ClientRpc`로 각 클라이언트에서 재생 중, 그 구조 유지).

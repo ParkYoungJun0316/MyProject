@@ -20,6 +20,9 @@ public class PlayerBuffVisual : MonoBehaviour
 
     [Header("Shield 막 투명도")]
     [SerializeField, Range(0f, 1f)] float shieldAlpha = 0.35f;
+    [Tooltip("흑백 모드(검정) 전용 알파. Additive 블렌드는 RGB(0,0,0)를 더해도 안 보이므로, " +
+             "검정일 때만 알파블렌드로 전환해 이 값만큼 배경을 어둡게 가린다.")]
+    [SerializeField, Range(0f, 1f)] float shieldAlphaBlack = 0.5f;
 
     // ── 내부 참조 ──────────────────────────────────────────────────
 
@@ -30,6 +33,13 @@ public class PlayerBuffVisual : MonoBehaviour
     ParticleSystem[] _speedUpParticles;
     MeshRenderer[]   _shieldMeshes;
     MaterialPropertyBlock _mpb;
+
+    // Additive(1=One) ↔ AlphaBlend(10=OneMinusSrcAlpha) 전환용.
+    // ShieldBubble.mat / SpeedStreak.mat 기본값이 Additive라 검정(RGB 0)은 더할 게 없어 안 보임 →
+    // 검정일 때만 _DstBlend를 알파블렌드로 덮어써서 실제로 어두운 막이 보이게 한다.
+    static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
+    const float DstBlendAdditive = 1f;  // BlendMode.One (머티리얼 기본값 — 고유색/흰색은 그대로 유지)
+    const float DstBlendAlpha    = 10f; // BlendMode.OneMinusSrcAlpha (검정 전용)
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -153,10 +163,13 @@ public class PlayerBuffVisual : MonoBehaviour
     {
         if (_player == null) return;
 
-        // 흑/백 전환과 무관하게 고유색 1개만 사용. 막은 반투명 유지.
-        Color c = PlayerColorUtil.GetUniqueColor(_player.playerColorType);
+        // 고유색 모드면 고유색, 아니면 흑/백(GetCurrentBaseColor)을 그대로 반영.
+        Color c = _player.GetCurrentBaseColor();
+        bool isTrueBlack = !_player.isUniqueColor && _player.isBlack;
+
         Color meshColor = c;
-        meshColor.a = shieldAlpha;
+        meshColor.a = isTrueBlack ? shieldAlphaBlack : shieldAlpha;
+        float dstBlend = isTrueBlack ? DstBlendAlpha : DstBlendAdditive;
 
         if (particles != null)
         {
@@ -165,6 +178,12 @@ public class PlayerBuffVisual : MonoBehaviour
                 if (particles[i] == null) continue;
                 var main = particles[i].main;
                 main.startColor = new ParticleSystem.MinMaxGradient(c);
+
+                var pr = particles[i].GetComponent<ParticleSystemRenderer>();
+                if (pr == null) continue;
+                pr.GetPropertyBlock(_mpb);
+                _mpb.SetFloat(DstBlendId, dstBlend);
+                pr.SetPropertyBlock(_mpb);
             }
         }
 
@@ -175,6 +194,7 @@ public class PlayerBuffVisual : MonoBehaviour
             // ShieldBubble.mat = URP Lit → _BaseColor만 읽음. 다른 셰이더로 교체 시 여기도 맞춰 갱신.
             meshes[i].GetPropertyBlock(_mpb);
             _mpb.SetColor("_BaseColor", meshColor);
+            _mpb.SetFloat(DstBlendId, dstBlend);
             meshes[i].SetPropertyBlock(_mpb);
         }
     }

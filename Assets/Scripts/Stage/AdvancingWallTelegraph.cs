@@ -32,8 +32,8 @@ public class AdvancingWallTelegraph : MonoBehaviour
     [SerializeField] float shakeFrequency = 0f;
 
     [Header("사운드 (경고 루프 — 3D)")]
-    [Tooltip("경고 구간 동안 재생할 SFX. 기본값(Trap_AdvancingWall_Telegraph)은 일반 벽용 — 천장 낙하 등\n" +
-             "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId(예: Trap_Ceiling)로 지정할 것.")]
+    [Tooltip("경고 구간 동안 재생할 SFX. 기본값(Trap_AdvancingWall_Telegraph)은 일반 벽용 —\n" +
+             "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId로 지정할 것.")]
     [SerializeField] SFXId warnSfxId = SFXId.Trap_AdvancingWall_Telegraph;
     [Tooltip("경고 구간(telegraphDuration) 동안 재생되는 루프. 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
     [SerializeField] [Range(0f, 1f)] float warnSpatialBlend = 1f;

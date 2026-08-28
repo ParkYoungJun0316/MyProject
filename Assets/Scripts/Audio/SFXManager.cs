@@ -138,9 +138,6 @@ public class SFXManager : MonoBehaviour
         _alternateUseSecond[key] = !useSecond;
     }
 
-    public void PlayMouthTeethBreak(Vector3 worldPosition) =>
-        Play(SFXId.Mouth_TeethBreak_1, worldPosition);
-
     // ── 루프 재생 ────────────────────────────────────────────────
 
     /// <summary>
