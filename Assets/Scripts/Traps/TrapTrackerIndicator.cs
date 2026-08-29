@@ -34,6 +34,11 @@ public class TrapTrackerIndicator : MonoBehaviour
     Camera                 _cam;
     MaterialPropertyBlock  _mpb;
 
+    // billboard는 아이콘 렌더러의 Transform에만 적용한다. 이 컴포넌트가 함정 루트에 부착된
+    // 씬(Tutorial/M.Stage1/M.Boss)에서 transform을 그대로 쓰면 함정 본체가 매 LateUpdate마다
+    // 카메라 기준으로 덮어써져 TrapPlayerTracker의 조준 회전이 무효화되고 발사 방향까지 뒤집힌다.
+    Transform              _billboard;
+
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId     = Shader.PropertyToID("_Color");
 
@@ -41,6 +46,7 @@ public class TrapTrackerIndicator : MonoBehaviour
     {
         _tracker = GetComponentInParent<TrapPlayerTracker>();
         if (targetRenderer == null) targetRenderer = GetComponent<Renderer>();
+        _billboard = targetRenderer != null ? targetRenderer.transform : transform;
         _mpb = new MaterialPropertyBlock();
     }
 
@@ -59,14 +65,15 @@ public class TrapTrackerIndicator : MonoBehaviour
 
     void LateUpdate()
     {
+        if (_billboard == null) return;
         if (_cam == null) _cam = Camera.main;
         if (_cam == null) return;
 
-        Vector3 dir = transform.position - _cam.transform.position;
+        Vector3 dir = _billboard.position - _cam.transform.position;
         if (yAxisOnly) dir.y = 0f;
         if (dir.sqrMagnitude < 0.0001f) return;
 
-        transform.rotation = Quaternion.LookRotation(dir.normalized);
+        _billboard.rotation = Quaternion.LookRotation(dir.normalized);
     }
 
     void ApplyTarget(Player target)
