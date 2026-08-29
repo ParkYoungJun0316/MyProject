@@ -1535,79 +1535,19 @@ MonoBehaviour:
   barrierDoor: {fileID: 0}
   OnRoundReady:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 818711158}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: PlayUntilStopped
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnTimerTick:
     m_PersistentCalls:
       m_Calls: []
   OnRoundSuccess:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 818711158}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Stop
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 818711159}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnRoundFailed:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 818711158}
-        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
-        m_MethodName: Stop
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnAllCleared:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: DoorController, Assembly-CSharp
-        m_MethodName: Open
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!134 &222527728
 PhysicsMaterial:
   m_ObjectHideFlags: 0
@@ -5244,9 +5184,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 818711160}
-  - component: {fileID: 818711159}
-  - component: {fileID: 818711158}
-  - component: {fileID: 818711157}
   m_Layer: 0
   m_Name: SFXEventPlayer
   m_TagString: Untagged
@@ -5254,45 +5191,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &818711157
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 818711156}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 4
---- !u!114 &818711158
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 818711156}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 10
---- !u!114 &818711159
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 818711156}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 9
 --- !u!4 &818711160
 Transform:
   m_ObjectHideFlags: 0
