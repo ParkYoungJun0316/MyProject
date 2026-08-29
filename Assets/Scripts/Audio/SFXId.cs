@@ -67,4 +67,7 @@ public enum SFXId
     // ── Wind ─────────────────────────────────────────────────────
     Wind_Pull                      = 29,
     Wind_Push                      = 30,
+
+    // ── Stage / Flow (추가) ──────────────────────────────────────
+    Stage_TransitionEsophagus      = 31,
 }

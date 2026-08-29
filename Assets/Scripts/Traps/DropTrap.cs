@@ -354,8 +354,8 @@ public class DropTrap : TrapBase
     {
         if (warnPrefab == null) yield break;
 
-        // 마커는 Y=0.5에 깔린다 (Y=0은 바닥과 겹쳐 안 보임).
-        Vector3 markerPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
+        // FloorTile(Cube, Y=0, scale.y=1) 윗면이 월드 Y=0.5라서, 같은 평면에 깔면 z-fighting.
+        Vector3 markerPos = new Vector3(targetPos.x, 0.6f, targetPos.z);
         GameObject warn = Instantiate(warnPrefab, markerPos, Quaternion.identity);
         warn.transform.localScale = markerScale;
         _pendingObjects.Add(warn);

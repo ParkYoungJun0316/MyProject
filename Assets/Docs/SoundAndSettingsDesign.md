@@ -672,6 +672,22 @@ min/maxDistance + `AudioRolloffMode`) 추가:
 `ClientRpc`로 각 클라이언트에 재생 위치를 브로드캐스트하는 방식 — `WindTrap`의 Mouth 연출 동기화와
 동일 패턴). 사용자 확인 후 진행할 것.
 
+### 11.5 `Stage_TransitionEsophagus` 신규 추가 (2026-08-29, 같은 세션)
+
+`Stage_TransitionMouth`(M.* 씬 진입 시 자동 재생)는 있는데 T.* 존(Esophagus)용 대응 SFX가
+없다는 걸 사용자가 뒤늦게 발견 — git 히스토리 확인 결과 **원래부터 없었음**(삭제된 게 아니라
+Mouth 쪽만 만들고 Esophagus는 안 만든 상태). 새로 추가:
+
+- `SFXId.Stage_TransitionEsophagus = 31` (기존 마지막 번호 `Wind_Push = 30` 다음에 추가 — §0
+  번호 고정 원칙대로 끝에 추가)
+- `SFXLibrary.cs`에 `Stage_TransitionEsophagus` 필드 + `GetClip()` case 추가
+- `SceneFlowManager.PlayStageTransitionSfx()`가 `"M."` 뿐 아니라 `"T."` 접두사도 처리하도록
+  `else if` 추가 — `Stage_TransitionMouth`와 완전히 대칭 구조, 2D 재생.
+
+**남은 작업(사용자):** `Assets/Audio/SFX/SFXLibrary.asset`(에셋 파일)에 실제 `AudioClip`을
+`Stage_TransitionEsophagus` 필드에 연결해야 함 — 이건 에셋 Inspector 작업이라 에이전트가
+대신 못 함.
+
 ### 11.4 min/maxDistance 기본 수치 확정 (2026-08-29, 같은 세션)
 
 사용자가 각 3D 사운드를 개별 실측할 시간이 없어서, 튜닝 전 시작값을 지금 다 정함

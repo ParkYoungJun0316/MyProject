@@ -666,9 +666,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &59552616
 PrefabInstance:
@@ -836,9 +836,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &94077575
 PrefabInstance:
@@ -961,9 +961,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!4 &94077578 stripped
 Transform:
@@ -999,10 +999,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapPlayerTracker
   activateDelay: 0
   controlTrapActivation: 1
-  targetMode: 1
+  targetMode: 0
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 384
+  trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 3
@@ -1334,9 +1335,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &146992659
 GameObject:
@@ -1386,7 +1387,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1549870149223187121, guid: d9cb60d4d6012f747a8e49b34029c884, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3728593090983120234, guid: d9cb60d4d6012f747a8e49b34029c884, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1608,9 +1609,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &190912091
 PrefabInstance:
@@ -1780,9 +1781,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &212408378
 GameObject:
@@ -1984,9 +1985,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &220021255
 MonoBehaviour:
@@ -2244,9 +2245,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &256185366
 GameObject:
@@ -2703,7 +2704,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &379409669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2916,6 +2917,10 @@ PrefabInstance:
     - target: {fileID: 5313554011524875045, guid: 9b66855e46428204ea983423fef9c6c3, type: 3}
       propertyPath: m_Name
       value: MouthBarrier.B
+      objectReference: {fileID: 0}
+    - target: {fileID: 5313554011524875045, guid: 9b66855e46428204ea983423fef9c6c3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3561,9 +3566,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &504258721
 MonoBehaviour:
@@ -3653,7 +3658,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2184560692123856292, guid: b0e04e96d50c525409fb2941f89e658c, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9195590198919252668, guid: b0e04e96d50c525409fb2941f89e658c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4888,7 +4893,7 @@ MonoBehaviour:
   OnWrongInput:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1921906981}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
@@ -5031,7 +5036,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &735431684
 Transform:
   m_ObjectHideFlags: 0
@@ -5398,9 +5403,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &786981766
 PrefabInstance:
@@ -5569,9 +5574,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &804008841
 MonoBehaviour:
@@ -5871,9 +5876,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &847766360
 PrefabInstance:
@@ -6045,9 +6050,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &864272148
 GameObject:
@@ -6550,9 +6555,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &975965301
 GameObject:
@@ -6845,9 +6850,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &1005388968
 GameObject:
@@ -6901,8 +6906,8 @@ MonoBehaviour:
   - {fileID: 1813836740159032203}
   randomTarget: 1
   warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
-  warnDuration: 0
-  warnMarkerScale: {x: 1, y: 1, z: 1}
+  warnDuration: 2
+  warnMarkerScale: {x: 2.7, y: 1, z: 2.7}
   spawnHeight: 25
   damage: 1
   scheduleMode: 1
@@ -6968,10 +6973,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapPlayerTracker
   activateDelay: 0
   controlTrapActivation: 1
-  targetMode: 1
+  targetMode: 0
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 384
+  trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 3
@@ -7046,9 +7052,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!4 &1008703206 stripped
 Transform:
@@ -7089,10 +7095,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapPlayerTracker
   activateDelay: 0
   controlTrapActivation: 1
-  targetMode: 1
+  targetMode: 0
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 384
+  trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 3
@@ -7167,9 +7174,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!4 &1026233451 stripped
 Transform:
@@ -7452,7 +7459,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1089047690
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7885,9 +7892,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &1165929814
 MonoBehaviour:
@@ -7985,7 +7992,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 735431683}
+    - {fileID: 1790554829}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -8063,6 +8070,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+        - m_Target: {fileID: 1921906982}
+          m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+          m_MethodName: Play
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 3
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -8103,6 +8122,18 @@ MonoBehaviour:
         - m_Target: {fileID: 735431685}
           m_TargetAssemblyTypeName: PhaseSurviveChallenge, Assembly-CSharp
           m_MethodName: Begin
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 5
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 1921906982}
+          m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+          m_MethodName: Play
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -8161,6 +8192,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+        - m_Target: {fileID: 1921906982}
+          m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+          m_MethodName: Play
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 7
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -8201,6 +8244,18 @@ MonoBehaviour:
         - m_Target: {fileID: 664922018}
           m_TargetAssemblyTypeName: GridRoundObjective, Assembly-CSharp
           m_MethodName: Begin
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 9
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 1921906982}
+          m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+          m_MethodName: Play
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -8300,6 +8355,7 @@ MonoBehaviour:
   OnBossDefeated:
     m_PersistentCalls:
       m_Calls: []
+  dieSfxId: 1
 --- !u!1 &1185114385
 GameObject:
   m_ObjectHideFlags: 0
@@ -8886,9 +8942,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &1342812128
 PrefabInstance:
@@ -9059,9 +9115,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &1374115659
 PrefabInstance:
@@ -9232,9 +9288,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &1381137483
 GameObject:
@@ -9521,9 +9577,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1001 &1420761897
 PrefabInstance:
@@ -11879,9 +11935,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 40
     speedMultiplier: 1.5
-  fireSfxId: 38
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!1 &1783057320
 GameObject:
@@ -12073,7 +12129,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1790554831
 Transform:
   m_ObjectHideFlags: 0
@@ -12758,7 +12814,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1921906983}
   - component: {fileID: 1921906982}
-  - component: {fileID: 1921906981}
   m_Layer: 0
   m_Name: SFXEventPlayer
   m_TagString: Untagged
@@ -12766,19 +12821,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1921906981
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1921906980}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 39
 --- !u!114 &1921906982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12791,7 +12833,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 12
+  sfxId: 1
 --- !u!4 &1921906983
 Transform:
   m_ObjectHideFlags: 0
@@ -13139,8 +13181,8 @@ MonoBehaviour:
   - {fileID: 1813836741208277090}
   randomTarget: 1
   warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
-  warnDuration: 0
-  warnMarkerScale: {x: 1, y: 1, z: 1}
+  warnDuration: 2
+  warnMarkerScale: {x: 3.3, y: 1, z: 3.3}
   spawnHeight: 25
   damage: 2
   scheduleMode: 1

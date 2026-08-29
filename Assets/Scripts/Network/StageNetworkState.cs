@@ -276,6 +276,18 @@ public class StageNetworkState : NetworkBehaviour
     // 항상 동일 순서).
     private readonly NetworkList<bool> _pioneerTileUnlocked = new();
 
+    // ── 함정 조준 타겟 동기화 (TrapPlayerTracker 슬롯) ──
+    // [왜 NV인가] "지금 이 함정이 누구를 조준 중"은 일회성 이벤트가 아니라 지속 상태다(§9 Sync 규칙).
+    // ClientRpc로 보내면 그 순간 수신 준비가 안 된 Client(트래커 레지스트리 미구성, Player 캐시 미확보)에게
+    // 값이 영구 유실되고 다음 타겟 변경까지 틀린 표시가 유지된다 — §6B.7 NotifyPlayersReady ClientRpc
+    // 유실 사고와 동일 유형. NV면 스폰 시 현재값이 자동 동기화되고 GetTrackerTarget()으로 캐치업도 된다.
+    // [왜 동기화하나] 실제 발사 방향은 Host 로컬 회전(spawn.forward) 기준인데 함정 회전은 씬 오브젝트의
+    // 평범한 Transform이라 동기화가 없다. Client가 타겟을 독자 계산하면 "포신은 나를 조준하는데 화살은
+    // 딴 사람에게 날아가는" 불일치가 생긴다.
+    // index는 TrapPlayerTracker가 씬 계층 경로 정렬로 배정(Host/Client 항상 동일 순서).
+    // 값 = PlayerColorType의 int 캐스팅, -1 = 타겟 없음.
+    private readonly NetworkList<int> _trackerTargets = new();
+
     // ── MemoryRoundObjective 구역 클리어 동기화 (T.Stage2 전용 슬롯, 2026-08 버그 수정) ──
     // [버그] MemoryRoundObjective가 StageManager.OnStageClear(§11A.0 — Host 레인에서만 유효한
     // 로컬 이벤트)를 네트워크 브릿지 없이 직접 구독해, Client의 진행 카운터가 0에서 고정됐다
@@ -340,6 +352,12 @@ public class StageNetworkState : NetworkBehaviour
     public bool IsPioneerTileUnlocked(int index) =>
         index >= 0 && index < _pioneerTileUnlocked.Count && _pioneerTileUnlocked[index];
 
+    public int  TrackerTargetCount => _trackerTargets.Count;
+
+    /// <summary>늦은 구독 캐치업용 — index 트래커의 현재 조준 타겟 colorIndex. 범위 밖/미설정이면 -1.</summary>
+    public int  GetTrackerTarget(int index) =>
+        index >= 0 && index < _trackerTargets.Count ? _trackerTargets[index] : -1;
+
     public int  MemorySectionsCleared => _memorySectionsCleared.Value;
 
     /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
@@ -367,6 +385,9 @@ public class StageNetworkState : NetworkBehaviour
 
     /// <summary>Pioneer Path 타일이 해금될 때 발동(index). 전 머신(Host 포함) 공통 구독점 — PioneerPathManager가 구독해 해당 타일의 Unlock() 호출.</summary>
     public event Action<int> OnPioneerTileUnlocked;
+
+    /// <summary>함정 조준 타겟이 바뀔 때 발동(트래커 index, colorIndex / -1 = 없음). Client의 TrapPlayerTracker가 구독해 회전·인디케이터에 반영.</summary>
+    public event Action<int, int> OnTrackerTargetChanged;
 
     /// <summary>MemoryRoundObjective 구역 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnMemorySectionsClearedChanged;
@@ -413,6 +434,7 @@ public class StageNetworkState : NetworkBehaviour
         _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
         _doorOpenStates.OnListChanged    += OnDoorOpenStatesChanged;
         _pioneerTileUnlocked.OnListChanged += OnPioneerTileUnlockedChanged;
+        _trackerTargets.OnListChanged    += OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged += OnMemorySectionsClearedNv;
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
@@ -429,6 +451,7 @@ public class StageNetworkState : NetworkBehaviour
         _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
         _doorOpenStates.OnListChanged    -= OnDoorOpenStatesChanged;
         _pioneerTileUnlocked.OnListChanged -= OnPioneerTileUnlockedChanged;
+        _trackerTargets.OnListChanged    -= OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged -= OnMemorySectionsClearedNv;
         if (Instance == this) Instance = null;
     }
@@ -461,9 +484,26 @@ public class StageNetworkState : NetworkBehaviour
     {
         yield return new WaitForSeconds(deathReloadDelay);
 
+        // 이 코루틴은 Rpc(SendTo.Server)로 진입한 Host 레인에서만 돈다 — Client는 이 코드를 안 타므로
+        // 여기서 명시적으로 Client에도 암전 시작을 알려야 한다(안 그러면 Client는 컷처럼 보임).
+        BroadcastBeginDeathCoverClientRpc();
+
+        // DeathOverlayUI 연출 이후 실제 리로드 순간의 컷을 완화 — 최소 유지시간 + 새 씬 동기화 확정
+        // (OnPlayersReady) 이후 자동 페이드인.
+        if (LoadingCurtain.Instance != null)
+            yield return StartCoroutine(LoadingCurtain.Instance.BeginCoverRoutine(waitForPlayersReady: true));
+
         string sceneName = SceneManager.GetActiveScene().name;
         Debug.Log($"[StageNetworkState] 사망 감지 — '{sceneName}' 리로드 (새 시드: {NetworkSessionData.Seed})");
         NetworkManager.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+    }
+
+    /// <summary>Host는 위에서 로컬로 이미 덮었으므로 자기 자신은 제외하고 Client에게만 적용.</summary>
+    [ClientRpc]
+    void BroadcastBeginDeathCoverClientRpc()
+    {
+        if (IsServer) return;
+        LoadingCurtain.Instance?.BeginCover(waitForPlayersReady: true);
     }
 
     [ClientRpc]
@@ -585,6 +625,46 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         ArrowTrap.PlayFireById(trapId);
+    }
+
+    // ── 함정 조준 타겟 동기화 (TrapPlayerTracker 슬롯, Door §3.1과 동일 원칙) ──────
+
+    /// <summary>
+    /// Host: 씬의 TrapPlayerTracker 개수만큼 슬롯을 초기화(전부 -1 = 타겟 없음).
+    /// 트래커가 Player 캐시 갱신 시 멱등 호출 — 개수가 이미 맞으면 아무것도 하지 않는다
+    /// (index가 트래커마다 고정 배정이라 배정 후 개수 변경은 index 오염, InitDoorSlots와 동일 원칙).
+    /// </summary>
+    public void InitTrackerTargetSlots(int count)
+    {
+        if (!IsServer || !IsSpawned) return;
+        if (_trackerTargets.Count == count) return;
+        _trackerTargets.Clear();
+        for (int i = 0; i < count; i++)
+            _trackerTargets.Add(-1);
+    }
+
+    /// <summary>
+    /// Host: 트래커 index의 조준 타겟 갱신. TrapPlayerTracker.SetCurrentTarget()에서 호출.
+    /// colorIndex = -1 → 타겟 없음. 씬 언로드/사망 리로드 중 Despawn 이후 호출될 수 있어 IsSpawned 가드 필수.
+    /// </summary>
+    public void SetTrackerTarget(int index, int colorIndex)
+    {
+        if (!IsServer || !IsSpawned) return;
+        if (index < 0 || index >= _trackerTargets.Count) return;
+        if (_trackerTargets[index] == colorIndex) return;
+        _trackerTargets[index] = colorIndex;
+    }
+
+    void OnTrackerTargetsChanged(NetworkListEvent<int> change)
+    {
+        switch (change.Type)
+        {
+            case NetworkListEvent<int>.EventType.Add:
+            case NetworkListEvent<int>.EventType.Insert:
+            case NetworkListEvent<int>.EventType.Value:
+                OnTrackerTargetChanged?.Invoke(change.Index, change.Value);
+                break;
+        }
     }
 
     // ── WindTrap Mouth 연출 동기화 (Pull/Push Open/Hold/Close, ArrowTrap Mouth와 동일 패턴) ──

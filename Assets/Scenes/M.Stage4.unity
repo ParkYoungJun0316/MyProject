@@ -723,7 +723,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &150346693
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -947,7 +950,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &167479387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1122,7 +1125,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &201171017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1415,7 +1421,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &341441850
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2626,7 +2635,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CheerService
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
-  buffDuration: 5
   cheerCooldownSeconds: 10
   cheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
@@ -2890,7 +2898,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &769379016
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3243,7 +3254,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &911747147
 Transform:
   m_ObjectHideFlags: 0
@@ -3571,7 +3582,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1043272809
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3719,7 +3733,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1069372010
 Transform:
   m_ObjectHideFlags: 0
@@ -4188,6 +4202,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 0}
   dropInterval: 3
   rotateToTarget: 0
   rotateSpeed: 0
@@ -4639,7 +4654,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1303841198
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4866,6 +4884,8 @@ Transform:
   m_Children:
   - {fileID: 1852519958}
   - {fileID: 437495289}
+  - {fileID: 1950876755}
+  - {fileID: 1795077205}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1447471547
@@ -5737,9 +5757,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -5878,7 +5900,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1641435907
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6230,7 +6255,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1687700249
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6742,12 +6770,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1795077202}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 110}
   m_LocalScale: {x: 180, y: 150, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1438379755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1821335604
 GameObject:
@@ -7236,7 +7264,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 1069372009}
+    - {fileID: 911747146}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -7626,7 +7654,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1916831860
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7766,7 +7797,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1438379755}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalScale.x
@@ -7798,7 +7829,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.y
@@ -7806,7 +7837,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -7859,6 +7890,11 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &1950876755 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
+  m_PrefabInstance: {fileID: 1950876752}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1964223405 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -7999,7 +8035,10 @@ MonoBehaviour:
   schedulePeriod: 3
   baseSpeed: 5
   speedPhases: []
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1973890256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8179,6 +8218,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 0}
   dropInterval: 3
   rotateToTarget: 0
   rotateSpeed: 0
@@ -16444,5 +16484,3 @@ SceneRoots:
   - {fileID: 638344465}
   - {fileID: 928611767}
   - {fileID: 167479388}
-  - {fileID: 1950876752}
-  - {fileID: 1795077205}

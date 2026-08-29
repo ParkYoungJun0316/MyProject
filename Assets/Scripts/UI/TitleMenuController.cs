@@ -210,7 +210,7 @@ public class TitleMenuController : MonoBehaviour
         {
             // in-scene NetworkObject(TutorialNetworkManager)가 OnNetworkSpawn을 받으려면
             // NetworkSceneManager를 통해 씬을 로드해야 한다.
-            NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+            StartCoroutine(LoadLobbySceneWithCurtain());
         }
         else
         {
@@ -251,7 +251,7 @@ public class TitleMenuController : MonoBehaviour
             // 이슈 D 우회용 virtual port를 Lobby 데이터로 공유 — Client가 StartClientSteam에 그대로 전달.
             lobby.Value.SetData("vport", NetworkManagerSetup.Instance.LastHostVirtualPort.ToString());
 
-            NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+            StartCoroutine(LoadLobbySceneWithCurtain());
         }
         catch (System.Exception e)
         {
@@ -471,6 +471,19 @@ public class TitleMenuController : MonoBehaviour
         foreach (char c in s)
             if (!char.IsDigit(c)) return false;
         return true;
+    }
+
+    /// <summary>
+    /// Host가 lobbySceneName(Tutorial)으로 넘어가기 전 LoadingCurtain으로 잠깐 덮어준다.
+    /// NGO NetworkSceneManager.LoadScene은 in-scene NetworkObject(TutorialNetworkManager)의
+    /// OnNetworkSpawn을 받기 위해 반드시 이 경로로 호출해야 하므로 대체하지 않는다.
+    /// </summary>
+    IEnumerator LoadLobbySceneWithCurtain()
+    {
+        if (LoadingCurtain.Instance != null)
+            yield return LoadingCurtain.Instance.BeginCoverRoutine(waitForPlayersReady: true);
+
+        NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
     }
 
     IEnumerator LoadSceneWithFade(string sceneName)

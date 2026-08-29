@@ -475,7 +475,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &108346483
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -855,10 +858,6 @@ MonoBehaviour:
   speedPhases: []
   pushParticle: {fileID: 805943648}
   pullParticle: {fileID: 1070422468}
-  windSpatialBlend: 1
-  windMinDistance: 1
-  windMaxDistance: 0
-  windRolloffMode: 0
 --- !u!65 &329038598
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -893,7 +892,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 523270670}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &334172018
 GameObject:
@@ -1068,6 +1067,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 0}
   dropInterval: 1
   rotateToTarget: 0
   rotateSpeed: 0
@@ -1254,6 +1254,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 628739175}
+  - {fileID: 329038599}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &555556112 stripped
@@ -1552,7 +1553,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &730469137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1737,7 +1738,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1438379755}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalScale.x
@@ -1769,7 +1770,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.y
@@ -1777,7 +1778,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1830,6 +1831,11 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &870689894 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
+  m_PrefabInstance: {fileID: 870689891}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &871429747
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2741,7 +2747,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1115647972
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3439,6 +3448,8 @@ Transform:
   m_Children:
   - {fileID: 1703988420}
   - {fileID: 437495289}
+  - {fileID: 870689894}
+  - {fileID: 1790906949}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1468563473
@@ -3683,7 +3694,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1506041948
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3845,7 +3859,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1542719385
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3923,7 +3940,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CheerService
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
-  buffDuration: 5
   cheerCooldownSeconds: 10
   cheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
@@ -4188,7 +4204,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1645183963
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4367,7 +4386,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1682967002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4526,7 +4548,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1696784128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5139,12 +5164,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1790906946}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 110}
   m_LocalScale: {x: 180, y: 150, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1438379755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1827164394 stripped
 Transform:
@@ -5429,7 +5454,10 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 45
     speedMultiplier: 1.5
-  fireSfxId: 38
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
+  fireRolloffMode: 0
 --- !u!114 &1934935799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5713,7 +5741,6 @@ SceneRoots:
   - {fileID: 1438379755}
   - {fileID: 1871857761}
   - {fileID: 523270670}
-  - {fileID: 329038599}
   - {fileID: 1751779496}
   - {fileID: 468527018}
   - {fileID: 1611333829}
@@ -5723,7 +5750,5 @@ SceneRoots:
   - {fileID: 1230758745}
   - {fileID: 1332737330}
   - {fileID: 730469138}
-  - {fileID: 870689891}
   - {fileID: 805943647}
   - {fileID: 1070422467}
-  - {fileID: 1790906949}

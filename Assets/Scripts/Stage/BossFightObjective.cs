@@ -51,6 +51,13 @@ public class BossFightObjective : MonoBehaviour
     [Tooltip("모든 페이즈 완료 시 호출 (선택)\n→ PhaseManager.onAllPhasesComplete로 씬 전환 처리 권장")]
     public UnityEvent OnBossDefeated;
 
+    [Header("사운드 (보스 사망 — 2D)")]
+    [Tooltip("모든 페이즈 클리어 시 재생할 SFX. None이면 무음.\n" +
+             "M.Boss는 Boss_Die_Mouth, T.Boss는 Boss_Die_Esophagus로 지정.\n" +
+             "OnBossDefeated(UnityEvent)는 Host에서만 발동돼 Client에서 안 들리므로, " +
+             "이 필드는 전 머신에 복제되는 HandleBossPhasesClearedChanged()에서 직접 재생한다.")]
+    [SerializeField] SFXId dieSfxId = SFXId.None;
+
     int  _phasesCleared;
     bool _isDefeated;
     StageNetworkState _netState;
@@ -134,7 +141,15 @@ public class BossFightObjective : MonoBehaviour
         }
     }
 
-    void HandleBossPhasesClearedChanged(int cleared) => OnPhaseCleared?.Invoke(cleared, totalPhases);
+    void HandleBossPhasesClearedChanged(int cleared)
+    {
+        OnPhaseCleared?.Invoke(cleared, totalPhases);
+
+        // NetworkVariable 콜백이라 Host/Client 전부 로컬로 발동됨 — OnBossDefeated(Host 전용)
+        // 대신 여기서 재생해야 Client도 사망음이 들린다.
+        if (cleared >= totalPhases && dieSfxId != SFXId.None)
+            SFXManager.Instance?.Play(dieSfxId);
+    }
 
     static bool IsClientOnly()
     {

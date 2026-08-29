@@ -2850,7 +2850,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CheerService
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
-  buffDuration: 10
   cheerCooldownSeconds: 10
   cheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
@@ -5917,6 +5916,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 413631043}
+  - {fileID: 1652662653}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &738912715
@@ -11995,7 +11995,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1519388117
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12043,7 +12043,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1525520069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12742,9 +12742,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -13001,7 +13003,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 734429174}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8a30b2115806dfa45ad454f27aa4625c, type: 3}
       propertyPath: m_LocalScale.x
@@ -13033,7 +13035,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a30b2115806dfa45ad454f27aa4625c, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a30b2115806dfa45ad454f27aa4625c, type: 3}
       propertyPath: m_LocalRotation.y
@@ -13068,6 +13070,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8a30b2115806dfa45ad454f27aa4625c, type: 3}
+--- !u!4 &1652662653 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8a30b2115806dfa45ad454f27aa4625c, type: 3}
+  m_PrefabInstance: {fileID: 1652662652}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1684180468
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15890,7 +15897,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 7
+  sfxId: 9
 --- !u!114 &2046266753
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16128,9 +16135,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -16926,9 +16935,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
-  useMouthTeethBreakSfx: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 5
@@ -18751,5 +18762,4 @@ SceneRoots:
   - {fileID: 262521286}
   - {fileID: 2046266754}
   - {fileID: 1519388118}
-  - {fileID: 1652662652}
   - {fileID: 1525520074}

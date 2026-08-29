@@ -2800,7 +2800,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &136617667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9249,7 +9249,6 @@ MonoBehaviour:
   activeLaneCount: 2
   excludeLastLanes: 1
   warningDuration: 1.5
-  warnSfxId: 40
 --- !u!4 &390452828
 Transform:
   m_ObjectHideFlags: 0
@@ -15489,7 +15488,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
-  sfxId: 7
+  sfxId: 9
 --- !u!114 &663282480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17580,6 +17579,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 413631043}
+  - {fileID: 1380234963775616164}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &739785308
@@ -18378,7 +18378,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &773349173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35907,7 +35907,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CheerService
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
-  buffDuration: 5
   cheerCooldownSeconds: 10
   cheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
@@ -50802,12 +50801,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1759857212808441374}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 1713}
   m_LocalScale: {x: 10, y: 10, z: 150}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 734429174}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1470546761337866114
 MeshFilter:
@@ -50984,7 +50983,7 @@ GameObject:
   - component: {fileID: 2632441901326039809}
   - component: {fileID: 246775213003673547}
   m_Layer: 0
-  m_Name: Esophagus (1)
+  m_Name: Esophagus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -53848,5 +53847,4 @@ SceneRoots:
   - {fileID: 390452828}
   - {fileID: 663282481}
   - {fileID: 136617668}
-  - {fileID: 1380234963775616164}
   - {fileID: 773349178}

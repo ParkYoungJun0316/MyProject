@@ -42,16 +42,22 @@ public class ObjectiveUI : MonoBehaviour
     [SerializeField] Color  slotBgColor = new Color(0f, 0f, 0f, 0.45f);
 
     [Header("ReachZone 바 (Ratio 모드)")]
-    [Tooltip("트랙 배경 색")]
+    [Tooltip("트랙 바에 사용할 Sprite. 비우면 단색.")]
+    [SerializeField] Sprite trackSprite;
+    [Tooltip("트랙 색. 커스텀 스프라이트를 쓸 때는 흰색으로.")]
     [SerializeField] Color trackBgColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+    [Tooltip("트랙 가로 길이(px). 0이면 슬롯 너비에서 좌우 여백을 뺀 값.")]
+    [SerializeField] float trackWidth = 0f;
+    [Tooltip("트랙 세로 높이(px). 0이면 슬롯 높이의 30% 자동 적용.")]
+    [SerializeField] float trackHeight = 0f;
     [Tooltip("마커에 사용할 Sprite. 비우면 기본 사각형.")]
     [SerializeField] Sprite markerSprite;
     [Tooltip("마커 색")]
     [SerializeField] Color markerColor  = new Color(1f, 1f, 1f, 1f);
-    [Tooltip("트랙 세로 높이(px). 0이면 슬롯 높이의 30% 자동 적용.")]
-    [SerializeField] float trackHeight  = 0f;
     [Tooltip("마커 한 변 크기(px). 0이면 슬롯 높이의 60% 자동 적용.")]
     [SerializeField] float markerSize   = 0f;
+    [Tooltip("마커 Y 오프셋(px). 양수면 위로.")]
+    [SerializeField] float markerYOffset = 0f;
 
     [Header("Stage Clear")]
     [Tooltip("스테이지 클리어 시 표시할 문구")]
@@ -203,20 +209,29 @@ public class ObjectiveUI : MonoBehaviour
 
     void BuildReachZoneContent(GameObject root, ObjSlot slot, ReachZoneObjective reach)
     {
-        float tH = trackHeight  > 0f ? trackHeight  : slotHeight * 0.30f;
+        float tH = trackHeight > 0f ? trackHeight : slotHeight * 0.30f;
+        float tW = trackWidth  > 0f ? trackWidth  : Mathf.Max(0f, slotWidth - 24f);
         float mS = markerSize   > 0f ? markerSize   : slotHeight * 0.60f;
 
-        // 트랙 배경
+        // 트랙 배경 — 고정 크기(가운데 정렬). 마커는 이 트랙의 0~1을 따라감.
         GameObject trackObj = new GameObject("Track");
         trackObj.transform.SetParent(root.transform, false);
         RectTransform trackRt = trackObj.AddComponent<RectTransform>();
-        trackRt.anchorMin        = new Vector2(0f, 0.5f);
-        trackRt.anchorMax        = new Vector2(1f, 0.5f);
+        trackRt.anchorMin        = new Vector2(0.5f, 0.5f);
+        trackRt.anchorMax        = new Vector2(0.5f, 0.5f);
         trackRt.pivot            = new Vector2(0.5f, 0.5f);
-        trackRt.offsetMin        = new Vector2(12f, -tH * 0.5f);
-        trackRt.offsetMax        = new Vector2(-12f, tH * 0.5f);
+        trackRt.sizeDelta        = new Vector2(tW, tH);
+        trackRt.anchoredPosition  = Vector2.zero;
         Image trackImg           = trackObj.AddComponent<Image>();
         trackImg.color           = trackBgColor;
+        trackImg.raycastTarget   = false;
+        if (trackSprite != null)
+        {
+            trackImg.sprite = trackSprite;
+            trackImg.type   = trackSprite.border.sqrMagnitude > 0f
+                ? Image.Type.Sliced
+                : Image.Type.Simple;
+        }
 
         // 마커 (트랙의 자식 — anchor X = Progress01)
         GameObject markerObj = new GameObject("Marker");
@@ -226,7 +241,7 @@ public class ObjectiveUI : MonoBehaviour
         slot.markerRect.anchorMax    = new Vector2(0f, 0.5f);
         slot.markerRect.pivot        = new Vector2(0.5f, 0.5f);
         slot.markerRect.sizeDelta    = new Vector2(mS, mS);
-        slot.markerRect.anchoredPosition = Vector2.zero;
+        slot.markerRect.anchoredPosition = new Vector2(0f, markerYOffset);
         Image markerImg              = markerObj.AddComponent<Image>();
         markerImg.color              = markerColor;
         if (markerSprite != null) markerImg.sprite = markerSprite;

@@ -69,6 +69,8 @@ public class SFXLibrary : ScriptableObject
     [Tooltip("M.* 씬(Mouth 구역) 진입 시 재생. SceneFlowManager.OnSceneLoaded()에서 씬 이름 접두사로 자동 재생됨.")]
     [FormerlySerializedAs("Stage_TransitionEnter")]
     public AudioClip Stage_TransitionMouth;
+    [Tooltip("T.* 씬(Esophagus 구역) 진입 시 재생. SceneFlowManager.OnSceneLoaded()에서 씬 이름 접두사로 자동 재생됨.")]
+    public AudioClip Stage_TransitionEsophagus;
 
     // ── Stage 5 ──────────────────────────────────────────────────
     [Header("Stage 5")]
@@ -150,6 +152,7 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Player_Run:                        return Player_Run;
 
             case SFXId.Stage_TransitionMouth:             return Stage_TransitionMouth;
+            case SFXId.Stage_TransitionEsophagus:         return Stage_TransitionEsophagus;
 
             case SFXId.Stage5_Chaser_Attack:              return Stage5_Chaser_Attack;
             case SFXId.Stage5_Chaser_Run:                 return Stage5_Chaser_Run;

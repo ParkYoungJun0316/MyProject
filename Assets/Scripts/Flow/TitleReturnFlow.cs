@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -74,7 +75,7 @@ public class TitleReturnFlow : MonoBehaviour
             return;
         }
         _isReturning = true;
-        ExecuteReturn(options);
+        StartCoroutine(ExecuteReturn(options));
     }
 
     // ── ISessionResettable 등록 ───────────────────────────────────
@@ -98,7 +99,7 @@ public class TitleReturnFlow : MonoBehaviour
 
     // ── 내부 ──────────────────────────────────────────────────────
 
-    void ExecuteReturn(TitleReturnOptions options)
+    IEnumerator ExecuteReturn(TitleReturnOptions options)
     {
         Debug.Log($"[TitleReturnFlow] 복귀 시작 — reason={options.Reason}, scope={options.Scope}");
 
@@ -107,6 +108,10 @@ public class TitleReturnFlow : MonoBehaviour
         Cursor.visible    = true;
         Cursor.lockState  = CursorLockMode.None;
         InGameChatUI.ResetForTitleReturn();
+
+        // ①.5 암전 시작 — 페이드아웃이 끝날 때까지 대기한 뒤 실제 전환 실행(컷 방지).
+        if (LoadingCurtain.Instance != null)
+            yield return LoadingCurtain.Instance.BeginCoverRoutine();
 
         // ② 네트워크 종료 (LanDiscovery 중단, NetworkSessionData 초기화, NGO Shutdown)
         NetworkManagerSetup.Instance?.Shutdown();

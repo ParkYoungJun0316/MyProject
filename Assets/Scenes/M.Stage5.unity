@@ -135,8 +135,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -298,12 +298,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 127093607}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 110}
   m_LocalScale: {x: 180, y: 150, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1438379755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &149099525
 MonoBehaviour:
@@ -321,8 +321,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -386,8 +386,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -712,6 +712,7 @@ GameObject:
   - component: {fileID: 268475147}
   - component: {fileID: 268475146}
   - component: {fileID: 268475145}
+  - component: {fileID: 268475150}
   m_Layer: 0
   m_Name: MouthTrap_Tracker
   m_TagString: Untagged
@@ -737,6 +738,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 1896000183}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 2
@@ -788,9 +790,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 0
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &268475148
 MonoBehaviour:
@@ -830,8 +832,24 @@ Transform:
   m_Children:
   - {fileID: 939268824}
   - {fileID: 963459514}
+  - {fileID: 1901418169}
   m_Father: {fileID: 554251967}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &268475150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 268475144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
+  targetRenderer: {fileID: 1901418171}
+  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  yAxisOnly: 1
 --- !u!1 &286591584
 GameObject:
   m_ObjectHideFlags: 0
@@ -1021,8 +1039,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -1214,8 +1232,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -1275,6 +1293,7 @@ GameObject:
   - component: {fileID: 512931852}
   - component: {fileID: 512931851}
   - component: {fileID: 512931850}
+  - component: {fileID: 512931855}
   m_Layer: 0
   m_Name: MouthTrap_Tracker
   m_TagString: Untagged
@@ -1300,6 +1319,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 1896000183}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 2
@@ -1351,9 +1371,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 0
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &512931853
 MonoBehaviour:
@@ -1393,8 +1413,24 @@ Transform:
   m_Children:
   - {fileID: 249026525}
   - {fileID: 1448297671}
+  - {fileID: 1693355708}
   m_Father: {fileID: 554251967}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &512931855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512931849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
+  targetRenderer: {fileID: 1693355710}
+  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  yAxisOnly: 1
 --- !u!114 &553838452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1411,8 +1447,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -1752,8 +1788,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -1785,8 +1821,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -1884,8 +1920,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -1901,13 +1937,125 @@ MonoBehaviour:
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &764034167
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 764034168}
+  - component: {fileID: 764034171}
+  - component: {fileID: 764034170}
+  - component: {fileID: 764034169}
+  m_Layer: 0
+  m_Name: Sphere (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &764034168
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764034167}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.2, z: -0.03}
+  m_LocalScale: {x: 0.07, y: 0.07, z: 0.07}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 789681597}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &764034169
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764034167}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &764034170
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764034167}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &764034171
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764034167}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1001 &781696675
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1438379755}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalScale.x
@@ -1939,7 +2087,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.y
@@ -1947,7 +2095,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2000,6 +2148,11 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &781696678 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
+  m_PrefabInstance: {fileID: 781696675}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &789681596
 GameObject:
   m_ObjectHideFlags: 0
@@ -2013,6 +2166,7 @@ GameObject:
   - component: {fileID: 789681600}
   - component: {fileID: 789681599}
   - component: {fileID: 789681598}
+  - component: {fileID: 789681602}
   m_Layer: 0
   m_Name: MouthTrap_Tracker
   m_TagString: Untagged
@@ -2035,6 +2189,7 @@ Transform:
   m_Children:
   - {fileID: 217450737}
   - {fileID: 2008332029}
+  - {fileID: 764034168}
   m_Father: {fileID: 554251967}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &789681598
@@ -2055,6 +2210,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 1896000183}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 2
@@ -2106,9 +2262,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 0
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &789681601
 MonoBehaviour:
@@ -2133,6 +2289,133 @@ MonoBehaviour:
   loopOpenClose: 0
   loopHoldDuration: 0
   loopInterval: 0
+--- !u!114 &789681602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 789681596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
+  targetRenderer: {fileID: 764034170}
+  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  yAxisOnly: 1
+--- !u!1 &813231884
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 813231885}
+  - component: {fileID: 813231888}
+  - component: {fileID: 813231887}
+  - component: {fileID: 813231886}
+  m_Layer: 0
+  m_Name: Sphere
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &813231885
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813231884}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.2, z: -0.03}
+  m_LocalScale: {x: 0.07, y: 0.07, z: 0.07}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1298275795}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &813231886
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813231884}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &813231887
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813231884}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &813231888
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813231884}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &823037435
 GameObject:
   m_ObjectHideFlags: 0
@@ -2770,6 +3053,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 0}
   dropInterval: 4
   rotateToTarget: 0
   rotateSpeed: 0
@@ -2794,7 +3078,7 @@ MonoBehaviour:
   randomTarget: 1
   warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 2
-  warnMarkerScale: {x: 1.6, y: 1, z: 1.6}
+  warnMarkerScale: {x: 1.7, y: 1, z: 1.7}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -2881,8 +3165,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -3317,8 +3601,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -3694,6 +3978,7 @@ GameObject:
   - component: {fileID: 1298275793}
   - component: {fileID: 1298275792}
   - component: {fileID: 1298275791}
+  - component: {fileID: 1298275796}
   m_Layer: 0
   m_Name: MouthTrap_Tracker
   m_TagString: Untagged
@@ -3719,6 +4004,7 @@ MonoBehaviour:
   playerVisibleLayer:
     serializedVersion: 2
     m_Bits: 128
+  trackZone: {fileID: 1896000183}
   dropInterval: 0
   rotateToTarget: 1
   rotateSpeed: 2
@@ -3770,9 +4056,9 @@ MonoBehaviour:
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
-  fireSfxId: 0
-  fireMinDistance: 1
-  fireMaxDistance: 0
+  fireSfxId: 25
+  fireMinDistance: 25
+  fireMaxDistance: 50
   fireRolloffMode: 0
 --- !u!114 &1298275794
 MonoBehaviour:
@@ -3812,8 +4098,24 @@ Transform:
   m_Children:
   - {fileID: 2080960069}
   - {fileID: 94016842}
+  - {fileID: 813231885}
   m_Father: {fileID: 554251967}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+--- !u!114 &1298275796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298275790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
+  targetRenderer: {fileID: 813231887}
+  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  yAxisOnly: 1
 --- !u!1 &1299028743
 GameObject:
   m_ObjectHideFlags: 0
@@ -3995,8 +4297,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4028,8 +4330,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4061,8 +4363,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4094,8 +4396,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4173,6 +4475,8 @@ Transform:
   m_Children:
   - {fileID: 1283159136}
   - {fileID: 437495289}
+  - {fileID: 781696678}
+  - {fileID: 127093610}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1448297670
@@ -4476,8 +4780,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4603,7 +4907,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1567642849
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4647,8 +4951,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4685,8 +4989,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4824,8 +5128,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4856,7 +5160,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1679405511
 Transform:
   m_ObjectHideFlags: 0
@@ -4873,6 +5177,118 @@ Transform:
   - {fileID: 1182994181}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1693355707
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1693355708}
+  - component: {fileID: 1693355711}
+  - component: {fileID: 1693355710}
+  - component: {fileID: 1693355709}
+  m_Layer: 0
+  m_Name: Sphere (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1693355708
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693355707}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: -0.7071068}
+  m_LocalPosition: {x: 0, y: 0.2, z: -0.03}
+  m_LocalScale: {x: 0.07, y: 0.07, z: 0.07}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 512931854}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &1693355709
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693355707}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1693355710
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693355707}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1693355711
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693355707}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!114 &1736283853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4889,8 +5305,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -4922,8 +5338,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -5061,8 +5477,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -5128,7 +5544,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 1679405510}
+    - {fileID: 1925547654}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -5377,8 +5793,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -5414,7 +5830,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1884231441
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5645,6 +6061,171 @@ MonoBehaviour:
   OnStageFailed:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1896000182
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1896000184}
+  - component: {fileID: 1896000183}
+  m_Layer: 0
+  m_Name: TrackerZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &1896000183
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1896000182}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 27, y: 5, z: 27}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1896000184
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1896000182}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1901418168
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1901418169}
+  - component: {fileID: 1901418172}
+  - component: {fileID: 1901418171}
+  - component: {fileID: 1901418170}
+  m_Layer: 0
+  m_Name: Sphere (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1901418169
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1901418168}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.2, z: -0.03}
+  m_LocalScale: {x: 0.07, y: 0.07, z: 0.07}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 268475149}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &1901418170
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1901418168}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1901418171
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1901418168}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1901418172
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1901418168}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1911528205
 GameObject:
   m_ObjectHideFlags: 0
@@ -5730,7 +6311,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1925547655
 Transform:
   m_ObjectHideFlags: 0
@@ -5909,8 +6490,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -6082,8 +6663,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 131072
   breakDelay: 0
-  destroyMinDistance: 1
-  destroyMaxDistance: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
   destroyRolloffMode: 0
   debrisPrefab: {fileID: 0}
   debrisLifetime: 0
@@ -15983,7 +16564,6 @@ SceneRoots:
   - {fileID: 953028346}
   - {fileID: 4312492011588377691}
   - {fileID: 7023309786009451319}
-  - {fileID: 781696675}
-  - {fileID: 127093610}
   - {fileID: 1567642850}
   - {fileID: 1884231446}
+  - {fileID: 1896000184}

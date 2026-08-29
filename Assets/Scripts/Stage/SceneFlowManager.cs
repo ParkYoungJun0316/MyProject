@@ -11,8 +11,8 @@ using UnityEngine.SceneManagement;
 /// 2. sceneSequence[] 에 순서대로 씬 이름 입력
 ///    M.Stage1 / M.Stage2 / M.Stage3 / M.Stage4 / M.Stage5 / M.Boss
 ///    T.Stage1 / T.Stage2 / T.Stage3 / T.Stage4 / T.Stage5 / T.Boss
-/// 3. (선택) screenFader: 이 GameObject의 자식 Canvas에 ScreenFader를 붙이고 연결
-///    → 없으면 암전 없이 즉시 전환
+/// 3. 전환 연출(암전/최소 유지시간)은 LoadingCurtain(DDOL, 0.Title 배치)이 전담한다 —
+///    LoadingCurtain.Instance가 없으면 연출 없이 즉시 전환.
 ///
 /// [이벤트 연결 — 확정 배선 (NetworkDesign §11.1)]
 /// StageManager.OnStageClear / PhaseManager.onAllPhasesComplete
@@ -31,21 +31,12 @@ public class SceneFlowManager : MonoBehaviour
     [Tooltip("순서대로 진행할 씬 이름. Build Settings 등록 이름과 정확히 일치해야 함.")]
     [SerializeField] private string[] sceneSequence;
 
-    [Header("페이드 연출 (선택)")]
-    [Tooltip("자식 Canvas에 ScreenFader를 배치하고 연결. 없으면 즉시 전환.")]
-    [SerializeField] private ScreenFader screenFader;
-
-    [Tooltip("씬 전환 전 페이드아웃 시간(초)")]
-    [SerializeField] private float fadeOutDuration = 0f;
-
-    [Tooltip("씬 로드 후 페이드인 시간(초)")]
-    [SerializeField] private float fadeInDuration = 0f;
-
     [Header("런타임 상태 (읽기 전용)")]
     [SerializeField] private int _currentSceneIndex = -1;
 
     private StageProgressState[] _stageStates;
     private bool _isTransitioning;
+    private string _lastLoadedSceneName;
 
     // ── 프로퍼티 ─────────────────────────────────────────────────
 
@@ -89,25 +80,31 @@ public class SceneFlowManager : MonoBehaviour
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         SyncCurrentIndex();
-
-        if (screenFader != null)
-            screenFader.FadeIn(fadeInDuration);
-
         PlayStageTransitionSfx(scene.name);
     }
 
     /// <summary>
     /// 씬 이름 접두사로 구역 진입 SFX를 자동 재생.
-    /// M.* → Mouth 구역. title/lobby/tutorial/Finish 및 T.* 는 재생 안 함.
+    /// M.* → Mouth 구역, T.* → Esophagus 구역. title/lobby/tutorial/Finish 는 재생 안 함.
     /// [주의] Host 전용 코드(TransitionTo())가 아니라 여기(OnSceneLoaded, 전 머신 로컬 실행)에 둬야
     /// Host/Client 모두 들림 — BGMManager 존 매칭과 동일한 씬 접두사 판별 패턴.
     /// 2D 재생(SFXManager.Play(id))만 사용 — 3D 재생(PlayClipAtPoint)은 임시 오브젝트가
     /// DontDestroyOnLoad가 아니라서 다음 씬 전환 때 잘릴 수 있음.
+    /// [동일 씬 리로드 스킵] 직전에 처리한 씬 이름과 같으면 재생하지 않는다 — 사망/ESC Reset
+    /// (StageNetworkState.ReloadAfterDeathAnim)이 같은 씬을 다시 LoadScene할 때도 이 메서드가
+    /// sceneLoaded로 호출되기 때문. 최초 진입(직전 씬 이름 없음)과 실제로 다른 씬으로 넘어가는
+    /// 경우(클리어 전환, 챕터 점프 등)는 이름이 다르므로 정상 재생됨.
     /// </summary>
     void PlayStageTransitionSfx(string sceneName)
     {
+        bool isSameSceneReload = sceneName == _lastLoadedSceneName;
+        _lastLoadedSceneName = sceneName;
+        if (isSameSceneReload) return;
+
         if (sceneName.StartsWith("M."))
             SFXManager.Instance?.Play(SFXId.Stage_TransitionMouth);
+        else if (sceneName.StartsWith("T."))
+            SFXManager.Instance?.Play(SFXId.Stage_TransitionEsophagus);
     }
 
     // ── 공개 API ──────────────────────────────────────────────────
@@ -204,11 +201,8 @@ public class SceneFlowManager : MonoBehaviour
     {
         _isTransitioning = true;
 
-        if (screenFader != null && fadeOutDuration > 0f)
-        {
-            screenFader.FadeOut(fadeOutDuration);
-            yield return new WaitForSeconds(fadeOutDuration);
-        }
+        if (LoadingCurtain.Instance != null)
+            yield return StartCoroutine(LoadingCurtain.Instance.BeginCoverRoutine(waitForPlayersReady: true));
 
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && nm.IsHost)
