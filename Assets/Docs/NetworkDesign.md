@@ -744,7 +744,7 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 |------|------|-------------------|---------------------------|
 | **1** | B 함정·피격 | `ArrowTrap`, `DropTrap`, `TrapProjectile`, `WindTrap`, `ContactDamage`(M.Stage3에도 있음), `TrapBase`, `TrapPlayerTracker`, `Breakable`, `Stage5ChaserHitbox` (+ `CeilingTrap`/`TrapSpeedPhase`/`SpikeTrap`은 현재 씬 배치 미확인 — 작업 중 재확인) | `SpikeLane`/`SpikeLaneField` (`T.Stage3`, `T.Boss`만 확인됨) |
 | **2** | E 월드 모션 | `AdvancingWall` (**`M.Stage3` 사용, `T.Boss`에서도 재사용되므로 여기서 검증해두면 T 쪽도 절반 커버됨**) | `WallMover`, `WallMoverSequencer`, `BoulderSpawner`, `BoulderSpawnManager`, `WaypointMover`(Boulder 프리팹에 내장), `WallWaveController`, `WallLineRandomizer`, `MovingCorridor`, `AdvancingWallTelegraph` — 전부 `T.Stage1`/`T.Stage3`/`T.Stage4`/`T.Boss`에서만 확인됨 |
-| **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse` 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
+| **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse`, `SafeZoneWarnSign` (`M.Boss` only — PhaseStartServerTime 로컬 스케줄, RPC 없음) 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
 | **UI** | shared | `DeathOverlayUI` — `UI.prefab`, M/T 전 스테이지. 사망 문구 `{0}` = CheerName(`CheerService.GetCheerName`). Steam/OS DisplayName 아님 (2026-08-29: 로컬 경로에서 `u died`로 보이던 원인). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 
 **그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.

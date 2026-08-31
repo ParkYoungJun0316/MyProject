@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.03, g: 0.03, b: 0.04, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.018
@@ -702,6 +702,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 214476506}
     m_Modifications:
+    - target: {fileID: -4511668892670266622, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      propertyPath: m_Height
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
       propertyPath: m_Name
       value: PressurePad.20
@@ -777,8 +781,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 362150869}
   m_SourcePrefab: {fileID: 100100000, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+--- !u!1 &13833393 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+  m_PrefabInstance: {fileID: 13833392}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &15214292
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -987,7 +999,6 @@ GameObject:
   - component: {fileID: 47046665}
   - component: {fileID: 47046664}
   - component: {fileID: 47046663}
-  - component: {fileID: 47046662}
   m_Layer: 27
   m_Name: DamageWall (5)
   m_TagString: Untagged
@@ -1010,21 +1021,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &47046662
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 47046660}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &47046663
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2331,7 +2327,6 @@ GameObject:
   - component: {fileID: 116045878}
   - component: {fileID: 116045877}
   - component: {fileID: 116045876}
-  - component: {fileID: 116045875}
   m_Layer: 27
   m_Name: DamageWall (9)
   m_TagString: Untagged
@@ -2354,21 +2349,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &116045875
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 116045873}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &116045876
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2691,6 +2671,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 668101608}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &124506093 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 124506092}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 668101602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!4 &125541794 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6416332504304535735, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
@@ -2800,7 +2791,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &136617667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3043,7 +3034,6 @@ GameObject:
   - component: {fileID: 147245298}
   - component: {fileID: 147245297}
   - component: {fileID: 147245296}
-  - component: {fileID: 147245295}
   m_Layer: 27
   m_Name: DamageWall (12)
   m_TagString: Untagged
@@ -3066,21 +3056,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &147245295
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 147245293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &147245296
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3353,7 +3328,6 @@ GameObject:
   - component: {fileID: 149144701}
   - component: {fileID: 149144700}
   - component: {fileID: 149144699}
-  - component: {fileID: 149144698}
   m_Layer: 27
   m_Name: DamageWall (28)
   m_TagString: Untagged
@@ -3376,21 +3350,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &149144698
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 149144696}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &149144699
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3509,7 +3468,6 @@ GameObject:
   - component: {fileID: 157688240}
   - component: {fileID: 157688239}
   - component: {fileID: 157688238}
-  - component: {fileID: 157688237}
   m_Layer: 27
   m_Name: DamageWall (16)
   m_TagString: Untagged
@@ -3532,21 +3490,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &157688237
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 157688235}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &157688238
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3836,7 +3779,6 @@ GameObject:
   - component: {fileID: 171124821}
   - component: {fileID: 171124820}
   - component: {fileID: 171124819}
-  - component: {fileID: 171124818}
   m_Layer: 27
   m_Name: DamageWall (5)
   m_TagString: Untagged
@@ -3859,21 +3801,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &171124818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 171124816}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &171124819
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4049,7 +3976,6 @@ GameObject:
   - component: {fileID: 174281164}
   - component: {fileID: 174281163}
   - component: {fileID: 174281162}
-  - component: {fileID: 174281161}
   m_Layer: 27
   m_Name: DamageWall (22)
   m_TagString: Untagged
@@ -4072,21 +3998,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &174281161
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 174281159}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &174281162
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4205,7 +4116,6 @@ GameObject:
   - component: {fileID: 182326389}
   - component: {fileID: 182326388}
   - component: {fileID: 182326387}
-  - component: {fileID: 182326386}
   m_Layer: 27
   m_Name: DamageWall (30)
   m_TagString: Untagged
@@ -4228,21 +4138,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &182326386
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 182326384}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &182326387
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4792,7 +4687,6 @@ GameObject:
   - component: {fileID: 208694276}
   - component: {fileID: 208694275}
   - component: {fileID: 208694274}
-  - component: {fileID: 208694273}
   m_Layer: 27
   m_Name: DamageWall (31)
   m_TagString: Untagged
@@ -4815,21 +4709,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &208694273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 208694271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &208694274
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4986,7 +4865,6 @@ GameObject:
   - component: {fileID: 215296174}
   - component: {fileID: 215296173}
   - component: {fileID: 215296172}
-  - component: {fileID: 215296171}
   m_Layer: 27
   m_Name: DamageWall (7)
   m_TagString: Untagged
@@ -5009,21 +4887,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &215296171
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 215296169}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &215296172
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6650,7 +6513,6 @@ GameObject:
   - component: {fileID: 271872002}
   - component: {fileID: 271872001}
   - component: {fileID: 271872000}
-  - component: {fileID: 271871999}
   m_Layer: 27
   m_Name: DamageWall (11)
   m_TagString: Untagged
@@ -6673,21 +6535,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &271871999
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 271871997}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &271872000
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6977,7 +6824,6 @@ GameObject:
   - component: {fileID: 284004416}
   - component: {fileID: 284004415}
   - component: {fileID: 284004414}
-  - component: {fileID: 284004413}
   m_Layer: 27
   m_Name: DamageWall (20)
   m_TagString: Untagged
@@ -7000,21 +6846,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &284004413
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 284004411}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &284004414
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -7421,7 +7252,6 @@ GameObject:
   - component: {fileID: 309878534}
   - component: {fileID: 309878533}
   - component: {fileID: 309878532}
-  - component: {fileID: 309878531}
   m_Layer: 27
   m_Name: DamageWall (13)
   m_TagString: Untagged
@@ -7444,21 +7274,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &309878531
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 309878529}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &309878532
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -8062,6 +7877,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1250132820}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &344101258 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 344101257}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250132814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1001 &344595396
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8444,12 +8270,27 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8028393199763076075, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 13833392}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 13833393}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePad
+--- !u!114 &362150869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 13833393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 344101258}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!1001 &363998602
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8520,7 +8361,6 @@ GameObject:
   - component: {fileID: 365945863}
   - component: {fileID: 365945862}
   - component: {fileID: 365945861}
-  - component: {fileID: 365945860}
   m_Layer: 27
   m_Name: DamageWall (29)
   m_TagString: Untagged
@@ -8543,21 +8383,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &365945860
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 365945858}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &365945861
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -9019,7 +8844,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &371380454
 Transform:
@@ -9332,7 +9157,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &394614694
 Transform:
@@ -9364,7 +9189,6 @@ GameObject:
   - component: {fileID: 394764648}
   - component: {fileID: 394764647}
   - component: {fileID: 394764646}
-  - component: {fileID: 394764645}
   m_Layer: 27
   m_Name: DamageWall (19)
   m_TagString: Untagged
@@ -9387,21 +9211,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &394764645
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 394764643}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &394764646
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -9520,7 +9329,6 @@ GameObject:
   - component: {fileID: 402920453}
   - component: {fileID: 402920452}
   - component: {fileID: 402920451}
-  - component: {fileID: 402920450}
   m_Layer: 27
   m_Name: DamageWall (4)
   m_TagString: Untagged
@@ -9543,21 +9351,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &402920450
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 402920448}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &402920451
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -9733,7 +9526,6 @@ GameObject:
   - component: {fileID: 407902030}
   - component: {fileID: 407902029}
   - component: {fileID: 407902028}
-  - component: {fileID: 407902027}
   m_Layer: 27
   m_Name: DamageWall (23)
   m_TagString: Untagged
@@ -9756,21 +9548,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &407902027
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 407902025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &407902028
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -10008,6 +9785,18 @@ PrefabInstance:
       value: ColorStartZone.Purple
       objectReference: {fileID: 0}
     - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5351274905674856379, guid: 58bb6c27b76caa544927112f044a449d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 5
       objectReference: {fileID: 0}
@@ -10195,7 +9984,6 @@ GameObject:
   - component: {fileID: 425901047}
   - component: {fileID: 425901046}
   - component: {fileID: 425901045}
-  - component: {fileID: 425901044}
   m_Layer: 27
   m_Name: DamageWall (1)
   m_TagString: Untagged
@@ -10218,21 +10006,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &425901044
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 425901042}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &425901045
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -10408,7 +10181,6 @@ GameObject:
   - component: {fileID: 431008799}
   - component: {fileID: 431008798}
   - component: {fileID: 431008797}
-  - component: {fileID: 431008796}
   m_Layer: 27
   m_Name: DamageWall (29)
   m_TagString: Untagged
@@ -10431,21 +10203,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &431008796
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 431008794}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &431008797
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -10754,6 +10511,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1894761195}
     m_Modifications:
+    - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2853555534544761932, guid: ea76debfe9a1c4e45be2995786a503f0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -11101,7 +10870,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &468702037
 Transform:
@@ -11112,7 +10881,7 @@ Transform:
   m_GameObject: {fileID: 468702034}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2, z: 269.79993}
+  m_LocalPosition: {x: 0, y: 2, z: 296}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -11587,7 +11356,6 @@ GameObject:
   - component: {fileID: 484904942}
   - component: {fileID: 484904941}
   - component: {fileID: 484904940}
-  - component: {fileID: 484904939}
   m_Layer: 27
   m_Name: DamageWall (18)
   m_TagString: Untagged
@@ -11610,21 +11378,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &484904939
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 484904937}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &484904940
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12033,7 +11786,6 @@ GameObject:
   - component: {fileID: 502474775}
   - component: {fileID: 502474774}
   - component: {fileID: 502474773}
-  - component: {fileID: 502474772}
   m_Layer: 27
   m_Name: DamageWall (21)
   m_TagString: Untagged
@@ -12056,21 +11808,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &502474772
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 502474770}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &502474773
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12286,7 +12023,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &502515008
 MeshCollider:
@@ -13217,7 +12954,6 @@ GameObject:
   - component: {fileID: 549807446}
   - component: {fileID: 549807445}
   - component: {fileID: 549807444}
-  - component: {fileID: 549807443}
   m_Layer: 27
   m_Name: DamageWall (24)
   m_TagString: Untagged
@@ -13240,21 +12976,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &549807443
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 549807441}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &549807444
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -13978,6 +13699,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1065823114}
     m_Modifications:
+    - target: {fileID: -4511668892670266622, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      propertyPath: m_Height
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
       propertyPath: m_Name
       value: PressurePad.1
@@ -14053,8 +13778,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1844164744}
   m_SourcePrefab: {fileID: 100100000, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+--- !u!1 &569849368 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+  m_PrefabInstance: {fileID: 569849367}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &574292812
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14474,7 +14207,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &614648974
 Transform:
@@ -16370,6 +16103,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1420942802}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &679491818 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 679491817}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 562363747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1001 &684055268
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16606,6 +16350,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 812398844}
     m_Modifications:
+    - target: {fileID: -4511668892670266622, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      propertyPath: m_Height
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
       propertyPath: m_Name
       value: PressurePad.21
@@ -16681,8 +16429,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2011705236}
   m_SourcePrefab: {fileID: 100100000, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+--- !u!1 &702344807 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+  m_PrefabInstance: {fileID: 702344806}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &704047120
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17038,7 +16794,6 @@ GameObject:
   - component: {fileID: 719394736}
   - component: {fileID: 719394735}
   - component: {fileID: 719394734}
-  - component: {fileID: 719394733}
   m_Layer: 27
   m_Name: DamageWall (18)
   m_TagString: Untagged
@@ -17061,21 +16816,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &719394733
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 719394731}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &719394734
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -17438,7 +17178,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &732481385
 MeshCollider:
@@ -17823,7 +17563,6 @@ GameObject:
   - component: {fileID: 754583136}
   - component: {fileID: 754583135}
   - component: {fileID: 754583134}
-  - component: {fileID: 754583133}
   m_Layer: 27
   m_Name: DamageWall (13)
   m_TagString: Untagged
@@ -17846,21 +17585,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &754583133
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 754583131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &754583134
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -18378,7 +18102,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &773349173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19266,7 +18990,6 @@ GameObject:
   - component: {fileID: 810235194}
   - component: {fileID: 810235193}
   - component: {fileID: 810235192}
-  - component: {fileID: 810235191}
   m_Layer: 27
   m_Name: DamageWall (22)
   m_TagString: Untagged
@@ -19289,21 +19012,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &810235191
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 810235189}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &810235192
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -19517,7 +19225,6 @@ GameObject:
   - component: {fileID: 814111482}
   - component: {fileID: 814111481}
   - component: {fileID: 814111480}
-  - component: {fileID: 814111479}
   m_Layer: 27
   m_Name: DamageWall (12)
   m_TagString: Untagged
@@ -19540,21 +19247,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &814111479
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 814111477}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &814111480
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -19673,7 +19365,6 @@ GameObject:
   - component: {fileID: 815635752}
   - component: {fileID: 815635751}
   - component: {fileID: 815635750}
-  - component: {fileID: 815635749}
   m_Layer: 27
   m_Name: DamageWall (25)
   m_TagString: Untagged
@@ -19696,21 +19387,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &815635749
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 815635747}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &815635750
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -19942,7 +19618,6 @@ GameObject:
   - component: {fileID: 824862099}
   - component: {fileID: 824862098}
   - component: {fileID: 824862097}
-  - component: {fileID: 824862096}
   m_Layer: 27
   m_Name: DamageWall (7)
   m_TagString: Untagged
@@ -19965,21 +19640,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &824862096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 824862094}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &824862097
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -20269,7 +19929,6 @@ GameObject:
   - component: {fileID: 838374315}
   - component: {fileID: 838374314}
   - component: {fileID: 838374313}
-  - component: {fileID: 838374312}
   m_Layer: 27
   m_Name: DamageWall (11)
   m_TagString: Untagged
@@ -20292,21 +19951,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &838374312
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 838374310}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &838374313
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -20897,7 +20541,6 @@ GameObject:
   - component: {fileID: 885627180}
   - component: {fileID: 885627179}
   - component: {fileID: 885627178}
-  - component: {fileID: 885627177}
   m_Layer: 27
   m_Name: DamageWall (6)
   m_TagString: Untagged
@@ -20920,21 +20563,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &885627177
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 885627175}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &885627178
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -21394,7 +21022,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &901557289
 MeshCollider:
@@ -21545,7 +21173,6 @@ GameObject:
   - component: {fileID: 907181495}
   - component: {fileID: 907181494}
   - component: {fileID: 907181493}
-  - component: {fileID: 907181492}
   m_Layer: 27
   m_Name: DamageWall (26)
   m_TagString: Untagged
@@ -21568,21 +21195,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &907181492
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 907181490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &907181493
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -21855,7 +21467,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &927606250
 MeshCollider:
@@ -21892,7 +21504,6 @@ GameObject:
   - component: {fileID: 928584143}
   - component: {fileID: 928584142}
   - component: {fileID: 928584141}
-  - component: {fileID: 928584140}
   m_Layer: 27
   m_Name: DamageWall (15)
   m_TagString: Untagged
@@ -21915,21 +21526,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &928584140
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 928584138}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &928584141
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -22202,7 +21798,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &936821277
 MeshCollider:
@@ -22435,7 +22031,6 @@ GameObject:
   - component: {fileID: 957936354}
   - component: {fileID: 957936353}
   - component: {fileID: 957936352}
-  - component: {fileID: 957936351}
   m_Layer: 27
   m_Name: DamageWall (16)
   m_TagString: Untagged
@@ -22458,21 +22053,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &957936351
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 957936349}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &957936352
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -22907,7 +22487,6 @@ GameObject:
   - component: {fileID: 974947934}
   - component: {fileID: 974947933}
   - component: {fileID: 974947932}
-  - component: {fileID: 974947931}
   m_Layer: 27
   m_Name: DamageWall (17)
   m_TagString: Untagged
@@ -22930,21 +22509,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &974947931
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 974947929}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &974947932
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -23063,7 +22627,6 @@ GameObject:
   - component: {fileID: 975108759}
   - component: {fileID: 975108758}
   - component: {fileID: 975108757}
-  - component: {fileID: 975108756}
   m_Layer: 27
   m_Name: DamageWall (14)
   m_TagString: Untagged
@@ -23086,21 +22649,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &975108756
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 975108754}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &975108757
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -23634,7 +23182,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &989369551
 MeshCollider:
@@ -23929,7 +23477,6 @@ GameObject:
   - component: {fileID: 1003181822}
   - component: {fileID: 1003181821}
   - component: {fileID: 1003181820}
-  - component: {fileID: 1003181819}
   m_Layer: 27
   m_Name: DamageWall (15)
   m_TagString: Untagged
@@ -23952,21 +23499,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1003181819
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1003181817}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1003181820
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -24464,7 +23996,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1017876240
 MeshCollider:
@@ -24645,7 +24177,6 @@ GameObject:
   - component: {fileID: 1022016888}
   - component: {fileID: 1022016887}
   - component: {fileID: 1022016886}
-  - component: {fileID: 1022016885}
   m_Layer: 27
   m_Name: DamageWall (30)
   m_TagString: Untagged
@@ -24668,21 +24199,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1022016885
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1022016883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1022016886
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -24910,6 +24426,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2145887242}
     m_Modifications:
+    - target: {fileID: -4511668892670266622, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      propertyPath: m_Height
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
       propertyPath: m_Name
       value: PressurePad.2
@@ -24985,8 +24505,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1752341240}
   m_SourcePrefab: {fileID: 100100000, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+--- !u!1 &1026996398 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+  m_PrefabInstance: {fileID: 1026996397}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1027454984
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25285,7 +24813,6 @@ GameObject:
   - component: {fileID: 1043970627}
   - component: {fileID: 1043970626}
   - component: {fileID: 1043970625}
-  - component: {fileID: 1043970624}
   m_Layer: 27
   m_Name: DamageWall (4)
   m_TagString: Untagged
@@ -25308,21 +24835,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1043970624
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1043970622}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1043970625
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -26486,7 +25998,6 @@ GameObject:
   - component: {fileID: 1083753991}
   - component: {fileID: 1083753990}
   - component: {fileID: 1083753989}
-  - component: {fileID: 1083753988}
   m_Layer: 27
   m_Name: DamageWall (27)
   m_TagString: Untagged
@@ -26509,21 +26020,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1083753988
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1083753986}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1083753989
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -26756,7 +26252,6 @@ GameObject:
   - component: {fileID: 1091644279}
   - component: {fileID: 1091644278}
   - component: {fileID: 1091644277}
-  - component: {fileID: 1091644276}
   m_Layer: 27
   m_Name: DamageWall (3)
   m_TagString: Untagged
@@ -26779,21 +26274,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1091644276
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1091644274}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1091644277
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -27156,7 +26636,6 @@ GameObject:
   - component: {fileID: 1110561252}
   - component: {fileID: 1110561251}
   - component: {fileID: 1110561250}
-  - component: {fileID: 1110561249}
   m_Layer: 27
   m_Name: DamageWall (6)
   m_TagString: Untagged
@@ -27179,21 +26658,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1110561249
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1110561247}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1110561250
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -27417,7 +26881,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1116591565
 Transform:
@@ -28021,6 +27485,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1298503612}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &1159414365 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 1159414364}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298503606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!65 &1170610925
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -28515,7 +27990,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1199039076
 MeshCollider:
@@ -28821,7 +28296,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1214522843
 MeshCollider:
@@ -29327,7 +28802,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1230003579
 MeshCollider:
@@ -29535,7 +29010,6 @@ GameObject:
   - component: {fileID: 1239882909}
   - component: {fileID: 1239882908}
   - component: {fileID: 1239882907}
-  - component: {fileID: 1239882906}
   m_Layer: 27
   m_Name: DamageWall (28)
   m_TagString: Untagged
@@ -29558,21 +29032,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1239882906
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1239882904}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1239882907
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -30034,7 +29493,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1246674058
 Transform:
@@ -30402,7 +29861,6 @@ GameObject:
   - component: {fileID: 1265435049}
   - component: {fileID: 1265435048}
   - component: {fileID: 1265435047}
-  - component: {fileID: 1265435046}
   m_Layer: 27
   m_Name: DamageWall (10)
   m_TagString: Untagged
@@ -30425,21 +29883,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1265435046
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1265435044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1265435047
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -30663,7 +30106,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1270643623
 Transform:
@@ -30694,7 +30137,6 @@ GameObject:
   - component: {fileID: 1275608414}
   - component: {fileID: 1275608413}
   - component: {fileID: 1275608412}
-  - component: {fileID: 1275608411}
   m_Layer: 27
   m_Name: DamageWall (14)
   m_TagString: Untagged
@@ -30717,21 +30159,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1275608411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1275608409}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1275608412
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -31318,7 +30745,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1306101082
 Transform:
@@ -31349,7 +30776,6 @@ GameObject:
   - component: {fileID: 1308877225}
   - component: {fileID: 1308877224}
   - component: {fileID: 1308877223}
-  - component: {fileID: 1308877222}
   m_Layer: 27
   m_Name: DamageWall (8)
   m_TagString: Untagged
@@ -31372,21 +30798,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1308877222
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1308877220}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1308877223
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -31888,7 +31299,6 @@ GameObject:
   - component: {fileID: 1333379281}
   - component: {fileID: 1333379280}
   - component: {fileID: 1333379279}
-  - component: {fileID: 1333379278}
   m_Layer: 27
   m_Name: DamageWall (23)
   m_TagString: Untagged
@@ -31911,21 +31321,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1333379278
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1333379276}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1333379279
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -33259,7 +32654,6 @@ GameObject:
   - component: {fileID: 1393700669}
   - component: {fileID: 1393700668}
   - component: {fileID: 1393700667}
-  - component: {fileID: 1393700666}
   m_Layer: 27
   m_Name: DamageWall (2)
   m_TagString: Untagged
@@ -33282,21 +32676,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1393700666
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1393700664}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1393700667
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -34031,7 +33410,6 @@ GameObject:
   - component: {fileID: 1431864154}
   - component: {fileID: 1431864153}
   - component: {fileID: 1431864152}
-  - component: {fileID: 1431864151}
   m_Layer: 27
   m_Name: DamageWall (25)
   m_TagString: Untagged
@@ -34054,21 +33432,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1431864151
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1431864149}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1431864152
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -34331,7 +33694,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a2e360faca7561c4784c05199d2ead85, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 25
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a2e360faca7561c4784c05199d2ead85, type: 3}
       propertyPath: m_LocalRotation.w
@@ -34413,7 +33776,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1434996695
 MeshCollider:
@@ -34449,7 +33812,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b6ab350ed01a73469dd839117055fc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WallMover
-  moveOffset: {x: 0, y: 200, z: 0}
+  moveOffset: {x: 0, y: 100, z: 0}
   moveDuration: 0.5
   easeCurve:
     serializedVersion: 2
@@ -34480,7 +33843,7 @@ MonoBehaviour:
   returnDuration: 0
   loop: 0
   loopDelay: 0
-  activateOnStart: 0
+  activateOnStart: 1
   moveAtSeconds: []
   loopSchedule: 0
   schedulePeriod: 10
@@ -34594,7 +33957,6 @@ GameObject:
   - component: {fileID: 1437815079}
   - component: {fileID: 1437815078}
   - component: {fileID: 1437815077}
-  - component: {fileID: 1437815076}
   m_Layer: 27
   m_Name: DamageWall (27)
   m_TagString: Untagged
@@ -34617,21 +33979,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1437815076
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1437815074}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1437815077
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -35245,7 +34592,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1469169180
 MeshCollider:
@@ -36542,7 +35889,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1538748415
 Transform:
@@ -37215,7 +36562,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1583318864
 MeshCollider:
@@ -37944,7 +37291,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1633041062
 Transform:
@@ -37985,7 +37332,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1636008769
 MeshCollider:
@@ -38297,6 +37644,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 1894761195}
     m_Modifications:
     - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4277412356618957285, guid: 5d426192b64017f4194fb777f8ab0708, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
       objectReference: {fileID: 0}
@@ -38374,7 +37733,6 @@ GameObject:
   - component: {fileID: 1654713280}
   - component: {fileID: 1654713279}
   - component: {fileID: 1654713278}
-  - component: {fileID: 1654713277}
   m_Layer: 27
   m_Name: DamageWall (21)
   m_TagString: Untagged
@@ -38397,21 +37755,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1654713277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1654713275}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1654713278
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -38587,7 +37930,6 @@ GameObject:
   - component: {fileID: 1657959130}
   - component: {fileID: 1657959129}
   - component: {fileID: 1657959128}
-  - component: {fileID: 1657959127}
   m_Layer: 27
   m_Name: DamageWall (8)
   m_TagString: Untagged
@@ -38610,21 +37952,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1657959127
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1657959125}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1657959128
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -39335,7 +38662,6 @@ GameObject:
   - component: {fileID: 1690320807}
   - component: {fileID: 1690320806}
   - component: {fileID: 1690320805}
-  - component: {fileID: 1690320804}
   m_Layer: 27
   m_Name: DamageWall (24)
   m_TagString: Untagged
@@ -39358,21 +38684,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1690320804
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1690320802}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1690320805
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -39655,7 +38966,6 @@ GameObject:
   - component: {fileID: 1697596476}
   - component: {fileID: 1697596475}
   - component: {fileID: 1697596474}
-  - component: {fileID: 1697596473}
   m_Layer: 27
   m_Name: DamageWall (26)
   m_TagString: Untagged
@@ -39678,21 +38988,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1697596473
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1697596471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1697596474
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -39811,7 +39106,6 @@ GameObject:
   - component: {fileID: 1699285895}
   - component: {fileID: 1699285894}
   - component: {fileID: 1699285893}
-  - component: {fileID: 1699285892}
   m_Layer: 27
   m_Name: DamageWall (32)
   m_TagString: Untagged
@@ -39834,21 +39128,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1699285892
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1699285890}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1699285893
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -40299,7 +39578,6 @@ GameObject:
   - component: {fileID: 1718914062}
   - component: {fileID: 1718914061}
   - component: {fileID: 1718914060}
-  - component: {fileID: 1718914059}
   m_Layer: 27
   m_Name: DamageWall (9)
   m_TagString: Untagged
@@ -40322,21 +39600,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1718914059
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1718914057}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1718914060
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -40616,7 +39879,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &1736542736
 MeshCollider:
@@ -41054,7 +40317,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8028393199763076075, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 1026996397}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1026996398}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
@@ -41065,6 +40328,21 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 1026996397}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1752341240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026996398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 679491818}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!1001 &1757975378
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41298,7 +40576,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8028393199763076075, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 1853110018}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1853110019}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
@@ -41778,7 +41056,6 @@ GameObject:
   - component: {fileID: 1805358811}
   - component: {fileID: 1805358810}
   - component: {fileID: 1805358809}
-  - component: {fileID: 1805358808}
   m_Layer: 27
   m_Name: DamageWall (10)
   m_TagString: Untagged
@@ -41801,21 +41078,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1805358808
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1805358806}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1805358809
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -42219,7 +41481,6 @@ GameObject:
   - component: {fileID: 1828735612}
   - component: {fileID: 1828735611}
   - component: {fileID: 1828735610}
-  - component: {fileID: 1828735609}
   m_Layer: 27
   m_Name: DamageWall (20)
   m_TagString: Untagged
@@ -42242,21 +41503,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1828735609
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1828735607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1828735610
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -42977,7 +42223,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8028393199763076075, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 569849367}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 569849368}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
@@ -42988,6 +42234,21 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6926818642850682201, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 569849367}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1844164744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 569849368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 1911648919}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!1001 &1845785317
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -43142,6 +42403,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1009080779}
     m_Modifications:
+    - target: {fileID: -4511668892670266622, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      propertyPath: m_Height
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
       propertyPath: m_Name
       value: PressurePad.3
@@ -43217,8 +42482,31 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1853110020}
   m_SourcePrefab: {fileID: 100100000, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+--- !u!1 &1853110019 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 623748915474999461, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
+  m_PrefabInstance: {fileID: 1853110018}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1853110020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853110019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 124506093}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!1001 &1853455528
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44286,6 +43574,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1508956925}
   m_SourcePrefab: {fileID: 100100000, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+--- !u!114 &1911648919 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8212477882125458296, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
+  m_PrefabInstance: {fileID: 1911648918}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1440680001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6c42665450d3b4aa8362706d546e29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1001 &1912387237
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44803,7 +44102,6 @@ GameObject:
   - component: {fileID: 1939853714}
   - component: {fileID: 1939853713}
   - component: {fileID: 1939853712}
-  - component: {fileID: 1939853711}
   m_Layer: 27
   m_Name: DamageWall (31)
   m_TagString: Untagged
@@ -44826,21 +44124,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1939853711
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1939853709}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1939853712
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -45711,7 +44994,6 @@ GameObject:
   - component: {fileID: 1970037730}
   - component: {fileID: 1970037729}
   - component: {fileID: 1970037728}
-  - component: {fileID: 1970037727}
   m_Layer: 27
   m_Name: DamageWall (17)
   m_TagString: Untagged
@@ -45734,21 +45016,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &1970037727
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1970037725}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1970037728
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -46201,7 +45468,6 @@ GameObject:
   - component: {fileID: 1982317976}
   - component: {fileID: 1982317975}
   - component: {fileID: 1982317974}
-  - component: {fileID: 1982317973}
   m_Layer: 27
   m_Name: DamageWall (1)
   m_TagString: Untagged
@@ -46224,21 +45490,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1982317973
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1982317971}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &1982317974
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -46818,7 +46069,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
   damage: 1
-  damageInterval: 0
+  damageInterval: 0.5
   isActive: 1
 --- !u!64 &2006942945
 MeshCollider:
@@ -46978,12 +46229,27 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8028393199763076075, guid: f1b125c934d01c7408e40827dcf76dd5, type: 3}
   m_PrefabInstance: {fileID: 702344806}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 702344807}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cb2ff50fbae22448a0f6633cf480ffa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePad
+--- !u!114 &2011705236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 702344807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 1159414365}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
 --- !u!1 &2019851035
 GameObject:
   m_ObjectHideFlags: 0
@@ -47387,7 +46653,6 @@ GameObject:
   - component: {fileID: 2030418770}
   - component: {fileID: 2030418769}
   - component: {fileID: 2030418768}
-  - component: {fileID: 2030418767}
   m_Layer: 27
   m_Name: DamageWall (19)
   m_TagString: Untagged
@@ -47410,21 +46675,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &2030418767
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2030418765}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &2030418768
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -47714,7 +46964,6 @@ GameObject:
   - component: {fileID: 2040128876}
   - component: {fileID: 2040128875}
   - component: {fileID: 2040128874}
-  - component: {fileID: 2040128873}
   m_Layer: 27
   m_Name: DamageWall (3)
   m_TagString: Untagged
@@ -47737,21 +46986,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2040128873
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2040128871}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &2040128874
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -48245,7 +47479,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &2068285279
 Transform:
@@ -48358,7 +47592,6 @@ GameObject:
   - component: {fileID: 2072426270}
   - component: {fileID: 2072426269}
   - component: {fileID: 2072426268}
-  - component: {fileID: 2072426267}
   m_Layer: 27
   m_Name: DamageWall (2)
   m_TagString: Untagged
@@ -48381,21 +47614,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 236614384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2072426267
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2072426265}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &2072426268
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -48996,7 +48214,6 @@ GameObject:
   - component: {fileID: 2097329466}
   - component: {fileID: 2097329465}
   - component: {fileID: 2097329464}
-  - component: {fileID: 2097329463}
   m_Layer: 27
   m_Name: DamageWall (32)
   m_TagString: Untagged
@@ -49019,21 +48236,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 249522898}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &2097329463
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2097329461}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2bce2d592ad24f4a84bb4fa101bfbad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ContactDamage
-  damage: 0
-  damageInterval: 1
-  isActive: 1
 --- !u!54 &2097329464
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -49845,7 +49047,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &2133706928
 Transform:
@@ -49984,7 +49186,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 40, y: 5, z: 1}
+  m_Size: {x: 40, y: 5, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &2139667066
 Transform:
@@ -50248,6 +49450,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1894761195}
     m_Modifications:
+    - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 237058272609558768, guid: fcd03d40dae1bff45bc9a661bb6520ca, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

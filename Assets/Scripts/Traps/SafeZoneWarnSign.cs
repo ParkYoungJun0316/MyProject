@@ -15,9 +15,10 @@ using UnityEngine;
 /// 2. markerVisual에 표시할 마커 오브젝트 연결 — 표시될 때 해당 Transform 위치로 옮긴 뒤 활성화
 /// 3. warnParticle(선택)에 순간 파티클 연결 — 표시 시작 시 1회 재생 (주목 유도용)
 ///
-/// [동기화 방식 — DropWarnMarker와 동일 패턴]
-/// Host만 스케줄 코루틴을 돌며 표시/숨김을 로컬 적용 + StageNetworkState RPC로 Client에 전달.
-/// Client는 스케줄을 스스로 계산하지 않고 RPC 수신으로만 반응한다 — 순수 연출이라 예측 불필요.
+/// [동기화 방식 — 로컬 스케줄]
+/// Host/Client 모두 자기 머신에서 ScheduleLoop를 돌린다. 기준 시각은 ArrowTrap/DropTrap과
+/// 같은 PhaseStartServerTime(절대 ServerTime)이라, 늦게 켜져도 대기만 짧아지고 표시 시각은
+/// 같다. 순수 연출이라 RPC 없음 — 바닥 타일 색 등 "공유된 시계를 각자 그린다"와 동일.
 /// </summary>
 public class SafeZoneWarnSign : MonoBehaviour
 {
@@ -30,8 +31,6 @@ public class SafeZoneWarnSign : MonoBehaviour
         [Tooltip("이 사이클에서 안전한 위치 (바닥 타일 등의 Transform)")]
         public Transform safeSpot;
     }
-
-    public static SafeZoneWarnSign Instance { get; private set; }
 
     [Header("스케줄 (해당 사이클 ArrowTrap들의 fireAtSeconds와 같은 기준 시각으로 입력)")]
     [SerializeField] private SafeZoneCycle[] cycles = new SafeZoneCycle[0];
@@ -61,22 +60,12 @@ public class SafeZoneWarnSign : MonoBehaviour
 
     void Awake()
     {
-        Instance = this;
-        HideMarkerLocal();
-    }
-
-    void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
+        HideMarker();
     }
 
     // Stage SetActive(false → true) 사이클 시 자동 재시작 (TrapBase.OnEnable과 동일 원칙)
     void OnEnable()
     {
-        var nm = NetworkManager.Singleton;
-        // Client는 스스로 스케줄을 돌리지 않음 — Host가 보내는 RPC로만 표시/숨김 (순수 연출)
-        if (nm != null && nm.IsListening && !nm.IsServer) return;
-
         _scheduleCoroutine = StartCoroutine(ScheduleLoop());
     }
 
@@ -87,13 +76,21 @@ public class SafeZoneWarnSign : MonoBehaviour
             StopCoroutine(_scheduleCoroutine);
             _scheduleCoroutine = null;
         }
-        HideMarkerLocal();
+        HideMarker();
     }
 
     IEnumerator ScheduleLoop()
     {
-        var   nm = NetworkManager.Singleton;
+        var nm = NetworkManager.Singleton;
         float baseTime;
+
+        // PhaseManager.EnterPhase()는 objectsToEnable.SetActive(true) 다음에야
+        // MarkAndSyncPhase()를 찍는다. OnEnable에서 즉시 PhaseStartServerTime을 읽으면 Host가
+        // 직전 Phase(Boss 0-60)의 낡은 앵커를 잡아 fireAtSeconds 전 사이클을 IsPastEvent로
+        // skip한다. 한 프레임 양보하면 같은 EnterPhase의 MarkAndSyncPhase + StartStage가 끝난
+        // 뒤 새 앵커를 읽는다. Client는 NV가 이미 갱신된 뒤 EnterPhaseOnClient가 오므로
+        // 이 yield는 no-op에 가깝다.
+        yield return null;
 
         // ArrowTrap/DropTrap과 동일한 앵커 — PhaseStartServerTime 기준으로 Host/Client가
         // 같은 절대 시각을 기준점으로 쓴다 (StageNetworkState가 없는 씬은 로컬 시각 폴백).
@@ -119,24 +116,15 @@ public class SafeZoneWarnSign : MonoBehaviour
             float waitTime = Mathf.Max(0f, targetTime - now - warnLeadTime);
             yield return new WaitForSeconds(waitTime);
 
-            Vector3 pos = cycle.safeSpot.position;
-            ShowMarkerLocal(pos);
-            StageNetworkState.Instance?.SyncSafeZoneWarnClientRpc(pos);
+            ShowMarker(cycle.safeSpot.position);
 
             yield return new WaitForSeconds(Mathf.Max(0f, warnLeadTime + holdAfterFire));
 
-            HideMarkerLocal();
-            StageNetworkState.Instance?.SyncSafeZoneHideClientRpc();
+            HideMarker();
         }
     }
 
-    // ── 재생 진입점 (Host: 위 코루틴에서 직접 호출 / Client: StageNetworkState RPC 수신으로 호출) ──
-
-    public void PlayWarnFromNetwork(Vector3 position) => ShowMarkerLocal(position);
-
-    public void PlayHideFromNetwork() => HideMarkerLocal();
-
-    void ShowMarkerLocal(Vector3 position)
+    void ShowMarker(Vector3 position)
     {
         Vector3 raisedPosition = position + Vector3.up * markerHeightOffset;
 
@@ -152,7 +140,7 @@ public class SafeZoneWarnSign : MonoBehaviour
         }
     }
 
-    void HideMarkerLocal()
+    void HideMarker()
     {
         if (markerVisual != null) markerVisual.SetActive(false);
     }
@@ -163,9 +151,9 @@ public class SafeZoneWarnSign : MonoBehaviour
     void TestShowFirst()
     {
         if (cycles == null || cycles.Length == 0 || cycles[0].safeSpot == null) return;
-        ShowMarkerLocal(cycles[0].safeSpot.position);
+        ShowMarker(cycles[0].safeSpot.position);
     }
 
     [ContextMenu("테스트: 숨김")]
-    void TestHide() => HideMarkerLocal();
+    void TestHide() => HideMarker();
 }

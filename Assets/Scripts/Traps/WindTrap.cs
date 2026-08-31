@@ -96,15 +96,18 @@ public class WindTrap : TrapBase
     public bool IsWindActive => _windActive;
 
     /// <summary>
-    /// MouthWindAnimator가 Awake에서 설정.
-    /// 이 시간만큼 바람 발동을 지연시켜 입 오므림 애니메이션과 동기화.
+    /// MouthWindAnimator / WindWarnSign이 Awake에서 설정.
+    /// 이 시간만큼 바람 발동을 지연시켜 입 오므림·경고 표시와 동기화.
+    /// 여러 컴포넌트가 호출하면 더 긴 쪽을 유지한다(경고 lead가 입 클립보다 길면 바람을 그만큼 더 미룸).
     /// </summary>
-    public void SetWindChargeTime(float t) => _windChargeTime = Mathf.Max(0f, t);
+    public float WindChargeTime => _windChargeTime;
 
-    /// <summary>바람 발동 _windChargeTime 전에 호출. MouthWindAnimator가 구독.</summary>
+    public void SetWindChargeTime(float t) => _windChargeTime = Mathf.Max(_windChargeTime, Mathf.Max(0f, t));
+
+    /// <summary>바람 발동 _windChargeTime 전에 호출. MouthWindAnimator / WindWarnSign이 구독.</summary>
     public event System.Action OnWindCharge;
 
-    /// <summary>바람 효과 종료 시 호출. MouthWindAnimator가 구독.</summary>
+    /// <summary>바람 효과 종료 시 호출. MouthWindAnimator / WindWarnSign이 구독.</summary>
     public event System.Action OnWindEnd;
 
     /// <summary>
@@ -116,7 +119,7 @@ public class WindTrap : TrapBase
 
     // ── Mouth 연출(Pull/Push Open/Hold/Close) 네트워크 동기화 (stable ID 레지스트리) ──
     // WindTrap의 바람 판정(WindCycle/FixedUpdate 힘 적용)은 Owner 물리 권한이라 그대로 각
-    // 피어가 로컬로 실행한다(안 건드림). 오직 MouthWindAnimator의 연출 트리거만 Host 로컬
+    // 피어가 로컬로 실행한다(안 건드림). 오직 MouthWindAnimator / WindWarnSign 연출만 Host 로컬
     // 이벤트 + ClientRpc로 통일한다 — 각 피어가 자기 로컬 OnWindCharge/OnWindEnd로 직접
     // 재생하면 Client의 ServerTime 추정 오차·백그라운드 스로틀링에 따라 애니메이션 타이밍이
     // Host와 어긋난다 (ArrowTrap Mouth 동기화와 동일 이유 — 2026-07-27).
@@ -154,18 +157,22 @@ public class WindTrap : TrapBase
         return path;
     }
 
-    /// <summary>StageNetworkState.SyncWindChargeClientRpc 수신 시 Client에서 호출. Mouth 오므림 연출만 재생.</summary>
+    /// <summary>StageNetworkState.SyncWindChargeClientRpc 수신 시 Client에서 호출. Mouth 오므림 + 경고 사인 재생.</summary>
     public static void PlayChargeById(int id)
     {
         _registry.TryGetValue(id, out WindTrap t);
-        t?.GetComponent<MouthWindAnimator>()?.PlayChargeFromNetwork();
+        if (t == null) return;
+        t.GetComponent<MouthWindAnimator>()?.PlayChargeFromNetwork();
+        t.GetComponent<WindWarnSign>()?.PlayWarnFromNetwork();
     }
 
-    /// <summary>StageNetworkState.SyncWindEndClientRpc 수신 시 Client에서 호출. Mouth 복귀 연출만 재생.</summary>
+    /// <summary>StageNetworkState.SyncWindEndClientRpc 수신 시 Client에서 호출. Mouth 복귀 + 경고 사인 숨김.</summary>
     public static void PlayEndById(int id)
     {
         _registry.TryGetValue(id, out WindTrap t);
-        t?.GetComponent<MouthWindAnimator>()?.PlayEndFromNetwork();
+        if (t == null) return;
+        t.GetComponent<MouthWindAnimator>()?.PlayEndFromNetwork();
+        t.GetComponent<WindWarnSign>()?.PlayHideFromNetwork();
     }
 
     void RelayWindChargeToClients()

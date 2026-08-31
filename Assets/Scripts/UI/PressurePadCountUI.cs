@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 압력 발판 위 "현재/필요" 인원을 World Space 텍스트로 표시.
-/// requiredCount > 1 인 발판에만 활성화.
+/// 컴포넌트가 붙은 발판은 인원·스케일된 requiredCount와 무관하게 항상 표시.
 ///
 /// [latch 동작]
 ///  - latchOnOpen = false : 실시간 CurrentCount / requiredCount 표시
@@ -72,31 +72,21 @@ public class PressurePadCountUI : MonoBehaviour
     /// </summary>
     public void Refresh()
     {
-        bool shouldShow = _pad.requiredCount > 1;
-
-        if (shouldShow && _text == null)
+        if (_text == null)
             BuildText();
 
-        if (_text != null)
-            _text.gameObject.SetActive(shouldShow);
-
-        if (shouldShow)
-            RefreshText();
+        _text.gameObject.SetActive(true);
+        RefreshText();
     }
 
     // ── 내부 ────────────────────────────────────────────────────
 
     void OnCountChanged(int current, int required)
     {
-        bool shouldShow = required > 1;
-
-        if (shouldShow && _text == null)
+        if (_text == null)
             BuildText();
 
-        if (_text == null) return;
-
-        _text.gameObject.SetActive(shouldShow);
-        if (!shouldShow) return;
+        _text.gameObject.SetActive(true);
 
         if (door != null && door.latchOnOpen && door.IsOpen)
             SetText(required, required);
