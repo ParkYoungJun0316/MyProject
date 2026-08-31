@@ -1,24 +1,21 @@
-using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// 응원 시스템 핵심 로직 (Host 전용).
-/// 씬 내 NetworkObject GameObject에 부착.
-/// M.Stage1 / T.Stage1 씬에 각각 배치.
+/// 씬 내 NetworkObject GameObject에 부착. M.Stage1/T.Stage1뿐 아니라 Tutorial 씬에도 배치한다 —
+/// TeamCheerWord Host 설정(TrySetTeamCheerWord)이 인스턴스 메서드라 Tutorial 게이트 통과 전
+/// Host가 값을 정하려면 이 씬에도 인스턴스가 있어야 한다(Phase D). 게이트 완료 시점에
+/// TutorialNetworkManager가 그때의 TeamCheerWord를 GameSession.SetSessionTeamCheerWord로 옮기고,
+/// 이후 스테이지의 CheerService.OnNetworkSpawn이 그 세션값을 자기 NV에 복원한다(CheerName과 동일 패턴).
 ///
 /// [역할]
-/// - SubmitCheerServerRpc 수신 → 응원 표 집계
-/// - 타임아웃(N초 내 미달) → 표 초기화
-/// - 수혜자 개인 쿨타임 관리
-/// - 조건 충족 시 버프 발동 → NetworkPlayerSetup.ApplyCheerBuff() — 버프 종류는 수혜자
-///   개인이 선택한 값(NetworkPlayerSetup.SelectedBuffType)을 따른다 (스테이지 고정 아님)
-/// - UI 동기화 → ClientRpc (OnVoteChanged, OnBuffActivated 등)
-///
-/// [배치]
-/// 빈 GameObject → NetworkObject + CheerService 추가.
-/// 씬 시작 시 자동으로 동작. 사망 씬 리로드 시 자동 초기화됨.
+/// - SubmitSelfCheerServerRpc → 즉시 개인 버프/쿨 (투표 없음)
+/// - SubmitTeamCheerServerRpc → 팀 공용 키워드 투표·타임아웃·전원 Heal
+/// - TeamCheerWord NetworkVariable (Host write, Everyone read)
+/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도)
 ///
 /// [CheerName ↔ colorIndex]
 /// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=dan(Yellow)
@@ -27,74 +24,83 @@ public class CheerService : NetworkBehaviour
 {
     public static CheerService Instance { get; private set; }
 
-    public enum CheerSource { Key, Voice }
-
     // ── Inspector ─────────────────────────────────────────────────
 
     [Header("스테이지 기본 버프 (스폰 시 초기 선택값 — 이후 플레이어가 자유 전환 가능, 고정 아님)")]
     [SerializeField] PlayerBuffSystem.BuffType stageBuffType = PlayerBuffSystem.BuffType.Shield;
 
-    [Header("버프 파라미터")]
-    // 버프 지속시간은 더 이상 스테이지별 필드가 아니라 PlayerBuffSystem.buffSettings[type].duration
-    // 소속(BuffType 기준 고정) — NetworkPlayerSetup.ApplyCheerBuff가 소유. 여기서 별도로 갖지 않는다
-    // (2026-08-28 자유 선택제 전환 후 "같은 버프인데 스테이지마다 지속시간이 다른" 불일치 제거).
-
+    [Header("개인 버프")]
     [Tooltip("버프 종료 후 수혜자 쿨타임(초)")]
     [SerializeField] float cheerCooldownSeconds = 15f;
 
-    [Tooltip("첫 표 이후 전원 응원 타임아웃(초). 미달 시 표 전부 초기화.")]
-    [SerializeField] float cheerTimeoutSeconds = 10f;
+    [Header("팀 버프")]
+    [Tooltip("팀 버프 발동 후 팀 공용 쿨타임(초). 값은 추후 튜닝.")]
+    [SerializeField] float teamCheerCooldownSeconds = 15f;
 
-    [Tooltip("숫자키(1~4) 응원 연속 입력 최소 간격(초)")]
+    [Tooltip("팀 첫 인식 후 전원 미달 시 표 초기화(초).")]
+    [SerializeField] float teamCheerTimeoutSeconds = 10f;
+
+    [Tooltip("팀 버프 체력회복량 (heart 단위)")]
+    [SerializeField] int teamHealAmount = 2;
+
+    [Tooltip("숫자키 응원 연속 입력 최소 간격(초)")]
     [SerializeField] float chatRateLimitSeconds = 0.5f;
 
     // ── CheerName 매핑 ────────────────────────────────────────────
 
-    // PlayerColorUtil.DefaultCheerNames 및 CheerLexiconBuilder 와 순서 동일하게 유지.
-    // 0=berry(Blue) 1=guma(Purple) 2=sook(Green) 3=dan(Yellow)
     static readonly string[] CheerNames = { "berry", "guma", "sook", "dan" };
 
-    // ── Host 내부 상태 ─────────────────────────────────────────────
+    readonly NetworkVariable<FixedString32Bytes> _teamCheerWord = new(
+        new FixedString32Bytes(GameSession.DefaultTeamCheerWord),
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
 
-    // targetColorIndex → 해당 수혜자를 응원 중인 clientId 집합
-    readonly Dictionary<int, HashSet<ulong>> _votes = new();
+    // ── Host 내부 상태 (개인) ─────────────────────────────────────
 
-    // targetColorIndex → 첫 표 수신 serverTime (타임아웃 계산용)
-    readonly Dictionary<int, double> _timeoutStart = new();
-
-    // clientId → 현재 응원 중인 targetColorIndex (-1 = 없음)
-    readonly Dictionary<ulong, int> _cheererTarget = new();
-
-    // targetColorIndex → 쿨타임 종료 serverTime
     readonly Dictionary<int, double> _cooldownEnd = new();
-
-    // targetColorIndex → 버프 종료 serverTime
     readonly Dictionary<int, double> _buffEnd = new();
-
-    // clientId → 채팅 rate limit 종료 serverTime
     readonly Dictionary<ulong, double> _chatRateEnd = new();
+
+    // ── Host 내부 상태 (팀) ───────────────────────────────────────
+
+    readonly HashSet<ulong> _teamVotes = new();
+    double _teamTimeoutStart = -1d;
+    double _teamCooldownEnd;
 
     // ── 이벤트 (로컬 — UI 구독용) ─────────────────────────────────
 
-    /// <summary>(targetColorIndex, 현재표수, 필요표수)</summary>
-    public event System.Action<int, int, int> OnVoteChanged;
-
-    /// <summary>버프 발동. (targetColorIndex)</summary>
+    /// <summary>개인 버프 발동. (colorIndex)</summary>
     public event System.Action<int> OnBuffActivated;
 
-    /// <summary>표 초기화. (targetColorIndex)</summary>
-    public event System.Action<int> OnVoteReset;
-
-    /// <summary>쿨타임 시작. (targetColorIndex, 쿨타임초)</summary>
+    /// <summary>개인 쿨타임 시작. (colorIndex, 쿨타임초)</summary>
     public event System.Action<int, float> OnCooldownStart;
 
-    /// <summary>응원자 색상 목록 변경. (targetColorIndex, 응원자 colorIndex 배열)</summary>
+    /// <summary>구 cross-target UI가 아직 구독 중. 신규 경로는 발행하지 않음 (Phase C에서 제거).</summary>
+#pragma warning disable CS0067
+    public event System.Action<int, int, int> OnVoteChanged;
+    public event System.Action<int> OnVoteReset;
     public event System.Action<int, int[]> OnCheerersChanged;
+#pragma warning restore CS0067
 
-    // ── 공개 프로퍼티 (UI에서 타이머 계산용) ──────────────────────
+    /// <summary>팀 버프 발동 (전원 Heal 직후). Phase C 배너 구독용.</summary>
+    public event System.Action OnTeamBuffActivated;
 
-    public float CooldownDuration                => cheerCooldownSeconds;
+    /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열)</summary>
+    public event System.Action<int, int, int[]> OnTeamVoteChanged;
+
+    // ── 공개 프로퍼티 ─────────────────────────────────────────────
+
+    public float CooldownDuration => cheerCooldownSeconds;
     public PlayerBuffSystem.BuffType StageBuffType => stageBuffType;
+
+    public string TeamCheerWord
+    {
+        get
+        {
+            string w = _teamCheerWord.Value.ToString();
+            return string.IsNullOrEmpty(w) ? GameSession.DefaultTeamCheerWord : w;
+        }
+    }
 
     // ── 라이프사이클 ───────────────────────────────────────────────
 
@@ -104,67 +110,126 @@ public class CheerService : NetworkBehaviour
         Instance = this;
     }
 
+    public override void OnNetworkSpawn()
+    {
+        _teamCheerWord.OnValueChanged += OnTeamCheerWordChanged;
+
+        if (IsServer && GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
+        {
+            string sessionWord = GameSession.Instance.GetSessionTeamCheerWord();
+            if (!string.IsNullOrEmpty(sessionWord))
+                _teamCheerWord.Value = new FixedString32Bytes(sessionWord);
+        }
+
+        PlayerCheerNameSync.RebuildOwnerLocalGrammar();
+    }
+
     public override void OnNetworkDespawn()
     {
+        _teamCheerWord.OnValueChanged -= OnTeamCheerWordChanged;
         if (Instance == this) Instance = null;
     }
+
+    void OnTeamCheerWordChanged(FixedString32Bytes previous, FixedString32Bytes current)
+        => PlayerCheerNameSync.RebuildOwnerLocalGrammar();
 
     void Update()
     {
         if (!IsServer) return;
-        // NetworkManager 로컬 참조 사용: Singleton은 씬 전환 중 null이 될 수 있음
         var nm = NetworkManager;
         if (nm == null || !nm.IsListening) return;
         double now = nm.ServerTime.Time;
-        CheckTimeouts(now);
+        CheckTeamTimeout(now);
         CheckBuffEnd(now);
+    }
+
+    // ── Host-only TeamCheerWord ───────────────────────────────────
+
+    /// <summary>
+    /// Host 클라이언트 UI가 IsServer 가드로 직접 호출. RPC 없음.
+    /// 실패 사유: "format" / "reserved" / "blocked" / "taken" / "not_server".
+    /// </summary>
+    public bool TrySetTeamCheerWord(string candidate, out string reason)
+    {
+        reason = "";
+        if (!IsServer)
+        {
+            reason = "not_server";
+            return false;
+        }
+
+        string lower = candidate == null ? "" : candidate.Trim().ToLowerInvariant();
+        if (!CheerNameValidator.IsValidFormat(lower, out reason))
+            return false;
+        if (CheerNameValidator.ContainsBlockedWord(lower))
+        {
+            reason = "blocked";
+            return false;
+        }
+
+        foreach (var (_, name) in PlayerCheerNameSync.GetAllEffectiveNames())
+        {
+            if (name != lower) continue;
+            reason = "taken";
+            return false;
+        }
+
+        if (TeamCheerWord == lower)
+            return true;
+
+        ResetTeamVotes();
+        _teamCheerWord.Value = new FixedString32Bytes(lower);
+        return true;
+    }
+
+    public bool MatchesTeamCheerWord(string lower)
+    {
+        if (string.IsNullOrEmpty(lower)) return false;
+        return TeamCheerWord == lower;
     }
 
     // ── 서버 RPC ──────────────────────────────────────────────────
 
-    /// <summary>
-    /// 클라이언트가 응원을 신고. InvokePermission.Everyone 으로 어느 클라이언트에서나 호출 가능.
-    /// 파라미터: targetColorIndex (0~3), isVoice (음성=true, 채팅=false).
-    /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SubmitCheerServerRpc(int targetColorIndex, bool isVoice, RpcParams rpcParams = default)
+    public void SubmitSelfCheerServerRpc(bool isVoice, RpcParams rpcParams = default)
     {
         ulong cheererId = rpcParams.Receive.SenderClientId;
-        double now = NetworkManager.Singleton.ServerTime.Time;
+        double now = NetworkManager.ServerTime.Time;
 
-        if (!ValidateCheer(targetColorIndex, cheererId, isVoice, now)) return;
+        if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor)) return;
+        int myIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, myColor);
+        if (myIdx < 0) return;
+        if (!ValidateSelfCheer(myIdx, cheererId, isVoice, now)) return;
 
-        // 타겟 변경 처리 (이전 타겟 표 제거)
-        HandleTargetSwitch(cheererId, targetColorIndex, now);
-
-        // 표 추가
-        if (!_votes.ContainsKey(targetColorIndex))
-            _votes[targetColorIndex] = new HashSet<ulong>();
-        _votes[targetColorIndex].Add(cheererId);
-
-        // 첫 표: 타임아웃 타이머 시작
-        if (!_timeoutStart.ContainsKey(targetColorIndex))
-            _timeoutStart[targetColorIndex] = now;
-
-        int currentVotes = _votes[targetColorIndex].Count;
-        int required = GetRequiredVotes();
-
-        BroadcastVoteChangedClientRpc(targetColorIndex, currentVotes, required);
-        BroadcastCheerersClientRpc(targetColorIndex, GetCheererColorIndices(targetColorIndex));
-
-        // 버프 발동 — 쿨타임 중이면 발동만 건너뜀 (표는 이미 쌓임)
-        bool onCooldown = _cooldownEnd.TryGetValue(targetColorIndex, out double cd) && now < cd;
-        if (!onCooldown && currentVotes >= required)
-            ApplyBuff(targetColorIndex, now);
+        ApplyBuff(myIdx, now);
     }
 
-    // ── 버프 적용 (Host 전용) ──────────────────────────────────────
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SubmitTeamCheerServerRpc(bool isVoice, RpcParams rpcParams = default)
+    {
+        ulong cheererId = rpcParams.Receive.SenderClientId;
+        double now = NetworkManager.ServerTime.Time;
+
+        if (!ValidateTeamCheer(cheererId, isVoice, now)) return;
+
+        bool added = _teamVotes.Add(cheererId);
+        if (!added) return;
+
+        if (_teamTimeoutStart < 0d)
+            _teamTimeoutStart = now;
+
+        int current = _teamVotes.Count;
+        int required = GetRequiredTeamVotes();
+        BroadcastTeamVoteChangedClientRpc(current, required, GetTeamVoterColorIndices());
+
+        if (current >= required)
+            ApplyTeamBuff(now);
+    }
+
+    // ── 개인 버프 적용 (Host 전용) ─────────────────────────────────
 
     void ApplyBuff(int targetColorIndex, double now)
     {
-        // 실제 지속시간은 수혜자의 버프 종류(BuffType) 소속 — NetworkPlayerSetup.ApplyCheerBuff가
-        // PlayerBuffSystem.buffSettings[type].duration을 읽어 적용하고 그 값을 돌려준다.
-        // 매칭되는 플레이어를 못 찾는 비정상 상황(색 조회 실패 등)에 대한 안전 폴백만 5초로 둔다.
         float appliedDuration = 5f;
 
         var players = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
@@ -179,8 +244,6 @@ public class CheerService : NetworkBehaviour
         }
 
         _buffEnd[targetColorIndex] = now + appliedDuration;
-
-        ResetVotes(targetColorIndex);
         BroadcastBuffActivatedClientRpc(targetColorIndex);
     }
 
@@ -190,38 +253,41 @@ public class CheerService : NetworkBehaviour
     /// </summary>
     public bool IsBuffActive(int colorIndex) => _buffEnd.ContainsKey(colorIndex);
 
-    // ── 표 초기화 (Host 전용) ─────────────────────────────────────
+    // ── 팀 버프 적용 (Host 전용) ───────────────────────────────────
 
-    void ResetVotes(int targetColorIndex)
+    void ApplyTeamBuff(double now)
     {
-        if (_votes.TryGetValue(targetColorIndex, out var voters))
+        var setups = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
+        foreach (var setup in setups)
         {
-            foreach (ulong id in voters)
-            {
-                if (_cheererTarget.TryGetValue(id, out int t) && t == targetColorIndex)
-                    _cheererTarget[id] = -1;
-            }
-            _votes.Remove(targetColorIndex);
+            if (!PlayerSpawnCoordinator.TryGetColor(setup.OwnerClientId, out var color)) continue;
+            if (!PlayerSpawnCoordinator.IsColorInSession(color)) continue;
+            var player = setup.GetComponent<Player>();
+            if (player == null) continue;
+            NetworkDamageUtil.ApplyHeal(player, teamHealAmount);
         }
-        _timeoutStart.Remove(targetColorIndex);
-        BroadcastVoteResetClientRpc(targetColorIndex);
+
+        _teamCooldownEnd = now + teamCheerCooldownSeconds;
+        ResetTeamVotes();
+        BroadcastTeamBuffActivatedClientRpc();
+    }
+
+    void ResetTeamVotes()
+    {
+        _teamVotes.Clear();
+        _teamTimeoutStart = -1d;
+        if (IsSpawned)
+            BroadcastTeamVoteChangedClientRpc(0, GetRequiredTeamVotes(), System.Array.Empty<int>());
     }
 
     // ── 주기 체크 ─────────────────────────────────────────────────
 
-    void CheckTimeouts(double now)
+    void CheckTeamTimeout(double now)
     {
-        var timedOut = new List<int>();
-        foreach (var kv in _timeoutStart)
-        {
-            int target = kv.Key;
-            if (now - kv.Value < cheerTimeoutSeconds) continue;
-            bool buffActive = _buffEnd.ContainsKey(target);
-            if (buffActive) continue;
-            int cnt = _votes.TryGetValue(target, out var v) ? v.Count : 0;
-            if (cnt < GetRequiredVotes()) timedOut.Add(target);
-        }
-        foreach (int t in timedOut) ResetVotes(t);
+        if (_teamVotes.Count == 0 || _teamTimeoutStart < 0d) return;
+        if (now - _teamTimeoutStart < teamCheerTimeoutSeconds) return;
+        if (_teamVotes.Count >= GetRequiredTeamVotes()) return;
+        ResetTeamVotes();
     }
 
     void CheckBuffEnd(double now)
@@ -240,96 +306,44 @@ public class CheerService : NetworkBehaviour
 
     // ── 유효성 검사 ───────────────────────────────────────────────
 
-    bool ValidateCheer(int targetColorIndex, ulong cheererId, bool isVoice, double now)
+    bool ValidateSelfCheer(int colorIndex, ulong cheererId, bool isVoice, double now)
     {
-        if (targetColorIndex < 0 || targetColorIndex >= CheerNames.Length) return false;
+        if (_buffEnd.ContainsKey(colorIndex)) return false;
+        if (_cooldownEnd.TryGetValue(colorIndex, out double cd) && now < cd) return false;
+        return PassRateLimit(cheererId, isVoice, now);
+    }
 
-        // 이번 세션에 실제로 접속 중인 색만 타겟 가능 — 인원수(<4)만큼만 색이 쓰이므로
-        // 미사용 슬롯(예: 3인 세션의 Yellow/dan)은 음성/채팅이 잘못 인식해도 표에 반영되지 않는다.
-        if (!PlayerSpawnCoordinator.IsColorInSession(PlayerColorUtil.ColorOrder[targetColorIndex])) return false;
+    bool ValidateTeamCheer(ulong cheererId, bool isVoice, double now)
+    {
+        if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out _)) return false;
+        if (now < _teamCooldownEnd) return false;
+        if (_teamVotes.Contains(cheererId)) return false;
+        return PassRateLimit(cheererId, isVoice, now);
+    }
 
-        // 자기 자신 응원 불가 (단, 1인 세션에서는 허용).
-        // 색 조회(TryGetColor) 실패 시 자기 응원 여부를 확정할 수 없으므로 안전하게 거부한다
-        // (fail-closed — 조회 실패를 "자기 응원 아님"으로 취급해 통과시키면 안 됨).
-        if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out var myColor)) return false;
-
-        int myIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, myColor);
-        if (myIdx == targetColorIndex)
-        {
-            // Tutorial: 실제 응원 표 집계가 아니라 "말해보기" 인식 테스트이므로 인원수와 무관하게
-            // 자기 응원(자기 이름 부르기)을 항상 허용한다 — 구 Lobby 시절 동작과 동일
-            // (CheerAndTutorialDesign.md §5.5, 실제 SubmitCheerServerRpc 제출 자체가 테스트).
-            bool isTutorial = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Tutorial");
-
-            // 실제 게임(M/T 스테이지)에서는 1인 세션(파티 사이즈 1)일 때만 자기 응원 허용 (§2.6).
-            bool isSolo = GameSession.Instance != null && GameSession.Instance.ActivePlayerCount == 1;
-
-            if (!isTutorial && !isSolo) return false;
-        }
-
-        // 수혜자 버프 중 → 표 차단
-        if (_buffEnd.ContainsKey(targetColorIndex)) return false;
-
-        // 숫자키 rate limit
-        if (!isVoice)
-        {
-            if (_chatRateEnd.TryGetValue(cheererId, out double rateEnd) && now < rateEnd) return false;
-            _chatRateEnd[cheererId] = now + chatRateLimitSeconds;
-        }
-
+    bool PassRateLimit(ulong cheererId, bool isVoice, double now)
+    {
+        if (isVoice) return true;
+        if (_chatRateEnd.TryGetValue(cheererId, out double rateEnd) && now < rateEnd) return false;
+        _chatRateEnd[cheererId] = now + chatRateLimitSeconds;
         return true;
     }
 
-    // ── 타겟 변경 처리 ────────────────────────────────────────────
-
-    void HandleTargetSwitch(ulong cheererId, int newTarget, double now)
+    int GetRequiredTeamVotes()
     {
-        int prevTarget = _cheererTarget.TryGetValue(cheererId, out int pt) ? pt : -1;
-        if (prevTarget == newTarget) return;
-
-        // 이전 타겟 표 제거
-        if (prevTarget >= 0 && _votes.TryGetValue(prevTarget, out var prevVotes))
+        int n = GameSession.Instance != null ? GameSession.Instance.ActivePlayerCount : 0;
+        if (n <= 0)
         {
-            prevVotes.Remove(cheererId);
-            int remainCnt = prevVotes.Count;
-            if (remainCnt == 0)
-            {
-                _votes.Remove(prevTarget);
-                _timeoutStart.Remove(prevTarget);
-            }
-            BroadcastVoteChangedClientRpc(prevTarget, remainCnt, GetRequiredVotes());
-            BroadcastCheerersClientRpc(prevTarget, GetCheererColorIndices(prevTarget));
+            var nm = NetworkManager;
+            n = nm != null ? nm.ConnectedClientsIds.Count : 1;
         }
-
-        _cheererTarget[cheererId] = newTarget;
+        return Mathf.Max(1, n);
     }
 
-    // ── 헬퍼 ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// 필요 응원 수 = max(1, 실제 참여 인원-1). NetworkManager 연결 수가 아니라
-    /// GameSession.ActivePlayerCount(이번 판 참가 인원)를 기준으로 삼는다 — 관전/유령 연결 등으로
-    /// ConnectedClientsIds.Count가 실제 참여 인원과 달라지면 필요 표수가 부풀려져 버프가
-    /// 영원히 발동하지 않는 문제가 있었다(CheerAndTutorialDesign.md §2.1과 소스 일치).
-    /// </summary>
-    int GetRequiredVotes()
+    int[] GetTeamVoterColorIndices()
     {
-        if (GameSession.Instance != null && GameSession.Instance.ActivePlayerCount > 0)
-            return Mathf.Max(1, GameSession.Instance.ActivePlayerCount - 1);
-
-        if (NetworkManager.Singleton == null) return 1;
-        int active = NetworkManager.Singleton.ConnectedClientsIds.Count;
-        return Mathf.Max(1, active - 1);
-    }
-
-    /// <summary>현재 해당 타겟을 응원 중인 플레이어들의 colorIndex 배열을 반환.</summary>
-    int[] GetCheererColorIndices(int targetColorIndex)
-    {
-        if (!_votes.TryGetValue(targetColorIndex, out var voters))
-            return System.Array.Empty<int>();
-
-        var result = new List<int>(voters.Count);
-        foreach (ulong id in voters)
+        var result = new List<int>(_teamVotes.Count);
+        foreach (ulong id in _teamVotes)
         {
             if (!PlayerSpawnCoordinator.TryGetColor(id, out var color)) continue;
             int idx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
@@ -341,36 +355,26 @@ public class CheerService : NetworkBehaviour
     // ── ClientRpc (UI 동기화) ──────────────────────────────────────
 
     [ClientRpc]
-    void BroadcastVoteChangedClientRpc(int targetColorIndex, int current, int required)
-        => OnVoteChanged?.Invoke(targetColorIndex, current, required);
-
-    [ClientRpc]
-    void BroadcastCheerersClientRpc(int targetColorIndex, int[] cheererColorIndices)
-        => OnCheerersChanged?.Invoke(targetColorIndex, cheererColorIndices);
-
-    [ClientRpc]
     void BroadcastBuffActivatedClientRpc(int targetColorIndex)
         => OnBuffActivated?.Invoke(targetColorIndex);
-
-    [ClientRpc]
-    void BroadcastVoteResetClientRpc(int targetColorIndex)
-        => OnVoteReset?.Invoke(targetColorIndex);
 
     [ClientRpc]
     void BroadcastCooldownStartClientRpc(int targetColorIndex, float seconds)
         => OnCooldownStart?.Invoke(targetColorIndex, seconds);
 
-    // ── 공개 유틸 (CheerChatInput / CheerProgressUI 사용) ─────────
+    [ClientRpc]
+    void BroadcastTeamBuffActivatedClientRpc()
+        => OnTeamBuffActivated?.Invoke();
+
+    [ClientRpc]
+    void BroadcastTeamVoteChangedClientRpc(int current, int required, int[] voterColorIndices)
+        => OnTeamVoteChanged?.Invoke(current, required, voterColorIndices ?? System.Array.Empty<int>());
+
+    // ── 공개 유틸 (이름 ↔ colorIndex) ─────────────────────────────
 
     /// <summary>
-    /// 이름 → colorIndex. 우선순위: ①GameSession 확정 세션 이름(게이트 통과 후, §6B.7 P5)
-    /// → ②PlayerCheerNameSync 실시간 값(게이트 통과 전 Tutorial에서도 존재, §6B.2) → ③정적 기본값.
-    /// 미매칭 시 -1.
-    ///
-    /// [②가 필요한 이유] Tutorial 게이트 통과 전엔 GameSession._sessionCheerNames가 아직 null이라
-    /// ①이 항상 실패한다. 이때 커스텀 CheerName으로 응원(zone 3 체험 등)을 외쳐도 grammar는 인식하지만
-    /// (PlayerCheerNameSync가 이미 로컬 grammar를 실시간 갱신함) 이 함수가 -1을 돌려주면 "인식됐으나
-    /// 불일치"로 조용히 씹힌다 — NetworkDesign.md §6B.7 다음 에이전트 시작점 3번 갭.
+    /// 이름 → colorIndex. 우선순위: ①GameSession 확정 세션 이름(게이트 통과 후)
+    /// → ②PlayerCheerNameSync 실시간 값(게이트 전) → ③정적 기본값. 미매칭 시 -1.
     /// </summary>
     public static int GetColorIndex(string cheerName)
     {
@@ -392,14 +396,7 @@ public class CheerService : NetworkBehaviour
         return System.Array.IndexOf(CheerNames, lower);
     }
 
-    /// <summary>colorIndex → CheerName. ①GameSession 확정 세션 이름(게이트 통과 후) → ②PlayerCheerNameSync
-    /// 실시간 값(게이트 전) → ③정적 기본값. 범위 밖이면 빈 문자열. 우선순위 근거는 <see cref="GetColorIndex"/> 참고.
-    ///
-    /// [왜 GameSession.HasSessionCheerNames로 먼저 분기하나] GameSession.GetSessionCheerName은
-    /// 세션 미확정(null) 상태에서도 자체적으로 PlayerColorUtil.DefaultCheerNames로 폴백해 항상
-    /// 비어있지 않은 값을 돌려준다 — 그래서 "비어있으면 다음 우선순위로" 방식으로는 게이트 전 커스텀
-    /// 이름을 절대 못 본다(항상 ①에서 기본값으로 조용히 성공해버림). 그래서 값 자체가 아니라
-    /// "세션이 확정됐는지"로 먼저 분기해야 한다.</summary>
+    /// <summary>colorIndex → CheerName. ①세션 확정값 → ②실시간 PlayerCheerNameSync → ③정적 기본값.</summary>
     public static string GetCheerName(int colorIndex)
     {
         if (GameSession.Instance != null && GameSession.Instance.HasSessionCheerNames)
@@ -409,21 +406,26 @@ public class CheerService : NetworkBehaviour
         {
             if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color) &&
                 PlayerColorUtil.ColorTypeToIndex(color) == colorIndex)
-                return name; // 이미 GetAllEffectiveNames 안에서 커스텀/기본값까지 해석된 값
+                return name;
         }
 
         if (colorIndex < 0 || colorIndex >= CheerNames.Length) return string.Empty;
         return CheerNames[colorIndex];
     }
 
-    // ── 에디터 테스트 ──────────────────────────────────────────────
-
 #if UNITY_EDITOR
-    [ContextMenu("테스트: berry(0) 응원 강제 발동 (Host 전용)")]
-    void Debug_ForceCheerBerry()
+    [ContextMenu("테스트: 자기 버프 강제 발동 color0 (Host 전용)")]
+    void Debug_ForceSelfBuff()
     {
         if (!IsServer) { Debug.LogWarning("Host 전용"); return; }
-        ApplyBuff(0, NetworkManager.Singleton.ServerTime.Time);
+        ApplyBuff(0, NetworkManager.ServerTime.Time);
+    }
+
+    [ContextMenu("테스트: 팀 버프 강제 발동 (Host 전용)")]
+    void Debug_ForceTeamBuff()
+    {
+        if (!IsServer) { Debug.LogWarning("Host 전용"); return; }
+        ApplyTeamBuff(NetworkManager.ServerTime.Time);
     }
 #endif
 }

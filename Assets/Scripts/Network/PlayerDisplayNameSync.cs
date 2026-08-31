@@ -41,16 +41,35 @@ public class PlayerDisplayNameSync : NetworkBehaviour
     /// <summary>현재 보고된 표시 이름 (빈 문자열 = 아직 보고 전).</summary>
     public string DisplayName => _displayName.Value.ToString();
 
+    /// <summary>아무 플레이어의 DisplayName NV가 바뀌면 전원 로컬에서 발행. TeamStatus 즉시 반영용.</summary>
+    public static event System.Action OnAnyDisplayNameChanged;
+
     /// <summary>현재 보고된 Dissonance VoiceId(LocalPlayerName) (빈 문자열 = 아직 보고 전/실패).</summary>
     public string VoiceId => _voiceId.Value.ToString();
 
     public override void OnNetworkSpawn()
     {
+        _displayName.OnValueChanged += HandleDisplayNameChanged;
+
         if (IsOwner)
         {
             ReportDisplayNameServerRpc(new FixedString64Bytes(GetLocalDisplayName()));
             StartCoroutine(ReportVoiceIdRoutine());
         }
+        else if (!string.IsNullOrEmpty(DisplayName))
+        {
+            OnAnyDisplayNameChanged?.Invoke();
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        _displayName.OnValueChanged -= HandleDisplayNameChanged;
+    }
+
+    void HandleDisplayNameChanged(FixedString64Bytes previous, FixedString64Bytes current)
+    {
+        OnAnyDisplayNameChanged?.Invoke();
     }
 
     /// <summary>

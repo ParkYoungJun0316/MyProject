@@ -154,6 +154,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         // Owner/비오너 설정 이후 Rigidbody 권한을 서버 기준으로 확정
         ApplyPhysicsAuthority();
+
+        // Tutorial 순차 합류: 이 머신에 플레이어가 실제로 생긴 뒤에 명단 UI를 다시 그린다.
+        // OnPlayersReady를 재발행하지 않음(§11.4).
+        PlayerSpawnCoordinator.RaiseRosterChanged();
     }
 
     public override void OnNetworkDespawn()
@@ -181,6 +185,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
             }
             PlayerSpawnCoordinator.OnPlayersReady -= BindCameraOnPlayersReady;
         }
+
+        PlayerSpawnCoordinator.RaiseRosterChanged();
     }
 
     // ── Owner 설정 ────────────────────────────────────────────────
@@ -203,7 +209,11 @@ public class NetworkPlayerSetup : NetworkBehaviour
         VerifySpawnPosition();
 
         // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
-        if (_voiceBroadcast != null) _voiceBroadcast.enabled = true;
+        if (_voiceBroadcast != null)
+        {
+            _voiceBroadcast.enabled = true;
+            GameSettingsManager.Instance?.ApplyMicTransmitVolume();
+        }
 
         // 키워드 인식도 Owner만 (자기 마이크만 분석)
         if (_cheerKeyword != null) _cheerKeyword.enabled = true;
@@ -399,6 +409,20 @@ public class NetworkPlayerSetup : NetworkBehaviour
             ForceKillClientRpc();
     }
 
+    /// <summary>
+    /// Host에서 직접 호출해 HP를 회복. heart 단위, maxHeart로 클램프.
+    /// 사망 중이거나 이미 풀피면 무시. HP NV 변경은 OnHpChanged → UI.
+    /// </summary>
+    public void ApplyHealFromServer(int amount)
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead) return;
+        if (amount <= 0) return;
+        if (_hp.Value <= 0) return;
+
+        _hp.Value = Mathf.Min(_player.maxHeart, _hp.Value + amount);
+    }
+
     /// <summary>오너 클라이언트에 피격 연출(애니·무적)만 요청. HP/heart 수정은 OnHpChanged에서 담당.</summary>
     [ClientRpc]
     void NotifyHitClientRpc(bool knockback)
@@ -433,6 +457,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // 0 → 양수: 씬 리로드 후 HP 복구 = 리스폰 신호 (비오너만 — Owner는 OnNetworkSpawn에서 처리).
         else if (prev == 0 && next > 0 && !IsOwner)
             _events?.RaiseRespawned();
+        else if (next > prev && prev > 0)
+            _events?.RaiseHealed();
     }
 
     // ── 넉백 (순수, HP 미변경) ────────────────────────────────────

@@ -31,10 +31,14 @@ public abstract class TrapBase : MonoBehaviour
     /// <summary>발사 직전(프로젝타일 생성 직전)에 호출됨.</summary>
     public event System.Action OnFiring;
 
-    /// <summary>MouthTrapAnimator 등이 Awake에서 설정. 이 시간만큼 앞당겨 OnPreFireCharge를 발행하고 발사를 지연.</summary>
+    /// <summary>MouthTrapAnimator / ArrowWarnSign 등이 Awake에서 설정. 이 시간만큼 앞당겨 OnPreFireCharge를 발행하고 발사를 지연.
+    /// 여러 컴포넌트가 호출하면 가장 긴 값을 유지한다(짧은 쪽이 긴 경고/입 벌림을 덮어쓰지 않게).</summary>
     protected float preFireChargeTime = 0f;
 
-    public void SetPreFireChargeTime(float t) => preFireChargeTime = Mathf.Max(0f, t);
+    public float PreFireChargeTime => preFireChargeTime;
+
+    public void SetPreFireChargeTime(float t) =>
+        preFireChargeTime = Mathf.Max(preFireChargeTime, Mathf.Max(0f, t));
 
     protected virtual void Awake()
     {

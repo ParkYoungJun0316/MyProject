@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Dissonance;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
@@ -35,8 +36,10 @@ public class GameSettingsManager : MonoBehaviour
     const string KeyResWidth     = "Settings.ResWidth";
     const string KeyResHeight    = "Settings.ResHeight";
     const string KeyMicMuted     = "Settings.MicMuted";
+    const string KeyMicVolume    = "Settings.MicVolume";
     const string KeyMicDevice    = "Settings.MicDevice";
     const string KeyChatFontSize = "Settings.ChatFontSize";
+    const string KeyDigitCheer   = "Settings.DigitCheerEnabled";
 
     /// <summary>채팅 글자 크기 슬라이더 min/max — OptionsMenuController Slider Inspector 값과 맞춰야 함.</summary>
     public const float MinChatFontSize = 10f;
@@ -47,15 +50,19 @@ public class GameSettingsManager : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
+    [Range(0f, 1f)] [SerializeField] float defaultMicVolume    = 1f;
     [Range(MinChatFontSize, MaxChatFontSize)] [SerializeField] float defaultChatFontSize = 14f;
 
     public float  MasterVolume  { get; private set; } = 1f;
     public float  BgmVolume     { get; private set; } = 1f;
     public float  SfxVolume     { get; private set; } = 1f;
+    public float  MicVolume     { get; private set; } = 1f;
     public bool   MicMuted      { get; private set; }
     /// <summary>빈 문자열 = 시스템 기본 마이크(Dissonance/Microphone API의 null과 동일 취급).</summary>
     public string MicDeviceName { get; private set; } = "";
     public float  ChatFontSize  { get; private set; } = 14f;
+    /// <summary>숫자키(1=self / 2=team) 응원. 기본 OFF — 음성이 기본 수단. Options에서 켠다.</summary>
+    public bool   DigitCheerEnabled { get; private set; }
 
     /// <summary>
     /// 채팅 글자 크기가 바뀔 때 발생(옵션 슬라이더 조작 + 기본값 리셋 공통 경로).
@@ -117,9 +124,11 @@ public class GameSettingsManager : MonoBehaviour
         MasterVolume  = PlayerPrefs.GetFloat(KeyMasterVolume, defaultMasterVolume);
         BgmVolume     = PlayerPrefs.GetFloat(KeyBgmVolume, defaultBgmVolume);
         SfxVolume     = PlayerPrefs.GetFloat(KeySfxVolume, defaultSfxVolume);
+        MicVolume     = PlayerPrefs.GetFloat(KeyMicVolume, defaultMicVolume);
         MicMuted      = PlayerPrefs.GetInt(KeyMicMuted, 0) == 1;
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
         ChatFontSize  = PlayerPrefs.GetFloat(KeyChatFontSize, defaultChatFontSize);
+        DigitCheerEnabled = PlayerPrefs.GetInt(KeyDigitCheer, 0) == 1;
 
         NativeResolution = QueryNativeResolution();
         ApplySavedDisplay();
@@ -145,6 +154,25 @@ public class GameSettingsManager : MonoBehaviour
         comms.IsMuted = MicMuted;
         if (!string.IsNullOrEmpty(MicDeviceName))
             comms.MicrophoneName = MicDeviceName;
+        ApplyMicTransmitVolume();
+    }
+
+    /// <summary>
+    /// 로컬 Owner의 VoiceBroadcastTrigger 송신 게인에 MicVolume을 반영.
+    /// Dissonance 로컬 VoicePlayerState.Volume setter는 미지원(에러만 남김)이라
+    /// ActivationFader를 쓴다. CheerKeywordEngine 캡처/Vosk 경로에는 영향 없음.
+    /// Player가 아직 없으면 no-op — 스폰 시 NetworkPlayerSetup이 다시 호출한다.
+    /// </summary>
+    public void ApplyMicTransmitVolume()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            return;
+        var localClient = NetworkManager.Singleton.LocalClient;
+        if (localClient == null || localClient.PlayerObject == null) return;
+
+        var trigger = localClient.PlayerObject.GetComponent<VoiceBroadcastTrigger>();
+        if (trigger == null) return;
+        trigger.ActivationFader.Volume = MicVolume;
     }
 
     /// <summary>옵션 메뉴 마이크 음소거 토글에서 호출. 즉시 적용 + 저장.
@@ -159,6 +187,13 @@ public class GameSettingsManager : MonoBehaviour
         if (comms != null) comms.IsMuted = value;
 
         MicMutedChanged?.Invoke(value);
+    }
+
+    /// <summary>옵션 메뉴 "숫자키로 응원하기" 토글에서 호출. 즉시 적용 + 저장. 기본 OFF.</summary>
+    public void SetDigitCheerEnabled(bool value)
+    {
+        DigitCheerEnabled = value;
+        PlayerPrefs.SetInt(KeyDigitCheer, value ? 1 : 0);
     }
 
     /// <summary>옵션 메뉴 마이크 입력장치 드롭다운에서 호출. 즉시 적용 + 저장.
@@ -190,6 +225,15 @@ public class GameSettingsManager : MonoBehaviour
     {
         SfxVolume = Mathf.Clamp01(value);
         PlayerPrefs.SetFloat(KeySfxVolume, SfxVolume);
+    }
+
+    /// <summary>옵션 메뉴 마이크 볼륨 슬라이더에서 호출. 즉시 적용 + 저장.
+    /// 로컬 송신 게인(VoiceBroadcastTrigger.ActivationFader)만 바꾸고, 응원 키워드 감지에는 영향 없음.</summary>
+    public void SetMicVolume(float value)
+    {
+        MicVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(KeyMicVolume, MicVolume);
+        ApplyMicTransmitVolume();
     }
 
     // ── 채팅 ──────────────────────────────────────────────────────
@@ -241,14 +285,16 @@ public class GameSettingsManager : MonoBehaviour
     /// <summary>
     /// 옵션 메뉴 "기본값" 버튼에서 호출. 볼륨·채팅 글자 크기는 Inspector 기본값, 화면은 현 모니터
     /// 네이티브 해상도 + 전체화면(독점), 언어는 수동 선택 해제 후 Steam/systemLanguage 자동감지로 되돌림.
-    /// 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
+    /// 숫자키 응원은 기본 OFF. 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
     /// </summary>
     public void ResetToDefaults()
     {
         SetMasterVolume(defaultMasterVolume);
         SetBgmVolume(defaultBgmVolume);
         SetSfxVolume(defaultSfxVolume);
+        SetMicVolume(defaultMicVolume);
         SetChatFontSize(defaultChatFontSize);
+        SetDigitCheerEnabled(false);
 
         ApplyDisplay(NativeResolution.width, NativeResolution.height, FullScreenMode.ExclusiveFullScreen);
 

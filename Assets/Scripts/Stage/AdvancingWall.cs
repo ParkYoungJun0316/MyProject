@@ -113,17 +113,10 @@ public class AdvancingWall : MonoBehaviour
     [Tooltip("출발 전 경고 연출 컴포넌트. 비워두면 경고 없이 즉시 출발")]
     [SerializeField] AdvancingWallTelegraph telegraph;
 
-    [Header("사운드 (이동 루프 — 3D)")]
-    [Tooltip("전진·후퇴 이동 중 재생할 SFX. 기본값(Trap_AdvancingWall_Move)은 일반 벽용 —\n" +
+    [Header("사운드 (이동 루프 — 2D)")]
+    [Tooltip("전진·후퇴·패널티 이동 중 재생할 SFX. 기본값(Trap_AdvancingWall_Move)은 일반 벽용 —\n" +
              "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId로 지정할 것.")]
     [SerializeField] SFXId moveSfxId = SFXId.Trap_AdvancingWall_Move;
-    [Tooltip("전진·후퇴 이동 중에만 재생되는 루프. 이동 시작~종료에 맞춰 자동으로 켜고 끔.\n0 = 완전 2D, 1 = 완전 3D")]
-    [SerializeField] [Range(0f, 1f)] float moveSpatialBlend = 1f;
-    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
-    [SerializeField] float moveMinDistance = 30f;
-    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
-    [SerializeField] float moveMaxDistance = 100f;
-    [SerializeField] AudioRolloffMode moveRolloffMode = AudioRolloffMode.Logarithmic;
 
     [Header("이벤트")]
     public UnityEvent OnAdvanceStarted;
@@ -406,7 +399,9 @@ public class AdvancingWall : MonoBehaviour
         Vector3 from     = _rb.position;
         Vector3 target   = _currentOrigin + worldDir * distance;
 
+        StartMoveLoop();
         yield return LerpTo(from, target, Mathf.Max(penaltyMoveDuration, 0.05f));
+        StopMoveLoop();
         _rb.MovePosition(target);
 
         _currentOrigin  = target;
@@ -446,7 +441,7 @@ public class AdvancingWall : MonoBehaviour
     }
 
     // ── 사운드 (이동 루프) ────────────────────────────────────────
-    // 전진/후퇴 공용. LerpTo() 시작 직전에 켜고, 완료 직후(또는 강제 중단 시 Deactivate/
+    // 전진/후퇴/패널티 공용. LerpTo() 시작 직전에 켜고, 완료 직후(또는 강제 중단 시 Deactivate/
     // PauseByColorRoutine에서) 꺼서 "소리 나는 시간 = 실제 이동 시간"을 보장한다.
 
     void StartMoveLoop()
@@ -462,10 +457,7 @@ public class AdvancingWall : MonoBehaviour
             _moveLoopSource              = gameObject.AddComponent<AudioSource>();
             _moveLoopSource.loop         = true;
             _moveLoopSource.playOnAwake  = false;
-            _moveLoopSource.spatialBlend = moveSpatialBlend;
-            _moveLoopSource.rolloffMode  = moveRolloffMode;
-            _moveLoopSource.minDistance  = moveMinDistance > 0f ? moveMinDistance : 1f;
-            _moveLoopSource.maxDistance  = moveMaxDistance > 0f ? moveMaxDistance : 500f;
+            _moveLoopSource.spatialBlend = 0f;
         }
 
         _moveLoopSource.clip   = clip;

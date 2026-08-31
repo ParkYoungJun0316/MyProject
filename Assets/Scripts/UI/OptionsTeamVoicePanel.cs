@@ -36,7 +36,35 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     [SerializeField] Row[] rows;
     [SerializeField] GameObject emptyState;
 
-    void OnEnable() => Refresh();
+    DissonanceComms _subscribedComms;
+
+    void OnEnable()
+    {
+        SubscribeVoiceSession();
+        Refresh();
+    }
+
+    void OnDisable() => UnsubscribeVoiceSession();
+
+    void SubscribeVoiceSession()
+    {
+        UnsubscribeVoiceSession();
+        DissonanceComms comms = DissonanceComms.GetSingleton();
+        if (comms == null) return;
+        comms.OnPlayerJoinedSession += OnVoiceSessionChanged;
+        comms.OnPlayerLeftSession += OnVoiceSessionChanged;
+        _subscribedComms = comms;
+    }
+
+    void UnsubscribeVoiceSession()
+    {
+        if (_subscribedComms == null) return;
+        _subscribedComms.OnPlayerJoinedSession -= OnVoiceSessionChanged;
+        _subscribedComms.OnPlayerLeftSession -= OnVoiceSessionChanged;
+        _subscribedComms = null;
+    }
+
+    void OnVoiceSessionChanged(VoicePlayerState _) => Refresh();
 
     public void Refresh()
     {
@@ -74,15 +102,17 @@ public class OptionsTeamVoicePanel : MonoBehaviour
             ? null
             : DissonanceComms.GetSingleton()?.FindPlayer(voiceId);
 
-        slider.interactable = player != null;
-        slider.SetValueWithoutNotify(player?.Volume ?? 1f);
+        bool canControl = player != null && !player.IsLocalPlayer && player.IsConnected;
+        slider.interactable = canControl;
+        slider.SetValueWithoutNotify(canControl ? player.Volume : 1f);
+        slider.GetComponent<SliderValuePercentLabel>()?.RefreshNow();
 
-        if (player == null) return;
+        if (!canControl) return;
 
         slider.onValueChanged.AddListener(value =>
         {
             VoicePlayerState live = DissonanceComms.GetSingleton()?.FindPlayer(voiceId);
-            if (live != null) live.Volume = value;
+            if (live != null && live.IsConnected) live.Volume = value;
         });
     }
 

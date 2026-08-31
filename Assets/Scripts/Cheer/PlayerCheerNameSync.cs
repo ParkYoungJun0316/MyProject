@@ -16,7 +16,8 @@ using UnityEngine;
 /// - NetworkVariable&lt;FixedString32Bytes&gt; (Server write, Everyone read). 빈 문자열 = 색 기본값 취급(§3.1).
 /// - SubmitCheerNameServerRpc — Host가 형식·예약어(CheerNameValidator) + 세션 내 중복을 검증 후 반영/거절.
 /// - Tutorial엔 Ready 잠금이 없으므로 언제든 재제출 가능(§3.4) — 별도 잠금 로직 없음.
-/// - 값이 바뀔 때마다(자신이든 남이든) 로컬 CheerKeywordEngine의 Vosk grammar를 즉시 재적용(§5.3).
+/// - 내 CheerName이 바뀔 때만 로컬 CheerKeywordEngine grammar를 재적용. 남의 이름 변경은
+///   이름표용 OnAnyCheerNameChanged만 발행하고 grammar에는 넣지 않는다(CheerSystemDesign.md §3.4).
 ///
 /// [세션 확정]
 /// 별도 "확정" 단계 없음 — TutorialGatherZone 통과 시점(TutorialNetworkManager.CompleteGate())의
@@ -37,13 +38,29 @@ public class PlayerCheerNameSync : NetworkBehaviour
     /// <summary>커스텀 CheerName(소문자, 빈 문자열 = 미설정 — 색 기본값 취급, §3.1).</summary>
     public string CustomCheerName => _cheerName.Value.ToString();
 
+    /// <summary>커스텀이 있으면 그 값, 없으면 색 기본 CheerName.</summary>
+    public string EffectiveCheerName
+    {
+        get
+        {
+            var netObj = GetComponent<NetworkObject>();
+            if (netObj == null)
+                return string.IsNullOrEmpty(CustomCheerName) ? "" : CustomCheerName;
+            return ResolveEffectiveName(netObj.OwnerClientId, CustomCheerName);
+        }
+    }
+
     /// <summary>제출 결과 통보(성공 여부, 실패 사유 키: "format"/"reserved"/"taken"). 요청 Client에서만 유효.</summary>
     public event System.Action<bool, string> OnSubmitResult;
+
+    /// <summary>아무 플레이어의 CheerName NV가 바뀌면 전원 로컬에서 발행. 이름표/HP 라벨 즉시 반영용.</summary>
+    public static event System.Action OnAnyCheerNameChanged;
 
     public override void OnNetworkSpawn()
     {
         _cheerName.OnValueChanged += OnCheerNameChanged;
-        RebuildOwnerLocalGrammar(); // 늦은 스폰 시점에 이미 값이 있을 경우(다른 플레이어가 먼저 확정) 즉시 1회 반영
+        if (IsOwner)
+            RebuildOwnerLocalGrammar();
     }
 
     public override void OnNetworkDespawn()
@@ -51,8 +68,12 @@ public class PlayerCheerNameSync : NetworkBehaviour
         _cheerName.OnValueChanged -= OnCheerNameChanged;
     }
 
-    void OnCheerNameChanged(FixedString32Bytes previous, FixedString32Bytes current) =>
-        RebuildOwnerLocalGrammar();
+    void OnCheerNameChanged(FixedString32Bytes previous, FixedString32Bytes current)
+    {
+        if (IsOwner)
+            RebuildOwnerLocalGrammar();
+        OnAnyCheerNameChanged?.Invoke();
+    }
 
     /// <summary>
     /// Client → Host. candidate가 빈 문자열이면 커스텀 해제(기본값 취급)로 처리.
@@ -85,7 +106,7 @@ public class PlayerCheerNameSync : NetworkBehaviour
             return;
         }
 
-        if (IsTakenByOther(lower))
+        if (IsTakenByOther(lower) || ConflictsWithTeamCheerWord(lower))
         {
             SendResult(false, "taken");
             return;
@@ -104,6 +125,16 @@ public class PlayerCheerNameSync : NetworkBehaviour
             if (name == lower) return true;
         }
         return false;
+    }
+
+    /// <summary>CheerName이 현재 TeamCheerWord와 겹치면 거절 (CheerSystemDesign.md §3.3).</summary>
+    static bool ConflictsWithTeamCheerWord(string lower)
+    {
+        if (CheerService.Instance != null)
+            return CheerService.Instance.MatchesTeamCheerWord(lower);
+        if (GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
+            return GameSession.Instance.GetSessionTeamCheerWord() == lower;
+        return lower == GameSession.DefaultTeamCheerWord;
     }
 
     void SendResult(bool success, string errorKey)
@@ -125,7 +156,7 @@ public class PlayerCheerNameSync : NetworkBehaviour
     /// <summary>
     /// 현재 씬에 스폰된 모든 PlayerCheerNameSync를 훑어 (clientId, 유효 이름) 목록을 반환.
     /// 유효 이름 = 커스텀 값이 있으면 그 값, 없으면 PlayerSpawnCoordinator 색 매핑 기준 기본값(§3.1).
-    /// Host(중복검사)·모든 Client(그래머 재빌드)·게이트 완료 확정에서 공용으로 쓴다 — 매번 새로
+    /// Host(중복검사)·게이트 완료 확정에서 공용으로 쓴다 — 매번 새로
     /// 훑으므로 Tutorial 특유의 동적 합류/이탈(§6B.2)에도 별도 캐시 무효화가 필요 없다.
     /// </summary>
     public static IEnumerable<(ulong ClientId, string Name)> GetAllEffectiveNames()
@@ -153,23 +184,19 @@ public class PlayerCheerNameSync : NetworkBehaviour
     }
 
     /// <summary>
-    /// 로컬 클라이언트 자신의 Player(IsOwner)를 찾아 그 CheerKeywordEngine의 Vosk grammar를
-    /// 현재 세션 전체 이름 목록으로 재적용한다(§5.3). 어느 Player의 NV가 바뀌었는지는 상관없이
-    /// 항상 "내 로컬 인식기 하나"만 갱신하면 충분 — 비오너 인스턴스의 CheerKeywordEngine은
-    /// NetworkPlayerSetup이 이미 비활성화해두므로(§7.3) 호출해도 무해하되 실질 동작은 없다.
+    /// 로컬 Owner CheerKeywordEngine grammar를 [내 유효 CheerName, TeamCheerWord]로 재적용.
+    /// 내 이름 변경 또는 CheerService TeamCheerWord NV 변경에서 호출 (CheerSystemDesign.md §3.4).
     /// </summary>
-    static void RebuildOwnerLocalGrammar()
+    public static void RebuildOwnerLocalGrammar()
     {
         var all = FindObjectsByType<PlayerCheerNameSync>(FindObjectsSortMode.None);
         PlayerCheerNameSync ownerSync = null;
-        var names = new List<string>(all.Length);
-
         foreach (var sync in all)
         {
             var netObj = sync.GetComponent<NetworkObject>();
-            if (netObj == null) continue;
-            names.Add(ResolveEffectiveName(netObj.OwnerClientId, sync.CustomCheerName));
-            if (netObj.IsOwner) ownerSync = sync;
+            if (netObj == null || !netObj.IsOwner) continue;
+            ownerSync = sync;
+            break;
         }
 
         if (ownerSync == null) return;
@@ -177,6 +204,6 @@ public class PlayerCheerNameSync : NetworkBehaviour
         var engine = ownerSync.GetComponent<CheerKeywordEngine>();
         if (engine == null || !engine.enabled) return;
 
-        engine.ApplySessionGrammar(names.ToArray());
+        engine.ApplyOwnerLocalGrammar();
     }
 }

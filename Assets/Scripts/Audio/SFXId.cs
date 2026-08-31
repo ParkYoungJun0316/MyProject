@@ -70,4 +70,7 @@ public enum SFXId
 
     // ── Stage / Flow (추가) ──────────────────────────────────────
     Stage_TransitionEsophagus      = 31,
+
+    // ── Pad / Tile (고유색 인식 단발) ─────────────────────────────
+    Pad_Press                      = 32,
 }

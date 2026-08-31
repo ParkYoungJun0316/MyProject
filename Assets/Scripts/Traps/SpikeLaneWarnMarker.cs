@@ -26,8 +26,7 @@ public class SpikeLaneWarnMarker : MonoBehaviour
     [SerializeField] private Color warnStartColor = Color.yellow;
     [SerializeField] private Color warnEndColor = Color.red;
 
-    MaterialPropertyBlock _block;
-    int _colorId;
+    WarnMarkerColorFx _fx;
     Coroutine _routine;
 
     void Awake()
@@ -35,8 +34,7 @@ public class SpikeLaneWarnMarker : MonoBehaviour
         if (targetRenderer == null)
             targetRenderer = GetComponentInChildren<Renderer>();
 
-        _colorId = Shader.PropertyToID(colorProperty);
-        _block   = new MaterialPropertyBlock();
+        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, warnStartColor, warnEndColor);
         SetVisible(false);
     }
 
@@ -74,16 +72,7 @@ public class SpikeLaneWarnMarker : MonoBehaviour
         SetProgress(1f);
     }
 
-    void SetProgress(float t)
-    {
-        if (targetRenderer == null) return;
-        targetRenderer.GetPropertyBlock(_block);
-        _block.SetColor(_colorId, Color.Lerp(warnStartColor, warnEndColor, Mathf.Clamp01(t)));
-        targetRenderer.SetPropertyBlock(_block);
-    }
+    void SetProgress(float t) => _fx.SetProgress(t);
 
-    void SetVisible(bool visible)
-    {
-        if (targetRenderer != null) targetRenderer.enabled = visible;
-    }
+    void SetVisible(bool visible) => _fx.SetRendererVisible(visible);
 }

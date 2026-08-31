@@ -57,6 +57,9 @@ public class DeathOverlayUI : MonoBehaviour
 
     readonly List<(PlayerEvents events, Action handler)> _subs = new();
 
+    // RebuildSubscriptions 재호출 코얼레싱 — TeamStatusUI.RequestRebuild와 동일 이유/패턴
+    bool _rebuildPending;
+
     // ── 초기화 ───────────────────────────────────────────────────
 
     void Awake()
@@ -71,25 +74,49 @@ public class DeathOverlayUI : MonoBehaviour
 
     void Start()
     {
-        PlayerSpawnCoordinator.OnPlayersReady += RebuildSubscriptions;
-        if (PlayerSpawnCoordinator.IsReady) RebuildSubscriptions();
+        PlayerSpawnCoordinator.OnPlayersReady += RequestRebuild;
+        PlayerSpawnCoordinator.OnRosterChanged += RequestRebuild;
+        if (PlayerSpawnCoordinator.IsReady) RequestRebuild();
     }
 
     void OnDestroy()
     {
-        PlayerSpawnCoordinator.OnPlayersReady -= RebuildSubscriptions;
+        PlayerSpawnCoordinator.OnPlayersReady -= RequestRebuild;
+        PlayerSpawnCoordinator.OnRosterChanged -= RequestRebuild;
         UnsubscribeAll();
+    }
+
+    /// <summary>
+    /// RebuildSubscriptions() 재호출을 다음 프레임으로 1회만 합친다.
+    /// 이유는 TeamStatusUI.RequestRebuild와 동일(§ 배치 스폰 중복 + Despawn 타이밍, NetworkDesign.md 참고).
+    /// </summary>
+    void RequestRebuild()
+    {
+        if (_rebuildPending) return;
+        _rebuildPending = true;
+        StartCoroutine(RebuildNextFrame());
+    }
+
+    IEnumerator RebuildNextFrame()
+    {
+        yield return null;
+        _rebuildPending = false;
+        RebuildSubscriptions();
     }
 
     // ── 구독 (TeamStatusUI.BuildSlots와 동일한 재구성 패턴) ────────
 
     void RebuildSubscriptions()
     {
+        if (!isActiveAndEnabled) return;
+
         UnsubscribeAll();
 
         foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {
             if (p == null) continue;
+            var net = p.GetComponent<NetworkObject>();
+            if (net != null && !net.IsSpawned) continue;
             PlayerEvents events = p.GetComponent<PlayerEvents>();
             if (events == null) continue;
 

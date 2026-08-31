@@ -97,6 +97,11 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Wind_Pull;
     public AudioClip Wind_Push;
 
+    // ── Pad / Tile ───────────────────────────────────────────────
+    [Header("Pad / Tile")]
+    [Tooltip("PressurePad / ColorTile이 고유색(또는 Common)으로 정확히 인식됐을 때 3D 재생.")]
+    public AudioClip Pad_Press;
+
     // ── 클립별 볼륨 보정 ──────────────────────────────────────────
 
     [Serializable]
@@ -169,6 +174,8 @@ public class SFXLibrary : ScriptableObject
 
             case SFXId.Wind_Pull:                         return Wind_Pull;
             case SFXId.Wind_Push:                         return Wind_Push;
+
+            case SFXId.Pad_Press:                         return Pad_Press;
 
             default: return null;
         }

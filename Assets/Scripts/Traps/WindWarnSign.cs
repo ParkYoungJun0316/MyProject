@@ -56,8 +56,7 @@ public class WindWarnSign : MonoBehaviour
     [SerializeField] private float hideOffset = 0f;
 
     WindTrap _wind;
-    MaterialPropertyBlock _block;
-    int _colorId;
+    WarnMarkerColorFx _fx;
     Quaternion _arrowRestLocalRotation;
     bool _arrowRestCached;
     bool _warnEnabled = true;
@@ -72,8 +71,7 @@ public class WindWarnSign : MonoBehaviour
             zoneRenderer = zoneVisual.GetComponent<Renderer>()
                         ?? zoneVisual.GetComponentInChildren<Renderer>(true);
 
-        _colorId = Shader.PropertyToID(colorProperty);
-        _block   = new MaterialPropertyBlock();
+        _fx = new WarnMarkerColorFx(zoneRenderer, colorProperty, warnStartColor, warnEndColor);
 
         CacheArrowRest();
         SetVisible(false);
@@ -177,13 +175,7 @@ public class WindWarnSign : MonoBehaviour
         if (arrowObject != null) arrowObject.SetActive(visible);
     }
 
-    void SetProgress(float t)
-    {
-        if (zoneRenderer == null) return;
-        zoneRenderer.GetPropertyBlock(_block);
-        _block.SetColor(_colorId, Color.Lerp(warnStartColor, warnEndColor, Mathf.Clamp01(t)));
-        zoneRenderer.SetPropertyBlock(_block);
-    }
+    void SetProgress(float t) => _fx.SetProgress(t);
 
     void CacheArrowRest()
     {

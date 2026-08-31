@@ -17,6 +17,7 @@ using UnityEngine.UI;
 ///
 /// [Inspector 연결]
 /// - masterVolumeSlider / bgmVolumeSlider / sfxVolumeSlider : Slider (0~1)
+/// - micVolumeSlider     : Slider (0~1, 미연결이면 Row_MicVolume 자동 탐색)
 /// - languageDropdown    : TMP_Dropdown — LocalizationSettings.AvailableLocales 기반 자동 채움
 /// - displayModeDropdown : TMP_Dropdown — 전체화면 / 창모드 / 테두리없는 창모드 (고정 3항목, 자동 채움)
 /// - resolutionDropdown  : TMP_Dropdown — Screen.resolutions 기반 자동 채움
@@ -24,6 +25,7 @@ using UnityEngine.UI;
 ///   라벨의 String Table 엔트리 연결(OXQuizManager와 동일 패턴). 미연결 시 한국어 기본값 폴백.
 /// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
 ///   (Inspector에서 Slider의 minValue/maxValue를 10~24로 설정).
+/// - digitCheerToggle   : Toggle — "숫자키로 응원하기". 미연결이면 설정 UI만 없음(기본 OFF 유지).
 ///
 /// 패널이 열릴 때(OnEnable)마다 현재 GameSettingsManager / Screen / LocalizationSettings 값을
 /// 읽어 UI에 반영함.
@@ -46,8 +48,14 @@ public class OptionsMenuController : MonoBehaviour
     [Header("마이크")]
     [Tooltip("Dissonance IsMuted 토글 — 네트워크 전송만 끊김, 응원 키워드 감지엔 영향 없음.")]
     [SerializeField] private Toggle micMuteToggle;
+    [Tooltip("송신 게인 0~1. Inspector 미연결이면 Row_MicVolume/Slider 를 런타임에 찾음.")]
+    [SerializeField] private Slider micVolumeSlider;
     [Tooltip("Dissonance.GetMicrophoneDevices() 기반 자동 채움. 첫 항목은 '시스템 기본'.")]
     [SerializeField] private TMP_Dropdown micDeviceDropdown;
+
+    [Header("응원")]
+    [Tooltip("숫자키 1=자기 응원, 2=팀 응원. 기본 OFF. 체크박스 오브젝트는 씬에서 연결.")]
+    [SerializeField] private Toggle digitCheerToggle;
 
     [Header("채팅")]
     [Tooltip("인게임 채팅 글자 크기. Slider의 minValue/maxValue를 " +
@@ -100,7 +108,9 @@ public class OptionsMenuController : MonoBehaviour
         if (displayModeDropdown != null) displayModeDropdown.onValueChanged.AddListener(OnDisplayModeChanged);
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
         if (micMuteToggle       != null) micMuteToggle.onValueChanged.AddListener(OnMicMuteChanged);
+        if (ResolveMicVolumeSlider() != null) micVolumeSlider.onValueChanged.AddListener(OnMicVolumeChanged);
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.AddListener(OnMicDeviceChanged);
+        if (digitCheerToggle    != null) digitCheerToggle.onValueChanged.AddListener(OnDigitCheerChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.AddListener(OnChatFontSizeChanged);
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
 
@@ -117,7 +127,9 @@ public class OptionsMenuController : MonoBehaviour
         if (displayModeDropdown != null) displayModeDropdown.onValueChanged.RemoveListener(OnDisplayModeChanged);
         if (resolutionDropdown  != null) resolutionDropdown.onValueChanged.RemoveListener(OnResolutionChanged);
         if (micMuteToggle       != null) micMuteToggle.onValueChanged.RemoveListener(OnMicMuteChanged);
+        if (micVolumeSlider     != null) micVolumeSlider.onValueChanged.RemoveListener(OnMicVolumeChanged);
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.RemoveListener(OnMicDeviceChanged);
+        if (digitCheerToggle    != null) digitCheerToggle.onValueChanged.RemoveListener(OnDigitCheerChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.RemoveListener(OnChatFontSizeChanged);
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
 
@@ -148,6 +160,7 @@ public class OptionsMenuController : MonoBehaviour
         RefreshDisplayModeDropdown();
         RefreshResolutionDropdown();
         RefreshMicRow();
+        RefreshDigitCheerToggle();
         RefreshChatFontSizeSlider();
     });
 
@@ -273,6 +286,15 @@ public class OptionsMenuController : MonoBehaviour
         if (settings != null && micMuteToggle != null)
             micMuteToggle.isOn = settings.MicMuted;
 
+        Slider volumeSlider = ResolveMicVolumeSlider();
+        if (volumeSlider != null)
+        {
+            volumeSlider.interactable = true;
+            volumeSlider.minValue = 0f;
+            volumeSlider.maxValue = 1f;
+            if (settings != null) volumeSlider.value = settings.MicVolume;
+        }
+
         if (micDeviceDropdown == null) return;
 
         _micDevices.Clear();
@@ -291,6 +313,13 @@ public class OptionsMenuController : MonoBehaviour
         micDeviceDropdown.RefreshShownValue();
     }
 
+    void RefreshDigitCheerToggle()
+    {
+        GameSettingsManager settings = GameSettingsManager.Instance;
+        if (settings != null && digitCheerToggle != null)
+            digitCheerToggle.isOn = settings.DigitCheerEnabled;
+    }
+
     void RefreshChatFontSizeSlider()
     {
         if (chatFontSizeSlider == null) return;
@@ -300,6 +329,24 @@ public class OptionsMenuController : MonoBehaviour
 
         GameSettingsManager settings = GameSettingsManager.Instance;
         if (settings != null) chatFontSizeSlider.value = settings.ChatFontSize;
+    }
+
+    /// <summary>
+    /// Inspector 미연결이어도 기존 Setting_Panel 프리팹의 Row_MicVolume을 찾아 쓴다
+    /// (placeholder로 생성된 행이라 serialized 필드가 비어 있음).
+    /// </summary>
+    Slider ResolveMicVolumeSlider()
+    {
+        if (micVolumeSlider != null) return micVolumeSlider;
+
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            if (children[i].name != "Row_MicVolume") continue;
+            micVolumeSlider = children[i].GetComponentInChildren<Slider>(true);
+            break;
+        }
+        return micVolumeSlider;
     }
 
     // ── 콜백 ──────────────────────────────────────────────────────
@@ -367,6 +414,18 @@ public class OptionsMenuController : MonoBehaviour
     {
         if (_refreshing) return;
         GameSettingsManager.Instance?.SetMicMuted(value);
+    }
+
+    void OnDigitCheerChanged(bool value)
+    {
+        if (_refreshing) return;
+        GameSettingsManager.Instance?.SetDigitCheerEnabled(value);
+    }
+
+    void OnMicVolumeChanged(float value)
+    {
+        if (_refreshing) return;
+        GameSettingsManager.Instance?.SetMicVolume(value);
     }
 
     void OnMicDeviceChanged(int index)

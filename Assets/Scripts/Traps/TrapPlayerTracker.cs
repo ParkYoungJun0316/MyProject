@@ -21,7 +21,7 @@ using UnityEngine;
 ///
 /// [네트워크 — 타겟 판정 동기화]
 /// - 실제 발사(DropTrap.FireAt / ArrowTrap 발사체 Spawn)는 항상 Host 판정 기준(nm.IsServer 가드).
-/// - 회전(rotateToTarget)·TrapTrackerIndicator 색은 예전엔 Client가 자기 로컬로 따로 계산했는데,
+/// - 회전(rotateToTarget)은 예전엔 Client가 자기 로컬로 따로 계산했는데,
 ///   Host의 실제 발사 방향과 어긋날 수 있었다(포신은 A를 조준한 것처럼 보이는데 화살은 B에게
 ///   날아가는 등 — 함정 회전은 씬 오브젝트의 평범한 Transform이라 동기화가 없기 때문).
 /// - 그래서 Host만 타겟을 계산해 StageNetworkState._trackerTargets(NetworkList 슬롯, Door §3.1과
@@ -164,7 +164,7 @@ public class TrapPlayerTracker : MonoBehaviour
     /// <summary>보이는(스텔스 아닌) 플레이어를 현재 타겟으로 잡고 있는지 여부.</summary>
     public bool IsTargetLocked => _currentTarget != null;
 
-    /// <summary>타겟이 바뀔 때(획득/변경/상실) 발생. null = 타겟 없음. TrapTrackerIndicator 등 표시용 구독자용.</summary>
+    /// <summary>타겟이 바뀔 때(획득/변경/상실) 발생. null = 타겟 없음.</summary>
     public event System.Action<Player> OnTargetChanged;
 
     void Awake()
@@ -175,9 +175,8 @@ public class TrapPlayerTracker : MonoBehaviour
         _initialRotation = transform.rotation;
         EnsureRegistryBuilt();
 
-        // 회전도 인디케이터도 없으면 "지금 누구 조준 중"을 볼 소비자가 없다 → 추적·NV 쓰기 생략.
-        _needsVisualTarget = rotateToTarget
-                          || GetComponentInChildren<TrapTrackerIndicator>(true) != null;
+        // 회전이 없으면 "지금 누구 조준 중"을 볼 소비자가 없다 → 추적·NV 쓰기 생략.
+        _needsVisualTarget = rotateToTarget;
     }
 
     void Start()

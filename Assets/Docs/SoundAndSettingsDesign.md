@@ -240,7 +240,7 @@ Inspector에서 특정 SFX만 보정 가능:
    완료 여부 미확인, 다음 세션에서 확인.
 10. `Setting_Panel`의 `Btn_Reset` → `OnClick()`에 `OptionsMenuController.OnClickReset` 연결 — 완료 여부
     미확인, 다음 세션에서 확인.
-11. `Row_MicVolume`(마이크 게인/노이즈 게이트)는 아직 placeholder 슬라이더 — 필요해지면 별도 스펙 논의.
+11. ~~`Row_MicVolume`(마이크 게인/노이즈 게이트)는 아직 placeholder 슬라이더~~ — **구현 완료 (2026-09-01).** `GameSettingsManager.MicVolume` + `VoiceBroadcastTrigger.ActivationFader`. Cheer/Vosk 캡처는 그대로.
 
 ## 7. 테스트 체크리스트 (위 배치 완료 후)
 
@@ -273,8 +273,7 @@ Inspector에서 특정 SFX만 보정 가능:
   같은 선택값을 씀.
 - **마이크 음소거 on/off — 구현 완료(§9.5).** `DissonanceComms.IsMuted` 바인딩. 네트워크 전송(인코더)만
   끊고 로컬 캡처는 유지되므로 응원 키워드 감지(Cheer)에는 영향 없음(코드 확인함).
-- **마이크 볼륨(게인) 조절 — 아직 미구현.** `Row_MicVolume`는 placeholder 슬라이더로 남아있음. 솔로
-  폴백 경로는 이미 `autoNormalizeMic`/`soloMicGain`이 있지만 옵션 UI에는 안 연결됨 — 필요해지면 별도 진행.
+- **마이크 볼륨(게인) 조절 — 구현 완료 (2026-09-01).** `GameSettingsManager.MicVolume`(PlayerPrefs `Settings.MicVolume`, 기본 1). 슬라이더는 `OptionsMenuController`가 `Row_MicVolume`을 찾아 연결(Inspector 미연결 폴백). 적용은 로컬 `VoiceBroadcastTrigger.ActivationFader.Volume`(상대가 듣는 송신 게인). Dissonance 로컬 `VoicePlayerState.Volume` setter는 미지원이라 쓰지 않음. CheerKeywordEngine/Vosk 캡처 레벨은 바꾸지 않음.
 - **팀원 보이스 수신 볼륨 조절 — 구현 완료(§9.6).** Dissonance `VoicePlayerState.PlayerId`가 세션마다
   랜덤 GUID라 팀원 슬롯과 매칭이 안 되는 신원 문제가 있었는데, 사용자가 (필드 추가 없이 우회하는 대안보다)
   `LobbyPlayerState`에 self-report 필드(`VoiceId`)를 추가하는 쪽을 채택해 해결(§9.6). 개별 음소거(mute)
@@ -616,6 +615,9 @@ BGM처럼 LUFS로 전부 통일하면 안 됨 — SFX는 종류별로 크기가 
   기술적 결함 유무로 나눈 분류였음. 사용자가 "왜 나누냐, 다 2D로" 요청해서 통일. `windSpatialBlend`/
   `windMinDistance`/`windMaxDistance`/`windRolloffMode` 필드 전부 제거, `_windLoopSource.spatialBlend = 0f`
   하드코딩. 임펄스 쪽 코드는 원래부터 2D라 변경 없음.
+- **`AdvancingWall.cs` 이동 루프 — 3D(Inspector 조절형) → 2D 고정 (2026-09-01).** `M.Stage3` `Tooth`가
+  스케일 25·천장 ~32m·패널티 0.6초라 3D가 사실상 무음. Telegraph/WindTrap과 동일하게 `moveSpatialBlend`/
+  `moveMinDistance`/`moveMaxDistance`/`moveRolloffMode` 필드 제거, `_moveLoopSource.spatialBlend = 0f`.
 
 ### 11.2 `Breakable_Destroy` 2D → 3D (2026-08-29, 같은 세션)
 
@@ -731,12 +733,9 @@ min=1/max=0(→500) 기본값이 명시적으로 저장돼 있는 상태**(`Spik
 
 **최종 상태 정리:**
 - **2D:** `DropTrap`(발동/경고), `SpikeLaneField`(경고음 제거 — 무음), `WindTrap`(임펄스+지속 루프
-  전부), `AdvancingWallTelegraph`(경고 루프).
+  전부), `AdvancingWallTelegraph`(경고 루프), `AdvancingWall`(이동 루프, 2026-09-01 3D→2D).
 - **3D:** `ArrowTrap`(발사음), `SpikeTrap`(상승음), `Stage5ChaserAI`(공격), `Stage5TargetRunner`(포획),
   `Breakable_Destroy`(벽 파괴, §11.2) — 단발음 5곳, `PlayAtPoint()`로 min/maxDistance Inspector 조절
-  가능. `AdvancingWall`(이동 루프), `SpinRoller`/Boulder_Roll(구르는 루프), `Stage5ChaserAI`/
-  `Stage5TargetRunner`(달리기 루프) — 루프 3곳, 원래부터 Inspector `spatialBlend`/`minDistance`/
-  `maxDistance` 조절 가능. **총 8곳(단발 5 + 루프 3) 다 min/maxDistance Inspector 조절 가능한 상태.**
-  코드 기본값은 §11.4 최종 표(사용자 지정)로 확정. 단, 기존에 씬/프리팹에 이미 배치된 인스턴스는
-  YAML에 구값(min=1/max=0)이 저장돼 있어 코드 기본값이 자동 반영되지 않으므로, §11.4 표대로
-  사용자가 직접 Inspector에서 입력해야 함(§10 체크리스트 이후 진행).
+  가능. `SpinRoller`/Boulder_Roll(구르는 루프), `Stage5ChaserAI`/
+  `Stage5TargetRunner`(달리기 루프) — 루프 2곳, Inspector `spatialBlend`/`minDistance`/
+  `maxDistance` 조절 가능.

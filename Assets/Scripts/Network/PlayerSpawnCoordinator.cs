@@ -45,8 +45,19 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
     /// 색 인덱스(playerColorType)는 NV 전달 타이밍에 따라 아직 기본값(Blue)일 수 있음.
     /// 구독자는 TryGetColor / IsColorInSession으로 색을 확정할 것(레이스 없음).
     /// static event — OnDestroy()에서 반드시 -= 로 구독 해제할 것.
+    ///
+    /// Tutorial 순차 합류(§6B.2)에서는 이 신호가 Host 1인 시점에 1회만 나간다.
+    /// 이후 명단이 늘거나 줄어드는 건 <see cref="OnRosterChanged"/>를 구독할 것.
+    /// OnPlayersReady를 재발행하지 않는다(§11.4).
     /// </summary>
     public static event System.Action OnPlayersReady;
+
+    /// <summary>
+    /// 이 머신에서 플레이어 NetworkObject가 스폰/Despawn된 직후.
+    /// RPC 없음 — 스폰 메시지가 도착한 로컬 시점이 신호다.
+    /// TeamStatusUI 등 "전원 목록" Consumer 전용. 카메라/HP 자기 슬롯은 OnPlayersReady만으로 충분.
+    /// </summary>
+    public static event System.Action OnRosterChanged;
 
     /// <summary>현재 씬에서 NotifyPlayersReady()가 이미 발행됐으면 true.</summary>
     public static bool IsReady { get; private set; }
@@ -261,5 +272,14 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
         if (IsServer || IsReady) return; // Host 자신 제외 + 중복 Invoke 방지
         IsReady = true;
         OnPlayersReady?.Invoke();
+    }
+
+    /// <summary>
+    /// 각 머신 로컬에서 플레이어 스폰/Despawn 직후 호출.
+    /// Tutorial 순차 합류 때 이미 Ready인 Host/기존 Client의 명단 UI를 다시 그리게 한다.
+    /// </summary>
+    public static void RaiseRosterChanged()
+    {
+        OnRosterChanged?.Invoke();
     }
 }

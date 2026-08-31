@@ -83,8 +83,9 @@ public class PlayerNameTagUI : MonoBehaviour
             _events.OnColorTypeChanged += _onColorTypeChanged;
 
         // 색 매핑(PlayerSpawnCoordinator NetworkList)이 아직 안 왔을 수 있어 준비 완료 시 재확인.
-        // 지금 당장도 한 번 시도 — 로컬 폴백(playerColorType) 경로나 이미 준비된 경우 즉시 반영됨.
+        // CheerName NV 변경은 OnAnyCheerNameChanged로 즉시 반영 (게이트 세션 스냅샷을 기다리지 않음).
         PlayerSpawnCoordinator.OnPlayersReady += RefreshName;
+        PlayerCheerNameSync.OnAnyCheerNameChanged += RefreshName;
         RefreshName();
     }
 
@@ -93,6 +94,7 @@ public class PlayerNameTagUI : MonoBehaviour
         if (_events != null && _onColorTypeChanged != null)
             _events.OnColorTypeChanged -= _onColorTypeChanged;
         PlayerSpawnCoordinator.OnPlayersReady -= RefreshName;
+        PlayerCheerNameSync.OnAnyCheerNameChanged -= RefreshName;
 
         PlayerSpawnCoordinator.OnPlayersReady -= HandleSelfPlayersReady;
         UnsubscribeSelfCheerService();

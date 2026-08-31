@@ -14,12 +14,21 @@ public class SliderValuePercentLabel : MonoBehaviour
     {
         _slider = GetComponent<Slider>();
         _slider.onValueChanged.AddListener(Refresh);
-        Refresh(_slider.value);
+        RefreshNow();
     }
+
+    void OnEnable() => RefreshNow();
 
     void OnDestroy()
     {
         if (_slider != null) _slider.onValueChanged.RemoveListener(Refresh);
+    }
+
+    /// <summary>SetValueWithoutNotify 이후처럼 onValueChanged가 안 올 때 라벨만 맞춘다.</summary>
+    public void RefreshNow()
+    {
+        if (_slider == null) _slider = GetComponent<Slider>();
+        Refresh(_slider.value);
     }
 
     void Refresh(float value)

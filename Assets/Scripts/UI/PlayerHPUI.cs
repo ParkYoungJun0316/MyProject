@@ -43,13 +43,22 @@ public class PlayerHPUI : MonoBehaviour
     [SerializeField] string selfNamePrefix = "YOU · ";
 
     Image[] heartImages;
-    PlayerCheerNameSync _cheerNameSync;
+    PlayerEvents _events;
+
+    // 델리게이트 필드로 보관 — 익명 람다는 OnDestroy에서 구독 해제가 불가능하므로
+    // (TeamStatusUI.PlayerSlot과 동일 패턴) 반드시 필드에 담아 해제한다.
+    System.Action<bool> _onDamaged;
+    System.Action       _onHealed;
+    System.Action       _onRespawned;
+    System.Action<PlayerColorType> _onColorTypeChanged;
 
     void Start()
     {
         BuildHearts();
 
         if (!Application.isPlaying) return;
+
+        PlayerCheerNameSync.OnAnyCheerNameChanged += HandleAnyCheerNameChanged;
 
         if (player != null)
         {
@@ -80,7 +89,8 @@ public class PlayerHPUI : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= FindAndSubscribe;
-        if (_cheerNameSync != null) _cheerNameSync.OnSubmitResult -= HandleCheerNameSubmitResult;
+        PlayerCheerNameSync.OnAnyCheerNameChanged -= HandleAnyCheerNameChanged;
+        UnsubscribeEvents();
     }
 
     /// <summary>
@@ -102,29 +112,41 @@ public class PlayerHPUI : MonoBehaviour
 
     void SubscribeAndRefresh()
     {
-        PlayerEvents events = player.GetComponent<PlayerEvents>();
-        if (events != null)
+        UnsubscribeEvents(); // player 재탐색(FindAndSubscribe 재호출) 시 이전 구독 잔존 방지
+
+        _events = player.GetComponent<PlayerEvents>();
+        if (_events != null)
         {
-            events.OnDamaged          += _ => RefreshHearts();
-            events.OnRespawned        +=     RefreshHearts;
-            events.OnColorTypeChanged += _ => RefreshHearts();
-            events.OnColorTypeChanged += _ => RefreshSelfName();
+            _onDamaged          = _ => RefreshHearts();
+            _onHealed           = RefreshHearts;
+            _onRespawned        = RefreshHearts;
+            _onColorTypeChanged = _ => { RefreshHearts(); RefreshSelfName(); };
+
+            _events.OnDamaged          += _onDamaged;
+            _events.OnHealed           += _onHealed;
+            _events.OnRespawned        += _onRespawned;
+            _events.OnColorTypeChanged += _onColorTypeChanged;
         }
 
-        // Tutorial CheerName 확정(PlayerCheerNameSync.SubmitCheerNameServerRpc 응답) 순간에도
-        // 색 변경 이벤트 없이 이름만 바뀌므로, 그 결과를 직접 구독해야 "YOU · 이름" 라벨이
-        // 확정 즉시(별도 색 변경 없이도) 갱신된다 — TutorialCheerNameUI가 겪던 것과 같은 문제.
-        _cheerNameSync = player.GetComponent<PlayerCheerNameSync>();
-        if (_cheerNameSync != null)
-            _cheerNameSync.OnSubmitResult += HandleCheerNameSubmitResult;
-
+        // Tutorial CheerName NV가 바뀌면(자기/타인 무관) "YOU · 이름"을 실시간 값으로 다시 읽는다.
+        // OnSubmitResult는 NV보다 먼저 올 수 있어 기본값(berry 등)을 다시 찍으므로 쓰지 않는다.
         RefreshHearts();
         RefreshSelfName();
     }
 
-    void HandleCheerNameSubmitResult(bool success, string errorKey)
+    void HandleAnyCheerNameChanged()
     {
-        if (success) RefreshSelfName();
+        if (player != null) RefreshSelfName();
+    }
+
+    void UnsubscribeEvents()
+    {
+        if (_events == null) return;
+        _events.OnDamaged          -= _onDamaged;
+        _events.OnHealed           -= _onHealed;
+        _events.OnRespawned        -= _onRespawned;
+        _events.OnColorTypeChanged -= _onColorTypeChanged;
+        _events = null;
     }
 
     /// <summary>selfNameLabel에 "YOU · BERRY" 형태 텍스트를 반영.</summary>

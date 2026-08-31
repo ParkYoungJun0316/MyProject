@@ -29,6 +29,10 @@ public class ColorTile : MonoBehaviour
     [Tooltip("true: 플레이어 색/isUniqueColor 체크 없이 누구든 밟으면 활성화")]
     public bool ignorePlayerCheck = false;
 
+    [Header("사운드 (2D)")]
+    [Tooltip("고유색으로 정확히 인식됐을 때 재생. None이면 무음. 발을 뗄 때(OnUncompleted)는 재생하지 않음.")]
+    [SerializeField] SFXId pressSfxId = SFXId.Pad_Press;
+
     [Header("이벤트 (선택)")]
     [Tooltip("올바른 플레이어가 올라섰을 때 (시각 피드백 등)")]
     public UnityEvent OnCompleted;
@@ -70,6 +74,7 @@ public class ColorTile : MonoBehaviour
         {
             if (_isCompleted) return;
             _isCompleted = true;
+            PlayPressSfx();
             OnCompleted?.Invoke();
             OnActivatedCallback?.Invoke(requiredColorType);
             return;
@@ -83,6 +88,7 @@ public class ColorTile : MonoBehaviour
         if (p.isUniqueColor && !_isCompleted)
         {
             _isCompleted = true;
+            PlayPressSfx();
             OnCompleted?.Invoke();
             OnActivatedCallback?.Invoke(requiredColorType);
         }
@@ -110,5 +116,11 @@ public class ColorTile : MonoBehaviour
 
         _isCompleted = false;
         OnUncompleted?.Invoke();
+    }
+
+    void PlayPressSfx()
+    {
+        if (pressSfxId == SFXId.None) return;
+        SFXManager.Instance?.Play(pressSfxId);
     }
 }

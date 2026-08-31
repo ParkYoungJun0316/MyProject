@@ -19,12 +19,24 @@ using UnityEngine;
 ///
 /// [일반 모드 동작 흐름]
 ///   OnPreFireCharge → doOpen  (입 벌리기 시작)
-///   openClipLength 후 → 발사 → doHold (입 완전히 열린 채 유지)
+///   openClipLength 후 → doHold (자체 타이머로 선(先) 전환 — 아래 참고)
+///   실제 발사(OnFiring) → doHold (재확정, holdDuration 타이머 시작)
 ///   holdDuration 후 → doClose (고정 타이머 — 발사체 도착/탈출 이벤트에 의존하지 않음)
 ///   closeClipLength 후 → doIdle
 ///   (Host만 발사체를 Spawn하고 Client는 복제 수신 후 로컬 비행을 시작하므로,
 ///    Close를 발사체 탈출 이벤트에 묶으면 Client의 Hold가 Spawn/RPC 왕복 시간만큼
 ///    Host보다 길어진다 — 그래서 Close는 순수 로컬 타이머로 분리한다.)
+///
+/// [Open→Hold 자체 타이머 — ArrowWarnSign 등과 공존 시 필수]
+/// TrapBase.preFireChargeTime은 여러 컴포넌트(Mouth/ArrowWarnSign)가 SetPreFireChargeTime을
+/// 부르면 그중 가장 긴 값으로 병합된다(TrapBase 참고). ArrowWarnSign의 warnLeadTime이
+/// openClipLength보다 길면 실제 발사(OnFiring)가 Open 클립이 끝난 뒤에도 한참 늦게 온다 —
+/// 이 사이에 doHold 트리거가 없으면 Animator가 Open의 마지막 프레임에서 트리거 없이 멈춰
+/// 있게 된다(WindTrap의 MouthWindAnimator.TriggerHoldAfterCharge와 동일 문제). 그래서 이
+/// 컴포넌트는 openClipLength 후 스스로 doHold를 걸어 Hold(Loop) 상태로 선전환한다 — 실제
+/// OnFiring이 그보다 늦게 오면 도착 시 doHold를 다시 걸지만 Hold는 Can Transition to Self
+/// = false라 재트리거는 무해하고, holdDuration 타이머만 그 시점(=실제 발사 시점)부터
+/// 새로 시작된다.
 ///
 /// [루프 모드 (loopOpenClose = true)]
 ///   Open → Hold(loopHoldDuration) → Close → (loopInterval) → Open ... 무한 반복
@@ -82,6 +94,7 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
     TrapBase  _trap;
     Coroutine _idleReturnCoroutine;
     Coroutine _loopCoroutine;
+    Coroutine _openWaitCoroutine;
 
     void Awake()
     {
@@ -125,6 +138,7 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
         StopAllCoroutines();
         _idleReturnCoroutine = null;
         _loopCoroutine       = null;
+        _openWaitCoroutine   = null;
 
         if (!loopOpenClose && _trap != null)
         {
@@ -146,8 +160,19 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
             StopCoroutine(_idleReturnCoroutine);
             _idleReturnCoroutine = null;
         }
+        if (_openWaitCoroutine != null)
+        {
+            StopCoroutine(_openWaitCoroutine);
+            _openWaitCoroutine = null;
+        }
 
         TriggerOpen();
+
+        // openClipLength 후 스스로 doHold로 선전환 (위 클래스 주석 "Open→Hold 자체 타이머" 참고).
+        // 실제 발사(OnFiring)가 그보다 늦게 오면 PlayHoldFromNetwork가 이 코루틴을 취소하고
+        // holdDuration 타이머를 그 시점부터 새로 시작한다.
+        if (openClipLength > 0f)
+            _openWaitCoroutine = StartCoroutine(HoldAfterOpenClipRoutine());
     }
 
     /// <summary>발사(Hold) 확정. Host는 OnFiring 직접 구독, Client는 SyncArrowFireClientRpc 수신으로 호출됨.</summary>
@@ -158,12 +183,30 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
             StopCoroutine(_idleReturnCoroutine);
             _idleReturnCoroutine = null;
         }
+        if (_openWaitCoroutine != null)
+        {
+            StopCoroutine(_openWaitCoroutine);
+            _openWaitCoroutine = null;
+        }
 
         TriggerHold();
         _idleReturnCoroutine = StartCoroutine(HoldThenCloseRoutine());
     }
 
     // ── 코루틴 ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Open 클립 재생 시간만큼만 기다렸다가 doHold로 선전환 — preFireChargeTime이 openClipLength
+    /// 보다 길게 병합돼(ArrowWarnSign 등) 실제 발사가 늦게 와도 Open의 마지막 프레임에 트리거
+    /// 없이 멈춰 있지 않도록 한다. holdDuration 타이머는 시작하지 않음(실제 발사 시점부터
+    /// PlayHoldFromNetwork가 새로 시작).
+    /// </summary>
+    IEnumerator HoldAfterOpenClipRoutine()
+    {
+        yield return new WaitForSeconds(openClipLength);
+        TriggerHold();
+        _openWaitCoroutine = null;
+    }
 
     /// <summary>
     /// doHold 후 holdDuration → doClose → closeClipLength → doIdle.

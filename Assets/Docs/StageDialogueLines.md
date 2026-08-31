@@ -14,7 +14,7 @@
 
 1. 우리, 먹혔어. 이제부터 살아나가는 것만 생각해.
 
-*(연습 구역인 Stealth/색 패드/응원 설명은 `2.Tutorial` 씬 담당 — M.Stage1에서 재설명하지 않음. `CheerAndTutorialDesign.md` §9.3 참고.)*
+*(연습 구역인 Stealth/색 패드/응원 설명은 `2.Tutorial` 씬 담당 — M.Stage1에서 재설명하지 않음. `CheerAndTutorialDesign.md` §4 참고.)*
 
 ## M.Stage2 (OXQuizManager)
 

@@ -55,6 +55,12 @@ public class GameSession : MonoBehaviour
     // 미설정 시 PlayerColorUtil.DefaultCheerNames 기본값 반환.
     private string[] _sessionCheerNames;
 
+    /// <summary>Host가 안 건드리면 이 값. CheerService._teamCheerWord 기본값과 동일.</summary>
+    public const string DefaultTeamCheerWord = "fighting";
+
+    // 이번 판 확정 TeamCheerWord. null = 미확정(게이트 전) → Get은 DefaultTeamCheerWord 폴백.
+    private string _sessionTeamCheerWord;
+
     // 이번 판 확정 Steam 표시 이름(DisplayName). 인덱스 = colorIndex.
     // 로비 LobbyPlayerState.DisplayName을 게임 시작 시 1회 그대로 옮겨온 것 — 별도 네트워크 갱신 없음.
     private string[] _sessionDisplayNames;
@@ -195,7 +201,36 @@ public class GameSession : MonoBehaviour
         return System.Array.IndexOf(PlayerColorUtil.DefaultCheerNames, lower);
     }
 
+    // ── 세션 TeamCheerWord ─────────────────────────────────────────
+
+    /// <summary>
+    /// true = SetSessionTeamCheerWord가 이미 호출됨(Tutorial 게이트 통과 후).
+    /// CheerService 스폰 시 세션값을 NV에 넣을지, Inspector/기본값("fighting")을 쓸지 구분용.
+    /// </summary>
+    public bool HasSessionTeamCheerWord => _sessionTeamCheerWord != null;
+
+    /// <summary>
+    /// 이번 판 확정 TeamCheerWord 저장. StartGame 직전 Host 로컬·Client 양쪽에서 CheerName과 동일하게 호출.
+    /// </summary>
+    public void SetSessionTeamCheerWord(string word)
+    {
+        _sessionTeamCheerWord = string.IsNullOrEmpty(word)
+            ? DefaultTeamCheerWord
+            : word.Trim().ToLowerInvariant();
+        Debug.Log($"[GameSession] 세션 TeamCheerWord 적용: {_sessionTeamCheerWord}");
+    }
+
+    /// <summary>이번 판 TeamCheerWord. 세션 미설정 시 DefaultTeamCheerWord.</summary>
+    public string GetSessionTeamCheerWord()
+        => string.IsNullOrEmpty(_sessionTeamCheerWord) ? DefaultTeamCheerWord : _sessionTeamCheerWord;
+
     // ── 세션 Steam 표시 이름 ───────────────────────────────────────
+
+    /// <summary>
+    /// true = SetSessionDisplayNames가 이미 호출됨(Tutorial 게이트 통과 후).
+    /// GetSessionDisplayName은 미확정 시 "Player"로 폴백하므로, 게이트 전 실시간 값과 구분할 때 쓴다.
+    /// </summary>
+    public bool HasSessionDisplayNames => _sessionDisplayNames != null;
 
     /// <summary>
     /// 이번 판 확정 Steam 표시 이름 배열 저장.
@@ -258,6 +293,7 @@ public class GameSession : MonoBehaviour
         _activeColors.Clear();
         _seenIntroKeys.Clear();
         _sessionCheerNames = null;
+        _sessionTeamCheerWord = null;
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
 

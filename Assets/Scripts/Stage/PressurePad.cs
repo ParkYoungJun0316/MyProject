@@ -34,6 +34,10 @@ public class PressurePad : MonoBehaviour
     [Tooltip("발판이 충족되려면 올라가 있어야 하는 최소 인원 (StagePressurePadSetup이 인원에 맞게 조정함)")]
     public int requiredCount = 1;
 
+    [Header("사운드 (2D)")]
+    [Tooltip("고유색(또는 Common)으로 정확히 인식돼 인원이 늘 때 재생. None이면 무음. 발을 뗄 때는 재생하지 않음.")]
+    [SerializeField] SFXId pressSfxId = SFXId.Pad_Press;
+
     [Header("이벤트")]
     [Tooltip("조건이 충족됐을 때 발동 (requiredCount명 이상 올라감)")]
     public UnityEvent OnFulfilled;
@@ -80,6 +84,7 @@ public class PressurePad : MonoBehaviour
         if (_players.Contains(p)) return;
 
         _players.Add(p);
+        PlayPressSfx();
         Evaluate();
     }
 
@@ -113,6 +118,14 @@ public class PressurePad : MonoBehaviour
     {
         if (_effectiveColor == PlayerColorType.Common) return true;
         return p.isUniqueColor && p.playerColorType == _effectiveColor;
+    }
+
+    // 로컬 2D 재생 — 발판 트리거는 각 머신이 CNT 위치로 이미 점유를 안다.
+    // OnFulfilled(Host-only)에 걸면 Client가 안 들림. 인원 감소(Exit)에서는 호출하지 말 것.
+    void PlayPressSfx()
+    {
+        if (pressSfxId == SFXId.None) return;
+        SFXManager.Instance?.Play(pressSfxId);
     }
 
     void Evaluate()

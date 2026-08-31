@@ -218,7 +218,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 ## 6B. Tutorial 사전 게이트 구간 (구 Lobby 흡수 — 2026-08-17 확정)
 
-> **SSOT.** `1.Lobby` 씬이 하던 일(Kick·색 선택·Ready·Start·Steam Invite UI)의 후속 규칙은 전부 이 절에 모은다. Tutorial 세부 콘텐츠(연습 존 배치·CheerName UX 등)는 `CheerAndTutorialDesign.md` §9가 SSOT이고, 이 절은 **네트워크·수명주기 관점**만 다룬다 — 중복 서술 금지.
+> **SSOT.** `1.Lobby` 씬이 하던 일(Kick·색 선택·Ready·Start·Steam Invite UI)의 후속 규칙은 전부 이 절에 모은다. Tutorial 세부 콘텐츠(연습 존 배치·CheerName/TeamCheerWord UX 등)는 `CheerAndTutorialDesign.md` §2~§3이 SSOT이고, 이 절은 **네트워크·수명주기 관점**만 다룬다 — 중복 서술 금지. 응원 버프 규칙 자체는 `CheerSystemDesign.md` SSOT (2026-09 문서 분리).
 
 ### 6B.1 배경 · 왜 없앴나
 
@@ -329,11 +329,18 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 **검증 결과 (2026-08-17, ParrelSync 2인):** 위 2건 수정 후 Client 카메라 정상 바인드 확인, Client 이탈 시 슬롯만 제거되고 방 유지·Host 계속 진행 확인.
 
+**버그 3 — Tutorial TeamStatus 명단/표시 이름/CheerName (2026-09-01):**
+- **증상:** Host TeamStatus가 비고, Client 슬롯은 있어도 Steam 이름이 `"Player"`. CheerName을 바꿔도 머리 위/`YOU ·`가 berry/guma/dan 고정. 게이트 통과 후 `M.Stage1`에 가서야 DisplayName이 보임.
+- **원인:** `OnPlayersReady`는 Host 1인 스폰 때 1회뿐이고 `CatchUpReadyFor`는 신규 Client만 대상. TeamStatus는 `GameSession` 게이트 스냅샷만 읽고, CheerName UI는 NV 변경을 구독하지 않음.
+- **수정:** `PlayerSpawnCoordinator.OnRosterChanged` — 각 머신 로컬 `NetworkPlayerSetup` 스폰/Despawn에서 발행 (`OnPlayersReady` 재발행 없음, §11.4). `TeamStatusUI`/`DeathOverlayUI`는 Ready+Roster를 **다음 프레임 1회 디바운스**로 재구성 — NGO는 `OnNetworkDespawn`을 `IsSpawned=false`·`Destroy`보다 먼저 호출하므로 즉시 `FindObjectsByType`하면 떠난 슬롯이 남고, M/T 배치 스폰은 N명 Roster + Ready로 N+1회 리빌드된다. DisplayName 우선순위는 `CheerService.GetCheerName`과 동일: **세션 확정값(`HasSessionDisplayNames`) → 없으면 `PlayerDisplayNameSync` 실시간 NV**. CheerName 즉시 반영은 `PlayerCheerNameSync.OnAnyCheerNameChanged`. **shared** (`UI.prefab`, Tutorial + 전 M/T).
+- **스모크:** Tutorial ParrelSync 2인 Host/Client 슬롯·Steam(또는 로컬 OS) 이름·CheerName 즉시 반영. Client 이탈 시 슬롯 제거. 반대 라운드 `M.Stage1` TeamStatus (§9B.4).
+
 **P3 — 세션 메타데이터**
 
 - [x] 룸코드 표시 — **로컬(①②) 경로 전용, 최소 구현으로 완료** (위 "P1/P2 2인 검증 통과" 참고). 구 `_sharedRoomCode` NetworkVariable 패턴은 채택하지 않음 — `NetworkManagerSetup.RoomCode`(Host 로컬 프로퍼티)를 그대로 표시하는 것으로 충분(Client는 표시 대상 아님, §6B.5). 어차피 Steam 정식 배포에서 룸코드 자체가 폐지되므로(§4.2) 이 이상 정교화하지 않는다.
-- [x] DisplayName 보고 (2026-08-22) — 구 `SubmitDisplayNameServerRpc`(슬롯 귀속)를 `PlayerDisplayNameSync`(Player 인스턴스 귀속, `PlayerCheerNameSync`와 동일 패턴)로 재구현. `OnNetworkSpawn`에서 Owner가 자기 표시 이름(Steam 경로: `SteamClient.Name`, 로컬 경로: OS 계정 이름)을 1회 자동 보고 → `TutorialNetworkManager.CompleteGate()`에서 `GameSession.SetSessionDisplayNames()` + `BroadcastSessionDisplayNamesClientRpc`로 전원 배포. **원인 회귀:** 2026-08-20 구 로비 삭제(아래 항목) 때 `SubmitDisplayNameServerRpc`가 함께 삭제된 뒤 새 Tutorial 게이트 구조로 이식되지 않아 `TeamStatusUI` 등에서 전원 `"Player"` 폴백만 표시되고 있었음 — 이번 수정으로 해소. **ParrelSync 검증 대기.**
+- [x] DisplayName 보고 (2026-08-22) — 구 `SubmitDisplayNameServerRpc`(슬롯 귀속)를 `PlayerDisplayNameSync`(Player 인스턴스 귀속, `PlayerCheerNameSync`와 동일 패턴)로 재구현. `OnNetworkSpawn`에서 Owner가 자기 표시 이름(Steam 경로: `SteamClient.Name`, 로컬 경로: OS 계정 이름)을 1회 자동 보고. HUD 읽기 우선순위는 CheerName과 동일: 게이트 후 `GameSession` 세션 스냅샷, 게이트 전(세션 미확정)에만 이 NV 실시간 표시 (2026-09-01, 위 버그 3). 게이트 통과 시 `GameSession.SetSessionDisplayNames()` + `BroadcastSessionDisplayNamesClientRpc`로 스테이지용 스냅샷만 복사.
 - [x] VoiceId 보고 (2026-08-26) — 구 `SubmitVoiceIdServerRpc`(슬롯 귀속)를 별도 클래스 신설 없이 `PlayerDisplayNameSync`에 필드 추가로 재구현(DisplayName과 동일 "검증 없는 1회 자동 self-report" 뼈대라 한 컴포넌트로 합침 — CheerName은 입력·검증·재제출이 있는 별도 도메인이라 `PlayerCheerNameSync`에 그대로 분리 유지). Dissonance 초기화 지연 대비 `ReportVoiceIdRoutine` 코루틴이 `LocalPlayerName` 확정까지 최대 5회(1초 간격) 재시도 후 1회 보고 → `TutorialNetworkManager.CompleteGate()`에서 `GameSession.SetSessionVoiceIds()` + `BroadcastSessionVoiceIdsClientRpc`로 전원 배포(DisplayName과 동일 시점). **원인 회귀:** 2026-08-20 구 로비 삭제 때 `SubmitVoiceIdServerRpc`가 함께 삭제된 뒤 새 Tutorial 게이트 구조로 이식되지 않아 `OptionsTeamVoicePanel`의 팀 보이스 볼륨 슬라이더가 항상 비활성(100% 고정)이었음 — 이번 수정으로 해소. **ParrelSync/실제 멀티 검증 대기.**
+- **공유 포스트모템 (2026-09-01, 마이크/팀 보이스 슬라이더):** `Row_MicVolume`은 placeholder라 `GameSettingsManager`/`OptionsMenuController`에 볼륨 필드가 없었고, 생성 기본값 70% + `interactable=false`로 고착. 팀 보이스는 `BindVolumeSlider`가 `SetValueWithoutNotify`만 써서 `%` 라벨이 70%에 남고, `FindPlayer` 실패 시 재시도가 없었다. 수정: `MicVolume` PlayerPrefs + `VoiceBroadcastTrigger.ActivationFader`(Cheer/Vosk 미변경), 슬라이더 런타임 탐색, `SliderValuePercentLabel.RefreshNow`, `OnPlayerJoinedSession` 재바인딩. 반대 라운드 스모크: `T.Stage1` Host+Client ESC 설정 (§9B.4).
 
 **P4 — `TutorialGatherZone` (§6B.3, 신규)** — **코드 완료 + 씬 배치·검증 통과 (2026-08-18, 솔로+ParrelSync 2인)**
 
@@ -351,7 +358,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 **P6 — CheerName Tutorial 통합** — **네트워크 동기화 코어 코드 완료 (2026-08-18), 자기응원 피드백 UI 코드 완료 (2026-08-19), 테스트는 이번 라운드 전체 보류 (사용자 지시 2026-08-19) → 아래 남은 작업 다 끝내고 한 번에 검증**
 
-> **별도 SSOT** — `CheerAndTutorialDesign.md` §11 Phase 7 / §13 체크리스트를 따라 진행. 여기서 중복 서술하지 않음. 아래는 이번 라운드에서 실제로 반영한 범위만 기록.
+> **별도 SSOT** — `CheerAndTutorialDesign.md` §7 Phase 7 / §9 체크리스트를 따라 진행(응원 버프 규칙 자체는 `CheerSystemDesign.md`). 여기서 중복 서술하지 않음. 아래는 이번 라운드에서 실제로 반영한 범위만 기록.
 
 - [x] `PlayerCheerNameSync`(`Assets/Scripts/Cheer/PlayerCheerNameSync.cs`) 신설 — Player 프리팹 부착 대상. `NetworkVariable<FixedString32Bytes>`(Server write) + `SubmitCheerNameServerRpc`(본인 소유 NetworkObject만 제출 가능 가드) + 형식·예약어·세션 내 중복 검증(§3.5) + 결과 통보 이벤트(`OnSubmitResult`)
 - [x] `CheerNameValidator`(`Assets/Scripts/Cheer/CheerNameValidator.cs`) 신설 — 구 `LobbyNetworkManager.IsValidCheerNameFormat`/`ReservedNames`를 추출한 공용 검증 유틸. `LobbyNetworkManager`도 이제 이걸 재사용 — P8에서 구 로비 코드를 지워도 검증 규칙은 남는다
@@ -362,7 +369,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [x] `CheerKeywordEngine` Tutorial 연동 + 게이트 전 커스텀 이름 인식 갭 수정 — **구현 완료 (2026-08-19)**
   - `CheerKeywordEngine`의 `_lobbyTestMode`→`_sayTestMode` 리네임, `GetLobbyColorIndex`/`BuildLobbyGrammarJson`(둘 다 `LobbyNetworkManager.Instance` 슬롯 순회)을 `GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`(`PlayerCheerNameSync.GetAllEffectiveNames()` + `PlayerSpawnCoordinator.TryGetColor` 기반)으로 교체 — 로비 의존 제거. `_sayTestMode=true`일 때는 여전히 `SubmitCheerServerRpc` 호출 안 함(로컬 인식 확인만). 영향 확인: `_lobbyTestMode=true`였던 곳은 삭제 대상 `1.Lobby.unity` 1곳뿐, 실사용 `Player1.prefab`은 `false`라 리네임으로 인한 동작 영향 없음
   - **Tutorial 게이트 통과 전 커스텀 이름 인식 갭 수정** — 원인은 `CheerService.GetColorIndex`/`GetCheerName`이 `GameSession._sessionCheerNames`(게이트 통과 시에만 설정)만 보고, 미설정 시 고정 4종 기본값으로만 폴백했던 것. `GameSession`에 `HasSessionCheerNames` 프로퍼티 신설(`GetSessionCheerName` 자체는 미확정 시에도 기본값으로 폴백해버려 "비어있으면 다음 우선순위" 방식으로는 구분 불가) + `CheerService.GetColorIndex`/`GetCheerName`에 우선순위 폴백 추가: ①`GameSession` 확정 세션값(게이트 후) → ②`PlayerCheerNameSync.GetAllEffectiveNames()` 실시간값(게이트 전) → ③정적 기본값. Vosk grammar 자체는 이미 `PlayerCheerNameSync.RebuildOwnerLocalGrammar()`가 실시간 반영해서 문제없었음 — 갭은 인식된 단어를 colorIndex로 바꾸는 이 매핑 단계였음
-- [x] "말해보기" UX 설계 변경 (2026-08-19, 사용자 결정) — **상시 노출 → Tutorial 구역 2 상호작용 표지판으로 개폐.** 상시 패널은 화면을 계속 가리고, DialogueUI식 1회성 노출은 나중에 이름을 바꾸려 해도 타이밍을 놓칠 수 있다는 문제로, `TutorialCheerNameSignboard`(신규, `Assets/Scripts/Stage/`) 상호작용 표지판이 `TutorialCheerNameUI.Open()/Close()/Toggle()`을 호출해 게이트 통과 전까지 언제든 여닫는 방식으로 확정. 상세는 §9(체크리스트) 및 `CheerAndTutorialDesign.md` §8.3/§9.2 참고
+- [x] "말해보기" UX 설계 변경 (2026-08-19, 사용자 결정) — **상시 노출 → Tutorial 구역 2 상호작용 표지판으로 개폐.** 상시 패널은 화면을 계속 가리고, DialogueUI식 1회성 노출은 나중에 이름을 바꾸려 해도 타이밍을 놓칠 수 있다는 문제로, `TutorialCheerNameSignboard`(신규, `Assets/Scripts/Stage/`) 상호작용 표지판이 `TutorialCheerNameUI.Open()/Close()/Toggle()`을 호출해 게이트 통과 전까지 언제든 여닫는 방식으로 확정. 상세는 §9(체크리스트) 및 `CheerAndTutorialDesign.md` §6/§2(구역 2) 참고
   - `TutorialCheerNameUI`: 패널 GameObject 자체를 활성/비활성으로 토글(`Open`/`Close`/`Toggle`), `IsOpen` 정적 플래그 신설(`InGameChatUI.IsChatOpen`과 동일 패턴), 닫기 버튼 추가
   - `Player.cs`의 `OnMove`/`GetInput`에 `TutorialCheerNameUI.IsOpen` 이동 잠금 가드 추가(`InGameChatUI.IsChatOpen`과 나란히) — 타이핑 중 WASD가 이동으로 새는 문제 방지, 채팅 입력과 동일 해법 재사용
   - **1개(재방문 가능)로 배치, 표지판 3D 비주얼은 사용자가 나중에 교체 — 지금은 플레이스홀더로 진행. 상호작용 키는 프로젝트 기존 관례(`Keyboard.current` 직접 폴링)대로 E키, `InputSystem_Actions`의 미사용 `Interact` 액션(Hold 인터랙션 붙어있어 그대로 쓰기 부적합)은 손대지 않음**
@@ -746,8 +753,11 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 | **2** | E 월드 모션 | `AdvancingWall` (**`M.Stage3` 사용, `T.Boss`에서도 재사용되므로 여기서 검증해두면 T 쪽도 절반 커버됨**) | `WallMover`, `WallMoverSequencer`, `BoulderSpawner`, `BoulderSpawnManager`, `WaypointMover`(Boulder 프리팹에 내장), `WallWaveController`, `WallLineRandomizer`, `MovingCorridor`, `AdvancingWallTelegraph` — 전부 `T.Stage1`/`T.Stage3`/`T.Stage4`/`T.Boss`에서만 확인됨 |
 | **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse`, `SafeZoneWarnSign` (`M.Boss` only — PhaseStartServerTime 로컬 스케줄, RPC 없음) 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
 | **UI** | shared | `DeathOverlayUI` — `UI.prefab`, M/T 전 스테이지. 사망 문구 `{0}` = CheerName(`CheerService.GetCheerName`). Steam/OS DisplayName 아님 (2026-08-29: 로컬 경로에서 `u died`로 보이던 원인). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
+| **UI** | shared | `OptionsTeamVoicePanel` / `OptionsMenuController` / `GameSettingsManager` — `Setting_Panel.prefab` (`Title` + `UI.prefab`, 전 M/T). 마이크 송신 볼륨·팀 보이스 수신 볼륨. 사후기록: §6B.7 P3 VoiceId 항목. | 동일 — T 대표 씬(`T.Stage1`) ESC 설정 |
 
 **그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.
+
+**공유 포스트모템 (2026-09-01, `AdvancingWall`):** `PermanentAdvance`/`PenaltyRoutine`이 `RunEntry`와 달리 이동 루프 SFX를 안 켜서, ColorTile 실패 패널티로만 움직이는 벽(`M.Stage3` `Tooth`, `T.Boss` 동일 경로)이 무음이었다. `LerpTo` 전후에 `StartMoveLoop`/`StopMoveLoop`를 맞춤. 이어서 이동 루프를 3D→2D(`spatialBlend = 0`, Telegraph/WindTrap과 동일)로 바꿈 — `M.Stage3` `Tooth`는 스케일 25·천장 ~32m·패널티 0.6초라 3D가 사실상 무음. 네트워크/위치 동기화는 변경 없음. 스모크: `M.Stage3` 챌린지 실패 이동음 + 반대 라운드 `T.Boss` 스케줄/패널티 벽(거리 무관 2D).
 
 #### 9.1.4 M 씬 작업 순서 (확정)
 
@@ -1104,6 +1114,8 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 ### 11.3 ⑤ Play Consumers (Ready 구독만 — 나열은 목록, **실행 순서 아님**)
 
 `NetworkPlayerSetup`(카메라 bind) · `GameSession` · `StageResetOnPlayerDeath` · `ColoredStartZone` · `StagePressurePadSetup` · `TrapPlayerTracker` · `PlayerHPUI` · `TeamStatusUI` · `CheerProgressUI` · `ChangeColorCooldownUI`
+
+`TeamStatusUI` — **shared** (`UI.prefab`, Tutorial + 전 M.* / T.* 씬). Tutorial 순차 합류는 Ready만으로는 명단이 안 늘어나 `OnRosterChanged`(로컬 스폰/Despawn)로 재구성. Ready+Roster 구독은 다음 프레임 1회 디바운스(`RequestRebuild`) — 즉시 리빌드하면 Despawn 중인 오브젝트가 슬롯에 남고, M/T 배치 스폰은 N+1회 중복. DisplayName은 `CheerService.GetCheerName`과 동일 우선순위(세션 확정값 → 게이트 전 실시간 NV). CheerName 즉시 반영은 `PlayerCheerNameSync.OnAnyCheerNameChanged`. 사후기록: §6B.7 버그 3. 반대 라운드 스모크: `M.Stage1` Host+Client TeamStatus (§9B.4).
 
 공통 패턴 (전 Consumer 동일):
 

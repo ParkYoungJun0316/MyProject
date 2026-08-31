@@ -59,6 +59,8 @@
 
 ## 2. 씬 인벤토리 (정정 반영)
 
+**공유 HUD:** `TeamStatusUI` (`UI.prefab`, Tutorial + 전 M/T) — Tutorial 순차 합류 명단/DisplayName/CheerName 즉시 반영. 기록은 [`NetworkDesign.md`](NetworkDesign.md) §6B.7 버그 3 · §11.3.
+
 | 씬 | 컨텐츠 | 상태(정정됨) |
 |---|---|---|
 | T1 | 패드·문·볼더·Breakable·WallMover | **Must 전부 완료 (2026-08).** 패드·볼더는 기존 구현 그대로 ParrelSync 2인 검증 통과(새 코드 작업 없음). 문(Door)은 §3.1 신규 구현 + ParrelSync 2인 검증 통과. Breakable은 M 그룹1(B)에서 처리된 클래스 재사용 스모크만(별도 확인 필요 시) |

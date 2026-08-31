@@ -7,6 +7,7 @@ using UnityEngine;
 /// [메서드 구분]
 /// ApplyDamage      — 서버 판정 전용. 함정·적·씬 이벤트 등 모든 데미지 진입점.
 ///                    서버에서만 실제 동작. 클라이언트 호출 시 즉시 반환.
+/// ApplyHeal        — 서버 판정 전용. 팀 버프 등 모든 회복 진입점. 클라이언트 호출 시 즉시 반환.
 /// ApplyInstantKill — 즉사 전용. 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
 /// ApplyKnockback   — 순수 넉백 전용(HP·쉴드 미변경). 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
 /// </summary>
@@ -25,6 +26,17 @@ public static class NetworkDamageUtil
             netSetup.ApplyDamageFromServer(amount, knockback);
         else
             p.TakeDamage(amount, knockback);
+    }
+
+    /// <summary>서버에서만 회복 판정. 팀 버프 등 서버 컨텍스트 전용. 클라이언트 호출 시 즉시 반환.</summary>
+    public static void ApplyHeal(Player p, int amount)
+    {
+        if (p == null || amount <= 0) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+        p.GetComponent<NetworkPlayerSetup>()?.ApplyHealFromServer(amount);
     }
 
     /// <summary>

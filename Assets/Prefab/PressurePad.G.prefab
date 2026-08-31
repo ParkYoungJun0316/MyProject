@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8028393199763076075}
   - component: {fileID: 1406949697870934979}
   - component: {fileID: -1064217017663608828}
+  - component: {fileID: 3978864103197716773}
   m_Layer: 25
   m_Name: PressurePad.G
   m_TagString: Untagged
@@ -107,6 +108,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PressurePad
   designColor: 3
   requiredCount: 1
+  pressSfxId: 32
   OnFulfilled:
     m_PersistentCalls:
       m_Calls: []
@@ -162,3 +164,18 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3978864103197716773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748915474999461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed81d7ea685fe904786a0034dc0dc391, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PadOccupancyFeedback
+  ripple: {fileID: 0}
+  ripplePrefab: {fileID: 6358182680378643340, guid: b6af2c94a31a0bd4482d20612605b7a4, type: 3}
+  heightOffset: 0.3

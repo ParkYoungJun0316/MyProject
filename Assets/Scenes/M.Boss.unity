@@ -548,7 +548,9 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  cheerTimeoutSeconds: 10
+  teamCheerCooldownSeconds: 15
+  teamCheerTimeoutSeconds: 10
+  teamHealAmount: 2
   chatRateLimitSeconds: 0.5
 --- !u!114 &54507342
 MonoBehaviour:
@@ -1020,7 +1022,7 @@ PrefabInstance:
       addedObject: {fileID: 94077580}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 94077579}
+      addedObject: {fileID: 94077583}
   m_SourcePrefab: {fileID: 100100000, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
 --- !u!1 &94077576 stripped
 GameObject:
@@ -1061,21 +1063,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
   m_PrefabInstance: {fileID: 94077575}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &94077579
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 94077576}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
-  targetRenderer: {fileID: 732350085}
-  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  yAxisOnly: 1
 --- !u!114 &94077580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1144,6 +1131,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &94077583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 94077576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0f1dc98696846646a5491995db2e645, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowWarnSign
+  warnSignObject: {fileID: 0}
+  warnLeadTime: 1.5
 --- !u!1 &106545999
 GameObject:
   m_ObjectHideFlags: 0
@@ -2848,7 +2849,7 @@ PrefabInstance:
       addedObject: {fileID: 1008703202}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1008703201}
+      addedObject: {fileID: 1008703207}
   m_SourcePrefab: {fileID: 100100000, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
 --- !u!114 &364058843
 MonoBehaviour:
@@ -4437,7 +4438,7 @@ PrefabInstance:
       addedObject: {fileID: 1026233447}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1026233446}
+      addedObject: {fileID: 1026233452}
   m_SourcePrefab: {fileID: 100100000, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
 --- !u!114 &636053865
 MonoBehaviour:
@@ -7100,21 +7101,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
   m_PrefabInstance: {fileID: 363684727}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1008703201
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1008703200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
-  targetRenderer: {fileID: 1110098845}
-  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  yAxisOnly: 1
 --- !u!114 &1008703202
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7217,26 +7203,25 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
   m_PrefabInstance: {fileID: 363684727}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1026233445 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
-  m_PrefabInstance: {fileID: 609956036}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1026233446
+--- !u!114 &1008703207
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1026233445}
+  m_GameObject: {fileID: 1008703200}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f89454a6b260cd345887999087ce5cb5, type: 3}
+  m_Script: {fileID: 11500000, guid: a0f1dc98696846646a5491995db2e645, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TrapTrackerIndicator
-  targetRenderer: {fileID: 1787523887}
-  noTargetColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  yAxisOnly: 1
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowWarnSign
+  warnSignObject: {fileID: 0}
+  warnLeadTime: 1.5
+--- !u!1 &1026233445 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
+  m_PrefabInstance: {fileID: 609956036}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1026233447
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7339,6 +7324,20 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ba09ed953b57f9343b2d6d5ede4eb1a2, type: 3}
   m_PrefabInstance: {fileID: 609956036}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1026233452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026233445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0f1dc98696846646a5491995db2e645, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowWarnSign
+  warnSignObject: {fileID: 0}
+  warnLeadTime: 1.5
 --- !u!1 &1060722640
 GameObject:
   m_ObjectHideFlags: 0

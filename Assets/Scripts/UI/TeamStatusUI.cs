@@ -63,6 +63,7 @@ public class TeamStatusUI : MonoBehaviour
 
         // BuildSlots 재호출 시 언구독용 (람다 캡처 해제 필수)
         public System.Action<bool>             onDamaged;
+        public System.Action                   onHealed;
         public System.Action                   onDied;
         public System.Action                   onRespawned;
         public System.Action<PlayerColorType>  onColorTypeChanged;
@@ -70,18 +71,49 @@ public class TeamStatusUI : MonoBehaviour
 
     readonly List<PlayerSlot> slots = new();
 
+    // BuildSlots 재호출 코얼레싱 — OnPlayersReady/OnRosterChanged가 같은 프레임에 몰려도 1회만 실행
+    bool _rebuildPending;
+
     // ── 초기화 ───────────────────────────────────────────────────
 
     void Start()
     {
-        PlayerSpawnCoordinator.OnPlayersReady += BuildSlots;
-        if (PlayerSpawnCoordinator.IsReady) BuildSlots();
+        PlayerSpawnCoordinator.OnPlayersReady += RequestRebuild;
+        PlayerSpawnCoordinator.OnRosterChanged += RequestRebuild;
+        PlayerDisplayNameSync.OnAnyDisplayNameChanged += RefreshAllSlotNames;
+        if (PlayerSpawnCoordinator.IsReady) RequestRebuild();
     }
 
     void OnDestroy()
     {
-        PlayerSpawnCoordinator.OnPlayersReady -= BuildSlots;
+        PlayerSpawnCoordinator.OnPlayersReady -= RequestRebuild;
+        PlayerSpawnCoordinator.OnRosterChanged -= RequestRebuild;
+        PlayerDisplayNameSync.OnAnyDisplayNameChanged -= RefreshAllSlotNames;
         UnsubscribeAllSlots();
+    }
+
+    /// <summary>
+    /// BuildSlots() 재호출을 다음 프레임으로 1회만 합친다(디바운스).
+    /// - M/T 배치 스폰: N명이 한 프레임에 각자 OnRosterChanged를 발행 + 곧이어 OnPlayersReady까지 →
+    ///   원래는 N+1번 리빌드되던 것을 1번으로 줄인다.
+    /// - Despawn 직후 즉시 리빌드하면 문제: NGO는 OnNetworkDespawn(=OnRosterChanged 발행 시점)을
+    ///   IsSpawned=false 갱신·GameObject Destroy()보다 먼저 호출한다(InvokeBehaviourNetworkDespawn →
+    ///   ResetOnDespawn → Destroy 순서, NetworkSpawnManager.OnDespawnObject 확인됨). 즉시 BuildSlots를
+    ///   돌리면 방금 나간 플레이어가 FindObjectsByType에 여전히 잡혀 슬롯이 남는다. 한 프레임 미루면
+    ///   그 사이 Destroy()가 반영되어 정상적으로 빠진다.
+    /// </summary>
+    void RequestRebuild()
+    {
+        if (_rebuildPending) return;
+        _rebuildPending = true;
+        StartCoroutine(RebuildNextFrame());
+    }
+
+    System.Collections.IEnumerator RebuildNextFrame()
+    {
+        yield return null;
+        _rebuildPending = false;
+        BuildSlots();
     }
 
     static Player FindLocalOwnerPlayer()
@@ -113,6 +145,8 @@ public class TeamStatusUI : MonoBehaviour
 
     void BuildSlots()
     {
+        if (!isActiveAndEnabled) return;
+
         if (excludePlayer == null)
             excludePlayer = FindLocalOwnerPlayer();
 
@@ -134,8 +168,19 @@ public class TeamStatusUI : MonoBehaviour
         vlg.childAlignment         = TextAnchor.UpperLeft;
 
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
-            if (p != null && p != excludePlayer)
-                slots.Add(CreateSlot(p));
+        {
+            if (p == null || p == excludePlayer) continue;
+            var net = p.GetComponent<NetworkObject>();
+            if (net != null && !net.IsSpawned) continue;
+            slots.Add(CreateSlot(p));
+        }
+    }
+
+    void RefreshAllSlotNames()
+    {
+        if (!isActiveAndEnabled) return;
+        foreach (var slot in slots)
+            RefreshSlot(slot);
     }
 
     void UnsubscribeAllSlots()
@@ -144,6 +189,7 @@ public class TeamStatusUI : MonoBehaviour
         {
             if (slot?.events == null) continue;
             if (slot.onDamaged != null)         slot.events.OnDamaged          -= slot.onDamaged;
+            if (slot.onHealed != null)          slot.events.OnHealed           -= slot.onHealed;
             if (slot.onDied != null)            slot.events.OnDied             -= slot.onDied;
             if (slot.onRespawned != null)       slot.events.OnRespawned        -= slot.onRespawned;
             if (slot.onColorTypeChanged != null) slot.events.OnColorTypeChanged -= slot.onColorTypeChanged;
@@ -152,13 +198,31 @@ public class TeamStatusUI : MonoBehaviour
 
     /// <summary>
     /// colorIndex → Steam 표시 이름(닉네임). 매핑 실패 시 "???".
+    /// 우선순위는 CheerService.GetCheerName과 동일 규칙(세션 확정값 우선 → 실시간 NV 폴백) —
+    /// 게이트 후(세션 확정)엔 스냅샷을 그대로 쓰고, 게이트 전(Tutorial, 세션 미확정)에만
+    /// PlayerDisplayNameSync 실시간 NV를 스캔한다. DisplayName은 재제출 UI가 없어 스테이지
+    /// 재스폰 때마다 같은 값이 그대로 재보고되므로 두 값은 항상 수렴하지만, 우선순위 규칙을
+    /// CheerName과 동일하게 맞춰 SSOT 판단 기준을 하나로 통일한다.
     /// CheerName("BERRY" 등)은 응원 시 혼동을 줄이기 위해 캐릭터 머리 위(PlayerNameTagUI)로 이전했고,
     /// 이 코너 패널은 "실제로 누구인지" 확인용 Steam 닉네임을 표시한다.
     /// </summary>
     static string GetPlayerDisplayName(int colorIndex)
     {
-        string name = GameSession.Instance != null ? GameSession.Instance.GetSessionDisplayName(colorIndex) : null;
-        return string.IsNullOrEmpty(name) ? "???" : name;
+        if (GameSession.Instance != null && GameSession.Instance.HasSessionDisplayNames)
+        {
+            string session = GameSession.Instance.GetSessionDisplayName(colorIndex);
+            if (!string.IsNullOrEmpty(session)) return session;
+        }
+
+        foreach (var (clientId, name) in PlayerDisplayNameSync.GetAllEffectiveNames())
+        {
+            if (string.IsNullOrEmpty(name)) continue;
+            if (!PlayerSpawnCoordinator.TryGetColor(clientId, out var color)) continue;
+            if (PlayerColorUtil.ColorTypeToIndex(color) == colorIndex)
+                return name;
+        }
+
+        return "???";
     }
 
     // ── 슬롯 생성 ─────────────────────────────────────────────────
@@ -255,10 +319,12 @@ public class TeamStatusUI : MonoBehaviour
         if (slot.events != null)
         {
             slot.onDamaged         = _ => RefreshSlot(slot);
+            slot.onHealed          = () => RefreshSlot(slot);
             slot.onDied            = () => SetDead(slot, true);
             slot.onRespawned       = () => SetDead(slot, false);
             slot.onColorTypeChanged = _ => RefreshSlot(slot);
             slot.events.OnDamaged          += slot.onDamaged;
+            slot.events.OnHealed           += slot.onHealed;
             slot.events.OnDied             += slot.onDied;
             slot.events.OnRespawned        += slot.onRespawned;
             slot.events.OnColorTypeChanged += slot.onColorTypeChanged;
