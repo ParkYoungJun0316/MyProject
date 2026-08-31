@@ -20,6 +20,12 @@ using UnityEngine.Events;
 ///   3. timeLimit 안에 4명 모두 자기 타일 위에 서 있는지는 Host만 판정
 ///   4. 결과(성공/실패)를 ClientRpc로 전파해 전 머신이 동일한 정리·이벤트를 재생
 ///
+/// [남은 시간 표시 — SideSplitChallenge.OnTimerTick과 동일 방식]
+///  ChallengeStepStartServerTime(②RoundStart에서 이미 기록됨)을 ServerTime 기준으로 역산해
+///  Host/Client가 항상 같은 숫자를 본다. 오답 페널티 등 이벤트성 변동이 없는 챌린지라
+///  SequenceRing의 SyncChallengeTimeClientRpc(주기 브로드캐스트) 방식은 불필요 — 새 NV/RPC 없음.
+///  점유 판정(allDone)·타임아웃 확정은 계속 Host 레인에서만 수행.
+///
 /// [스케줄 설정]
 ///  activateAtSeconds = [10, 30, 60] → 10초, 30초, 60초에 발동
 ///  loopSchedule = true + schedulePeriod = 90 → 90초 주기로 반복
@@ -88,6 +94,10 @@ public class ColorTileChallenge : MonoBehaviour
     [Header("이벤트")]
     [Tooltip("챌린지 시작 시 호출")]
     public UnityEvent OnChallengeStarted;
+
+    [Tooltip("남은 시간(초) 전달 — 타이머 UI에 연결 (매 프레임 갱신, ServerTime 역산이라 Host/Client 동일값).\n" +
+             "SideSplitChallenge.OnTimerTick과 동일 패턴.")]
+    public UnityEvent<float> OnTimerTick;
 
     [Tooltip("시간 안에 모두 성공 시 호출")]
     public UnityEvent OnSuccess;
@@ -346,39 +356,61 @@ public class ColorTileChallenge : MonoBehaviour
 
         OnChallengeStarted?.Invoke();
 
-        // 5. 판정은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 ClientRpc로만 관찰
-        if (IsClientOnly()) return;
-
+        // 5. 남은 시간 표시는 전 머신 공통, 실제 점유 판정은 Host 레인에서만 (§11B ④Judge)
         if (_judgeCoroutine != null) StopCoroutine(_judgeCoroutine);
         _judgeCoroutine = StartCoroutine(JudgeRoutine());
     }
 
-    // ── 판정 (Host 전용, §11B ④Judge) ─────────────────────────────
+    // ── 판정 (시계: 전 머신 공통 / 점유 판정: Host 전용, §11B ④Judge) ──
 
+    /// <summary>
+    /// 남은 시간은 ChallengeStepStartServerTime을 ServerTime 기준으로 역산해 Host/Client가 항상
+    /// 같은 숫자를 표시한다(SideSplitChallenge.TimerRoutine과 동일 원칙). 타일 점유 확인과 타임아웃
+    /// 확정은 계속 Host 레인에서만 수행 — Client는 시계만 갱신하고, 결과는
+    /// NotifyChallengeOutcomeClientRpc(HandleNetChallengeOutcome)로만 관찰한다.
+    /// </summary>
     IEnumerator JudgeRoutine()
     {
-        float remaining = timeLimit;
+        var nm = NetworkManager.Singleton;
+        bool clientOnly = IsClientOnly();
 
-        while (remaining > 0f)
+        while (_isRunning)
         {
-            // 모든 타일이 완료됐는지 확인 (타일이 있을 때만 성공 가능)
-            bool allDone = _activeTiles.Count > 0;
-            foreach (ColorTile t in _activeTiles)
-            {
-                if (t == null || !t.IsCompleted) { allDone = false; break; }
-            }
+            double startTime = _netState != null ? _netState.ChallengeStepStartServerTime : 0.0;
+            double elapsed   = (nm != null ? nm.ServerTime.Time : 0.0) - startTime;
+            float  remaining = Mathf.Max(0f, timeLimit - (float)elapsed);
 
-            if (allDone)
+            OnTimerTick?.Invoke(remaining);
+
+            if (!clientOnly)
             {
-                ResolveRound(true);
+                // 모든 타일이 완료됐는지 확인 (타일이 있을 때만 성공 가능)
+                bool allDone = _activeTiles.Count > 0;
+                foreach (ColorTile t in _activeTiles)
+                {
+                    if (t == null || !t.IsCompleted) { allDone = false; break; }
+                }
+
+                if (allDone)
+                {
+                    ResolveRound(true);
+                    yield break;
+                }
+
+                if (remaining <= 0f)
+                {
+                    ResolveRound(false);
+                    yield break;
+                }
+            }
+            else if (remaining <= 0f)
+            {
+                // Client: 시간이 다 됐어도 스스로 실패 확정하지 않음 — Host의 결과 RPC를 기다린다.
                 yield break;
             }
 
-            remaining -= Time.deltaTime;
             yield return null;
         }
-
-        ResolveRound(false);
     }
 
     /// <summary>Host: 판정 확정 → 로컬 반영 + Client에 결과 전파 (§11B ⑤Resolve).</summary>

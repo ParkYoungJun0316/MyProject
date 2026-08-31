@@ -1011,7 +1011,7 @@ MonoBehaviour:
   - {fileID: 589589754}
   - {fileID: 780076804}
   - {fileID: 1380054029}
-  timeLimit: 3
+  timeLimit: 5
   activateAtSeconds:
   - 7
   - 14
@@ -1026,6 +1026,9 @@ MonoBehaviour:
   - {fileID: 8925258424838456718}
   penaltyAdvanceDistance: 4
   OnChallengeStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTimerTick:
     m_PersistentCalls:
       m_Calls: []
   OnSuccess:
@@ -1395,7 +1398,7 @@ Transform:
   m_GameObject: {fileID: 589589753}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -11, y: 0, z: 0}
+  m_LocalPosition: {x: -11, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1610,7 +1613,7 @@ Transform:
   m_GameObject: {fileID: 780076803}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -11}
+  m_LocalPosition: {x: 0, y: 0.5, z: -11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2628,7 +2631,7 @@ Transform:
   m_GameObject: {fileID: 1380054028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 11}
+  m_LocalPosition: {x: 0, y: 0.5, z: 11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2659,7 +2662,7 @@ Transform:
   m_GameObject: {fileID: 1392766767}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 11, y: 0, z: 0}
+  m_LocalPosition: {x: 11, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3398,6 +3401,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2829055845306062393, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2879022694852666727, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: dialogueLines.Array.size
       value: 3
@@ -3426,6 +3433,10 @@ PrefabInstance:
       propertyPath: m_text
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 4693323322132826522, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: challenge
+      value: 
+      objectReference: {fileID: 433914000}
     - target: {fileID: 4862474480044982399, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_Name
       value: UI
@@ -3441,6 +3452,10 @@ PrefabInstance:
     - target: {fileID: 6238628592825684599, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: maxAlpha
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6305786061873140881, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.00004929843
       objectReference: {fileID: 0}
     - target: {fileID: 6417479575125417010, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: GlobalObjectIdHash
@@ -3537,6 +3552,10 @@ PrefabInstance:
     - target: {fileID: 7854442590580305213, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: OnClickLeaveRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 8443715416055452950, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
