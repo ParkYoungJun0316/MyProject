@@ -212,7 +212,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (_voiceBroadcast != null)
         {
             _voiceBroadcast.enabled = true;
-            GameSettingsManager.Instance?.ApplyMicTransmitVolume();
+            // NetworkManager.LocalClient.PlayerObject로 다시 찾는 오버로드는 이 시점엔 아직 null이라
+            // no-op됨(NGO가 PlayerObject를 채우는 건 OnNetworkSpawn 이후) — 캐시해둔 참조를 직접 넘긴다.
+            GameSettingsManager.Instance?.ApplyMicTransmitVolume(_voiceBroadcast);
         }
 
         // 키워드 인식도 Owner만 (자기 마이크만 분석)

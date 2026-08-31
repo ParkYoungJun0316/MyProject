@@ -274,6 +274,15 @@ Inspector에서 특정 SFX만 보정 가능:
 - **마이크 음소거 on/off — 구현 완료(§9.5).** `DissonanceComms.IsMuted` 바인딩. 네트워크 전송(인코더)만
   끊고 로컬 캡처는 유지되므로 응원 키워드 감지(Cheer)에는 영향 없음(코드 확인함).
 - **마이크 볼륨(게인) 조절 — 구현 완료 (2026-09-01).** `GameSettingsManager.MicVolume`(PlayerPrefs `Settings.MicVolume`, 기본 1). 슬라이더는 `OptionsMenuController`가 `Row_MicVolume`을 찾아 연결(Inspector 미연결 폴백). 적용은 로컬 `VoiceBroadcastTrigger.ActivationFader.Volume`(상대가 듣는 송신 게인). Dissonance 로컬 `VoicePlayerState.Volume` setter는 미지원이라 쓰지 않음. CheerKeywordEngine/Vosk 캡처 레벨은 바꾸지 않음.
+  - **후속 수정(같은 날, 스폰 타이밍 버그).** 최초 구현은 `ApplyMicTransmitVolume()`이
+    `NetworkManager.LocalClient.PlayerObject`로 트리거를 다시 찾았는데, NGO
+    `NetworkSpawnManager`가 이 필드를 `InvokeBehaviourNetworkSpawn()`(= `OnNetworkSpawn`, 즉
+    `NetworkPlayerSetup.SetupOwner()`가 실행되는 그 안) **이후**에 채운다는 걸
+    `Library/PackageCache` 소스 대조로 확인함 — 그래서 스폰 시점 호출은 매번 no-op되어
+    저장된 마이크 볼륨이 재접속 직후 자동으로 반영 안 되고(기본 100%로 송신), 옵션 창을
+    열어 슬라이더를 한 번 만져야만(그때는 PlayerObject가 이미 채워짐) 적용되는 문제가 있었음.
+    `ApplyMicTransmitVolume(VoiceBroadcastTrigger)` 오버로드를 추가해 `SetupOwner()`가 이미
+    캐시해둔 `_voiceBroadcast` 참조를 직접 넘기도록 수정 — 타이밍 문제 자체를 우회.
 - **팀원 보이스 수신 볼륨 조절 — 구현 완료(§9.6).** Dissonance `VoicePlayerState.PlayerId`가 세션마다
   랜덤 GUID라 팀원 슬롯과 매칭이 안 되는 신원 문제가 있었는데, 사용자가 (필드 추가 없이 우회하는 대안보다)
   `LobbyPlayerState`에 self-report 필드(`VoiceId`)를 추가하는 쪽을 채택해 해결(§9.6). 개별 음소거(mute)
@@ -615,9 +624,16 @@ BGM처럼 LUFS로 전부 통일하면 안 됨 — SFX는 종류별로 크기가 
   기술적 결함 유무로 나눈 분류였음. 사용자가 "왜 나누냐, 다 2D로" 요청해서 통일. `windSpatialBlend`/
   `windMinDistance`/`windMaxDistance`/`windRolloffMode` 필드 전부 제거, `_windLoopSource.spatialBlend = 0f`
   하드코딩. 임펄스 쪽 코드는 원래부터 2D라 변경 없음.
-- **`AdvancingWall.cs` 이동 루프 — 3D(Inspector 조절형) → 2D 고정 (2026-09-01).** `M.Stage3` `Tooth`가
-  스케일 25·천장 ~32m·패널티 0.6초라 3D가 사실상 무음. Telegraph/WindTrap과 동일하게 `moveSpatialBlend`/
-  `moveMinDistance`/`moveMaxDistance`/`moveRolloffMode` 필드 제거, `_moveLoopSource.spatialBlend = 0f`.
+- **`AdvancingWall.cs` 이동 루프 — 3D↔2D 왕복 후 최종 "패널티는 무음 + 3D 유지"로 확정 (2026-09-01).**
+  1차: `M.Stage3` `Tooth`가 스케일 25·천장 ~32m·패널티 0.6초라 3D가 사실상 무음 → Telegraph/WindTrap과
+  동일하게 2D 고정 시도. 2차: 2D로도 여전히 작게 들림 — 원인은 클립 자체가 아니라 (a) `SFXLibrary`의
+  `VolumeOverride` 2배가 `AudioSource.volume`(0~1 클램프) 경로라 SFX 100에서도 못 먹고, (b) 패널티
+  0.6초가 클립의 페이드인 구간과 겹침. **최종 결정: 패널티 이동엔 루프 사운드를 아예 안 씀** — 대신
+  실패 시점에 `ColorTileChallenge.OnFail`(UnityEvent) → `SFXEventPlayer.Play()`(2D 단발, 이미 `M.Stage3`
+  씬에 배치돼 있던 컴포넌트 재사용, 신규 코드 없음)로 연결. `AdvancingWall`의 이동 루프 자체는
+  **3D로 원복**(`moveSpatialBlend`/`moveMinDistance`/`moveMaxDistance`/`moveRolloffMode` 필드 복원) —
+  `T.Boss`가 스케줄 전진·후퇴(패널티 아님)에 이 루프를 그대로 쓰므로 2D로 두면 그쪽엔 과함. `PenaltyRoutine()`
+  에서 `StartMoveLoop()`/`StopMoveLoop()` 호출 제거(패널티는 순간이동 취급, 사운드는 호출자 책임).
 
 ### 11.2 `Breakable_Destroy` 2D → 3D (2026-08-29, 같은 세션)
 
@@ -733,9 +749,10 @@ min=1/max=0(→500) 기본값이 명시적으로 저장돼 있는 상태**(`Spik
 
 **최종 상태 정리:**
 - **2D:** `DropTrap`(발동/경고), `SpikeLaneField`(경고음 제거 — 무음), `WindTrap`(임펄스+지속 루프
-  전부), `AdvancingWallTelegraph`(경고 루프), `AdvancingWall`(이동 루프, 2026-09-01 3D→2D).
+  전부), `AdvancingWallTelegraph`(경고 루프), `ColorTileChallenge` 실패 사운드(`OnFail` →
+  `SFXEventPlayer.Play()`, 2026-09-01 신설, §11 참고).
 - **3D:** `ArrowTrap`(발사음), `SpikeTrap`(상승음), `Stage5ChaserAI`(공격), `Stage5TargetRunner`(포획),
   `Breakable_Destroy`(벽 파괴, §11.2) — 단발음 5곳, `PlayAtPoint()`로 min/maxDistance Inspector 조절
   가능. `SpinRoller`/Boulder_Roll(구르는 루프), `Stage5ChaserAI`/
-  `Stage5TargetRunner`(달리기 루프) — 루프 2곳, Inspector `spatialBlend`/`minDistance`/
-  `maxDistance` 조절 가능.
+  `Stage5TargetRunner`(달리기 루프), `AdvancingWall`(전진·후퇴 스케줄 루프, 패널티는 무음 — 2026-09-01
+  최종) — 루프 3곳, Inspector `spatialBlend`/`minDistance`/`maxDistance` 조절 가능.

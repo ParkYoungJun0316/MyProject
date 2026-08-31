@@ -757,7 +757,7 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 
 **그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.
 
-**공유 포스트모템 (2026-09-01, `AdvancingWall`):** `PermanentAdvance`/`PenaltyRoutine`이 `RunEntry`와 달리 이동 루프 SFX를 안 켜서, ColorTile 실패 패널티로만 움직이는 벽(`M.Stage3` `Tooth`, `T.Boss` 동일 경로)이 무음이었다. `LerpTo` 전후에 `StartMoveLoop`/`StopMoveLoop`를 맞춤. 이어서 이동 루프를 3D→2D(`spatialBlend = 0`, Telegraph/WindTrap과 동일)로 바꿈 — `M.Stage3` `Tooth`는 스케일 25·천장 ~32m·패널티 0.6초라 3D가 사실상 무음. 네트워크/위치 동기화는 변경 없음. 스모크: `M.Stage3` 챌린지 실패 이동음 + 반대 라운드 `T.Boss` 스케줄/패널티 벽(거리 무관 2D).
+**공유 포스트모템 (2026-09-01, `AdvancingWall`):** `PermanentAdvance`/`PenaltyRoutine`이 `RunEntry`와 달리 이동 루프 SFX를 안 켜서, ColorTile 실패 패널티로만 움직이는 벽(`M.Stage3` `Tooth`, `T.Boss` 동일 경로)이 무음이었다. 1차 수정: `LerpTo` 전후에 `StartMoveLoop`/`StopMoveLoop`를 맞추고, 3D→2D(`spatialBlend = 0`)로 전환. 2차(같은 날): 2D로도 여전히 안 들림 — 원인은 `VolumeOverride` 2배가 `AudioSource.volume`(0~1 클램프) 경로라 못 먹는 것 + 패널티 0.6초가 클립 페이드인과 겹치는 것이었음. **최종: 패널티 이동은 무음으로 되돌리고(`PenaltyRoutine`에서 `StartMoveLoop`/`StopMoveLoop` 제거), 이동 루프 자체는 3D로 원복**(`moveSpatialBlend`/`moveMinDistance`/`moveMaxDistance`/`moveRolloffMode` 필드 복원 — `T.Boss` 스케줄 전진·후퇴가 이 루프를 그대로 쓰므로 2D는 과함). 실패 사운드는 `ColorTileChallenge.OnFail` → `SFXEventPlayer.Play()`(2D 단발, `M.Stage3`에 이미 배치된 컴포넌트 재사용)로 챌린지 쪽에서 별도 처리. 네트워크/위치 동기화는 변경 없음(Host/Client 각자 로컬 재생). 스모크: `M.Stage3` 챌린지 실패 시 단발 SFX 1회 + 반대 라운드 `T.Boss` 스케줄 전진·후퇴 이동음(3D, 패널티 시 무음) 확인.
 
 #### 9.1.4 M 씬 작업 순서 (확정)
 

@@ -161,7 +161,13 @@ public class GameSettingsManager : MonoBehaviour
     /// 로컬 Owner의 VoiceBroadcastTrigger 송신 게인에 MicVolume을 반영.
     /// Dissonance 로컬 VoicePlayerState.Volume setter는 미지원(에러만 남김)이라
     /// ActivationFader를 쓴다. CheerKeywordEngine 캡처/Vosk 경로에는 영향 없음.
-    /// Player가 아직 없으면 no-op — 스폰 시 NetworkPlayerSetup이 다시 호출한다.
+    ///
+    /// [옵션 슬라이더 조작 경로 전용 — 스폰 직후엔 쓰지 말 것]
+    /// NetworkManager.LocalClient.PlayerObject로 트리거를 다시 찾는다. 이 필드는 NGO
+    /// NetworkSpawnManager가 InvokeBehaviourNetworkSpawn() 이후에야 채우므로, Player의
+    /// OnNetworkSpawn(NetworkPlayerSetup.SetupOwner) 안에서 호출하면 아직 null이라 no-op된다
+    /// (2026-09-01 실측 — Library/PackageCache 소스 대조 확인). 스폰 시점엔 트리거를 이미
+    /// 들고 있는 ApplyMicTransmitVolume(VoiceBroadcastTrigger) 오버로드를 쓴다.
     /// </summary>
     public void ApplyMicTransmitVolume()
     {
@@ -170,7 +176,16 @@ public class GameSettingsManager : MonoBehaviour
         var localClient = NetworkManager.Singleton.LocalClient;
         if (localClient == null || localClient.PlayerObject == null) return;
 
-        var trigger = localClient.PlayerObject.GetComponent<VoiceBroadcastTrigger>();
+        ApplyMicTransmitVolume(localClient.PlayerObject.GetComponent<VoiceBroadcastTrigger>());
+    }
+
+    /// <summary>
+    /// 위와 동일한 적용 로직이지만 트리거를 직접 받는다 — NetworkPlayerSetup.SetupOwner()가
+    /// OnNetworkSpawn 시점에 이미 캐시해둔 자기 자신의 VoiceBroadcastTrigger를 넘겨 호출.
+    /// NetworkManager.LocalClient.PlayerObject 타이밍 문제(위 설명)를 완전히 우회한다.
+    /// </summary>
+    public void ApplyMicTransmitVolume(VoiceBroadcastTrigger trigger)
+    {
         if (trigger == null) return;
         trigger.ActivationFader.Volume = MicVolume;
     }

@@ -166,7 +166,7 @@ public void FloorRoll(int seed, float keepBWRatio)
 - 타일 생성 로직을 `ChallengeRoutine()`(로컬 전용 코루틴)에서 `HandleChallengeStepChanged(int)`(StageNetworkState NV 구독, 전 머신 공통)로 이동 — `System.Random(ChallengeSeed)`로 스폰 포인트 셔플(전역 `UnityEngine.Random` 오염 없음)
 - 판정(`JudgeRoutine`)은 `HandleChallengeStepChanged` 끝에서 Host만 시작 — `ResolveRound()`가 Host 로컬 반영 + `NotifyChallengeOutcomeClientRpc`로 Client 전파
 - 실패 패널티(`AdvancingWall.PermanentAdvance`)는 네트워크 동기화가 없는 로컬 컴포넌트라, Host/Client가 `HandleChallengeOutcome`을 통해 동일한 고정값으로 각자 호출해 위치를 맞춤(별도 NV 불필요)
-- `AdvancingWall` 패널티 이동 무음(2026-09-01): 공유 컴포넌트라 `NetworkDesign.md` §9.1.3에 기록. `PenaltyRoutine`에 `StartMoveLoop`/`StopMoveLoop` 추가.
+- `AdvancingWall` 패널티 이동 무음(2026-09-01): 공유 컴포넌트라 `NetworkDesign.md` §9.1.3에 기록. 1차로 `PenaltyRoutine`에 `StartMoveLoop`/`StopMoveLoop` 추가 + 2D 전환을 시도했으나 여전히 안 들려서, **최종적으로 패널티 이동은 무음으로 되돌리고 이동 루프는 3D로 원복** — 실패 사운드는 `ColorTileChallenge.OnFail` → `SFXEventPlayer.Play()`로 분리(상세는 `NetworkDesign.md` §9.1.3 참고).
 - `ColorTileRoundObjective.HandleSuccess()`에 Host 가드 추가 — `Complete()` 확정은 Host 레인에서만(`OXQuizObjective.HandleAllCleared`와 동일 패턴)
 
 ### 지금까지 실제로 한 일 (코드, 전부 완료)
