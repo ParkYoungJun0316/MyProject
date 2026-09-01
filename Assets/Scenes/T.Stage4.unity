@@ -15,9 +15,9 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 0
-  m_FogColor: {r: 0.28930807, g: 0.1828645, b: 0.28930807, a: 1}
+  m_FogColor: {r: 0, g: 0, b: 0, a: 1}
   m_FogMode: 3
-  m_FogDensity: 0.01
+  m_FogDensity: 0.1
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
@@ -224,12 +224,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 51033926}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 10, z: -29}
   m_LocalScale: {x: 1, y: 5, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2022581125}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &54277347
 GameObject:
@@ -1216,6 +1216,108 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 160852125}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &161751939
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 907770936}
+    m_Modifications:
+    - target: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_Name
+      value: GroundFog
+      objectReference: {fileID: 0}
+    - target: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 188
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: lengthInSec
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.b
+      value: 0.31132066
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.g
+      value: 0.31132066
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.m_ColorSpace
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+--- !u!4 &161751940 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+  m_PrefabInstance: {fileID: 161751939}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &170623894
 GameObject:
   m_ObjectHideFlags: 0
@@ -2463,7 +2565,7 @@ Transform:
   m_GameObject: {fileID: 406004633}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 23, y: 10, z: 30}
+  m_LocalPosition: {x: 24, y: 10, z: 30}
   m_LocalScale: {x: 60, y: 1, z: 21}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3222,7 +3324,7 @@ Transform:
   m_LocalScale: {x: 1, y: 5, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2022581125}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &501680165
 GameObject:
@@ -3334,7 +3436,7 @@ Transform:
   m_LocalScale: {x: 1, y: 5, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2022581125}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &512867628
 GameObject:
@@ -4975,6 +5077,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1282599969}
+  - {fileID: 2022581125}
+  - {fileID: 1698619294}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &763371449
@@ -5911,6 +6015,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 554497831}
+  - {fileID: 161751940}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &917022603
@@ -7626,12 +7731,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1186469362}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 10, z: 29}
   m_LocalScale: {x: 1, y: 5, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2022581125}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &1200647778
 GameObject:
@@ -9860,6 +9965,112 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1697510830}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1698619293
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 759889027}
+    m_Modifications:
+    - target: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_Name
+      value: GroundFog (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: lengthInSec
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.ctime1
+      value: 65278
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.b
+      value: 0.22369719
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.m_ColorSpace
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+--- !u!4 &1698619294 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+  m_PrefabInstance: {fileID: 1698619293}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1785443572
 GameObject:
   m_ObjectHideFlags: 0
@@ -10846,6 +11057,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -29
       objectReference: {fileID: 0}
+    - target: {fileID: 4770791036089515599, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 900
+      objectReference: {fileID: 0}
     - target: {fileID: 4862474480044982399, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_Name
       value: UI
@@ -11321,7 +11536,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -11330,8 +11545,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 3
   playerLayer:
     serializedVersion: 2
@@ -11419,6 +11634,41 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2022038050}
   m_Mesh: {fileID: 5480564765635122532, guid: 127fdfa1617067344adef3b118ab91ab, type: 3}
+--- !u!1 &2022581124
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2022581125}
+  m_Layer: 0
+  m_Name: Direction
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2022581125
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2022581124}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 495736541}
+  - {fileID: 501680169}
+  - {fileID: 1186469366}
+  - {fileID: 51033930}
+  m_Father: {fileID: 759889027}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2033333647
 GameObject:
   m_ObjectHideFlags: 0
@@ -11572,7 +11822,7 @@ Transform:
   m_GameObject: {fileID: 2076637403}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: -23, y: 10, z: 30}
+  m_LocalPosition: {x: -24, y: 10, z: 30}
   m_LocalScale: {x: 60, y: 1, z: 21}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14935,7 +15185,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -14944,8 +15194,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -14998,7 +15248,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15007,8 +15257,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15061,7 +15311,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15070,8 +15320,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15124,7 +15374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15133,8 +15383,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15187,7 +15437,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15196,8 +15446,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15250,7 +15500,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15259,8 +15509,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15313,7 +15563,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15322,8 +15572,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15376,7 +15626,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15385,8 +15635,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15439,7 +15689,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15448,8 +15698,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15502,7 +15752,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15511,8 +15761,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15565,7 +15815,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15574,8 +15824,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15628,7 +15878,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15637,8 +15887,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15691,7 +15941,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15700,8 +15950,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 3
   playerLayer:
     serializedVersion: 2
@@ -15754,7 +16004,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15763,8 +16013,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15817,7 +16067,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15826,8 +16076,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15880,7 +16130,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15889,8 +16139,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15943,7 +16193,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -15952,8 +16202,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16006,7 +16256,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16015,8 +16265,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16069,7 +16319,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16078,8 +16328,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 10
   playerLayer:
     serializedVersion: 2
@@ -16132,7 +16382,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16141,8 +16391,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 0
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16195,7 +16445,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16204,8 +16454,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 3
   playerLayer:
     serializedVersion: 2
@@ -16258,7 +16508,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16267,8 +16517,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 15
   playerLayer:
     serializedVersion: 2
@@ -16321,7 +16571,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16330,8 +16580,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16384,7 +16634,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16393,8 +16643,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16447,7 +16697,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16456,8 +16706,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 15
   playerLayer:
     serializedVersion: 2
@@ -16545,7 +16795,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16554,8 +16804,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16679,7 +16929,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16688,8 +16938,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16851,7 +17101,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Breakable
   breakTriggerLayers:
     serializedVersion: 2
-    m_Bits: 262144
+    m_Bits: 0
   breakDelay: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -16860,8 +17110,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 10
-  knockbackForceMax: 20
+  knockbackForceMin: 100
+  knockbackForceMax: 200
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16912,8 +17162,4 @@ SceneRoots:
   - {fileID: 196502481}
   - {fileID: 818711160}
   - {fileID: 372770517}
-  - {fileID: 495736541}
-  - {fileID: 501680169}
-  - {fileID: 1186469366}
-  - {fileID: 51033930}
   - {fileID: 1149504246}

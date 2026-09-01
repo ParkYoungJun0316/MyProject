@@ -5861,7 +5861,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ba3cc6aad637d0458882d5be4c3e3b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAudio
-  runVolume: 0.1
+  runVolume: 0.05
+  punchMinDistance: 5
+  punchMaxDistance: 25
+  punchRolloffMode: 0
 --- !u!114 &2740325668553884217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5952,6 +5955,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerPunch
   ShowTopMostFoldoutHeaderGroup: 1
   cooldown: 1
+  localCooldownBuffer: 0.15
   swingActiveDuration: 0.2
   hitbox: {fileID: 3768475646249131272}
   knockbackForceMin: 70
@@ -5998,7 +6002,6 @@ MonoBehaviour:
   - colorType: 4
     heartSprite: {fileID: 21300000, guid: 67cfb52fe41b31740a98541d49015108, type: 3}
   heartSize: 40
-  heartSpacing: 6
 --- !u!114 &-5567261443160759466
 MonoBehaviour:
   m_ObjectHideFlags: 0

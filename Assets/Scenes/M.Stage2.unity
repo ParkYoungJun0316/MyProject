@@ -1048,7 +1048,7 @@ MonoBehaviour:
   baseDropSpeed: 5
   speedPhases: []
   warnSfxId: 38
-  fireSfxId: 32
+  fireSfxId: 26
 --- !u!114 &453563920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2316,7 +2316,7 @@ MonoBehaviour:
   totalRounds: 5
   minColorRounds: 3
   maxColorRounds: 4
-  roundTimeLimit: 5
+  roundTimeLimit: 4
   resolveDelay: 2
   wrongDamage: 1
   playerOverlapLayers:
@@ -3979,7 +3979,9 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  cheerTimeoutSeconds: 10
+  teamCheerCooldownSeconds: 15
+  teamCheerTimeoutSeconds: 10
+  teamHealAmount: 2
   chatRateLimitSeconds: 0.5
 --- !u!114 &1553919822
 MonoBehaviour:
@@ -5278,7 +5280,7 @@ MonoBehaviour:
   phases:
   - triggerTime: 35
     changeInterval: 8
-    keepBWRatio: 0.5
+    keepBWRatio: 1
 --- !u!4 &1852587696 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
