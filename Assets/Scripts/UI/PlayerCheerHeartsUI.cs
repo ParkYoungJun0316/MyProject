@@ -1,29 +1,25 @@
-using System.Collections.Generic;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 캐릭터 머리 위에 "지금 이 캐릭터를 응원 중인 팀원" 하트 아이콘을 World Space로 표시.
-/// Player 프리팹에 부착 (PlayerNameTagUI와 나란히).
+/// 캐릭터 머리 위에 "이번 팀워드 라운드에 이 플레이어가 이미 외쳤는지"를
+/// World Space 하트 1개 온/오프로 표시. Player 프리팹에 부착 (PlayerNameTagUI와 나란히).
 ///
 /// [무엇을 보여주나]
-/// TeamStatusUI 코너 패널의 "Cheering" 라벨과 완전히 같은 데이터(CheerService.OnCheerersChanged /
-/// OnVoteReset)를 쓰되, 텍스트 대신 팀원 색깔별 하트 아이콘(Assets/Figma/Ingame/Heart)으로 표시한다.
-/// 예: 노랑·파랑이 이 캐릭터를 응원 중이면 노랑 하트 + 파랑 하트 2개만 켜짐(나머지 자리는 숨김).
-/// 필요 표수(팀원 수 - 1)를 채워 버프가 발동하면 CheerService.ApplyBuff → ResetVotes가
-/// OnVoteReset을 발행해 자동으로 전부 꺼진다.
+/// CheerService.OnTeamVoteChanged의 voterColorIndices에 이 캐릭터 colorIndex가 있으면 하트 ON.
+/// 타임아웃·팀 버프 발동 시 Host가 빈 배열로 같은 이벤트를 다시 보내므로 자동으로 OFF.
 ///
 /// [네트워크 불필요 · 전원에게 보임]
-/// CheerService가 이미 ClientRpc로 "누가 누구를 응원 중인지"를 전 클라이언트에 브로드캐스트하므로,
-/// 이 컴포넌트는 그 이벤트를 자기 colorIndex 기준으로 필터링해 로컬에서 그리기만 한다.
-/// 응원받는 본인 화면은 물론, 다른 팀원·관전 상황에서도 동일하게 보인다(추가 통신 없음).
+/// CheerService가 이미 ClientRpc로 투표 명단을 전 클라이언트에 브로드캐스트하므로,
+/// 이 컴포넌트는 자기 colorIndex만 필터링해 로컬에서 그리기만 한다.
 ///
 /// [씬 설정]
-/// 1. Player 프리팹 루트에 PlayerCheerHeartsUI 추가 (UI는 코드로 자동 생성됨).
-/// 2. colorHeartMap : PlayerColorType별 하트 스프라이트 연결
-///    (Assets/Figma/Ingame/Heart/BlueHeart.png 등 — TeamStatusUI colorHeartMap과 동일 에셋 재사용 가능).
-/// 3. offset : 머리 위 위치 오프셋. PlayerNameTagUI 이름표보다 위쪽 권장(예: 0, 2.6, 0).
+/// 1. Player 프리팹 루트에 PlayerCheerHeartsUI (UI는 코드로 자동 생성).
+/// 2. colorHeartMap : PlayerColorType별 하트 스프라이트
+///    (Assets/Figma/Ingame/Heart — TeamStatusUI colorHeartMap과 동일 에셋 재사용 가능).
+/// 3. offset : 머리 위 위치. PlayerNameTagUI 이름표보다 위쪽 권장(예: 0, 2.6, 0).
 /// </summary>
 [RequireComponent(typeof(Player))]
 public class PlayerCheerHeartsUI : MonoBehaviour
@@ -36,7 +32,7 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     }
 
     [Header("표시 위치")]
-    [Tooltip("머리 위 하트 행 위치 오프셋 (이름표보다 위쪽 권장)")]
+    [Tooltip("머리 위 하트 위치 오프셋 (이름표보다 위쪽 권장)")]
     [SerializeField] Vector3 offset = new Vector3(0f, 2.6f, 0f);
     [Tooltip("World Space Canvas 축소 비율 — 픽셀 단위로 만든 UI를 월드 크기로 줄임")]
     [SerializeField] Vector3 worldScale = new Vector3(0.01f, 0.01f, 0.01f);
@@ -44,14 +40,14 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     [Header("아이콘")]
     [Tooltip("PlayerColorType별 하트 스프라이트 (Figma Heart 폴더)")]
     [SerializeField] ColorHeartEntry[] colorHeartMap;
-    [SerializeField] float heartSize    = 40f;
-    [SerializeField] float heartSpacing = 6f;
+    [SerializeField] float heartSize = 40f;
 
     Player    _player;
     int       _myColorIndex = -1;
-    Image[]   _heartIcons;
+    Image     _heartIcon;
     Transform _canvasTransform;
     Transform _camTransform;
+    Coroutine _waitSubscribe;
 
     void Awake()
     {
@@ -87,7 +83,7 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     void HandlePlayersReady()
     {
         _myColorIndex = ResolveColorIndex();
-        SubscribeCheerService();
+        TrySubscribeCheerService();
     }
 
     /// <summary>ColorOrder 인덱스(0=berry …). TeamStatusUI.ResolveColorIndex와 동일 로직.</summary>
@@ -99,60 +95,68 @@ public class PlayerCheerHeartsUI : MonoBehaviour
         return System.Array.IndexOf(PlayerColorUtil.ColorOrder, _player.playerColorType);
     }
 
-    // ── CheerService 구독 (TeamStatusUI와 동일 패턴) ───────────────
+    // ── CheerService 구독 ─────────────────────────────────────────
+
+    void TrySubscribeCheerService()
+    {
+        if (CheerService.Instance != null)
+        {
+            SubscribeCheerService();
+            return;
+        }
+        if (!isActiveAndEnabled || _waitSubscribe != null) return;
+        _waitSubscribe = StartCoroutine(WaitAndSubscribe());
+    }
+
+    IEnumerator WaitAndSubscribe()
+    {
+        while (CheerService.Instance == null)
+            yield return null;
+        _waitSubscribe = null;
+        SubscribeCheerService();
+    }
 
     void SubscribeCheerService()
     {
         var svc = CheerService.Instance;
         if (svc == null) return;
-        svc.OnCheerersChanged -= HandleCheerersChanged;
-        svc.OnVoteReset       -= HandleVoteReset;
-        svc.OnCheerersChanged += HandleCheerersChanged;
-        svc.OnVoteReset       += HandleVoteReset;
+        svc.OnTeamVoteChanged -= HandleTeamVoteChanged;
+        svc.OnTeamVoteChanged += HandleTeamVoteChanged;
     }
 
     void UnsubscribeCheerService()
     {
         var svc = CheerService.Instance;
         if (svc == null) return;
-        svc.OnCheerersChanged -= HandleCheerersChanged;
-        svc.OnVoteReset       -= HandleVoteReset;
+        svc.OnTeamVoteChanged -= HandleTeamVoteChanged;
     }
 
-    /// <summary>서버/솔로에서 응원자 목록이 바뀔 때 호출. 이 캐릭터가 타겟일 때만 반영.</summary>
-    void HandleCheerersChanged(int targetIdx, int[] cheererColorIndices)
+    void HandleTeamVoteChanged(int current, int required, int[] voterColorIndices)
     {
         if (_myColorIndex < 0) _myColorIndex = ResolveColorIndex();
-        if (_myColorIndex < 0 || targetIdx != _myColorIndex) return;
-        RefreshHearts(cheererColorIndices);
-    }
-
-    /// <summary>표가 초기화(타임아웃·버프 발동)되면 하트 전부 숨김.</summary>
-    void HandleVoteReset(int targetIdx)
-    {
-        if (_myColorIndex < 0 || targetIdx != _myColorIndex) return;
-        RefreshHearts(System.Array.Empty<int>());
+        bool voted = _myColorIndex >= 0
+            && voterColorIndices != null
+            && System.Array.IndexOf(voterColorIndices, _myColorIndex) >= 0;
+        SetHeartVisible(voted);
     }
 
     // ── UI 갱신 ──────────────────────────────────────────────────
 
-    void RefreshHearts(int[] cheererColorIndices)
+    void SetHeartVisible(bool visible)
     {
-        if (_heartIcons == null) return;
-
-        var set = new HashSet<int>(cheererColorIndices);
-        int shown = 0;
-        for (int ci = 0; ci < PlayerColorUtil.ColorOrder.Length; ci++)
+        if (_heartIcon == null) return;
+        if (visible)
         {
-            if (!set.Contains(ci)) continue;
-            if (shown >= _heartIcons.Length) break; // 풀 초과 방어 (최대 팀원 수만큼만 존재)
-
-            _heartIcons[shown].sprite = GetHeartSprite(PlayerColorUtil.ColorOrder[ci]);
-            _heartIcons[shown].gameObject.SetActive(true);
-            shown++;
+            PlayerColorType color = _myColorIndex >= 0 && _myColorIndex < PlayerColorUtil.ColorOrder.Length
+                ? PlayerColorUtil.ColorOrder[_myColorIndex]
+                : _player.playerColorType;
+            _heartIcon.sprite = GetHeartSprite(color);
+            _heartIcon.gameObject.SetActive(true);
         }
-        for (int i = shown; i < _heartIcons.Length; i++)
-            _heartIcons[i].gameObject.SetActive(false);
+        else
+        {
+            _heartIcon.gameObject.SetActive(false);
+        }
     }
 
     Sprite GetHeartSprite(PlayerColorType colorType)
@@ -178,35 +182,17 @@ public class PlayerCheerHeartsUI : MonoBehaviour
         canvas.renderMode = RenderMode.WorldSpace;
 
         var canvasRt = canvasGo.GetComponent<RectTransform>();
-        canvasRt.sizeDelta = new Vector2(200f, 60f);
+        canvasRt.sizeDelta = new Vector2(80f, 60f);
 
-        var rowGo = new GameObject("Row");
-        rowGo.transform.SetParent(canvasGo.transform, false);
-        var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
-        hlg.spacing                = heartSpacing;
-        hlg.childControlWidth      = false;
-        hlg.childControlHeight     = false;
-        hlg.childForceExpandWidth  = false;
-        hlg.childForceExpandHeight = false;
-        hlg.childAlignment         = TextAnchor.MiddleCenter;
-        var rowRt = rowGo.GetComponent<RectTransform>();
-        rowRt.anchorMin = Vector2.zero;
-        rowRt.anchorMax = Vector2.one;
-        rowRt.offsetMin = Vector2.zero;
-        rowRt.offsetMax = Vector2.zero;
-
-        // 최대 팀원 수(자기 자신 제외) = ColorOrder 전체 - 1
-        int maxIcons = PlayerColorUtil.ColorOrder.Length - 1;
-        _heartIcons = new Image[maxIcons];
-        for (int i = 0; i < maxIcons; i++)
-        {
-            var iconGo = new GameObject($"Heart{i}");
-            iconGo.transform.SetParent(rowGo.transform, false);
-            var img = iconGo.AddComponent<Image>();
-            img.preserveAspect = true;
-            iconGo.GetComponent<RectTransform>().sizeDelta = new Vector2(heartSize, heartSize);
-            iconGo.SetActive(false);
-            _heartIcons[i] = img;
-        }
+        var iconGo = new GameObject("Heart");
+        iconGo.transform.SetParent(canvasGo.transform, false);
+        _heartIcon = iconGo.AddComponent<Image>();
+        _heartIcon.preserveAspect = true;
+        var iconRt = iconGo.GetComponent<RectTransform>();
+        iconRt.anchorMin = new Vector2(0.5f, 0.5f);
+        iconRt.anchorMax = new Vector2(0.5f, 0.5f);
+        iconRt.sizeDelta = new Vector2(heartSize, heartSize);
+        iconRt.anchoredPosition = Vector2.zero;
+        iconGo.SetActive(false);
     }
 }

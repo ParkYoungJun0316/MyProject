@@ -1,10 +1,11 @@
 # Steamworks 연동 · 다국어 — 확정 기준
 
-**상태 요약:** 전략적 결정 11개(§1~§11) 확정 + 트랙 1~4(부트스트랩/Transport/Lobby/다국어) 구현 완료. 트랙 5(2인 Depot 스모크, 버그 A~F)는 전부 해결·검증 완료된 종료 히스토리. 트랙 6(4인 실사용, 크래시·온기동 재발)도 12차 세션까지 전부 해결 완료 — 상세 경위는 아래 각 트랙 세션 절 참고. **다음 에이전트는 바로 아래 포인터 블록만 읽고 시작할 것.**
+**상태 요약:** 전략적 결정 11개(§1~§11) 확정 + 트랙 1~4(부트스트랩/Transport/Lobby/다국어) 구현 완료. 트랙 5(2인 Depot 스모크, 버그 A~F)는 전부 해결·검증 완료된 종료 히스토리. 트랙 6(4인 실사용, 크래시·온기동 재발)도 13차 세션까지 전부 해결 완료 — 상세 경위는 아래 각 트랙 세션 절 참고. **다음 에이전트는 바로 아래 포인터 블록만 읽고 시작할 것.**
 
 > ## ⭐⭐⭐ 다음 에이전트(새 채팅) 시작 지침 — 여기부터 읽을 것
 >
-> **트랙 6 12차 세션이 최신 — 맨 아래 "트랙 6 — 12차 세션" 절부터 읽을 것.**
+> **트랙 6 13차 세션이 최신 — 맨 아래 "트랙 6 — 13차 세션" 절부터 읽을 것.**
+> -2. 13차 세션: 11차 세션에서 확정한 "웜 리커넥트는 항상 재시작" 정책이 `JoinGameSteamAsync`(참여)에만 걸려있고 `CreateGameSteamAsync`(방 만들기/재호스팅)에는 빠져있던 가드 공백을 발견·수정. SequenceRing 이중 판정 조사에서 역추적된 것 — 재호스팅 시 트랜스포트 중복 RPC 전달이 이 공백 때문에 재현됨.
 > -1. 12차 세션은 **코드 정리만** — 동작 변경 없음. 9차 세션에서 추가했던 진단 전용 계측(`JoinWatchdog` 워치독, `[DIAG]` 태그 로그, `SubscribeDiagCallbacksOnce`류)을 제거했다. 혹시 예전 로그에서 `[DIAG]`/`WATCHDOG` 태그를 찾고 있다면 이제 코드에 없다 — 정상.
 > 0. 11차 세션에서 전략을 바꿨다 — "Host 종료 후 같은 프로세스 재접속"은 더 이상 버그가 아니라 **프로세스 재시작이 정상 동작인 정책**으로 확정(상류 Facepunch 트랜스포트 패키지의 미해결 버그, contrib#267 때문에 인프로세스 재접속 자체가 구조적으로 안전하지 않음을 확인). 10차 세션의 재시작 아키텍처는 그대로 유지·정식화. 대신 이번 세션엔 그것과 무관한 온기동 신규 원인 2건(언어설정이 Steam 초기화를 스킵시킴 / Tutorial 게이트 전 초대 구독 누락)을 찾아 수정 완료 — **다음 세션은 11차 세션 절의 Verify 4항목 결과부터 받을 것 (아직 사용자 검증 대기 중).**
 > 1. 트랙 5(6차 세션까지)는 전부 해결 확인된 히스토리 — 재조사 불필요.
@@ -1115,3 +1116,29 @@ Bug Hunter 진단 결과, 이번에 사용자가 재보고한 "타이틀에서 �
 - 11차 세션 수정분(`SteamManager.Awake()`, `TutorialSteamInviteUI` 초대 구독) — 로직 변경 없이 그대로.
 
 **Files changed (이번 세션):** `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Docs/SteamworksIntegrationDesign.md`.
+
+---
+
+## 트랙 6 — 13차 세션 (2026-09-01): `TryRestartForWarmReconnect` 가드 공백 — 방 만들기(Host)에도 확장
+
+### 발견 경위
+
+SequenceRing 미니게임 "입력 1번에 스텝 2칸 진행" 버그를 조사하다가, 사용자가 재현한 로그(같은 프로세스에서 방 만들기 → 나가기 → 방 만들기 재시도)에서 Host가 클라이언트의 `SubmitStepServerRpc`를 같은 프레임에 2번 수신하는 게 확인됨. 증상이 트랙6 11차 세션에서 이미 원인 규명·정책 확정된 "Facepunch 트랜스포트 상류 버그(메시지 중복 전달)"와 정확히 같은 패턴이라 추적한 결과, **`TryRestartForWarmReconnect()` 재시작 가드가 `JoinGameSteamAsync()`(참여)에만 걸려있고 `CreateGameSteamAsync()`(방 만들기)에는 아예 없었음**을 확인. 804줄(10차 세션) "부수 발견" 절에서 이미 가드 범위가 좁다는 리스크를 기록해뒀었는데(그때는 "Host 이후 Client 최초 접속" 케이스만 지목), 이번엔 **"Host 이후 Host 재시도"(재호스팅) 케이스도 같은 사각지대**였다는 게 새로 확인됨.
+
+### 수정 완료
+
+- `Assets/Scripts/Network/NetworkManagerSetup.cs`: `RestartWithConnectLobby`/`RestartWithCreateGame` 공용 내부 헬퍼 `RestartProcess(string args)`로 리팩터. `RestartWithCreateGame()` 신규 추가 — `+create_game` 인자로 프로세스 재시작(로비 ID 불필요, 재시작 후 새로 만듦).
+- `Assets/Scripts/UI/TitleMenuController.cs`: `TryRestartForCreateGame()`(`TryRestartForWarmReconnect`와 동일 구조) 신규 추가, `CreateGameSteamAsync()` 진입부에서 호출. `TryAutoCreateGameFromLaunchArgs()`(`TryAutoJoinFromLaunchArgs`와 동일 구조) 신규 추가해 `Start()`에서 `+create_game` 커맨드라인을 감지 → `OnClickCreateGame()` 자동 재시도.
+
+### 별도로 넣어둔 증상 레벨 가드 (근본 수정과 무관하게 유지)
+
+같은 세션에서 SequenceRing 버그 조사 중 "같은 프레임 중복 RPC 수신 시 비멱등 동작" 패턴을 프로젝트 전체 Client→Host RPC에서 점검, 3곳에 프레임 기준 멱등 가드 추가(근본 원인과 무관하게 방어적으로 유지):
+- `StageNetworkState.SubmitStepServerRpc`/`SubmitAnyKeyStepServerRpc` (SequenceRing 판정)
+- `InGameChatUI.SendMessageServerRpc` (채팅 중복 표시 방지)
+- `NetworkPlayerSetup.RequestToggleBuffTypeServerRpc` (버프 토글 무효화 방지)
+
+### Verify (다음 세션/사용자)
+
+방 만들기 → 나가기 → 같은 프로세스에서 방 만들기를 3회 이상 반복해서, 매번 `TryRestartForCreateGame` 로그가 찍히고 프로세스가 재시작되며 `+create_game` 자동 재시도로 정상 방 생성까지 이어지는지 확인. 기존 참여(Join) 경로 회귀 없는지도 함께 확인.
+
+**Files changed (이번 세션):** `Assets/Scripts/Network/NetworkManagerSetup.cs`, `Assets/Scripts/UI/TitleMenuController.cs`, `Assets/Scripts/Network/StageNetworkState.cs`, `Assets/Scripts/UI/InGameChatUI.cs`, `Assets/Scripts/Network/NetworkPlayerSetup.cs`, `Assets/Scripts/Stage/SequenceRingMinigame.cs`, `Assets/Docs/SteamworksIntegrationDesign.md`.

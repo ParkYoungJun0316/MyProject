@@ -362,10 +362,10 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 - [x] `PlayerCheerNameSync`(`Assets/Scripts/Cheer/PlayerCheerNameSync.cs`) 신설 — Player 프리팹 부착 대상. `NetworkVariable<FixedString32Bytes>`(Server write) + `SubmitCheerNameServerRpc`(본인 소유 NetworkObject만 제출 가능 가드) + 형식·예약어·세션 내 중복 검증(§3.5) + 결과 통보 이벤트(`OnSubmitResult`)
 - [x] `CheerNameValidator`(`Assets/Scripts/Cheer/CheerNameValidator.cs`) 신설 — 구 `LobbyNetworkManager.IsValidCheerNameFormat`/`ReservedNames`를 추출한 공용 검증 유틸. `LobbyNetworkManager`도 이제 이걸 재사용 — P8에서 구 로비 코드를 지워도 검증 규칙은 남는다
-- [x] CheerName 변경 시 로컬 `CheerKeywordEngine.ApplySessionGrammar()` 재빌드 훅 연결 — 어느 Player의 이름이 바뀌었든 "내 로컬 인식기(Owner 인스턴스)" 하나만 매번 전체 이름 목록으로 재적용(§5.3)
+- [x] CheerName 변경 시 로컬 `CheerKeywordEngine.ApplySessionGrammar()` 재빌드 훅 연결 — 어느 Player의 이름이 바뀌었든 "내 로컬 인식기(Owner 인스턴스)" 하나만 매번 전체 이름 목록으로 재적용(§5.3) — **[2026-09-01 갱신] Phase B에서 `ApplySessionGrammar`(전원 이름) → `ApplyOwnerLocalGrammar`(내 이름 + TeamCheerWord만)로 교체됨. 현재 동작 SSOT는 `CheerSystemDesign.md` §10.2. 이 줄은 2026-08-18 시점 기록으로 보존.**
 - [x] `TutorialNetworkManager.CompleteGate()`에 세션 CheerName 확정 추가 — 게이트 통과 시점 각자 최신값을 colorIndex 배열로 확정해 `GameSession.SetSessionCheerNames()` + `BroadcastSessionCheerNamesClientRpc`로 전원 배포(§6B.7 P3 두 번째 항목 중 CheerName 부분은 이걸로 완료 처리 — DisplayName은 2026-08-22, VoiceId는 2026-08-26에 각각 후속 완료, 위 P3/P8 항목 참고)
 - [x] **입력 UI**(TMP_InputField 연결, 확정 버튼) — **코드+씬 배치 완료 (2026-08-19), ParrelSync 검증 대기.** 아래 "입력 UI 반영 내용" 참고
-- [x] **"내가 지금 응원 중" 자기 확인 UI** (신규, 2026-08-19) — `PlayerNameTagUI`의 로컬 오너 전용 슬롯(`hideForLocalOwner`로 원래 비워두던 자리, 항상 시야에 있음 — 응원 중엔 화면만 보고 음성만 쓰기 때문에 타겟 머리 위 표시는 응원자 본인에겐 안 보인다는 문제 해결용)을 재사용. `CheerService.OnCheerersChanged`에서 내 colorIndex가 낀 target을 찾아 그 target의 `CheerName`을 **타겟 색상 텍스트**로 표시(하트 아이콘 없음 — 사용자 결정, 2026-08-19). `OnVoteReset`/타겟 변경 시 자동 숨김. 새 스크립트·프리팹 변경 없이 `PlayerNameTagUI.cs`만 수정. **ParrelSync 검증 대기** (아래 체크리스트 참고)
+- [x] **"내가 지금 응원 중" 자기 확인 UI** (신규, 2026-08-19) — `PlayerNameTagUI`의 로컬 오너 전용 슬롯에 타겟 CheerName 표시. `OnVoteReset`/타겟 변경 시 자동 숨김. **ParrelSync 검증 대기** (아래 체크리스트 참고) — **[2026-09-01 갱신] Phase C에서 cross-targeting 삭제로 이 슬롯 자체 제거. 로컬 오너는 다시 이름표 숨김만. 현재 SSOT는 `CheerSystemDesign.md` §10.3. 이 줄은 2026-08-19 시점 기록으로 보존.**
 - [x] `CheerKeywordEngine` Tutorial 연동 + 게이트 전 커스텀 이름 인식 갭 수정 — **구현 완료 (2026-08-19)**
   - `CheerKeywordEngine`의 `_lobbyTestMode`→`_sayTestMode` 리네임, `GetLobbyColorIndex`/`BuildLobbyGrammarJson`(둘 다 `LobbyNetworkManager.Instance` 슬롯 순회)을 `GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`(`PlayerCheerNameSync.GetAllEffectiveNames()` + `PlayerSpawnCoordinator.TryGetColor` 기반)으로 교체 — 로비 의존 제거. `_sayTestMode=true`일 때는 여전히 `SubmitCheerServerRpc` 호출 안 함(로컬 인식 확인만). 영향 확인: `_lobbyTestMode=true`였던 곳은 삭제 대상 `1.Lobby.unity` 1곳뿐, 실사용 `Player1.prefab`은 `false`라 리네임으로 인한 동작 영향 없음
   - **Tutorial 게이트 통과 전 커스텀 이름 인식 갭 수정** — 원인은 `CheerService.GetColorIndex`/`GetCheerName`이 `GameSession._sessionCheerNames`(게이트 통과 시에만 설정)만 보고, 미설정 시 고정 4종 기본값으로만 폴백했던 것. `GameSession`에 `HasSessionCheerNames` 프로퍼티 신설(`GetSessionCheerName` 자체는 미확정 시에도 기본값으로 폴백해버려 "비어있으면 다음 우선순위" 방식으로는 구분 불가) + `CheerService.GetColorIndex`/`GetCheerName`에 우선순위 폴백 추가: ①`GameSession` 확정 세션값(게이트 후) → ②`PlayerCheerNameSync.GetAllEffectiveNames()` 실시간값(게이트 전) → ③정적 기본값. Vosk grammar 자체는 이미 `PlayerCheerNameSync.RebuildOwnerLocalGrammar()`가 실시간 반영해서 문제없었음 — 갭은 인식된 단어를 colorIndex로 바꾸는 이 매핑 단계였음
@@ -375,9 +375,9 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
   - **1개(재방문 가능)로 배치, 표지판 3D 비주얼은 사용자가 나중에 교체 — 지금은 플레이스홀더로 진행. 상호작용 키는 프로젝트 기존 관례(`Keyboard.current` 직접 폴링)대로 E키, `InputSystem_Actions`의 미사용 `Interact` 액션(Hold 인터랙션 붙어있어 그대로 쓰기 부적합)은 손대지 않음**
   - [x] 사용자 에디터 작업 — **완료 (2026-08-19, MCP).** `CheerNamePanel` 기본 비활성 + `CloseButton`/`ExamplesText` 추가·연결, `CheerNameSignboard`(트리거+플레이스홀더 Visual+`[E] 이름 설정` 프롬프트) 구역 2 근처 `(10, 0, 8)`에 배치. `Tutorial.unity` 저장됨
 - [x] "말해보기" 브로드캐스트 미결정 항목 — **모두 필요 없음으로 결론 (2026-08-19, 사용자 판단).** 두 차례 물었던 "팀원 화면에도 인식 결과를 보여줄지" 자체가 잘못된 질문이었음 — 실제 응원 제출 경로(`_sayTestMode=false`, 기본값)로 이름을 외치면 이미 **전원에게** 실시간으로 보인다:
-  - `PlayerCheerHeartsUI` — 응원받는 사람 머리 위에 응원 중인 팀원 색 하트(네트워크 전체 브로드캐스트, 기존 구현)
-  - `PlayerNameTagUI` — 응원하는 사람 본인 화면에 "지금 응원 중인 대상의 CheerName" 표시 → 내 발화가 인식돼 올바른 대상에 매칭됐는지 즉시 확인 가능
-  - `TeamStatusUI` — 나를 응원 중인 팀원에 "Cheering" 라벨
+  - `PlayerCheerHeartsUI` — 응원받는 사람 머리 위에 응원 중인 팀원 색 하트(네트워크 전체 브로드캐스트, 기존 구현) — **[2026-09-01] Phase C: 이번 팀워드 라운드에 그 플레이어가 이미 외쳤는지 하트 1개 온/오프. SSOT `CheerSystemDesign.md` §10.3**
+  - `PlayerNameTagUI` — 응원하는 사람 본인 화면에 "지금 응원 중인 대상의 CheerName" 표시 → 내 발화가 인식돼 올바른 대상에 매칭됐는지 즉시 확인 가능 — **[2026-09-01] Phase C에서 삭제. 타겟 개념 없음**
+  - `TeamStatusUI` — 나를 응원 중인 팀원에 "Cheering" 라벨 — **[2026-09-01] Phase C: 숫자키 아이콘 → 팀워드 진행도 체크**
   
   즉 "말해보기"는 **별도 모드가 아니라 진짜 응원 제출 그 자체**로 이미 충족된다. 별도 로컬 전용 인식 확인 UI(`TutorialCheerSayTestUI`)는 만들지 않기로 확정
 - [x] ~~"말해보기" 테스트 UI 자체(`TutorialCheerSayTestUI`)~~ — **폐기 (2026-08-19).** 위 근거로 신규 컴포넌트 불필요. 대신 `CheerNamePanel`의 `ExamplesText`에 "확정 후에는 팀원에게 이 이름을 외쳐달라 해서 실제로 인식되는지 확인해보세요!" 안내 문구 추가(2026-08-19, MCP 반영·씬 저장 완료)로 대체. `CheerKeywordEngine`의 `_sayTestMode`/`GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`/`OnKeywordDetected`는 로비 의존 제거 과정에서 이미 만들어둔 코드라 남겨두되(부작용 없음, 어떤 컴포넌트도 `_sayTestMode=true`로 설정 안 함), 이걸 소비하는 UI는 더 만들지 않음
@@ -547,6 +547,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 
 - **Owner** Attack 입력 → `PunchServerRpc`(Host: 쿨다운·생존만 체크) → **Host 로컬 히트박스**(`PlayerPunchHitbox`, Host가 전 플레이어 Rigidbody를 시뮬레이션하므로 유효) 판정 → `NetworkDamageUtil.ApplyKnockback`(§9A.3) → `ClientRpc`로 피격자 Owner에만 `AddForce`.
 - HP 데미지는 0(순수 넉백)이지만 **네트워크 진실(Host 판정 + 데미지 파이프라인 API)이 있는 기능** — §9.1의 Pattern **B(함정·피격)와 동일 권한 구조**. `PlayerPunch`/`PlayerPunchHitbox`는 §9.1의 "스테이지 컨텐츠" 표에는 넣지 않는다 (레벨디자이너가 배치하는 컨텐츠가 아니라 플레이어 대 플레이어 기본 동작이므로) — 여기 §7.4와 §9A.3에만 기재.
+- **쿨다운 레이스 완화 (2026-09-01):** Owner 로컬 쿨다운(`_nextLocalPunchTime`)과 Host 쿨다운(`_nextPunchTime`)은 같은 `cooldown` 값이지만 시작 시점이 다르다 — Owner는 입력 즉시, Host는 `PunchServerRpc` 수신 시점(네트워크 지연만큼 늦음)에 시작. 이 차이 때문에 Owner 로컬 쿨다운이 끝나자마자 보낸 다음 펀치를 Host가 "아직 쿨다운 중"으로 거부하면, 애니(NetworkAnimator로 무조건 동기화)는 나가는데 사운드(`PlayPunchSfxClientRpc`)·넉백 판정만 빠지는 desync가 생김. **완화:** `localCooldownBuffer`(기본 0.15초)를 Owner 로컬 쿨다운에만 더해, Owner의 다음 허용 시점이 Host보다 항상 늦게 풀리게 함 — 완전 제거는 아니고 레이스 발생 빈도를 낮추는 실용적 절충(근본 해결은 "Host 승인 후 재생"으로 순서를 뒤집는 구조 변경, 반응성 트레이드오프 있어 보류).
 
 ---
 
@@ -754,8 +755,13 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 | **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse`, `SafeZoneWarnSign` (`M.Boss` only — PhaseStartServerTime 로컬 스케줄, RPC 없음) 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
 | **UI** | shared | `DeathOverlayUI` — `UI.prefab`, M/T 전 스테이지. 사망 문구 `{0}` = CheerName(`CheerService.GetCheerName`). Steam/OS DisplayName 아님 (2026-08-29: 로컬 경로에서 `u died`로 보이던 원인). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 | **UI** | shared | `OptionsTeamVoicePanel` / `OptionsMenuController` / `GameSettingsManager` — `Setting_Panel.prefab` (`Title` + `UI.prefab`, 전 M/T). 마이크 송신 볼륨·팀 보이스 수신 볼륨. 사후기록: §6B.7 P3 VoiceId 항목. | 동일 — T 대표 씬(`T.Stage1`) ESC 설정 |
+| **SFX** | shared | `PlayerAudio` / `PlayerPunch` — `Kkultteok.prefab`, 전 M/T. 개인 SFX(ColorChange/Buff/Hit/Death/Run)는 Owner 2D. Punch/PunchHit는 전 클라 3D. 사후기록: 아래 포스트모템. | 동일 — T 대표 씬(`T.Stage1`) |
 
 **그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.
+
+**공유 포스트모템 (2026-09-01, `PlayerAudio`):** 색 NV/`ApplyCheerBuffClientRpc`가 비주얼용으로 전 머신에 이벤트를 올리는데, `PlayerAudio`가 오너 가드 없이 `SFXManager.Play()`(2D)를 호출해 Client가 원격 플레이어의 ColorChange/Buff/Hit/Death를 거리 무관 풀볼륨으로 들었다. 개인 SFX는 Owner만 2D. Punch는 Owner 즉시 3D + 비오너 `PlayPunchSfxClientRpc`, PunchHit는 `NotifyPunchHitClientRpc`에서 전 클라 3D(애니는 Owner만). 스모크: `M.Stage1` Host+Client 색/버프/펀치, 반대 라운드 `T.Stage1` (§9B.4).
+
+**공유 포스트모템 (2026-09-01, `SequenceRingMinigame` 정답/오답 SFX):** `AdvanceStep`/`ApplyWrongPenalty`가 `OnCorrectInput`/`OnWrongInput` UnityEvent를 직접 발동시켰는데, 이 두 메서드는 `TrySubmit`/`TrySubmitAnyKey`를 통해 **Host 판정 레인에서만** 호출된다(§11B ④Judge) — Client는 이 이벤트가 전혀 발동하지 않아 정답/오답 SFX(`SFXEventPlayer.Play()`, 2D)를 못 들었다. 스텝 진행(정답)은 `ChallengeStepBegin`(NV)로 Client에도 전파되지만 "오답"은 스텝 인덱스가 그대로라 NV만으로는 신호를 못 보냄. 수정: `StageNetworkState`에 `OnChallengeStepResult` 이벤트 + `NotifyChallengeStepResult(bool)`/`NotifyChallengeStepResultClientRpc` 추가(`ChallengeCleared`/`NotifyChallengeClearedClientRpc`와 동일한 "Host 로컬 즉시 발동 + RPC 보장 전달" 패턴). `SequenceRingMinigame`은 이제 `HandleChallengeStepResult`(owner 가드 포함, Host/Client 공통 구독)에서 `OnCorrectInput`/`OnWrongInput`을 발동. 스모크: `M.Stage4`/`M.Boss` Host+Client 정답/오답 시 양쪽 다 SFX 확인.
 
 **공유 포스트모템 (2026-09-01, `AdvancingWall`):** `PermanentAdvance`/`PenaltyRoutine`이 `RunEntry`와 달리 이동 루프 SFX를 안 켜서, ColorTile 실패 패널티로만 움직이는 벽(`M.Stage3` `Tooth`, `T.Boss` 동일 경로)이 무음이었다. 1차 수정: `LerpTo` 전후에 `StartMoveLoop`/`StopMoveLoop`를 맞추고, 3D→2D(`spatialBlend = 0`)로 전환. 2차(같은 날): 2D로도 여전히 안 들림 — 원인은 `VolumeOverride` 2배가 `AudioSource.volume`(0~1 클램프) 경로라 못 먹는 것 + 패널티 0.6초가 클립 페이드인과 겹치는 것이었음. **최종: 패널티 이동은 무음으로 되돌리고(`PenaltyRoutine`에서 `StartMoveLoop`/`StopMoveLoop` 제거), 이동 루프 자체는 3D로 원복**(`moveSpatialBlend`/`moveMinDistance`/`moveMaxDistance`/`moveRolloffMode` 필드 복원 — `T.Boss` 스케줄 전진·후퇴가 이 루프를 그대로 쓰므로 2D는 과함). 실패 사운드는 `ColorTileChallenge.OnFail` → `SFXEventPlayer.Play()`(2D 단발, `M.Stage3`에 이미 배치된 컴포넌트 재사용)로 챌린지 쪽에서 별도 처리. 네트워크/위치 동기화는 변경 없음(Host/Client 각자 로컬 재생). 스모크: `M.Stage3` 챌린지 실패 시 단발 SFX 1회 + 반대 라운드 `T.Boss` 스케줄 전진·후퇴 이동음(3D, 패널티 시 무음) 확인.
 
@@ -787,8 +793,9 @@ F·D 공통은 **검증 완료** 전제. 이후 **씬 단위**로 C(·필요 시
 
 ```
 Host   = HP · 피격 최종 판정 · 함정 스폰/스케줄 · 문/패드 등 규칙 · (발사체) 초기 velocity + 데미지 확정
-Owner  = 이동(CNT) · 키 입력 · 카메라 · 애니/SFX 연출 · 로컬 마이크/응원
+Owner  = 이동(CNT) · 키 입력 · 카메라 · 개인 SFX(색/버프/피격/사망/런) · 로컬 마이크/응원
 Client = 발사체 로컬 비행 (+ 트리거 감지 → ServerRpc 보고). VFX는 Rpc/로컬
+Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `PlayerAudio` 포스트모템.
 ```
 
 **이동 Host화는 하지 않는다.** Owner + `ClientNetworkTransform`을 계속 가져간다.

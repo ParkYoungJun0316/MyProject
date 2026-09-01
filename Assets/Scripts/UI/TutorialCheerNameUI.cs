@@ -15,6 +15,13 @@ using UnityEngine.UI;
 /// Player 프리팹에 붙이지 않는다 — 각 클라이언트는 자기 화면의 UI 하나만 보면 되므로 인원수만큼
 /// 중복 생성할 필요가 없다(§6B.2 동적 합류와도 무관하게 항상 씬에 1개만 존재).
 ///
+/// [TeamCheerWord, CheerSystemDesign.md D1]
+/// 같은 패널에 Host 전용 입력 섹션을 둔다. Host는 TrySetTeamCheerWord를 직접 호출(RPC 없음).
+/// 비-Host는 현재 값만 읽기 전용. 팀워드 확정은 패널을 닫지 않는다(CheerName 확정만 닫음).
+/// 미연결이면 팀워드 UI만 없음 — CheerName 입력은 그대로 동작.
+/// teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식으로 배치 — 부모
+/// SetActive 1번으로 같이 꺼짐/켜짐(개별 SetActive 중복 방지).
+///
 /// [상시 표시 → 상호작용 표지판 개폐로 변경, 2026-08-19]
 /// 이전엔 항상 화면에 떠 있었으나, 화면을 계속 가리고 "그 순간 지나면 다시 못 여는" DialogueUI식
 /// 1회성 노출의 단점을 피하고자 Tutorial 씬의 상호작용 표지판(TutorialCheerNameSignboard)이
@@ -53,6 +60,18 @@ public class TutorialCheerNameUI : MonoBehaviour
     [SerializeField] TMP_Text feedbackText;
     [SerializeField] float feedbackDisplaySeconds = 2.5f;
 
+    [Header("TeamCheerWord")]
+    [Tooltip("Host 전용 입력 섹션 루트 — teamWordInputField/teamWordConfirmButton을 이 GameObject의 " +
+             "자식으로 배치할 것(SetActive 1회로 같이 꺼짐/켜짐). 비-Host에선 숨김.")]
+    [SerializeField] GameObject hostTeamWordSection;
+    [Tooltip("비-Host 읽기 전용 섹션 루트. Host에선 숨김. 비워도 됨.")]
+    [SerializeField] GameObject clientTeamWordSection;
+    [Tooltip("hostTeamWordSection의 자식으로 배치.")]
+    [SerializeField] TMP_InputField teamWordInputField;
+    [Tooltip("hostTeamWordSection의 자식으로 배치.")]
+    [SerializeField] Button teamWordConfirmButton;
+    [SerializeField] TMP_Text currentTeamWordText;
+
     [Header("커서")]
     [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요 " +
              "(EscMenuController/PlayerEmoteMenuUI와 동일 패턴).")]
@@ -67,7 +86,7 @@ public class TutorialCheerNameUI : MonoBehaviour
     public static bool ConsumedEscThisFrame => s_escClosedFrame == Time.frameCount;
     static int s_escClosedFrame = -1;
 
-    /// <summary>이번 프레임에 Enter로 이름 확정을 시도했는지 — InGameChatUI가 같은 프레임에
+    /// <summary>이번 프레임에 Enter로 CheerName 또는 TeamCheerWord 확정을 시도했는지 — InGameChatUI가 같은 프레임에
     /// 채팅을 열지 않도록 확인하는 명시적 플래그. Host 자체 테스트 등에서 ServerRpc 왕복이
     /// 같은 프레임 안에 끝나 확정 성공과 동시에 IsOpen이 false로 바뀌어버리면, InGameChatUI가
     /// "입력창 닫힌 상태에서 Enter"로 오인해 같은 물리 Enter로 채팅을 열어버리는 문제를 막는다
@@ -76,8 +95,9 @@ public class TutorialCheerNameUI : MonoBehaviour
     static int s_enterConfirmFrame = -1;
 
     PlayerCheerNameSync _mySync;
-    ulong _myClientId;
     string _lastShownName;
+    string _lastShownTeamWord;
+    bool? _teamWordHostVisible;
     float _feedbackHideAt = -1f;
 
     void Awake()
@@ -93,6 +113,15 @@ public class TutorialCheerNameUI : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
 
+        if (teamWordInputField != null)
+        {
+            teamWordInputField.characterLimit = maxLength;
+            teamWordInputField.onValidateInput = ValidateCharacter;
+            teamWordInputField.onSubmit.AddListener(_ => OnTeamWordConfirmClicked());
+        }
+        if (teamWordConfirmButton != null)
+            teamWordConfirmButton.onClick.AddListener(OnTeamWordConfirmClicked);
+
         SetInteractable(false); // 내 캐릭터를 찾기 전까지 비활성
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
@@ -104,6 +133,9 @@ public class TutorialCheerNameUI : MonoBehaviour
         // 입력창/확정 버튼을 클릭할 수 있게 한다. OnEnable/OnDisable 짝으로 걸어 씬 파괴 시에도
         // Release가 보장된다(클래스 doc [커서 공유] 참고).
         CursorUnlockRequestUtil.Request(this);
+        _teamWordHostVisible = null;
+        _lastShownTeamWord = null;
+        ApplyTeamWordRole();
     }
 
     void OnDisable()
@@ -143,6 +175,14 @@ public class TutorialCheerNameUI : MonoBehaviour
         EventSystem.current?.SetSelectedGameObject(nameInputField.gameObject);
     }
 
+    IEnumerator FocusTeamWordNextFrame()
+    {
+        yield return null;
+        if (teamWordInputField == null || !gameObject.activeSelf) yield break;
+        teamWordInputField.ActivateInputField();
+        EventSystem.current?.SetSelectedGameObject(teamWordInputField.gameObject);
+    }
+
     /// <summary>패널 닫기 — 확정 여부와 무관, 타이핑 중이던 미확정 글자는 버려짐(§3.4상 문제 없음, 확정 전엔 로컬일 뿐).</summary>
     public void Close()
     {
@@ -174,12 +214,13 @@ public class TutorialCheerNameUI : MonoBehaviour
         }
 
         if (_mySync == null)
-        {
             TryFindLocalSync();
-            if (_mySync == null) return;
-        }
 
-        RefreshCurrentNameDisplay();
+        if (_mySync != null)
+            RefreshCurrentNameDisplay();
+
+        ApplyTeamWordRole();
+        RefreshCurrentTeamWordDisplay();
 
         if (_feedbackHideAt >= 0f && Time.time >= _feedbackHideAt && feedbackText != null)
         {
@@ -199,7 +240,6 @@ public class TutorialCheerNameUI : MonoBehaviour
             if (netObj == null || !netObj.IsOwner) continue;
 
             _mySync = sync;
-            _myClientId = netObj.OwnerClientId;
             _mySync.OnSubmitResult += HandleSubmitResult;
             SetInteractable(true);
             break;
@@ -221,9 +261,16 @@ public class TutorialCheerNameUI : MonoBehaviour
         if (_mySync == null || nameInputField == null) return;
 
         s_enterConfirmFrame = Time.frameCount;
-        _mySync.SubmitCheerNameServerRpc(new FixedString32Bytes(nameInputField.text));
+
+        // 비활성화는 RPC 호출 "전에" — Host가 자기 자신에게 보내는 ServerRpc는 네트워크를 안 타고
+        // 이 호출 안에서 즉시(동기) 처리되어 HandleSubmitResult까지 여기서 다 끝나버린다. 순서가
+        // 바뀌면(호출 뒤에 비활성화) 방금 HandleSubmitResult가 켜둔 interactable=true를 이 줄이
+        // 덮어써 false로 고정시켜버린다 — Host에서 최초 1회 확정 후 입력칸이 영구 비활성화되는
+        // 버그였다(2026-09-01, Steam 4인 테스트에서 발견). Client는 실제 네트워크 왕복이라 이
+        // 호출이 즉시 리턴되므로 순서와 무관하게 항상 정상 동작했다.
         SetInteractable(false); // 응답 오기 전까지 중복 제출 방지
         ShowFeedback("확인 중...", persistent: true);
+        _mySync.SubmitCheerNameServerRpc(new FixedString32Bytes(nameInputField.text));
     }
 
     void HandleSubmitResult(bool success, string errorKey)
@@ -244,6 +291,37 @@ public class TutorialCheerNameUI : MonoBehaviour
         }
     }
 
+    void OnTeamWordConfirmClicked()
+    {
+        s_enterConfirmFrame = Time.frameCount;
+
+        if (!IsLocalServer())
+        {
+            ShowFeedback(ResolveTeamWordError("not_server"));
+            return;
+        }
+
+        if (teamWordInputField == null) return;
+
+        var svc = CheerService.Instance;
+        if (svc == null || !svc.IsSpawned)
+        {
+            ShowFeedback(ResolveTeamWordError(""));
+            return;
+        }
+
+        if (!svc.TrySetTeamCheerWord(teamWordInputField.text, out string reason))
+        {
+            ShowFeedback(ResolveTeamWordError(reason));
+            StartCoroutine(FocusTeamWordNextFrame());
+            return;
+        }
+
+        teamWordInputField.text = "";
+        _lastShownTeamWord = null;
+        RefreshCurrentTeamWordDisplay();
+    }
+
     static string ResolveErrorMessage(string key) => key switch
     {
         "format"   => "2~12자, 영문 소문자/숫자/밑줄(_)만 사용할 수 있어요.",
@@ -253,23 +331,83 @@ public class TutorialCheerNameUI : MonoBehaviour
         _          => "이름을 확정할 수 없어요.",
     };
 
+    static string ResolveTeamWordError(string key) => key switch
+    {
+        "format"     => "2~12자, 영문 소문자/숫자/밑줄(_)만 사용할 수 있어요.",
+        "reserved"   => "시스템 예약어라 사용할 수 없는 단어예요.",
+        "blocked"    => "사용할 수 없는 단어가 포함되어 있어요.",
+        "taken"      => "이미 팀원이 응원 이름으로 쓰고 있어요.",
+        "not_server" => "호스트만 팀 키워드를 정할 수 있어요.",
+        _            => "팀 키워드를 확정할 수 없어요.",
+    };
+
     // ── 표시 ────────────────────────────────────────────────────
 
     void RefreshCurrentNameDisplay()
     {
-        if (currentNameText == null) return;
+        // 내 이름만 표시하는 라벨이라 전체 플레이어를 훑을 필요가 없다 — 이미 캐싱된 _mySync에서
+        // 바로 읽는다(과거엔 GetAllEffectiveNames()로 전원 스캔 후 내 clientId만 필터링했음, 불필요).
+        if (currentNameText == null || _mySync == null) return;
 
-        string effective = "";
-        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
-        {
-            if (clientId != _myClientId) continue;
-            effective = name;
-            break;
-        }
-
+        string effective = _mySync.EffectiveCheerName;
         if (effective == _lastShownName) return;
         _lastShownName = effective;
         currentNameText.text = string.IsNullOrEmpty(effective) ? "현재 이름: (없음)" : $"현재 이름: {effective}";
+    }
+
+    void ApplyTeamWordRole()
+    {
+        bool isServer = IsLocalServer();
+        bool canEdit = isServer && CheerServiceReady();
+
+        if (_teamWordHostVisible != isServer)
+        {
+            _teamWordHostVisible = isServer;
+            // teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식이라
+            // 부모 SetActive 1번으로 같이 꺼짐/켜짐 — 개별 SetActive 중복 호출 없음.
+            if (hostTeamWordSection != null)
+                hostTeamWordSection.SetActive(isServer);
+            if (clientTeamWordSection != null)
+                clientTeamWordSection.SetActive(!isServer);
+        }
+
+        if (teamWordInputField != null)
+            teamWordInputField.interactable = canEdit;
+        if (teamWordConfirmButton != null)
+            teamWordConfirmButton.interactable = canEdit;
+    }
+
+    void RefreshCurrentTeamWordDisplay()
+    {
+        if (currentTeamWordText == null) return;
+
+        string word = ResolveCurrentTeamWord();
+        if (word == _lastShownTeamWord) return;
+        _lastShownTeamWord = word;
+        currentTeamWordText.text = string.IsNullOrEmpty(word)
+            ? $"팀 키워드: {GameSession.DefaultTeamCheerWord}"
+            : $"팀 키워드: {word}";
+    }
+
+    static string ResolveCurrentTeamWord()
+    {
+        if (CheerService.Instance != null)
+            return CheerService.Instance.TeamCheerWord;
+        if (GameSession.Instance != null)
+            return GameSession.Instance.GetSessionTeamCheerWord();
+        return GameSession.DefaultTeamCheerWord;
+    }
+
+    static bool IsLocalServer()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && nm.IsServer;
+    }
+
+    static bool CheerServiceReady()
+    {
+        var svc = CheerService.Instance;
+        return svc != null && svc.IsSpawned;
     }
 
     void ShowFeedback(string message, bool persistent = false)

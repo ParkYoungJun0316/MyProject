@@ -31,6 +31,13 @@ public class PlayerPunch : NetworkBehaviour
     [Tooltip("펀치 재사용 대기시간(초)")]
     [Range(0f, 2f)]
     [SerializeField] float cooldown = 1f;
+    [Tooltip("Owner 로컬 쿨다운에 얹는 여유 버퍼(초). Owner의 다음 입력 허용 시점(Time.time 기준)과 " +
+        "Host가 PunchServerRpc를 실제로 받아 쿨다운을 시작하는 시점(네트워크 지연만큼 늦음) 사이 레이스를 " +
+        "덮기 위한 값 — 이게 없으면 Owner 로컬 쿨다운이 딱 끝나는 순간 보낸 다음 펀치를 Host가 " +
+        "'아직 쿨다운 중'으로 거부해 애니(NetworkAnimator로 무조건 동기화됨)는 나가는데 사운드/판정만 " +
+        "빠지는 SFX·넉백 desync가 생긴다(2026-09-01 진단).")]
+    [Range(0f, 0.5f)]
+    [SerializeField] float localCooldownBuffer = 0.15f;
 
     [Header("판정 윈도우")]
     [Tooltip("Host가 PunchServerRpc를 승인한 뒤 히트박스가 유효한 시간(초). 1스윙 1히트 가드용")]
@@ -47,6 +54,7 @@ public class PlayerPunch : NetworkBehaviour
     [SerializeField] float knockbackForceMax = 10f;
 
     Player _player;
+    PlayerAudio _audio;
     Animator _anim;
     float _nextPunchTime;
     float _nextLocalPunchTime;
@@ -57,6 +65,7 @@ public class PlayerPunch : NetworkBehaviour
     void Awake()
     {
         _player = GetComponent<Player>();
+        _audio = GetComponent<PlayerAudio>();
         _anim = GetComponentInChildren<Animator>();
     }
 
@@ -71,9 +80,11 @@ public class PlayerPunch : NetworkBehaviour
         if (!IsOwner || _player == null || _player.IsDead) return;
         if (Time.time < _nextLocalPunchTime) return;
 
-        _nextLocalPunchTime = Time.time + cooldown;
+        // Host의 _nextPunchTime보다 항상 늦게 풀리도록 여유 버퍼를 더한다 (localCooldownBuffer 참고).
+        _nextLocalPunchTime = Time.time + cooldown + localCooldownBuffer;
 
-        SFXManager.Instance?.Play(SFXId.Player_Punch);
+        // Owner는 즉시 3D 재생(입력 지연 없음). 다른 머신은 PunchServerRpc → ClientRpc.
+        _audio?.PlayPunch3D();
         // Owner 로컬에서 직접 트리거 — NetworkAnimator(Owner Authority)가 다른 클라이언트에 자동 동기화
         // (Player.cs의 doHit/doDie과 동일한 방식. 실제 피격 판정은 별도로 PunchServerRpc가 담당)
         _anim?.SetTrigger("doPunch");
@@ -89,6 +100,15 @@ public class PlayerPunch : NetworkBehaviour
 
         _nextPunchTime = Time.time + cooldown;
         StartSwingWindow();
+        PlayPunchSfxClientRpc();
+    }
+
+    /// <summary>오너는 로컬에서 이미 재생했으므로 스킵. 나머지 머신은 펀처 위치 3D.</summary>
+    [ClientRpc]
+    void PlayPunchSfxClientRpc()
+    {
+        if (IsOwner) return;
+        _audio?.PlayPunch3D();
     }
 
     void StartSwingWindow()

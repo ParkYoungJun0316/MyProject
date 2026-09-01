@@ -107,6 +107,7 @@ public class TitleMenuController : MonoBehaviour
         if (!UseLocalNetworkPath)
         {
             TryAutoJoinFromLaunchArgs();
+            TryAutoCreateGameFromLaunchArgs();
 
             if (SteamLobbyManager.Instance == null)
                 Debug.LogError("[TitleMenuController] SteamLobbyManager.Instance가 null — OnInviteAccepted 구독 실패. " +
@@ -154,6 +155,31 @@ public class TitleMenuController : MonoBehaviour
     }
 
     /// <summary>
+    /// [버그 수정 2026-09-01] TryRestartForCreateGame()이 트리거한 <c>+create_game</c> 재시작의
+    /// 착지점 — TryAutoJoinFromLaunchArgs()와 동일한 패턴(앱 전체 수명에서 1회만 처리).
+    /// 새 프로세스는 방을 만든 적이 없는 "냉기동" 상태이므로 OnClickCreateGame()을 그대로 타도
+    /// 재호스팅 트랜스포트 버그 조건에 걸리지 않는다.
+    /// </summary>
+    static bool s_launchCreateGameArgsHandled;
+
+    void TryAutoCreateGameFromLaunchArgs()
+    {
+        if (s_launchCreateGameArgsHandled) return;
+        s_launchCreateGameArgsHandled = true;
+
+        string[] args = Environment.GetCommandLineArgs();
+        foreach (string arg in args)
+        {
+            if (!string.Equals(arg, "+create_game", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            Debug.Log("[TitleMenuController] 커맨드라인 +create_game 감지 — 방 만들기 재시도.");
+            OnClickCreateGame();
+            return;
+        }
+    }
+
+    /// <summary>
     /// 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있으면 인프로세스 재접속 대신
     /// <c>+connect_lobby &lt;lobbyId&gt;</c>로 프로세스를 재시작한다 — "웜 리커넥트는 항상 재시작"
     /// 정책(SteamworksIntegrationDesign.md 트랙6 11차 세션 확정, 상류 Facepunch 트랜스포트 버그 회피).
@@ -169,6 +195,25 @@ public class TitleMenuController : MonoBehaviour
         if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId)) return true;
 
         Debug.LogWarning("[TitleMenuController] 재시작 실패 — 인프로세스 접속으로 폴백합니다(재현될 수 있음).");
+        return false;
+    }
+
+    /// <summary>
+    /// [버그 수정 2026-09-01] 방 만들기(Host)도 참여(Join)와 동일한 "웜 리커넥트는 항상 재시작"
+    /// 정책 대상으로 편입 — 지금까지 이 가드가 CreateGameSteamAsync()에는 없어서 재호스팅 시
+    /// 트랜스포트 중복 RPC 전달 버그(SequenceRing 이중 판정)가 재현됐다. TryRestartForWarmReconnect와
+    /// 동일 구조, lobbyId 없이 <c>+create_game</c>으로만 재시작한다(새 로비는 재시작 후 새로 만듦).
+    /// </summary>
+    static bool TryRestartForCreateGame()
+    {
+        if (!NetworkManagerSetup.HasStartedSteamNetworkingThisProcess) return false;
+
+        Debug.Log("[TitleMenuController] 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있음 — " +
+                  "프로세스 재시작 후 방 만들기 재시도.");
+
+        if (NetworkManagerSetup.RestartWithCreateGame()) return true;
+
+        Debug.LogWarning("[TitleMenuController] 재시작 실패 — 인프로세스 방 만들기로 폴백합니다(재현될 수 있음).");
         return false;
     }
 
@@ -221,6 +266,11 @@ public class TitleMenuController : MonoBehaviour
     async System.Threading.Tasks.Task CreateGameSteamAsync()
     {
         Debug.Log("[TitleMenuController] CreateGameSteamAsync 진입");
+
+        // 웜 리커넥트는 항상 재시작(SteamworksIntegrationDesign.md 트랙6 확정 정책) — JoinGameSteamAsync와
+        // 동일한 이유로 재호스팅도 인프로세스로 두면 트랜스포트 중복 전달 버그가 재현됨(2026-09-01).
+        if (TryRestartForCreateGame())
+            return;
 
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {

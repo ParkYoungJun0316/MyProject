@@ -75,17 +75,10 @@ public class CheerService : NetworkBehaviour
     /// <summary>개인 쿨타임 시작. (colorIndex, 쿨타임초)</summary>
     public event System.Action<int, float> OnCooldownStart;
 
-    /// <summary>구 cross-target UI가 아직 구독 중. 신규 경로는 발행하지 않음 (Phase C에서 제거).</summary>
-#pragma warning disable CS0067
-    public event System.Action<int, int, int> OnVoteChanged;
-    public event System.Action<int> OnVoteReset;
-    public event System.Action<int, int[]> OnCheerersChanged;
-#pragma warning restore CS0067
-
-    /// <summary>팀 버프 발동 (전원 Heal 직후). Phase C 배너 구독용.</summary>
+    /// <summary>팀 버프 발동 (전원 Heal 직후). TeamBuffBannerUI 구독.</summary>
     public event System.Action OnTeamBuffActivated;
 
-    /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열)</summary>
+    /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열). PlayerCheerHeartsUI / TeamStatusUI 구독.</summary>
     public event System.Action<int, int, int[]> OnTeamVoteChanged;
 
     // ── 공개 프로퍼티 ─────────────────────────────────────────────

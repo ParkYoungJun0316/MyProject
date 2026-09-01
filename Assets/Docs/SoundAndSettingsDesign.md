@@ -756,3 +756,31 @@ min=1/max=0(→500) 기본값이 명시적으로 저장돼 있는 상태**(`Spik
   가능. `SpinRoller`/Boulder_Roll(구르는 루프), `Stage5ChaserAI`/
   `Stage5TargetRunner`(달리기 루프), `AdvancingWall`(전진·후퇴 스케줄 루프, 패널티는 무음 — 2026-09-01
   최종) — 루프 3곳, Inspector `spatialBlend`/`minDistance`/`maxDistance` 조절 가능.
+
+### 11.6 `PressurePad`/`ColorTile` 누름음(`Pad_Press`) 2D → 3D (2026-09-01, 별도 세션)
+
+`PressurePad.PlayPressSfx()`/`ColorTile.PlayPressSfx()`는 §11 재분류 감사 때 대상에서 빠져 있던
+두 곳 — 발판·타일 트리거는 각 머신이 CNT로 동기화된 위치를 로컬 물리로 감지해 트리거하므로,
+원격 플레이어가 멀리 있는 발판을 밟아도 그 판정이 내 머신에서도 그대로 일어나 `Play(id)`(2D)가
+거리 무관 풀볼륨으로 재생됐다 — 남이 밟았는데 내 귀 옆에서 나는 것처럼 들리는 문제
+(`PlayerAudio` §9.1.3 포스트모템과 동일 계열 증상, 원인은 다름 — 여긴 로컬 트리거가 원격 대상에도
+반응하는 문제, `PlayerAudio`는 오너 가드 누락이 원인).
+
+**수정:** 둘 다 `Play(pressSfxId)` → `PlayAtPoint(pressSfxId, transform.position, pressMinDistance,
+pressMaxDistance, pressRolloffMode)`로 전환, `SpikeTrap`과 동일한 Inspector 필드 패턴 추가
+(`pressMinDistance`=5 / `pressMaxDistance`=20 / `pressRolloffMode`=Logarithmic 기본값). 네트워크
+변경 없음 — 여전히 각 머신 로컬 재생, RPC 불필요(발판/타일은 고정 위치라 `transform.position` 그대로
+사용 가능).
+
+### 11.7 `SequenceRingMinigame` 정답/오답음이 Client에서 전혀 안 들림 (2026-09-01, 별도 세션)
+
+`OnCorrectInput`/`OnWrongInput`(씬에서 `SFXEventPlayer.Play()` 2D 연결) 자체는 문제 없음 —
+원인은 이 두 UnityEvent를 발동시키는 `AdvanceStep`/`ApplyWrongPenalty`가 `TrySubmit`/
+`TrySubmitAnyKey`를 통해 **Host 판정 레인에서만** 호출된다는 것(§11B ④Judge, 네트워크
+구조 문제라 여긴 2D/3D 선택과 무관 — SequenceRing은 화면 전체 UI성 미니게임이라 2D가 맞다는
+판단은 유지). Client는 이 경로 자체를 안 타 정답/오답 사운드를 **아예** 못 들었다.
+
+**수정:** 자세한 내용은 `NetworkDesign.md` §9.1 공유 포스트모템(`SequenceRingMinigame` 정답/오답
+SFX, 2026-09-01) 참고 — `StageNetworkState.NotifyChallengeStepResult`(RPC 보장 전달)로 Host/Client 공통
+채널을 새로 만들고, `SequenceRingMinigame.HandleChallengeStepResult`에서 `OnCorrectInput`/
+`OnWrongInput`을 발동하도록 이동. SFX 자체는 2D 그대로 유지.

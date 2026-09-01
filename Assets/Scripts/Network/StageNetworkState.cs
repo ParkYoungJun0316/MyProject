@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -366,6 +367,12 @@ public class StageNetworkState : NetworkBehaviour
     public event Action<bool> OnChallengeClearedChanged;
     /// <summary>Host 판정 결과(성공/실패) 1회성 연출 신호 — Client 전용(Host는 로컬에서 직접 처리).</summary>
     public event Action<bool> OnChallengeOutcome;
+    /// <summary>
+    /// 스텝 단위 정답/오답 1회성 연출 신호(SFX 등). NV(ChallengeStepState) 변경과 달리 "오답"은
+    /// 스텝 인덱스가 그대로라 NV만으로는 Client에 전달되지 않는다 — SequenceRing이 최초 사용.
+    /// Host/Client 전 머신 공통 구독점(NotifyChallengeStepResult 참고 — Host 로컬 즉시 발동 + RPC).
+    /// </summary>
+    public event Action<bool> OnChallengeStepResult;
 
     /// <summary>
     /// 연속 진행형 챌린지(SequenceRing 등)의 남은 시간 동기화 이벤트 — Client 전용(Host는 로컬 tick으로 직접 갱신).
@@ -943,6 +950,27 @@ public class StageNetworkState : NetworkBehaviour
         OnChallengeOutcome?.Invoke(success);
     }
 
+    /// <summary>
+    /// Host: 스텝 단위 정답/오답 1회성 연출 신호(SFX 등). ChallengeCleared와 동일한 이유로
+    /// RPC 보장 전달 — "오답"은 스텝 인덱스가 그대로라 NV(ChallengeStepState) 변경만으로는
+    /// Client가 알 방법이 없다(2026-09-01, SequenceRing OnCorrectInput/OnWrongInput이 Host
+    /// 전용 호출 경로인 TrySubmit/TrySubmitAnyKey 안에서만 발동돼 Client가 전혀 못 듣던 문제 수정).
+    /// </summary>
+    public void NotifyChallengeStepResult(bool correct)
+    {
+        if (!IsServer) return;
+        OnChallengeStepResult?.Invoke(correct); // Host 로컬 즉시 발동
+        NotifyChallengeStepResultClientRpc(correct);
+    }
+
+    /// <summary>Client 전용 — 위 NotifyChallengeStepResult(true/false)가 보장 전달하는 1회성 신호.</summary>
+    [ClientRpc]
+    void NotifyChallengeStepResultClientRpc(bool correct)
+    {
+        if (IsServer) return;
+        OnChallengeStepResult?.Invoke(correct);
+    }
+
     void OnChallengeStepChangedNv(ChallengeStepState prev, ChallengeStepState next) => OnChallengeStepChanged?.Invoke(next.stepIndex);
 
     /// <summary>
@@ -998,21 +1026,48 @@ public class StageNetworkState : NetworkBehaviour
 
     // ── 챌린지 입력 제출 (Client → Host, §11B.1) ───────────────────
 
+    // [버그 수정 2026-09-01] 클라이언트별 마지막 제출 프레임. 같은 클라이언트의 같은 프레임 제출은
+    // 1회만 판정한다 — SequenceRing은 판정이 곧 스텝 진행(ChallengeStepBegin)이라 비멱등이고,
+    // 실기 로그에서 Client의 Space 1회가 Host에 같은 프레임 2번 도착해 한 입력이 두 스텝을
+    // 소비했다(첫 판정이 스텝을 올린 뒤 두 번째가 다음 스텝을 또 판정 — 스텝 인덱스 기준
+    // 가드로는 못 막는 이유). 클라이언트는 wasPressedThisFrame로 프레임당 1회만 보내므로
+    // 같은 프레임의 2번째 제출은 항상 중복이다. 색/AnyKey는 한 입력에 둘 중 하나만 오므로
+    // 슬롯을 공유한다.
+    private readonly Dictionary<ulong, int> _lastChallengeSubmitFrame = new();
+
+    bool IsDuplicateChallengeSubmit(ulong senderClientId)
+    {
+        int frame = Time.frameCount;
+        if (_lastChallengeSubmitFrame.TryGetValue(senderClientId, out int lastFrame) && lastFrame == frame)
+            return true;
+
+        _lastChallengeSubmitFrame[senderClientId] = frame;
+        return false;
+    }
+
     /// <summary>
     /// Client: 자기 색으로 챌린지 스텝 제출 요청(예: SequenceRing 키 입력). Host만 위치·색 등 실제
     /// 상태를 갖고 있는 포지션 판정형과 달리, 키 입력형은 "누가 눌렀는가" 자체가 Host에 없는 정보라
     /// 별도 제출 경로가 필요하다 — Host가 SequenceRingMinigame.TrySubmit()으로 판정한다.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SubmitStepServerRpc(PlayerColorType color)
+    public void SubmitStepServerRpc(PlayerColorType color, RpcParams rpcParams = default)
     {
+        ulong sender = rpcParams.Receive.SenderClientId;
+
+        if (IsDuplicateChallengeSubmit(sender)) return;
+
         SequenceRingMinigame.Instance?.TrySubmit(color);
     }
 
     /// <summary>Client: Common/Danger 스텝 등 색 구분 없는 "아무 키" 제출 요청.</summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SubmitAnyKeyStepServerRpc()
+    public void SubmitAnyKeyStepServerRpc(RpcParams rpcParams = default)
     {
+        ulong sender = rpcParams.Receive.SenderClientId;
+
+        if (IsDuplicateChallengeSubmit(sender)) return;
+
         SequenceRingMinigame.Instance?.TrySubmitAnyKey();
     }
 

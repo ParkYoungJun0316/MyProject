@@ -162,6 +162,7 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState.OnChallengeStepChanged    += HandleChallengeStepChanged;
             _netState.OnChallengeClearedChanged += HandleChallengeClearedChanged;
             _netState.OnChallengeOutcome        += HandleChallengeOutcome;
+            _netState.OnChallengeStepResult     += HandleChallengeStepResult;
             _netState.OnChallengeTimeSync       += HandleChallengeTimeSync;
             _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
 
@@ -190,6 +191,7 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState.OnChallengeStepChanged    -= HandleChallengeStepChanged;
             _netState.OnChallengeClearedChanged -= HandleChallengeClearedChanged;
             _netState.OnChallengeOutcome        -= HandleChallengeOutcome;
+            _netState.OnChallengeStepResult     -= HandleChallengeStepResult;
             _netState.OnChallengeTimeSync       -= HandleChallengeTimeSync;
             _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
@@ -321,6 +323,20 @@ public class SequenceRingMinigame : MonoBehaviour
         if (!success) HandleFailedOutcome();
     }
 
+    /// <summary>
+    /// [버그 수정 2026-09-01] StageNetworkState.OnChallengeStepResult 구독 핸들러. 예전엔 AdvanceStep/
+    /// ApplyWrongPenalty가 OnCorrectInput/OnWrongInput을 직접 발동시켰는데, 이 두 메서드는 TrySubmit/
+    /// TrySubmitAnyKey를 통해 Host 판정 레인에서만 호출된다(§11B ④Judge) — Client는 이 UnityEvent가
+    /// 아예 발동하지 않아 정답/오답 SFX를 전혀 듣지 못했다. Host/Client 공통 구독점으로 옮겨 RPC로
+    /// 보장 전달한다(HandleChallengeStepChanged와 동일한 owner 가드).
+    /// </summary>
+    void HandleChallengeStepResult(bool correct)
+    {
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.SequenceRing) return;
+        if (correct) OnCorrectInput?.Invoke();
+        else OnWrongInput?.Invoke();
+    }
+
     void HandleFailedOutcome()
     {
         _state = MinigameState.Failed;
@@ -403,6 +419,11 @@ public class SequenceRingMinigame : MonoBehaviour
     /// </summary>
     void PollSpaceInput()
     {
+        // [버그 수정 2026-09-01] 입력 제출은 현재 활성 인스턴스 1개만 담당한다. 한 씬에 링이
+        // 여러 개 있고(M.Stage4는 Phase별 4개) Phase 전환이 겹쳐 두 개가 동시에 활성이면 각자
+        // Update를 돌아 같은 Space 1회를 각각 제출 → Host가 한 입력을 두 번 판정한다.
+        if (Instance != this) return;
+
         if (Keyboard.current == null) return;
         if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
         if (_currentStepIndex < 0 || _currentStepIndex >= _steps.Length) return;
@@ -507,7 +528,7 @@ public class SequenceRingMinigame : MonoBehaviour
     void AdvanceStep(bool fromPlayerInput = true)
     {
         if (fromPlayerInput)
-            OnCorrectInput?.Invoke();
+            _netState?.NotifyChallengeStepResult(true); // Host 로컬 즉시 발동 + Client RPC (HandleChallengeStepResult)
 
         _successCount++;
 
@@ -541,7 +562,7 @@ public class SequenceRingMinigame : MonoBehaviour
             }
         }
 
-        OnWrongInput?.Invoke();
+        _netState?.NotifyChallengeStepResult(false); // Host 로컬 즉시 발동 + Client RPC (HandleChallengeStepResult)
     }
 
     /// <summary>Host: 클리어 확정. ChallengeCleared NV가 전 머신 공통으로 HandleChallengeClearedChanged를

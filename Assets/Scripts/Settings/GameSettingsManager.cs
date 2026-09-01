@@ -172,11 +172,25 @@ public class GameSettingsManager : MonoBehaviour
     public void ApplyMicTransmitVolume()
     {
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+        {
+            // Title 부팅 시점(ApplySavedMicSettingsWhenReady)엔 항상 이 경로라 정상 — Warning 아님.
+            Debug.Log($"[GameSettingsManager] ApplyMicTransmitVolume(no-arg) no-op — NetworkManager 없음/미리스닝, 아직 세션 전 (MicVolume={MicVolume})");
             return;
+        }
         var localClient = NetworkManager.Singleton.LocalClient;
-        if (localClient == null || localClient.PlayerObject == null) return;
+        if (localClient == null || localClient.PlayerObject == null)
+        {
+            Debug.LogWarning($"[GameSettingsManager] ApplyMicTransmitVolume(no-arg) no-op — LocalClient.PlayerObject 없음 (MicVolume={MicVolume})");
+            return;
+        }
 
-        ApplyMicTransmitVolume(localClient.PlayerObject.GetComponent<VoiceBroadcastTrigger>());
+        var trigger = localClient.PlayerObject.GetComponent<VoiceBroadcastTrigger>();
+        if (trigger == null)
+        {
+            Debug.LogWarning("[GameSettingsManager] ApplyMicTransmitVolume(no-arg) no-op — PlayerObject에 VoiceBroadcastTrigger 없음");
+            return;
+        }
+        ApplyMicTransmitVolume(trigger);
     }
 
     /// <summary>
@@ -186,8 +200,13 @@ public class GameSettingsManager : MonoBehaviour
     /// </summary>
     public void ApplyMicTransmitVolume(VoiceBroadcastTrigger trigger)
     {
-        if (trigger == null) return;
+        if (trigger == null)
+        {
+            Debug.LogWarning($"[GameSettingsManager] ApplyMicTransmitVolume(trigger) no-op — trigger null (MicVolume={MicVolume})");
+            return;
+        }
         trigger.ActivationFader.Volume = MicVolume;
+        Debug.Log($"[GameSettingsManager] ApplyMicTransmitVolume 적용 — MicVolume={MicVolume} → trigger={trigger.name} ActivationFader.Volume={trigger.ActivationFader.Volume}");
     }
 
     /// <summary>옵션 메뉴 마이크 음소거 토글에서 호출. 즉시 적용 + 저장.
@@ -248,6 +267,7 @@ public class GameSettingsManager : MonoBehaviour
     {
         MicVolume = Mathf.Clamp01(value);
         PlayerPrefs.SetFloat(KeyMicVolume, MicVolume);
+        Debug.Log($"[GameSettingsManager] SetMicVolume 호출 — value={value} → MicVolume={MicVolume}");
         ApplyMicTransmitVolume();
     }
 

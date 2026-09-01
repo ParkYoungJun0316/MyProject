@@ -1038,7 +1038,19 @@ MonoBehaviour:
       m_Calls: []
   OnFail:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 796540933}
+        m_TargetAssemblyTypeName: SFXEventPlayer, Assembly-CSharp
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &433914001
 Transform:
   m_ObjectHideFlags: 0
@@ -1711,6 +1723,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 796540932}
+  - component: {fileID: 796540933}
   m_Layer: 0
   m_Name: SFXEventPlayer
   m_TagString: Untagged
@@ -1733,6 +1746,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &796540933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 796540930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d698db3115897cd47a1515d944d1a92b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXEventPlayer
+  sfxId: 33
 --- !u!1 &843514282
 GameObject:
   m_ObjectHideFlags: 0
@@ -5581,6 +5607,10 @@ MonoBehaviour:
   pauseReturnDuration: 0.5
   telegraph: {fileID: 0}
   moveSfxId: 23
+  moveSpatialBlend: 1
+  moveMinDistance: 1
+  moveMaxDistance: 0
+  moveRolloffMode: 0
   OnAdvanceStarted:
     m_PersistentCalls:
       m_Calls: []

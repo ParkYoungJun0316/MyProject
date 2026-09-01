@@ -321,11 +321,23 @@ public class InGameChatUI : NetworkBehaviour
 
     // ── 네트워크 ──────────────────────────────────────────────────
 
+    // [버그 수정 2026-09-01] SequenceRing 이중 판정과 동일 원인(재호스팅 시 같은 프레임 RPC 중복
+    // 수신) — 채팅은 시간 쿨다운·Add류 자연 가드가 없어 그대로 두면 같은 메시지가 두 번 찍힌다.
+    // 클라이언트는 SendChat()이 프레임당 한 번만 이 RPC를 보내므로 같은 sender의 같은 프레임
+    // 2번째 수신은 항상 중복이다 (StageNetworkState.IsDuplicateChallengeSubmit과 동일 패턴).
+    private readonly Dictionary<ulong, int> _lastMessageFrame = new();
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     void SendMessageServerRpc(string message, RpcParams rpcParams = default)
     {
         ulong senderId = rpcParams.Receive.SenderClientId;
-        int colorIdx   = -1;
+
+        int frame = Time.frameCount;
+        if (_lastMessageFrame.TryGetValue(senderId, out int lastFrame) && lastFrame == frame)
+            return;
+        _lastMessageFrame[senderId] = frame;
+
+        int colorIdx = -1;
         // PlayerSpawnCoordinator(NetworkList) — 서버·클라이언트 공통 단일 소스
         if (PlayerSpawnCoordinator.TryGetColor(senderId, out var color))
             colorIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);

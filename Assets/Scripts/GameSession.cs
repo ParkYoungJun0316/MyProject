@@ -262,7 +262,7 @@ public class GameSession : MonoBehaviour
     public void SetSessionVoiceIds(string[] ids)
     {
         _sessionVoiceIds = ids;
-        Debug.Log("[GameSession] 세션 VoiceId 적용 완료");
+        Debug.Log($"[GameSession] 세션 VoiceId 적용 완료 — Blue={(string.IsNullOrEmpty(ids[0]) ? "빈값" : "매칭됨")} Purple={(string.IsNullOrEmpty(ids[1]) ? "빈값" : "매칭됨")} Green={(string.IsNullOrEmpty(ids[2]) ? "빈값" : "매칭됨")} Yellow={(string.IsNullOrEmpty(ids[3]) ? "빈값" : "매칭됨")}");
     }
 
     /// <summary>colorIndex → 이번 판 Dissonance VoiceId. 미설정/빈 값이면 null(매칭 불가로 취급).</summary>

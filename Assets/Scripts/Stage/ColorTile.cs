@@ -29,9 +29,14 @@ public class ColorTile : MonoBehaviour
     [Tooltip("true: 플레이어 색/isUniqueColor 체크 없이 누구든 밟으면 활성화")]
     public bool ignorePlayerCheck = false;
 
-    [Header("사운드 (2D)")]
+    [Header("사운드 (3D)")]
     [Tooltip("고유색으로 정확히 인식됐을 때 재생. None이면 무음. 발을 뗄 때(OnUncompleted)는 재생하지 않음.")]
     [SerializeField] SFXId pressSfxId = SFXId.Pad_Press;
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float pressMinDistance = 5f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float pressMaxDistance = 20f;
+    [SerializeField] AudioRolloffMode pressRolloffMode = AudioRolloffMode.Logarithmic;
 
     [Header("이벤트 (선택)")]
     [Tooltip("올바른 플레이어가 올라섰을 때 (시각 피드백 등)")]
@@ -118,9 +123,12 @@ public class ColorTile : MonoBehaviour
         OnUncompleted?.Invoke();
     }
 
+    // 로컬 3D 재생 — 타일 트리거는 각 머신이 CNT 위치로 이미 점유를 안다(RPC 불필요).
+    // 2D였을 때는 원격 플레이어가 밟은 타일도 내 귀 옆에서 나는 것처럼 풀볼륨으로 들렸음
+    // (2026-09-01 수정) — 타일 위치 기준 3D로 전환.
     void PlayPressSfx()
     {
         if (pressSfxId == SFXId.None) return;
-        SFXManager.Instance?.Play(pressSfxId);
+        SFXManager.Instance?.PlayAtPoint(pressSfxId, transform.position, pressMinDistance, pressMaxDistance, pressRolloffMode);
     }
 }

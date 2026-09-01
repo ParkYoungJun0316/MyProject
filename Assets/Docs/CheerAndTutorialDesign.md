@@ -127,7 +127,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 ## 7. 구현 순서 (Phase — Tutorial 관점)
 
 > 응원 코어 구현 순서(Phase A~E)는 `CheerSystemDesign.md` §10이 SSOT.
-> **Phase A·B 완료. 다음 착수점은 Phase C** (`CheerSystemDesign.md` **§10.2**). 아래는 Tutorial 콘텐츠 관점만.
+> **Phase A~D2 코드 완료.** 남은 Tutorial 작업은 에디터(D1 패널 연결, D4 구역 3, 숫자키 씬 텍스트). 상세는 `CheerSystemDesign.md` **§10.4**.
 
 ### Phase 7 — Tutorial · 커스텀 **[Ship Must]**
 
@@ -164,11 +164,11 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - [ ] `TutorialNetworkManager` — 접속 즉시 스폰, 색 자동배정, 사전구간 이탈 처리, 게이트 통과 시 Start 로직 (SSOT: `NetworkDesign.md` §6B)
 - [ ] `TutorialGatherZone` — 색 무관 단일 헤드카운트 게이트 (§5, `NetworkDesign.md` §6B.3)
 - [ ] Tutorial 상시 HUD — 룸코드 표시 + Steam Invite 버튼 (구 로비 UI 역할). 게이트 통과 후 숨김
-- [ ] `TutorialCheerNameUI` — 개인 CheerName 입력 (완료) + **[신규] Host 전용 TeamCheerWord 입력 섹션 추가**
-- [ ] `TutorialCheerNameSignboard` — 구역 2 상호작용 표지판 (완료)
+- [x] `TutorialCheerNameUI` — 개인 CheerName 입력 (완료) + **Host 전용 TeamCheerWord 입력 섹션 (코드 완료, 에디터 연결은 사용자)**
+- [x] `TutorialCheerNameSignboard` — 구역 2 상호작용 표지판 (완료)
 - [ ] **[필수] Title/Tutorial UI 로컬라이제이션** — 하드코딩된 한국어 문자열을 String Table 방식으로 전환
 - [ ] 구역 3 재설계 — 구 cross-target 응원 체험 → **자기 응원 + 팀 응원(TeamCheerWord)** 체험으로 교체 (미구현)
-- [ ] 구역 2 안내 문구에 "숫자키 응원 설정" 안내 추가
+- [ ] 구역 2 안내 문구에 "숫자키 응원 설정" 안내 — **코드 없음, 사용자 씬 텍스트** (`CheerSystemDesign.md` D3 제외)
 - [ ] 연습 구역(Stealth/응원 1회) — 색 패드는 보류
 - [ ] Dev Build ② 2인 (중간) — Tutorial 이름+TeamCheerWord+말해보기+인게임 응원
 - [ ] Steam P2P ④ 2인 (2PC — 출시 게이트)

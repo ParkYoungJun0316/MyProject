@@ -224,8 +224,8 @@ public class TutorialNetworkManager : NetworkBehaviour
     /// <summary>
     /// 게이트 통과 확정. 구 LobbyNetworkManager.StartGameServerRpc의 세션 확정 로직을 그대로 옮김 —
     /// PlayerSpawnCoordinator는 Tutorial 접속 시점에 이미 스폰돼 색 데이터를 들고 있으므로
-    /// 재스폰은 불필요(§6B.2). CheerName/DisplayName/VoiceId 세션 확정은 이 메서드에서 처리
-    /// (§6B.7 P6·P3·P8, 아래 참고).
+    /// 재스폰은 불필요(§6B.2). CheerName/TeamCheerWord/DisplayName/VoiceId 세션 확정은 이 메서드에서 처리
+    /// (§6B.7 P6·P3·P8, CheerSystemDesign.md Phase D2).
     /// </summary>
     void CompleteGate()
     {
@@ -277,6 +277,15 @@ public class TutorialNetworkManager : NetworkBehaviour
         BroadcastSessionCheerNamesClientRpc(
             new FixedString32Bytes(sessionNames[0]), new FixedString32Bytes(sessionNames[1]),
             new FixedString32Bytes(sessionNames[2]), new FixedString32Bytes(sessionNames[3]));
+
+        // CheerSystemDesign.md §3.2 / D2 — 게이트 통과 시점 TeamCheerWord를 GameSession에 고정.
+        // Tutorial CheerService는 씬 언로드로 사라지므로, 다음 스테이지 OnNetworkSpawn이
+        // HasSessionTeamCheerWord로 NV를 복원한다. CheerName과 같이 Host 로컬 Set + ClientRpc.
+        string teamWord = CheerService.Instance != null
+            ? CheerService.Instance.TeamCheerWord
+            : GameSession.DefaultTeamCheerWord;
+        GameSession.Instance?.SetSessionTeamCheerWord(teamWord);
+        BroadcastSessionTeamCheerWordClientRpc(new FixedString32Bytes(teamWord));
 
         // §6B.7 P3 두 번째 항목 — 세션 DisplayName 확정. CheerName과 동일 패턴(게이트 통과 시점의
         // 각자 최신 보고값이 그대로 최종값). PlayerDisplayNameSync NV도 이미 Everyone-read지만,
@@ -353,6 +362,14 @@ public class TutorialNetworkManager : NetworkBehaviour
             new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() });
     }
 
+    /// <summary>세션 확정 TeamCheerWord를 모든 클라이언트의 GameSession에 배포(CheerSystemDesign.md D2).</summary>
+    [ClientRpc]
+    void BroadcastSessionTeamCheerWordClientRpc(FixedString32Bytes word)
+    {
+        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
+        GameSession.Instance?.SetSessionTeamCheerWord(word.ToString());
+    }
+
     /// <summary>
     /// 게이트 완료 시점의 각 플레이어 보고된 DisplayName을 colorIndex 순 배열로 확정(§6B.7 P3).
     /// PlayerDisplayNameSync.GetAllEffectiveNames()가 (clientId, 보고값) 전체를 훑어주므로,
@@ -397,11 +414,21 @@ public class TutorialNetworkManager : NetworkBehaviour
 
         foreach (var (clientId, voiceId) in PlayerDisplayNameSync.GetAllEffectiveVoiceIds())
         {
-            if (!clientColorDict.TryGetValue(clientId, out var color)) continue;
-            if (string.IsNullOrEmpty(voiceId)) continue;
+            if (!clientColorDict.TryGetValue(clientId, out var color))
+            {
+                Debug.LogWarning($"[TutorialNetworkManager] BuildSessionVoiceIds — clientId={clientId} color 매칭 실패(clientColorDict 없음), 스킵");
+                continue;
+            }
             int ci = PlayerColorUtil.ColorTypeToIndex(color);
+            if (string.IsNullOrEmpty(voiceId))
+            {
+                Debug.LogWarning($"[TutorialNetworkManager] BuildSessionVoiceIds — clientId={clientId} colorIndex={ci} VoiceId 빈 값(미보고/실패) — 팀 보이스 매칭 불가로 확정됨");
+                continue;
+            }
             if (ci >= 0) ids[ci] = voiceId;
         }
+
+        Debug.Log($"[TutorialNetworkManager] BuildSessionVoiceIds 확정 — Blue={(string.IsNullOrEmpty(ids[0]) ? "빈값" : "매칭됨")} Purple={(string.IsNullOrEmpty(ids[1]) ? "빈값" : "매칭됨")} Green={(string.IsNullOrEmpty(ids[2]) ? "빈값" : "매칭됨")} Yellow={(string.IsNullOrEmpty(ids[3]) ? "빈값" : "매칭됨")}");
         return ids;
     }
 

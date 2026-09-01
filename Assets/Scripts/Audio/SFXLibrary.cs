@@ -87,6 +87,7 @@ public class SFXLibrary : ScriptableObject
     public AudioClip Trap_Arrow;
     public AudioClip Trap_Drop;
     public AudioClip Trap_SpikeRaise;
+    public AudioClip Trap_CeilingWall_Move;
 
     // ── UI / Menu ────────────────────────────────────────────────
     [Header("UI / Menu")]
@@ -169,6 +170,7 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Trap_Arrow:                        return Trap_Arrow;
             case SFXId.Trap_Drop:                         return Trap_Drop;
             case SFXId.Trap_SpikeRaise:                   return Trap_SpikeRaise;
+            case SFXId.Trap_CeilingWall_Move:             return Trap_CeilingWall_Move;
 
             case SFXId.UI_Click:                          return UI_Click;
 

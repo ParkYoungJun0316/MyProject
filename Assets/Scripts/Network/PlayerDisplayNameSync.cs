@@ -84,11 +84,12 @@ public class PlayerDisplayNameSync : NetworkBehaviour
             if (!string.IsNullOrEmpty(localVoiceId))
             {
                 ReportVoiceIdServerRpc(new FixedString64Bytes(localVoiceId));
+                Debug.Log($"[PlayerDisplayNameSync] VoiceId 보고 성공 — attempt={attempt + 1}/{VoiceIdMaxRetries} ownerClientId={OwnerClientId}");
                 yield break;
             }
             yield return new WaitForSeconds(VoiceIdRetryIntervalSec);
         }
-        Debug.LogWarning("[PlayerDisplayNameSync] VoiceId 보고 실패 — Dissonance LocalPlayerName 미확정 (재시도 소진)");
+        Debug.LogWarning($"[PlayerDisplayNameSync] VoiceId 보고 실패 — Dissonance LocalPlayerName 미확정 (재시도 소진) ownerClientId={OwnerClientId}");
     }
 
     /// <summary>

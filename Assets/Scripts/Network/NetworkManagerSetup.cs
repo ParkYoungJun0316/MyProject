@@ -83,12 +83,24 @@ public class NetworkManagerSetup : MonoBehaviour
     /// 인프로세스 재접속의 Server Scene Handle 충돌을 구조적으로 회피한다(SteamworksIntegrationDesign.md 트랙6).
     /// 재실행 실패 시 false를 반환하고 프로세스를 유지한다 — 호출부가 폴백을 결정할 수 있다.
     /// </summary>
-    public static bool RestartWithConnectLobby(SteamId lobbyId)
+    public static bool RestartWithConnectLobby(SteamId lobbyId) =>
+        RestartProcess($"+connect_lobby {lobbyId.Value}");
+
+    /// <summary>
+    /// [버그 수정 2026-09-01] 방 만들기(Host)도 참여(Join)와 동일한 "웜 리커넥트는 항상 재시작"
+    /// 정책 대상이어야 한다 — 이 가드가 CreateGameSteamAsync()에는 없었던 게 재호스팅 시
+    /// 트랜스포트 중복 RPC 전달(SequenceRing 이중 판정 등)이 재현된 진짜 원인이었다(트랙6과 동일한
+    /// Facepunch 트랜스포트 상류 버그, SteamworksIntegrationDesign.md). 새 프로세스는
+    /// TitleMenuController.TryAutoCreateGameFromLaunchArgs가 감지해 방 만들기를 재시도한다.
+    /// </summary>
+    public static bool RestartWithCreateGame() => RestartProcess("+create_game");
+
+    static bool RestartProcess(string args)
     {
         try
         {
             string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-            var startInfo = new System.Diagnostics.ProcessStartInfo(exePath, $"+connect_lobby {lobbyId.Value}")
+            var startInfo = new System.Diagnostics.ProcessStartInfo(exePath, args)
             {
                 UseShellExecute = true,
             };
@@ -96,11 +108,11 @@ public class NetworkManagerSetup : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[NetworkManagerSetup] +connect_lobby 재실행 실패 — {e}");
+            Debug.LogError($"[NetworkManagerSetup] 프로세스 재시작 실패({args}) — {e}");
             return false;
         }
 
-        Debug.Log($"[NetworkManagerSetup] +connect_lobby {lobbyId.Value}로 재실행 — 현재 프로세스 종료.");
+        Debug.Log($"[NetworkManagerSetup] {args}로 재실행 — 현재 프로세스 종료.");
         Application.Quit();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;

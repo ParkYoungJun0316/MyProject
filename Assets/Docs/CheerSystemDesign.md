@@ -12,7 +12,7 @@
 
 > **2026-09-01 전면 개편.** 구 "팀원이 나를 응원해야 버프" 방식(전원 투표로 타인 타겟에게 버프)은 **폐기**. 신규: ①자기 응원 → 즉시 개인 버프, ②팀 전원 공용 키워드 → 팀 전체 버프. 남을 지목해서 응원하는 기능(cross-targeting)은 완전히 삭제됐다.
 >
-> **구현 현황:** Phase A·B 코드 완료 (인수인계 **§10.1** / **§10.2**). 다음은 Phase C.
+> **구현 현황:** Phase A·B·C·D1·D2 코드 완료 (인수인계 **§10.1**~**§10.4**). D3 안내 문구는 코드에서 제외(사용자 씬 텍스트). D0는 Tutorial 씬에 `CheerService` 배치됨. 남은 건 D4(구역 3) + Phase E 에디터.
 
 ---
 
@@ -359,7 +359,7 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 
 의존성 순. **아래 단계를 건너뛰면 다음이 막힌다.** 에이전트는 `.cs`만. 씬/프리팹/인스펙터는 사용자.
 
-> **다음 에이전트:** Phase A·B는 끝났다. 착수점은 **§10.2**. Phase A 코어는 **§10.1**.
+> **다음 에이전트:** Phase A~D2는 끝났다. 코드 착수점은 없음 — 남은 건 D4(사용자 에디터)와 Phase E. 코어는 **§10.1**, grammar는 **§10.2**, 인게임 UI는 **§10.3**, Tutorial 연동은 **§10.4**.
 
 ### 0. 이미 있는 것 (손대지 않음)
 
@@ -400,40 +400,40 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 | B2 | Tutorial 말해보기 grammar도 동일하게 2단어 | `CheerKeywordEngine` |
 | B3 | Options에 "숫자키로 응원하기" 토글 | `OptionsMenuController` |
 
-### Phase C — 인게임 UI **[다음]**
+### Phase C — 인게임 UI **[완료 2026-09-01]**
 
 | # | 작업 | 파일 |
 |---|---|---|
 | C1 | 머리 위 하트 = "이번 팀워드 라운드에 이미 외쳤는지" | `PlayerCheerHeartsUI` |
-| C2 | 숫자키 아이콘 → 팀워드 진행도 체크마크 | `TeamStatusUI` |
+| C2 | 죽은 숫자키 아이콘 슬롯 제거(교체 아이콘 없음 — 사용자 결정 2026-09-01, 팀워드 진행도는 C1 머리 위 하트로만) | `TeamStatusUI` |
 | C3 | "지금 응원 중인 대상" 표시 제거 | `PlayerNameTagUI` |
 | C4 | **"Team Buff!"** 배너 (2~3초) | 신규 컴포넌트 (오브젝트 배치는 사용자) |
 
 개인 버프 HUD(`CheerProgressUI`)는 유지.
 
-### Phase D — Tutorial 연동
+### Phase D — Tutorial 연동 **[D1·D2 코드 완료 2026-09-01]**
 
-> **D0 선행 필수**: `TrySetTeamCheerWord`는 `CheerService` 인스턴스 메서드라 Tutorial 씬에
-> `CheerService`가 없으면 Host가 게이트 전 TeamCheerWord를 정할 방법이 없다(코드 리뷰 2026-09-01 발견).
-> D1 착수 전 Tutorial 씬에 `CheerService`를 배치해야 한다(**사용자 에디터**).
+> **D0**: Tutorial 씬에 `CheerService`(NetworkObject) **이미 배치됨** (2026-09-01 확인).
+> **D3 제외** (사용자 결정 2026-09-01): "숫자키 켜세요" 안내는 Tutorial 씬에서 1회 설명. 코드 문자열 넣지 않음.
 
-| # | 작업 | 파일 / 담당 |
-|---|---|---|
-| D0 | Tutorial 씬에 `CheerService` 배치 (M/T 스테이지와 동일 컴포넌트 재사용) | **사용자 에디터** |
-| D1 | Host 전용 TeamCheerWord 입력 + 비-Host 읽기 전용 | `TutorialCheerNameUI` (코드) + 패널 배치는 사용자 |
-| D2 | 게이트 완료 2곳에서 그 시점 `CheerService.TeamCheerWord` 값을 `SetSessionTeamCheerWord`로 옮김 | `TutorialNetworkManager` |
-| D3 | 안내 문구: "인식 안 되면 Options에서 숫자키 켜세요" / Host 팀워드 안내 | 코드 문자열 또는 사용자 씬 텍스트 |
-| D4 | 구역 3: 구 cross-target 체험 → 자기 응원 + 팀 응원 | **사용자 에디터** |
+| # | 작업 | 파일 / 담당 | 상태 |
+|---|---|---|---|
+| D0 | Tutorial 씬에 `CheerService` 배치 | **사용자 에디터** | **완료** (씬에 NetworkObject+CheerService) |
+| D1 | Host 전용 TeamCheerWord 입력 + 비-Host 읽기 전용 | `TutorialCheerNameUI` (코드) + 패널 배치는 사용자 | **코드 완료** — GO 연결은 사용자 |
+| D2 | 게이트 완료 2곳에서 그 시점 `CheerService.TeamCheerWord` 값을 `SetSessionTeamCheerWord`로 옮김 | `TutorialNetworkManager` | **코드 완료** |
+| D3 | ~~안내 문구 코드~~ | — | **제외** — 사용자 씬 텍스트 |
+| D4 | 구역 3: 구 cross-target 체험 → 자기 응원 + 팀 응원 | **사용자 에디터** | 미착수 |
 
 ### Phase E — 에디터 마감 + 플레이테스트
 
 사용자 에디터:
 
-- Tutorial 씬에 `CheerService` 배치 (D0)
+- ~~Tutorial 씬에 `CheerService` 배치 (D0)~~ **완료**
 - `CheerService` Inspector: 팀 쿨 / 타임아웃(시작 10초) / Heal 2
-- Options 체크박스, Team Buff 배너, Tutorial Host 입력 필드 연결
-- Tutorial 구역 3 체험 재배치
-- 숫자키 안내 문구 배치
+- Options 체크박스, Team Buff 배너 연결
+- Tutorial CheerName 패널: Host 팀워드 입력 필드·확정 버튼·현재값 텍스트 연결 (D1)
+- Tutorial 구역 3 체험 재배치 (D4)
+- 숫자키 안내 문구 배치 (D3 대체 — 씬 텍스트 1회)
 
 테스트:
 
@@ -444,7 +444,7 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 
 ## 10.1 Phase A 인수인계 (2026-09-01 완료)
 
-다음 에이전트는 **Phase C부터**. Phase A 코어·RPC·Heal과 Phase B grammar/Options를 다시 짜지 말 것.
+다음 에이전트는 **Phase D 코드 완료(§10.4)**. Phase A 코어·RPC·Heal과 Phase B grammar/Options, Phase C 인게임 UI를 다시 짜지 말 것.
 에이전트는 `.cs` / Docs만. 씬·프리팹·인스펙터는 사용자.
 
 ### 상태
@@ -454,6 +454,8 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 | Phase A (기반 API + CheerService 코어 + 최소 소비자) | **코드 완료** |
 | 코드 리뷰 | 완료. 결정 반영됨 (아래 "리뷰 결정") |
 | Phase B | **코드 완료** (§10.2) |
+| Phase C (인게임 UI) | **코드 완료** (§10.3) |
+| Phase D D1·D2 (Tutorial UI + 세션 저장) | **코드 완료** (§10.4) |
 | 플레이테스트 | 아직 없음 (Phase E) |
 
 ### 한 줄 계약 (이미 살아 있음)
@@ -473,13 +475,13 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 | `NetworkPlayerSetup.cs` | `ApplyHealFromServer` — 사망/`_hp<=0`/음수 무시, `maxHeart` 클램프. `OnHpChanged`에서 `next>prev && prev>0`이면 `RaiseHealed` (0→양수는 기존대로 리스폰, Owner 제외) | 풀피면 NV 불변 → `OnHealed` 안 뜸. 정상 |
 | `PlayerEvent.cs` | `OnHealed` / `RaiseHealed()` | 기존 `OnDamaged`와 별개. 피격 SFX 경로에 넣지 말 것 |
 | `PlayerHPUI.cs` | `OnHealed` 구독 + **리뷰 후** 델리게이트 필드로 `OnDestroy` 해제 (`TeamStatusUI`와 동일 패턴) | 익명 람다 구독으로 되돌리지 말 것 |
-| `TeamStatusUI.cs` | 슬롯 `onHealed` 필드 구독/해제 | Phase C에서 숫자키 아이콘만 교체. Heal 구독은 유지 |
-| `GameSession.cs` | `DefaultTeamCheerWord = "fighting"`, `Set/GetSessionTeamCheerWord`, `HasSessionTeamCheerWord`, `ResetSession`에서 null | 게이트 전 `Has==false`, `Get`은 그래도 `"fighting"` 폴백. Phase D D2에서 `Set` 호출 |
+| `TeamStatusUI.cs` | 슬롯 `onHealed` 필드 구독/해제 | Heal 구독은 유지. 숫자키 아이콘은 C2에서 팀워드 체크로 교체됨 (§10.3) |
+| `GameSession.cs` | `DefaultTeamCheerWord = "fighting"`, `Set/GetSessionTeamCheerWord`, `HasSessionTeamCheerWord`, `ResetSession`에서 null | 게이트 전 `Has==false`, `Get`은 그래도 `"fighting"` 폴백. D2에서 `Set` 호출됨 (§10.4) |
 | `GameSettingsManager.cs` | `DigitCheerEnabled` (PlayerPrefs `Settings.DigitCheerEnabled`, 기본 0=OFF), `SetDigitCheerEnabled` | Options 토글은 B3. `ResetToDefaults()`가 `SetDigitCheerEnabled(false)` 호출 |
-| `CheerService.cs` | 아래 "CheerService 계약" | Tutorial 씬에 **아직 미배치** (D0, 사용자). 인스턴스 없으면 `TrySetTeamCheerWord` 호출 불가. `_teamCheerWord.OnValueChanged` → `RebuildOwnerLocalGrammar` (B1) |
+| `CheerService.cs` | 아래 "CheerService 계약" | Tutorial 씬에 **배치됨** (D0). `_teamCheerWord.OnValueChanged` → `RebuildOwnerLocalGrammar` (B1) |
 | `CheerDigitInput.cs` | `DigitCheerEnabled` 가드. `1`=Self RPC, `2`=Team RPC. 3/4 제거 | 매핑 유지 |
 | `CheerKeywordEngine.cs` | 인식 후 self→Self RPC, team→Team RPC. `ApplyOwnerLocalGrammar` = [내 이름, TeamCheerWord] | `ApplySessionGrammar` / `WithTeamCheerWord` / 4이름 grammar **삭제됨. 부활 금지.** |
-| `PlayerCheerNameSync.cs` | `ConflictsWithTeamCheerWord` — `IsTakenByOther`와 OR. CheerService → 세션 Has → `"fighting"` 순. `EffectiveCheerName`. `RebuildOwnerLocalGrammar`는 Owner 이름만 | Tutorial에서 CheerService 없으면 `"fighting"`만 막음 (D0 전 한계, 의도) |
+| `PlayerCheerNameSync.cs` | `ConflictsWithTeamCheerWord` — `IsTakenByOther`와 OR. CheerService → 세션 Has → `"fighting"` 순. `EffectiveCheerName`. `RebuildOwnerLocalGrammar`는 Owner 이름만 | Tutorial `CheerService` 배치됨(D0). 인스턴스 없을 때만 `"fighting"` 폴백 |
 
 ### CheerService 계약 (재작성 금지, 확장만)
 
@@ -506,24 +508,26 @@ UI 이벤트:
 | 이벤트 | 발행 | 구독 현황 |
 |---|---|---|
 | `OnBuffActivated` / `OnCooldownStart` | ClientRpc → 로컬 이벤트. 개인 버프 HUD | `CheerProgressUI` (유지, 손대지 않음) |
-| `OnTeamBuffActivated` | 팀 Heal 직후 ClientRpc | **구독자 없음** — C4 배너가 구독 |
-| `OnTeamVoteChanged(current, required, voterColorIndices)` | 표 추가/리셋 때 ClientRpc | **구독자 없음** — C1/C2가 구독 |
-| `OnVoteChanged` / `OnVoteReset` / `OnCheerersChanged` | **발행 안 함** (`#pragma CS0067`) | `PlayerNameTagUI`·`PlayerCheerHeartsUI`가 아직 구독 중 → **머리 위 하트/"응원 대상"은 지금부터 안 뜸.** Phase C에서 재정의. **지금 삭제하지 말 것** (사용자 결정) |
+| `OnTeamBuffActivated` | 팀 Heal 직후 ClientRpc | `TeamBuffBannerUI` (§10.3). **GO 미배치면 배너만 없음** |
+| `OnTeamVoteChanged(current, required, voterColorIndices)` | 표 추가/리셋 때 ClientRpc | `PlayerCheerHeartsUI` / `TeamStatusUI` (§10.3) |
 
 ### 리뷰 결정 (이미 반영)
 
 1. **Tutorial TeamCheerWord 경로** = CheerService를 Tutorial 씬에도 배치 (신규 RPC 안 만듦). **사용자 에디터 D0.** 코드는 배치만 되면 `TrySetTeamCheerWord` + 게이트 `SetSessionTeamCheerWord` + 스테이지 `OnNetworkSpawn` 복원으로 닫힘.
 2. **PlayerHPUI 구독 해제** = 지금 고침 (델리게이트 필드). 완료.
-3. **죽은 이벤트** = Phase C에서 한 번에. `OnVoteChanged`만 미리 지우지 말 것.
+3. **죽은 이벤트** = Phase C에서 삭제 완료. `OnVoteChanged` / `OnVoteReset` / `OnCheerersChanged` **부활 금지.**
 
 ### 알려진 한계 (버그로 착각하지 말 것)
 
-- Tutorial에 `CheerService` 없음 → Host가 팀워드를 못 바꿈, CheerName 충돌은 `"fighting"`만 검사. **D0 전 정상.**
+- Tutorial에 `CheerService` 없음 → Host가 팀워드를 못 바꿈, CheerName 충돌은 `"fighting"`만 검사. **D0 전 정상.** *(D0 완료 — Tutorial 씬에 배치됨)*
 - `CheerKeywordEngine.ParseAndSubmit`에 `_lastDetected[word] = Time.time`이 두 분기에 있음 (실행은 상호배타). 스타일만, 동작 버그 아님.
 - `ApplyBuff`/`ApplyTeamBuff`의 `FindObjectsByType<NetworkPlayerSetup>`는 구 패턴 유지. 인원 최대 4. 새로 바꾸지 말 것.
 - Options `digitCheerToggle` 미연결이면 숫자키 설정 UI가 안 보임. API·가드는 동작(기본 OFF). **사용자 에디터.**
+- `TeamBuffBannerUI` GO 미배치면 배너만 없음 (Heal은 적용). **사용자 에디터.**
+- `TeamStatusUI`에는 이름/HP 하트 외 아이콘 없음(사용자 결정). 팀워드 진행도가 보고 싶으면 캐릭터 머리 위(`PlayerCheerHeartsUI`)를 본다.
+- 팀 정체성 색(`PlayerColorType`/`colorIndex`, Blue/Purple/Green/Yellow)은 스폰 시 1회만 정해지고 게임 중 재변경 경로 없음 — `isBlack`/`isUniqueColor`(흑백↔고유색 토글, `ChangeColorCooldownUI`)와 다른 시스템이니 혼동하지 말 것.
 
-### Phase B 착수점 — **완료.** 다음은 §10.2 / Phase C.
+### Phase B 착수점 — **완료.** 다음은 §10.2 / 그 다음 Phase C는 §10.3에서 완료.
 
 Phase B에서 하지 말 것은 유지: CheerService RPC 재작성, Heal 파이프라인, Phase C UI 재정의, Tutorial Host 입력 UI (D1).
 
@@ -537,7 +541,7 @@ Phase B에서 하지 말 것은 유지: CheerService RPC 재작성, Heal 파이�
 
 ## 10.2 Phase B 인수인계 (2026-09-01 완료)
 
-다음 에이전트는 **Phase C부터**. grammar 슬림·Options 토글을 다시 짜지 말 것.
+다음 에이전트는 **Phase D 코드 완료(§10.4)**. grammar 슬림·Options 토글·인게임 UI를 다시 짜지 말 것.
 에이전트는 `.cs` / Docs만. 씬·프리팹·인스펙터는 사용자.
 
 ### 한 줄
@@ -554,16 +558,75 @@ Phase B에서 하지 말 것은 유지: CheerService RPC 재작성, Heal 파이�
 | `OptionsMenuController.cs` | `digitCheerToggle` — `micMuteToggle`과 같은 Toggle 패턴 (`OnEnable` 반영, listener, `RefreshDigitCheerToggle`) | **체크박스 오브젝트 배치는 사용자.** 미연결이면 null no-op |
 | `GameSettingsManager.cs` | `ResetToDefaults()` → `SetDigitCheerEnabled(false)` | 기본 OFF 유지 |
 
-### Phase C 착수점
+### Phase C 착수점 — **완료.** 다음은 §10.3 / Phase D.
 
-| # | 할 일 | 현재 | 목표 |
-|---|---|---|---|
-| **C1** | 머리 위 하트 | `PlayerCheerHeartsUI`가 죽은 `OnCheerersChanged` 구독 중 | `OnTeamVoteChanged` — 이번 팀워드 라운드에 이미 외쳤는지 |
-| **C2** | 팀 진행도 | `TeamStatusUI` 숫자키 1~4 아이콘 | 팀워드 체크마크. Heal 구독은 유지 |
-| **C3** | 응원 대상 표시 제거 | `PlayerNameTagUI`가 죽은 `OnVoteChanged` 구독 | 타겟 개념 없음. 죽은 이벤트는 C에서 한 번에 |
-| **C4** | Team Buff! 배너 | `OnTeamBuffActivated` 구독자 없음 | 2~3초 텍스트. 오브젝트 배치는 사용자 |
+Phase C에서 하지 말 것은 유지됐다: CheerService RPC 재작성, grammar 되돌리기, Tutorial Host 입력 UI (D1).
 
-Phase C에서 하지 말 것: CheerService RPC 재작성, grammar 되돌리기, Tutorial Host 입력 UI (D1), 죽은 이벤트를 C 전에 미리 삭제.
+### Phase B 코드 리뷰 (2026-09-01, 반영됨)
+
+런타임 버그 없음. 문서 drift 2건만 고침. 아래는 **버그로 착각해서 지우지 말 것.**
+
+| # | 내용 | 상태 |
+|---|---|---|
+| 1-1 | `NetworkDesign.md` §6B.7 P6가 구 `ApplySessionGrammar`(전원 이름)를 현재 동작처럼 서술 | **고침** — 2026-08-18 기록은 보존, 옆에 Phase B `ApplyOwnerLocalGrammar` 각주. 현재 SSOT는 이 문서 §10.2 |
+| 1-2 | `CheerKeywordEngine` 클래스 doc 초기화 순서가 `BuildDemoGrammarJson` / Dissonance-먼저 | **고침** — 실제 순서: Model → `OwnerGrammarWords` → Dissonance 대기 → Subscribe |
+| 2-1 | Host `OnNetworkSpawn`에서 세션 NV write 시 `OnValueChanged` + 명시적 `RebuildOwnerLocalGrammar`가 겹침 | **의도. 지우지 말 것.** 명시적 호출은 세션값 없는 스폰(Tutorial D0 전 등)을 커버. 겹칠 때는 `ApplyOwnerLocalGrammar`가 JSON 같으면 no-op |
+| 2-2 | `ResolveOwnerCheerName`의 `PlayerCheerNameSync` 이후 GameSession/기본값 폴백 | **의도. 지우지 말 것.** 프리팹에 Sync가 빠진 경우의 안전망. `GetColorIndex` 3단 폴백과 동일 패턴 |
+
+---
+
+## 10.3 Phase C 인수인계 (2026-09-01 완료)
+
+다음 에이전트는 **Phase D 코드 완료(§10.4)**. 인게임 UI를 다시 짜지 말 것. D4(구역 3)는 **사용자 에디터**.
+에이전트는 `.cs` / Docs만. 씬·프리팹·인스펙터는 사용자.
+
+### 한 줄
+
+팀워드 투표 중 → 머리 위 하트 1개(코너 패널엔 표시 없음). 발동 → "Team Buff!" 배너. 타겟 개념/구 투표 이벤트 없음.
+
+### 파일별
+
+| 파일 | 무엇을 넣었나 | 다음 에이전트가 알 것 |
+|---|---|---|
+| `PlayerCheerHeartsUI.cs` | `OnTeamVoteChanged` — 자기 colorIndex가 voter에 있으면 자기 색 하트 1개 ON | 구 "누가 나를 응원 중" 하트 여러 개 **부활 금지**. 타임아웃/발동은 빈 voter 배열로 OFF. 팀워드 진행도를 보여주는 **유일한** UI(코너 패널엔 없음) |
+| `TeamStatusUI.cs` | `keyIconSprites`(죽은 숫자키 3/4 아이콘) 삭제, 대체 아이콘 없음. 이름+HP 하트만 | **사용자 결정(2026-09-01): 코너 패널에 팀워드 체크 아이콘 추가하지 않음.** `CheerService.OnTeamVoteChanged` 구독 **부활 금지** — 팀워드 진행도는 오직 `PlayerCheerHeartsUI`(머리 위)로만 표시 |
+| `PlayerNameTagUI.cs` | 로컬 오너 "응원 대상" 분기 삭제. 타인 CheerName만 | `hideForLocalOwner` 유지. 타겟 텍스트 슬롯 **부활 금지** |
+| `TeamBuffBannerUI.cs` | 신규. `OnTeamBuffActivated` → 2.5초 페이드 배너 (`StageClearBannerUI` 패턴) | **Canvas 아래 빈 GO 배치는 사용자.** 미배치면 배너만 없음 |
+| `CheerService.cs` | `OnVoteChanged` / `OnVoteReset` / `OnCheerersChanged` 삭제 | 구 이벤트 **부활 금지.** RPC 재작성 금지 |
+
+### Phase D 착수점 — **D1·D2 완료.** 상세는 §10.4.
+
+Phase D에서 하지 말 것은 유지됐다: CheerService RPC 재작성, grammar 되돌리기, Phase C UI 재정의, 신규 TeamCheerWord 설정 RPC (D0 배치 + D1 직접 호출로 닫힘). D3 안내 문구 코드 **넣지 말 것**.
+
+---
+
+## 10.4 Phase D 인수인계 (2026-09-01 완료 — D1·D2 코드)
+
+다음 에이전트는 **코드 착수점 없음**. 남은 건 D4(구역 3)와 Phase E 에디터. D1·D2를 다시 짜지 말 것.
+에이전트는 `.cs` / Docs만. 씬·프리팹·인스펙터는 사용자.
+
+### 한 줄
+
+Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheerWord`, RPC 없음). 게이트 통과 시 Host+Client `GameSession.SetSessionTeamCheerWord`. 다음 스테이지 `CheerService.OnNetworkSpawn`이 그 값을 NV에 복원.
+
+### 파일별
+
+| 파일 | 무엇을 넣었나 | 다음 에이전트가 알 것 |
+|---|---|---|
+| `TutorialCheerNameUI.cs` | Host 입력 필드+확정 / 비-Host 섹션 숨김 / `currentTeamWordText`. 확정은 `CheerService.TrySetTeamCheerWord` 직접 호출. 성공해도 패널을 닫지 않음 | **인스펙터 연결은 사용자.** 미연결이면 팀워드 UI만 없음. CheerName Enter/Esc/커서 계약 유지. `ConsumedEnterThisFrame`은 팀워드 Enter도 소비 |
+| `TutorialNetworkManager.cs` | `CompleteGate`에서 CheerName 직후 `SetSessionTeamCheerWord` + `BroadcastSessionTeamCheerWordClientRpc` | CheerName과 같은 2곳(Host 로컬 + ClientRpc). 신규 설정 RPC 만들지 말 것. `CheerService` 없으면 `"fighting"` 폴백으로라도 `Set`해서 `HasSession`이 true가 됨 |
+
+### 사용자 에디터 잔여
+
+- D1 패널: `hostTeamWordSection` / `teamWordInputField` / `teamWordConfirmButton` / `currentTeamWordText` (`clientTeamWordSection`은 선택). **`currentTeamWordText`는 Host/Client 공통으로 보이게 두 섹션 바깥에**
+- D3: Tutorial 씬 텍스트로 숫자키 안내 (코드 없음)
+- D4: 구역 3 자기 응원 + 팀 응원 체험
+- Options `digitCheerToggle`, `TeamBuffBannerUI` GO (Phase B/C 잔여)
+
+### 결정
+
+- **D3 제외** (사용자 2026-09-01): 숫자키 안내는 Tutorial 씬에서 1회 설명. `TutorialCheerNameUI`에 안내 문자열 넣지 말 것.
+- **D0 완료**: Tutorial 씬에 `CheerService`+`NetworkObject` 이미 있음.
 
 ---
 
@@ -596,18 +659,21 @@ Phase C에서 하지 말 것: CheerService RPC 재작성, grammar 되돌리기, 
 
 **Phase C**
 
-- [ ] `PlayerCheerHeartsUI` — "팀워드 이미 외쳤는지" 표시로 재정의
-- [ ] `TeamStatusUI` — 숫자키 아이콘 → 팀워드 진행도로 교체
-- [ ] `PlayerNameTagUI` — 본인 "응원 대상 표시" 제거
-- [ ] Team Buff! 배너 UI 신규 컴포넌트
+- [x] `PlayerCheerHeartsUI` — "팀워드 이미 외쳤는지" 표시로 재정의
+- [x] `TeamStatusUI` — 죽은 숫자키 아이콘 삭제(대체 아이콘 없음, 이름+HP 하트만)
+- [x] `PlayerNameTagUI` — 본인 "응원 대상 표시" 제거
+- [x] Team Buff! 배너 UI 신규 컴포넌트
+- [x] `CheerService` 구 투표 이벤트 (`OnVoteChanged` / `OnVoteReset` / `OnCheerersChanged`) 삭제
+- [x] 인수인계 기록 (`CheerSystemDesign.md` §10.3)
 
 **Phase D**
 
-- [ ] Tutorial 씬에 `CheerService` 배치 (D0, 사용자 에디터 — 없으면 D1 Host 설정 호출 불가)
-- [ ] `TutorialNetworkManager` — 게이트 완료 지점 2곳(기존 `SetSessionCheerNames` 호출부)에 TeamCheerWord 세션 저장 추가
-- [ ] TeamCheerWord 설정 UI — Tutorial CheerName 패널에 Host 전용 필드 병합 (에디터 배치는 사용자 작업)
-- [ ] Tutorial 안내 문구 — "인식 안 되면 설정에서 숫자키 켜세요" (§6.2)
+- [x] Tutorial 씬에 `CheerService` 배치 (D0, 사용자 에디터 — 2026-09-01 씬 확인)
+- [x] `TutorialNetworkManager` — 게이트 완료 지점 2곳(기존 `SetSessionCheerNames` 호출부)에 TeamCheerWord 세션 저장 추가
+- [x] TeamCheerWord 설정 UI — `TutorialCheerNameUI` Host 전용 필드 (에디터 배치는 사용자 작업)
+- [x] ~~Tutorial 안내 문구 코드~~ — **제외** (사용자 씬 텍스트, 2026-09-01)
 - [ ] 구역 3 재설계 — 구 cross-target 체험 → 자기 응원 + 팀 응원 (에디터)
+- [x] 인수인계 기록 (`CheerSystemDesign.md` §10.4)
 
 ---
 
@@ -633,6 +699,7 @@ Phase C에서 하지 말 것: CheerService RPC 재작성, grammar 되돌리기, 
 | 팀 UI | `Assets/Scripts/UI/TeamStatusUI.cs` |
 | 진행도 UI | `Assets/Scripts/UI/PlayerCheerHeartsUI.cs` |
 | 이름표 UI | `Assets/Scripts/UI/PlayerNameTagUI.cs` |
+| 팀 버프 배너 | `Assets/Scripts/UI/TeamBuffBannerUI.cs` |
 | Tutorial 이름 설정 UI | `Assets/Scripts/UI/TutorialCheerNameUI.cs` |
 | Tutorial 네트워크 | `Assets/Scripts/Network/TutorialNetworkManager.cs` |
 

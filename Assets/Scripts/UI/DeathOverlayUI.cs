@@ -22,7 +22,7 @@ using TMPro;
 /// "죽은지 잘 모르겠다". 사망 즉시(1프레임 후) 씬이 리로드돼(현재는
 /// StageNetworkState.deathReloadDelay로 연장됨) 그 사이를 채워줄 전용 연출이 없었다. 이 게임은
 /// 1명 사망 = 전원 리로드(§11)라, 본인이 안 죽었어도 팀원이 죽으면 화면이 갑자기 리셋된다 —
-/// 그 이유를 알려주기 위해 사망자 CheerName("berry 사망")과 그 사람의 고유색(배경/텍스트)을 표시한다.
+/// 그 이유를 알려주기 위해 사망자 CheerName("BERRY Died")과 그 사람의 고유색(배경/텍스트)을 표시한다.
 /// 본인/팀원 구분 없이 동일 로직 — 배경색이 곧 "누가 죽었는지"를 알려준다.
 ///
 /// [트리거]
@@ -241,6 +241,6 @@ public class DeathOverlayUI : MonoBehaviour
     static string GetPlayerCheerName(int colorIndex)
     {
         string name = CheerService.GetCheerName(colorIndex);
-        return string.IsNullOrEmpty(name) ? "???" : name;
+        return string.IsNullOrEmpty(name) ? "???" : name.ToUpperInvariant();
     }
 }

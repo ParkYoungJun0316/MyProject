@@ -14,8 +14,8 @@ using UnityEngine;
 /// - 색 보간은 warnLeadTime 동안 0→1. 발사 시점에 완전 빨강(holdAfterFire가 음수면 그 전에 숨김).
 ///
 /// [비주얼]
-/// warnSignObject에 메시(URP Lit, _BaseColor)를 두고 이 컴포넌트가 MaterialPropertyBlock으로
-/// 색만 덮는다. SpikeLane WarnMarker 메시/머티리얼을 그대로 복제해 써도 된다.
+/// warnSignObject에 ArrowWarnMarker 셰이더 머티리얼(반투명 외곽 + 경로 채움)을 둔다.
+/// 진행도 t=0→1 동안 노랑→빨강(_BaseColor)과 입→끝 채움(_Fill)을 같이 갱신한다.
 ///
 /// [동기화 방식 — Mouth 계열과 동일 패턴]
 /// Host만 로컬 TrapBase 이벤트를 직접 구독해 재생하고(zero latency, IsServer 가드),
@@ -73,7 +73,7 @@ public class ArrowWarnSign : MonoBehaviour
             Debug.LogWarning($"[ArrowWarnSign] {name}: targetRenderer를 찾지 못했습니다 — " +
                               "warnSignObject 또는 targetRenderer를 인스펙터에서 지정하세요.", this);
 
-        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, warnStartColor, warnEndColor);
+        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, warnStartColor, warnEndColor, "_Fill");
         SetVisible(false);
     }
 

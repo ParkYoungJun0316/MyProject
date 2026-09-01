@@ -23,9 +23,9 @@ using Vosk;
 /// NetworkPlayerSetup.SetupNonOwner → enabled = false
 ///
 /// [초기화 순서]
-/// 1. DissonanceComms 준비 대기
-/// 2. VoskModelLoader.GetSharedModel() → 공유 Model (null이면 초기화 중단)
-/// 3. CheerLexiconBuilder.BuildDemoGrammarJson() → grammar
+/// 1. VoskModelLoader.GetSharedModel() → 공유 Model (null이면 초기화 중단)
+/// 2. OwnerGrammarWords(ResolveOwnerCheerName()) → [내 CheerName, TeamCheerWord] grammar 빌드
+/// 3. DissonanceComms 준비 대기
 /// 4. SubscribeToRecordedAudio → 5초 대기 → ResetAudioStream 으로 워커 리셋 신호
 ///    5초 내 오디오 없으면 직접 마이크 fallback
 ///

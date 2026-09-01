@@ -285,7 +285,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsDead) return;
         anim?.SetTrigger("doPunchHit");
-        SFXManager.Instance?.Play(SFXId.Player_PunchHit);
     }
 
     /// <summary>피격 무적 지속 시간. NetworkPlayerSetup에서 서버 무적 타이머 계산에 사용.</summary>

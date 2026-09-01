@@ -15,22 +15,33 @@ public sealed class WarnMarkerColorFx
     readonly Color _start;
     readonly Color _end;
     readonly int _colorId;
+    readonly int _fillId;
     readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
 
-    public WarnMarkerColorFx(Renderer renderer, string colorProperty, Color startColor, Color endColor)
+    /// <param name="fillProperty">
+    /// 경로 채움 셰이더 float(0~1). 비우면 색만 쓴다 — SpikeLane/Wind(URP Lit)는 기존처럼 색만.
+    /// ArrowWarnMarker 셰이더는 "_Fill" (DropWarnMarker와 동일 이름).
+    /// </param>
+    public WarnMarkerColorFx(
+        Renderer renderer, string colorProperty, Color startColor, Color endColor,
+        string fillProperty = null)
     {
         _renderer = renderer;
         _start    = startColor;
         _end      = endColor;
         _colorId  = Shader.PropertyToID(colorProperty);
+        _fillId   = string.IsNullOrEmpty(fillProperty) ? 0 : Shader.PropertyToID(fillProperty);
     }
 
-    /// <summary>t=0(시작색) ~ t=1(끝색)로 보간해 즉시 반영. Clamp01 적용.</summary>
+    /// <summary>t=0(시작색·빈 외곽) ~ t=1(끝색·가득 채움). Clamp01 적용.</summary>
     public void SetProgress(float t)
     {
         if (_renderer == null) return;
+        t = Mathf.Clamp01(t);
         _renderer.GetPropertyBlock(_block);
-        _block.SetColor(_colorId, Color.Lerp(_start, _end, Mathf.Clamp01(t)));
+        _block.SetColor(_colorId, Color.Lerp(_start, _end, t));
+        if (_fillId != 0)
+            _block.SetFloat(_fillId, t);
         _renderer.SetPropertyBlock(_block);
     }
 

@@ -73,4 +73,7 @@ public enum SFXId
 
     // ── Pad / Tile (고유색 인식 단발) ─────────────────────────────
     Pad_Press                      = 32,
+
+    // ── Trap / Hazard (추가) ──────────────────────────────────────
+    Trap_CeilingWall_Move          = 33,
 }

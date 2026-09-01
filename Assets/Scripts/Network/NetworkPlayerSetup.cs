@@ -72,6 +72,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     private PlayerEvents            _events;
     private VoiceBroadcastTrigger   _voiceBroadcast;
     private CheerKeywordEngine      _cheerKeyword;
+    private PlayerAudio             _audio;
 
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
@@ -89,6 +90,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _events          = GetComponent<PlayerEvents>();
         _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
         _cheerKeyword    = GetComponent<CheerKeywordEngine>();
+        _audio           = GetComponent<PlayerAudio>();
     }
 
     public override void OnNetworkSpawn()
@@ -498,10 +500,11 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NotifyPunchHitClientRpc();
     }
 
-    /// <summary>오너 클라이언트에 Punch 피격 연출만 전달. HP·데미지와 무관.</summary>
+    /// <summary>전 클라: 피격자 위치 3D PunchHit. 오너만 doPunchHit 애니.</summary>
     [ClientRpc]
     void NotifyPunchHitClientRpc()
     {
+        _audio?.PlayPunchHit3D();
         if (!IsOwner) return;
         _player?.PlayPunchHitReaction();
     }
@@ -551,9 +554,20 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// 순차 처리하므로 CheerService.ApplyBuff 실행 시점 이후 도착한 전환 요청은 항상 거부된다
     /// (레이스 컨디션으로 뚫릴 여지 없음).
     /// </summary>
+    // [버그 수정 2026-09-01] SequenceRing 이중 판정과 동일 원인(재호스팅 시 같은 프레임 RPC
+    // 중복 수신) — 이 토글은 시간 쿨다운/Add류 자연 가드가 없어 그대로 두면 같은 프레임에
+    // 두 번 뒤집혀 결과적으로 원래 값으로 되돌아간다("Q키를 눌러도 반응 없음"으로 보이는 버그).
+    // InvokePermission.Owner라 이 인스턴스를 호출할 수 있는 sender는 항상 이 캐릭터의 Owner
+    // 하나뿐이므로 클라이언트별 Dictionary 없이 단일 프레임 값으로 충분하다.
+    int _lastToggleBuffFrame = -1;
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void RequestToggleBuffTypeServerRpc()
     {
+        int frame = Time.frameCount;
+        if (_lastToggleBuffFrame == frame) return;
+        _lastToggleBuffFrame = frame;
+
         if (CheerService.Instance != null && CheerService.Instance.IsBuffActive(_colorIndex.Value))
             return;
 

@@ -8,12 +8,11 @@ using TMPro;
 /// TeamStatus_Panel에 붙이는 스크립트.
 /// 씬의 모든 Player(자신 제외)를 자동 수집해 슬롯 생성.
 ///
-/// [각 슬롯 레이아웃 — bottomRow]
-/// [숫자키 아이콘] [하트...]
-///  ← HP 왼쪽        HP
+/// [각 슬롯 레이아웃]
+/// 이름(위) / HP 하트(아래). 그 외 아이콘 없음.
 ///
-/// - 숫자키 아이콘: 해당 팀원을 응원할 때 눌러야 할 숫자키(1~4) 안내.
-///   실제로 존재하는 팀원(자신 제외)만 슬롯이 생성되므로 항상 유효한 대상만 노출됨.
+/// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 하트(PlayerCheerHeartsUI)로 표시한다
+/// (CheerSystemDesign.md §10.3, 사용자 결정 2026-09-01 — 코너 패널에 새 아이콘 추가하지 않음).
 /// </summary>
 public class TeamStatusUI : MonoBehaviour
 {
@@ -43,10 +42,6 @@ public class TeamStatusUI : MonoBehaviour
     [Header("색별 하트 스프라이트")]
     [SerializeField] ColorHeartEntry[] colorHeartMap;
 
-    [Tooltip("colorIndex(0=Blue/1=Purple/2=Green/3=Yellow) 순서 — CheerDigitInput 1~4 키에 대응하는 키캡 아이콘")]
-    [Header("숫자키 아이콘")]
-    [SerializeField] Sprite[] keyIconSprites = new Sprite[4];
-
     [Header("색상")]
     [SerializeField] Color slotBgColor = Color.clear;
 
@@ -59,7 +54,6 @@ public class TeamStatusUI : MonoBehaviour
         public Image            slotBg;
         public TextMeshProUGUI  nameText;
         public Image[]          heartImages;
-        public Image            keyIcon;      // 숫자키 안내 아이콘
 
         // BuildSlots 재호출 시 언구독용 (람다 캡처 해제 필수)
         public System.Action<bool>             onDamaged;
@@ -270,7 +264,6 @@ public class TeamStatusUI : MonoBehaviour
         nameRt.offsetMax = new Vector2(-4f, -2f);
 
         // ── 아래쪽 행 (HorizontalLayoutGroup) ────────────────────
-        // 순서: [숫자키 아이콘] [하트(들)]
         var bottomRow = new GameObject("BottomRow");
         bottomRow.transform.SetParent(root.transform, false);
         var rowHlg = bottomRow.AddComponent<HorizontalLayoutGroup>();
@@ -285,20 +278,6 @@ public class TeamStatusUI : MonoBehaviour
         rowRt.anchorMax = new Vector2(1f, 0.55f);
         rowRt.offsetMin = new Vector2(6f, 3f);
         rowRt.offsetMax = new Vector2(-4f, 0f);
-
-        // ── 숫자키 아이콘 (하트 왼쪽) ─────────────────────────────
-        if (keyIconSprites != null && slot.colorIndex >= 0 && slot.colorIndex < keyIconSprites.Length
-            && keyIconSprites[slot.colorIndex] != null)
-        {
-            var kObj = new GameObject("KeyIcon");
-            kObj.transform.SetParent(bottomRow.transform, false);
-            var kImg = kObj.AddComponent<Image>();
-            kImg.sprite         = keyIconSprites[slot.colorIndex];
-            kImg.color          = PlayerColorUtil.GetUniqueColor(PlayerColorUtil.ColorOrder[slot.colorIndex]);
-            kImg.preserveAspect = true;
-            kObj.GetComponent<RectTransform>().sizeDelta = new Vector2(heartSize, heartSize);
-            slot.keyIcon = kImg;
-        }
 
         // ── 하트 ─────────────────────────────────────────────────
         slot.heartImages = new Image[player.maxHeart];
@@ -344,13 +323,6 @@ public class TeamStatusUI : MonoBehaviour
         slot.colorIndex = ResolveColorIndex(slot.player);
         if (slot.nameText != null)
             slot.nameText.text = GetPlayerDisplayName(slot.colorIndex);
-
-        if (slot.keyIcon != null && keyIconSprites != null
-            && slot.colorIndex >= 0 && slot.colorIndex < keyIconSprites.Length && keyIconSprites[slot.colorIndex] != null)
-        {
-            slot.keyIcon.sprite = keyIconSprites[slot.colorIndex];
-            slot.keyIcon.color  = PlayerColorUtil.GetUniqueColor(PlayerColorUtil.ColorOrder[slot.colorIndex]);
-        }
 
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
         if (slot.heartImages == null) return;

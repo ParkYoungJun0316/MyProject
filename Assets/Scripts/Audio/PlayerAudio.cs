@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -5,12 +6,12 @@ using UnityEngine;
 /// Player 프리팹 루트에 추가한다.
 ///
 /// [담당 SFX]
-///   Player_Hit / Player_Death / Player_ColorChange / Player_Run (루프)
-///   Buff
+///   개인(Owner 2D): Player_Hit / Player_Death / Player_ColorChange / Player_Run / Buff
+///   월드(전 클라 3D): Player_Punch / Player_PunchHit
 ///
 /// [배치 방법]
 ///   1. Player.G / Player.B 등 프리팹 루트에 Add Component → PlayerAudio.
-///   2. runVolume 을 Inspector 에서 설정 (기본 0 → Inspector 에서 조정).
+///   2. runVolume · Punch 3D 거리를 Inspector 에서 설정.
 ///   3. SFXManager 가 씬에 있어야 함.
 /// </summary>
 [RequireComponent(typeof(PlayerEvents))]
@@ -20,22 +21,27 @@ public class PlayerAudio : MonoBehaviour
     [Tooltip("달리기 루프 볼륨 (0 ~ 1). 0이면 Inspector에서 미설정 → 1로 처리")]
     [SerializeField] [Range(0f, 1f)] float runVolume = 0f;
 
-    // ── 내부 참조 ─────────────────────────────────────────────────
+    [Header("Punch / PunchHit (3D)")]
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float punchMinDistance = 5f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float punchMaxDistance = 25f;
+    [SerializeField] AudioRolloffMode punchRolloffMode = AudioRolloffMode.Logarithmic;
 
     Player           _player;
     PlayerEvents     _events;
     PlayerBuffSystem _buffSystem;
+    NetworkObject    _net;
 
     AudioSource _runSource;
     bool        _isRunning;
-
-    // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
     {
         _player     = GetComponent<Player>();
         _events     = GetComponent<PlayerEvents>();
         _buffSystem = GetComponent<PlayerBuffSystem>();
+        _net        = GetComponent<NetworkObject>();
 
         _runSource              = gameObject.AddComponent<AudioSource>();
         _runSource.playOnAwake  = false;
@@ -73,11 +79,17 @@ public class PlayerAudio : MonoBehaviour
         StopRun();
     }
 
-    // ── 달리기 루프 ──────────────────────────────────────────────
+    bool IsLocalOwner()
+    {
+        if (_net != null && _net.IsSpawned) return _net.IsOwner;
+        return false;
+    }
+
+    // ── 달리기 루프 (Owner 2D) ────────────────────────────────────
 
     void Update()
     {
-        if (_player == null || _player.IsDead)
+        if (_player == null || _player.IsDead || !IsLocalOwner())
         {
             StopRun();
             return;
@@ -115,17 +127,51 @@ public class PlayerAudio : MonoBehaviour
         _isRunning = false;
     }
 
-    // ── PlayerEvents 핸들러 ───────────────────────────────────────
+    // ── 개인 SFX (Owner 2D) ───────────────────────────────────────
 
-    void OnHit(bool _)          => SFXManager.Instance?.Play(SFXId.Player_Hit);
-    void OnDeath()              => SFXManager.Instance?.Play(SFXId.Player_Death);
-    void OnBWChanged(bool _)    => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
-    void OnUniqueChanged(int _) => SFXManager.Instance?.Play(SFXId.Player_ColorChange);
+    void OnHit(bool _)
+    {
+        if (!IsLocalOwner()) return;
+        SFXManager.Instance?.Play(SFXId.Player_Hit);
+    }
 
-    // ── PlayerBuffSystem 핸들러 ───────────────────────────────────
+    void OnDeath()
+    {
+        if (!IsLocalOwner()) return;
+        SFXManager.Instance?.Play(SFXId.Player_Death);
+    }
+
+    void OnBWChanged(bool _)
+    {
+        if (!IsLocalOwner()) return;
+        SFXManager.Instance?.Play(SFXId.Player_ColorChange);
+    }
+
+    void OnUniqueChanged(int _)
+    {
+        if (!IsLocalOwner()) return;
+        SFXManager.Instance?.Play(SFXId.Player_ColorChange);
+    }
 
     void OnBuffApplied(PlayerBuffSystem.BuffType type, float _)
     {
+        if (!IsLocalOwner()) return;
         SFXManager.Instance?.Play(SFXId.Buff);
+    }
+
+    // ── 월드 SFX (전 클라 3D) ─────────────────────────────────────
+
+    public void PlayPunch3D()
+    {
+        SFXManager.Instance?.PlayAtPoint(
+            SFXId.Player_Punch, transform.position,
+            punchMinDistance, punchMaxDistance, punchRolloffMode);
+    }
+
+    public void PlayPunchHit3D()
+    {
+        SFXManager.Instance?.PlayAtPoint(
+            SFXId.Player_PunchHit, transform.position,
+            punchMinDistance, punchMaxDistance, punchRolloffMode);
     }
 }

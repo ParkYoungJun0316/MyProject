@@ -9,6 +9,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 95a9fda877ae28840a965801317824cd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 95a9fda877ae28840a965801317824cd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 95a9fda877ae28840a965801317824cd, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 95a9fda877ae28840a965801317824cd, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -50,7 +62,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 95a9fda877ae28840a965801317824cd, type: 3}
       propertyPath: m_Name
-      value: FrontTooth
+      value: FrontTooth_Boss3
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 95a9fda877ae28840a965801317824cd, type: 3}
       propertyPath: m_Layer
@@ -76,6 +88,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 95a9fda877ae28840a965801317824cd, type: 3}
       insertIndex: -1
       addedObject: {fileID: -3426818365736031283}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 95a9fda877ae28840a965801317824cd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2017704162704773508}
   m_SourcePrefab: {fileID: 100100000, guid: 95a9fda877ae28840a965801317824cd, type: 3}
 --- !u!1 &3167473789573110745 stripped
 GameObject:
@@ -174,3 +189,36 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 3767681972161203217, guid: 95a9fda877ae28840a965801317824cd, type: 3}
+--- !u!114 &2017704162704773508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3167473789573110745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69b615c85fdb94842ad058a102a32fab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Breakable
+  breakTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 268435456
+  breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
+  debrisPrefab: {fileID: 0}
+  debrisLifetime: 0
+  damagePlayerOnBreak: 1
+  breakDamage: 1
+  knockbackForceMin: 15
+  knockbackForceMax: 20
+  damageRadius: 15
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 384
+  syncBreakOverNetwork: 1
+  OnBreak:
+    m_PersistentCalls:
+      m_Calls: []

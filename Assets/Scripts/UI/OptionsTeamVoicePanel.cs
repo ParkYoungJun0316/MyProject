@@ -3,6 +3,7 @@ using Dissonance;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
@@ -37,6 +38,7 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     [SerializeField] GameObject emptyState;
 
     DissonanceComms _subscribedComms;
+    readonly Dictionary<Slider, UnityAction<float>> _volumeCallbacks = new();
 
     void OnEnable()
     {
@@ -91,12 +93,16 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     /// <summary>
     /// 슬라이더를 해당 팀원의 Dissonance VoicePlayerState.Volume에 연결.
     /// VoiceId 매칭 실패(아직 미보고/미접속)면 비활성화하고 100%로 표시.
+    /// RemoveAllListeners()를 쓰면 SliderValuePercentLabel의 onValueChanged 구독까지 같이
+    /// 끊겨 퍼센트 표시가 값이 바뀌어도 고정되는 버그가 있어, 이 메서드가 직접 붙인 콜백만
+    /// 골라 제거한다(SoundAndSettingsDesign.md 팀 보이스 % 고정 버그).
     /// </summary>
-    static void BindVolumeSlider(Slider slider, string voiceId)
+    void BindVolumeSlider(Slider slider, string voiceId)
     {
         if (slider == null) return;
 
-        slider.onValueChanged.RemoveAllListeners();
+        if (_volumeCallbacks.TryGetValue(slider, out UnityAction<float> previous))
+            slider.onValueChanged.RemoveListener(previous);
 
         VoicePlayerState player = string.IsNullOrEmpty(voiceId)
             ? null
@@ -107,13 +113,19 @@ public class OptionsTeamVoicePanel : MonoBehaviour
         slider.SetValueWithoutNotify(canControl ? player.Volume : 1f);
         slider.GetComponent<SliderValuePercentLabel>()?.RefreshNow();
 
-        if (!canControl) return;
+        if (!canControl)
+        {
+            _volumeCallbacks.Remove(slider);
+            return;
+        }
 
-        slider.onValueChanged.AddListener(value =>
+        UnityAction<float> callback = value =>
         {
             VoicePlayerState live = DissonanceComms.GetSingleton()?.FindPlayer(voiceId);
             if (live != null && live.IsConnected) live.Volume = value;
-        });
+        };
+        _volumeCallbacks[slider] = callback;
+        slider.onValueChanged.AddListener(callback);
     }
 
     static List<Teammate> CollectTeammates()
