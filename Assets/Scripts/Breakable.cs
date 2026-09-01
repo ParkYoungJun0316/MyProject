@@ -274,7 +274,7 @@ public class Breakable : MonoBehaviour
                                ?? hits[i].GetComponentInParent<Player>();
                     if (p == null) continue;
 
-                    NetworkDamageUtil.ApplyDamage(p, breakDamage, false);
+                    NetworkDamageUtil.ApplyDamage(p, breakDamage);
 
                     Vector3 dir = p.transform.position - transform.position;
                     dir.y = 0f;

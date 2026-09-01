@@ -56,7 +56,7 @@ public class TeamStatusUI : MonoBehaviour
         public Image[]          heartImages;
 
         // BuildSlots 재호출 시 언구독용 (람다 캡처 해제 필수)
-        public System.Action<bool>             onDamaged;
+        public System.Action                   onDamaged;
         public System.Action                   onHealed;
         public System.Action                   onDied;
         public System.Action                   onRespawned;
@@ -297,7 +297,7 @@ public class TeamStatusUI : MonoBehaviour
         slot.events = player.GetComponent<PlayerEvents>();
         if (slot.events != null)
         {
-            slot.onDamaged         = _ => RefreshSlot(slot);
+            slot.onDamaged         = () => RefreshSlot(slot);
             slot.onHealed          = () => RefreshSlot(slot);
             slot.onDied            = () => SetDead(slot, true);
             slot.onRespawned       = () => SetDead(slot, false);

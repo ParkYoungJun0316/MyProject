@@ -189,7 +189,7 @@ public class TrapProjectile : NetworkBehaviour
         {
             Player p = netObj.GetComponent<Player>();
             if (p != null && damage > 0)
-                NetworkDamageUtil.ApplyDamage(p, damage, false);
+                NetworkDamageUtil.ApplyDamage(p, damage);
         }
 
         if (destroyOnPlayer) DestroyProjectileOnServer();

@@ -818,7 +818,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 
 | 용도 | API |
 |------|-----|
-| 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount, knockback)` |
+| 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount)` |
 | 즉사 (함정 타일·스테이지 Fail 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
 | 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force)` — Breakable 범위 넉백, `PlayerPunch` PvP, 문 닫힘, `ContactKnockback` 등 (§7.4) |
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |

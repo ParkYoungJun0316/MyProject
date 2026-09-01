@@ -129,7 +129,7 @@ public class PlayerAudio : MonoBehaviour
 
     // ── 개인 SFX (Owner 2D) ───────────────────────────────────────
 
-    void OnHit(bool _)
+    void OnHit()
     {
         if (!IsLocalOwner()) return;
         SFXManager.Instance?.Play(SFXId.Player_Hit);

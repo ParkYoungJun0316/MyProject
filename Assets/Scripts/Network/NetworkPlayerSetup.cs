@@ -379,7 +379,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// Host에서 직접 호출해 HP를 차감.
     /// ArrowTrap·DropTrap 등 함정이 Host에서 플레이어 충돌을 감지했을 때 사용.
     /// </summary>
-    public void ApplyDamageFromServer(int amount, bool knockback = false)
+    public void ApplyDamageFromServer(int amount)
     {
         if (!IsServer) return;
         if (_player == null || _player.IsDead) return;
@@ -408,7 +408,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _hp.Value = newHp;
 
         if (newHp > 0)
-            NotifyHitClientRpc(knockback);
+            NotifyHitClientRpc();
         else
             ForceKillClientRpc();
     }
@@ -429,10 +429,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     /// <summary>오너 클라이언트에 피격 연출(애니·무적)만 요청. HP/heart 수정은 OnHpChanged에서 담당.</summary>
     [ClientRpc]
-    void NotifyHitClientRpc(bool knockback)
+    void NotifyHitClientRpc()
     {
         if (!IsOwner) return;
-        _player?.TakeDamageVisualOnly(knockback);
+        _player?.TakeDamageVisualOnly();
     }
 
 
@@ -457,7 +457,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // HP가 실제로 줄었을 때만 피격 이벤트 발행.
         // HP 증가(스폰·리스폰 회복)에서 Hit SFX·연출이 울리는 버그 방지.
         if (next > 0 && next < prev)
-            _events?.RaiseDamaged(false);
+            _events?.RaiseDamaged();
         // 0 → 양수: 씬 리로드 후 HP 복구 = 리스폰 신호 (비오너만 — Owner는 OnNetworkSpawn에서 처리).
         else if (prev == 0 && next > 0 && !IsOwner)
             _events?.RaiseRespawned();
@@ -480,11 +480,17 @@ public class NetworkPlayerSetup : NetworkBehaviour
         ApplyKnockbackClientRpc(direction, force);
     }
 
-    /// <summary>Owner 클라이언트에서만 실제 AddForce 적용.</summary>
+    /// <summary>
+    /// Owner 클라이언트에서만 실제 AddForce 적용.
+    /// AddForce 전에 Player.SuppressMoveForKnockback()으로 잠깐 Move()를 억제해야 한다 —
+    /// 안 그러면 다음 FixedUpdate의 Move()가 velocity.x/z를 입력값으로 바로 덮어써
+    /// 넉백이 힘 크기와 무관하게 한 프레임 만에 사라진다 (2026-09-02 진단).
+    /// </summary>
     [ClientRpc]
     void ApplyKnockbackClientRpc(Vector3 direction, float force)
     {
         if (!IsOwner) return;
+        _player?.SuppressMoveForKnockback();
         _rb?.AddForce(direction * force, ForceMode.Impulse);
     }
 

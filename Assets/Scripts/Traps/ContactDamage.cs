@@ -73,7 +73,7 @@ public class ContactDamage : MonoBehaviour
                    ?? other.GetComponentInParent<Player>();
         if (p == null) return;
 
-        NetworkDamageUtil.ApplyDamage(p, damage, false);
+        NetworkDamageUtil.ApplyDamage(p, damage);
         _nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.05f);
     }
 }

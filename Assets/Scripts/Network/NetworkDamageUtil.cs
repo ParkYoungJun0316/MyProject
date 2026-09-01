@@ -14,7 +14,7 @@ using UnityEngine;
 public static class NetworkDamageUtil
 {
     /// <summary>서버에서만 데미지 판정. 적/씬 이벤트 등 서버 컨텍스트 전용.</summary>
-    public static void ApplyDamage(Player p, int amount, bool knockback = false)
+    public static void ApplyDamage(Player p, int amount)
     {
         if (p == null || amount <= 0) return;
 
@@ -23,9 +23,9 @@ public static class NetworkDamageUtil
 
         var netSetup = p.GetComponent<NetworkPlayerSetup>();
         if (netSetup != null)
-            netSetup.ApplyDamageFromServer(amount, knockback);
+            netSetup.ApplyDamageFromServer(amount);
         else
-            p.TakeDamage(amount, knockback);
+            p.TakeDamage(amount);
     }
 
     /// <summary>서버에서만 회복 판정. 팀 버프 등 서버 컨텍스트 전용. 클라이언트 호출 시 즉시 반환.</summary>

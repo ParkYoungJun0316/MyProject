@@ -106,7 +106,7 @@ public class PlayerVisualController : MonoBehaviour
         SetColor(player.GetCurrentBaseColor());
     }
 
-    void FlashDamage(bool _)
+    void FlashDamage()
     {
         if (player != null && player.IsDead) return;
 

@@ -262,19 +262,19 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     /// HP 차감 없이 피격 연출(애니·무적·넉백)만 처리.
     /// Host → 오너 클라이언트 경로(ForceKillClientRpc 이전 단계)에서 사용.
     /// </summary>
-    public void TakeDamageVisualOnly(bool knockback = false)
+    public void TakeDamageVisualOnly()
     {
         if (IsDead) return;
 
         // HP UI 갱신은 무적 여부와 무관하게 항상 수행
         // (무적 중 연속 피격 시 _player.heart가 갱신됐어도 UI가 멈추는 버그 방지)
-        events?.RaiseDamaged(knockback);
+        events?.RaiseDamaged();
 
         if (isDamage) return; // 무적 중: 애니·효과만 스킵
 
         playerStealth?.RevealTemporarily();
         anim?.SetTrigger("doHit");
-        StartCoroutine(OnDamage(knockback));
+        StartCoroutine(OnDamage());
     }
 
     /// <summary>
@@ -325,15 +325,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public float GetBWCooldownRemaining() => Mathf.Max(0f, nextBWTime - Time.time);
 
     /// <summary>무적·피격 쿨 중이면 false, 실제 피격 시 true.</summary>
-    public bool TryTakeDamage(int amount, bool knockback = false)
+    public bool TryTakeDamage(int amount)
     {
         if (IsDead) return false;
         if (isDamage) return false;
-        TakeDamage(amount, knockback);
+        TakeDamage(amount);
         return true;
     }
 
-    public void TakeDamage(int amount, bool knockback = false)
+    public void TakeDamage(int amount)
     {
         if (IsDead) return;
         if (isDamage) return;
@@ -349,7 +349,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     public void ReceiveDamage(int amount, object source)
     {
-        TakeDamage(amount, false);
+        TakeDamage(amount);
     }
 
     void OnTriggerEnter(Collider other)
@@ -364,37 +364,53 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             {
                 Bullet enemyBullet = other.GetComponent<Bullet>();
                 if (enemyBullet != null)
-                    NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage, false);
+                    NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage);
             }
         }
     }
 
     // ── 사망 / 리스폰 ─────────────────────────────────────────
 
-    IEnumerator OnDamage(bool isBossAtk)
+    IEnumerator OnDamage()
     {
         isDamage = true;
-
-        // 넉백은 Owner 로컬 물리로만 적용 (Owner Rigidbody는 항상 dynamic).
-        // Rigidbody가 kinematic이면 AddForce가 no-op이므로 가드.
-        if (isBossAtk && isOwnerControlled && !rigid.isKinematic)
-        {
-            isKnockback = true;
-            rigid.AddForce(transform.forward * -25, ForceMode.Impulse);
-        }
-
         float invuln = damageInvulnerabilityDuration > 0f ? damageInvulnerabilityDuration : 0.5f;
         yield return new WaitForSeconds(invuln);
         isDamage = false;
+    }
 
-        if (isBossAtk && isOwnerControlled && !rigid.isKinematic)
-        {
-            rigid.linearVelocity = Vector3.zero;
-            isKnockback = false;
-        }
+    [Header("순수 넉백 (HP 미변경)")]
+    [Tooltip("Punch/Breakable/ContactKnockback/DoorController 등 순수 넉백(NetworkDamageUtil.ApplyKnockback) " +
+        "적용 시 Move()가 velocity.x/z를 입력값으로 덮어써 넉백을 즉시 지우는 것을 막는 시간(초). " +
+        "너무 짧으면 넉백이 거의 안 느껴지고, 너무 길면 피격 후 조작 불능 시간이 길어짐.")]
+    [SerializeField] float knockbackSuppressDuration = 0.25f;
 
-        if (isBossAtk && (!isOwnerControlled || rigid.isKinematic))
-            isKnockback = false;
+    Coroutine _knockbackSuppressRoutine;
+
+    /// <summary>
+    /// 순수 넉백 AddForce 직후 호출. Move()가 매 FixedUpdate마다 velocity.x/z를 입력값으로
+    /// 덮어써 임펄스를 한 프레임 만에 지우는 문제를 막기 위해, knockbackSuppressDuration
+    /// 동안만 Move()를 억제한 뒤 수평 속도를 정리하고 복귀한다.
+    /// NetworkPlayerSetup.ApplyKnockbackClientRpc(Punch/Breakable/ContactKnockback/DoorController 공용)에서 호출.
+    /// </summary>
+    public void SuppressMoveForKnockback()
+    {
+        if (!isOwnerControlled || rigid.isKinematic) return;
+        if (_knockbackSuppressRoutine != null) StopCoroutine(_knockbackSuppressRoutine);
+        _knockbackSuppressRoutine = StartCoroutine(KnockbackSuppressRoutine());
+    }
+
+    IEnumerator KnockbackSuppressRoutine()
+    {
+        isKnockback = true;
+        yield return new WaitForSeconds(knockbackSuppressDuration);
+
+        Vector3 v = rigid.linearVelocity;
+        v.x = 0f; v.z = 0f;
+        rigid.linearVelocity = v;
+
+        isKnockback = false;
+        _knockbackSuppressRoutine = null;
     }
 
     void Die()
@@ -404,6 +420,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
         CancelInvoke();
 
+        if (_knockbackSuppressRoutine != null)
+        {
+            StopCoroutine(_knockbackSuppressRoutine);
+            _knockbackSuppressRoutine = null;
+        }
         isKnockback = false; isDamage = false;
         moveSpeedMultiplier  = 1f;
         fallAnimTriggered    = false;

@@ -42,7 +42,7 @@ public class Stage5ChaserHitbox : MonoBehaviour
         if (p == null || p.IsDead) return;
 
         // 넉백 없음. 데미지 적용 후 Chaser 정지 연동 (서버에서만).
-        NetworkDamageUtil.ApplyDamage(p, damage, false);
+        NetworkDamageUtil.ApplyDamage(p, damage);
         _chaser.NotifyHitFromHitbox();
     }
 }
