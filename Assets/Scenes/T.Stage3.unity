@@ -999,6 +999,7 @@ GameObject:
   - component: {fileID: 47046665}
   - component: {fileID: 47046664}
   - component: {fileID: 47046663}
+  - component: {fileID: 47046667}
   m_Layer: 27
   m_Name: DamageWall (5)
   m_TagString: Untagged
@@ -1126,6 +1127,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 47046660}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &47046667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 47046660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &48413888
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2327,6 +2344,7 @@ GameObject:
   - component: {fileID: 116045878}
   - component: {fileID: 116045877}
   - component: {fileID: 116045876}
+  - component: {fileID: 116045880}
   m_Layer: 27
   m_Name: DamageWall (9)
   m_TagString: Untagged
@@ -2454,6 +2472,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 116045873}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &116045880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 116045873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &116983327
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3034,6 +3068,7 @@ GameObject:
   - component: {fileID: 147245298}
   - component: {fileID: 147245297}
   - component: {fileID: 147245296}
+  - component: {fileID: 147245300}
   m_Layer: 27
   m_Name: DamageWall (12)
   m_TagString: Untagged
@@ -3161,6 +3196,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 147245293}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &147245300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 147245293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &148242146
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3328,6 +3379,7 @@ GameObject:
   - component: {fileID: 149144701}
   - component: {fileID: 149144700}
   - component: {fileID: 149144699}
+  - component: {fileID: 149144703}
   m_Layer: 27
   m_Name: DamageWall (28)
   m_TagString: Untagged
@@ -3455,6 +3507,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 149144696}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &149144703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 149144696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &157688235
 GameObject:
   m_ObjectHideFlags: 0
@@ -3468,6 +3536,7 @@ GameObject:
   - component: {fileID: 157688240}
   - component: {fileID: 157688239}
   - component: {fileID: 157688238}
+  - component: {fileID: 157688242}
   m_Layer: 27
   m_Name: DamageWall (16)
   m_TagString: Untagged
@@ -3595,6 +3664,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 157688235}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &157688242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157688235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &159532510
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3779,6 +3864,7 @@ GameObject:
   - component: {fileID: 171124821}
   - component: {fileID: 171124820}
   - component: {fileID: 171124819}
+  - component: {fileID: 171124823}
   m_Layer: 27
   m_Name: DamageWall (5)
   m_TagString: Untagged
@@ -3906,6 +3992,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 171124816}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &171124823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 171124816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &171476470
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3976,6 +4078,7 @@ GameObject:
   - component: {fileID: 174281164}
   - component: {fileID: 174281163}
   - component: {fileID: 174281162}
+  - component: {fileID: 174281166}
   m_Layer: 27
   m_Name: DamageWall (22)
   m_TagString: Untagged
@@ -4103,6 +4206,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 174281159}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &174281166
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 174281159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &182326384
 GameObject:
   m_ObjectHideFlags: 0
@@ -4116,6 +4235,7 @@ GameObject:
   - component: {fileID: 182326389}
   - component: {fileID: 182326388}
   - component: {fileID: 182326387}
+  - component: {fileID: 182326391}
   m_Layer: 27
   m_Name: DamageWall (30)
   m_TagString: Untagged
@@ -4243,6 +4363,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 182326384}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &182326391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 182326384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &184801509
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4687,6 +4823,7 @@ GameObject:
   - component: {fileID: 208694276}
   - component: {fileID: 208694275}
   - component: {fileID: 208694274}
+  - component: {fileID: 208694278}
   m_Layer: 27
   m_Name: DamageWall (31)
   m_TagString: Untagged
@@ -4814,6 +4951,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 208694271}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &208694278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 208694271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &214476505
 GameObject:
   m_ObjectHideFlags: 0
@@ -4865,6 +5018,7 @@ GameObject:
   - component: {fileID: 215296174}
   - component: {fileID: 215296173}
   - component: {fileID: 215296172}
+  - component: {fileID: 215296176}
   m_Layer: 27
   m_Name: DamageWall (7)
   m_TagString: Untagged
@@ -4992,6 +5146,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 215296169}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &215296176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 215296169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &222348611
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6513,6 +6683,7 @@ GameObject:
   - component: {fileID: 271872002}
   - component: {fileID: 271872001}
   - component: {fileID: 271872000}
+  - component: {fileID: 271872004}
   m_Layer: 27
   m_Name: DamageWall (11)
   m_TagString: Untagged
@@ -6640,6 +6811,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 271871997}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &271872004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 271871997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &276719003
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6824,6 +7011,7 @@ GameObject:
   - component: {fileID: 284004416}
   - component: {fileID: 284004415}
   - component: {fileID: 284004414}
+  - component: {fileID: 284004418}
   m_Layer: 27
   m_Name: DamageWall (20)
   m_TagString: Untagged
@@ -6951,6 +7139,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 284004411}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &284004418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 284004411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &287375287
 GameObject:
   m_ObjectHideFlags: 0
@@ -7252,6 +7456,7 @@ GameObject:
   - component: {fileID: 309878534}
   - component: {fileID: 309878533}
   - component: {fileID: 309878532}
+  - component: {fileID: 309878536}
   m_Layer: 27
   m_Name: DamageWall (13)
   m_TagString: Untagged
@@ -7379,6 +7584,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 309878529}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &309878536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 309878529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &310770668
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8361,6 +8582,7 @@ GameObject:
   - component: {fileID: 365945863}
   - component: {fileID: 365945862}
   - component: {fileID: 365945861}
+  - component: {fileID: 365945865}
   m_Layer: 27
   m_Name: DamageWall (29)
   m_TagString: Untagged
@@ -8488,6 +8710,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 365945858}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &365945865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365945858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &366623843
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9189,6 +9427,7 @@ GameObject:
   - component: {fileID: 394764648}
   - component: {fileID: 394764647}
   - component: {fileID: 394764646}
+  - component: {fileID: 394764650}
   m_Layer: 27
   m_Name: DamageWall (19)
   m_TagString: Untagged
@@ -9316,6 +9555,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 394764643}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &394764650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 394764643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &402920448
 GameObject:
   m_ObjectHideFlags: 0
@@ -9329,6 +9584,7 @@ GameObject:
   - component: {fileID: 402920453}
   - component: {fileID: 402920452}
   - component: {fileID: 402920451}
+  - component: {fileID: 402920455}
   m_Layer: 27
   m_Name: DamageWall (4)
   m_TagString: Untagged
@@ -9456,6 +9712,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 402920448}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &402920455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 402920448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &403697803
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9526,6 +9798,7 @@ GameObject:
   - component: {fileID: 407902030}
   - component: {fileID: 407902029}
   - component: {fileID: 407902028}
+  - component: {fileID: 407902032}
   m_Layer: 27
   m_Name: DamageWall (23)
   m_TagString: Untagged
@@ -9653,6 +9926,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 407902025}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &407902032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 407902025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &412517596
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9984,6 +10273,7 @@ GameObject:
   - component: {fileID: 425901047}
   - component: {fileID: 425901046}
   - component: {fileID: 425901045}
+  - component: {fileID: 425901049}
   m_Layer: 27
   m_Name: DamageWall (1)
   m_TagString: Untagged
@@ -10111,6 +10401,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 425901042}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &425901049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 425901042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &426027234
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10181,6 +10487,7 @@ GameObject:
   - component: {fileID: 431008799}
   - component: {fileID: 431008798}
   - component: {fileID: 431008797}
+  - component: {fileID: 431008801}
   m_Layer: 27
   m_Name: DamageWall (29)
   m_TagString: Untagged
@@ -10308,6 +10615,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 431008794}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &431008801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431008794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &433672884
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11356,6 +11679,7 @@ GameObject:
   - component: {fileID: 484904942}
   - component: {fileID: 484904941}
   - component: {fileID: 484904940}
+  - component: {fileID: 484904944}
   m_Layer: 27
   m_Name: DamageWall (18)
   m_TagString: Untagged
@@ -11483,6 +11807,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 484904937}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &484904944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 484904937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &488530754
 GameObject:
   m_ObjectHideFlags: 0
@@ -11786,6 +12126,7 @@ GameObject:
   - component: {fileID: 502474775}
   - component: {fileID: 502474774}
   - component: {fileID: 502474773}
+  - component: {fileID: 502474777}
   m_Layer: 27
   m_Name: DamageWall (21)
   m_TagString: Untagged
@@ -11913,6 +12254,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 502474770}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &502474777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 502474770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &502515003 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: a2e360faca7561c4784c05199d2ead85, type: 3}
@@ -12954,6 +13311,7 @@ GameObject:
   - component: {fileID: 549807446}
   - component: {fileID: 549807445}
   - component: {fileID: 549807444}
+  - component: {fileID: 549807448}
   m_Layer: 27
   m_Name: DamageWall (24)
   m_TagString: Untagged
@@ -13081,6 +13439,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 549807441}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &549807448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 549807441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &549845699
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16794,6 +17168,7 @@ GameObject:
   - component: {fileID: 719394736}
   - component: {fileID: 719394735}
   - component: {fileID: 719394734}
+  - component: {fileID: 719394738}
   m_Layer: 27
   m_Name: DamageWall (18)
   m_TagString: Untagged
@@ -16921,6 +17296,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 719394731}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &719394738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 719394731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &720675354
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17563,6 +17954,7 @@ GameObject:
   - component: {fileID: 754583136}
   - component: {fileID: 754583135}
   - component: {fileID: 754583134}
+  - component: {fileID: 754583138}
   m_Layer: 27
   m_Name: DamageWall (13)
   m_TagString: Untagged
@@ -17690,6 +18082,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 754583131}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &754583138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 754583131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &758238150
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18990,6 +19398,7 @@ GameObject:
   - component: {fileID: 810235194}
   - component: {fileID: 810235193}
   - component: {fileID: 810235192}
+  - component: {fileID: 810235196}
   m_Layer: 27
   m_Name: DamageWall (22)
   m_TagString: Untagged
@@ -19117,6 +19526,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 810235189}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &810235196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 810235189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &812398843
 GameObject:
   m_ObjectHideFlags: 0
@@ -19225,6 +19650,7 @@ GameObject:
   - component: {fileID: 814111482}
   - component: {fileID: 814111481}
   - component: {fileID: 814111480}
+  - component: {fileID: 814111484}
   m_Layer: 27
   m_Name: DamageWall (12)
   m_TagString: Untagged
@@ -19352,6 +19778,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 814111477}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &814111484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 814111477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &815635747
 GameObject:
   m_ObjectHideFlags: 0
@@ -19365,6 +19807,7 @@ GameObject:
   - component: {fileID: 815635752}
   - component: {fileID: 815635751}
   - component: {fileID: 815635750}
+  - component: {fileID: 815635754}
   m_Layer: 27
   m_Name: DamageWall (25)
   m_TagString: Untagged
@@ -19492,6 +19935,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 815635747}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &815635754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 815635747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &816722884
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19618,6 +20077,7 @@ GameObject:
   - component: {fileID: 824862099}
   - component: {fileID: 824862098}
   - component: {fileID: 824862097}
+  - component: {fileID: 824862101}
   m_Layer: 27
   m_Name: DamageWall (7)
   m_TagString: Untagged
@@ -19745,6 +20205,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 824862094}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &824862101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 824862094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &833176252
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19929,6 +20405,7 @@ GameObject:
   - component: {fileID: 838374315}
   - component: {fileID: 838374314}
   - component: {fileID: 838374313}
+  - component: {fileID: 838374317}
   m_Layer: 27
   m_Name: DamageWall (11)
   m_TagString: Untagged
@@ -20056,6 +20533,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 838374310}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &838374317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838374310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &842297831
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20541,6 +21034,7 @@ GameObject:
   - component: {fileID: 885627180}
   - component: {fileID: 885627179}
   - component: {fileID: 885627178}
+  - component: {fileID: 885627182}
   m_Layer: 27
   m_Name: DamageWall (6)
   m_TagString: Untagged
@@ -20668,6 +21162,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 885627175}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &885627182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885627175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &887750814
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21173,6 +21683,7 @@ GameObject:
   - component: {fileID: 907181495}
   - component: {fileID: 907181494}
   - component: {fileID: 907181493}
+  - component: {fileID: 907181497}
   m_Layer: 27
   m_Name: DamageWall (26)
   m_TagString: Untagged
@@ -21300,6 +21811,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 907181490}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &907181497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 907181490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &914311236
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21504,6 +22031,7 @@ GameObject:
   - component: {fileID: 928584143}
   - component: {fileID: 928584142}
   - component: {fileID: 928584141}
+  - component: {fileID: 928584145}
   m_Layer: 27
   m_Name: DamageWall (15)
   m_TagString: Untagged
@@ -21631,6 +22159,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 928584138}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &928584145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 928584138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &932856327
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21857,6 +22401,9 @@ MonoBehaviour:
   openMode: 1
   openAmount: 10
   duration: 2
+  knockbackForceMin: 50
+  knockbackForceMax: 50
+  knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
   OnOpened:
@@ -22031,6 +22578,7 @@ GameObject:
   - component: {fileID: 957936354}
   - component: {fileID: 957936353}
   - component: {fileID: 957936352}
+  - component: {fileID: 957936356}
   m_Layer: 27
   m_Name: DamageWall (16)
   m_TagString: Untagged
@@ -22158,6 +22706,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 957936349}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &957936356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 957936349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &961044610
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22487,6 +23051,7 @@ GameObject:
   - component: {fileID: 974947934}
   - component: {fileID: 974947933}
   - component: {fileID: 974947932}
+  - component: {fileID: 974947936}
   m_Layer: 27
   m_Name: DamageWall (17)
   m_TagString: Untagged
@@ -22614,6 +23179,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 974947929}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &974947936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 974947929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &975108754
 GameObject:
   m_ObjectHideFlags: 0
@@ -22627,6 +23208,7 @@ GameObject:
   - component: {fileID: 975108759}
   - component: {fileID: 975108758}
   - component: {fileID: 975108757}
+  - component: {fileID: 975108761}
   m_Layer: 27
   m_Name: DamageWall (14)
   m_TagString: Untagged
@@ -22754,6 +23336,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 975108754}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &975108761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 975108754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &975305307
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23477,6 +24075,7 @@ GameObject:
   - component: {fileID: 1003181822}
   - component: {fileID: 1003181821}
   - component: {fileID: 1003181820}
+  - component: {fileID: 1003181824}
   m_Layer: 27
   m_Name: DamageWall (15)
   m_TagString: Untagged
@@ -23604,6 +24203,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1003181817}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1003181824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1003181817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1008558090
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24177,6 +24792,7 @@ GameObject:
   - component: {fileID: 1022016888}
   - component: {fileID: 1022016887}
   - component: {fileID: 1022016886}
+  - component: {fileID: 1022016890}
   m_Layer: 27
   m_Name: DamageWall (30)
   m_TagString: Untagged
@@ -24304,6 +24920,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1022016883}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1022016890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1022016883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1022102579
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24813,6 +25445,7 @@ GameObject:
   - component: {fileID: 1043970627}
   - component: {fileID: 1043970626}
   - component: {fileID: 1043970625}
+  - component: {fileID: 1043970629}
   m_Layer: 27
   m_Name: DamageWall (4)
   m_TagString: Untagged
@@ -24940,6 +25573,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1043970622}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1043970629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1043970622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1044605726
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25998,6 +26647,7 @@ GameObject:
   - component: {fileID: 1083753991}
   - component: {fileID: 1083753990}
   - component: {fileID: 1083753989}
+  - component: {fileID: 1083753993}
   m_Layer: 27
   m_Name: DamageWall (27)
   m_TagString: Untagged
@@ -26125,6 +26775,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1083753986}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1083753993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083753986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1084653319
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26252,6 +26918,7 @@ GameObject:
   - component: {fileID: 1091644279}
   - component: {fileID: 1091644278}
   - component: {fileID: 1091644277}
+  - component: {fileID: 1091644281}
   m_Layer: 27
   m_Name: DamageWall (3)
   m_TagString: Untagged
@@ -26379,6 +27046,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1091644274}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1091644281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1091644274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1093463714
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26636,6 +27319,7 @@ GameObject:
   - component: {fileID: 1110561252}
   - component: {fileID: 1110561251}
   - component: {fileID: 1110561250}
+  - component: {fileID: 1110561254}
   m_Layer: 27
   m_Name: DamageWall (6)
   m_TagString: Untagged
@@ -26763,6 +27447,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1110561247}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1110561254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110561247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1114037422
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29122,6 +29822,7 @@ GameObject:
   - component: {fileID: 1239882909}
   - component: {fileID: 1239882908}
   - component: {fileID: 1239882907}
+  - component: {fileID: 1239882911}
   m_Layer: 27
   m_Name: DamageWall (28)
   m_TagString: Untagged
@@ -29249,6 +29950,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1239882904}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1239882911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239882904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &1240563916
 GameObject:
   m_ObjectHideFlags: 0
@@ -30085,6 +30802,7 @@ GameObject:
   - component: {fileID: 1265435049}
   - component: {fileID: 1265435048}
   - component: {fileID: 1265435047}
+  - component: {fileID: 1265435051}
   m_Layer: 27
   m_Name: DamageWall (10)
   m_TagString: Untagged
@@ -30212,6 +30930,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1265435044}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1265435051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1265435044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1266405714
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30361,6 +31095,7 @@ GameObject:
   - component: {fileID: 1275608414}
   - component: {fileID: 1275608413}
   - component: {fileID: 1275608412}
+  - component: {fileID: 1275608416}
   m_Layer: 27
   m_Name: DamageWall (14)
   m_TagString: Untagged
@@ -30488,6 +31223,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1275608409}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1275608416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1275608409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1275739845
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31000,6 +31751,7 @@ GameObject:
   - component: {fileID: 1308877225}
   - component: {fileID: 1308877224}
   - component: {fileID: 1308877223}
+  - component: {fileID: 1308877227}
   m_Layer: 27
   m_Name: DamageWall (8)
   m_TagString: Untagged
@@ -31127,6 +31879,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1308877220}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1308877227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1308877220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1309560209
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31523,6 +32291,7 @@ GameObject:
   - component: {fileID: 1333379281}
   - component: {fileID: 1333379280}
   - component: {fileID: 1333379279}
+  - component: {fileID: 1333379283}
   m_Layer: 27
   m_Name: DamageWall (23)
   m_TagString: Untagged
@@ -31650,6 +32419,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1333379276}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1333379283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1333379276}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1336685975
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32878,6 +33663,7 @@ GameObject:
   - component: {fileID: 1393700669}
   - component: {fileID: 1393700668}
   - component: {fileID: 1393700667}
+  - component: {fileID: 1393700671}
   m_Layer: 27
   m_Name: DamageWall (2)
   m_TagString: Untagged
@@ -33005,6 +33791,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1393700664}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1393700671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393700664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1394939622
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33634,6 +34436,7 @@ GameObject:
   - component: {fileID: 1431864154}
   - component: {fileID: 1431864153}
   - component: {fileID: 1431864152}
+  - component: {fileID: 1431864156}
   m_Layer: 27
   m_Name: DamageWall (25)
   m_TagString: Untagged
@@ -33761,6 +34564,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1431864149}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1431864156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1431864149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &1433558067
 GameObject:
   m_ObjectHideFlags: 0
@@ -34181,6 +35000,7 @@ GameObject:
   - component: {fileID: 1437815079}
   - component: {fileID: 1437815078}
   - component: {fileID: 1437815077}
+  - component: {fileID: 1437815081}
   m_Layer: 27
   m_Name: DamageWall (27)
   m_TagString: Untagged
@@ -34308,6 +35128,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1437815074}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1437815081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1437815074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &1440680001 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1596284921862400727, guid: b4ce3bd25e1c8954ab0feaf2e85e4cf6, type: 3}
@@ -37959,6 +38795,7 @@ GameObject:
   - component: {fileID: 1654713280}
   - component: {fileID: 1654713279}
   - component: {fileID: 1654713278}
+  - component: {fileID: 1654713282}
   m_Layer: 27
   m_Name: DamageWall (21)
   m_TagString: Untagged
@@ -38086,6 +38923,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1654713275}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1654713282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1654713275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1655774063
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38156,6 +39009,7 @@ GameObject:
   - component: {fileID: 1657959130}
   - component: {fileID: 1657959129}
   - component: {fileID: 1657959128}
+  - component: {fileID: 1657959132}
   m_Layer: 27
   m_Name: DamageWall (8)
   m_TagString: Untagged
@@ -38283,6 +39137,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1657959125}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1657959132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1657959125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1658101015
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38888,6 +39758,7 @@ GameObject:
   - component: {fileID: 1690320807}
   - component: {fileID: 1690320806}
   - component: {fileID: 1690320805}
+  - component: {fileID: 1690320809}
   m_Layer: 27
   m_Name: DamageWall (24)
   m_TagString: Untagged
@@ -39015,6 +39886,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1690320802}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1690320809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690320802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!4 &1692775988 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3446509337588805664, guid: f5fcccc5cfda2ec47992e4f12d2c062f, type: 3}
@@ -39192,6 +40079,7 @@ GameObject:
   - component: {fileID: 1697596476}
   - component: {fileID: 1697596475}
   - component: {fileID: 1697596474}
+  - component: {fileID: 1697596478}
   m_Layer: 27
   m_Name: DamageWall (26)
   m_TagString: Untagged
@@ -39319,6 +40207,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1697596471}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1697596478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1697596471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &1699285890
 GameObject:
   m_ObjectHideFlags: 0
@@ -39332,6 +40236,7 @@ GameObject:
   - component: {fileID: 1699285895}
   - component: {fileID: 1699285894}
   - component: {fileID: 1699285893}
+  - component: {fileID: 1699285897}
   m_Layer: 27
   m_Name: DamageWall (32)
   m_TagString: Untagged
@@ -39459,6 +40364,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1699285890}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1699285897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699285890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1703702883
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39804,6 +40725,7 @@ GameObject:
   - component: {fileID: 1718914062}
   - component: {fileID: 1718914061}
   - component: {fileID: 1718914060}
+  - component: {fileID: 1718914064}
   m_Layer: 27
   m_Name: DamageWall (9)
   m_TagString: Untagged
@@ -39931,6 +40853,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1718914057}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1718914064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1718914057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1732068394
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41282,6 +42220,7 @@ GameObject:
   - component: {fileID: 1805358811}
   - component: {fileID: 1805358810}
   - component: {fileID: 1805358809}
+  - component: {fileID: 1805358813}
   m_Layer: 27
   m_Name: DamageWall (10)
   m_TagString: Untagged
@@ -41409,6 +42348,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1805358806}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1805358813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1805358806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1809830173
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41707,6 +42662,7 @@ GameObject:
   - component: {fileID: 1828735612}
   - component: {fileID: 1828735611}
   - component: {fileID: 1828735610}
+  - component: {fileID: 1828735614}
   m_Layer: 27
   m_Name: DamageWall (20)
   m_TagString: Untagged
@@ -41834,6 +42790,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1828735607}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1828735614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1828735607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1828908861
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44328,6 +45300,7 @@ GameObject:
   - component: {fileID: 1939853714}
   - component: {fileID: 1939853713}
   - component: {fileID: 1939853712}
+  - component: {fileID: 1939853716}
   m_Layer: 27
   m_Name: DamageWall (31)
   m_TagString: Untagged
@@ -44455,6 +45428,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1939853709}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1939853716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1939853709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1941206874
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -45224,6 +46213,7 @@ GameObject:
   - component: {fileID: 1970037730}
   - component: {fileID: 1970037729}
   - component: {fileID: 1970037728}
+  - component: {fileID: 1970037732}
   m_Layer: 27
   m_Name: DamageWall (17)
   m_TagString: Untagged
@@ -45351,6 +46341,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1970037725}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1970037732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1970037725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1 &1972560486
 GameObject:
   m_ObjectHideFlags: 0
@@ -45698,6 +46704,7 @@ GameObject:
   - component: {fileID: 1982317976}
   - component: {fileID: 1982317975}
   - component: {fileID: 1982317974}
+  - component: {fileID: 1982317978}
   m_Layer: 27
   m_Name: DamageWall (1)
   m_TagString: Untagged
@@ -45825,6 +46832,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1982317971}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1982317978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1982317971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &1983195997
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -46883,6 +47906,7 @@ GameObject:
   - component: {fileID: 2030418770}
   - component: {fileID: 2030418769}
   - component: {fileID: 2030418768}
+  - component: {fileID: 2030418772}
   m_Layer: 27
   m_Name: DamageWall (19)
   m_TagString: Untagged
@@ -47010,6 +48034,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2030418765}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &2030418772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2030418765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &2031417411
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47194,6 +48234,7 @@ GameObject:
   - component: {fileID: 2040128876}
   - component: {fileID: 2040128875}
   - component: {fileID: 2040128874}
+  - component: {fileID: 2040128878}
   m_Layer: 27
   m_Name: DamageWall (3)
   m_TagString: Untagged
@@ -47321,6 +48362,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2040128871}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &2040128878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2040128871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &2049489045
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47822,6 +48879,7 @@ GameObject:
   - component: {fileID: 2072426270}
   - component: {fileID: 2072426269}
   - component: {fileID: 2072426268}
+  - component: {fileID: 2072426272}
   m_Layer: 27
   m_Name: DamageWall (2)
   m_TagString: Untagged
@@ -47949,6 +49007,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2072426265}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &2072426272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2072426265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &2073068839
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -48444,6 +49518,7 @@ GameObject:
   - component: {fileID: 2097329466}
   - component: {fileID: 2097329465}
   - component: {fileID: 2097329464}
+  - component: {fileID: 2097329468}
   m_Layer: 27
   m_Name: DamageWall (32)
   m_TagString: Untagged
@@ -48571,6 +49646,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2097329461}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &2097329468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2097329461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75f191f3542b2784db7c4470185aa6f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContactKnockback
+  knockbackForceMin: 300
+  knockbackForceMax: 500
+  knockbackInterval: 0.5
+  isActive: 1
 --- !u!1001 &2098745042
 PrefabInstance:
   m_ObjectHideFlags: 0

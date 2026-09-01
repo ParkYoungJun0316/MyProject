@@ -509,7 +509,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _player?.PlayPunchHitReaction();
     }
 
-    // ── 문 즉사 (Die 애니로 통일) ──────────────────────────────────
+    // ── 즉사 확정 (Die 애니로 통일) ──────────────────────────────────
+    // 함정 타일(MemoryPath/PioneerPath 등)·StageManager Fail·SequenceRing 전용.
+    // 문(DoorController)은 즉사 아님 — ApplyKnockback 사용 (닫힘 넉백).
 
     /// <summary>
     /// 서버에서 즉사 확정. HP를 0으로 내리고 Owner에게 KillInstantly() 전달.

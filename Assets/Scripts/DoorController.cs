@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
@@ -10,8 +11,9 @@ using UnityEngine.Events;
 ///  Rigidbody.MovePosition(Kinematic) 사용.
 ///  transform.position 직접 변경 방식 대비 물리 충돌이 올바르게 처리됨.
 ///
-/// [즉사 판정]
-///  문이 닫히는 도중 플레이어와 충돌하면 Player.KillInstantly() 호출.
+/// [닫힘 넉백]
+///  문이 닫히는 도중 플레이어와 충돌하면 NetworkDamageUtil.ApplyKnockback.
+///  방향은 수평만 (Y=0). Punch / ContactKnockback과 동일 파이프라인.
 ///  OnCollisionEnter + OnCollisionStay 양쪽에서 감지하므로 이미 닿아 있는 경우도 처리됨.
 ///
 /// [압력 발판 연동]
@@ -43,6 +45,16 @@ public class DoorController : MonoBehaviour
     [Tooltip("열리고 닫히는 데 걸리는 시간(초)")]
     public float duration = 0f;
 
+    [Header("닫힘 넉백")]
+    [Tooltip("닫히는 중 플레이어와 충돌 시 수평 넉백 힘 최소값")]
+    [SerializeField] float knockbackForceMin = 50f;
+
+    [Tooltip("닫히는 중 플레이어와 충돌 시 수평 넉백 힘 최대값")]
+    [SerializeField] float knockbackForceMax = 50f;
+
+    [Tooltip("닿아있는 동안 이 간격마다 다시 튕김(초). Stay 연타 방지.")]
+    [SerializeField] float knockbackInterval = 0.25f;
+
     [Header("압력 발판 연동")]
     [Tooltip("등록된 발판이 전부 충족돼야 문이 열림. 비어 있으면 Open()/Close() 직접 호출 방식으로만 동작")]
     public PressurePad[] requiredPads;
@@ -73,6 +85,8 @@ public class DoorController : MonoBehaviour
     Quaternion _closedLocalRot;
 
     Rigidbody  _rb;
+
+    readonly Dictionary<int, float> _nextKnockbackTime = new();
 
     // ── 초기화 ────────────────────────────────────────────────
 
@@ -205,26 +219,35 @@ public class DoorController : MonoBehaviour
         _rb.rotation = LocalToWorldRot(_closedLocalRot);
     }
 
-    // ── 충돌 즉사 판정 ────────────────────────────────────────
+    // ── 닫힘 넉백 ─────────────────────────────────────────────
 
-    void OnCollisionEnter(Collision col)
+    void OnCollisionEnter(Collision col) => TryKnockback(col.collider);
+
+    void OnCollisionStay(Collision col)  => TryKnockback(col.collider);
+
+    void TryKnockback(Collider other)
     {
         if (!_isClosing) return;
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
-        Player p = col.collider.GetComponent<Player>();
-        if (p == null) return;
-        NetworkDamageUtil.ApplyInstantKill(p);
-    }
 
-    void OnCollisionStay(Collision col)
-    {
-        if (!_isClosing) return;
-        var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening && !nm.IsServer) return;
-        Player p = col.collider.GetComponent<Player>();
-        if (p == null) return;
-        NetworkDamageUtil.ApplyInstantKill(p);
+        Player p = other.GetComponent<Player>()
+                   ?? other.GetComponentInParent<Player>();
+        if (p == null || p.IsDead) return;
+
+        int id = p.GetInstanceID();
+        if (_nextKnockbackTime.TryGetValue(id, out float next) && Time.time < next)
+            return;
+
+        Vector3 dir = p.transform.position - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f) dir = transform.forward;
+        dir.Normalize();
+
+        float force = Random.Range(knockbackForceMin, knockbackForceMax);
+        NetworkDamageUtil.ApplyKnockback(p, dir, force);
+
+        _nextKnockbackTime[id] = Time.time + Mathf.Max(knockbackInterval, 0.05f);
     }
 
     // ── 내부 애니메이션 ───────────────────────────────────────

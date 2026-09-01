@@ -819,8 +819,8 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 | 용도 | API |
 |------|-----|
 | 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount, knockback)` |
-| 즉사 (문 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
-| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force)` — Breakable 범위 넉백, `PlayerPunch` PvP 넉백 등 (§7.4) |
+| 즉사 (함정 타일·스테이지 Fail 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
+| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force)` — Breakable 범위 넉백, `PlayerPunch` PvP, 문 닫힘, `ContactKnockback` 등 (§7.4) |
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 | 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
@@ -866,7 +866,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 | 2 | Owner RPC 삭제 | `NetworkPlayerSetup`: `ReportHitServerRpc`, `ReportInstantKillServerRpc`, `ReportFallDeathServerRpc` |
 | 3 | 함정 → `ApplyDamage` + 서버 가드 | `ContactDamage`, `SpikeTrap` 등 **본체** 함정. `TrapProjectile`은 §9.0.1 |
 | 3b | 발사체 §9.0.1 | `ArrowTrap` / `TrapProjectile` — velocity Rpc, Client 비행, 피격 ServerRpc, Host 검증·데미지·Despawn |
-| 4 | 문 즉사 | `DoorController.cs` — `ApplyInstantKill` 유지, 서버 충돌만 |
+| 4 | 문 닫힘 넉백 | `DoorController.cs` — `ApplyKnockback` (수평 Y=0), 서버 충돌만. 즉사 아님 |
 | 5 | 낙사 | `Player.cs` — Owner Y 1회 신고 `ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y는 폴백 유지 (2026-07-16: Host 단독 Y 판정은 Client void 낙사를 놓쳐 폐기) |
 | 6 | 깨진 경로 수정 | `Stage5ChaserHitbox.cs` → `ApplyDamage` + 피격 시 `_chaser.NotifyHitFromHitbox()` (서버에서) |
 | 7 | Breakable | `Breakable.cs` — `ApplyDamageFromServer` 직접 호출 → util/Host 규칙 통일 |
@@ -878,7 +878,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 #### 9A.5.2 Phase 1 완료 판정
 
 - [ ] `grep ApplyDamageWithOwnerReport` / `ReportHitServerRpc` / `ReportInstantKillServerRpc` — **프로젝트 0건** (`ReportFallDeathServerRpc`는 낙사 한정 허용 — §9A.3)
-- [ ] ParrelSync **2인**: 화살·가시·ContactDamage·문즉사·낙사·Enemy·Chaser 각 **1회 이상** — HP·리로드 정상
+- [ ] ParrelSync **2인**: 화살·가시·ContactDamage·문 닫힘 넉백·낙사·Enemy·Chaser 각 **1회 이상** — HP·리로드 정상
 - [ ] Host·Client **동일 HP** (`heart` UI = `_hp`). 이중 데미지 없음
 
 ### 9A.6 Phase 2 — 이동 Host화 (**폐기**)
@@ -964,10 +964,10 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 [Host]     검증 → ApplyDamage → NV / ClientRpc 연출 · 발사체 Despawn
 ```
 
-**즉사 (문):**
+**문 닫힘 넉백:**
 
 ```
-[Host Server]   Door OnCollision (IsServer) → ApplyInstantKill → _hp=0 → ForceInstantKillClientRpc
+[Host Server]   Door OnCollision (IsServer, _isClosing) → ApplyKnockback (dir.y=0) → Owner AddForce
 ```
 
 ### 9A.9 NetworkVariable · Transform · Animator (기대 컴포넌트)
