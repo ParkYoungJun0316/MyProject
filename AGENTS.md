@@ -17,6 +17,7 @@
 - **Projectiles:** **B안** — Host spawn + initial velocity → Client local flight → Client hit report ServerRpc → Host damage
 - **Session:** No reconnect / late-join / host migration. Anyone leaves in-game → **room ends** (all to title)
 - **Test:** **ParrelSync** and/or **Build + Editor/Build** on one PC — **no LAN / discovery** testing
+- **Co-op content:** 1–4 variable, design floor = **2p**, audit stages (not reconceive / not FFA) — `Assets/Docs/CoopStageAudit.md` (공유) · `CoopStageAudit.M.md` · `CoopStageAudit.T.md`
 
 ## Test environment
 
@@ -52,9 +53,8 @@
 | 출시 일정·범위·QA (9/1 정식만) | `Assets/Docs/ReleaseRoadmap.md` |
 | 텔레메트리 MVP 스펙 | `Assets/Docs/TelemetryDesign.md` |
 | Cheer / voice / Vosk / tutorial | `Assets/Docs/CheerAndTutorialDesign.md` |
+| 협동 체감·인원·2인 테스트 | `Assets/Docs/CoopStageAudit.md` |
+| 입 스테이지 감사 (M) | `Assets/Docs/CoopStageAudit.M.md` |
+| 식도 스테이지 감사 (T) | `Assets/Docs/CoopStageAudit.T.md` |
 | Domain boundaries | `Assets/Docs/GameArchitectureBoundaries.md` |
 | Cursor AI rebuild process | `Assets/Docs/CursorVibeSetupBrief.md` |
-
-## Next
-
-Write **6 project Rules** (Unity, Multiplayer, Architecture, Bug Hunting, Plan First, Diff Only). Git = User Rules only if already present.

@@ -15,7 +15,7 @@ using UnityEngine;
 /// - SubmitSelfCheerServerRpc → 즉시 개인 버프/쿨 (투표 없음)
 /// - SubmitTeamCheerServerRpc → 팀 공용 키워드 투표·타임아웃·전원 Heal
 /// - TeamCheerWord NetworkVariable (Host write, Everyone read)
-/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도)
+/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도). 팀 쿨은 ServerTime 종료 시각 NV + GameSession 복원
 ///
 /// [CheerName ↔ colorIndex]
 /// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=dan(Yellow)
@@ -35,7 +35,7 @@ public class CheerService : NetworkBehaviour
 
     [Header("팀 버프")]
     [Tooltip("팀 버프 발동 후 팀 공용 쿨타임(초).")]
-    [SerializeField] float teamCheerCooldownSeconds = 30f;
+    [SerializeField] float teamCheerCooldownSeconds = 120f;
 
     [Tooltip("팀 첫 인식 후 전원 미달 시 표 초기화(초).")]
     [SerializeField] float teamCheerTimeoutSeconds = 10f;
@@ -52,6 +52,12 @@ public class CheerService : NetworkBehaviour
 
     readonly NetworkVariable<FixedString32Bytes> _teamCheerWord = new(
         new FixedString32Bytes(GameSession.DefaultTeamCheerWord),
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    /// <summary>팀 버프 쿨 종료 시각 (NetworkManager.ServerTime.Time). 0 = 쿨 없음. Host write.</summary>
+    readonly NetworkVariable<double> _teamCooldownEndNv = new(
+        0d,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
@@ -78,12 +84,18 @@ public class CheerService : NetworkBehaviour
     /// <summary>팀 버프 발동 (전원 Heal 직후). TeamBuffBannerUI 구독.</summary>
     public event System.Action OnTeamBuffActivated;
 
+    /// <summary>팀 쿨 종료 시각 NV가 바뀜. TeamBuffCooldownUI 구독. 값은 TeamCooldownEndServerTime.</summary>
+    public event System.Action OnTeamCooldownClockChanged;
+
     /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열). PlayerCheerHeartsUI / TeamStatusUI 구독.</summary>
     public event System.Action<int, int, int[]> OnTeamVoteChanged;
 
     // ── 공개 프로퍼티 ─────────────────────────────────────────────
 
     public float CooldownDuration => cheerCooldownSeconds;
+    public float TeamCooldownDuration => teamCheerCooldownSeconds;
+    public double TeamCooldownEndServerTime
+        => IsSpawned ? _teamCooldownEndNv.Value : _teamCooldownEnd;
     public PlayerBuffSystem.BuffType StageBuffType => stageBuffType;
 
     public string TeamCheerWord
@@ -106,6 +118,10 @@ public class CheerService : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         _teamCheerWord.OnValueChanged += OnTeamCheerWordChanged;
+        _teamCooldownEndNv.OnValueChanged += OnTeamCooldownEndNvChanged;
+
+        if (IsServer)
+            RestoreTeamCooldownFromSession();
 
         if (IsServer && GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
         {
@@ -115,11 +131,13 @@ public class CheerService : NetworkBehaviour
         }
 
         PlayerCheerNameSync.RebuildOwnerLocalGrammar();
+        OnTeamCooldownClockChanged?.Invoke();
     }
 
     public override void OnNetworkDespawn()
     {
         _teamCheerWord.OnValueChanged -= OnTeamCheerWordChanged;
+        _teamCooldownEndNv.OnValueChanged -= OnTeamCooldownEndNvChanged;
         if (Instance == this) Instance = null;
     }
 
@@ -260,7 +278,7 @@ public class CheerService : NetworkBehaviour
             NetworkDamageUtil.ApplyHeal(player, teamHealAmount);
         }
 
-        _teamCooldownEnd = now + teamCheerCooldownSeconds;
+        CommitTeamCooldownEnd(now + teamCheerCooldownSeconds);
         ResetTeamVotes();
         BroadcastTeamBuffActivatedClientRpc();
     }
@@ -358,6 +376,33 @@ public class CheerService : NetworkBehaviour
     [ClientRpc]
     void BroadcastTeamBuffActivatedClientRpc()
         => OnTeamBuffActivated?.Invoke();
+
+    void RestoreTeamCooldownFromSession()
+    {
+        var gs = GameSession.Instance;
+        if (gs == null) return;
+
+        double end = gs.GetSessionTeamCooldownEnd();
+        double now = NetworkManager.ServerTime.Time;
+        if (end > now)
+            CommitTeamCooldownEnd(end);
+        else if (end > 0d)
+            gs.SetSessionTeamCooldownEnd(0d);
+    }
+
+    void CommitTeamCooldownEnd(double end)
+    {
+        _teamCooldownEnd = end;
+        if (!IsServer) return;
+        _teamCooldownEndNv.Value = end;
+        GameSession.Instance?.SetSessionTeamCooldownEnd(end);
+    }
+
+    void OnTeamCooldownEndNvChanged(double previous, double current)
+    {
+        _teamCooldownEnd = current;
+        OnTeamCooldownClockChanged?.Invoke();
+    }
 
     [ClientRpc]
     void BroadcastTeamVoteChangedClientRpc(int current, int required, int[] voterColorIndices)

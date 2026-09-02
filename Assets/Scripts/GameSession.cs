@@ -61,6 +61,11 @@ public class GameSession : MonoBehaviour
     // 이번 판 확정 TeamCheerWord. null = 미확정(게이트 전) → Get은 DefaultTeamCheerWord 폴백.
     private string _sessionTeamCheerWord;
 
+    // 팀 버프 쿨 종료 시각 (NetworkManager.ServerTime.Time). 0 = 없음.
+    // CheerService는 씬 NetworkObject라 LoadScene마다 사라지므로, 스테이지 전환·사망 리로드
+    // 뒤에도 같은 서버 시계로 막기 위해 여기(DDOL)에만 남긴다. 개인 버프 쿨은 저장하지 않음.
+    private double _sessionTeamCooldownEnd;
+
     // 이번 판 확정 Steam 표시 이름(DisplayName). 인덱스 = colorIndex.
     // 로비 LobbyPlayerState.DisplayName을 게임 시작 시 1회 그대로 옮겨온 것 — 별도 네트워크 갱신 없음.
     private string[] _sessionDisplayNames;
@@ -224,6 +229,15 @@ public class GameSession : MonoBehaviour
     public string GetSessionTeamCheerWord()
         => string.IsNullOrEmpty(_sessionTeamCheerWord) ? DefaultTeamCheerWord : _sessionTeamCheerWord;
 
+    // ── 세션 팀 버프 쿨 (ServerTime 종료 시각) ──────────────────────
+
+    /// <summary>Host가 팀 버프 쿨 종료 시각을 저장할 때 호출. 0이면 쿨 없음.</summary>
+    public void SetSessionTeamCooldownEnd(double serverTimeEnd)
+        => _sessionTeamCooldownEnd = serverTimeEnd > 0d ? serverTimeEnd : 0d;
+
+    /// <summary>팀 버프 쿨 종료 ServerTime. 0이면 쿨 없음(만료 포함).</summary>
+    public double GetSessionTeamCooldownEnd() => _sessionTeamCooldownEnd;
+
     // ── 세션 Steam 표시 이름 ───────────────────────────────────────
 
     /// <summary>
@@ -294,6 +308,7 @@ public class GameSession : MonoBehaviour
         _seenIntroKeys.Clear();
         _sessionCheerNames = null;
         _sessionTeamCheerWord = null;
+        _sessionTeamCooldownEnd = 0d;
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
 

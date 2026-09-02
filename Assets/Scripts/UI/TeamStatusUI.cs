@@ -30,10 +30,15 @@ public class TeamStatusUI : MonoBehaviour
 
     [Header("슬롯 크기")]
     [SerializeField] float slotWidth    = 400f;
+    [Tooltip("슬롯 최소 높이. 이름 폰트+하트+간격보다 작으면 자동으로 늘어남(VLG가 슬롯 간격을 유지하므로 플레이어끼리 겹치지 않음).")]
     [SerializeField] float slotHeight   = 50f;
     [SerializeField] float slotSpacing  = 6f;
     [SerializeField] float heartSize    = 20f;
     [SerializeField] float heartSpacing = 2f;
+    [Tooltip("Steam 닉네임 글자 크기. 길면 한 줄에서 …으로 잘림(오토사이즈 없음).")]
+    [SerializeField] float nameFontSize = 22f;
+    [Tooltip("이름과 HP 하트 사이 세로 간격(px).")]
+    [SerializeField] float nameHeartGap = 4f;
 
     [Header("스프라이트")]
     [SerializeField] Sprite fullHeartSprite;
@@ -235,33 +240,38 @@ public class TeamStatusUI : MonoBehaviour
         slot.player     = player;
         slot.colorIndex = ResolveColorIndex(player);
 
+        const float topPad    = 2f;
+        const float bottomPad = 3f;
+        float nameRowH = Mathf.Max(8f, nameFontSize + 8f);
+        float gap      = Mathf.Max(0f, nameHeartGap);
+        float usedH    = topPad + nameRowH + gap + heartSize + bottomPad;
+        float h        = Mathf.Max(slotHeight, usedH);
+
         // ── 슬롯 루트 ─────────────────────────────────────────────
         var root   = new GameObject(player.name);
         root.transform.SetParent(transform, false);
         var rootRt = root.AddComponent<RectTransform>();
-        rootRt.sizeDelta  = new Vector2(slotWidth, slotHeight);
+        rootRt.sizeDelta  = new Vector2(slotWidth, h);
         slot.slotBg       = root.AddComponent<Image>();
         slot.slotBg.color = slotBgColor;
 
-        // ── 이름 (위쪽 절반) ──────────────────────────────────────
+        // ── 이름 (위). 한 줄 고정, 길면 … ────────────────────────
         var nameObj = new GameObject("Name");
         nameObj.transform.SetParent(root.transform, false);
-        slot.nameText                = nameObj.AddComponent<TextMeshProUGUI>();
-        slot.nameText.text           = GetPlayerDisplayName(slot.colorIndex);
-        slot.nameText.fontSize       = 13f;
-        slot.nameText.fontStyle      = FontStyles.Bold;
-        slot.nameText.color          = Color.white;
-        // 긴 Steam 닉네임이 줄바꿈되어 좁은 슬롯 높이에서 잘려 보이는 것을 방지:
-        // 줄바꿈 금지 + 폭에 안 맞으면 폰트를 자동 축소.
+        slot.nameText                  = nameObj.AddComponent<TextMeshProUGUI>();
+        slot.nameText.text             = GetPlayerDisplayName(slot.colorIndex);
+        slot.nameText.fontSize         = nameFontSize;
+        slot.nameText.fontStyle        = FontStyles.Bold;
+        slot.nameText.color            = Color.white;
+        slot.nameText.alignment        = TextAlignmentOptions.MidlineLeft;
         slot.nameText.textWrappingMode = TextWrappingModes.NoWrap;
-        slot.nameText.enableAutoSizing = true;
-        slot.nameText.fontSizeMin      = 8f;
-        slot.nameText.fontSizeMax      = 13f;
+        slot.nameText.overflowMode     = TextOverflowModes.Ellipsis;
+        slot.nameText.enableAutoSizing = false;
         var nameRt = nameObj.GetComponent<RectTransform>();
-        nameRt.anchorMin = new Vector2(0f, 0.55f);
+        nameRt.anchorMin = new Vector2(0f, 1f);
         nameRt.anchorMax = new Vector2(1f, 1f);
-        nameRt.offsetMin = new Vector2(16f, 0f);
-        nameRt.offsetMax = new Vector2(-4f, -2f);
+        nameRt.offsetMin = new Vector2(16f, -topPad - nameRowH);
+        nameRt.offsetMax = new Vector2(-4f, -topPad);
 
         // ── 아래쪽 행 (HorizontalLayoutGroup) ────────────────────
         var bottomRow = new GameObject("BottomRow");
@@ -275,9 +285,9 @@ public class TeamStatusUI : MonoBehaviour
         rowHlg.childAlignment         = TextAnchor.MiddleLeft;
         var rowRt = bottomRow.GetComponent<RectTransform>();
         rowRt.anchorMin = new Vector2(0f, 0f);
-        rowRt.anchorMax = new Vector2(1f, 0.55f);
-        rowRt.offsetMin = new Vector2(6f, 3f);
-        rowRt.offsetMax = new Vector2(-4f, 0f);
+        rowRt.anchorMax = new Vector2(1f, 0f);
+        rowRt.offsetMin = new Vector2(6f, bottomPad);
+        rowRt.offsetMax = new Vector2(-4f, bottomPad + heartSize);
 
         // ── 하트 ─────────────────────────────────────────────────
         slot.heartImages = new Image[player.maxHeart];

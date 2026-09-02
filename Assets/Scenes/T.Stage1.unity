@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.28930807, g: 0.1828645, b: 0.28930807, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.02
@@ -2853,7 +2853,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 30
+  teamCheerCooldownSeconds: 120
   teamCheerTimeoutSeconds: 10
   teamHealAmount: 2
   chatRateLimitSeconds: 0.5
@@ -17493,9 +17493,9 @@ GameObject:
   - component: {fileID: 6926818644287703597}
   - component: {fileID: 6793985088780494953}
   - component: {fileID: 2321958553634461431}
-  - component: {fileID: 8683762110389860999}
   - component: {fileID: 8028393200214568095}
   - component: {fileID: 8683762110389861000}
+  - component: {fileID: 8683762110389861001}
   m_Layer: 0
   m_Name: PressurePad.5(3)
   m_TagString: Untagged
@@ -17535,9 +17535,9 @@ GameObject:
   - component: {fileID: 6926818643981248632}
   - component: {fileID: 6793985088013175356}
   - component: {fileID: 2321958553873790114}
-  - component: {fileID: 8683762109480491218}
   - component: {fileID: 8028393200914730698}
   - component: {fileID: 8683762109480491219}
+  - component: {fileID: 8683762109480491220}
   m_Layer: 0
   m_Name: PressurePad.7(3)
   m_TagString: Untagged
@@ -17556,9 +17556,9 @@ GameObject:
   - component: {fileID: 6926818643303692471}
   - component: {fileID: 6793985089819040499}
   - component: {fileID: 2321958554522018925}
-  - component: {fileID: 8683762108819671069}
   - component: {fileID: 8028393199175884293}
   - component: {fileID: 8683762108819671070}
+  - component: {fileID: 8683762108819671071}
   m_Layer: 0
   m_Name: PressurePad.9(3)
   m_TagString: Untagged
@@ -18572,8 +18572,23 @@ MonoBehaviour:
   OnCountChanged:
     m_PersistentCalls:
       m_Calls: []
---- !u!65 &8683762108819671069
-BoxCollider:
+--- !u!114 &8683762108819671070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748914820695371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 312082288}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
+--- !u!135 &8683762108819671071
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -18591,23 +18606,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8683762108819671070
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 623748914820695371}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
-  door: {fileID: 312082288}
-  offset: {x: 0, y: 2, z: 0}
-  fontSize: 10
+  m_Radius: 1
+  m_Center: {x: 0, y: 0.055740055, z: 0}
 --- !u!65 &8683762108917463759
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -18644,8 +18644,23 @@ MonoBehaviour:
   door: {fileID: 1832923781}
   offset: {x: 0, y: 2, z: 0}
   fontSize: 10
---- !u!65 &8683762109480491218
-BoxCollider:
+--- !u!114 &8683762109480491219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748914457679236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 650727941}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
+--- !u!135 &8683762109480491220
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -18663,23 +18678,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8683762109480491219
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 623748914457679236}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
-  door: {fileID: 650727941}
-  offset: {x: 0, y: 2, z: 0}
-  fontSize: 10
+  m_Radius: 1
+  m_Center: {x: 0, y: 0.055740055, z: 0}
 --- !u!65 &8683762109733880197
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -18716,8 +18716,23 @@ MonoBehaviour:
   door: {fileID: 212470614}
   offset: {x: 0, y: 2, z: 0}
   fontSize: 10
---- !u!65 &8683762110389860999
-BoxCollider:
+--- !u!114 &8683762110389861000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623748913682544593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
+  door: {fileID: 1638088045}
+  offset: {x: 0, y: 2, z: 0}
+  fontSize: 10
+--- !u!135 &8683762110389861001
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -18735,23 +18750,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8683762110389861000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 623748913682544593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1700e29e0ba596b409c82be49ed7dbf1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PressurePadCountUI
-  door: {fileID: 1638088045}
-  offset: {x: 0, y: 2, z: 0}
-  fontSize: 10
+  m_Radius: 1
+  m_Center: {x: 0, y: 0.055740055, z: 0}
 --- !u!1 &9064797689172866219
 GameObject:
   m_ObjectHideFlags: 0

@@ -2636,7 +2636,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 30
+  teamCheerCooldownSeconds: 120
   teamCheerTimeoutSeconds: 10
   teamHealAmount: 2
   chatRateLimitSeconds: 0.5
@@ -4224,12 +4224,12 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  dropPrefab: {fileID: 8045563586200383017, guid: 10e795b3527332a4bb63df3cf326d037, type: 3}
+  dropPrefab: {fileID: 7264827689938741534, guid: 95563711c56770345905334f033ba1bc, type: 3}
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 3
-  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
+  warnMarkerScale: {x: 2.7, y: 1, z: 2.7}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0
@@ -7339,7 +7339,7 @@ MonoBehaviour:
     objectsToDisable:
     - {fileID: 1046863814}
     objectsToEnable:
-    - {fileID: 1594071810}
+    - {fileID: 399167627}
     manualAdvanceOnly: 0
     onPhaseEnter:
       m_PersistentCalls:
@@ -7367,54 +7367,6 @@ MonoBehaviour:
     onPhaseEnter:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1209715959}
-          m_TargetAssemblyTypeName: StageManager, Assembly-CSharp
-          m_MethodName: StartStage
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Delay3
-    surviveDuration: 3
-    objectsToDisable:
-    - {fileID: 1594071810}
-    objectsToEnable:
-    - {fileID: 399167627}
-    manualAdvanceOnly: 0
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 1852519957}
-          m_TargetAssemblyTypeName: ObjectiveUI, Assembly-CSharp
-          m_MethodName: Refresh
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage4.4
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable: []
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
         - m_Target: {fileID: 504438108}
           m_TargetAssemblyTypeName: StageManager, Assembly-CSharp
           m_MethodName: StartStage
@@ -7430,7 +7382,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Delay4
+  - phaseName: Delay3
     surviveDuration: 3
     objectsToDisable:
     - {fileID: 399167627}
@@ -7455,7 +7407,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage4.5
+  - phaseName: Stage4.4
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable: []
@@ -8240,12 +8192,12 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  dropPrefab: {fileID: 3717695987514568031, guid: 1a5defe7ac92a664bb300ef9c4c8c0b9, type: 3}
+  dropPrefab: {fileID: 7264827689938741534, guid: 95563711c56770345905334f033ba1bc, type: 3}
   targetPoints: []
   randomTarget: 1
   warnPrefab: {fileID: 1505193290576929784, guid: 88f3d968e969a8d49be418710c4ae4f0, type: 3}
   warnDuration: 3
-  warnMarkerScale: {x: 2.2, y: 1, z: 2.2}
+  warnMarkerScale: {x: 2.7, y: 1, z: 2.7}
   spawnHeight: 25
   damage: 0
   scheduleMode: 0

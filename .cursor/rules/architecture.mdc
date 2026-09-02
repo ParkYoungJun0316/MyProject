@@ -10,7 +10,7 @@ alwaysApply: true
 - **Do not invent** missing classes, methods, or package APIs. Search the repo first; if unclear, **ask**.
 - Prefer extending existing systems over parallel new frameworks.
 - Damage pipeline: **NetworkDamageUtil** is the single entry point — do not bypass
-- Docs SSOT: `NetworkDesign.md`, `CheerAndTutorialDesign.md`, `GameArchitectureBoundaries.md`
+- Docs SSOT: `NetworkDesign.md`, `CheerAndTutorialDesign.md`, `GameArchitectureBoundaries.md`, `CoopStageAudit.md` (공유) + `CoopStageAudit.M.md` / `CoopStageAudit.T.md`
 - Do **not** auto-promote Docs into new Rules/Skills without user approval
 
 ## Boundaries (respect)
@@ -43,3 +43,4 @@ alwaysApply: true
 - Don't create duplicate damage pipelines alongside `NetworkDamageUtil`
 - Don't run Vosk `AcceptWaveform` on the main thread
 - Don't add offline fallback branches — NGO is always running (solo = Host 1-player)
+- Don't reconceive genre/FFA, lock player count, or treat N× solo clones as co-op — stage/minigame content follows `CoopStageAudit.md`

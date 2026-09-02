@@ -2,7 +2,7 @@
 
 스테이지에 배치되는 **미니게임(챌린지)** 설계 SSOT. OX퀴즈 삭제 이후 신설 — 미니게임이 1개 더 추가될 수 있어, 특정 미니게임 하나에 종속되지 않는 별도 문서로 분리한다.
 
-관련: [`NetworkDesign.md`](NetworkDesign.md) §11B (챌린지 축·`ChallengeOwnerType`·시드 동기화 SSOT), [`GameArchitectureBoundaries.md`](GameArchitectureBoundaries.md).
+관련: [`NetworkDesign.md`](NetworkDesign.md) §11B (챌린지 축·`ChallengeOwnerType`·시드 동기화 SSOT), [`GameArchitectureBoundaries.md`](GameArchitectureBoundaries.md), [`CoopStageAudit.md`](CoopStageAudit.md) (2인 테스트·버킷) · [`CoopStageAudit.M.md`](CoopStageAudit.M.md) / [`CoopStageAudit.T.md`](CoopStageAudit.T.md) (챌린지 **콘텐츠** 변경의 기준).
 
 **범례**
 

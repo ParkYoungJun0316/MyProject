@@ -682,21 +682,16 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         return list.Count > 0 ? list.ToArray() : new[] { GameSession.DefaultTeamCheerWord };
     }
 
+    /// <summary>
+    /// 내 CheerName. UI와 동일 SSOT(<see cref="CheerService.GetCheerName"/>) —
+    /// 게이트 후 세션값, 게이트 전 PlayerCheerNameSync, 없으면 색 기본값.
+    /// EffectiveCheerName을 직접 읽으면 스테이지 재스폰 후 빈 NV가 기본색 이름으로
+    /// 세션값을 가려 grammar만 틀어지는 전례가 있다.
+    /// </summary>
     string ResolveOwnerCheerName()
     {
-        var sync = GetComponent<PlayerCheerNameSync>();
-        if (sync != null)
-        {
-            string n = sync.EffectiveCheerName;
-            if (!string.IsNullOrEmpty(n)) return n;
-        }
-
         int ci = ResolveOwnerColorIndex();
-        if (ci < 0) return "";
-        if (GameSession.Instance != null)
-            return GameSession.Instance.GetSessionCheerName(ci);
-        var defaults = PlayerColorUtil.DefaultCheerNames;
-        return ci < defaults.Length ? defaults[ci] : "";
+        return ci < 0 ? "" : CheerService.GetCheerName(ci);
     }
 
     // ── 버퍼 용량 보장 ────────────────────────────────────────────
