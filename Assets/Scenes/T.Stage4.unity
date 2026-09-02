@@ -808,9 +808,9 @@ MonoBehaviour:
     - 2.5
   useFixedRandomSeed: 0
   randomSeed: 0
-  minWallDistance: 16
-  maxWallDistance: 32
-  startActive: 1
+  minWallDistance: 20
+  maxWallDistance: 35
+  startActive: 0
   activateOnPlayerTrigger: 0
   activateOnce: 0
   OnActivated:
@@ -1818,7 +1818,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 15
+  teamCheerCooldownSeconds: 30
   teamCheerTimeoutSeconds: 10
   teamHealAmount: 2
   chatRateLimitSeconds: 0.5
@@ -2195,8 +2195,8 @@ Transform:
   m_GameObject: {fileID: 363104559}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
-  m_LocalPosition: {x: -13, y: 7, z: 50}
-  m_LocalScale: {x: 40, y: 1, z: 25}
+  m_LocalPosition: {x: -13, y: 7, z: 51}
+  m_LocalScale: {x: 38, y: 1, z: 25}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 362632672}
@@ -2463,8 +2463,8 @@ Transform:
   m_GameObject: {fileID: 406004633}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 24, y: 10, z: 30}
-  m_LocalScale: {x: 60, y: 1, z: 21}
+  m_LocalPosition: {x: 23, y: 10, z: 31}
+  m_LocalScale: {x: 60, y: 2, z: 21}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 362632672}
@@ -4979,7 +4979,6 @@ Transform:
   m_Children:
   - {fileID: 1282599969}
   - {fileID: 2022581125}
-  - {fileID: 1698619294}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &763371449
@@ -5435,8 +5434,8 @@ Transform:
   m_GameObject: {fileID: 793982144}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 20, z: 50}
-  m_LocalScale: {x: 40, y: 1, z: 25}
+  m_LocalPosition: {x: 0, y: 20, z: 51}
+  m_LocalScale: {x: 38, y: 1, z: 25}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 362632672}
@@ -6359,8 +6358,8 @@ Transform:
   m_GameObject: {fileID: 1013275594}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
-  m_LocalPosition: {x: 13, y: 7, z: 50}
-  m_LocalScale: {x: 40, y: 1, z: 25}
+  m_LocalPosition: {x: 13, y: 7, z: 51}
+  m_LocalScale: {x: 38, y: 1, z: 25}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 362632672}
@@ -6672,18 +6671,6 @@ MonoBehaviour:
       - m_Target: {fileID: 4184123936275160724}
         m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
         m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ContactDamage, Assembly-CSharp
-        m_MethodName: set_enabled
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -8735,7 +8722,7 @@ Transform:
   m_GameObject: {fileID: 1417640701}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.0000038, z: 308}
+  m_LocalPosition: {x: 0, y: 2.0000038, z: 314}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9850,112 +9837,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1697510830}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &1698619293
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 759889027}
-    m_Modifications:
-    - target: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_Name
-      value: GroundFog (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -90
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: lengthInSec
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: EmissionModule.rateOverTime.scalar
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: ColorModule.gradient.maxGradient.ctime1
-      value: 65278
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: ColorModule.gradient.maxGradient.key1.b
-      value: 0.22369719
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: ColorModule.gradient.maxGradient.key1.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: ColorModule.gradient.maxGradient.key1.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 198748979371217952, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-      propertyPath: ColorModule.gradient.maxGradient.m_ColorSpace
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
---- !u!4 &1698619294 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
-  m_PrefabInstance: {fileID: 1698619293}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1785443572
 GameObject:
   m_ObjectHideFlags: 0
@@ -11415,8 +11296,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 10
+  knockbackForceMax: 20
   damageRadius: 3
   playerLayer:
     serializedVersion: 2
@@ -11692,8 +11573,8 @@ Transform:
   m_GameObject: {fileID: 2076637403}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: -24, y: 10, z: 30}
-  m_LocalScale: {x: 60, y: 1, z: 21}
+  m_LocalPosition: {x: -23, y: 10, z: 30}
+  m_LocalScale: {x: 60, y: 2, z: 21}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 362632672}
@@ -14853,7 +14734,7 @@ Transform:
   m_GameObject: {fileID: 5364062812070313625}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 10, z: 78.70004}
+  m_LocalPosition: {x: 0, y: 10, z: 79}
   m_LocalScale: {x: 30, y: 5, z: 30}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15285,8 +15166,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 10
+  knockbackForceMax: 20
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15600,8 +15481,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 10
+  knockbackForceMax: 20
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -15852,8 +15733,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 1
+  knockbackForceMax: 2
   damageRadius: 3
   playerLayer:
     serializedVersion: 2
@@ -16167,8 +16048,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 10
+  knockbackForceMax: 20
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16356,8 +16237,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 1
+  knockbackForceMax: 2
   damageRadius: 3
   playerLayer:
     serializedVersion: 2
@@ -16706,8 +16587,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 5
+  knockbackForceMax: 10
   damageRadius: 7
   playerLayer:
     serializedVersion: 2
@@ -16840,8 +16721,8 @@ MonoBehaviour:
   debrisLifetime: 0
   damagePlayerOnBreak: 1
   breakDamage: 1
-  knockbackForceMin: 100
-  knockbackForceMax: 200
+  knockbackForceMin: 10
+  knockbackForceMax: 20
   damageRadius: 7
   playerLayer:
     serializedVersion: 2

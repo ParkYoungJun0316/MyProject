@@ -551,15 +551,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c5be4528b41f894788da63cc3efc197, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TeamBuffBannerUI
-  bannerMessage: Team Buff!
-  bgColor: {r: 0.12, g: 0.55, b: 0.38, a: 0.92}
-  textColor: {r: 1, g: 1, b: 1, a: 1}
+  stamp: {fileID: 21300000, guid: 97f3cc7b3d9fbb249a9f8bbbc906b8eb, type: 3}
+  stampSize: {x: 760, y: 420}
+  anchorY: 0.72
   fadeInDuration: 0.15
   holdDuration: 2.5
   fadeOutDuration: 0.35
-  bannerSize: {x: 560, y: 88}
-  anchorY: 0.72
-  fontSize: 42
+  punchScale: 1.12
 --- !u!1 &314033063530219953
 GameObject:
   m_ObjectHideFlags: 0
@@ -2899,7 +2897,7 @@ MonoBehaviour:
   markerColor: {r: 1, g: 1, b: 1, a: 1}
   markerSize: 50
   markerYOffset: 15
-  clearMessage: Stage Clear
+  clearMessage: Clear
   clearBgColor: {r: 1, g: 0.6901961, b: 0.6901961, a: 0.9}
   clearTextColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &2883335329408942453
@@ -6387,15 +6385,6 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  clearText:
-    m_TableReference:
-      m_TableCollectionName: SideSplit
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: Result.Clear
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   colorNameBlue:
     m_TableReference:
       m_TableCollectionName: SideSplit
@@ -6433,11 +6422,10 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   resultDisplayDuration: 1.5
-  clearDisplayDuration: 2
   promptColor: {r: 1, g: 1, b: 1, a: 1}
   successColor: {r: 0.2, g: 0.9, b: 0.3, a: 1}
   failColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
-  clearColor: {r: 1, g: 1, b: 1, a: 1}
+  countHighlightColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   references:
     version: 2
     RefIds: []
@@ -9785,8 +9773,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 50
-  m_fontSizeBase: 50
+  m_fontSize: 100
+  m_fontSizeBase: 100
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

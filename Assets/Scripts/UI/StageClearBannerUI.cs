@@ -24,7 +24,7 @@ using TMPro;
 public class StageClearBannerUI : MonoBehaviour
 {
     [Header("문구")]
-    [SerializeField] string clearMessage = "Stage Clear !!";
+    [SerializeField] string clearMessage = "Clear";
 
     [Header("색상")]
     [SerializeField] Color bgColor   = new Color(1f, 0.4f, 0.7f, 0.9f);

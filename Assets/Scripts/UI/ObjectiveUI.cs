@@ -7,9 +7,9 @@ using TMPro;
 /// Objective_Panel에 붙이는 스크립트.
 /// StageManager의 objectives[] 를 읽어 목표 슬롯을 자동 생성.
 ///
-/// [Stage Clear 표시 흐름]
+/// [Clear 표시 흐름]
 /// - 중간 스테이지 클리어(OnStageClear) → 슬롯 갱신 없음 (문구 X)
-/// - 씬 전체 클리어(onAllPhasesComplete) → ShowSceneClear() 연결 → 문구 표시
+/// - 씬 전체 클리어(onAllPhasesComplete) → ShowSceneClear() 연결 → "Clear"
 /// - 다음 스테이지 전환(onPhaseEnter)    → Refresh() 연결 → 슬롯 재생성
 ///
 /// [표시 모드 SSOT — 타입 분기 대신 모드로 통일. 새 Objective 추가 시 아래 4개 중 하나로 분류할 것]
@@ -59,9 +59,9 @@ public class ObjectiveUI : MonoBehaviour
     [Tooltip("마커 Y 오프셋(px). 양수면 위로.")]
     [SerializeField] float markerYOffset = 0f;
 
-    [Header("Stage Clear")]
-    [Tooltip("스테이지 클리어 시 표시할 문구")]
-    [SerializeField] string clearMessage   = "Stage Clear !!";
+    [Header("Clear")]
+    [Tooltip("씬 전체 클리어 시 슬롯에 표시할 문구")]
+    [SerializeField] string clearMessage   = "Clear";
     [SerializeField] Color  clearBgColor   = new Color(1f, 0.4f, 0.7f, 0.9f);
     [SerializeField] Color  clearTextColor = Color.white;
 
@@ -373,7 +373,7 @@ public class ObjectiveUI : MonoBehaviour
     // ── 씬 전체 클리어 ───────────────────────────────────────────
 
     /// <summary>
-    /// 씬 전체 클리어 시 Stage Clear 문구 표시.
+    /// 씬 전체 클리어 시 Clear 문구 표시.
     /// PhaseManager.onAllPhasesComplete 에 연결.
     /// </summary>
     public void ShowSceneClear()

@@ -295,7 +295,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &116291108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1848,7 +1848,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 15
+  teamCheerCooldownSeconds: 30
   teamCheerTimeoutSeconds: 10
   teamHealAmount: 2
   chatRateLimitSeconds: 0.5
@@ -2162,6 +2162,18 @@ PrefabInstance:
     - target: {fileID: 1641531233319068710, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2099421968304097032, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 2099421968304097032, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 2099421968304097032, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.55
       objectReference: {fileID: 0}
     - target: {fileID: 2679583920807342898, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
@@ -2930,7 +2942,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1441701787
 MonoBehaviour:
   m_ObjectHideFlags: 0

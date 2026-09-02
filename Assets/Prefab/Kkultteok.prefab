@@ -5494,7 +5494,7 @@ MonoBehaviour:
   heart: 7
   maxHeart: 7
   isBlack: 0
-  bwCooldown: 1
+  bwCooldown: 0
   blackColor: {r: 0, g: 0, b: 0, a: 1}
   whiteColor: {r: 1, g: 1, b: 1, a: 1}
   instantKillThreshold: 10
@@ -5508,6 +5508,7 @@ MonoBehaviour:
   moveSpeedMultiplier: 1
   isOwnerControlled: 1
   moveInput: {x: 0, y: 0}
+  knockbackSuppressDuration: 0.25
 --- !u!114 &436884416855067427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5561,7 +5562,7 @@ MonoBehaviour:
     duration: 10
     value: 15
   - type: 1
-    duration: 5
+    duration: 10
     value: 1
 --- !u!114 &5731665603722411831
 MonoBehaviour:
@@ -5584,6 +5585,8 @@ MonoBehaviour:
   - {fileID: 6705163789354107372}
   - {fileID: 153381192624555510}
   - {fileID: 6706151389912762743}
+  - {fileID: 4579128520550583927}
+  - {fileID: 3009830412203221980}
   damageFlashTime: 0.15
   damageColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!82 &-5475488637962777578
@@ -5847,8 +5850,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerBuffVisual
   shieldRoot: {fileID: 5150353490465317757}
   speedUpRoot: {fileID: 8405729445360728529}
-  shieldAlpha: 0.35
-  shieldAlphaBlack: 0.5
 --- !u!114 &3612153687716905943
 MonoBehaviour:
   m_ObjectHideFlags: 0

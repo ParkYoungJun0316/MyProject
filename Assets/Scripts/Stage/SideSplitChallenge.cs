@@ -378,7 +378,7 @@ public class SideSplitChallenge : MonoBehaviour
     }
 
     /// <summary>마지막 라운드 클리어 확정을 resolveDelay만큼 늦춘다 — NextRoundAfterDelay와 동일한 이유
-    /// (판정 직후 결과 연출이 재생 중일 때 Clear! 화면이 곧바로 덮어버리는 것을 방지, OXQuizManager와 동일 원칙).</summary>
+    /// (판정 직후 결과 연출이 재생 중일 때 OnAllCleared가 곧바로 덮어버리는 것을 방지).</summary>
     IEnumerator ClearAfterDelay()
     {
         if (resolveDelay > 0f)

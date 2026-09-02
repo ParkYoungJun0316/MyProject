@@ -34,8 +34,8 @@ public class CheerService : NetworkBehaviour
     [SerializeField] float cheerCooldownSeconds = 15f;
 
     [Header("팀 버프")]
-    [Tooltip("팀 버프 발동 후 팀 공용 쿨타임(초). 값은 추후 튜닝.")]
-    [SerializeField] float teamCheerCooldownSeconds = 15f;
+    [Tooltip("팀 버프 발동 후 팀 공용 쿨타임(초).")]
+    [SerializeField] float teamCheerCooldownSeconds = 30f;
 
     [Tooltip("팀 첫 인식 후 전원 미달 시 표 초기화(초).")]
     [SerializeField] float teamCheerTimeoutSeconds = 10f;

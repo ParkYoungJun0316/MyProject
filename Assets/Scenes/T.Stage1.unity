@@ -2853,7 +2853,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 15
+  teamCheerCooldownSeconds: 30
   teamCheerTimeoutSeconds: 10
   teamHealAmount: 2
   chatRateLimitSeconds: 0.5
@@ -12985,6 +12985,9 @@ MonoBehaviour:
   openMode: 1
   openAmount: 20
   duration: 1
+  knockbackForceMin: 50
+  knockbackForceMax: 50
+  knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 1
   OnOpened:
@@ -16378,6 +16381,9 @@ MonoBehaviour:
   openMode: 1
   openAmount: 20
   duration: 1
+  knockbackForceMin: 50
+  knockbackForceMax: 50
+  knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 1
   OnOpened:

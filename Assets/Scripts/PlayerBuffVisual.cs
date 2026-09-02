@@ -4,8 +4,16 @@ using UnityEngine;
 /// 버프 VFX 전담 컴포넌트. Player.Network 프리팹 루트에 추가.
 ///
 /// [담당]
-///   Shield / SpeedUp 버프 VFX ON·OFF + 플레이어 고유색 적용.
-///   Shield는 메쉬 막(MeshRenderer) + 보조 파티클.
+///   Shield / SpeedUp 버프 VFX ON·OFF만. 색은 각 머티리얼에 고정된 값을 그대로 쓰고
+///   플레이어 고유색/흑백을 따라가지 않는다.
+///
+///   (2026-09-02: 이전에는 Shield 막 색을 플레이어 색에 맞췄으나 —
+///   Shield는 Additive 블렌드라 검정(RGB 0)일 때 안 보이고, MaterialPropertyBlock으로
+///   DstBlend를 바꿔도 GPU 블렌드 스테이트는 실제로 안 바뀌어 우회가 먹히지 않았음.
+///   SpeedUp도 Additive ColorMode + 밝은 베이스 텍스처와 겹치면 어떤 tint를 넣어도
+///   흰색으로 saturate돼 색이 안 먹혔음. 두 문제의 근본 원인이 같아 색 추종 자체를
+///   제거함. Shield를 또렷하게 보이려면 ShieldBubble.mat의 Surface Type을
+///   Alpha Blend로 바꿔야 함 — 에셋 수정은 Inspector에서 사용자가 직접.)
 ///
 /// [배치 방법]
 ///   1. Player.Network 루트에 Add Component → PlayerBuffVisual.
@@ -18,42 +26,22 @@ public class PlayerBuffVisual : MonoBehaviour
     [SerializeField] GameObject shieldRoot;
     [SerializeField] GameObject speedUpRoot;
 
-    [Header("Shield 막 투명도")]
-    [SerializeField, Range(0f, 1f)] float shieldAlpha = 0.35f;
-    [Tooltip("흑백 모드(검정) 전용 알파. Additive 블렌드는 RGB(0,0,0)를 더해도 안 보이므로, " +
-             "검정일 때만 알파블렌드로 전환해 이 값만큼 배경을 어둡게 가린다.")]
-    [SerializeField, Range(0f, 1f)] float shieldAlphaBlack = 0.5f;
-
     // ── 내부 참조 ──────────────────────────────────────────────────
 
-    Player           _player;
     PlayerBuffSystem _buffSystem;
 
     ParticleSystem[] _shieldParticles;
     ParticleSystem[] _speedUpParticles;
-    MeshRenderer[]   _shieldMeshes;
-    MaterialPropertyBlock _mpb;
-
-    // Additive(1=One) ↔ AlphaBlend(10=OneMinusSrcAlpha) 전환용.
-    // ShieldBubble.mat / SpeedStreak.mat 기본값이 Additive라 검정(RGB 0)은 더할 게 없어 안 보임 →
-    // 검정일 때만 _DstBlend를 알파블렌드로 덮어써서 실제로 어두운 막이 보이게 한다.
-    static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
-    const float DstBlendAdditive = 1f;  // BlendMode.One (머티리얼 기본값 — 고유색/흰색은 그대로 유지)
-    const float DstBlendAlpha    = 10f; // BlendMode.OneMinusSrcAlpha (검정 전용)
 
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
     {
-        _player     = GetComponent<Player>();
         _buffSystem = GetComponent<PlayerBuffSystem>();
 
         _shieldParticles  = CollectParticles(shieldRoot);
         _speedUpParticles = CollectParticles(speedUpRoot);
-        _shieldMeshes     = CollectMeshes(shieldRoot);
-        _mpb              = new MaterialPropertyBlock();
 
-        if (_player     == null) Debug.LogWarning($"[BuffVisual] Player 없음 — {name}", this);
         if (_buffSystem == null) Debug.LogWarning($"[BuffVisual] PlayerBuffSystem 없음 — {name}", this);
         if (shieldRoot  == null) Debug.LogWarning($"[BuffVisual] shieldRoot 미연결 — {name}", this);
         if (speedUpRoot == null) Debug.LogWarning($"[BuffVisual] speedUpRoot 미연결 — {name}", this);
@@ -77,7 +65,7 @@ public class PlayerBuffVisual : MonoBehaviour
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: Shield ON")]
-    void Test_ShieldOn()  => ActivateVFX(shieldRoot, _shieldParticles, _shieldMeshes);
+    void Test_ShieldOn()  => ActivateVFX(shieldRoot, _shieldParticles);
 
     [ContextMenu("테스트: Shield OFF")]
     void Test_ShieldOff() => DeactivateVFX(shieldRoot, _shieldParticles);
@@ -96,7 +84,7 @@ public class PlayerBuffVisual : MonoBehaviour
         switch (type)
         {
             case PlayerBuffSystem.BuffType.Shield:
-                ActivateVFX(shieldRoot, _shieldParticles, _shieldMeshes);
+                ActivateVFX(shieldRoot, _shieldParticles);
                 break;
             case PlayerBuffSystem.BuffType.SpeedUp:
                 ActivateVFX(speedUpRoot, _speedUpParticles);
@@ -119,14 +107,13 @@ public class PlayerBuffVisual : MonoBehaviour
 
     // ── VFX 제어 ─────────────────────────────────────────────────
 
-    void ActivateVFX(GameObject root, ParticleSystem[] particles, MeshRenderer[] meshes = null)
+    void ActivateVFX(GameObject root, ParticleSystem[] particles)
     {
         if (root == null) return;
 
         // 이미 재생 중인 파티클 위에 그냥 Play()하면 기존 파티클이 안 지워지고 겹쳐서
         // 다중 막처럼 보인다(예: Shield 3중 겹침). 재생 여부와 무관하게 항상 먼저 정리 후 재생.
         StopParticles(particles);
-        ApplyColor(particles, meshes);
         root.SetActive(true);
         PlayParticles(particles);
     }
@@ -157,59 +144,11 @@ public class PlayerBuffVisual : MonoBehaviour
         }
     }
 
-    // ── 색 적용 ──────────────────────────────────────────────────
-
-    void ApplyColor(ParticleSystem[] particles, MeshRenderer[] meshes)
-    {
-        if (_player == null) return;
-
-        // 고유색 모드면 고유색, 아니면 흑/백(GetCurrentBaseColor)을 그대로 반영.
-        Color c = _player.GetCurrentBaseColor();
-        bool isTrueBlack = !_player.isUniqueColor && _player.isBlack;
-
-        Color meshColor = c;
-        meshColor.a = isTrueBlack ? shieldAlphaBlack : shieldAlpha;
-        float dstBlend = isTrueBlack ? DstBlendAlpha : DstBlendAdditive;
-
-        if (particles != null)
-        {
-            for (int i = 0; i < particles.Length; i++)
-            {
-                if (particles[i] == null) continue;
-                var main = particles[i].main;
-                main.startColor = new ParticleSystem.MinMaxGradient(c);
-
-                var pr = particles[i].GetComponent<ParticleSystemRenderer>();
-                if (pr == null) continue;
-                pr.GetPropertyBlock(_mpb);
-                _mpb.SetFloat(DstBlendId, dstBlend);
-                pr.SetPropertyBlock(_mpb);
-            }
-        }
-
-        if (meshes == null) return;
-        for (int i = 0; i < meshes.Length; i++)
-        {
-            if (meshes[i] == null) continue;
-            // ShieldBubble.mat = URP Lit → _BaseColor만 읽음. 다른 셰이더로 교체 시 여기도 맞춰 갱신.
-            meshes[i].GetPropertyBlock(_mpb);
-            _mpb.SetColor("_BaseColor", meshColor);
-            _mpb.SetFloat(DstBlendId, dstBlend);
-            meshes[i].SetPropertyBlock(_mpb);
-        }
-    }
-
     // ── 유틸 ─────────────────────────────────────────────────────
 
     static ParticleSystem[] CollectParticles(GameObject root)
     {
         if (root == null) return System.Array.Empty<ParticleSystem>();
         return root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
-    }
-
-    static MeshRenderer[] CollectMeshes(GameObject root)
-    {
-        if (root == null) return System.Array.Empty<MeshRenderer>();
-        return root.GetComponentsInChildren<MeshRenderer>(includeInactive: true);
     }
 }

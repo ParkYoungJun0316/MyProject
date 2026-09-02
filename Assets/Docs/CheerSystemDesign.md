@@ -31,7 +31,7 @@
 | 트리거 | **자기** CheerName 외치기 (또는 숫자키 `1`, 기본 비활성) | **전원**(예외 없이 자기 자신 포함)이 **팀 공용 키워드(TeamCheerWord)** 외치기 (또는 숫자키 `2`, 기본 비활성) |
 | 발동 방식 | **즉시** — 필요 인원 1명(자기 자신)이라 투표 집계 자체가 불필요 | 투표 집계 + 타임아웃(첫 인식 후 N초 내 전원 미달 시 초기화) |
 | 효과 | 본인이 Q키로 고른 `Shield`/`SpeedUp` (기존 유지) | 전체 체력회복 **+2** (즉발, 지속시간 없음) |
-| 쿨다운 | 개인별 (`cheerCooldownSeconds`) | 팀 공용 (`teamCheerCooldownSeconds`, 개인과 별개 — 값은 Inspector에서 추후 설정) |
+| 쿨다운 | 개인별 (`cheerCooldownSeconds`) | 팀 공용 (`teamCheerCooldownSeconds`, 개인과 별개 — **30초**) |
 | 대상 | 항상 자기 자신 (솔로/멀티 구분 없음 — 구 "솔로만 self 허용" 예외 폐기, 이제 기본 규칙) | `GameSession.ActivePlayerCount` 전원 |
 
 ### 1.3 두 개의 독립 시스템 (유지)
@@ -80,7 +80,7 @@
 | 필요 인원 | `GameSession.ActivePlayerCount` (제외 없음 — 자기 자신도 포함해서 셈) |
 | 타임아웃 | 첫 인식 후 `teamCheerTimeoutSeconds`(기본값, Inspector 노출) 내 전원 미달 시 표 전부 초기화 |
 | 효과 | 전체 체력회복 **+2** — `NetworkDamageUtil.ApplyHeal` 경유, 즉발(지속시간 없음) |
-| 쿨다운 | 팀 공용 1개, 개인 쿨다운과 완전히 별개 상태. `teamCheerCooldownSeconds`(Inspector 노출, **값은 사용자가 나중에 직접 설정** — placeholder만) |
+| 쿨다운 | 팀 공용 1개, 개인 쿨다운과 완전히 별개 상태. `teamCheerCooldownSeconds` **30초** |
 | 발동 피드백 | 전원 화면에 짧게 **"Team Buff!"** 텍스트 배너 표시 (§8.2) |
 | 솔로(1인) | `ActivePlayerCount==1`이면 자기 혼자 TeamCheerWord 1회로 발동 — 자연스럽게 축소, 별도 예외 코드 불필요 |
 
@@ -348,7 +348,7 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 |---|---|---|---|
 | `PlayerBuffSystem.buffSettings[type].duration` | `PlayerBuffSystem` | Shield/SpeedUp 지속 | Shield 5초 / SpeedUp 10초 (기존 유지) |
 | `cheerCooldownSeconds` | `CheerService` | 개인 버프 종료 후 쿨 | 15초 (기존 유지) |
-| `teamCheerCooldownSeconds` | `CheerService` | **[신규]** 팀 버프 종료 후 쿨 | placeholder — 사용자가 추후 설정 |
+| `teamCheerCooldownSeconds` | `CheerService` | **[신규]** 팀 버프 종료 후 쿨 | **30초** |
 | `teamCheerTimeoutSeconds` | `CheerService` | **[신규]** 팀 첫 인식 후 전원 미달 타임아웃 | placeholder — 기본 10초 정도로 시작, 튜닝 여지 |
 | `chatRateLimitSeconds` | `CheerService` | 숫자키 응원 간격 | 0.5~1초 (기존 유지) |
 | `teamHealAmount` | `CheerService` | **[신규]** 팀 버프 체력회복량 | 2 (heart 단위) |
@@ -493,7 +493,7 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 - `MatchesTeamCheerWord(string lower)` / `TeamCheerWord` 프로퍼티
 - `_teamCheerWord` NV: Server write, Everyone read, 기본 `"fighting"`
 - `OnNetworkSpawn`: 전원 `_teamCheerWord.OnValueChanged` 구독 + `RebuildOwnerLocalGrammar`. Host만 `HasSessionTeamCheerWord`면 세션값을 NV에 복사
-- Inspector: `teamCheerCooldownSeconds`(15 placeholder), `teamCheerTimeoutSeconds`(10), `teamHealAmount`(2) — **값 튜닝은 사용자**
+- Inspector: `teamCheerCooldownSeconds`(**30**), `teamCheerTimeoutSeconds`(10), `teamHealAmount`(2)
 
 Host 내부:
 

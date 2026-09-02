@@ -45,6 +45,23 @@ public static class PlayerColorUtil
         _                      => Color.white,
     };
 
+    // 몸통 고유색은 HUD 글자에 쓰면 보라·초록이 묻힌다. 채팅 이름색(InGameChatUI)과 같은
+    // 밝은 톤 — 색 가짓수는 유지하고 밝기만 올린다.
+    static readonly Color HudBlue   = new(0.35f, 0.64f, 0.82f);
+    static readonly Color HudPurple = new(0.61f, 0.35f, 0.71f);
+    static readonly Color HudGreen  = new(0.18f, 0.80f, 0.44f);
+    static readonly Color HudYellow = new(0.95f, 0.61f, 0.07f);
+
+    /// <summary>어두운 배경 HUD 텍스트용. 몸통 틴트는 GetUniqueColor.</summary>
+    public static Color GetHudTextColor(PlayerColorType type) => type switch
+    {
+        PlayerColorType.Blue   => HudBlue,
+        PlayerColorType.Purple => HudPurple,
+        PlayerColorType.Green  => HudGreen,
+        PlayerColorType.Yellow => HudYellow,
+        _                      => Color.white,
+    };
+
     /// <summary>playerColorType·uniqueColor 설정 후 몸통 MPB 갱신.</summary>
     public static void ApplyToPlayer(Player player, PlayerColorType type)
     {

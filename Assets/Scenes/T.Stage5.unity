@@ -953,7 +953,9 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
   cheerCooldownSeconds: 10
-  cheerTimeoutSeconds: 10
+  teamCheerCooldownSeconds: 30
+  teamCheerTimeoutSeconds: 10
+  teamHealAmount: 2
   chatRateLimitSeconds: 0.5
 --- !u!114 &120098122
 MonoBehaviour:
@@ -2474,6 +2476,18 @@ MonoBehaviour:
   OnCountdownComplete:
     m_PersistentCalls:
       m_Calls:
+      - m_Target: {fileID: 1965931423}
+        m_TargetAssemblyTypeName: StartCountdownUI, Assembly-CSharp
+        m_MethodName: Hide
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
       - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: DoorController, Assembly-CSharp
         m_MethodName: Close
@@ -2489,18 +2503,6 @@ MonoBehaviour:
       - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: DoorController, Assembly-CSharp
         m_MethodName: Open
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 1965931423}
-        m_TargetAssemblyTypeName: StartCountdownUI, Assembly-CSharp
-        m_MethodName: Hide
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -12926,7 +12928,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 698490471}
+    - {fileID: 1005861529}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -13382,7 +13384,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &2037694535
 MonoBehaviour:
   m_ObjectHideFlags: 0
