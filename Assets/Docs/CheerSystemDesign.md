@@ -10,7 +10,7 @@
 | **[Ship Must]** | **2026-09-01 정식 출시** 전 필수 |
 | **[Post-Launch]** | 정식 이후 |
 
-> **콘텐츠 오버라이드 (2026-09-03):** 팀 응원 **효과·쿨**의 콘텐츠 SSOT는 [`CoopStageAudit.md`](CoopStageAudit.md) §9 맵 + [`CoopStageAudit.M.md`](CoopStageAudit.M.md) / [`CoopStageAudit.T.md`](CoopStageAudit.T.md). M = 입 되돌림. T1·T3 = 조임 원상 복구. T2·T4 = 바닥 안개 걷힘. T5·T.Boss 응원은 아직. **+2힐·120초 쿨은 폐기 예정.** RPC·투표·그래머·개인 버프 경로는 유지.
+> **콘텐츠 오버라이드 (2026-09-03):** 팀 응원 **효과·쿨**의 콘텐츠 SSOT는 [`CoopStageAudit.md`](CoopStageAudit.md) §9 맵 + [`CoopStageAudit.M.md`](CoopStageAudit.M.md) / [`CoopStageAudit.T.md`](CoopStageAudit.T.md). **+2힐·120초는 코드에서 폐기.** `CheerService`는 `ITeamCheerRevert` — 입 닫힘·침 연결. 혀는 `TongueController` 코드 됨·에디터 남음. T 조임·안개는 아직. RPC·투표·그래머·개인 버프 경로는 유지. 다음 작업 = M §H.5.
 >
 > **2026-09-01 전면 개편.** 구 "팀원이 나를 응원해야 버프" 방식(전원 투표로 타인 타겟에게 버프)는 **폐기**. 신규: ①자기 응원 → 즉시 개인 버프, ②팀 전원 공용 키워드 → 팀 전체 버프. 남을 지목해서 응원하는 기능(cross-targeting)은 완전히 삭제됐다.
 >

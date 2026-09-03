@@ -1,34 +1,29 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// 입 배경 연출 컨트롤러 — Animator 기반, 함정처럼 랜덤 스케줄로 동작.
+/// 입 배경 연출 컨트롤러 — Animator 기반.
 ///
-/// 배경 입은 평소 열린 상태(Idle)이므로 사이클은 닫기 → Hold → 열기 순서.
-///
-/// [동작 흐름]
-///   initialDelay 대기
-///   → 랜덤 간격(randomIntervalMin ~ randomIntervalMax) 대기
-///   → doClose (입 닫기 시작) → closeClipLength 대기
-///   → doHold (입 닫힌 채 유지) → holdDuration 대기
-///   → doOpen (입 열기) → openClipLength 대기
-///   → doIdle 복귀
-///   → 다시 랜덤 대기 반복
-///
-/// [Animator 구성]
-///   States   : Idle / Close / Hold / Open
-///   Triggers : doClose / doHold / doOpen / doIdle
-///   (모든 Transition: Has Exit Time = false, Duration = 0)
-///   Idle 클립 : Loop Time = true
-///   Hold 클립 : Loop Time = true  ← holdDuration 동안 입 닫힌 채 유지
-///
-/// [설정 방법]
-///   1. 이 스크립트를 빈 GameObject에 부착 (배경 입 메시와 분리)
-///   2. mouthAnimator : 배경 입 메시의 Animator를 Inspector에서 직접 연결
-///   3. 클립 길이 필드를 실제 Animator 클립 Length와 정확히 맞출 것
+/// [기본] 랜덤 스케줄 Close → Hold → Open 반복 (기존).
+/// [팀 응원 함정] teamCheerHazard=true 인 씬(M1·M3·M.Boss)만:
+///   Idle (응원 무시)
+///   → Warning (UI. 이때부터 응원)
+///        ├─ 외침: Close 안 넣음. Idle 유지
+///        └─ 없음: Close 끝까지 → Hold (암전 유지) → 외침 시 Open → Idle
+///   자동 Open 없음. 데미지 없음. ScreenFader만.
 /// </summary>
-public class MouthController : MonoBehaviour
+public class MouthController : MonoBehaviour, ITeamCheerRevert
 {
+    enum HazardPhase
+    {
+        Idle,
+        Warning,
+        Closing,
+        Holding,
+        Opening,
+    }
+
     [Header("참조")]
     [Tooltip("입 오브젝트의 Animator. 비워두면 자식에서 자동 탐색")]
     [SerializeField] private Animator mouthAnimator = null;
@@ -43,7 +38,7 @@ public class MouthController : MonoBehaviour
     [Tooltip("Close 클립 길이(초). 입이 완전히 닫히는 데 걸리는 시간.\n예) 24fps 8프레임 = 0.333s")]
     [SerializeField] private float closeClipLength = 0f;
 
-    [Tooltip("Hold 유지 시간(초). 이 시간 동안 입이 닫힌 채 루프함.")]
+    [Tooltip("Hold 유지 시간(초). teamCheerHazard이면 무시하고 외침까지 Hold.")]
     [SerializeField] private float holdDuration    = 0f;
 
     [Tooltip("Open 클립 길이(초). 입이 완전히 열리는 데 걸리는 시간.\n예) 24fps 8프레임 = 0.333s")]
@@ -62,6 +57,13 @@ public class MouthController : MonoBehaviour
     [Tooltip("Start 시 자동으로 사이클 시작 여부")]
     [SerializeField] private bool startOnAwake = true;
 
+    [Header("팀 응원 함정")]
+    [Tooltip("켜면 Close/Hold가 팀 응원 되돌림 대상이 된다. M1·M3·M.Boss만 켠다. M2는 SalivaHazard가 revert. M4·M5는 끈다.")]
+    [SerializeField] private bool teamCheerHazard = false;
+
+    [Tooltip("Close 전 Warning 유지 시간(초). 수치는 나중에 튜닝.")]
+    [SerializeField] private float warnDuration = 2f;
+
     [Header("암전 연동 (선택)")]
     [Tooltip("입 닫힐 때 FadeOut, 열릴 때 FadeIn 을 자동 호출.\n비워두면 암전 없음.")]
     [SerializeField] private ScreenFader screenFader = null;
@@ -71,11 +73,21 @@ public class MouthController : MonoBehaviour
     [SerializeField] private int seedSalt = 0x4D4F5554;
 
     Coroutine _cycleCoroutine;
+    Coroutine _bindRoutine;
     bool _isBusy;
     int _cycleCount;
+    int _syncGeneration;
+
+    HazardPhase _phase = HazardPhase.Idle;
+    bool _available;
+    bool _prevented;
+    bool _recoverQueued;
+    double _resyncDeadline = -1d;
 
     /// <summary>현재 Close/Hold/Open 사이클 진행 중이면 true.</summary>
     public bool IsBusy => _isBusy;
+
+    public bool IsAvailable => teamCheerHazard && _available;
 
     void Awake()
     {
@@ -85,18 +97,36 @@ public class MouthController : MonoBehaviour
 
     void OnEnable()
     {
+        ResetHazardFlags();
         _isBusy = false;
         _cycleCount = 0;
         TriggerIdle();
-        if (startOnAwake)
+        if (teamCheerHazard)
+            _bindRoutine = StartCoroutine(BindAndStartHazard());
+        else if (startOnAwake)
             StartCycle();
     }
 
     void OnDisable()
     {
+        if (teamCheerHazard && CheerService.Instance != null)
+            CheerService.Instance.UnregisterRevert(this);
         StopAllCoroutines();
         _cycleCoroutine = null;
+        _bindRoutine = null;
         _isBusy = false;
+        ResetHazardFlags();
+    }
+
+    IEnumerator BindAndStartHazard()
+    {
+        while (CheerService.Instance == null)
+            yield return null;
+        _bindRoutine = null;
+        if (!isActiveAndEnabled || !teamCheerHazard) yield break;
+        CheerService.Instance.RegisterRevert(this);
+        if (startOnAwake)
+            StartCycle();
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
@@ -105,7 +135,7 @@ public class MouthController : MonoBehaviour
     public void StartCycle()
     {
         if (_cycleCoroutine != null) StopCoroutine(_cycleCoroutine);
-        _cycleCoroutine = StartCoroutine(AutoCycle());
+        _cycleCoroutine = StartCoroutine(teamCheerHazard ? HazardCycle() : AutoCycle());
     }
 
     /// <summary>랜덤 사이클 중지. 현재 진행 중인 Open/Hold/Close는 즉시 중단됨.</summary>
@@ -117,7 +147,30 @@ public class MouthController : MonoBehaviour
             _cycleCoroutine = null;
         }
         _isBusy = false;
+        ResetHazardFlags();
         TriggerIdle();
+        screenFader?.FadeIn(0f);
+    }
+
+    public void Revert()
+    {
+        if (!teamCheerHazard || !_available) return;
+
+        _syncGeneration++;
+        _resyncDeadline = GetServerTime() + PickSeededInterval(_syncGeneration);
+
+        switch (_phase)
+        {
+            case HazardPhase.Warning:
+                _prevented = true;
+                EndWindow();
+                break;
+            case HazardPhase.Closing:
+            case HazardPhase.Holding:
+                _recoverQueued = true;
+                EndWindow();
+                break;
+        }
     }
 
     // ── 코루틴 ────────────────────────────────────────────────────
@@ -129,43 +182,148 @@ public class MouthController : MonoBehaviour
 
         while (true)
         {
-            // Host/Client가 같은 간격을 뽑도록 세션 시드 기반으로 InitState 후 뽑는다
-            // (WindTrap.OnWindCharge Random 모드와 동일 관례 — RPC 없이 시드만 동일하면 됨).
-            int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (_cycleCount * 0x2545F491);
-            UnityEngine.Random.InitState(mixedSeed);
-            float interval = Random.Range(randomIntervalMin, randomIntervalMax);
+            yield return new WaitForSeconds(PickSeededInterval(_cycleCount));
             _cycleCount++;
-
-            yield return new WaitForSeconds(interval);
-
             yield return StartCoroutine(CloseOpenCycle());
         }
+    }
+
+    IEnumerator HazardCycle()
+    {
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+
+        while (true)
+        {
+            if (_resyncDeadline > 0d)
+            {
+                yield return WaitUntilServerTime(_resyncDeadline);
+                _resyncDeadline = -1d;
+            }
+            else
+            {
+                yield return new WaitForSeconds(PickSeededInterval(_cycleCount));
+                _cycleCount++;
+            }
+
+            _prevented = false;
+            _recoverQueued = false;
+            _phase = HazardPhase.Warning;
+            _available = true;
+            CheerService.Instance?.NotifyHazardWindow(true);
+
+            float warnElapsed = 0f;
+            float warn = Mathf.Max(0f, warnDuration);
+            while (warnElapsed < warn && !_prevented)
+            {
+                warnElapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (_prevented)
+            {
+                _prevented = false;
+                _phase = HazardPhase.Idle;
+                TriggerIdle();
+                continue;
+            }
+
+            _phase = HazardPhase.Closing;
+            _isBusy = true;
+            TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
+            screenFader?.FadeOut(closeClipLength > 0f ? closeClipLength : 0f);
+            if (closeClipLength > 0f)
+                yield return new WaitForSeconds(closeClipLength);
+
+            if (_recoverQueued)
+            {
+                _recoverQueued = false;
+                yield return OpenRoutine();
+                continue;
+            }
+
+            _phase = HazardPhase.Holding;
+            TriggerSafe(holdTrigger, closeTrigger, openTrigger, idleTrigger);
+            while (!_recoverQueued)
+                yield return null;
+
+            _recoverQueued = false;
+            yield return OpenRoutine();
+        }
+    }
+
+    IEnumerator OpenRoutine()
+    {
+        _phase = HazardPhase.Opening;
+        EndWindow();
+        TriggerSafe(openTrigger, closeTrigger, holdTrigger, idleTrigger);
+        screenFader?.FadeIn(openClipLength > 0f ? openClipLength : 0f);
+        if (openClipLength > 0f)
+            yield return new WaitForSeconds(openClipLength);
+
+        TriggerIdle();
+        _isBusy = false;
+        _phase = HazardPhase.Idle;
     }
 
     IEnumerator CloseOpenCycle()
     {
         _isBusy = true;
 
-        // 닫기 (Idle 열린 상태 → 닫힘)
         TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
         screenFader?.FadeOut(closeClipLength > 0f ? closeClipLength : 0f);
         if (closeClipLength > 0f)
             yield return new WaitForSeconds(closeClipLength);
 
-        // Hold (닫힌 채 유지)
         TriggerSafe(holdTrigger, closeTrigger, openTrigger, idleTrigger);
         if (holdDuration > 0f)
             yield return new WaitForSeconds(holdDuration);
 
-        // 열기 (닫힘 → 다시 열림)
         TriggerSafe(openTrigger, closeTrigger, holdTrigger, idleTrigger);
         screenFader?.FadeIn(openClipLength > 0f ? openClipLength : 0f);
         if (openClipLength > 0f)
             yield return new WaitForSeconds(openClipLength);
 
-        // Idle 복귀
         TriggerIdle();
         _isBusy = false;
+    }
+
+    IEnumerator WaitUntilServerTime(double deadline)
+    {
+        while (GetServerTime() < deadline)
+            yield return null;
+    }
+
+    float PickSeededInterval(int generation)
+    {
+        int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (generation * 0x2545F491);
+        UnityEngine.Random.InitState(mixedSeed);
+        float min = randomIntervalMin;
+        float max = Mathf.Max(min, randomIntervalMax);
+        return Random.Range(min, max);
+    }
+
+    static double GetServerTime()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening ? nm.ServerTime.Time : Time.timeAsDouble;
+    }
+
+    void EndWindow()
+    {
+        _available = false;
+        CheerService.Instance?.NotifyHazardWindow(false);
+    }
+
+    void ResetHazardFlags()
+    {
+        _phase = HazardPhase.Idle;
+        _available = false;
+        _prevented = false;
+        _recoverQueued = false;
+        _resyncDeadline = -1d;
+        if (teamCheerHazard)
+            CheerService.Instance?.NotifyHazardWindow(false);
     }
 
     // ── 트리거 헬퍼 ────────────────────────────────────────────────

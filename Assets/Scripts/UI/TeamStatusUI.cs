@@ -75,6 +75,16 @@ public class TeamStatusUI : MonoBehaviour
 
     // ── 초기화 ───────────────────────────────────────────────────
 
+    void Awake()
+    {
+        // ContentSizeFitter가 슬롯 수만큼 세로로 늘 때, 피벗이 중앙이면 패널이
+        // HP_Panel/CheerName 쪽으로 올라간다. 상단 고정 → 아래로만 늘어남.
+        var rt = (RectTransform)transform;
+        Vector2 pivot = rt.pivot;
+        pivot.y = 1f;
+        rt.pivot = pivot;
+    }
+
     void Start()
     {
         PlayerSpawnCoordinator.OnPlayersReady += RequestRebuild;
@@ -154,15 +164,21 @@ public class TeamStatusUI : MonoBehaviour
         // → Owner ForceKill/씬 리로드가 깨진다. 반드시 전부 언구독 후 재구성.
         UnsubscribeAllSlots();
 
+        // Destroy는 프레임 끝이라 새 슬롯과 한 프레임 공존하며 VLG가 겹쳐 그린다.
+        // 비활성 자식은 레이아웃에서 빠지므로 그 전에 끈다.
         for (int i = transform.childCount - 1; i >= 0; i--)
-            Destroy(transform.GetChild(i).gameObject);
+        {
+            var go = transform.GetChild(i).gameObject;
+            go.SetActive(false);
+            Destroy(go);
+        }
         slots.Clear();
 
         var vlg = GetComponent<VerticalLayoutGroup>() ?? gameObject.AddComponent<VerticalLayoutGroup>();
         vlg.spacing                = slotSpacing;
-        vlg.childControlWidth      = false;
-        vlg.childControlHeight     = false;
-        vlg.childForceExpandWidth  = false;
+        vlg.childControlWidth      = true;
+        vlg.childControlHeight     = true;
+        vlg.childForceExpandWidth  = true;
         vlg.childForceExpandHeight = false;
         vlg.childAlignment         = TextAnchor.UpperLeft;
 
@@ -173,6 +189,8 @@ public class TeamStatusUI : MonoBehaviour
             if (net != null && !net.IsSpawned) continue;
             slots.Add(CreateSlot(p));
         }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)transform);
     }
 
     void RefreshAllSlotNames()
@@ -240,18 +258,27 @@ public class TeamStatusUI : MonoBehaviour
         slot.player     = player;
         slot.colorIndex = ResolveColorIndex(player);
 
-        const float topPad    = 2f;
-        const float bottomPad = 3f;
-        float nameRowH = Mathf.Max(8f, nameFontSize + 8f);
+        const float topPad    = 4f;
+        const float bottomPad = 4f;
+        // TMP Bold는 fontSize+8보다 실제 줄 높이가 커서 하트와 겹친다.
+        float nameRowH = Mathf.Max(nameFontSize + 14f, nameFontSize * 1.45f);
         float gap      = Mathf.Max(0f, nameHeartGap);
         float usedH    = topPad + nameRowH + gap + heartSize + bottomPad;
         float h        = Mathf.Max(slotHeight, usedH);
+        float panelW   = ((RectTransform)transform).rect.width;
+        float w        = panelW > 1f ? panelW : slotWidth;
 
         // ── 슬롯 루트 ─────────────────────────────────────────────
         var root   = new GameObject(player.name);
         root.transform.SetParent(transform, false);
         var rootRt = root.AddComponent<RectTransform>();
-        rootRt.sizeDelta  = new Vector2(slotWidth, h);
+        rootRt.sizeDelta  = new Vector2(w, h);
+        var le = root.AddComponent<LayoutElement>();
+        le.minHeight = h;
+        le.preferredHeight = h;
+        le.flexibleHeight = 0f;
+        le.minWidth = w;
+        le.preferredWidth = w;
         slot.slotBg       = root.AddComponent<Image>();
         slot.slotBg.color = slotBgColor;
 

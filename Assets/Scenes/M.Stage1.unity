@@ -1327,6 +1327,8 @@ MonoBehaviour:
   randomIntervalMax: 15
   initialDelay: 0
   startOnAwake: 1
+  teamCheerHazard: 0
+  warnDuration: 2
   screenFader: {fileID: 0}
   seedSalt: 1297044820
 --- !u!4 &891936727
@@ -1763,9 +1765,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 120
   teamCheerTimeoutSeconds: 10
-  teamHealAmount: 2
   chatRateLimitSeconds: 0.5
 --- !u!4 &1140314231 stripped
 Transform:
@@ -2714,6 +2714,8 @@ MonoBehaviour:
   randomIntervalMax: 15
   initialDelay: 0
   startOnAwake: 1
+  teamCheerHazard: 1
+  warnDuration: 2
   screenFader: {fileID: 1293583617}
   seedSalt: 1297044820
 --- !u!4 &1425081342

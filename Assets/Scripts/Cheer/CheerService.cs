@@ -13,9 +13,11 @@ using UnityEngine;
 ///
 /// [역할]
 /// - SubmitSelfCheerServerRpc → 즉시 개인 버프/쿨 (투표 없음)
-/// - SubmitTeamCheerServerRpc → 팀 공용 키워드 투표·타임아웃·전원 Heal
+/// - SubmitTeamCheerServerRpc → 팀 공용 키워드 투표·타임아웃 → 등록된 ITeamCheerRevert.Revert()
+///   (힐·120초 쿨 폐기. 새 RPC 없음. Idle 외침 무시. Warning~Revert만 유효.
+///    씬당 revert 하나 — 입 MouthController / 침 SalivaHazard / 혀 TongueController)
 /// - TeamCheerWord NetworkVariable (Host write, Everyone read)
-/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도). 팀 쿨은 ServerTime 종료 시각 NV + GameSession 복원
+/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도). 팀 쿨 NV는 0으로 고정
 ///
 /// [CheerName ↔ colorIndex]
 /// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=dan(Yellow)
@@ -34,14 +36,8 @@ public class CheerService : NetworkBehaviour
     [SerializeField] float cheerCooldownSeconds = 15f;
 
     [Header("팀 버프")]
-    [Tooltip("팀 버프 발동 후 팀 공용 쿨타임(초).")]
-    [SerializeField] float teamCheerCooldownSeconds = 120f;
-
     [Tooltip("팀 첫 인식 후 전원 미달 시 표 초기화(초).")]
     [SerializeField] float teamCheerTimeoutSeconds = 10f;
-
-    [Tooltip("팀 버프 체력회복량 (heart 단위)")]
-    [SerializeField] int teamHealAmount = 2;
 
     [Tooltip("숫자키 응원 연속 입력 최소 간격(초)")]
     [SerializeField] float chatRateLimitSeconds = 0.5f;
@@ -73,6 +69,9 @@ public class CheerService : NetworkBehaviour
     double _teamTimeoutStart = -1d;
     double _teamCooldownEnd;
 
+    ITeamCheerRevert _revert;
+    bool _hazardWindow;
+
     // ── 이벤트 (로컬 — UI 구독용) ─────────────────────────────────
 
     /// <summary>개인 버프 발동. (colorIndex)</summary>
@@ -81,11 +80,14 @@ public class CheerService : NetworkBehaviour
     /// <summary>개인 쿨타임 시작. (colorIndex, 쿨타임초)</summary>
     public event System.Action<int, float> OnCooldownStart;
 
-    /// <summary>팀 버프 발동 (전원 Heal 직후). TeamBuffBannerUI 구독.</summary>
+    /// <summary>팀 응원 성공 (Revert 직후). TeamBuffBannerUI 구독.</summary>
     public event System.Action OnTeamBuffActivated;
 
-    /// <summary>팀 쿨 종료 시각 NV가 바뀜. TeamBuffCooldownUI 구독. 값은 TeamCooldownEndServerTime.</summary>
+    /// <summary>폐기된 팀 쿨 HUD 호환. 값은 항상 0.</summary>
     public event System.Action OnTeamCooldownClockChanged;
+
+    /// <summary>Warning 시작~Revert 성공. TeamCheerWarningUI 구독.</summary>
+    public event System.Action<bool> OnHazardWindowChanged;
 
     /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열). PlayerCheerHeartsUI / TeamStatusUI 구독.</summary>
     public event System.Action<int, int, int[]> OnTeamVoteChanged;
@@ -93,10 +95,11 @@ public class CheerService : NetworkBehaviour
     // ── 공개 프로퍼티 ─────────────────────────────────────────────
 
     public float CooldownDuration => cheerCooldownSeconds;
-    public float TeamCooldownDuration => teamCheerCooldownSeconds;
+    public float TeamCooldownDuration => 0f;
     public double TeamCooldownEndServerTime
         => IsSpawned ? _teamCooldownEndNv.Value : _teamCooldownEnd;
     public PlayerBuffSystem.BuffType StageBuffType => stageBuffType;
+    public bool IsHazardWindowActive => _hazardWindow;
 
     public string TeamCheerWord
     {
@@ -121,7 +124,7 @@ public class CheerService : NetworkBehaviour
         _teamCooldownEndNv.OnValueChanged += OnTeamCooldownEndNvChanged;
 
         if (IsServer)
-            RestoreTeamCooldownFromSession();
+            ClearTeamCooldown();
 
         if (IsServer && GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
         {
@@ -138,6 +141,8 @@ public class CheerService : NetworkBehaviour
     {
         _teamCheerWord.OnValueChanged -= OnTeamCheerWordChanged;
         _teamCooldownEndNv.OnValueChanged -= OnTeamCooldownEndNvChanged;
+        _revert = null;
+        NotifyHazardWindow(false);
         if (Instance == this) Instance = null;
     }
 
@@ -199,6 +204,27 @@ public class CheerService : NetworkBehaviour
         return TeamCheerWord == lower;
     }
 
+    // ── 되돌림 등록 (씬당 하나) ───────────────────────────────────
+
+    public void RegisterRevert(ITeamCheerRevert revert)
+    {
+        _revert = revert;
+    }
+
+    public void UnregisterRevert(ITeamCheerRevert revert)
+    {
+        if (_revert != revert) return;
+        _revert = null;
+        NotifyHazardWindow(false);
+    }
+
+    public void NotifyHazardWindow(bool active)
+    {
+        if (_hazardWindow == active) return;
+        _hazardWindow = active;
+        OnHazardWindowChanged?.Invoke(active);
+    }
+
     // ── 서버 RPC ──────────────────────────────────────────────────
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -234,7 +260,7 @@ public class CheerService : NetworkBehaviour
         BroadcastTeamVoteChangedClientRpc(current, required, GetTeamVoterColorIndices());
 
         if (current >= required)
-            ApplyTeamBuff(now);
+            ApplyTeamBuff();
     }
 
     // ── 개인 버프 적용 (Host 전용) ─────────────────────────────────
@@ -264,21 +290,10 @@ public class CheerService : NetworkBehaviour
     /// </summary>
     public bool IsBuffActive(int colorIndex) => _buffEnd.ContainsKey(colorIndex);
 
-    // ── 팀 버프 적용 (Host 전용) ───────────────────────────────────
+    // ── 팀 응원 적용 (Host 전용 → 기존 ClientRpc로 전 머신 Revert) ─
 
-    void ApplyTeamBuff(double now)
+    void ApplyTeamBuff()
     {
-        var setups = FindObjectsByType<NetworkPlayerSetup>(FindObjectsSortMode.None);
-        foreach (var setup in setups)
-        {
-            if (!PlayerSpawnCoordinator.TryGetColor(setup.OwnerClientId, out var color)) continue;
-            if (!PlayerSpawnCoordinator.IsColorInSession(color)) continue;
-            var player = setup.GetComponent<Player>();
-            if (player == null) continue;
-            NetworkDamageUtil.ApplyHeal(player, teamHealAmount);
-        }
-
-        CommitTeamCooldownEnd(now + teamCheerCooldownSeconds);
         ResetTeamVotes();
         BroadcastTeamBuffActivatedClientRpc();
     }
@@ -327,7 +342,7 @@ public class CheerService : NetworkBehaviour
     bool ValidateTeamCheer(ulong cheererId, bool isVoice, double now)
     {
         if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out _)) return false;
-        if (now < _teamCooldownEnd) return false;
+        if (_revert == null || !_revert.IsAvailable) return false;
         if (_teamVotes.Contains(cheererId)) return false;
         return PassRateLimit(cheererId, isVoice, now);
     }
@@ -375,19 +390,15 @@ public class CheerService : NetworkBehaviour
 
     [ClientRpc]
     void BroadcastTeamBuffActivatedClientRpc()
-        => OnTeamBuffActivated?.Invoke();
-
-    void RestoreTeamCooldownFromSession()
     {
-        var gs = GameSession.Instance;
-        if (gs == null) return;
+        _revert?.Revert();
+        OnTeamBuffActivated?.Invoke();
+    }
 
-        double end = gs.GetSessionTeamCooldownEnd();
-        double now = NetworkManager.ServerTime.Time;
-        if (end > now)
-            CommitTeamCooldownEnd(end);
-        else if (end > 0d)
-            gs.SetSessionTeamCooldownEnd(0d);
+    void ClearTeamCooldown()
+    {
+        CommitTeamCooldownEnd(0d);
+        GameSession.Instance?.SetSessionTeamCooldownEnd(0d);
     }
 
     void CommitTeamCooldownEnd(double end)
@@ -463,7 +474,7 @@ public class CheerService : NetworkBehaviour
     void Debug_ForceTeamBuff()
     {
         if (!IsServer) { Debug.LogWarning("Host 전용"); return; }
-        ApplyTeamBuff(NetworkManager.ServerTime.Time);
+        ApplyTeamBuff();
     }
 #endif
 }

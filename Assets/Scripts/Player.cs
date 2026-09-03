@@ -17,6 +17,12 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     [Tooltip("이동 방향으로 캐릭터가 회전하는 속도 (0 = 즉시). 폴가이즈 느낌: 10~15")]
     public float turnSpeed = 0f;
 
+    [Header("침 미끄럼 (얼음)")]
+    [Tooltip("침 위에서 정지 → 풀속도까지 걸리는 시간(초). 클수록 출발이 느리고 발이 밀림.")]
+    [SerializeField] [Min(0.05f)] float salivaAccelTime = 1.2f;
+    [Tooltip("침 위에서 풀속도 → 정지까지 걸리는 시간(초). 클수록 손 떼도 길게 미끄러짐. Accel보다 크게.")]
+    [SerializeField] [Min(0.05f)] float salivaDecelTime = 3.5f;
+
     [Header("Stat")]
     public int heart;
 
@@ -54,6 +60,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     public float fallAnimY = 0f;
 
     [HideInInspector] public float moveSpeedMultiplier = 1f;
+    int _salivaOverlaps;
 
     /// <summary>
     /// 네트워크 Owner 여부. NetworkPlayerSetup이 OnNetworkSpawn에서 설정.
@@ -233,8 +240,31 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         float finalSpeed = (speed * runMultiplier + speedBonus) * moveSpeedMultiplier;
 
         Vector3 v = rigid.linearVelocity;
-        v.x = moveVec.x * finalSpeed;
-        v.z = moveVec.z * finalSpeed;
+        if (_salivaOverlaps <= 0)
+        {
+            v.x = moveVec.x * finalSpeed;
+            v.z = moveVec.z * finalSpeed;
+        }
+        else
+        {
+            Vector2 horiz = new Vector2(v.x, v.z);
+            float dt = Time.fixedDeltaTime;
+            if (hasMove)
+            {
+                float accel = finalSpeed / Mathf.Max(0.05f, salivaAccelTime);
+                horiz += new Vector2(moveVec.x, moveVec.z) * accel * dt;
+                float max = finalSpeed;
+                if (horiz.sqrMagnitude > max * max)
+                    horiz = horiz.normalized * max;
+            }
+            else
+            {
+                float decel = finalSpeed / Mathf.Max(0.05f, salivaDecelTime);
+                horiz = Vector2.MoveTowards(horiz, Vector2.zero, decel * dt);
+            }
+            v.x = horiz.x;
+            v.z = horiz.y;
+        }
         rigid.linearVelocity = v;
 
         if (anim != null)
@@ -323,6 +353,19 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     /// <summary>색 전환 쿨다운 남은 시간(초). 0이면 사용 가능.</summary>
     public float GetBWCooldownRemaining() => Mathf.Max(0f, nextBWTime - Time.time);
+
+    /// <summary>SalivaVolume이 Cover/Hold 중 발판 위에 있을 때. 중첩 카운트.</summary>
+    public void AddSalivaOverlap()
+    {
+        if (IsDead) return;
+        _salivaOverlaps++;
+    }
+
+    public void RemoveSalivaOverlap()
+    {
+        if (_salivaOverlaps > 0)
+            _salivaOverlaps--;
+    }
 
     /// <summary>무적·피격 쿨 중이면 false, 실제 피격 시 true.</summary>
     public bool TryTakeDamage(int amount)
@@ -427,6 +470,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         }
         isKnockback = false; isDamage = false;
         moveSpeedMultiplier  = 1f;
+        _salivaOverlaps = 0;
         fallAnimTriggered    = false;
         fallDeathReported    = false;
 

@@ -1122,7 +1122,7 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 
 `NetworkPlayerSetup`(카메라 bind) · `GameSession` · `StageResetOnPlayerDeath` · `ColoredStartZone` · `StagePressurePadSetup` · `TrapPlayerTracker` · `PlayerHPUI` · `TeamStatusUI` · `CheerProgressUI` · `ChangeColorCooldownUI`
 
-`TeamStatusUI` — **shared** (`UI.prefab`, Tutorial + 전 M.* / T.* 씬). Tutorial 순차 합류는 Ready만으로는 명단이 안 늘어나 `OnRosterChanged`(로컬 스폰/Despawn)로 재구성. Ready+Roster 구독은 다음 프레임 1회 디바운스(`RequestRebuild`) — 즉시 리빌드하면 Despawn 중인 오브젝트가 슬롯에 남고, M/T 배치 스폰은 N+1회 중복. DisplayName은 `CheerService.GetCheerName`과 동일 우선순위(세션 확정값 → 게이트 전 실시간 NV). CheerName 즉시 반영은 `PlayerCheerNameSync.OnAnyCheerNameChanged`. 사후기록: §6B.7 버그 3. 반대 라운드 스모크: `M.Stage1` Host+Client TeamStatus (§9B.4). **DisplayName 글자 (2026-09-02):** 8/28 잘림 대응 오토사이즈(8–13pt)가 닉네임을 과도 축소 → 오토사이즈 제거, NoWrap+Ellipsis, `nameFontSize` 인스펙터. 이름/하트는 슬롯 높이 자동 확장으로 간격 확보(VLG `slotSpacing` 유지).
+`TeamStatusUI` — **shared** (`UI.prefab`, Tutorial + 전 M.* / T.* 씬). Tutorial 순차 합류는 Ready만으로는 명단이 안 늘어나 `OnRosterChanged`(로컬 스폰/Despawn)로 재구성. Ready+Roster 구독은 다음 프레임 1회 디바운스(`RequestRebuild`) — 즉시 리빌드하면 Despawn 중인 오브젝트가 슬롯에 남고, M/T 배치 스폰은 N+1회 중복. DisplayName은 `CheerService.GetCheerName`과 동일 우선순위(세션 확정값 → 게이트 전 실시간 NV). CheerName 즉시 반영은 `PlayerCheerNameSync.OnAnyCheerNameChanged`. 사후기록: §6B.7 버그 3. 반대 라운드 스모크: `M.Stage1` Host+Client TeamStatus (§9B.4). **DisplayName 글자 (2026-09-02):** 8/28 잘림 대응 오토사이즈(8–13pt)가 닉네임을 과도 축소 → 오토사이즈 제거, NoWrap+Ellipsis, `nameFontSize` 인스펙터. **슬롯 간격 (2026-09-03):** 피벗 중앙+CSF가 인원 증가 시 `HP_Panel` 쪽으로 커져 닉네임/하트가 겹침 → 피벗 상단·`LayoutElement` 슬롯 높이·옛 자식 비활성 후 재구성. 반대 라운드: `T.Stage1` TeamStatus 3인 이상.
 
 공통 패턴 (전 Consumer 동일):
 

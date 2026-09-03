@@ -548,9 +548,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 120
   teamCheerTimeoutSeconds: 10
-  teamHealAmount: 2
   chatRateLimitSeconds: 0.5
 --- !u!114 &54507342
 MonoBehaviour:
@@ -8705,6 +8703,8 @@ MonoBehaviour:
   randomIntervalMax: 15
   initialDelay: 0
   startOnAwake: 1
+  teamCheerHazard: 1
+  warnDuration: 2
   screenFader: {fileID: 763942137}
   seedSalt: 1297044820
 --- !u!1001 &1163798889
@@ -10295,6 +10295,8 @@ MonoBehaviour:
   randomIntervalMax: 15
   initialDelay: 0
   startOnAwake: 1
+  teamCheerHazard: 0
+  warnDuration: 2
   screenFader: {fileID: 0}
   seedSalt: 1297044820
 --- !u!114 &1330046490
