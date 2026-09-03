@@ -249,6 +249,146 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SequenceRingTile
   ringIndex: 6
+--- !u!1001 &39443063
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1658446495}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_Name
+      value: TongueAttack
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 39443067}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 39443066}
+  m_SourcePrefab: {fileID: 100100000, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+--- !u!4 &39443064 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+  m_PrefabInstance: {fileID: 39443063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &39443065 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+  m_PrefabInstance: {fileID: 39443063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &39443066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 39443065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82052d00b8b8d274c9826caf749d1b83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TongueController
+  pattern: 0
+  tongueAnimator: {fileID: 39443067}
+  idleTrigger: doIdle
+  riseTrigger: doRise
+  holdTrigger: doHold
+  retractTrigger: doRetract
+  attackLTrigger: doAttackL
+  attackRTrigger: doAttackR
+  riseClipLength: 5.3
+  attackClipLength: 4
+  retractClipLength: 1.3
+  centerTiles:
+  - {fileID: 3249175176033487092}
+  leftTiles: []
+  rightTiles: []
+  randomIntervalMin: 5
+  randomIntervalMax: 15
+  initialDelay: 0
+  startOnAwake: 1
+  warnDuration: 2
+  seedSalt: 1414483527
+--- !u!95 &39443067
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 39443065}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d97c247ba552cd24fbbb31db2cdf98c6, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &45411672
 GameObject:
   m_ObjectHideFlags: 0
@@ -401,6 +541,7 @@ Transform:
   - {fileID: 1788531462}
   - {fileID: 507137217}
   - {fileID: 1855515177}
+  - {fileID: 2009149288}
   m_Father: {fileID: 1046863815}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &47918700
@@ -950,7 +1091,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &167479387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2636,9 +2777,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 1
   cheerCooldownSeconds: 10
-  teamCheerCooldownSeconds: 120
   teamCheerTimeoutSeconds: 10
-  teamHealAmount: 2
   chatRateLimitSeconds: 0.5
 --- !u!114 &686489727
 MonoBehaviour:
@@ -4946,6 +5085,8 @@ MonoBehaviour:
   randomIntervalMax: 15
   initialDelay: 0
   startOnAwake: 1
+  teamCheerHazard: 0
+  warnDuration: 2
   screenFader: {fileID: 0}
   seedSalt: 1297044820
 --- !u!114 &1450635932
@@ -6097,6 +6238,7 @@ Transform:
   - {fileID: 1553626237}
   - {fileID: 155738429}
   - {fileID: 2066715667}
+  - {fileID: 39443064}
   m_Father: {fileID: 911747147}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1658446496
@@ -6706,7 +6848,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!23 &1795077203
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7805,6 +7947,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3843646465893119013, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3f98c439015fb1744b050b28e5a306ea, type: 3}
       propertyPath: m_Name
       value: MouthBG
@@ -8210,6 +8356,137 @@ MonoBehaviour:
   speedPhases: []
   warnSfxId: 40
   fireSfxId: 26
+--- !u!1001 &2009149287
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 47918699}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_Name
+      value: TongueAttack
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2009149291}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2009149290}
+  m_SourcePrefab: {fileID: 100100000, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+--- !u!4 &2009149288 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+  m_PrefabInstance: {fileID: 2009149287}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2009149289 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: deb64639573032b41a087ea50a36f7b7, type: 3}
+  m_PrefabInstance: {fileID: 2009149287}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2009149290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2009149289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82052d00b8b8d274c9826caf749d1b83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TongueController
+  pattern: 1
+  tongueAnimator: {fileID: 2009149291}
+  idleTrigger: doIdle
+  riseTrigger: doRise
+  holdTrigger: doHold
+  retractTrigger: doRetract
+  attackLTrigger: doAttackL
+  attackRTrigger: doAttackR
+  riseClipLength: 5.3
+  attackClipLength: 3.967
+  retractClipLength: 1.3
+  centerTiles: []
+  leftTiles: []
+  rightTiles: []
+  randomIntervalMin: 5
+  randomIntervalMax: 15
+  initialDelay: 0
+  startOnAwake: 1
+  warnDuration: 2
+  seedSalt: 1414483527
+--- !u!95 &2009149291
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2009149289}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d97c247ba552cd24fbbb31db2cdf98c6, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &2019773085
 MonoBehaviour:
   m_ObjectHideFlags: 0
