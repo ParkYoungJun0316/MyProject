@@ -54,7 +54,7 @@
 | 텔레메트리 MVP 스펙 | `Assets/Docs/TelemetryDesign.md` |
 | Cheer / voice / Vosk / tutorial | `Assets/Docs/CheerAndTutorialDesign.md` |
 | 협동 체감·인원·2인 테스트 | `Assets/Docs/CoopStageAudit.md` |
-| 입 스테이지 감사 (M) | `Assets/Docs/CoopStageAudit.M.md` — **다음 핸드오프 = §H.5** (침 됨. 혀 코드 됨·에디터 남음) |
+| 입 스테이지 감사 (M) | `Assets/Docs/CoopStageAudit.M.md` — **다음 핸드오프 = §H.5** (입·침·혀 됨. 다음 = Barrier M1 · ColorTile 점수제) |
 | 식도 스테이지 감사 (T) | `Assets/Docs/CoopStageAudit.T.md` |
 | Domain boundaries | `Assets/Docs/GameArchitectureBoundaries.md` |
 | Cursor AI rebuild process | `Assets/Docs/CursorVibeSetupBrief.md` |

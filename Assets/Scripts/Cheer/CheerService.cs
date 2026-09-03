@@ -80,7 +80,7 @@ public class CheerService : NetworkBehaviour
     /// <summary>개인 쿨타임 시작. (colorIndex, 쿨타임초)</summary>
     public event System.Action<int, float> OnCooldownStart;
 
-    /// <summary>팀 응원 성공 (Revert 직후). TeamBuffBannerUI 구독.</summary>
+    /// <summary>팀 응원 성공 (Revert 직후). TeamCheerCleared 구독.</summary>
     public event System.Action OnTeamBuffActivated;
 
     /// <summary>폐기된 팀 쿨 HUD 호환. 값은 항상 0.</summary>

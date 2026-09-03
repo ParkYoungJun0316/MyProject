@@ -861,17 +861,23 @@ public class StageNetworkState : NetworkBehaviour
     }
 
     /// <summary>
-    /// Host: 문제/라운드 스텝 시작. stepIndex 변경이 전 머신에 전파되어
-    /// OnChallengeStepChanged 구독자가 동일한 표시·타이머 로직을 실행한다.
-    /// 시드·owner는 그대로 들고 있던 값을 유지 — 이 쓰기에서도 seed+stepIndex+time+owner가
-    /// 한 번에 같이 간다.
+    /// Host: 문제/라운드 스텝 시작. 시드는 유지. 시드까지 바꾸려면 ChallengeStepBegin(stepIndex, seed).
     /// </summary>
     public void ChallengeStepBegin(int stepIndex)
+    {
+        ChallengeStepBegin(stepIndex, _challengeStep.Value.seed);
+    }
+
+    /// <summary>
+    /// Host: 스텝과 시드를 한 NV 쓰기로 같이 보낸다. ColorTile 점수제 재스폰(슬롯+스폰 인덱스)에 사용.
+    /// 기존 챌린지는 ChallengeStepBegin(stepIndex)만 쓰면 시드는 유지된다.
+    /// </summary>
+    public void ChallengeStepBegin(int stepIndex, int seed)
     {
         if (!IsServer) return;
         _challengeStep.Value = new ChallengeStepState
         {
-            seed                 = _challengeStep.Value.seed,
+            seed                 = seed,
             stepIndex            = stepIndex,
             stepStartServerTime  = NetworkManager.Singleton.ServerTime.Time,
             owner                = _challengeStep.Value.owner,

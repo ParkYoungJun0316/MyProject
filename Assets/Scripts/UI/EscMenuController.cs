@@ -77,10 +77,12 @@ public class EscMenuController : MonoBehaviour
     {
         if (Keyboard.current == null) return;
 
-        // CheerName 설정 패널이 열려 있으면 Esc 최우선권을 그쪽에 넘긴다(우선순위: cheername > esc 메뉴).
+        // CheerName / 이모트 휠이 열려 있으면 Esc 최우선권을 그쪽에 넘긴다
+        // (우선순위: cheername > 이모트 휠 > esc 메뉴).
         // IsOpen뿐 아니라 ConsumedEscThisFrame도 함께 확인 — 실행 순서와 무관하게 "이번 프레임에
-        // Esc를 CheerName 패널이 이미 처리했음"을 명시적으로 알 수 있어 이중 소비를 막는다.
+        // Esc를 이미 처리했음"을 명시적으로 알 수 있어 이중 소비를 막는다.
         if (TutorialCheerNameUI.IsOpen || TutorialCheerNameUI.ConsumedEscThisFrame) return;
+        if (PlayerEmoteMenuUI.IsOpen || PlayerEmoteMenuUI.ConsumedEscThisFrame) return;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {

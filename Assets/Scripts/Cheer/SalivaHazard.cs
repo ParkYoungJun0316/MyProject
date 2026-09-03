@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -38,8 +39,14 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
     [Tooltip("알파 페이드 대상. 비우면 coverRoots의 Renderer를 수집.")]
     [SerializeField] Renderer[] coverRenderers = null;
 
-    [Tooltip("깔릴 때 재생. Recover 때 정지.")]
-    [SerializeField] ParticleSystem[] coverParticles = null;
+    [Tooltip("Cover 동안 위에서 떨어지는 침 방울(로컬 VFX). TrapProjectile/DropTrap 아님.")]
+    [SerializeField] GameObject coverDropPrefab = null;
+
+    [Tooltip("월드 Y 스폰 높이. Y=0까지 등속. 속도 = 이 값 / 원하는 초.")]
+    [SerializeField] float coverDropSpawnHeight = 50f;
+
+    [Tooltip("낙하 속도(m/s). 높이 50→Y0: 1초=50, 0.5초=100.")]
+    [SerializeField] float coverDropSpeed = 50f;
 
     [Tooltip("완전 덮였을 때 수면 알파. 수치는 스테이지 때.")]
     [SerializeField] [Range(0.05f, 1f)] float coverAlpha = 0.7f;
@@ -69,6 +76,8 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
     Color[] _baseColors;
     Coroutine _cycleCoroutine;
     Coroutine _bindRoutine;
+    readonly List<GameObject> _activeCoverDrops = new();
+    readonly HashSet<SalivaVolume> _coverDropSpawned = new();
 
     HazardPhase _phase = HazardPhase.Idle;
     bool _available;
@@ -166,14 +175,12 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
         }
     }
 
-    /// <summary>2.2가 늦게 켜질 때 등 — 비주얼·파티클을 현재 페이즈에 맞춘다.</summary>
+    /// <summary>2.2가 늦게 켜질 때 등 — 수면 알파와, Cover/Hold면 그 볼륨에 드롭 1회.</summary>
     public void RefreshLateJoinVisuals()
     {
         ApplyCoverAlpha(_coverVisualAlpha);
         if (_slipActive)
-            PlayCoverParticles();
-        else
-            StopCoverParticles();
+            StartCoverDrops();
     }
 
     IEnumerator HazardCycle()
@@ -238,7 +245,7 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
         _phase = HazardPhase.Covering;
         ShowCoverRoots(true);
         SetSlipActive(true);
-        PlayCoverParticles();
+        StartCoverDrops();
 
         float dur = Mathf.Max(0f, coverDuration);
         if (dur <= 0f)
@@ -262,7 +269,7 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
         _phase = HazardPhase.Recovering;
         EndWindow();
         SetSlipActive(false);
-        StopCoverParticles();
+        StopCoverDrops();
 
         float dur = Mathf.Max(0f, recoverDuration);
         float from = _coverVisualAlpha;
@@ -416,32 +423,52 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
         }
     }
 
-    void PlayCoverParticles()
+    void StartCoverDrops()
     {
-        if (coverParticles == null) return;
-        for (int i = 0; i < coverParticles.Length; i++)
+        if (coverDropPrefab == null || volumes == null) return;
+
+        for (int v = 0; v < volumes.Length; v++)
         {
-            ParticleSystem ps = coverParticles[i];
-            if (ps == null || !ps.gameObject.activeInHierarchy) continue;
-            ps.Play(true);
+            SalivaVolume vol = volumes[v];
+            if (vol == null || !vol.gameObject.activeInHierarchy) continue;
+            if (!_coverDropSpawned.Add(vol)) continue;
+
+            Collider col = vol.GetComponent<Collider>();
+            if (col == null)
+            {
+                _coverDropSpawned.Remove(vol);
+                continue;
+            }
+
+            Bounds b = col.bounds;
+            var pos = new Vector3(b.center.x, coverDropSpawnHeight, b.center.z);
+            GameObject go = Instantiate(coverDropPrefab, pos, Quaternion.identity, transform);
+            _activeCoverDrops.Add(go);
+
+            var drop = go.GetComponent<SalivaCoverDrop>();
+            if (drop != null)
+            {
+                float speed = coverDropSpeed > 0f ? coverDropSpeed : -1f;
+                drop.Init(0f, speed);
+            }
         }
     }
 
-    void StopCoverParticles()
+    void StopCoverDrops()
     {
-        if (coverParticles == null) return;
-        for (int i = 0; i < coverParticles.Length; i++)
+        for (int i = 0; i < _activeCoverDrops.Count; i++)
         {
-            ParticleSystem ps = coverParticles[i];
-            if (ps == null) continue;
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            if (_activeCoverDrops[i] != null)
+                Destroy(_activeCoverDrops[i]);
         }
+        _activeCoverDrops.Clear();
+        _coverDropSpawned.Clear();
     }
 
     void HideCoverImmediate()
     {
         ApplyCoverAlpha(0f);
-        StopCoverParticles();
+        StopCoverDrops();
         ShowCoverRoots(false);
     }
 

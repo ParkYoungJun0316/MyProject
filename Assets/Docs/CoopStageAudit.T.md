@@ -6,7 +6,7 @@
 
 관련: [`CheerSystemDesign.md`](CheerSystemDesign.md) (RPC — 팀 **효과**는 여기 §3·§5).
 
-**확정:** 2026-09-03. **다음 M 트랙:** 침 — [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §H.5. T1–T4 설계는 잠금, 구현은 M 응원 동사 다음. T5·T.Boss 설계는 보류.
+**확정:** 2026-09-03. **다음 M 트랙:** 인게임 판 맞추기 (Barrier M1 · ColorTile) — [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §H.5. 입·침·혀 됨. T1–T4 설계는 잠금, 구현은 그 M 트랙 다음. T5·T.Boss 설계는 보류.
 
 **범례:** [확정] = 승인 완료. 수치는 해당 스테이지 때.
 
@@ -52,7 +52,7 @@ M·T1–T4를 다시 묻지 말 것. **T5·T.Boss 응원·페이즈는 보류** 
 
 ### H.5 다음 (우선)
 
-1. **구현 (사용자 “구현해” 후, M 침·혀 다음):** T1 조임 **원상 복구** → T3 복습 → T2 안개 초출 → T4 안개 복습. `ITeamCheerRevert`에 꽂음. 새 RPC 없음.
+1. **구현 (사용자 “구현해” 후, M Barrier/ColorTile 다음):** T1 조임 **원상 복구** → T3 복습 → T2 안개 초출 → T4 안개 복습. `ITeamCheerRevert`에 꽂음. 새 RPC 없음.
 2. T5·T.Boss는 그 뒤에 다시 감사. 지금 잠그지 않음.
 3. 에디터(사용자, 구현과 맞춰): T1 Door_1→Door_3. T3 Door_1형 4색 겹침 삭제·Door_3 커먼. T4 패드→Door 길·SideSplit 삭제. T3 `ThronSeq.*`에 `NetworkObject`.
 4. 초·안개 창·조임 속도는 해당 스테이지 때.

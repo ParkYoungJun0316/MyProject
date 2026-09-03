@@ -13,7 +13,7 @@
 
 **확정:** 2026-09-03. **다음 에이전트 SSOT = 이 세 문서.** 채팅 로그 불필요.
 
-**다음 작업 = M2 침 플레이 확인** — 코드+에디터 [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §H.5. 혀 설계 잠금 M §5, 코드는 “구현해” 후. T1 조임은 그 뒤. T5·T.Boss 설계는 보류.
+**다음 작업 = M 인게임 판 맞추기** — Barrier §2/M1 이동 · ColorTile 점수제 §3. [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §H.5. 입·침·혀 응원 되돌림은 **됨** (2026-09-04). T1 조임은 그 뒤. T5·T.Boss 설계는 보류.
 
 **범례:** [확정] = 승인 완료. 수치는 해당 스테이지 때.
 
@@ -25,8 +25,8 @@
 
 1. T1–T4 설계는 **잠금**. T5·T.Boss 응원·페이즈는 **보류**. 종이로 T5를 더 짜지 않는다.
 2. **읽기:** [`CoopStageAudit.M.md`](CoopStageAudit.M.md) **§H.5** (현재 구현 트랙) → 이 문서 §9. T는 아직 손대지 않음.
-3. **할 일:** **M2 침** 플레이 확인. 혀는 M §5 잠금, 코드는 “구현해” 후. T1 조임은 M 응원 동사(입·침·혀) 다음.
-4. **하지 말 것:** T5 지금 잠그기. 힐·120초 쿨 부활. 새 RPC. Tutorial 팀 외침을 지금.
+3. **할 일:** M 인게임 판 맞추기 — Barrier M1 + ColorTile 점수제. T1 조임은 그 다음.
+4. **하지 말 것:** T5 지금 잠그기. 힐·120초 쿨 부활. 새 RPC. Tutorial 팀 외침을 지금. 입/침/혀 재설계.
 
 ### H.1 세션 규칙
 
@@ -69,14 +69,14 @@ M·T 개별 버린 목록은 각 문서 H.3.
 
 ### H.4 코드
 
-`CheerService` 팀 = Heal·120초 **폐기됨**. `ITeamCheerRevert` + Warning 창. 입 닫힘 연결. 침(`SalivaHazard` + `SalivaVolume`) 코드+`M.Stage2` 볼륨 됨. 미끄럼 = `Player` 얼음 가속/코스트. 수면 아트는 슬롯만 비움. T 조임 원상 복구·안개 걷힘은 **아직 없음**. 새 RPC 없음. NGO 챌린지 축(`NetworkDesign` §11B) 유지.
+`CheerService` 팀 = Heal·120초 **폐기됨**. `ITeamCheerRevert` + Warning 창. 입 닫힘·침·혀 **됨** (플레이 확인 2026-09-04). ColorTile 점수제 코드 됨(M.Stage3 에디터 할당 남음). 수면 아트는 슬롯만 비움. T 조임 원상 복구·안개 걷힘은 **아직 없음**. 새 RPC 없음. NGO 챌린지 축(`NetworkDesign` §11B) 유지.
 
 `MinigameDesign.md`와 충돌하면 **감사 문서가 이김**. 팀 응원 **효과·쿨**이 `CheerSystemDesign.md`와 충돌하면 **이 맵 + M/T 문서가 이김**. RPC·투표·그래머·개인 버프는 `CheerSystemDesign`.
 
 ### H.5 다음 (우선)
 
-1. **M2 침 플레이 확인** — [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §H.5. 코드+에디터 됨. 입 닫힘은 M.Stage1에서도 확인.
-2. 혀(`TongueController` 코드 됨, 에디터 남음) → Barrier §2/M1 이동·ColorTile 점수제 → **T1 조임 원상 복구** → T3 → T2 안개 → T4 안개.
+1. **M 인게임 판 맞추기** — [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §H.5. Barrier §2/M1 이동 · ColorTile 점수제 §3.
+2. 그다음 **T1 조임 원상 복구** → T3 → T2 안개 → T4 안개. 입·침·혀는 다시 열지 말 것.
 3. T5·T.Boss 설계는 그 뒤. Tutorial 팀 외침은 마지막.
 4. 잔여 버킷 C: M3 Drop, 4.1 Drop. 에디터: T1 Door_1→Door_3, T3 4색 겹침 삭제, T4 패드→Door 길·SideSplit 삭제 — 씬은 사용자가 나중에.
 5. 초·데미지·안개 창·조임 속도는 해당 스테이지 때.
@@ -186,7 +186,7 @@ M·T 개별 버린 목록은 각 문서 H.3.
 | 6.7 | 1인 행동을 N명에게 복제해서 “협동” |
 | 6.8 | 보스를 신기 입문 스테이지로 (`M.Boss` / `T.Boss` 초출) |
 | 6.9 | 5스테이지를 채우려고 판 늘리기 |
-| 6.10 | ColorTile 클리어를 각자 자기 칸 서기로만 (점수·흑백 할당량 없이) |
+| 6.10 | ColorTile 클리어를 각자 자기 칸 서기로만 (점수·흑백 할당량 없이). 할당량+입 창 대신 넉백·문 내림·광장화로 난이도 |
 | 6.11 | 컷 결정과 동시에 에셋·씬을 지우는 것 (기록만 먼저) |
 | 6.12 | 새 장면을 고유색·흑·백 없이 짜는 것 |
 | 6.13 | NPC·대화·길 헤맴·글 읽기·허브·컷신으로 플레이타임 |

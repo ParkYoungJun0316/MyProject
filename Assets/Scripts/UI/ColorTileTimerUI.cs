@@ -67,6 +67,7 @@ public class ColorTileTimerUI : MonoBehaviour
         challenge.OnTimerTick.AddListener(SetRemaining);
         challenge.OnSuccess.AddListener(ShowSuccess);
         challenge.OnFail.AddListener(ShowFail);
+        challenge.OnQuotaChanged.AddListener(SetQuota);
     }
 
     void UnregisterListeners()
@@ -77,6 +78,7 @@ public class ColorTileTimerUI : MonoBehaviour
         challenge.OnTimerTick.RemoveListener(SetRemaining);
         challenge.OnSuccess.RemoveListener(ShowSuccess);
         challenge.OnFail.RemoveListener(ShowFail);
+        challenge.OnQuotaChanged.RemoveListener(SetQuota);
     }
 
     /// <summary>ColorTileChallenge.OnChallengeStarted</summary>
@@ -85,6 +87,7 @@ public class ColorTileTimerUI : MonoBehaviour
         StopSequence();
         gameObject.SetActive(true);
         if (timerText != null) timerText.color = normalColor;
+        SetQuota();
     }
 
     /// <summary>
@@ -97,6 +100,13 @@ public class ColorTileTimerUI : MonoBehaviour
         if (timerText == null) return;
         int display = Mathf.CeilToInt(remaining);
         timerText.text = display > 0 ? display.ToString() : "";
+    }
+
+    void SetQuota()
+    {
+        if (timerText == null || challenge == null || !challenge.UsesQuotaScoring) return;
+        timerText.text = $"{challenge.QuotaProgress}/{challenge.QuotaRequired}";
+        timerText.color = normalColor;
     }
 
     /// <summary>ColorTileChallenge.OnSuccess</summary>

@@ -18,16 +18,26 @@
 
 M1–5·M.Boss를 다시 묻지 말 것. T5·T.Boss는 보류.
 
-### H.5 다음 에이전트 — 여기부터 (2026-09-03)
+### H.5 다음 에이전트 — 여기부터 (2026-09-04)
 
-**트랙:** M 팀 응원 되돌림. T1 조임은 이 트랙 뒤.
+**닫힌 트랙:** M 팀 응원 되돌림 (입 닫힘·침·혀). 코드+에디터+플레이 확인 **됨** (2026-09-04). 입/침/혀 머신 다시 열지 말 것.
 
-1. **읽기:** 이 절 → §4·§5·§6. 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §9. T는 아직 구현하지 않음.
-2. **코드 (됨):** **M2 침** — `SalivaHazard` + `SalivaVolume` + `Player.Move()` 얼음 가속/코스트. PhysicMaterial 아님. 새 RPC 없음. **M.Stage2 전체(2.1 SideSplit + 2.2 Drop).**
-3. **에디터 (됨):** `M.Stage2` `SalivaHazard` + `SalivaVolume` 2.1/2.2. 수면·드립·머티리얼은 **삭제**. 비주얼 슬롯만 비움. `TransitionPhase2` 입 `teamCheerHazard`는 끄기 유지.
-4. **혀:** 코드 됨 (`TongueController`). 에디터 남음 — `Tongue.controller` 트리거, M.Stage4 프롭·1×1 배열, 클립 Animation Event `SweepBreak(int)`. `MouthBG` 혀 금지.
-5. **입 닫힘:** 코드+에디터 반영됨. M.Stage1 2인 플레이로 확인할 것. 숫자(`warnDuration` 기본 2)는 나중에.
-6. **하지 말 것:** 팀 힐·120초 쿨 부활. 새 RPC. Tutorial 팀 외침(마지막). Barrier 슬롯·ColorTile 점수제·T 조임은 침/혀와 별 트랙.
+**다음 트랙:** M 인게임 판을 잠금에 맞추기. T1 조임은 이 트랙 뒤.
+
+1. **읽기:** 이 절 → §2 Barrier · §3 ColorTile. 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §H.5. T는 아직 구현하지 않음.
+2. **할 일:** ColorTile 점수제 §3 — 코드 됨. **에디터:** M.Stage3 `uniqueQuota`/`blackQuota`/`whiteQuota` 전부 >0, spawnPoints를 고유+흑+백보다 많이, 흑·백 머티리얼. Barrier는 M.Stage1로 + §2.1 슬롯. Sequence / Grid 손대지 않음.
+3. **하지 말 것:** ColorTile에 넉백·문 내림·광장화. 입/침/혀 재설계. 팀 힐·120초. 새 RPC. Tutorial 팀 외침(마지막). T 조임·안개. T5.
+
+**혀 반영 (2026-09-04) [확정]**
+
+| 항목 | 내용 |
+|------|------|
+| 코드 | `TongueController`. 새 RPC 없음. 4.1 `RiseHold` / 설계 4.2 `AttackSweep` |
+| 에디터 | `Tongue.controller` 트리거. `TongueAttack.fbx` 경기장 혀. `MouthBG` 혀 안 씀 |
+| 4.1 | 가운데 **1칸** (`MiddleRingTile`). 3×3 9칸 **폐기**. 사용자 선택 |
+| 4.2 | 씬 GO 이름 `Stage4.3`. 왼 10 + 오른 10 `FloorTile`. 가운데 1×5는 배열에 없음 |
+| 스윕 | `SweepBreak` 이벤트 **안 씀**. 클립 끝나면 `BreakRemaining()`이 해당 배열을 끔 |
+| 플레이 | 입 닫힘(M.Stage1)·침(M2)·혀(M4) 확인됨 (2026-09-04). 숫자(`warnDuration`)는 나중에 |
 
 **되돌림 머신 (입 기준, 혀·침·조임 동일):**  
 Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 넣음 / 없으면 Attack 끝까지 → Hold(유지, 암전·침·혀 나온 채) → 외침이면 Recover 클립 → Idle.  
@@ -38,7 +48,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 - `ITeamCheerRevert` — 씬당 하나.
 - `MouthController.teamCheerHazard` — true면 위 머신. false면 옛 Close→Hold초→Open.
 - `SalivaHazard` — M2 revert. Warning→Cover→Hold→Recover. `SalivaVolume`이 발판 위일 때만 `Player` 얼음 미끄럼.
-- `TongueController` — M4 revert. 4.1 RiseHold / 4.2 AttackSweep. `SweepBreak(int)`.
+- `TongueController` — M4 revert. 4.1 RiseHold / 4.2 AttackSweep. `SweepBreak` 이벤트 안 씀(클립 끝 `BreakRemaining`).
 - `TeamCheerWarningUI` — `OnHazardWindowChanged`. `TeamBuffCooldownUI`는 숨김.
 
 **에디터 (됨):** `M.Stage1` / `M.Stage3` / `M.Boss`의 GO 이름 `MouthController`만 `teamCheerHazard=true`. `TransitionPhase*`·M2 입·M4·M5는 false. `UI.prefab`에 `TeamCheerWarning` + `Assets/Figma/Lobby/Warning.png`, Fadeout보다 위(마지막 형제).
@@ -67,10 +77,10 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | M3 ColorTile | **컷 취소.** 점수제 §3. 각자 칸 서기 폐기. **입 시계.** 10–12분 |
 | M4 | **한 씬, 두 구간.** 4.1 SequenceRing 턴제 + **혀 초출.** 4.2 ArrowTrap + **혀 복습**. 링 위에 화살 없음. M6·M7 없음. 리듬·16칸 암기·검정만 늘리기 **폐기** |
 | M5 | Grid Color+BW **유지.** 2인 장면 = BW 후반. Color/1인 쉬움 수용. **WindTrap 유지**, 강도만 사용자. 바람에서 협동 찾지 않음. **입 열기 없음** |
-| ColorTile 점수 | 2초(기본) 또는 3초 점유 → 뽕 → 그 색 +1 → **다른 칸에 재스폰**. 고유는 주인만, 흑백은 아무나. 통과 = 고유+흑+백 의무. 흑백 의무 0 금지. 통로 좁게. 함정으로 협동 안 만듦 |
+| ColorTile 점수 | 2초(기본) 또는 3초 점유 → 뽕 → 그 색 +1 → **다른 칸에 재스폰**. 고유는 주인만, 흑백은 아무나. 통과 = 고유+흑+백 의무. 흑백 의무 0 금지. 통로 좁게. **압력 = 할당량 + 입 창.** 함정으로 협동 안 만듦. 넉백·문 내림·광장화 안 씀 |
 | 소리 초출 | **M1.** 외침으로 닫힘 막기. 닫힘의 맛 = **암흑 시야 정도는 가져감.** 데미지·둘 다는 나중에. M3·보스 복습 |
 | 침 초출 | **M2 (2.1부터).** 2.2·보스 복습. PhysicMaterial 아님 — `Player.Move()` 얼음 가속/코스트 (`salivaAccelTime` / `salivaDecelTime`). §6 |
-| 혀 초출 | **M4.1.** 보스·M4.2 복습. M6·M7 없음. 1×1 스윕 파괴. 꺼진 칸 낙사→방 리셋. §5 |
+| 혀 초출 | **M4.1.** 보스·M4.2 복습. M6·M7 없음. 4.1 가운데 1칸. 클립 끝에 칸 끔 (`SweepBreak` 안 씀). 꺼진 칸 낙사→방 리셋. §5 |
 | 입 창 리듬 | **개념만.** M1·M3·보스. M2·M5 없음. 초·횟수·데미지는 나중에 |
 | M.Boss | §7. 1 Barrier+침, 2 Drop+화살+혀, 3 Sequence+닫힘, 4 ColorTile+침+닫힘, 5 혀가 바닥을 부수고 삼켜 T. 시드=Host ChallengeStart |
 
@@ -85,6 +95,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 - M6·M7, 링 위에 ArrowTrap, 2.1 위에 Drop
 - 혀 맞음을 약한 밀침으로, 침을 PhysicMaterial로
 - 팀 응원 +2힐·120초를 M 시계로, 창 중 재외침으로 연장, 계속 고함
+- ColorTile에 ContactKnockback·흑백 문 내림·고유색 벽·광장화로 난이도 (압력은 할당량+입 창)
 
 ### H.4 코드
 
@@ -93,8 +104,8 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | CheerService 팀 | **됨.** Heal·120초 폐기. Warning~Revert만 유효. 새 RPC 없음. 입 닫힘·침·혀 연결 |
 | MouthController | **됨.** hazard 씬만 Close→Hold(외침까지)→Open. 자동 재오픈 없음 |
 | 침 | **됨.** `SalivaHazard` / `SalivaVolume` / `Player` 얼음. 수면 비주얼은 슬롯만 비움 |
-| 혀 | **됨.** `TongueController`. 에디터(컨트롤러·프롭·타일·이벤트) 남음 |
-| ColorTile | 구 클리어(전원 자기 색 칸). §3 미반영 |
+| 혀 | **됨.** `TongueController` + M.Stage4 에디터. 4.1=1칸, `SweepBreak` 안 씀. 플레이 확인 (2026-09-04) |
+| ColorTile | **점수제 코드 됨.** unique/black/white 할당 전부 >0이면 §3. 0이면 구 클리어(T.Boss). M.Stage3 인스펙터 할당·스폰·흑백 머티리얼 남음 |
 | Barrier | 아직 보스. §2 슬롯/M1 이동 미반영 |
 | Sequence / Grid | 룰 유지. 손대지 않음 |
 
@@ -172,7 +183,9 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 
 ## 3. ColorTile 점수제 **[확정]**
 
-컷 취소. M.Stage3 유지. 입 시계 안에서 점수. 구현 아직. 통로 좁게. 10–12분 = 할당량 + 창. 라운드 수로 안 벌음.
+컷 취소. M.Stage3 유지. 입 시계 안에서 점수. 코드 됨, 에디터 할당·스폰 남음. 통로 좁게. 10–12분 = **할당량 + 입 창**. 라운드 수로 안 벌음.
+
+**압력 (2026-09-04 재확인):** 점수 할당을 무조건 채운다 + 입 창이 점수를 끊는다. 너무 쉽다고 함정·문을 붙이지 않음.
 
 점유: 연속 2초 또는 3초(기본 2) → 뽕 → 그 색 +1 → **다른 칸에 재스폰**. 발 떼면 리셋.
 
@@ -184,6 +197,8 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 통과: 고유 의무 **그리고** 백 의무 + 흑 의무. 덤 합산(의무보다 큰 총점) 없음. 흑백 의무 0 **금지**. 1인은 혼자 순환. 2인+는 몸이 고유+흑백보다 적으니 담당을 나눔.
 
 2인: 흑·백을 아무도 안 채우면 실패. 자기 색만 밟으면 실패.
+
+안 함 (2026-09-04): ContactKnockback으로 난이도. 흑백 문 내려 통로 넓히기. 고유색 벽 오르내리기. 맵을 광장·평행 길로 넓히기. 라운드 수로 분 벌기.
 
 ---
 
@@ -210,19 +225,19 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 
 | 회 | 구간 | 역할 |
 |----|------|------|
-| 1 초출 | 4.1 SequenceRing | Rise→Hold→Retract. 가운데 1×1 ×9. 가림막. 링 위 화살 없음 |
+| 1 초출 | 4.1 SequenceRing | Rise→Hold→Retract. 가운데 **1칸**. 가림막. 링 위 화살 없음 |
 | 2 복습 | 4.2 ArrowTrap | Attack 한 번에 L **또는** R 하나. 왼쪽/오른쪽 1×1 ×10 (2×5). Hold·Retract 클립 없음. 화살은 압력 |
 | 보스 | M.Boss | 복습만. P2는 4.2쪽 |
 
 제때 외침 = Attack 안 넣음. 늦게 외침 = 꺼진 1×1 복구 (이미 낙사면 방 리셋이 먼저).
 
-**타일:** 전부 **1×1**. 큰 판 아님. 인스펙터 배열. 배열 순서 = 혀가 지나가는 순서.
-- 4.1 가운데: **9칸** (3×3)
-- 4.2: 가로 5열 기준. 왼쪽 **10칸** (2×5) / 가운데 **5칸** (1×5) / 오른쪽 **10칸** (2×5). 가운데 1×5는 L·R 배열에 안 넣음. 3×5+3×5는 가운데 1×5가 겹쳐서 **폐기**
+**타일:** 인스펙터 배열. 배열 순서 = 스윕 순서(이벤트 쓸 때).
+- 4.1 가운데: **1칸** (`MiddleRingTile`. 3×3 9칸 **폐기**, 2026-09-04)
+- 4.2: 가로 5열 기준. 왼쪽 **10칸** (2×5) / 가운데 **5칸** (1×5) / 오른쪽 **10칸** (2×5). 가운데 1×5는 L·R 배열에 안 넣음. 3×5+3×5는 가운데 1×5가 겹쳐서 **폐기**. 씬 GO 이름 `Stage4.3`
 
-**스윕:** Rise·Attack_L·Attack_R 모두 **혀가 그 칸을 지나는 프레임에 그 1×1만** 끔 (콜라이더+메시). 클립 시작에 전부 끄지 않음. 클립 Animation Event `SweepBreak(int)` (칸 인덱스). 클립 끝나면 남은 칸은 코드가 끔.
+**스윕:** `SweepBreak(int)` Animation Event **안 씀**. 클립 끝나면 `BreakRemaining()`이 해당 배열 남은 칸을 끔. 한 칸씩 따라가는 스윕 아님.
 
-**4.1 머신:** Idle → Warning → 외침이면 Rise 안 넣음 / 없으면 Rise 끝까지 → Hold(9칸 꺼진 채, 혀가 가림막 — 반대편 시퀀스는 돌아서 봄) → 외침이면 Retract + 9칸 복구 → Idle.
+**4.1 머신:** Idle → Warning → 외침이면 Rise 안 넣음 / 없으면 Rise 끝까지 → Hold(가운데 칸 꺼진 채, 혀가 가림막 — 반대편 시퀀스는 돌아서 봄) → 외침이면 Retract + 칸 복구 → Idle.
 
 **4.2 머신:** Idle → Warning → 외침이면 Attack 안 넣음 **그리고 꺼진 칸 전부 복구** / 없으면 **이번 방향 하나**만 끝까지 (L이면 왼 10칸, R이면 오른 10칸. 한 클립에 L+R 같이 안 함) → Hold 클립 없음. 혀 Idle.
 - Attack 중 외침: 클립은 끊지 않음. 끝나면 꺼진 칸 전부 복구.
@@ -235,9 +250,9 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 
 **시드:** 4.2 **첫** L/R만 `NetworkSessionData.Seed`. 이후는 교차. 전 머신 동일.
 
-안 함: 4.1+4.2 한 바닥, 화살 전용 새 씬, 혀 무게로 기울이기, 혀 맞음=밀침, 큰 판 하나, 4.2 3×5(가운데 겹침), 한 번에 L+R.
+안 함: 4.1+4.2 한 바닥, 화살 전용 새 씬, 혀 무게로 기울이기, 혀 맞음=밀침, 4.2 3×5(가운데 겹침), 한 번에 L+R. 4.1 가운데 큰 판 1칸은 **허용**.
 
-코드 `TongueController`. 에디터(컨트롤러·프롭·타일 배열·이벤트) 남음.
+코드 `TongueController`. 에디터+플레이 확인 됨 (2026-09-04).
 
 ---
 

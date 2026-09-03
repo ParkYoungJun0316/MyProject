@@ -3,23 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 팀 버프 발동 시 화면에 짧게 뜨는 스탬프 이미지 배너.
-/// UI Canvas 아래 GameObject에 이 스크립트를 붙이면 된다 — 이미지는 Awake에서 스스로 붙인다.
-/// CheerService.OnTeamBuffActivated를 코드에서 직접 구독.
-///
-/// [트리거]
-/// CheerService.BroadcastTeamBuffActivatedClientRpc → OnTeamBuffActivated (Host 로컬 + 전 클라이언트).
-/// Inspector에서 stamp 스프라이트를 연결해야 보인다. 미배치·미스프라이트면 배너만 없고 Heal은 그대로 적용된다.
+/// 팀 응원 성공 시 스탬프를 짧게 보여 준다.
+/// 스프라이트·크기·위치는 이 패널의 Image / RectTransform에서 맞춘다. 이 스크립트는 타이밍만 담당.
+/// CheerService.OnTeamBuffActivated를 구독. Image 미연결·미스프라이트면 배너만 없고 Heal은 그대로다.
 /// </summary>
-public class TeamBuffBannerUI : MonoBehaviour
+public class TeamCheerCleared : MonoBehaviour
 {
-    [Header("이미지")]
-    [SerializeField] Sprite stamp;
-
-    [Header("레이아웃")]
-    [SerializeField] Vector2 stampSize = new Vector2(760f, 420f);
-    [SerializeField] [Range(0f, 1f)] float anchorY = 0.72f;
-
     [Header("타이밍(초)")]
     [SerializeField] float fadeInDuration  = 0.12f;
     [SerializeField] float holdDuration    = 1.6f;
@@ -32,45 +21,19 @@ public class TeamBuffBannerUI : MonoBehaviour
     Coroutine   _waitSubscribe;
     Vector3     _restScale = Vector3.one;
 
-    void Awake() => BuildVisual();
-
-    void BuildVisual()
+    void Awake()
     {
-        DestroyLegacyChild("Text");
-        DestroyLegacyChild("Shadow");
-
-        _canvasGroup = gameObject.GetComponent<CanvasGroup>();
+        _canvasGroup = GetComponent<CanvasGroup>();
         if (_canvasGroup == null) _canvasGroup = gameObject.AddComponent<CanvasGroup>();
         _canvasGroup.alpha          = 0f;
         _canvasGroup.blocksRaycasts = false;
         _canvasGroup.interactable   = false;
 
-        RectTransform selfRt = GetComponent<RectTransform>();
-        if (selfRt == null) selfRt = gameObject.AddComponent<RectTransform>();
-        selfRt.anchorMin        = new Vector2(0.5f, anchorY);
-        selfRt.anchorMax        = new Vector2(0.5f, anchorY);
-        selfRt.pivot            = new Vector2(0.5f, 0.5f);
-        selfRt.sizeDelta        = stampSize;
-        selfRt.anchoredPosition = Vector2.zero;
-        selfRt.localRotation    = Quaternion.identity;
-
-        _image = gameObject.GetComponent<Image>();
-        if (_image == null) _image = gameObject.AddComponent<Image>();
-        _image.sprite         = stamp;
-        _image.preserveAspect = true;
-        _image.raycastTarget  = false;
-        _image.color          = Color.white;
-        _image.enabled        = stamp != null;
+        _image = GetComponent<Image>();
+        if (_image == null) _image = GetComponentInChildren<Image>(true);
 
         _restScale = transform.localScale;
         if (_restScale.sqrMagnitude < 0.0001f) _restScale = Vector3.one;
-    }
-
-    void DestroyLegacyChild(string childName)
-    {
-        Transform child = transform.Find(childName);
-        if (child != null)
-            Destroy(child.gameObject);
     }
 
     void OnEnable()  => TrySubscribe();
@@ -123,7 +86,7 @@ public class TeamBuffBannerUI : MonoBehaviour
     void Show()
     {
         if (!isActiveAndEnabled) return;
-        if (stamp == null) return;
+        if (_image == null || _image.sprite == null) return;
         if (_playRoutine != null) StopCoroutine(_playRoutine);
         _playRoutine = StartCoroutine(PlayRoutine());
     }

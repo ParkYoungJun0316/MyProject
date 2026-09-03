@@ -63,8 +63,24 @@ public class ColorTileChallenge : MonoBehaviour
     [SerializeField] ColorTilePrefabEntry[] tilePrefabs = new ColorTilePrefabEntry[0];
 
     [Header("타일 생성")]
-    [Tooltip("타일이 등장할 수 있는 위치 풀 (빈 오브젝트 Transform).\n4개 이상 준비 권장 (랜덤성)")]
+    [Tooltip("타일이 등장할 수 있는 위치 풀 (빈 오브젝트 Transform).\n점수제는 고유 인원+흑+백보다 많게.")]
     [SerializeField] Transform[] spawnPoints = new Transform[0];
+
+    [Header("점수제 (CoopStageAudit.M §3)")]
+    [Tooltip("고유색마다 채워야 하는 횟수. 흑·백과 함께 전부 >0이면 점수제, 아니면 구 라운드 클리어.")]
+    [SerializeField] int uniqueQuota = 0;
+    [Tooltip("팀 흑 할당. 0이면 구 클리어.")]
+    [SerializeField] int blackQuota = 0;
+    [Tooltip("팀 백 할당. 0이면 구 클리어.")]
+    [SerializeField] int whiteQuota = 0;
+    [Tooltip("유효 점유 유지 시간(초). 기본 2. 발 떼면 리셋.")]
+    [SerializeField] float occupySeconds = 2f;
+    [Tooltip("흑 타일 프리팹. 비우면 고유 프리팹+blackMaterial.")]
+    [SerializeField] GameObject blackPrefab = null;
+    [Tooltip("백 타일 프리팹. 비우면 고유 프리팹+whiteMaterial.")]
+    [SerializeField] GameObject whitePrefab = null;
+    [SerializeField] Material blackMaterial = null;
+    [SerializeField] Material whiteMaterial = null;
 
     [Header("타이머")]
     [Tooltip("모든 플레이어가 타일에 올라서야 하는 제한 시간(초)")]
@@ -105,10 +121,18 @@ public class ColorTileChallenge : MonoBehaviour
     [Tooltip("시간 초과 시 호출 (추가 연출 등 연결 가능)")]
     public UnityEvent OnFail;
 
+    [Tooltip("점수제 진행 변경 — ObjectiveUI Count.")]
+    public UnityEvent OnQuotaChanged;
+
     bool _isRunning;
     int  _failCount;
 
     readonly List<ColorTile> _activeTiles = new List<ColorTile>();
+    readonly List<QuotaSlot> _quotaSlots = new List<QuotaSlot>();
+    readonly Dictionary<PlayerColorType, int> _uniqueScores = new Dictionary<PlayerColorType, int>();
+    int _blackScore;
+    int _whiteScore;
+    int _scoreGeneration;
     Coroutine _scheduleCoroutine;
     Coroutine _judgeCoroutine;
     float     _scheduleStartTime;
@@ -119,11 +143,28 @@ public class ColorTileChallenge : MonoBehaviour
     /// <summary>
     /// activateAtSeconds에 등록된 총 스케줄 개수 = 총 라운드 수.
     /// ColorTileRoundObjective에서 읽어 UI 표시에 사용.
+    /// 점수제면 할당 합.
     /// </summary>
-    public int ScheduledRoundCount => activateAtSeconds != null ? activateAtSeconds.Length : 0;
+    public int ScheduledRoundCount => UsesQuotaScoring
+        ? QuotaRequired
+        : (activateAtSeconds != null ? activateAtSeconds.Length : 0);
 
     /// <summary>실패 누적 횟수.</summary>
     public int FailCount => _failCount;
+
+    /// <summary>고유·흑·백 할당이 모두 1 이상이면 점수제. T.Boss 구 클리어는 0으로 둔다.</summary>
+    public bool UsesQuotaScoring => uniqueQuota > 0 && blackQuota > 0 && whiteQuota > 0;
+
+    public int QuotaProgress { get; private set; }
+    public int QuotaRequired { get; private set; }
+
+    struct QuotaSlot
+    {
+        public ColorTile tile;
+        public ColorTile.TileKind kind;
+        public PlayerColorType uniqueColor;
+        public int spawnIndex;
+    }
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
@@ -173,8 +214,13 @@ public class ColorTileChallenge : MonoBehaviour
         _netState.OnDeathReloadStarted   += HandleDeathReloadStarted;
         _subscribed = true;
 
-        if (autoStart && !IsClientOnly() && activateAtSeconds != null && activateAtSeconds.Length > 0)
-            StartSchedule();
+        if (autoStart && !IsClientOnly())
+        {
+            if (UsesQuotaScoring)
+                Activate();
+            else if (activateAtSeconds != null && activateAtSeconds.Length > 0)
+                StartSchedule();
+        }
     }
 
     void Unsubscribe()
@@ -221,6 +267,11 @@ public class ColorTileChallenge : MonoBehaviour
     public void StartSchedule()
     {
         if (IsClientOnly()) return;
+        if (UsesQuotaScoring)
+        {
+            Activate();
+            return;
+        }
         if (_scheduleCoroutine != null) StopCoroutine(_scheduleCoroutine);
         _scheduleStartTime = Time.time;
         _scheduleCoroutine = StartCoroutine(ScheduleRoutine());
@@ -282,6 +333,12 @@ public class ColorTileChallenge : MonoBehaviour
         if (_netState.ChallengeInstanceId != challengeInstanceId) return;
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
+
+        if (UsesQuotaScoring)
+        {
+            HandleQuotaStepChanged(stepIndex);
+            return;
+        }
 
         // 1. 생존 색 집합 — 순서는 안 쓰므로 GetActivePlayers()의 스캔 캐시 순서와 무관 (생존 여부만 확인)
         var aliveColors = new HashSet<PlayerColorType>();
@@ -498,10 +555,11 @@ public class ColorTileChallenge : MonoBehaviour
         foreach (ColorTile t in _activeTiles)
         {
             if (t == null) continue;
-            t.gameObject.SetActive(false); // 즉시 시각적으로 숨김
-            Destroy(t.gameObject);         // 프레임 끝에 메모리 해제
+            t.gameObject.SetActive(false);
+            Destroy(t.gameObject);
         }
         _activeTiles.Clear();
+        _quotaSlots.Clear();
     }
 
     /// <summary>colorType에 맞는 프리팹 반환. 없으면 null.</summary>
@@ -513,6 +571,341 @@ public class ColorTileChallenge : MonoBehaviour
                 return entry.prefab;
         }
         return null;
+    }
+
+    // ── 점수제 (Host 판정 + ChallengeStep NV 재스폰, 새 RPC 없음) ──
+
+    void HandleQuotaStepChanged(int stepIndex)
+    {
+        if (stepIndex == 0)
+        {
+            if (!GenerateQuotaSession())
+                return;
+            OnChallengeStarted?.Invoke();
+            RefreshQuotaProgress();
+            if (!IsClientOnly())
+            {
+                if (_judgeCoroutine != null) StopCoroutine(_judgeCoroutine);
+                _judgeCoroutine = StartCoroutine(JudgeQuotaRoutine());
+            }
+            return;
+        }
+
+        ApplyQuotaScore(stepIndex);
+    }
+
+    bool GenerateQuotaSession()
+    {
+        List<PlayerColorType> colors = CollectAliveUniqueColors();
+        if (colors.Count == 0 || spawnPoints == null || spawnPoints.Length == 0)
+        {
+            Debug.LogWarning("[ColorTileChallenge] 점수제: 생존 색 또는 spawnPoints가 없습니다.");
+            return false;
+        }
+
+        int needed = colors.Count + 2;
+        if (spawnPoints.Length < needed)
+            Debug.LogWarning($"[ColorTileChallenge] 점수제 spawnPoints {spawnPoints.Length}개 — 고유+흑+백 {needed}개 이상 권장.");
+
+        _isRunning = true;
+        _scoreGeneration = 0;
+        _blackScore = 0;
+        _whiteScore = 0;
+        _uniqueScores.Clear();
+        foreach (PlayerColorType color in colors)
+            _uniqueScores[color] = 0;
+
+        int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        var rng = new System.Random(seed);
+        List<int> order = ShuffledSpawnIndices(rng);
+        if (order.Count == 0) return false;
+
+        ClearTiles();
+
+        var used = new HashSet<int>();
+        int cursor = 0;
+        int TakeSpawn()
+        {
+            for (int n = 0; n < order.Count; n++)
+            {
+                int idx = order[(cursor + n) % order.Count];
+                if (used.Add(idx))
+                {
+                    cursor += n + 1;
+                    return idx;
+                }
+            }
+
+            return order[cursor % order.Count];
+        }
+
+        foreach (PlayerColorType color in colors)
+            SpawnQuotaTile(ColorTile.TileKind.Unique, color, TakeSpawn());
+
+        SpawnQuotaTile(ColorTile.TileKind.Black, PlayerColorType.Common, TakeSpawn());
+        SpawnQuotaTile(ColorTile.TileKind.White, PlayerColorType.Common, TakeSpawn());
+        return true;
+    }
+
+    IEnumerator JudgeQuotaRoutine()
+    {
+        while (_isRunning)
+        {
+            if (!IsClientOnly())
+            {
+                for (int i = 0; i < _quotaSlots.Count; i++)
+                {
+                    QuotaSlot slot = _quotaSlots[i];
+                    if (slot.tile == null || !slot.tile.HoldReady) continue;
+                    if (!SlotNeedsScore(slot)) continue;
+
+                    int spawnIndex = PickFreeSpawnIndex(i);
+                    _scoreGeneration++;
+                    int packed = PackScoreStep(i, _scoreGeneration);
+                    _netState?.ChallengeStepBegin(packed, spawnIndex);
+                    break;
+                }
+
+                if (QuotasMet())
+                {
+                    ResolveRound(true);
+                    yield break;
+                }
+            }
+
+            yield return null;
+        }
+    }
+
+    void ApplyQuotaScore(int packed)
+    {
+        UnpackScoreStep(packed, out int slotIndex, out int generation);
+        if (slotIndex < 0 || slotIndex >= _quotaSlots.Count) return;
+
+        QuotaSlot slot = _quotaSlots[slotIndex];
+        if (slot.tile != null)
+            slot.tile.PlayScoreSfx();
+
+        switch (slot.kind)
+        {
+            case ColorTile.TileKind.Black:
+                _blackScore++;
+                break;
+            case ColorTile.TileKind.White:
+                _whiteScore++;
+                break;
+            default:
+                if (_uniqueScores.ContainsKey(slot.uniqueColor))
+                    _uniqueScores[slot.uniqueColor]++;
+                else
+                    _uniqueScores[slot.uniqueColor] = 1;
+                break;
+        }
+
+        _scoreGeneration = Mathf.Max(_scoreGeneration, generation);
+        RefreshQuotaProgress();
+
+        int newSpawn = _netState != null ? _netState.ChallengeSeed : slot.spawnIndex;
+        if (newSpawn < 0 || spawnPoints == null || newSpawn >= spawnPoints.Length)
+            newSpawn = slot.spawnIndex;
+
+        if (!SlotNeedsScore(_quotaSlots[slotIndex]))
+        {
+            DespawnQuotaSlot(slotIndex);
+            return;
+        }
+
+        MoveQuotaTile(slotIndex, newSpawn);
+    }
+
+    bool SlotNeedsScore(QuotaSlot slot)
+    {
+        switch (slot.kind)
+        {
+            case ColorTile.TileKind.Black:
+                return _blackScore < blackQuota;
+            case ColorTile.TileKind.White:
+                return _whiteScore < whiteQuota;
+            default:
+                _uniqueScores.TryGetValue(slot.uniqueColor, out int scored);
+                return scored < uniqueQuota;
+        }
+    }
+
+    bool QuotasMet()
+    {
+        if (_blackScore < blackQuota || _whiteScore < whiteQuota) return false;
+        foreach (var kv in _uniqueScores)
+        {
+            if (kv.Value < uniqueQuota) return false;
+        }
+        return _uniqueScores.Count > 0;
+    }
+
+    void RefreshQuotaProgress()
+    {
+        int required = blackQuota + whiteQuota;
+        int progress = Mathf.Min(_blackScore, blackQuota) + Mathf.Min(_whiteScore, whiteQuota);
+        foreach (var kv in _uniqueScores)
+        {
+            required += uniqueQuota;
+            progress += Mathf.Min(kv.Value, uniqueQuota);
+        }
+
+        QuotaRequired = required;
+        QuotaProgress = progress;
+        OnQuotaChanged?.Invoke();
+    }
+
+    void SpawnQuotaTile(ColorTile.TileKind kind, PlayerColorType uniqueColor, int spawnIndex)
+    {
+        if (spawnPoints == null || spawnIndex < 0 || spawnIndex >= spawnPoints.Length) return;
+        Transform point = spawnPoints[spawnIndex];
+        if (point == null) return;
+
+        GameObject prefab = GetQuotaPrefab(kind, uniqueColor);
+        if (prefab == null)
+        {
+            Debug.LogWarning($"[ColorTileChallenge] 점수제 프리팹 없음 ({kind} {uniqueColor}).");
+            return;
+        }
+
+        GameObject tileObj = Instantiate(prefab, point.position, Quaternion.identity);
+        ColorTile tile = tileObj.GetComponent<ColorTile>();
+        if (tile == null) tile = tileObj.AddComponent<ColorTile>();
+        tile.SetupQuota(kind, uniqueColor, occupySeconds);
+        if (kind == ColorTile.TileKind.Black)
+            tile.ApplySharedMaterial(blackMaterial);
+        else if (kind == ColorTile.TileKind.White)
+            tile.ApplySharedMaterial(whiteMaterial);
+
+        _activeTiles.Add(tile);
+        _quotaSlots.Add(new QuotaSlot
+        {
+            tile = tile,
+            kind = kind,
+            uniqueColor = uniqueColor,
+            spawnIndex = spawnIndex,
+        });
+    }
+
+    void MoveQuotaTile(int slotIndex, int spawnIndex)
+    {
+        QuotaSlot slot = _quotaSlots[slotIndex];
+        if (slot.tile == null || spawnPoints == null || spawnIndex < 0 || spawnIndex >= spawnPoints.Length)
+            return;
+        Transform point = spawnPoints[spawnIndex];
+        if (point == null) return;
+
+        slot.tile.transform.position = point.position;
+        slot.tile.ResetHold();
+        slot.spawnIndex = spawnIndex;
+        _quotaSlots[slotIndex] = slot;
+    }
+
+    void DespawnQuotaSlot(int slotIndex)
+    {
+        QuotaSlot slot = _quotaSlots[slotIndex];
+        if (slot.tile != null)
+        {
+            _activeTiles.Remove(slot.tile);
+            slot.tile.gameObject.SetActive(false);
+            Destroy(slot.tile.gameObject);
+        }
+
+        slot.tile = null;
+        _quotaSlots[slotIndex] = slot;
+    }
+
+    GameObject GetQuotaPrefab(ColorTile.TileKind kind, PlayerColorType uniqueColor)
+    {
+        if (kind == ColorTile.TileKind.Black && blackPrefab != null) return blackPrefab;
+        if (kind == ColorTile.TileKind.White && whitePrefab != null) return whitePrefab;
+        GameObject unique = GetPrefabForColor(uniqueColor);
+        if (unique != null) return unique;
+        if (tilePrefabs != null)
+        {
+            for (int i = 0; i < tilePrefabs.Length; i++)
+            {
+                if (tilePrefabs[i].prefab != null)
+                    return tilePrefabs[i].prefab;
+            }
+        }
+        return null;
+    }
+
+    int PickFreeSpawnIndex(int slotIndex)
+    {
+        if (spawnPoints == null || spawnPoints.Length == 0) return 0;
+
+        var used = new HashSet<int>();
+        for (int i = 0; i < _quotaSlots.Count; i++)
+        {
+            if (i == slotIndex) continue;
+            if (_quotaSlots[i].tile == null) continue;
+            used.Add(_quotaSlots[i].spawnIndex);
+        }
+
+        int current = _quotaSlots[slotIndex].spawnIndex;
+        for (int n = 1; n <= spawnPoints.Length; n++)
+        {
+            int candidate = (current + n) % spawnPoints.Length;
+            if (spawnPoints[candidate] == null) continue;
+            if (used.Contains(candidate)) continue;
+            return candidate;
+        }
+
+        return current;
+    }
+
+    List<int> ShuffledSpawnIndices(System.Random rng)
+    {
+        var list = new List<int>(spawnPoints.Length);
+        for (int i = 0; i < spawnPoints.Length; i++)
+        {
+            if (spawnPoints[i] != null)
+                list.Add(i);
+        }
+
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(0, i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+
+        return list;
+    }
+
+    List<PlayerColorType> CollectAliveUniqueColors()
+    {
+        var aliveColors = new HashSet<PlayerColorType>();
+        if (GameSession.Instance != null)
+        {
+            foreach (Player p in GameSession.Instance.GetActivePlayers())
+                if (p != null && !p.IsDead) aliveColors.Add(p.playerColorType);
+        }
+        else
+        {
+            foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+                if (!p.IsDead) aliveColors.Add(p.playerColorType);
+        }
+
+        IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
+            ? GameSession.Instance.GetActiveColors()
+            : (IReadOnlyList<PlayerColorType>)PlayerColorUtil.ColorOrder;
+
+        var colors = new List<PlayerColorType>();
+        foreach (PlayerColorType color in activeColors)
+            if (aliveColors.Contains(color)) colors.Add(color);
+        return colors;
+    }
+
+    static int PackScoreStep(int slot, int generation) => (generation << 8) | (slot & 0xFF);
+
+    static void UnpackScoreStep(int packed, out int slot, out int generation)
+    {
+        slot = packed & 0xFF;
+        generation = packed >> 8;
     }
 
     // ── 에디터 ──────────────────────────────────────────────────

@@ -1,26 +1,26 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
 /// 색상 타일 — ColorTileChallenge에서 생성/관리됨.
 ///
-/// [동작]
-///  requiredColorType에 맞는 플레이어가 올라서면 IsCompleted = true.
-///  현재 흑/백/고유색 모드와 무관하게 playerColorType으로만 판별.
-///  틀린 색 플레이어가 올라서도 완료되지 않음.
-///
-/// [테스트 모드]
-///  ignorePlayerCheck = true 시 플레이어 색/isUniqueColor 체크 없이 누구든 밟으면 활성화.
-///  DirectionalBarrierRound에서 디버그용으로 사용.
-///
-/// [설정]
-///  Collider(Is Trigger = true) 필수.
-///  ColorTileChallenge.Activate() 호출 시 자동 생성되므로 직접 씬에 배치 불필요.
+/// 구 클리어: requiredColorType 플레이어가 올라서면 IsCompleted.
+/// 점수제: SetupQuota 후 occupySeconds 동안 유효 점유 → HoldReady. 발 떼면 리셋.
+/// DirectionalBarrier 디버그: ignorePlayerCheck 시 누구든 즉시 완료.
+/// Collider(Is Trigger) 필수.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class ColorTile : MonoBehaviour
 {
+    public enum TileKind
+    {
+        Unique,
+        White,
+        Black,
+    }
+
     [Header("타일 색상")]
     [Tooltip("이 타일이 요구하는 플레이어 고유색")]
     [SerializeField] PlayerColorType requiredColorType = PlayerColorType.Blue;
@@ -49,31 +49,115 @@ public class ColorTile : MonoBehaviour
     public Action<PlayerColorType> OnActivatedCallback;
 
     public PlayerColorType RequiredColorType => requiredColorType;
+    public TileKind Kind { get; private set; } = TileKind.Unique;
 
+    readonly HashSet<Player> _occupants = new HashSet<Player>();
+
+    bool _quotaMode;
+    float _occupySeconds = 2f;
+    float _heldTime;
     bool _isCompleted;
 
-    /// <summary>요구 색상의 플레이어가 현재 타일 위에 있으면 true.</summary>
+    /// <summary>구 클리어: 요구 색 플레이어가 위에 있으면 true. 점수제: 쓰지 않음(HoldReady).</summary>
     public bool IsCompleted => _isCompleted;
+
+    /// <summary>점수제: occupySeconds 동안 유효 점유가 유지되면 true.</summary>
+    public bool HoldReady => _quotaMode && _occupants.Count > 0 && _heldTime >= _occupySeconds;
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>ColorTileChallenge에서 색상 설정 시 호출.</summary>
+    /// <summary>ColorTileChallenge 구 클리어 / DirectionalBarrier에서 색상 설정.</summary>
     public void Setup(PlayerColorType colorType)
     {
         requiredColorType = colorType;
+        Kind = TileKind.Unique;
+        _quotaMode = false;
+        _heldTime = 0f;
+        _occupants.Clear();
+        _isCompleted = false;
     }
 
-    // ── 충돌 감지 ────────────────────────────────────────────────
+    /// <summary>점수제 타일. White/Black은 uniqueColor 무시, 아무 생존 플레이어나 점유.</summary>
+    public void SetupQuota(TileKind kind, PlayerColorType uniqueColor, float occupySeconds)
+    {
+        Kind = kind;
+        requiredColorType = uniqueColor;
+        _occupySeconds = Mathf.Max(0.01f, occupySeconds);
+        _quotaMode = true;
+        _heldTime = 0f;
+        _occupants.Clear();
+        _isCompleted = false;
+    }
+
+    public void ApplySharedMaterial(Material material)
+    {
+        if (material == null) return;
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer == null)
+            renderer = GetComponentInChildren<Renderer>(true);
+        if (renderer != null)
+            renderer.sharedMaterial = material;
+    }
+
+    public void ResetHold()
+    {
+        _heldTime = 0f;
+    }
+
+    public void PlayScoreSfx() => PlayPressSfx();
+
+    // ── 점유 ────────────────────────────────────────────────────
 
     void Awake()
     {
         GetComponent<Collider>().isTrigger = true;
     }
 
-    void OnTriggerEnter(Collider other) => CheckPlayer(other);
-    void OnTriggerStay(Collider other)  => CheckPlayer(other);
+    void Update()
+    {
+        if (!_quotaMode) return;
 
-    void CheckPlayer(Collider other)
+        if (_occupants.Count > 0)
+        {
+            _occupants.RemoveWhere(p => p == null || p.IsDead);
+            if (_occupants.Count > 0)
+                _heldTime += Time.deltaTime;
+            else
+                _heldTime = 0f;
+        }
+        else
+            _heldTime = 0f;
+    }
+
+    void OnTriggerEnter(Collider other) => TryAddOccupant(other);
+    void OnTriggerStay(Collider other)  => TryAddOccupant(other);
+
+    void OnTriggerExit(Collider other)
+    {
+        Player p = other.GetComponentInParent<Player>();
+        if (p == null) return;
+
+        if (_quotaMode)
+        {
+            if (_occupants.Remove(p) && _occupants.Count == 0)
+                OnUncompleted?.Invoke();
+            return;
+        }
+
+        if (!_isCompleted) return;
+
+        if (ignorePlayerCheck)
+        {
+            _isCompleted = false;
+            return;
+        }
+
+        if (p.playerColorType != requiredColorType) return;
+        _isCompleted = false;
+        OnUncompleted?.Invoke();
+    }
+
+    void TryAddOccupant(Collider other)
     {
         if (ignorePlayerCheck)
         {
@@ -87,9 +171,17 @@ public class ColorTile : MonoBehaviour
 
         Player p = other.GetComponentInParent<Player>();
         if (p == null || p.IsDead) return;
+
+        if (_quotaMode)
+        {
+            if (!IsValidQuotaOccupant(p)) return;
+            if (_occupants.Add(p) && _occupants.Count == 1)
+                OnCompleted?.Invoke();
+            return;
+        }
+
         if (p.playerColorType != requiredColorType) return;
 
-        // 고유색 모드로 전환된 순간 완료
         if (p.isUniqueColor && !_isCompleted)
         {
             _isCompleted = true;
@@ -97,7 +189,6 @@ public class ColorTile : MonoBehaviour
             OnCompleted?.Invoke();
             OnActivatedCallback?.Invoke(requiredColorType);
         }
-        // 고유색 → 흑/백으로 전환된 순간 취소
         else if (!p.isUniqueColor && _isCompleted)
         {
             _isCompleted = false;
@@ -105,27 +196,14 @@ public class ColorTile : MonoBehaviour
         }
     }
 
-    void OnTriggerExit(Collider other)
+    bool IsValidQuotaOccupant(Player p)
     {
-        if (!_isCompleted) return;
-
-        if (ignorePlayerCheck)
-        {
-            _isCompleted = false;
-            return;
-        }
-
-        Player p = other.GetComponentInParent<Player>();
-        if (p == null) return;
-        if (p.playerColorType != requiredColorType) return;
-
-        _isCompleted = false;
-        OnUncompleted?.Invoke();
+        if (p == null || p.IsDead) return false;
+        if (Kind == TileKind.White || Kind == TileKind.Black)
+            return true;
+        return p.playerColorType == requiredColorType;
     }
 
-    // 로컬 3D 재생 — 타일 트리거는 각 머신이 CNT 위치로 이미 점유를 안다(RPC 불필요).
-    // 2D였을 때는 원격 플레이어가 밟은 타일도 내 귀 옆에서 나는 것처럼 풀볼륨으로 들렸음
-    // (2026-09-01 수정) — 타일 위치 기준 3D로 전환.
     void PlayPressSfx()
     {
         if (pressSfxId == SFXId.None) return;
