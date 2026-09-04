@@ -117,7 +117,7 @@ public class AdvancingWall : MonoBehaviour
     [Tooltip("전진·후퇴 이동 중 재생할 SFX. 기본값(Trap_AdvancingWall_Move)은 일반 벽용 —\n" +
              "이 컴포넌트를 재사용하는 다른 트랩은 여기서 다른 SFXId로 지정할 것.\n" +
              "패널티 이동(PermanentAdvance)에는 재생 안 함 — 짧은 순간이동이라 루프 사운드가 안 어울려서,\n" +
-             "실패 사운드는 호출자(ColorTileChallenge.OnFail 등)의 SFXEventPlayer로 별도 연결할 것.")]
+             "실패 사운드는 호출자의 SFXEventPlayer로 별도 연결할 것.")]
     [SerializeField] SFXId moveSfxId = SFXId.Trap_AdvancingWall_Move;
     [Tooltip("0 = 완전 2D, 1 = 완전 3D")]
     [SerializeField] [Range(0f, 1f)] float moveSpatialBlend = 1f;
@@ -408,8 +408,7 @@ public class AdvancingWall : MonoBehaviour
         Vector3 from     = _rb.position;
         Vector3 target   = _currentOrigin + worldDir * distance;
 
-        // 패널티 이동은 사운드 없음 — 실패 사운드는 호출자(ColorTileChallenge.OnFail 등)의
-        // SFXEventPlayer로 별도 연결한다(짧은 순간이동이라 루프 사운드보단 단발음이 더 잘 들림).
+        // 패널티 이동은 사운드 없음 — 실패 사운드는 호출자의 SFXEventPlayer로 별도 연결한다.
         yield return LerpTo(from, target, Mathf.Max(penaltyMoveDuration, 0.05f));
         _rb.MovePosition(target);
 

@@ -14,8 +14,8 @@ using TMPro;
 ///
 /// [표시 모드 SSOT — 타입 분기 대신 모드로 통일. 새 Objective 추가 시 아래 4개 중 하나로 분류할 것]
 /// - Time        : "275s"       — SurviveTimeObjective
-/// - Count       : "3/5"        — RoundProgressObjective 전부 (OXQuiz/Grid/ColorTile/MemoryRound). 성공·실패 구분 없이 진행 라운드 수만 표시
-/// - Count+Timer : "2/5 · 18s"  — SequenceRingObjective, Stage5TargetObjective
+/// - Count       : "3/5"        — RoundProgressObjective (Grid/Memory 등). 성공·실패 구분 없이 진행 라운드 수만 표시
+/// - Count+Timer : "2/5 · 18s"  — SequenceRingObjective, Stage5TargetObjective, ColorTileRoundObjective
 /// - Ratio       : 가로 트랙 바 + 마커 (0~1) — ReachZoneObjective만
 /// 그 외(분류 안 된 StageObjective)는 지원하지 않음 — objectiveName 텍스트로 대체하지 않는다.
 /// Boss(BossFightObjective)는 StageObjective가 아니며 이 UI가 다루지 않음 — BossHealthBarUI 별도 유지.
@@ -169,6 +169,10 @@ public class ObjectiveUI : MonoBehaviour
             slot.stage5Required  = stage5.requiredCaptures;
             slot.stage5Remaining = stage5.Remaining;
             BuildTextContent(root, slot, FormatCountTimer(slot.stage5Captured, slot.stage5Required, slot.stage5Remaining));
+        }
+        else if (obj is ColorTileRoundObjective colorTile)
+        {
+            BuildTextContent(root, slot, FormatCountClock(colorTile.PlayedRounds, colorTile.TotalRounds, colorTile.Remaining));
         }
         else if (obj is RoundProgressObjective round)
         {
@@ -351,6 +355,17 @@ public class ObjectiveUI : MonoBehaviour
                 stage5.OnCaptureCountChanged.AddListener(captured.stage5CaptureListener);
                 stage5.OnTimerChanged.AddListener(captured.stage5TimerListener);
             }
+            else if (slot.objective is ColorTileRoundObjective colorTile)
+            {
+                var captured = slot;
+                captured.roundListener = () =>
+                {
+                    if (captured.titleText != null)
+                        captured.titleText.text = FormatCountClock(
+                            colorTile.PlayedRounds, colorTile.TotalRounds, colorTile.Remaining);
+                };
+                colorTile.OnProgressChanged.AddListener(captured.roundListener);
+            }
             else if (slot.objective is RoundProgressObjective round)
             {
                 var captured = slot;
@@ -399,6 +414,12 @@ public class ObjectiveUI : MonoBehaviour
 
     static string FormatCountTimer(int played, int total, float secondsRemaining) =>
         $"{played}/{total} · {Mathf.CeilToInt(secondsRemaining)}s";
+
+    static string FormatCountClock(int played, int total, float secondsRemaining)
+    {
+        int t = Mathf.Max(0, Mathf.CeilToInt(secondsRemaining));
+        return $"{played}/{total} · {t / 60}:{t % 60:00}";
+    }
 
     static void SetMarkerProgress(RectTransform markerRect, float progress01)
     {

@@ -14,15 +14,8 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Collider))]
 public class ColorTile : MonoBehaviour
 {
-    public enum TileKind
-    {
-        Unique,
-        White,
-        Black,
-    }
-
     [Header("타일 색상")]
-    [Tooltip("이 타일이 요구하는 플레이어 고유색")]
+    [Tooltip("고유색(Blue/Purple/Green/Yellow) 또는 점수제 흑백(Black/White). Common/Danger는 쓰지 않음.")]
     [SerializeField] PlayerColorType requiredColorType = PlayerColorType.Blue;
 
     [Header("테스트")]
@@ -49,7 +42,6 @@ public class ColorTile : MonoBehaviour
     public Action<PlayerColorType> OnActivatedCallback;
 
     public PlayerColorType RequiredColorType => requiredColorType;
-    public TileKind Kind { get; private set; } = TileKind.Unique;
 
     readonly HashSet<Player> _occupants = new HashSet<Player>();
 
@@ -66,37 +58,25 @@ public class ColorTile : MonoBehaviour
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>ColorTileChallenge 구 클리어 / DirectionalBarrier에서 색상 설정.</summary>
+    /// <summary>DirectionalBarrier 등에서 색상 설정. 점수제는 SetupQuota.</summary>
     public void Setup(PlayerColorType colorType)
     {
         requiredColorType = colorType;
-        Kind = TileKind.Unique;
         _quotaMode = false;
         _heldTime = 0f;
         _occupants.Clear();
         _isCompleted = false;
     }
 
-    /// <summary>점수제 타일. White/Black은 uniqueColor 무시, 아무 생존 플레이어나 점유.</summary>
-    public void SetupQuota(TileKind kind, PlayerColorType uniqueColor, float occupySeconds)
+    /// <summary>점수제 타일. 고유색은 isUniqueColor+색 일치. Black/White는 아무 생존 플레이어나.</summary>
+    public void SetupQuota(PlayerColorType colorType, float occupySeconds)
     {
-        Kind = kind;
-        requiredColorType = uniqueColor;
+        requiredColorType = colorType;
         _occupySeconds = Mathf.Max(0.01f, occupySeconds);
         _quotaMode = true;
         _heldTime = 0f;
         _occupants.Clear();
         _isCompleted = false;
-    }
-
-    public void ApplySharedMaterial(Material material)
-    {
-        if (material == null) return;
-        Renderer renderer = GetComponent<Renderer>();
-        if (renderer == null)
-            renderer = GetComponentInChildren<Renderer>(true);
-        if (renderer != null)
-            renderer.sharedMaterial = material;
     }
 
     public void ResetHold()
@@ -199,9 +179,9 @@ public class ColorTile : MonoBehaviour
     bool IsValidQuotaOccupant(Player p)
     {
         if (p == null || p.IsDead) return false;
-        if (Kind == TileKind.White || Kind == TileKind.Black)
+        if (PlayerColorUtil.IsSharedTileColor(requiredColorType))
             return true;
-        return p.playerColorType == requiredColorType;
+        return p.isUniqueColor && p.playerColorType == requiredColorType;
     }
 
     void PlayPressSfx()

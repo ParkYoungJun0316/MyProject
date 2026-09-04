@@ -414,9 +414,6 @@ public class PlayerEmoteMenuUI : MonoBehaviour
             rt.sizeDelta = iconSize;
             rt.localScale = Vector3.one;
 
-            float ang = i * SliceRadians;
-            rt.anchoredPosition = new Vector2(Mathf.Sin(ang), Mathf.Cos(ang)) * iconOrbitRadius;
-
             EnsureSlotLabel(img, SlotLabels[i]);
         }
     }

@@ -25,7 +25,7 @@ M1–5·M.Boss를 다시 묻지 말 것. T5·T.Boss는 보류.
 **다음 트랙:** M 인게임 판을 잠금에 맞추기. T1 조임은 이 트랙 뒤.
 
 1. **읽기:** 이 절 → §2 Barrier · §3 ColorTile. 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §H.5. T는 아직 구현하지 않음.
-2. **할 일:** ColorTile 점수제 §3 — 코드 됨. **에디터:** M.Stage3 `uniqueQuota`/`blackQuota`/`whiteQuota` 전부 >0, spawnPoints를 고유+흑+백보다 많이, 흑·백 머티리얼. Barrier는 M.Stage1로 + §2.1 슬롯. Sequence / Grid 손대지 않음.
+2. **할 일:** ColorTile 점수제 §3 — 코드 됨. 타이머·발동 스케줄·실패 패널티 **폐기**. **에디터:** M.Stage3 `uniqueQuota`=6, 흑·백 배열 1인 4/4 · 2인 6/6 · 3인 7/7 · 4인 8/8, `tilePrefabs`에 Black·White, `ColorTileRoundObjective.targetTime`=180. Barrier는 M.Stage1로 + §2.1 슬롯. Sequence / Grid 손대지 않음.
 3. **하지 말 것:** ColorTile에 넉백·문 내림·광장화. 입/침/혀 재설계. 팀 힐·120초. 새 RPC. Tutorial 팀 외침(마지막). T 조임·안개. T5.
 
 **혀 반영 (2026-09-04) [확정]**
@@ -74,7 +74,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 |------|------|
 | M1 | `DirectionalBarrier`를 보스에서 앞으로. 패드→문 상승→incoming 함정 파괴. 뮤텍스 = 한 색만 업. **소리 초출.** 통과 퍼즐 아님. 슬롯 = §2. `Distribute` 1인=전원동색 / 2인=2+2 **쓰지 않음** |
 | M2 | **한 씬, 두 구간.** 2.1 SideSplit + **침**. 2.2 Drop + **침**. 암전 안 씀. 2.1 위에 Drop 안 얹음. 라운드로 시간 안 벌음 |
-| M3 ColorTile | **컷 취소.** 점수제 §3. 각자 칸 서기 폐기. **입 시계.** 10–12분 |
+| M3 ColorTile | **컷 취소.** 점수제 §3. 각자 칸 서기 폐기. **입 시계.** 3분(2–5) |
 | M4 | **한 씬, 두 구간.** 4.1 SequenceRing 턴제 + **혀 초출.** 4.2 ArrowTrap + **혀 복습**. 링 위에 화살 없음. M6·M7 없음. 리듬·16칸 암기·검정만 늘리기 **폐기** |
 | M5 | Grid Color+BW **유지.** 2인 장면 = BW 후반. Color/1인 쉬움 수용. **WindTrap 유지**, 강도만 사용자. 바람에서 협동 찾지 않음. **입 열기 없음** |
 | ColorTile 점수 | 2초(기본) 또는 3초 점유 → 뽕 → 그 색 +1 → **다른 칸에 재스폰**. 고유는 주인만, 흑백은 아무나. 통과 = 고유+흑+백 의무. 흑백 의무 0 금지. 통로 좁게. **압력 = 할당량 + 입 창.** 함정으로 협동 안 만듦. 넉백·문 내림·광장화 안 씀 |
@@ -105,7 +105,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | MouthController | **됨.** hazard 씬만 Close→Hold(외침까지)→Open. 자동 재오픈 없음 |
 | 침 | **됨.** `SalivaHazard` / `SalivaVolume` / `Player` 얼음. 수면 비주얼은 슬롯만 비움 |
 | 혀 | **됨.** `TongueController` + M.Stage4 에디터. 4.1=1칸, `SweepBreak` 안 씀. 플레이 확인 (2026-09-04) |
-| ColorTile | **점수제 코드 됨.** unique/black/white 할당 전부 >0이면 §3. 0이면 구 클리어(T.Boss). M.Stage3 인스펙터 할당·스폰·흑백 머티리얼 남음 |
+| ColorTile | **점수제만.** unique 6 + 인원별 흑/백(4/4, 6/6, 7/7, 8/8). 목표 시간 = `targetTime`(기본 180, 권장 120–300). 타일 `Black`/`White`. M.Stage3 인스펙터 남음 |
 | Barrier | 아직 보스. §2 슬롯/M1 이동 미반영 |
 | Sequence / Grid | 룰 유지. 손대지 않음 |
 
@@ -183,7 +183,7 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 
 ## 3. ColorTile 점수제 **[확정]**
 
-컷 취소. M.Stage3 유지. 입 시계 안에서 점수. 코드 됨, 에디터 할당·스폰 남음. 통로 좁게. 10–12분 = **할당량 + 입 창**. 라운드 수로 안 벌음.
+컷 취소. M.Stage3 유지. 입 시계 안에서 점수. 코드 됨, 에디터 할당·스폰 남음. 통로 좁게. **3분** = 할당량 + 입 창 (인스펙터 2–5분). 라운드 수로 안 벌음. 상한은 `ColorTileRoundObjective.targetTime`(기본 180초). 넘기면 Fail.
 
 **압력 (2026-09-04 재확인):** 점수 할당을 무조건 채운다 + 입 창이 점수를 끊는다. 너무 쉽다고 함정·문을 붙이지 않음.
 
@@ -284,5 +284,7 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 | 5 | 혀가 바닥을 부숨 → 삼켜 T. 연출 |
 
 페이즈 2는 혀가 본체. 드롭·화살이 동등한 숙제가 되면 다시 짠다. 랜덤 = Host `ChallengeStart(seed)`만. 클라이언트마다 `Random` 없음.
+
+**P5 아이디어 (미잠금, 2026-09-04):** 연출만으로 두지 않고, 혀가 바닥을 부수는 걸 **피하는 판**을 고려. 한 사이클에서 Rise(가운데)와 Attack_L/R을 같이 쓴다 — 4.1 가림막 + 4.2 한쪽 쓸기를 보스에서 섞는 후보. 4.1·4.2 본체에는 안 넣음. 가운데는 RiseHold, L/R은 Attack(Hold 없음). 확정 아님.
 
 빼는 것: 세이프존 입문, Barrier 초출, 깨물림 모이기, 바람만 페이즈.

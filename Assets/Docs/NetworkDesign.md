@@ -1423,6 +1423,16 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 - 적용 대상: OX/ColorTile/GridColor/GridBW/SequenceRing 5개 챌린지 + `DirectionalBarrierRound`(§11B.3에는 없으나 동일 공유 슬롯 사용 확인되어 함께 수정).
 - 상세 반영 내용: [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
 
+### 11B.10 `ColorTile` 점수제 고유칸 `isUniqueColor` 누락 (2026-09-04)
+
+**증상:** `M.Stage3` 점수제에서 고유색 폼이 아니어도(흑·백 몸) 자기 고유칸이 점수된다. 1인은 고유 1+흑+백만 깔리므로, 흑·백 칸의 「아무나」(§3 잠금)와 겹쳐 아무 몸·아무 칸이나 되는 것처럼 보였다.
+
+**원인:** `ColorTile.IsValidQuotaOccupant`가 고유칸에서 `playerColorType`만 비교하고 `isUniqueColor`를 안 봤다. `PressurePad`/`GridColor`/구 ColorTile 클리어는 `isUniqueColor && playerColorType`인데 점수제만 빠져 있었다. 흑·백 칸(`IsSharedTileColor`)은 설계대로 아무나라 유지.
+
+**수정:** 고유칸만 `p.isUniqueColor && p.playerColorType == requiredColorType`. 새 RPC/NV 없음. `Setup()` 경로(`DirectionalBarrier`)는 기존 `isUniqueColor` 체크 유지.
+
+스모크: `M.Stage3` 고유칸=고유색 폼만, 흑·백 칸=아무 폼. 반대 라운드 `T.Boss` ColorTile/`DirectionalBarrier` 패드(구 `Setup` 클리어) 회귀 없음. (§9B.4)
+
 ---
 
 ## 12. 이탈 · 세션 종료

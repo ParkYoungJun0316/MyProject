@@ -339,7 +339,7 @@ public class GameSession : MonoBehaviour
         //    ColoredStartZone 등 다른 시스템이 IsColorActive()를 신뢰할 수 있도록 먼저 채움
         if (activeColorSlots != null)
             foreach (PlayerColorType c in activeColorSlots)
-                if (c != PlayerColorType.Common && c != PlayerColorType.Danger)
+                if (PlayerColorUtil.IsUniquePlayerColor(c))
                     _activeColors.Add(c);
 
         if (players == null || players.Length == 0)

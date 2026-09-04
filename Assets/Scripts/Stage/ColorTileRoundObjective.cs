@@ -3,52 +3,41 @@ using UnityEngine;
 
 /// <summary>
 /// ColorTileChallenge 클리어 Objective.
-/// 점수제: 고유+흑+백 할당을 모두 채우면 Complete. Count UI는 QuotaProgress/QuotaRequired.
-/// 구 클리어: 스케줄 성공 횟수 &gt;= requiredSuccesses.
+/// 고유+흑+백 할당을 모두 채우면 Complete.
+/// targetTime 안에 못 채우면 Fail (StageManager가 전원 즉사 → 방 리셋).
+/// Count UI는 점수, 남은 시간은 PhaseStartServerTime 역산 — 새 RPC 없음.
 /// </summary>
 public class ColorTileRoundObjective : RoundProgressObjective
 {
     [Header("컬러 타일 챌린지")]
     [Tooltip("감시할 ColorTileChallenge.\n" +
              "이 Objective는 Activate()를 호출하지 않습니다.\n" +
-             "Challenge의 autoStart/스케줄 설정을 그대로 사용하세요.")]
+             "Challenge의 autoStart를 그대로 사용하세요.")]
     [SerializeField] ColorTileChallenge challenge;
 
-    [Header("클리어 조건 (구 라운드 모드)")]
-    [Tooltip("점수제가 아닐 때만 사용. 스테이지 클리어에 필요한 최소 성공 횟수.")]
-    [SerializeField] int requiredSuccesses = 0;
+    [Header("목표 시간")]
+    [Tooltip("스테이지 상한(초). 권장 120–300 (2–5분). M.Stage3 기본 180 (3분).\n" +
+             "할당을 이 안에 못 채우면 실패. 0이면 시간 실패 없음.")]
+    [SerializeField] float targetTime = 180f;
 
-    int _playedRounds;
-    int _successCount;
+    float _lastRemaining = -1f;
 
     public override int PlayedRounds =>
-        challenge != null && challenge.UsesQuotaScoring
-            ? challenge.QuotaProgress
-            : _playedRounds;
+        challenge != null ? challenge.QuotaProgress : 0;
 
     public override int TotalRounds =>
-        challenge != null && challenge.UsesQuotaScoring
-            ? challenge.QuotaRequired
-            : (challenge != null ? challenge.ScheduledRoundCount : 0);
+        challenge != null ? challenge.QuotaRequired : 0;
 
-    public override int CurrentRoundIndex
-    {
-        get
-        {
-            if (challenge != null && challenge.UsesQuotaScoring)
-                return PlayedRounds < TotalRounds ? PlayedRounds : -1;
-            return _playedRounds < TotalRounds ? _playedRounds : -1;
-        }
-    }
+    public override int CurrentRoundIndex =>
+        PlayedRounds < TotalRounds ? PlayedRounds : -1;
 
-    public int RequiredSuccesses => requiredSuccesses;
+    public float TargetTime => Mathf.Max(0f, targetTime);
+    public float Remaining => ComputeRemaining();
 
     public override void Begin()
     {
         Unsubscribe();
-
-        _playedRounds = 0;
-        _successCount = 0;
+        _lastRemaining = -1f;
 
         if (challenge == null)
         {
@@ -57,13 +46,49 @@ public class ColorTileRoundObjective : RoundProgressObjective
         }
 
         challenge.OnSuccess.AddListener(HandleSuccess);
-        challenge.OnFail.AddListener(HandleFail);
         challenge.OnQuotaChanged.AddListener(HandleQuotaChanged);
 
         OnProgressChanged?.Invoke();
     }
 
-    public override void Tick() { }
+    public override void Tick()
+    {
+        if (IsCompleted || IsFailed) return;
+
+        float remaining = Remaining;
+        if (_lastRemaining < 0f || Mathf.Abs(remaining - _lastRemaining) >= 0.09f)
+        {
+            _lastRemaining = remaining;
+            OnProgressChanged?.Invoke();
+        }
+
+        if (TargetTime <= 0f || remaining > 0f) return;
+        if (QuotasFilled()) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+        Fail();
+    }
+
+    bool QuotasFilled()
+    {
+        return challenge != null
+            && challenge.QuotaRequired > 0
+            && challenge.QuotaProgress >= challenge.QuotaRequired;
+    }
+
+    float ComputeRemaining()
+    {
+        if (TargetTime <= 0f) return 0f;
+
+        var nm = NetworkManager.Singleton;
+        var net = StageNetworkState.Instance;
+        if (nm == null || !nm.IsListening || net == null || net.PhaseStartServerTime <= 0.0)
+            return TargetTime;
+
+        float elapsed = Mathf.Max(0f, (float)(nm.ServerTime.Time - net.PhaseStartServerTime));
+        return Mathf.Max(0f, TargetTime - elapsed);
+    }
 
     void HandleQuotaChanged()
     {
@@ -75,41 +100,16 @@ public class ColorTileRoundObjective : RoundProgressObjective
     {
         if (IsCompleted || IsFailed) return;
 
-        if (challenge != null && challenge.UsesQuotaScoring)
-        {
-            OnProgressChanged?.Invoke();
-            var nmQuota = NetworkManager.Singleton;
-            if (nmQuota != null && nmQuota.IsListening && !nmQuota.IsServer) return;
-            Complete();
-            return;
-        }
-
-        _successCount++;
-        _playedRounds++;
         OnProgressChanged?.Invoke();
-
-        if (_successCount < requiredSuccesses) return;
-
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
-
         Complete();
-    }
-
-    void HandleFail()
-    {
-        if (IsCompleted || IsFailed) return;
-        if (challenge != null && challenge.UsesQuotaScoring) return;
-
-        _playedRounds++;
-        OnProgressChanged?.Invoke();
     }
 
     void Unsubscribe()
     {
         if (challenge == null) return;
         challenge.OnSuccess.RemoveListener(HandleSuccess);
-        challenge.OnFail.RemoveListener(HandleFail);
         challenge.OnQuotaChanged.RemoveListener(HandleQuotaChanged);
     }
 

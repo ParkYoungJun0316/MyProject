@@ -36,12 +36,27 @@ public static class PlayerColorUtil
         return -1;
     }
 
+    public static bool IsUniquePlayerColor(PlayerColorType colorType)
+    {
+        return colorType == PlayerColorType.Blue
+            || colorType == PlayerColorType.Purple
+            || colorType == PlayerColorType.Green
+            || colorType == PlayerColorType.Yellow;
+    }
+
+    public static bool IsSharedTileColor(PlayerColorType colorType)
+    {
+        return colorType == PlayerColorType.Black || colorType == PlayerColorType.White;
+    }
+
     public static Color GetUniqueColor(PlayerColorType type) => type switch
     {
         PlayerColorType.Blue   => Blue,
         PlayerColorType.Yellow => Yellow,
         PlayerColorType.Purple => Purple,
         PlayerColorType.Green  => Green,
+        PlayerColorType.Black  => Color.black,
+        PlayerColorType.White  => Color.white,
         _                      => Color.white,
     };
 

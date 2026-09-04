@@ -4,10 +4,12 @@
 /// </summary>
 public enum PlayerColorType
 {
-    Common, // 공용 — 모든 플레이어 사용 가능
+    Common, // 공용 패드 등 — 모든 플레이어. 값 유지(직렬화). ColorTile 흑백에 쓰지 않음.
     Blue,
     Purple,
     Green,
     Yellow,
-    Danger, // 모두 즉사
+    Danger, // SequenceRing 즉사 등. 값 유지(직렬화).
+    Black,
+    White,
 }
