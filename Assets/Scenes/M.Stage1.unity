@@ -278,6 +278,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 309282294}
+        m_TargetAssemblyTypeName: DirectionalBarrierRound, Assembly-CSharp
+        m_MethodName: CloseAndSpawnTiles
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &134850435
 Transform:
   m_ObjectHideFlags: 0
@@ -381,7 +393,7 @@ MonoBehaviour:
     prefab: {fileID: 3292826405906091819, guid: 9ddf20956a292684880d1a089bb83a3a, type: 3}
   - colorType: 7
     prefab: {fileID: 3292826405906091819, guid: 6dfa05e1eb9e6b94dbd11ea17b98ed4a, type: 3}
-  revealDuration: 4
+  autoStart: 0
   debugAllTiles: 0
   OnRoundStarted:
     m_PersistentCalls:
@@ -3249,6 +3261,18 @@ MonoBehaviour:
         - m_Target: {fileID: 1472692733}
           m_TargetAssemblyTypeName: PhaseDialogueGate, Assembly-CSharp
           m_MethodName: Begin
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 309282294}
+          m_TargetAssemblyTypeName: DirectionalBarrierRound, Assembly-CSharp
+          m_MethodName: Reveal
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}

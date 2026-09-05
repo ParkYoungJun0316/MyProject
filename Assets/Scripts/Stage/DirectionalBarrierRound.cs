@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,25 +11,40 @@ using UnityEngine.Events;
 /// 동일한 색 배치를 재생성한다 (버그 수정 2026-07-27 — 이전엔 전 피어가 각자 UnityEngine.Random으로
 /// 셔플해 Host/Client 색 배치가 갈라졌음. 위치는 씬 공유 Transform이라 항상 맞았음).
 ///
-/// [라운드 시작 시퀀스]
-///  1. 베리어 스폰 포인트 4곳에 색상 프리팹을 시드 기반으로 배치
-///  2. 전부 Open → revealDuration초 동안 색↔위치 매핑 공개
-///  3. 전부 Close (하강)
-///  4. 타일 스폰
-///  5. 타일 밟으면 해당 색 베리어만 Open, 나머지 Close
+/// [흐름 — 2단계로 분리 (2026-09-05)]
+///  1. Reveal(): 베리어 스폰 포인트 4곳에 색상 프리팹을 시드 기반으로 배치 + 전부 Open.
+///     자동으로 안 닫힌다 — 다이얼로그 등 프리뷰 구간 내내 열어둘 수 있다.
+///  2. CloseAndSpawnTiles(): 열려 있던 베리어를 전부 Close(하강) + 타일 스폰 — 진짜 라운드 시작.
+///     Reveal()을 건너뛰고 곧장 호출해도 그 자리에서 스폰부터 자동 수행한다(프리뷰 없이 즉시 시작,
+///     M.Boss 같은 무프리뷰 씬용).
+///  3. 타일 밟으면 해당 색 베리어만 Open, 나머지 Close (HandleTileActivated)
 ///
 /// [베리어 규칙]
 ///  - 한 번에 하나만 Open (토글 없음)
 ///
+/// [권장 연결 — M.Stage1]
+///  Phase0 onPhaseEnter → PhaseDialogueGate.Begin()(대화)과 동시에 → Reveal()(미리보기 시작)
+///  PhaseDialogueGate.OnAllReady → StageStartGate.Arm()
+///  StageStartGate.OnCountdownComplete → CloseAndSpawnTiles()
+///
+/// [시작]
+///  - autoStart = true: GO가 켜지면 Host가 즉시 Reveal() (프리뷰 없이 바로 배치하고 싶을 때)
+///  - autoStart = false: 위 권장 연결대로 Reveal()/CloseAndSpawnTiles()를 외부에서 호출
+///
 /// [Inspector 필수 설정]
 ///  barrierSpawnPoints : 동/서/남/북 스폰 위치 4개
-///  barrierPrefabs     : Blue/Purple/Green/Yellow DoorController 포함 프리팹 4개
-///  tileSpawnPoints    : 타일 스폰 위치 4개 이상
-///  tilePrefabs        : Blue/Purple/Green/Yellow ColorTile 프리팹 4개
+///  barrierPrefabs     : Blue/Purple/Green/Yellow + White/Black DoorController 포함 프리팹
+///  tileSpawnPoints    : 타일 스폰 위치 (색 종류 수 이상)
+///  tilePrefabs        : Blue/Purple/Green/Yellow + White/Black ColorTile 프리팹
 ///  debugAllTiles      : true = 플레이어 체크 없이 누구나 밟기 가능 (테스트용)
 /// </summary>
 public class DirectionalBarrierRound : MonoBehaviour
 {
+    // _challengeStep 슬롯의 stepIndex 의미 — Reveal(배치+Open, 안 닫힘)과 CloseAndSpawnTiles
+    // (Close+타일 스폰)를 서로 다른 네트워크 신호로 분리해 Host/Client가 각각 언제 재생할지 구분한다.
+    const int RevealStep = 0;
+    const int CloseStep  = 1;
+
     public enum SpawnDirection
     {
         NorthSouth, // 북/남 — 프리팹 회전 그대로
@@ -83,8 +97,9 @@ public class DirectionalBarrierRound : MonoBehaviour
     [SerializeField] TilePrefabEntry[] tilePrefabs = new TilePrefabEntry[4];
 
     [Header("라운드 시작")]
-    [Tooltip("베리어를 Open해서 색↔위치 매핑을 보여주는 시간(초)")]
-    [SerializeField] float revealDuration = 0f;
+    [Tooltip("true: GO가 켜지면 Host가 즉시 Reveal() (프리뷰 없이 바로 배치+Open)\n" +
+             "false: Reveal()/CloseAndSpawnTiles()를 외부에서 호출 (M.Stage1 권장 연결 참고)")]
+    [SerializeField] bool autoStart = false;
 
     [Header("테스트")]
     [Tooltip("true: 플레이어 색/isUniqueColor 체크 없이 누구든 타일 밟기 가능")]
@@ -126,11 +141,10 @@ public class DirectionalBarrierRound : MonoBehaviour
 
     void OnDisable()
     {
-        // Phase가 이 GameObject를 끌 때 구독 해제 + 코루틴/스폰 정리 — 다른 챌린지가 그 뒤에
+        // Phase가 이 GameObject를 끌 때 구독 해제 + 스폰 정리 — 다른 챌린지가 그 뒤에
         // _challengeStep을 쓸 때 이 컴포넌트가 반응하지 않도록 반드시 여기서 해제해야 한다.
         Unsubscribe();
 
-        StopAllCoroutines();
         ClearBarriers();
         ClearTiles();
     }
@@ -150,7 +164,7 @@ public class DirectionalBarrierRound : MonoBehaviour
         _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
         _subscribed = true;
 
-        // late-subscribe catch-up: Host는 이 GameObject가 켜지자마자 Activate()로 _challengeStep을
+        // late-subscribe catch-up: Host는 이 GameObject가 켜지자마자 Reveal()로 _challengeStep을
         // 쓰지만, Client는 접속·씬 로드·StageNetworkState replica 스폰을 거쳐야 해서 항상 Host보다
         // 늦게 이 시점이 온다. 그 시점엔 이미 stepIndex가 "초기 스폰값"으로 도착해 있어
         // OnValueChanged(변경 이벤트)가 발동하지 않는 NGO 표준 동작 때문에 HandleChallengeStepChanged가
@@ -160,8 +174,9 @@ public class DirectionalBarrierRound : MonoBehaviour
             HandleChallengeStepChanged(_netState.ChallengeStepIndex);
 
         // Host 레인만 라운드를 발동(§11B ①Trigger+②RoundStart) — Client는 NV 전파만 관찰.
-        if (!IsClientOnly())
-            Activate();
+        // autoStart=false면 Reveal()/CloseAndSpawnTiles()를 외부(다이얼로그·게이트)에서 기다린다.
+        if (autoStart && !IsClientOnly())
+            Reveal();
     }
 
     void Unsubscribe()
@@ -181,24 +196,45 @@ public class DirectionalBarrierRound : MonoBehaviour
     // ── 외부 호출 (Host 전용 — §11B ①Trigger) ─────────────────────
 
     /// <summary>
-    /// 라운드 즉시 시작. Host 레인만 실제로 시드를 배포한다 — Client의 직접 호출은 무시된다.
-    /// 시드를 StageNetworkState로 배포하면 전 머신이 HandleChallengeStepChanged에서 동일한
-    /// 시드로 베리어·타일을 재생성한다 (§11B ②RoundStart).
+    /// 베리어를 시드 기반으로 배치하고 전부 Open한 채로 유지한다 — 자동으로 안 닫힌다.
+    /// 씬 진입(다이얼로그 등) 시점에 호출해 색↔슬롯 매핑을 미리 보여주는 용도. Host 레인만
+    /// 실제로 새 시드를 배포한다 — Client의 직접 호출은 무시된다.
     /// </summary>
-    public void Activate()
+    public void Reveal()
     {
         if (IsClientOnly()) return;
         if (_netState == null) return;
 
         int seed = Random.Range(int.MinValue, int.MaxValue);
         _netState.ChallengeStart(seed, ChallengeOwnerType.DirectionalBarrier);
-        _netState.ChallengeStepBegin(0);
+        _netState.ChallengeStepBegin(RevealStep);
+    }
+
+    /// <summary>
+    /// Reveal()로 계속 열려 있던 베리어를 전부 Close(하강)하고 타일을 스폰한다 — 진짜 라운드 시작.
+    /// StageStartGate.OnCountdownComplete에 연결. Host 레인만 실제로 신호를 보낸다 — Client의
+    /// 직접 호출은 무시된다. Reveal()이 먼저 호출된 적 없으면(ChallengeOwner 불일치) 여기서
+    /// 새로 소유권+시드를 잡는다 — Reveal() 없이 이 메서드만 호출해도 항상 동작한다(M.Boss 등
+    /// 무프리뷰 씬용, CloseBarriersAndSpawnTiles의 late-subscribe 복구 경로와 같은 이유).
+    /// </summary>
+    public void CloseAndSpawnTiles()
+    {
+        if (IsClientOnly()) return;
+        if (_netState == null) return;
+
+        if (_netState.ChallengeOwner != ChallengeOwnerType.DirectionalBarrier)
+        {
+            int seed = Random.Range(int.MinValue, int.MaxValue);
+            _netState.ChallengeStart(seed, ChallengeOwnerType.DirectionalBarrier);
+        }
+
+        _netState.ChallengeStepBegin(CloseStep);
     }
 
     // ── 라운드 흐름 (전 머신 공통 — StageNetworkState NV 구독, §11B ③Generate) ──
 
     /// <summary>
-    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 라운드를 재생한다.
+    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 재생한다.
     /// 색 배치는 ChallengeSeed 기반 System.Random이라 전 머신이 항상 같은 결과를 낸다.
     /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
@@ -209,37 +245,44 @@ public class DirectionalBarrierRound : MonoBehaviour
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
 
-        StopAllCoroutines();
-        ClearBarriers();
-        ClearTiles();
-        StartCoroutine(RoundRoutine());
+        if (stepIndex == RevealStep)
+            RevealBarriers();
+        else if (stepIndex == CloseStep)
+            CloseBarriersAndSpawnTiles();
     }
 
-    IEnumerator RoundRoutine()
+    void RevealBarriers()
     {
-        // 베리어 스폰 + 타일 스폰이 같은 시드 시퀀스를 이어서 소비 — 전 머신이 항상 같은 순서로
-        // 같은 System.Random 호출을 하므로 결과가 일치한다(UnityEngine.Random 전역 상태 오염 없음,
-        // OXQuizManager.RegenerateQuestionOrder와 동일 원칙).
+        ClearTiles();
+
         int seed = _netState != null ? _netState.ChallengeSeed : 0;
-        var rng  = new System.Random(seed);
+        SpawnBarriers(new System.Random(seed));
 
-        SpawnBarriers(rng);
-
-        // 전체 Open → 매핑 공개
         foreach (List<DoorController> doors in _colorToDoors.Values)
             foreach (DoorController door in doors)
                 door?.Open();
+    }
 
-        OnRoundStarted?.Invoke();
+    void CloseBarriersAndSpawnTiles()
+    {
+        // 늦게 구독한 Client가 RevealStep 신호를 놓치고 곧장 CloseStep으로 캐치업하는 경우
+        // (late-subscribe catch-up, TryBindAndSubscribe 참고) — 베리어가 아직 없으므로 여기서
+        // 스폰부터 복구한다. Reveal()을 건너뛰고 CloseAndSpawnTiles()만 호출한 씬(M.Boss 등
+        // 무프리뷰)도 항상 이 경로로 들어온다 — 즉시 스폰+Close+타일까지 한 번에 끝난다.
+        if (_colorToDoors.Count == 0)
+            RevealBarriers();
 
-        yield return new WaitForSeconds(revealDuration);
-
-        // 전체 Close → 하강
         foreach (List<DoorController> doors in _colorToDoors.Values)
             foreach (DoorController door in doors)
                 door?.Close();
 
-        SpawnTiles(rng);
+        // Reveal의 SpawnBarriers와는 독립된 새 System.Random 인스턴스 — 같은 시드로 시작해도
+        // 서로 다른 함수 안에서만 rng.Next()를 쓰므로 두 스텝이 시간차를 두고 갈라져도(다이얼로그
+        // 대기 등) 전 머신이 항상 같은 타일 배치를 재생한다.
+        int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        SpawnTiles(new System.Random(seed));
+
+        OnRoundStarted?.Invoke();
     }
 
     // ── 베리어 스폰 ──────────────────────────────────────────────
@@ -462,8 +505,11 @@ public class DirectionalBarrierRound : MonoBehaviour
 
     // ── 에디터 ──────────────────────────────────────────────────
 
-    [ContextMenu("테스트: 라운드 시작")]
-    void Debug_StartRound() => Activate();
+    [ContextMenu("테스트: Reveal (미리보기)")]
+    void Debug_Reveal() => Reveal();
+
+    [ContextMenu("테스트: Close + 타일 스폰 (라운드 시작)")]
+    void Debug_CloseAndSpawnTiles() => CloseAndSpawnTiles();
 
     void OnDrawGizmos()
     {

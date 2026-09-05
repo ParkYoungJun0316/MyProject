@@ -19,6 +19,7 @@ public struct SideSplitRound
     public bool hasColorRequirement;
     public SideSplitDirection colorDirection; // hasColorRequirement가 true일 때만 의미 있음
     public PlayerColorType requiredColor; // hasColorRequirement가 true일 때만 의미 있음
+    public int rotationSteps; // 0~3, ×90도. RegenerateRoundPlan()에서 결정 — SplitZoneRig 스냅 각도(rotationStartRound 이전 라운드는 항상 0)
 }
 
 /// <summary>OnRoundReady 이벤트로 UI에 전달되는 라운드 안내 데이터.</summary>
@@ -73,6 +74,13 @@ public class SideSplitFloatEvent : UnityEvent<float> { }
 ///  6. resolveDelay 후 다음 라운드로 Host가 진행 확정(StageNetworkState.ChallengeStepBegin)
 ///  7. 모든 라운드가 끝났을 때, 생존자가 1명 이상이면 Host가 클리어 확정
 ///     - AllCleared → barrierDoor Close + StageNetworkState.ChallengeCleared
+///
+/// [회전 — zoneRig, 신규] zoneRig가 연결되면 rotationStartRound 라운드부터 존이 라운드 사이(delay
+/// 구간)에 스핀하다가 lockBeforeRoundStart초 전에 90도 단위로 스냅해 위치를 미리 보여준다.
+/// 인원수 UI 공개(OnRoundReady)는 그대로 라운드 시작 시점에 유지 — 위치 확정과 인원수 확정 시점을
+/// 분리한다. 각도는 RegenerateRoundPlan()이 시드로 결정(전 머신 동일), 스핀 자체는 순수 로컬
+/// 코스메틱이며 실제 라운드 시작(HandleChallengeStepChanged)에서 한 번 더 강제 스냅되므로 타이밍이
+/// 빗나가도 판정에는 영향 없음.
 /// </summary>
 public class SideSplitChallenge : MonoBehaviour
 {
@@ -102,6 +110,22 @@ public class SideSplitChallenge : MonoBehaviour
 
     [Tooltip("라운드 실패 시 전원에게 줄 피해량")]
     public int wrongDamage = 1;
+
+    [Header("회전 — 라운드 사이 zoneRig 위치 셔플")]
+    [Tooltip("Left/Right/Front/Back SideSplitZone을 자식으로 둔 부모 Transform. 비어 있으면 회전 기능 비활성.")]
+    public Transform zoneRig;
+
+    [Tooltip("이 라운드 인덱스(0-based)부터 회전 시작. 이전 라운드는 항상 회전 없음(0도 고정).")]
+    public int rotationStartRound = 2;
+
+    [Tooltip("회전 시작 라운드의 스핀 속도(도/초).")]
+    public float rotationSpinSpeedBase = 60f;
+
+    [Tooltip("회전 시작 라운드 이후, 라운드가 지날수록 스핀 속도에 더해지는 증가량(도/초).")]
+    public float rotationSpinSpeedStep = 30f;
+
+    [Tooltip("스핀을 멈춰 위치를 확정 짓는 시점 — 다음 라운드 시작 몇 초 전.")]
+    public float lockBeforeRoundStart = 1f;
 
     [Header("판정")]
     [Tooltip("판정 Bounds 오버랩 검사에 포함할 레이어. 비어 있으면 실행 시 Player 레이어를 사용합니다.")]
@@ -135,6 +159,7 @@ public class SideSplitChallenge : MonoBehaviour
     SideSplitRound[] _rounds;
 
     Coroutine         _timerCoroutine;
+    Coroutine         _spinCoroutine;
     StageNetworkState _netState; // 구독 해제 시 동일 인스턴스 참조 보장용 캐시
     bool _subscribed;
 
@@ -226,6 +251,7 @@ public class SideSplitChallenge : MonoBehaviour
     {
         Unsubscribe();
         StopTimer();
+        StopSpin();
         _challengeActive = false;
     }
 
@@ -317,6 +343,9 @@ public class SideSplitChallenge : MonoBehaviour
 
         RegenerateRoundPlan();
         if (stepIndex >= _rounds.Length) return; // 안전장치
+
+        StopSpin(); // 소프트 락(RotationSpinRoutine) 타이밍이 빗나갔어도 라운드 시작 시점엔 무조건 정답 각도로 보정
+        SnapZoneRig(stepIndex);
 
         _challengeStarted = true; // Host/Client 공통 — IsStarted는 이 신호로만 true가 됨
         _roundIndex        = stepIndex;
@@ -491,6 +520,7 @@ public class SideSplitChallenge : MonoBehaviour
             return;
         }
 
+        TryStartRotationSpin(_roundIndex); // Host 레인 — Client는 HandleChallengeOutcome에서 동일하게 시작
         StartCoroutine(NextRoundAfterDelay());
     }
 
@@ -505,6 +535,8 @@ public class SideSplitChallenge : MonoBehaviour
 
         if (success) OnRoundSuccess?.Invoke();
         else         OnRoundFailed?.Invoke();
+
+        TryStartRotationSpin(_roundIndex + 1); // Client 레인 — Host는 Judge()에서 이미 시작함
     }
 
     /// <summary>ChallengeCleared NV 변경 시 Host/Client 공통으로 OnAllCleared를 1회 재생.</summary>
@@ -524,6 +556,7 @@ public class SideSplitChallenge : MonoBehaviour
     {
         _challengeActive = false;
         StopTimer();
+        StopSpin();
     }
 
     // ── 유틸 ──────────────────────────────────────────────────────
@@ -537,6 +570,71 @@ public class SideSplitChallenge : MonoBehaviour
         }
     }
 
+    // ── 회전 (zoneRig) ───────────────────────────────────────────
+
+    void StopSpin()
+    {
+        if (_spinCoroutine != null)
+        {
+            StopCoroutine(_spinCoroutine);
+            _spinCoroutine = null;
+        }
+    }
+
+    /// <summary>
+    /// 다음 라운드(nextRoundIndex)를 대상으로 스핀 코루틴을 시작. Host(Judge 직후)·Client
+    /// (HandleChallengeOutcome) 양쪽에서 각자 호출 — 새 RPC 없이 각 머신이 로컬로 같은 시드 결과를
+    /// 재생만 한다(RegenerateRoundPlan()과 동일 원칙).
+    /// </summary>
+    void TryStartRotationSpin(int nextRoundIndex)
+    {
+        if (zoneRig == null) return;
+        if (_rounds == null || nextRoundIndex < 0 || nextRoundIndex >= _rounds.Length) return;
+
+        StopSpin();
+        _spinCoroutine = StartCoroutine(RotationSpinRoutine(nextRoundIndex));
+    }
+
+    /// <summary>
+    /// ChallengeStepStartServerTime(현재 라운드 시작 서버시간) 기준으로 "다음 라운드 시작 예상
+    /// 서버시간 - lockBeforeRoundStart"까지 zoneRig를 계속 돌리다가 정지 각도로 스냅한다.
+    /// 서버시간 앵커를 쓰므로 RPC 수신 지연에 흔들리지 않음(TimerRoutine과 동일 원칙).
+    /// 실제 라운드 시작(HandleChallengeStepChanged)에서 SnapZoneRig()로 한 번 더 강제 보정하므로
+    /// 여기서 타이밍이 살짝 빗나가도 판정에는 영향 없음(안전장치).
+    /// </summary>
+    IEnumerator RotationSpinRoutine(int nextRoundIndex)
+    {
+        int   steps          = _rounds[nextRoundIndex].rotationSteps;
+        float speedDegPerSec = rotationSpinSpeedBase +
+            rotationSpinSpeedStep * Mathf.Max(0, nextRoundIndex - rotationStartRound);
+
+        var    nm              = NetworkManager.Singleton;
+        double startServerTime = _netState != null ? _netState.ChallengeStepStartServerTime : 0.0;
+        double snapAt          = startServerTime + roundTimeLimit + resolveDelay - lockBeforeRoundStart;
+
+        while (true)
+        {
+            double now = nm != null ? nm.ServerTime.Time : 0.0;
+            if (now >= snapAt) break;
+
+            if (steps > 0)
+                zoneRig.Rotate(Vector3.up, speedDegPerSec * Time.deltaTime, Space.Self);
+
+            yield return null;
+        }
+
+        SnapZoneRig(nextRoundIndex);
+        _spinCoroutine = null;
+    }
+
+    /// <summary>_rounds[roundIndex].rotationSteps(×90도)로 zoneRig를 즉시 스냅.
+    /// 회전 미사용 인스턴스(zoneRig 미연결)는 그냥 무시.</summary>
+    void SnapZoneRig(int roundIndex)
+    {
+        if (zoneRig == null || _rounds == null || roundIndex < 0 || roundIndex >= _rounds.Length) return;
+        zoneRig.localRotation = Quaternion.Euler(0f, _rounds[roundIndex].rotationSteps * 90f, 0f);
+    }
+
     /// <summary>
     /// StageNetworkState.ChallengeSeed로 전체 라운드 계획(_rounds)을 다시 계산한다.
     /// 전 머신이 같은 시드로 호출하므로 항상 동일한 결과가 나온다 (OXQuizManager.RegenerateQuestionOrder와
@@ -547,7 +645,7 @@ public class SideSplitChallenge : MonoBehaviour
     ///  1. 색 조건 포함 라운드 수 결정 (min~maxColorRounds)
     ///  2. 뒤쪽 라운드부터 그 개수만큼 색 조건 배정 (초반 라운드는 항상 색 조건 없음 — MinigameDesign.md §1.2)
     ///  3. 라운드 0..totalRounds-1 순서대로: 활성 방향 전원 분배(고정 순서 Left→Right→Front→Back으로 순차 소진)
-    ///     → (색 조건 라운드면) 색 배정 방향·색상 결정
+    ///     → (색 조건 라운드면) 색 배정 방향·색상 결정 → (rotationStartRound 이후 라운드면) 회전 각도 결정
     ///
     /// [4방향 확장 — MinigameDesign.md §1.7] 활성 zone 수(2 또는 4)만 다를 뿐 알고리즘은 동일하게 일반화됨.
     /// 2방향 모드에서는 항상 zones=[Left,Right] 2개뿐이라 기존 leftCount=rng.Next(0,total+1) /
@@ -612,6 +710,10 @@ public class SideSplitChallenge : MonoBehaviour
                     round.requiredColor = GameSessionColorDistribution.Distribute(1, rng)[0];
                 }
             }
+
+            // rotationStartRound 이전 라운드는 항상 0(회전 없음). 이후는 90/180/270 중 하나(0 제외 —
+            // 회전 구간에 들어서면 항상 뭔가는 바뀜). zoneRig 미연결 인스턴스는 값이 있어도 그냥 안 쓰임.
+            round.rotationSteps = i >= rotationStartRound ? rng.Next(1, 4) : 0;
 
             _rounds[i] = round;
         }

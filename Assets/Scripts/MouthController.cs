@@ -124,7 +124,11 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
         // 페이드는 ScreenFader 자기 코루틴으로 돌기 때문에 위 StopAllCoroutines로 안 멈춘다.
         // Closing/Holding 중에 입이 꺼지면(스테이지 종료·Phase 전환) 화면이 암전인 채로 굳으므로
         // 여기서 걷어준다. StopCycle()에도 같은 복구가 있지만 그쪽은 ContextMenu 전용이다.
-        screenFader?.FadeIn(0f);
+        // 씬 전환 등으로 ScreenFader가 이 오브젝트보다 먼저 파괴되는 경우, `?.`(C# null 체크)는
+        // Unity가 파괴한 객체를 걸러내지 못해 죽은 객체에 StartCoroutine을 걸다가
+        // MissingReferenceException이 난다 — Unity의 `!= null` 오버로드로 파괴 여부를 확인한다.
+        if (screenFader != null)
+            screenFader.FadeIn(0f);
     }
 
     IEnumerator BindAndStartHazard()
@@ -158,7 +162,8 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
         _isBusy = false;
         ResetHazardFlags();
         TriggerIdle();
-        screenFader?.FadeIn(0f);
+        if (screenFader != null)
+            screenFader.FadeIn(0f);
     }
 
     public void BuildRevertOrder(out int generation, out double resumeAtServerTime)

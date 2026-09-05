@@ -6,8 +6,12 @@ using UnityEngine.Events;
 /// <summary>
 /// 색상 타일 — ColorTileChallenge에서 생성/관리됨.
 ///
-/// 구 클리어: requiredColorType 플레이어가 올라서면 IsCompleted.
-/// 점수제: SetupQuota 후 occupySeconds 동안 유효 점유 → HoldReady. 발 떼면 리셋.
+/// 구 클리어(Setup): requiredColorType 플레이어가 올라서면 IsCompleted.
+///  - 고유색(Blue/Purple/Green/Yellow): 그 색 신원(playerColorType) 플레이어만, isUniqueColor=true일 때.
+///  - 공용(Black/White, DirectionalBarrier): 신원 무관 — Player.isBlack 토글이 타일 색과 일치하면
+///    누구든(ColorWall.IsColorMatch와 동일 판정).
+/// 점수제(SetupQuota): occupySeconds 동안 유효 점유 → HoldReady. 발 떼면 리셋.
+///  - 공용(Black/White)은 토글 무관 완전히 "아무나"(IsValidQuotaOccupant) — 구 클리어와 다른 규칙.
 /// DirectionalBarrier 디버그: ignorePlayerCheck 시 누구든 즉시 완료.
 /// Collider(Is Trigger) 필수.
 /// </summary>
@@ -15,7 +19,7 @@ using UnityEngine.Events;
 public class ColorTile : MonoBehaviour
 {
     [Header("타일 색상")]
-    [Tooltip("고유색(Blue/Purple/Green/Yellow) 또는 점수제 흑백(Black/White). Common/Danger는 쓰지 않음.")]
+    [Tooltip("고유색(Blue/Purple/Green/Yellow, 신원 일치) 또는 공용 흑백(Black/White). 구 클리어 모드의 흑백은 Player.isBlack 토글 일치가 필요, 점수제는 완전히 아무나. Common/Danger는 쓰지 않음.")]
     [SerializeField] PlayerColorType requiredColorType = PlayerColorType.Blue;
 
     [Header("테스트")]
@@ -145,7 +149,9 @@ public class ColorTile : MonoBehaviour
             return;
         }
 
-        if (p.playerColorType != requiredColorType) return;
+        // 공용(흑/백) 타일은 신원(playerColorType) 필터가 없다 — 누구든 밟을 수 있으므로 나갈 때도
+        // 신원으로 거르지 않고 무조건 해제. 고유 타일은 기존처럼 그 색 담당 플레이어가 나갈 때만 해제.
+        if (!PlayerColorUtil.IsSharedTileColor(requiredColorType) && p.playerColorType != requiredColorType) return;
         _isCompleted = false;
         OnUncompleted?.Invoke();
     }
@@ -185,16 +191,28 @@ public class ColorTile : MonoBehaviour
             return;
         }
 
-        if (p.playerColorType != requiredColorType) return;
+        // 고유 타일(Blue/Purple/Green/Yellow): 그 색 신원(playerColorType) 플레이어만 관여 — 이 게임엔
+        // 같은 고유색이 둘일 수 없으므로 신원 필터만으로 "그 사람"이 특정된다.
+        // 공용 타일(Black/White): 신원과 무관 — 지금 흑/백 토글(Player.isBlack, isUniqueColor=false
+        // 상태)이 타일 색과 맞는 "누구든" 밟을 수 있다(ColorWall.IsBlackOnly/WhiteOnly와 동일 판정).
+        // [버그 수정 2026-09-05] 예전엔 흑/백도 playerColorType으로 비교해서 항상 불일치 —
+        // 플레이어 고유색은 절대 Black/White가 될 수 없으니 흑/백 타일이 영원히 안 올라왔다.
+        bool isSharedColor = PlayerColorUtil.IsSharedTileColor(requiredColorType);
 
-        if (p.isUniqueColor && !_isCompleted)
+        if (!isSharedColor && p.playerColorType != requiredColorType) return;
+
+        bool colorMatches = isSharedColor
+            ? !p.isUniqueColor && (p.isBlack == (requiredColorType == PlayerColorType.Black))
+            : p.isUniqueColor;
+
+        if (colorMatches && !_isCompleted)
         {
             _isCompleted = true;
             PlayPressSfx();
             OnCompleted?.Invoke();
             OnActivatedCallback?.Invoke(requiredColorType);
         }
-        else if (!p.isUniqueColor && _isCompleted)
+        else if (!colorMatches && _isCompleted)
         {
             _isCompleted = false;
             OnUncompleted?.Invoke();
