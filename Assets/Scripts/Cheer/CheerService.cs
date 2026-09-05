@@ -13,11 +13,11 @@ using UnityEngine;
 ///
 /// [역할]
 /// - SubmitSelfCheerServerRpc → 즉시 개인 버프/쿨 (투표 없음)
-/// - SubmitTeamCheerServerRpc → 팀 공용 키워드 투표·타임아웃 → 등록된 ITeamCheerRevert.Revert()
+/// - SubmitTeamCheerServerRpc → 팀 공용 키워드 투표·타임아웃 → 등록된 ITeamCheerRevert 되돌림
 ///   (힐·120초 쿨 폐기. 새 RPC 없음. Idle 외침 무시. Warning~Revert만 유효.
 ///    씬당 revert 하나 — 입 MouthController / 침 SalivaHazard / 혀 TongueController)
 /// - TeamCheerWord NetworkVariable (Host write, Everyone read)
-/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도). 팀 쿨 NV는 0으로 고정
+/// - UI 동기화 → ClientRpc (개인 버프 이벤트 + 팀 발동/진행도)
 ///
 /// [CheerName ↔ colorIndex]
 /// 0=berry(Blue), 1=guma(Purple), 2=sook(Green), 3=dan(Yellow)
@@ -51,12 +51,6 @@ public class CheerService : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
-    /// <summary>팀 버프 쿨 종료 시각 (NetworkManager.ServerTime.Time). 0 = 쿨 없음. Host write.</summary>
-    readonly NetworkVariable<double> _teamCooldownEndNv = new(
-        0d,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server);
-
     // ── Host 내부 상태 (개인) ─────────────────────────────────────
 
     readonly Dictionary<int, double> _cooldownEnd = new();
@@ -67,10 +61,13 @@ public class CheerService : NetworkBehaviour
 
     readonly HashSet<ulong> _teamVotes = new();
     double _teamTimeoutStart = -1d;
-    double _teamCooldownEnd;
 
     ITeamCheerRevert _revert;
     bool _hazardWindow;
+
+    // 이번 창을 이미 되돌렸는지. 되돌림 명령이 로컬 함정에 반영되기 전에 들어온 추가 표로
+    // 같은 창이 두 번 발동(배너 2회)하는 것을 Host 상태만으로 막는다. 다음 창 시작 시 해제.
+    bool _teamWindowConsumed;
 
     // ── 이벤트 (로컬 — UI 구독용) ─────────────────────────────────
 
@@ -83,9 +80,6 @@ public class CheerService : NetworkBehaviour
     /// <summary>팀 응원 성공 (Revert 직후). TeamCheerCleared 구독.</summary>
     public event System.Action OnTeamBuffActivated;
 
-    /// <summary>폐기된 팀 쿨 HUD 호환. 값은 항상 0.</summary>
-    public event System.Action OnTeamCooldownClockChanged;
-
     /// <summary>Warning 시작~Revert 성공. TeamCheerWarningUI 구독.</summary>
     public event System.Action<bool> OnHazardWindowChanged;
 
@@ -95,9 +89,6 @@ public class CheerService : NetworkBehaviour
     // ── 공개 프로퍼티 ─────────────────────────────────────────────
 
     public float CooldownDuration => cheerCooldownSeconds;
-    public float TeamCooldownDuration => 0f;
-    public double TeamCooldownEndServerTime
-        => IsSpawned ? _teamCooldownEndNv.Value : _teamCooldownEnd;
     public PlayerBuffSystem.BuffType StageBuffType => stageBuffType;
     public bool IsHazardWindowActive => _hazardWindow;
 
@@ -121,10 +112,6 @@ public class CheerService : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         _teamCheerWord.OnValueChanged += OnTeamCheerWordChanged;
-        _teamCooldownEndNv.OnValueChanged += OnTeamCooldownEndNvChanged;
-
-        if (IsServer)
-            ClearTeamCooldown();
 
         if (IsServer && GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
         {
@@ -134,14 +121,18 @@ public class CheerService : NetworkBehaviour
         }
 
         PlayerCheerNameSync.RebuildOwnerLocalGrammar();
-        OnTeamCooldownClockChanged?.Invoke();
     }
 
     public override void OnNetworkDespawn()
     {
         _teamCheerWord.OnValueChanged -= OnTeamCheerWordChanged;
-        _teamCooldownEndNv.OnValueChanged -= OnTeamCooldownEndNvChanged;
         _revert = null;
+
+        // NotifyHazardWindow(false)의 표 리셋이 despawn 중에 ClientRpc를 쏘지 않도록 먼저 비운다.
+        _teamVotes.Clear();
+        _teamTimeoutStart = -1d;
+        _teamWindowConsumed = false;
+
         NotifyHazardWindow(false);
         if (Instance == this) Instance = null;
     }
@@ -208,12 +199,22 @@ public class CheerService : NetworkBehaviour
 
     public void RegisterRevert(ITeamCheerRevert revert)
     {
+        if (revert == null) return;
+
+        // 씬당 하나가 계약인데 등록 순서는 각 함정의 CheerService.Instance 대기 해제 순서라
+        // 비결정적이다. 조용히 덮어쓰면 "어느 함정이 되돌림 대상인지"가 실행마다 달라지므로
+        // 에디터 오설정(예: M2 입의 teamCheerHazard를 켬)을 여기서 바로 드러낸다.
+        if (IsAlive(_revert) && !ReferenceEquals(_revert, revert))
+            Debug.LogWarning(
+                $"[CheerService] ITeamCheerRevert가 이미 등록돼 있습니다 " +
+                $"({_revert.GetType().Name} → {revert.GetType().Name}). 씬당 하나만 두세요.", this);
+
         _revert = revert;
     }
 
     public void UnregisterRevert(ITeamCheerRevert revert)
     {
-        if (_revert != revert) return;
+        if (!ReferenceEquals(_revert, revert)) return;
         _revert = null;
         NotifyHazardWindow(false);
     }
@@ -222,7 +223,30 @@ public class CheerService : NetworkBehaviour
     {
         if (_hazardWindow == active) return;
         _hazardWindow = active;
+
+        if (IsServer)
+        {
+            if (active)
+            {
+                _teamWindowConsumed = false;
+            }
+            else
+            {
+                // 창이 성공 없이 닫혔을 때(혀 4.2 미외침·함정 비활성·씬 전환 등) 표가 타임아웃까지
+                // 남으면 다음 창을 적은 인원으로 뚫게 된다. 창 단위로 표를 끊는다.
+                ResetTeamVotes();
+            }
+        }
+
         OnHazardWindowChanged?.Invoke(active);
+    }
+
+    /// <summary>파괴된 MonoBehaviour가 인터페이스 참조로 남아 있으면 null로 취급.</summary>
+    static bool IsAlive(ITeamCheerRevert revert)
+    {
+        if (revert == null) return false;
+        if (revert is UnityEngine.Object unityObject) return unityObject != null;
+        return true;
     }
 
     // ── 서버 RPC ──────────────────────────────────────────────────
@@ -294,12 +318,25 @@ public class CheerService : NetworkBehaviour
 
     void ApplyTeamBuff()
     {
+        if (!IsSpawned) return;
+
+        // 되돌림 명령(세대 + 다음 창 재개 ServerTime)은 Host가 정해서 전 머신에 그대로 실어 보낸다.
+        // 각 머신이 로컬로 계산하면, 명령을 놓친 머신만 예약이 어긋난 채 남는다.
+        int generation = 0;
+        double resumeAt = 0d;
+        if (IsAlive(_revert))
+            _revert.BuildRevertOrder(out generation, out resumeAt);
+
+        _teamWindowConsumed = true;
         ResetTeamVotes();
-        BroadcastTeamBuffActivatedClientRpc();
+        BroadcastTeamBuffActivatedClientRpc(generation, resumeAt);
     }
 
     void ResetTeamVotes()
     {
+        if (!IsServer) return;
+        if (_teamVotes.Count == 0 && _teamTimeoutStart < 0d) return;
+
         _teamVotes.Clear();
         _teamTimeoutStart = -1d;
         if (IsSpawned)
@@ -342,7 +379,8 @@ public class CheerService : NetworkBehaviour
     bool ValidateTeamCheer(ulong cheererId, bool isVoice, double now)
     {
         if (!PlayerSpawnCoordinator.TryGetColor(cheererId, out _)) return false;
-        if (_revert == null || !_revert.IsAvailable) return false;
+        if (_teamWindowConsumed) return false;
+        if (!IsAlive(_revert) || !_revert.IsAvailable) return false;
         if (_teamVotes.Contains(cheererId)) return false;
         return PassRateLimit(cheererId, isVoice, now);
     }
@@ -389,30 +427,11 @@ public class CheerService : NetworkBehaviour
         => OnCooldownStart?.Invoke(targetColorIndex, seconds);
 
     [ClientRpc]
-    void BroadcastTeamBuffActivatedClientRpc()
+    void BroadcastTeamBuffActivatedClientRpc(int generation, double resumeAtServerTime)
     {
-        _revert?.Revert();
+        if (IsAlive(_revert) && generation > 0)
+            _revert.Revert(generation, resumeAtServerTime);
         OnTeamBuffActivated?.Invoke();
-    }
-
-    void ClearTeamCooldown()
-    {
-        CommitTeamCooldownEnd(0d);
-        GameSession.Instance?.SetSessionTeamCooldownEnd(0d);
-    }
-
-    void CommitTeamCooldownEnd(double end)
-    {
-        _teamCooldownEnd = end;
-        if (!IsServer) return;
-        _teamCooldownEndNv.Value = end;
-        GameSession.Instance?.SetSessionTeamCooldownEnd(end);
-    }
-
-    void OnTeamCooldownEndNvChanged(double previous, double current)
-    {
-        _teamCooldownEnd = current;
-        OnTeamCooldownClockChanged?.Invoke();
     }
 
     [ClientRpc]

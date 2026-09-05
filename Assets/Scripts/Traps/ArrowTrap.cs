@@ -207,6 +207,35 @@ public class ArrowTrap : TrapBase
         SFXManager.Instance?.PlayAtPoint(fireSfxId, spawn.position, fireMinDistance, fireMaxDistance, fireRolloffMode);
     }
 
+    /// <summary>
+    /// ArrowIncomingDirector(§2.2)가 직접 호출하는 단발 발사 진입점. 자체 fireAtSeconds/
+    /// loopSchedule과 무관하게 즉시 1회 충전→발사 시퀀스를 실행한다.
+    ///
+    /// [전제] 감독이 붙는 incoming 레인은 에디터에서 startActive=false로 자체 루프를 꺼둔다
+    /// (CoopStageAudit.M.md §2.2 확정) — Activate()가 한 번도 안 불려 isRunning이 항상 false인
+    /// 상태다. 그런데 기존 protected FireWithCharge()는 충전(preFireChargeTime) 대기 이후
+    /// "그 사이 Deactivate 됐는지" 가드로 `if (!isRunning) yield break;`를 두고 있어, isRunning이
+    /// 계속 false면 이 가드가 항상 발사를 막아버린다. isRunning은 protected 필드라 이 서브클래스
+    /// 에서 직접 켜고 끌 수 있으므로, 이번 발사 한 번만 유효하게 감싼다 — TrapLoop() 자체는
+    /// 시작하지 않으므로 자체 스케줄은 여전히 돌지 않는다.
+    ///
+    /// 이미 충전/발사가 진행 중이면(isRunning=true) 중복 호출은 무시 — 감독은 직전 레인만
+    /// 제외하고 재추첨하므로 같은 레인이 짧은 간격으로 다시 뽑힐 수 있는데, 그 경우 이전
+    /// 발사가 아직 안 끝났다면 겹쳐서 두 번 발사되는 걸 막는다.
+    /// </summary>
+    public void FireOnce()
+    {
+        if (isRunning) return;
+        StartCoroutine(FireOnceRoutine());
+    }
+
+    IEnumerator FireOnceRoutine()
+    {
+        isRunning = true;
+        yield return StartCoroutine(FireWithCharge());
+        isRunning = false;
+    }
+
     protected override IEnumerator TrapLoop()
     {
         if (fireAtSeconds == null || fireAtSeconds.Length == 0)

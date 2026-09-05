@@ -316,26 +316,23 @@ public class InGameChatUI : NetworkBehaviour
 
     void SendChat(string trimmed)
     {
-        SendMessageServerRpc(trimmed);
+        SendMessageServerRpc(trimmed, _sendDedup.NextSeq());
     }
 
     // ── 네트워크 ──────────────────────────────────────────────────
 
-    // [버그 수정 2026-09-01] SequenceRing 이중 판정과 동일 원인(재호스팅 시 같은 프레임 RPC 중복
-    // 수신) — 채팅은 시간 쿨다운·Add류 자연 가드가 없어 그대로 두면 같은 메시지가 두 번 찍힌다.
-    // 클라이언트는 SendChat()이 프레임당 한 번만 이 RPC를 보내므로 같은 sender의 같은 프레임
-    // 2번째 수신은 항상 중복이다 (StageNetworkState.IsDuplicateChallengeSubmit과 동일 패턴).
-    private readonly Dictionary<ulong, int> _lastMessageFrame = new();
+    // [버그 수정 2026-09-01 / 2026-09-05] SequenceRing 이중 판정과 동일 원인(트랜스포트 레벨 RPC
+    // 중복 전달) — 채팅은 시간 쿨다운·Add류 자연 가드가 없어 그대로 두면 같은 메시지가 두 번 찍힌다.
+    // 처음엔 같은 프레임 2번째 수신을 버렸지만 중복이 다른 틱에 도착하면 통과해서, 공용
+    // RpcSubmitDedup(발신 측 단조 증가 번호)으로 통일했다.
+    private readonly RpcSubmitDedup _sendDedup = new();
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    void SendMessageServerRpc(string message, RpcParams rpcParams = default)
+    void SendMessageServerRpc(string message, uint submitSeq, RpcParams rpcParams = default)
     {
         ulong senderId = rpcParams.Receive.SenderClientId;
 
-        int frame = Time.frameCount;
-        if (_lastMessageFrame.TryGetValue(senderId, out int lastFrame) && lastFrame == frame)
-            return;
-        _lastMessageFrame[senderId] = frame;
+        if (_sendDedup.IsDuplicate(senderId, submitSeq)) return;
 
         int colorIdx = -1;
         // PlayerSpawnCoordinator(NetworkList) — 서버·클라이언트 공통 단일 소스

@@ -373,19 +373,29 @@ public class TutorialNetworkManager : NetworkBehaviour
     /// <summary>
     /// 게이트 완료 시점의 각 플레이어 보고된 DisplayName을 colorIndex 순 배열로 확정(§6B.7 P3).
     /// PlayerDisplayNameSync.GetAllEffectiveNames()가 (clientId, 보고값) 전체를 훑어주므로,
-    /// clientColorDict로 clientId→colorIndex만 매칭하면 된다 — 미보고/빈 값은 "Player" 폴백
-    /// (GameSession.GetSessionDisplayName 기본 폴백과 동일 값).
+    /// clientColorDict로 clientId→colorIndex만 매칭하면 된다 — 미보고/빈 값은 빈 문자열 유지
+    /// (VoiceId와 동일하게 "확정값 없음"으로 취급되어, 호출자가 실시간 NV로 폴백할 수 있다).
+    /// "Player" 같은 non-empty 플레이스홀더를 넣으면 그게 실제 닉네임과 구분되지 않아 폴백이
+    /// 막히고 그 판 내내 고착된다 — 표기는 UI가 정한다(2026-09-05 수정).
     /// </summary>
     static string[] BuildSessionDisplayNames(Dictionary<ulong, PlayerColorType> clientColorDict)
     {
         var names = new string[4];
-        for (int i = 0; i < 4; i++) names[i] = "Player";
+        for (int i = 0; i < 4; i++) names[i] = "";
 
         foreach (var (clientId, name) in PlayerDisplayNameSync.GetAllEffectiveNames())
         {
-            if (!clientColorDict.TryGetValue(clientId, out var color)) continue;
-            if (string.IsNullOrEmpty(name)) continue;
+            if (!clientColorDict.TryGetValue(clientId, out var color))
+            {
+                Debug.LogWarning($"[TutorialNetworkManager] BuildSessionDisplayNames — clientId={clientId} color 매칭 실패(clientColorDict 없음), 스킵");
+                continue;
+            }
             int ci = PlayerColorUtil.ColorTypeToIndex(color);
+            if (string.IsNullOrEmpty(name))
+            {
+                Debug.LogWarning($"[TutorialNetworkManager] BuildSessionDisplayNames — clientId={clientId} colorIndex={ci} DisplayName 빈 값(미보고) — UI가 실시간 NV로 폴백함");
+                continue;
+            }
             if (ci >= 0) names[ci] = name;
         }
         return names;

@@ -16,6 +16,10 @@ public class SalivaVolume : MonoBehaviour
     {
         if (hazard == null)
             hazard = GetComponentInParent<SalivaHazard>();
+        if (hazard == null)
+            Debug.LogWarning(
+                $"[SalivaVolume] '{name}'에 SalivaHazard가 없다 — 이 발판은 영영 미끄럽지 않다. " +
+                "인스펙터 hazard를 연결하거나 SalivaHazard 자식으로 둘 것.", this);
 
         Collider col = GetComponent<Collider>();
         col.isTrigger = true;

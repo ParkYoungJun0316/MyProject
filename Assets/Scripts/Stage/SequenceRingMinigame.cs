@@ -19,8 +19,8 @@ public class SequenceFloatEvent : UnityEvent<float> { }
 /// Trigger(StartMinigame, Host만) → RoundStart(Host가 시드 NV 배포) → Generate(전 머신 각자 동일
 /// 시드로 스텝 시퀀스 재생성) → Judge(Host 레인만, `TrySubmit`/`TrySubmitAnyKey`) → Resolve(성공은
 /// ChallengeCleared, 실패는 outcome ClientRpc로 전파). 포지션 판정형(OX/GridColor/ColorTile)과 달리
-/// 키 입력형이라 "누가 눌렀는가"는 Host가 알 수 없으므로 Client는 `StageNetworkState.SubmitStepServerRpc`
-/// / `SubmitAnyKeyStepServerRpc`로 요청만 보내고, Host가 `TrySubmit`/`TrySubmitAnyKey`로 실제 판정한다.
+/// 키 입력형이라 "누가 눌렀는가"는 Host가 알 수 없으므로 Client는 `StageNetworkState.SubmitChallengeStep`
+/// / `SubmitChallengeAnyKeyStep`으로 요청만 보내고, Host가 `TrySubmit`/`TrySubmitAnyKey`로 실제 판정한다.
 /// 남은 시간은 오답 페널티 등 이벤트 기반 변동이 있어 ServerTime 역산이 불가능해 별도
 /// `SyncChallengeTimeClientRpc`로 Host가 주기적으로 브로드캐스트한다.
 /// </summary>
@@ -124,7 +124,7 @@ public class SequenceRingMinigame : MonoBehaviour
 
     StageNetworkState _netState;
 
-    /// <summary>씬당 1개 전제 — StageNetworkState.SubmitStepServerRpc가 Host에서 참조 (§11B.1).</summary>
+    /// <summary>씬당 1개 전제 — StageNetworkState의 제출 RPC가 Host에서 참조 (§11B.1).</summary>
     public static SequenceRingMinigame Instance { get; private set; }
 
     public MinigameState State => _state;
@@ -196,6 +196,11 @@ public class SequenceRingMinigame : MonoBehaviour
             _netState.OnDeathReloadStarted      -= HandleDeathReloadStarted;
         }
         if (Instance == this) Instance = null;
+
+        // [버그 수정 2026-09-05] 꺼질 때 상태를 Idle로 되돌린다. 안 되돌리면 _state가 Playing으로
+        // 남아, 같은 링 컨테이너를 뒤 Phase에서 다시 켤 때 HandleChallengeStepChanged의 firstEntry가
+        // false로 계산돼 OnMinigameStarted와 최초 시간 브로드캐스트가 아예 발동하지 않는다.
+        StopMinigame();
     }
 
     /// <summary>Client/Host 공통. Host 레인 여부만 다르게 취급 (OXQuizManager와 동일).</summary>
@@ -205,8 +210,27 @@ public class SequenceRingMinigame : MonoBehaviour
         return nm != null && nm.IsListening && !nm.IsServer;
     }
 
+    /// <summary>
+    /// [버그 수정 2026-09-05] "지금 활성인 링 1개만 진행한다"는 불변식은 입력뿐 아니라 Host 판정
+    /// 레인 전체에 걸린다. 예전엔 이 가드가 PollSpaceInput에만 있어서, 링 두 개가 동시에 활성이면
+    /// (Phase 배선상 앞 링이 objectsToDisable에 빠진 경우) TickTimer가 각자 남은 시간을 브로드캐스트
+    /// 하고 각자 FailMinigame()을 확정했고, TickDangerStep도 각자 AdvanceStep을 불러 Danger 스텝이
+    /// 한 번에 두 칸 진행됐다 — 입력 없이도 "칸이 두 번 눌리는" 증상이 재현되는 경로였다.
+    ///
+    /// Instance가 비어 있으면 이 인스턴스가 소유권을 되찾는다. OnDisable은 Instance == this일 때만
+    /// 반납하므로 A활성 → B활성(Instance=B) → B비활성(Instance=null) 순서가 되면 A는 살아있는데
+    /// 소유자가 없는 고아 상태가 되고, 그 상태에서는 Host의 SubmitStepServerRpc도
+    /// Instance?.TrySubmit()에서 조용히 사라져 클라이언트 입력이 에러 없이 유실된다.
+    /// </summary>
+    bool IsActiveInstance()
+    {
+        if (Instance == null) Instance = this;
+        return Instance == this;
+    }
+
     void Update()
     {
+        if (!IsActiveInstance()) return;
         if (_state != MinigameState.Playing) return;
 
         // 판정·타이머 진행은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 관찰만
@@ -333,6 +357,7 @@ public class SequenceRingMinigame : MonoBehaviour
     void HandleChallengeStepResult(bool correct)
     {
         if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.SequenceRing) return;
+        if (!IsActiveInstance()) return; // 링 두 개가 동시 활성이면 정답/오답 SFX가 두 번 울린다
         if (correct) OnCorrectInput?.Invoke();
         else OnWrongInput?.Invoke();
     }
@@ -422,8 +447,7 @@ public class SequenceRingMinigame : MonoBehaviour
         // [버그 수정 2026-09-01] 입력 제출은 현재 활성 인스턴스 1개만 담당한다. 한 씬에 링이
         // 여러 개 있고(M.Stage4는 Phase별 4개) Phase 전환이 겹쳐 두 개가 동시에 활성이면 각자
         // Update를 돌아 같은 Space 1회를 각각 제출 → Host가 한 입력을 두 번 판정한다.
-        if (Instance != this) return;
-
+        // 가드 자체는 Update()의 IsActiveInstance()로 올렸다(판정 레인 전체가 같은 불변식).
         if (Keyboard.current == null) return;
         if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
         if (_currentStepIndex < 0 || _currentStepIndex >= _steps.Length) return;
@@ -449,20 +473,20 @@ public class SequenceRingMinigame : MonoBehaviour
         return false;
     }
 
-    /// <summary>Host는 TrySubmit()으로 즉시 판정, Client는 SubmitStepServerRpc로 요청만 (§11B.1).</summary>
+    /// <summary>Host는 TrySubmit()으로 즉시 판정, Client는 SubmitChallengeStep으로 요청만 (§11B.1).</summary>
     void SubmitColorInput(PlayerColorType color)
     {
         if (IsClientOnly())
-            _netState?.SubmitStepServerRpc(color);
+            _netState?.SubmitChallengeStep(color);
         else
             TrySubmit(color);
     }
 
-    /// <summary>Host는 TrySubmitAnyKey()으로 즉시 판정, Client는 SubmitAnyKeyStepServerRpc로 요청만.</summary>
+    /// <summary>Host는 TrySubmitAnyKey()으로 즉시 판정, Client는 SubmitChallengeAnyKeyStep으로 요청만.</summary>
     void SubmitAnyKeyInput()
     {
         if (IsClientOnly())
-            _netState?.SubmitAnyKeyStepServerRpc();
+            _netState?.SubmitChallengeAnyKeyStep();
         else
             TrySubmitAnyKey();
     }
@@ -599,7 +623,12 @@ public class SequenceRingMinigame : MonoBehaviour
     /// </summary>
     void GenerateSteps()
     {
-        _steps = new StepData[targetStepCount];
+        // 스텝 변경마다 호출되므로 배열은 크기가 같으면 재사용한다 — 결과는 시드로 결정되니 덮어써도
+        // 동일하다. 시드 기준으로 캐싱해 아예 건너뛰지는 않는다: 색 풀(GetUniqueColorPool)이 스폰
+        // 동기화보다 먼저 조회되면 폴백 4색이 섞이는데, 매번 다시 만드는 지금 구조가 그걸 스스로 고친다.
+        if (_steps.Length != targetStepCount)
+            _steps = new StepData[targetStepCount];
+
         PlayerColorType[] pool = GetUniqueColorPool();
 
         int seed = _netState != null ? _netState.ChallengeSeed : 0;
@@ -662,9 +691,14 @@ public class SequenceRingMinigame : MonoBehaviour
 
     // ── 미리보기 가시 스텝 ───────────────────────────────────────
 
+    // RefreshTileColors가 스텝마다 호출하므로 매번 새 HashSet을 만들지 않고 이 하나를 비워 쓴다.
+    readonly HashSet<int> _visibleSteps = new();
+
     HashSet<int> BuildVisibleStepSet()
     {
-        var set = new HashSet<int>();
+        HashSet<int> set = _visibleSteps;
+        set.Clear();
+
         int total = _steps.Length;
         if (total == 0) return set;
 

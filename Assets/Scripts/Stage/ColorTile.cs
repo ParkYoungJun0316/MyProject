@@ -79,9 +79,21 @@ public class ColorTile : MonoBehaviour
         _isCompleted = false;
     }
 
+    /// <summary>
+    /// 점수 직후 리셋 — 다음 점수까지 occupySeconds를 처음부터 다시 채워야 한다.
+    /// 점유 집계도 비운다: 이 호출은 타일이 다른 칸으로 순간이동하는 시점이라 지금 등록된 점유자는
+    /// 이미 그 위에 없는데, 물리 OnTriggerExit은 다음 스텝에야 오므로 비우지 않으면 그 한 프레임
+    /// 동안 없는 사람의 점유가 계속 누적된다. 비우면서 OnUncompleted를 직접 발동시키는 이유는,
+    /// 뒤늦게 오는 그 Exit이 이제 Remove에 실패해서(이미 비었으므로) 시각 연출이 눌린 채로
+    /// 남아버리기 때문이다.
+    /// </summary>
     public void ResetHold()
     {
         _heldTime = 0f;
+        if (_occupants.Count == 0) return;
+
+        _occupants.Clear();
+        OnUncompleted?.Invoke();
     }
 
     public void PlayScoreSfx() => PlayPressSfx();
@@ -114,7 +126,8 @@ public class ColorTile : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        // GetComponent (GetComponentInParent 아님) — 아래 TryAddOccupant 주석 참고.
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
 
         if (_quotaMode)
@@ -139,8 +152,21 @@ public class ColorTile : MonoBehaviour
 
     void TryAddOccupant(Collider other)
     {
+        // [버그 수정 2026-09-05] Player 콜라이더는 하나가 아니다 — 몸통 CapsuleCollider(루트,
+        // isTrigger=false)와 PlayerPunchHitbox의 SphereCollider(자식, isTrigger=true, 항상 켜짐,
+        // PlayerPunchHitbox.cs)가 같은 플레이어에 동시에 존재한다. GetComponentInParent<Player>()로
+        // 찾으면 둘 다 "같은 Player"로 잡히는데, 두 콜라이더가 타일 경계를 서로 다른 순간에
+        // 드나들어(예: 몸통이 먼저 빠져나가며 _isCompleted=false → 아직 안 빠진 펀치 히트박스가
+        // 곧이어 OnTriggerStay로 다시 걸리며 _isCompleted=true) 벗어나는 순간에도 PlayPressSfx()가
+        // 다시 불렸다. GetComponent(부모 탐색 없음)로 바꾸면 Player와 같은 GameObject에 있는 몸통
+        // 콜라이더만 통과하고, 자식인 펀치 히트박스는 걸러진다 — PressurePad.OnTriggerEnter가
+        // 원래부터 GetComponent를 썼던 이유(발판은 이 버그가 없었음)와 동일한 원칙으로 통일.
+        Player p = other.GetComponent<Player>();
+        if (p == null) return;
+
         if (ignorePlayerCheck)
         {
+            if (p.IsDead) return;
             if (_isCompleted) return;
             _isCompleted = true;
             PlayPressSfx();
@@ -149,8 +175,7 @@ public class ColorTile : MonoBehaviour
             return;
         }
 
-        Player p = other.GetComponentInParent<Player>();
-        if (p == null || p.IsDead) return;
+        if (p.IsDead) return;
 
         if (_quotaMode)
         {

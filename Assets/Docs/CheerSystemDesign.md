@@ -12,6 +12,8 @@
 
 > **콘텐츠 오버라이드 (2026-09-03):** 팀 응원 **효과·쿨**의 콘텐츠 SSOT는 [`CoopStageAudit.md`](CoopStageAudit.md) §9 맵 + [`CoopStageAudit.M.md`](CoopStageAudit.M.md) / [`CoopStageAudit.T.md`](CoopStageAudit.T.md). **+2힐·120초는 코드에서 폐기.** `CheerService`는 `ITeamCheerRevert` — 입 닫힘·침·혀 **됨** (2026-09-04 플레이 확인). T 조임·안개는 아직. RPC·투표·그래머·개인 버프 경로는 유지. 다음 작업 = M §H.5 (Barrier M1 · ColorTile 점수제).
 >
+> **팀 버프 코드 리뷰 반영 (2026-09-05):** 되돌림이 **Host 권한 명령**이 됐다 — `BroadcastTeamBuffActivatedClientRpc(generation, resumeAt)`. 예전엔 각 머신이 "지금 로컬 창을 닫아라"만 받아서, 창이 아직 안 열린 머신은 명령을 조용히 버리고 혼자 암전/미끄럼이 유지됐다. 함정 첫 창도 `PhaseStartServerTime`에 앵커링(WindTrap과 같은 패턴). 팀 쿨 잔재(`_teamCooldownEndNv`·`OnTeamCooldownClockChanged`·`GameSession` 쿨 저장·`TeamBuffCooldownUI`)는 **전부 삭제.** 아래 표 중 옛 Heal/쿨 서술은 이 항목이 우선한다.
+>
 > **2026-09-01 전면 개편.** 구 "팀원이 나를 응원해야 버프" 방식(전원 투표로 타인 타겟에게 버프)는 **폐기**. 신규: ①자기 응원 → 즉시 개인 버프, ②팀 전원 공용 키워드 → 팀 전체 버프. 남을 지목해서 응원하는 기능(cross-targeting)은 완전히 삭제됐다.
 >
 > **구현 현황:** Phase A·B·C·D1·D2 코드 완료 (인수인계 **§10.1**~**§10.4**). D3 안내 문구는 코드에서 제외(사용자 씬 텍스트). D0는 Tutorial 씬에 `CheerService` 배치됨. 남은 건 D4(구역 3) + Phase E 에디터.
@@ -32,8 +34,8 @@
 |---|---|---|
 | 트리거 | **자기** CheerName 외치기 (또는 숫자키 `1`, 기본 비활성) | **전원**(예외 없이 자기 자신 포함)이 **팀 공용 키워드(TeamCheerWord)** 외치기 (또는 숫자키 `2`, 기본 비활성) |
 | 발동 방식 | **즉시** — 필요 인원 1명(자기 자신)이라 투표 집계 자체가 불필요 | 투표 집계 + 타임아웃(첫 인식 후 N초 내 전원 미달 시 초기화) |
-| 효과 | 본인이 Q키로 고른 `Shield`/`SpeedUp` (기존 유지) | 전체 체력회복 **+2** (즉발, 지속시간 없음) |
-| 쿨다운 | 개인별 (`cheerCooldownSeconds`) | 팀 공용 (`teamCheerCooldownSeconds`, 개인과 별개 — **120초 / 2분**) |
+| 효과 | 본인이 Q키로 고른 `Shield`/`SpeedUp` (기존 유지) | 그 씬 함정이 한 일을 **되돌림**(`ITeamCheerRevert`) — 힐 아님(§0 오버라이드) |
+| 쿨다운 | 개인별 (`cheerCooldownSeconds`) | **없음** — 함정이 창(Warning~되돌림)을 열었을 때만 유효하므로 쿨이 곧 함정 주기 |
 | 대상 | 항상 자기 자신 (솔로/멀티 구분 없음 — 구 "솔로만 self 허용" 예외 폐기, 이제 기본 규칙) | `GameSession.ActivePlayerCount` 전원 |
 
 ### 1.3 두 개의 독립 시스템 (유지)
@@ -81,9 +83,10 @@
 | 수혜자 | 팀 전원 (그 순간 스폰돼 있는 활성 플레이어 전부) |
 | 필요 인원 | `GameSession.ActivePlayerCount` (제외 없음 — 자기 자신도 포함해서 셈) |
 | 타임아웃 | 첫 인식 후 `teamCheerTimeoutSeconds`(기본값, Inspector 노출) 내 전원 미달 시 표 전부 초기화 |
-| 효과 | 전체 체력회복 **+2** — `NetworkDamageUtil.ApplyHeal` 경유, 즉발(지속시간 없음) |
-| 쿨다운 | 팀 공용 1개, 개인 쿨다운과 완전히 별개. `teamCheerCooldownSeconds` **120초(2분)**. **시계 = `NetworkManager.ServerTime`만.** 종료 시각은 `GameSession`(DDOL)에 남아 스테이지 전환·사망 리로드 후에도 유지. 타이틀 복귀 `ResetSession`에서만 지움. 개인 버프 쿨은 씬마다 리셋(기존) |
-| 발동 피드백 | 전원 화면에 짧게 **"Team Buff!"** 텍스트 배너 표시 (§8.2) |
+| 효과 | 씬에 등록된 `ITeamCheerRevert` 되돌림 — 입 Open / 침 수면 페이드아웃 / 혀 복구. **Heal 아님**(§0 오버라이드) |
+| 유효 구간 | 함정이 창을 연 동안(Warning~되돌림)만. Idle 중 외침은 무시되고 표도 안 쌓임 |
+| 쿨다운 | **없음.** 팀 쿨 state·NV·세션 저장 전부 삭제(2026-09-05). 창이 닫히면 표도 함께 리셋 |
+| 발동 피드백 | 전원 화면에 짧게 배너 표시 (`TeamCheerCleared`, §8.2) |
 | 솔로(1인) | `ActivePlayerCount==1`이면 자기 혼자 TeamCheerWord 1회로 발동 — 자연스럽게 축소, 별도 예외 코드 불필요 |
 
 **개인 버프와 팀 버프는 서로 독립.** 같은 순간에 개인 버프 쿨타임 중이어도 팀 버프 투표/발동에는 영향 없음(그 반대도 마찬가지).
@@ -276,15 +279,17 @@ Metaphone/Soundex류 발음 근사로 후보 제안하는 방식은 작업량이
 | RPC | 방향 | 처리 |
 |---|---|---|
 | `SubmitSelfCheerServerRpc(bool isVoice)` | Client→Host | 서버가 `PlayerSpawnCoordinator.TryGetColor(senderId)`로 자기 색 조회 → 버프 중/쿨 중 아니면 즉시 `ApplyBuff` |
-| `SubmitTeamCheerServerRpc(bool isVoice)` | Client→Host | 가상 "team" 풀에 표 추가 → `ActivePlayerCount` 충족 시 `ApplyTeamBuff`(전원 Heal) |
+| `SubmitTeamCheerServerRpc(bool isVoice)` | Client→Host | 가상 "team" 풀에 표 추가 → `ActivePlayerCount` 충족 시 `ApplyTeamBuff`(= 등록된 `ITeamCheerRevert` 되돌림. **Heal 아님** — §0 오버라이드) |
 | `RequestToggleBuffTypeServerRpc` | Owner→Host | 기존 유지 (Shield/SpeedUp 선택) |
 | `ApplyCheerBuffClientRpc` | Host→All | 기존 유지 |
-| `BroadcastTeamBuffActivatedClientRpc` | Host→All | "Team Buff!" 배너만 (`OnTeamBuffActivated`). 팀 쿨은 NV |
+| `BroadcastTeamBuffActivatedClientRpc(int generation, double resumeAt)` | Host→All | 되돌림 명령(세대 + 다음 창 재개 ServerTime) + 배너(`OnTeamBuffActivated`). 팀 쿨 없음 |
 | `BroadcastTeamVoteChangedClientRpc` | Host→All | **신규** — 팀 진행도 UI (누가 이미 외쳤는지) |
 
 **삭제:** `SubmitCheerServerRpc(targetColorIndex, isVoice)`, `HandleTargetSwitch`, `_cheererTarget`, `GetCheererColorIndices`(개인 타겟용) — cross-targeting 제거로 불필요.
 
-### 7.3 Heal 파이프라인 **[신규]**
+### 7.3 Heal 파이프라인 **[현재 팀 응원은 안 씀]**
+
+> **2026-09-03 오버라이드:** 팀 응원 효과가 Heal → `ITeamCheerRevert` 되돌림으로 바뀌면서 **`CheerService`는 `ApplyHeal`을 호출하지 않는다.** 아래 API(`NetworkDamageUtil.ApplyHeal` / `NetworkPlayerSetup.ApplyHealFromServer` / `PlayerEvents.OnHealed`)는 회복이 필요한 다음 기능을 위한 정식 진입점으로 **남겨 둔 것** — 새 회복 경로를 만들지 말고 이걸 쓸 것.
 
 데미지 파이프라인과 동일하게 `NetworkDamageUtil`이 단일 진입점 — 우회 없음.
 
@@ -326,8 +331,9 @@ Idle(선택 아이콘) / BuffActive(fill) / Cooldown(숫자) 3상태, Q키 입�
 
 | 컴포넌트 | 역할 |
 |---|---|
-| **Team Buff! 배너** | 팀 버프 발동 시 화면 가운데 2~3초 스탬프. `CheerService.OnTeamBuffActivated` 구독 |
-| **`TeamBuffCooldownUI`** | Mute 위 같은 스탬프. fill은 `ServerTime` vs 쿨 종료 시각. 씬 로드 중이면 이미 찬 비율부터. 다 차면 pop 1회. `OnTeamCooldownClockChanged` 구독 |
+| **`TeamCheerCleared`** (구 이름 `TeamBuffBannerUI`) | 팀 응원 성공 시 화면 가운데 스탬프. `CheerService.OnTeamBuffActivated` 구독. `UI.prefab`에 배치됨 |
+| **`TeamCheerWarningUI`** | 팀 응원 가능 구간(Warning~되돌림) 경고. `CheerService.OnHazardWindowChanged` 구독. `UI.prefab`에 배치됨 |
+| ~~`TeamBuffCooldownUI`~~ | **삭제됨** — 팀 쿨(120초) 폐기와 함께 스크립트·NV·이벤트 전부 제거(2026-09-05) |
 | `PlayerCheerHeartsUI` (역할 재정의) | 구: "나를 응원 중인 남들" 표시 → **신: "이 플레이어가 이번 팀워드 라운드에 이미 외쳤는지"**를 그 플레이어 자기 머리 위에 하트 1개 온/오프로 표시 |
 | `TeamStatusUI` (숫자키 아이콘 자리 교체) | 구: 팀원별 숫자키(1~4) 아이콘 → **신: 팀워드 진행도**(그 팀원이 이미 외쳤는지 체크마크) |
 | `PlayerNameTagUI` | 본인 "지금 응원 중인 대상" 표시 제거 (더 이상 타겟 개념 없음) |
@@ -351,10 +357,9 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 |---|---|---|---|
 | `PlayerBuffSystem.buffSettings[type].duration` | `PlayerBuffSystem` | Shield/SpeedUp 지속 | Shield 5초 / SpeedUp 10초 (기존 유지) |
 | `cheerCooldownSeconds` | `CheerService` | 개인 버프 종료 후 쿨 | 15초 (기존 유지) |
-| `teamCheerCooldownSeconds` | `CheerService` | **[신규]** 팀 버프 종료 후 쿨 | **120초 (2분)** |
-| `teamCheerTimeoutSeconds` | `CheerService` | **[신규]** 팀 첫 인식 후 전원 미달 타임아웃 | placeholder — 기본 10초 정도로 시작, 튜닝 여지 |
+| `teamCheerTimeoutSeconds` | `CheerService` | 팀 첫 인식 후 전원 미달 타임아웃 | 10초 |
 | `chatRateLimitSeconds` | `CheerService` | 숫자키 응원 간격 | 0.5~1초 (기존 유지) |
-| `teamHealAmount` | `CheerService` | **[신규]** 팀 버프 체력회복량 | 2 (heart 단위) |
+| ~~`teamCheerCooldownSeconds`~~ / ~~`teamHealAmount`~~ | — | **삭제됨** — 팀 쿨 120초·+2힐 폐기(§0 오버라이드). 함정별 창 주기는 각 함정의 `randomIntervalMin/Max` + `warnDuration` | — |
 
 ---
 
@@ -496,23 +501,24 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 - `MatchesTeamCheerWord(string lower)` / `TeamCheerWord` 프로퍼티
 - `_teamCheerWord` NV: Server write, Everyone read, 기본 `"fighting"`
 - `OnNetworkSpawn`: 전원 `_teamCheerWord.OnValueChanged` 구독 + `RebuildOwnerLocalGrammar`. Host만 `HasSessionTeamCheerWord`면 세션값을 NV에 복사
-- Inspector: `teamCheerCooldownSeconds`(**120**), `teamCheerTimeoutSeconds`(10), `teamHealAmount`(2)
+- `RegisterRevert` / `UnregisterRevert` / `NotifyHazardWindow(bool)` — 씬당 `ITeamCheerRevert` 하나. 중복 등록은 경고 로그
+- Inspector: `cheerCooldownSeconds`(15), `teamCheerTimeoutSeconds`(10), `chatRateLimitSeconds`(0.5)
 
 Host 내부:
 
 - 개인: `_buffEnd` / `_cooldownEnd` (colorIndex), `_chatRateEnd` (clientId, 숫자키만, 음성은 rate skip)
-- 팀: `_teamVotes`, `_teamTimeoutStart`, `_teamCooldownEnd` + `_teamCooldownEndNv`(ServerTime 종료 시각, Host write). 씬을 넘기려면 `GameSession`에 같은 시각 저장. 개인 쿨은 세션에 안 남김
+- 팀: `_teamVotes`, `_teamTimeoutStart`, `_teamWindowConsumed`(이번 창 이미 되돌림 — 창이 새로 열릴 때 해제). **팀 쿨 state 없음**
 - `GetRequiredTeamVotes()` = `max(1, ActivePlayerCount)` (폴백: `ConnectedClientsIds.Count`)
-- `ApplyTeamBuff`: 세션 활성 색 `NetworkPlayerSetup`에 `NetworkDamageUtil.ApplyHeal`
-- `ResetTeamVotes`: `IsSpawned`일 때만 ClientRpc (스폰 전 호출 가드)
+- `ApplyTeamBuff`: `_revert.BuildRevertOrder`로 세대·재개 시각을 Host가 정하고 `BroadcastTeamBuffActivatedClientRpc`로 전 머신에 그대로 전달 (전원 Heal **아님**)
+- `ResetTeamVotes`: Host 전용 + 이미 비어 있으면 no-op + `IsSpawned`일 때만 ClientRpc. 창이 닫힐 때(`NotifyHazardWindow(false)`)도 호출돼 표가 창을 넘어가지 않음
 
 UI 이벤트:
 
 | 이벤트 | 발행 | 구독 현황 |
 |---|---|---|
 | `OnBuffActivated` / `OnCooldownStart` | ClientRpc → 로컬 이벤트. 개인 버프 HUD | `CheerProgressUI` (유지, 손대지 않음) |
-| `OnTeamBuffActivated` | 팀 Heal 직후 ClientRpc | `TeamBuffBannerUI` (§10.3). **GO 미배치면 배너만 없음** |
-| `OnTeamCooldownClockChanged` | `_teamCooldownEndNv`(ServerTime 종료 시각) 변경 | `TeamBuffCooldownUI`. 씬 복원은 Host `OnNetworkSpawn`이 `GameSession`에서 NV로 씀. **GO 미배치면 쿨 HUD만 없음** |
+| `OnTeamBuffActivated` | 되돌림 ClientRpc 직후 | `TeamCheerCleared` (§10.3). **GO 미배치면 배너만 없음** |
+| `OnHazardWindowChanged(bool)` | 함정이 `NotifyHazardWindow` 호출 (머신 로컬) | `TeamCheerWarningUI` |
 | `OnTeamVoteChanged(current, required, voterColorIndices)` | 표 추가/리셋 때 ClientRpc | `PlayerCheerHeartsUI` / `TeamStatusUI` (§10.3) |
 
 ### 리뷰 결정 (이미 반영)
@@ -527,7 +533,7 @@ UI 이벤트:
 - `CheerKeywordEngine.ParseAndSubmit`에 `_lastDetected[word] = Time.time`이 두 분기에 있음 (실행은 상호배타). 스타일만, 동작 버그 아님.
 - `ApplyBuff`/`ApplyTeamBuff`의 `FindObjectsByType<NetworkPlayerSetup>`는 구 패턴 유지. 인원 최대 4. 새로 바꾸지 말 것.
 - Options `digitCheerToggle` 미연결이면 숫자키 설정 UI가 안 보임. API·가드는 동작(기본 OFF). **사용자 에디터.**
-- `TeamBuffBannerUI` GO 미배치면 배너만 없음 (Heal은 적용). **사용자 에디터.**
+- `TeamCheerCleared` GO 미배치면 배너만 없음 (되돌림은 적용). `UI.prefab`에는 배치돼 있음.
 - `TeamStatusUI`에는 이름/HP 하트 외 아이콘 없음(사용자 결정). 팀워드 진행도가 보고 싶으면 캐릭터 머리 위(`PlayerCheerHeartsUI`)를 본다.
 - 팀 정체성 색(`PlayerColorType`/`colorIndex`, Blue/Purple/Green/Yellow)은 스폰 시 1회만 정해지고 게임 중 재변경 경로 없음 — `isBlack`/`isUniqueColor`(흑백↔고유색 토글, `ChangeColorCooldownUI`)와 다른 시스템이니 혼동하지 말 것.
 
@@ -586,7 +592,7 @@ Phase C에서 하지 말 것은 유지됐다: CheerService RPC 재작성, gramma
 
 ### 한 줄
 
-팀워드 투표 중 → 머리 위 하트 1개(코너 패널엔 표시 없음). 발동 → "Team Buff!" 배너 + Mute 위 스탬프 쿨 fill. 타겟 개념/구 투표 이벤트 없음.
+팀워드 투표 중 → 머리 위 하트 1개(코너 패널엔 표시 없음). 발동 → 배너(`TeamCheerCleared`). 타겟 개념/구 투표 이벤트/팀 쿨 HUD 없음.
 
 ### 파일별
 
@@ -595,8 +601,8 @@ Phase C에서 하지 말 것은 유지됐다: CheerService RPC 재작성, gramma
 | `PlayerCheerHeartsUI.cs` | `OnTeamVoteChanged` — 자기 colorIndex가 voter에 있으면 자기 색 하트 1개 ON | 구 "누가 나를 응원 중" 하트 여러 개 **부활 금지**. 타임아웃/발동은 빈 voter 배열로 OFF. 팀워드 진행도를 보여주는 **유일한** UI(코너 패널엔 없음) |
 | `TeamStatusUI.cs` | `keyIconSprites`(죽은 숫자키 3/4 아이콘) 삭제, 대체 아이콘 없음. 이름+HP 하트만 | **사용자 결정(2026-09-01): 코너 패널에 팀워드 체크 아이콘 추가하지 않음.** `CheerService.OnTeamVoteChanged` 구독 **부활 금지** — 팀워드 진행도는 오직 `PlayerCheerHeartsUI`(머리 위)로만 표시 |
 | `PlayerNameTagUI.cs` | 로컬 오너 "응원 대상" 분기 삭제. 타인 CheerName만 | `hideForLocalOwner` 유지. 타겟 텍스트 슬롯 **부활 금지** |
-| `TeamBuffBannerUI.cs` | 신규. `OnTeamBuffActivated` → 2.5초 페이드 배너 (`StageClearBannerUI` 패턴) | **Canvas 아래 빈 GO 배치는 사용자.** 미배치면 배너만 없음 |
-| `TeamBuffCooldownUI.cs` | `OnTeamCooldownClockChanged` — 같은 스탬프, ServerTime fill, 완료 시 pop 1회 | **Mute 위 GO는 사용자/MCP.** 숫자/상시 숨쉬기 없음. 씬 전환·사망 리로드에도 쿨 유지 |
+| `TeamCheerCleared.cs` (구 `TeamBuffBannerUI.cs`) | `OnTeamBuffActivated` → 페이드 배너 (`StageClearBannerUI` 패턴) | `UI.prefab`에 배치 완료 |
+| ~~`TeamBuffCooldownUI.cs`~~ | **삭제됨** (2026-09-05) — 팀 쿨 폐기. `OnTeamCooldownClockChanged` / `_teamCooldownEndNv` / `GameSession` 쿨 저장도 함께 제거 | **부활 금지** |
 | `CheerService.cs` | `OnVoteChanged` / `OnVoteReset` / `OnCheerersChanged` 삭제 | 구 이벤트 **부활 금지.** RPC 재작성 금지 |
 
 ### Phase D 착수점 — **D1·D2 완료.** 상세는 §10.4.
@@ -626,7 +632,7 @@ Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheer
 - D1 패널: `hostTeamWordSection` / `teamWordInputField` / `teamWordConfirmButton` / `currentTeamWordText` (`clientTeamWordSection`은 선택). **`currentTeamWordText`는 Host/Client 공통으로 보이게 두 섹션 바깥에**
 - D3: Tutorial 씬 텍스트로 숫자키 안내 (코드 없음)
 - D4: 구역 3 자기 응원 + 팀 응원 체험
-- Options `digitCheerToggle`, `TeamBuffBannerUI` GO (Phase B/C 잔여)
+- Options `digitCheerToggle` (Phase B/C 잔여). 배너·경고 GO는 `UI.prefab`에 배치 완료
 
 ### 결정
 
@@ -704,8 +710,10 @@ Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheer
 | 팀 UI | `Assets/Scripts/UI/TeamStatusUI.cs` |
 | 진행도 UI | `Assets/Scripts/UI/PlayerCheerHeartsUI.cs` |
 | 이름표 UI | `Assets/Scripts/UI/PlayerNameTagUI.cs` |
-| 팀 버프 배너 | `Assets/Scripts/UI/TeamBuffBannerUI.cs` |
-| 팀 버프 쿨 HUD | `Assets/Scripts/UI/TeamBuffCooldownUI.cs` |
+| 팀 응원 성공 배너 | `Assets/Scripts/UI/TeamCheerCleared.cs` |
+| 팀 응원 경고 | `Assets/Scripts/UI/TeamCheerWarningUI.cs` |
+| 되돌림 계약 | `Assets/Scripts/Cheer/ITeamCheerRevert.cs` |
+| 되돌림 대상 | `Assets/Scripts/MouthController.cs` · `Assets/Scripts/Cheer/SalivaHazard.cs` · `Assets/Scripts/Cheer/TongueController.cs` |
 | Tutorial 이름 설정 UI | `Assets/Scripts/UI/TutorialCheerNameUI.cs` |
 | Tutorial 네트워크 | `Assets/Scripts/Network/TutorialNetworkManager.cs` |
 

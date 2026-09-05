@@ -9,8 +9,9 @@ using UnityEngine;
 ///  Start()
 ///  1. 씬에서 PressurePad, DoorController, DoorPuzzleGroup 수집
 ///  2. pad→door 역방향 맵 구성
-///  3. designColor != Common인 패드에 활성 색 균등 분배
-///     - 같은 문에 묶인 패드끼리는 서로 다른 색 강제
+///  3. designColor(Blue/Purple/Green/Yellow 4슬롯) 단위로 활성 색을 매핑
+///     - 같은 designColor는 항상 같은 참가색 (1인=전부 자기색, 2인=2+2, 3인=2+1+1, 4인=그대로)
+///     - 같은 문에 묶인 서로 다른 designColor가 매핑 후 겹치면 보정
 ///  4. 각 DoorPuzzleGroup.ApplyScaling(activeCount) 호출 (latch·requiredCount 스케일)
 ///  5. 문의 ColoredDoorVisual.Apply(effectiveColor) 동기화
 ///  6. 패드의 ColoredPadVisual.Apply(effectiveColor) 동기화
@@ -139,8 +140,16 @@ public class StagePressurePadSetup : MonoBehaviour
     }
 
     /// <summary>
-    /// designColor != Common인 패드에 활성 색을 균등 분배하고 effectiveColor를 설정한다.
-    /// 같은 문에 묶인 패드끼리는 서로 다른 색이 배정되도록 보정한다.
+    /// 4개 디자인 색 슬롯(Blue/Purple/Green/Yellow) 단위로 활성 색을 매핑하고,
+    /// 같은 designColor를 가진 패드는 전부 같은 effectiveColor를 받도록 한다.
+    ///
+    ///  1인 → 나머지 3색 전부 자기 색으로
+    ///  2인 → 각자 자기 색 + 비활성 2색을 1개씩 나눠 받음
+    ///  3인 → 각자 자기 색 + 비활성 1색을 그중 1명이 받음
+    ///  4인 → 그대로(자기 자신)
+    ///
+    /// 패드 단위 재셔플은 하지 않는다 — 같은 디자인 그룹은 항상 같은 참가색이어야 하기 때문
+    /// (패드 개수 단위로 통짜 셔플하던 구 로직이 그룹을 깨뜨리던 버그의 원인이었음).
     /// </summary>
     void DistributeColors(PlayerColorType[] activeColors)
     {
@@ -152,20 +161,60 @@ public class StagePressurePadSetup : MonoBehaviour
 
         if (coloredPads.Count == 0) return;
 
-        // 이름 기준 오름차순 정렬 → Host/Client 양측에서 동일 순서 보장
-        coloredPads.Sort((a, b) =>
-            string.Compare(a.gameObject.name, b.gameObject.name, System.StringComparison.Ordinal));
+        Dictionary<PlayerColorType, PlayerColorType> map = BuildDesignColorMap(activeColors);
 
-        // 색 분배 + 셔플 — activeColors를 직접 주입해 GameSession 경유를 없앤다
-        PlayerColorType[] distributed = GameSessionColorDistribution.Distribute(activeColors, coloredPads.Count);
-        Shuffle(distributed);
+        // 같은 문에 묶인 서로 다른 designColor끼리 매핑 후에도 겹치면 보정 (Door.C류 다색 AND 패드 보호)
+        FixDoorColorCollisions(map, activeColors);
 
-        // 같은 문에 묶인 패드끼리 다른 색 강제
-        FixSiblingPadColors(coloredPads, distributed);
+        // 패드에 effectiveColor 적용 — 같은 designColor는 항상 같은 색
+        foreach (PressurePad pad in coloredPads)
+            pad.SetEffectiveColor(map.TryGetValue(pad.designColor, out PlayerColorType c) ? c : pad.designColor);
+    }
 
-        // 패드에 effectiveColor 적용
-        for (int i = 0; i < coloredPads.Count; i++)
-            coloredPads[i].SetEffectiveColor(distributed[i]);
+    /// <summary>
+    /// ColorOrder 4슬롯(Blue/Purple/Green/Yellow) 각각이 최종적으로 어떤 참가색으로 표시될지
+    /// 매핑한다. 활성색은 항상 자기 자신에게 매핑되고, 비활성색만 활성색 중 하나로 재배정된다 —
+    /// GameSessionColorDistribution.Distribute의 4슬롯 배정 개수 공식(2인→2+2, 3인→2+1+1,
+    /// 4인→1+1+1+1)과 동일한 비율을 만족시킨다.
+    /// </summary>
+    static Dictionary<PlayerColorType, PlayerColorType> BuildDesignColorMap(PlayerColorType[] activeColors)
+    {
+        // 4슬롯을 활성색으로 균등 분배한 "가방" — 여분 슬롯 배정 셔플은 내부에서
+        // UnityEngine.Random 사용(ApplySeedAndColors에서 이미 InitState된 시드라 Host/Client 동일).
+        PlayerColorType[] slotBag = GameSessionColorDistribution.Distribute(activeColors, PlayerColorUtil.ColorOrder.Length);
+
+        var targetCount = new Dictionary<PlayerColorType, int>();
+        foreach (PlayerColorType c in slotBag)
+            targetCount[c] = targetCount.TryGetValue(c, out int n) ? n + 1 : 1;
+
+        var map       = new Dictionary<PlayerColorType, PlayerColorType>();
+        var remaining = new Dictionary<PlayerColorType, int>();
+        foreach (PlayerColorType active in activeColors)
+        {
+            map[active] = active; // 활성색은 항상 자기 자신
+            int target = targetCount.TryGetValue(active, out int t) ? t : 0;
+            remaining[active] = Mathf.Max(0, target - 1); // 자기 슬롯 1개는 이미 확정
+        }
+
+        // 비활성 디자인 색을 remaining 여유가 있는 활성색에 순서대로 채운다.
+        foreach (PlayerColorType designSlot in PlayerColorUtil.ColorOrder)
+        {
+            if (map.ContainsKey(designSlot)) continue; // 이미 활성색(자기 자신)
+
+            PlayerColorType assigned = activeColors.Length > 0 ? activeColors[0] : PlayerColorType.Common;
+            foreach (PlayerColorType active in activeColors)
+            {
+                if (remaining.TryGetValue(active, out int left) && left > 0)
+                {
+                    assigned = active;
+                    remaining[active] = left - 1;
+                    break;
+                }
+            }
+            map[designSlot] = assigned;
+        }
+
+        return map;
     }
 
     /// <summary>
@@ -296,54 +345,50 @@ public class StagePressurePadSetup : MonoBehaviour
 
     // ── 내부 유틸 ────────────────────────────────────────────────
 
-    static void Shuffle<T>(T[] arr)
-    {
-        for (int i = arr.Length - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            (arr[i], arr[j]) = (arr[j], arr[i]);
-        }
-    }
-
     /// <summary>
-    /// 같은 DoorController의 requiredPads에 묶인 패드끼리 다른 색이 배정되도록 보정한다.
-    /// Door.C처럼 2색 AND 패드에서 동일 색이 배정되는 상황을 방지한다.
+    /// 같은 DoorController의 requiredPads가 서로 다른 designColor를 가지는데(Door.C류 다색
+    /// AND 패드), 매핑 후 같은 effectiveColor로 겹치면 한쪽을 다른 활성색으로 재배정한다.
+    /// 같은 designColor를 가진 패드끼리는 항상 같은 색을 유지해야 하므로, 이 보정은
+    /// map(designColor 단위)에만 적용한다 — 패드 인스턴스 단위 스왑은 하지 않는다.
     /// </summary>
-    void FixSiblingPadColors(List<PressurePad> coloredPads, PlayerColorType[] distributed)
+    void FixDoorColorCollisions(Dictionary<PlayerColorType, PlayerColorType> map, PlayerColorType[] activeColors)
     {
-        // door → 해당 문에 묶인 패드의 distributed 인덱스 목록
-        var doorIndices = new Dictionary<DoorController, List<int>>();
-        for (int i = 0; i < coloredPads.Count; i++)
+        // door → 그 문의 requiredPads가 가진 서로 다른 designColor 집합 (Common 제외)
+        var doorDesignColors = new Dictionary<DoorController, HashSet<PlayerColorType>>();
+        foreach (var kv in _padToDoors)
         {
-            if (!_padToDoors.TryGetValue(coloredPads[i], out List<DoorController> doors)) continue;
-            foreach (DoorController door in doors)
+            if (kv.Key == null || kv.Key.designColor == PlayerColorType.Common) continue;
+            foreach (DoorController door in kv.Value)
             {
-                if (!doorIndices.ContainsKey(door))
-                    doorIndices[door] = new List<int>();
-                if (!doorIndices[door].Contains(i))
-                    doorIndices[door].Add(i);
+                if (!doorDesignColors.TryGetValue(door, out HashSet<PlayerColorType> set))
+                {
+                    set = new HashSet<PlayerColorType>();
+                    doorDesignColors[door] = set;
+                }
+                set.Add(kv.Key.designColor);
             }
         }
 
-        foreach (List<int> siblings in doorIndices.Values)
+        foreach (HashSet<PlayerColorType> designSet in doorDesignColors.Values)
         {
-            if (siblings.Count < 2) continue;
+            if (designSet.Count < 2) continue;
 
-            // 형제 패드끼리 색 충돌 확인
-            for (int a = 0; a < siblings.Count - 1; a++)
+            var designs = new List<PlayerColorType>(designSet);
+            for (int a = 0; a < designs.Count - 1; a++)
             {
-                for (int b = a + 1; b < siblings.Count; b++)
+                for (int b = a + 1; b < designs.Count; b++)
                 {
-                    if (distributed[siblings[a]] != distributed[siblings[b]]) continue;
+                    if (map[designs[a]] != map[designs[b]]) continue;
 
-                    // 충돌: 형제가 아닌 패드 중 다른 색을 가진 패드와 스왑
-                    for (int c = 0; c < distributed.Length; c++)
+                    // 충돌 — designs[b]를 이 문에서 아직 안 쓰인 활성색으로 재배정
+                    foreach (PlayerColorType candidate in activeColors)
                     {
-                        if (siblings.Contains(c)) continue;
-                        if (distributed[c] == distributed[siblings[b]]) continue;
+                        bool usedInDoor = false;
+                        foreach (PlayerColorType d in designs)
+                            if (map[d] == candidate) { usedInDoor = true; break; }
+                        if (usedInDoor) continue;
 
-                        (distributed[siblings[b]], distributed[c]) =
-                            (distributed[c], distributed[siblings[b]]);
+                        map[designs[b]] = candidate;
                         break;
                     }
                 }

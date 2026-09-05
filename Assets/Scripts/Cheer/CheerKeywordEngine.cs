@@ -71,8 +71,18 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     const float SoloMicWarmupSec       = 0.5f;
     const float SoloMicPositionWaitSec = 1f;
     const float KeywordCooldown        = 0.5f;
-    const float NormNoiseFloor         = 0.0001f;
+
+    // 0.0001은 거의 완전한 무음만 걸러내는 수준이라, 배경 잡음(peak 0.001~0.005대)까지
+    // NormMaxGain(20배) 가까이 증폭되어 Vosk 입력이 잡음으로 뭉개지는 문제가 있었다.
+    // LogMicLevel 로그 기준(peak>0.01="작은 소리")과 맞춰 그 아래는 잡음으로 간주하고 증폭하지 않는다.
+    // 실측 후 필요하면 Inspector 노출 없이 이 값만 조정할 것(값 자체가 튜닝 포인트).
+    const float NormNoiseFloor         = 0.008f;
     const float NormMaxGain            = 20f;
+
+    // 100ms 청크마다 목표 게인이 갑자기 바뀌면(예: 조용함→발화 시작) Vosk 입력 다이내믹이
+    // 뭉개진다. 이전 스무딩값과 목표값을 섞어 완만하게 따라간다. 1에 가까울수록 즉각 반응.
+    const float GainSmoothingFactor    = 0.3f;
+
     const int   PcmQueueMax            = 60;     // 큐 최대 청크 수 (~2초분)
 
     // ── 메인 스레드 전용 상태 ─────────────────────────────────────
@@ -81,6 +91,13 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     string _grammarJson;
     bool   _subscribed;
     int    _dissonanceSampleRate;
+
+    // InitCoroutine의 "Dissonance 오디오 수신했는가" 판단 전용 신호. ResetAudioStream에서만 true.
+    // 과거엔 _workerNextModel(grammar 재적용 시에도 채워짐)로 겸용해서, 5초 창 안에
+    // ApplyOwnerLocalGrammar가 한 번이라도 불리면 오디오가 실제로는 안 왔는데도 "왔다"로
+    // 오판 → 솔로 마이크 폴백이 통째로 스킵되는 버그가 있었다(인게임 진입 직후 CheerService
+    // TeamCheerWord NV 복원이 이 재적용을 트리거하는 경로가 있어 인게임에서만 재현되기 쉬웠다).
+    volatile bool _dissonanceAudioSeen;
 
     // 솔로 마이크 경로
     bool      _usingSoloMic;
@@ -96,6 +113,9 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     float[] _dissonanceResample;
     float[] _accumBuf;
     int     _accumCount;
+
+    // NormalizeBuffer 청크 간 게인 스무딩 상태 (메인 스레드 전용). 1f = 무증폭.
+    float _smoothedGain = 1f;
 
     // ── 이벤트 (말해보기 테스트 모드 전용) ───────────────────────
     /// <summary>
@@ -130,10 +150,20 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     {
         StartWorker();
         StartCoroutine(InitCoroutine());
+
+        // 색 해석(ResolveOwnerColorIndex → PlayerSpawnCoordinator.TryGetColor) 실패로 grammar가
+        // 팀워드만 남는 레이스 대비 자동 재시도. 표준 구독 패턴(PlayerSpawnCoordinator 문서 헤더) —
+        // 늦은 구독 대비 IsReady 즉시 체크. ApplyOwnerLocalGrammar는 결과가 같으면 no-op이라
+        // (§3.4/이 파일 ApplyOwnerLocalGrammar 참고) 여러 번 걸려도 안전하다.
+        PlayerSpawnCoordinator.OnPlayersReady   += ApplyOwnerLocalGrammar;
+        PlayerSpawnCoordinator.OnRosterChanged  += ApplyOwnerLocalGrammar;
+        if (PlayerSpawnCoordinator.IsReady) ApplyOwnerLocalGrammar();
     }
 
     void OnDisable()
     {
+        PlayerSpawnCoordinator.OnPlayersReady  -= ApplyOwnerLocalGrammar;
+        PlayerSpawnCoordinator.OnRosterChanged -= ApplyOwnerLocalGrammar;
         StopAllCoroutines();
         Shutdown();
     }
@@ -158,12 +188,12 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         _subscribed = true;
         Debug.Log($"[CheerKeywordEngine] Init OK — grammar={_grammarJson}");
 
-        // Dissonance 오디오 수신 여부 확인 (ResetAudioStream → _workerNextModel 설정됨)
+        // Dissonance 오디오 수신 여부 확인 (ResetAudioStream → _dissonanceAudioSeen 설정됨)
         float deadline = Time.time + DissonanceWaitSec;
-        while (_workerNextModel == null && Time.time < deadline)
+        while (!_dissonanceAudioSeen && Time.time < deadline)
             yield return null;
 
-        if (_workerNextModel == null)
+        if (!_dissonanceAudioSeen)
         {
             // 마이크 이중 오픈 금지(과거 사고: CheerAndTutorialDesign.md §4.3) — 솔로(1인)일 때만
             // 직접 마이크 fallback 허용. 멀티(2인 이상)는 Dissonance가 늦어도 직접 마이크를 열지
@@ -217,6 +247,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         _accumCount      = 0;
         _usingSoloMic    = true;
         _debugFrameTimer = 0;
+        _smoothedGain    = 1f;
 
         SignalWorkerReset(_model, _grammarJson);
         Debug.Log($"[CheerKeywordEngine] 직접 마이크 시작 — 캡처:{_soloMicSourceHz}Hz → Vosk:{VoskFeedHz}Hz, gain={soloMicGain:F1}, normalize={autoNormalizeMic}");
@@ -243,12 +274,14 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             _resampleBuf     = null;
             _accumBuf        = null;
             _accumCount      = 0;
+            _smoothedGain    = 1f;
         }
 
-        _model             = null;
-        _grammarJson       = null;
-        _workerNextModel   = null;
-        _workerNextGrammar = null;
+        _model               = null;
+        _grammarJson         = null;
+        _workerNextModel     = null;
+        _workerNextGrammar   = null;
+        _dissonanceAudioSeen = false;
 
         while (_pcmQueue.TryDequeue(out _)) { }
         while (_resultQueue.TryDequeue(out _)) { }
@@ -258,6 +291,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
     protected override void ResetAudioStream(WaveFormat waveFormat)
     {
+        _dissonanceAudioSeen = true;
+
         if (_usingSoloMic) return;
 
         _dissonanceSampleRate = waveFormat.SampleRate;
@@ -362,11 +397,18 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         float peak = 0f;
         for (int i = 0; i < count; i++) peak = Mathf.Max(peak, Mathf.Abs(buf[i]));
 
-        if (peak < NormNoiseFloor || peak >= normalizeTargetPeak) return;
+        // 목표 게인 — 잡음(NormNoiseFloor 미달) 또는 이미 충분히 큰 소리(target 이상)면 1배(무증폭).
+        float targetGain = (peak < NormNoiseFloor || peak >= normalizeTargetPeak)
+            ? 1f
+            : Mathf.Min(normalizeTargetPeak / peak, NormMaxGain);
 
-        float gain = Mathf.Min(normalizeTargetPeak / peak, NormMaxGain);
+        // 청크(100ms)마다 목표 게인이 튀는 걸 완만하게 따라간다(조용함→발화 전환 등).
+        _smoothedGain = Mathf.Lerp(_smoothedGain, targetGain, GainSmoothingFactor);
+
+        if (Mathf.Abs(_smoothedGain - 1f) < 0.01f) return; // 거의 무증폭이면 곱 연산 스킵
+
         for (int i = 0; i < count; i++)
-            buf[i] = Mathf.Clamp(buf[i] * gain, -1f, 1f);
+            buf[i] = Mathf.Clamp(buf[i] * _smoothedGain, -1f, 1f);
     }
 
     void LogMicLevel(float[] buf, int count)
@@ -382,7 +424,10 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         string level = peak > 0.05f ? "← 발화 감지됨"
                      : peak > 0.01f ? "← 작은 소리"
                      :                "← 소음/매우 조용함";
-        Debug.Log($"[CheerKeywordEngine] 마이크 레벨 peak={peak:F4} {level} (gain={soloMicGain:F1}, normalize={autoNormalizeMic})");
+        // peak는 게인 적용 후 값. normalize 모드에선 실제 적용 중인 스무딩 게인을 함께 보여준다
+        // (soloMicGain은 그 모드에서 무시되는 Inspector 값이라 그대로 찍으면 오해를 준다).
+        float appliedGain = autoNormalizeMic ? _smoothedGain : soloMicGain;
+        Debug.Log($"[CheerKeywordEngine] 마이크 레벨 peak={peak:F4} {level} (gain={appliedGain:F1}, normalize={autoNormalizeMic})");
     }
 
     // ── 리샘플 ────────────────────────────────────────────────────
@@ -659,12 +704,15 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     /// <summary>
     /// 로컬 grammar를 [내 유효 CheerName, TeamCheerWord]로 재적용 (CheerSystemDesign.md §3.4).
     /// 모델 로드 전이면 무시 — InitCoroutine이 같은 헬퍼로 초기 grammar를 만든다.
+    /// PlayerSpawnCoordinator.OnPlayersReady/OnRosterChanged로도 걸려 여러 번 호출될 수 있으므로
+    /// 결과가 이전과 같으면(_grammarJson 비교) 워커 리셋을 스킵한다 — _workerNextModel/_workerNextGrammar는
+    /// "Dissonance 오디오 수신 여부" 판단(InitCoroutine)에도 쓰여 여기서 그 값과 비교하면 안 된다.
     /// </summary>
     public void ApplyOwnerLocalGrammar()
     {
         if (_model == null) return;
         string newJson = CheerLexiconBuilder.BuildGrammarJson(OwnerGrammarWords(ResolveOwnerCheerName()));
-        if (newJson == _workerNextGrammar) return;
+        if (newJson == _grammarJson) return;
         _grammarJson = newJson;
         SignalWorkerReset(_model, newJson);
         Debug.Log($"[CheerKeywordEngine] owner grammar 갱신: {newJson}");
@@ -691,7 +739,14 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     string ResolveOwnerCheerName()
     {
         int ci = ResolveOwnerColorIndex();
-        return ci < 0 ? "" : CheerService.GetCheerName(ci);
+        if (ci < 0)
+        {
+            // 이 상태로 grammar가 굳으면 TeamCheerWord만 남아 자기 응원이 이번 스테이지 내내 죽는다.
+            // OnPlayersReady/OnRosterChanged 재시도(OnEnable)가 곧 다시 부를 것이므로 여기선 경고만.
+            Debug.LogWarning("[CheerKeywordEngine] 색 해석 실패(PlayerSpawnCoordinator.TryGetColor) — 이번 호출은 CheerName 없이 진행, 재시도 대기");
+            return "";
+        }
+        return CheerService.GetCheerName(ci);
     }
 
     // ── 버퍼 용량 보장 ────────────────────────────────────────────

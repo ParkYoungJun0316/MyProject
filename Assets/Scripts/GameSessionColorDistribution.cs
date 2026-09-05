@@ -12,7 +12,8 @@ using UnityEngine;
 ///  GameSession이 없으면 Blue/Purple/Green/Yellow 4색으로 fallback.
 ///
 /// [사용처]
-///  DirectionalBarrierRound, PioneerPathManager, StagePressurePadSetup
+///  Distribute(균등분배): PioneerPathManager, StagePressurePadSetup
+///  GetActiveColorsOrFallback(목록만): DirectionalBarrierRound — §2.1 고정 표라 균등분배를 안 씀
 /// </summary>
 public static class GameSessionColorDistribution
 {
@@ -27,26 +28,35 @@ public static class GameSessionColorDistribution
     /// <summary>
     /// 활성 색을 totalSlots칸에 균등 분배한 배열을 반환한다.
     ///
+    /// rng를 넘기면(예: System.Random(ChallengeSeed)) 여분 슬롯 배정까지 그 시드로 결정된다 —
+    /// 네트워크 동기화가 필요한 호출자(PioneerPathManager 등)는 반드시 넘길 것.
+    /// null이면 기존 동작 그대로 UnityEngine.Random 사용(로컬 전용 호출자 하위호환).
+    /// </summary>
+    public static PlayerColorType[] Distribute(int totalSlots, System.Random rng = null)
+    {
+        return Distribute(GetActiveColorsOrFallback(), totalSlots, rng);
+    }
+
+    /// <summary>
+    /// 활성 색 목록을 우선순위대로 조회한다 (분배 없이 목록만).
+    ///
     /// 색 소스 우선순위:
     ///  1. PlayerSpawnCoordinator.GetActiveColors() — NetworkList SSOT, 레이스 없음
     ///  2. GameSession.GetActiveColors()            — Editor 직접 Play 등 PSC 없을 때 fallback
     ///  3. PlayableColors 4색                       — 둘 다 없을 때 최종 fallback
     ///
-    /// rng를 넘기면(예: System.Random(ChallengeSeed)) 여분 슬롯 배정까지 그 시드로 결정된다 —
-    /// 네트워크 동기화가 필요한 호출자(DirectionalBarrierRound 등)는 반드시 넘길 것.
-    /// null이면 기존 동작 그대로 UnityEngine.Random 사용(로컬 전용 호출자 하위호환).
+    /// DirectionalBarrierRound처럼 균등 분배가 아니라 고정 표(§2.1)로 슬롯을 짜야 하는
+    /// 호출자를 위해 노출 — Distribute(int,rng)와 같은 소스를 공유한다.
     /// </summary>
-    public static PlayerColorType[] Distribute(int totalSlots, System.Random rng = null)
+    public static IReadOnlyList<PlayerColorType> GetActiveColorsOrFallback()
     {
         PlayerColorType[] psColors = PlayerSpawnCoordinator.GetActiveColors();
         if (psColors.Length > 0)
-            return Distribute(psColors, totalSlots, rng);
+            return psColors;
 
-        IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
+        return GameSession.Instance != null
             ? GameSession.Instance.GetActiveColors()
             : (IReadOnlyList<PlayerColorType>)PlayableColors;
-
-        return Distribute(activeColors, totalSlots, rng);
     }
 
     /// <summary>

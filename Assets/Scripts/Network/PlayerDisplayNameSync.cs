@@ -47,29 +47,55 @@ public class PlayerDisplayNameSync : NetworkBehaviour
     /// <summary>현재 보고된 Dissonance VoiceId(LocalPlayerName) (빈 문자열 = 아직 보고 전/실패).</summary>
     public string VoiceId => _voiceId.Value.ToString();
 
+    /// <summary>
+    /// 아무 플레이어의 VoiceId NV가 바뀌면 전원 로컬에서 발행. OptionsTeamVoicePanel 즉시 반영용.
+    /// VoiceId는 Dissonance LocalPlayerName 확정을 최대 5초(1초×5회) 기다렸다 보고되므로,
+    /// 이 알림이 없으면 팀 보이스 패널이 이미 열린 뒤 도착한 VoiceId를 영원히 못 본다
+    /// (슬라이더가 계속 비활성으로 남는 버그, 2026-09-05 수정).
+    /// </summary>
+    public static event System.Action OnAnyVoiceIdChanged;
+
     public override void OnNetworkSpawn()
     {
         _displayName.OnValueChanged += HandleDisplayNameChanged;
+        _voiceId.OnValueChanged     += HandleVoiceIdChanged;
 
         if (IsOwner)
         {
             ReportDisplayNameServerRpc(new FixedString64Bytes(GetLocalDisplayName()));
             StartCoroutine(ReportVoiceIdRoutine());
         }
-        else if (!string.IsNullOrEmpty(DisplayName))
+        else
         {
-            OnAnyDisplayNameChanged?.Invoke();
+            // 이 머신에 스폰될 때 NV에 이미 값이 실려 온 경우엔 OnValueChanged가 오지 않으므로
+            // 여기서 1회 수동 발행. 다음 프레임으로 미루는 이유: 지금은 NGO 스폰 메시지 처리
+            // 도중이라, 구독자 쪽에서 예외가 나면 스폰 처리 자체가 끊긴다(§9.0.1-b Deferred/유실).
+            if (!string.IsNullOrEmpty(DisplayName) || !string.IsNullOrEmpty(VoiceId))
+                StartCoroutine(NotifyInitialValuesNextFrame());
         }
     }
 
     public override void OnNetworkDespawn()
     {
         _displayName.OnValueChanged -= HandleDisplayNameChanged;
+        _voiceId.OnValueChanged     -= HandleVoiceIdChanged;
+    }
+
+    IEnumerator NotifyInitialValuesNextFrame()
+    {
+        yield return null;
+        if (!string.IsNullOrEmpty(DisplayName)) OnAnyDisplayNameChanged?.Invoke();
+        if (!string.IsNullOrEmpty(VoiceId))     OnAnyVoiceIdChanged?.Invoke();
     }
 
     void HandleDisplayNameChanged(FixedString64Bytes previous, FixedString64Bytes current)
     {
         OnAnyDisplayNameChanged?.Invoke();
+    }
+
+    void HandleVoiceIdChanged(FixedString64Bytes previous, FixedString64Bytes current)
+    {
+        OnAnyVoiceIdChanged?.Invoke();
     }
 
     /// <summary>

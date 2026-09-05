@@ -94,11 +94,16 @@ public class TutorialCheerNameUI : MonoBehaviour
     public static bool ConsumedEnterThisFrame => s_enterConfirmFrame == Time.frameCount;
     static int s_enterConfirmFrame = -1;
 
+    /// <summary>제출 응답이 이 시간 안에 안 오면 입력칸을 다시 열어준다 (아래 SubmitTimeoutRoutine).</summary>
+    const float SubmitTimeoutSec = 3f;
+
     PlayerCheerNameSync _mySync;
     string _lastShownName;
     string _lastShownTeamWord;
     bool? _teamWordHostVisible;
     float _feedbackHideAt = -1f;
+    bool _awaitingSubmitResult;
+    Coroutine _submitTimeoutRoutine;
 
     void Awake()
     {
@@ -135,12 +140,22 @@ public class TutorialCheerNameUI : MonoBehaviour
         CursorUnlockRequestUtil.Request(this);
         _teamWordHostVisible = null;
         _lastShownTeamWord = null;
+
+        // 닫혀 있는 동안 제출 응답을 놓쳤을 수 있다(닫히면 코루틴·타임아웃이 같이 멈춘다).
+        // 열릴 때마다 입력 상태를 다시 확정해 "회색 입력칸" 고착이 어떤 경로로도 남지 않게 한다.
+        _awaitingSubmitResult = false;
+        _submitTimeoutRoutine = null;
+        HideFeedback();
+        SetInteractable(_mySync != null);
+
         ApplyTeamWordRole();
     }
 
     void OnDisable()
     {
         IsOpen = false;
+        _awaitingSubmitResult = false;
+        _submitTimeoutRoutine = null;
 
         // 씬이 통째로 언로드되는 중(예: TitleReturnFlow의 SceneManager.LoadScene)이면 자동으로
         // OnDisable이 불려도 목록 제거만 하고 실제 Cursor는 건드리지 않는다 — 그 시점엔 이미
@@ -270,18 +285,51 @@ public class TutorialCheerNameUI : MonoBehaviour
         // 호출이 즉시 리턴되므로 순서와 무관하게 항상 정상 동작했다.
         SetInteractable(false); // 응답 오기 전까지 중복 제출 방지
         ShowFeedback("확인 중...", persistent: true);
+        _awaitingSubmitResult = true;
         _mySync.SubmitCheerNameServerRpc(new FixedString32Bytes(nameInputField.text));
+
+        // Host는 위 호출 안에서 결과 처리까지 끝나 이미 false가 됐을 수 있다 — 그때는 타이머 불필요.
+        if (_awaitingSubmitResult)
+            _submitTimeoutRoutine = StartCoroutine(SubmitTimeoutRoutine());
+    }
+
+    /// <summary>
+    /// 제출 응답이 영원히 안 오는 경우의 복구. SubmitCheerNameServerRpc는 sender 검증
+    /// (본인 캐릭터만 제출 가능)에 걸리거나 그 사이 Player가 Despawn되면 아무 응답도 보내지 않는데,
+    /// 그러면 입력칸이 interactable=false로 영구 고착된다 — Host 순서 버그(위 주석)와 증상이
+    /// 똑같아서 원인을 헷갈리게 만든다. 응답 없음도 실패로 취급해 입력칸을 되돌린다.
+    /// </summary>
+    IEnumerator SubmitTimeoutRoutine()
+    {
+        yield return new WaitForSeconds(SubmitTimeoutSec);
+        _submitTimeoutRoutine = null;
+        if (!_awaitingSubmitResult) yield break;
+
+        _awaitingSubmitResult = false;
+        SetInteractable(true);
+        ShowFeedback("응답이 없어요. 다시 시도해 주세요.");
+        StartCoroutine(FocusInputNextFrame());
     }
 
     void HandleSubmitResult(bool success, string errorKey)
     {
+        _awaitingSubmitResult = false;
+        if (_submitTimeoutRoutine != null)
+        {
+            StopCoroutine(_submitTimeoutRoutine);
+            _submitTimeoutRoutine = null;
+        }
+
         SetInteractable(true);
 
         if (success)
         {
             // 확정되면 닫기 버튼 대신 바로 닫는다(§요청 3) — 확정 결과는 패널 밖 닉네임 표시(예:
             // PlayerHPUI selfNameLabel)로 바로 반영되므로 패널 안에서 문구를 보여줄 필요가 없다.
-            nameInputField.text = "";
+            // "확인 중..."은 persistent라 여기서 지우지 않으면 자동 숨김도 안 되고, 다음에 패널을
+            // 열 때 그대로 남아 있다(2026-09-05 수정).
+            HideFeedback();
+            if (nameInputField != null) nameInputField.text = "";
             Close();
         }
         else
@@ -416,6 +464,12 @@ public class TutorialCheerNameUI : MonoBehaviour
         feedbackText.gameObject.SetActive(true);
         feedbackText.text = message;
         _feedbackHideAt = persistent ? -1f : Time.time + feedbackDisplaySeconds;
+    }
+
+    void HideFeedback()
+    {
+        _feedbackHideAt = -1f;
+        if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
 
     void SetInteractable(bool value)

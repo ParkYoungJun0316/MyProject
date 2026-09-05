@@ -79,6 +79,12 @@ public class DeathOverlayUI : MonoBehaviour
         if (PlayerSpawnCoordinator.IsReady) RequestRebuild();
     }
 
+    /// <summary>(다시) 켜질 때 구독을 따라잡는다 — 이유는 TeamStatusUI.OnEnable과 동일.</summary>
+    void OnEnable() => RequestRebuild();
+
+    /// <summary>비활성화 중 예약된 리빌드는 코루틴이 정지되므로 플래그를 되돌려 놓는다.</summary>
+    void OnDisable() => _rebuildPending = false;
+
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= RequestRebuild;
@@ -93,6 +99,10 @@ public class DeathOverlayUI : MonoBehaviour
     void RequestRebuild()
     {
         if (_rebuildPending) return;
+        // 비활성이면 플래그를 세우지 않는다 — StartCoroutine이 시작되지 않는데 _rebuildPending만
+        // 남으면 복구 경로가 없어 OnDied 구독이 영구히 안 붙는다(TeamStatusUI.RequestRebuild와
+        // 동일 원인·동일 수정, 2026-09-05). 놓친 요청은 OnEnable이 따라잡는다.
+        if (!isActiveAndEnabled) return;
         _rebuildPending = true;
         StartCoroutine(RebuildNextFrame());
     }

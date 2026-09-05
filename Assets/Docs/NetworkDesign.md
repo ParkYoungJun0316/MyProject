@@ -332,8 +332,21 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 **버그 3 — Tutorial TeamStatus 명단/표시 이름/CheerName (2026-09-01):**
 - **증상:** Host TeamStatus가 비고, Client 슬롯은 있어도 Steam 이름이 `"Player"`. CheerName을 바꿔도 머리 위/`YOU ·`가 berry/guma/dan 고정. 게이트 통과 후 `M.Stage1`에 가서야 DisplayName이 보임.
 - **원인:** `OnPlayersReady`는 Host 1인 스폰 때 1회뿐이고 `CatchUpReadyFor`는 신규 Client만 대상. TeamStatus는 `GameSession` 게이트 스냅샷만 읽고, CheerName UI는 NV 변경을 구독하지 않음.
-- **수정:** `PlayerSpawnCoordinator.OnRosterChanged` — 각 머신 로컬 `NetworkPlayerSetup` 스폰/Despawn에서 발행 (`OnPlayersReady` 재발행 없음, §11.4). `TeamStatusUI`/`DeathOverlayUI`는 Ready+Roster를 **다음 프레임 1회 디바운스**로 재구성 — NGO는 `OnNetworkDespawn`을 `IsSpawned=false`·`Destroy`보다 먼저 호출하므로 즉시 `FindObjectsByType`하면 떠난 슬롯이 남고, M/T 배치 스폰은 N명 Roster + Ready로 N+1회 리빌드된다. DisplayName 우선순위는 `CheerService.GetCheerName`과 동일: **세션 확정값(`HasSessionDisplayNames`) → 없으면 `PlayerDisplayNameSync` 실시간 NV**. CheerName 즉시 반영은 `PlayerCheerNameSync.OnAnyCheerNameChanged`. **shared** (`UI.prefab`, Tutorial + 전 M/T).
+- **수정:** `PlayerSpawnCoordinator.OnRosterChanged` — 각 머신 로컬 `NetworkPlayerSetup` 스폰/Despawn에서 발행 (`OnPlayersReady` 재발행 없음, §11.4). `TeamStatusUI`/`DeathOverlayUI`는 Ready+Roster를 **다음 프레임 1회 디바운스**로 재구성 — NGO는 `OnNetworkDespawn`을 `IsSpawned=false`·`Destroy`보다 먼저 호출하므로 즉시 `FindObjectsByType`하면 떠난 슬롯이 남고, M/T 배치 스폰은 N명 Roster + Ready로 N+1회 리빌드된다. DisplayName 우선순위는 `CheerService.GetCheerName`과 동일: **세션 확정값 → 없으면 `PlayerDisplayNameSync` 실시간 NV**. CheerName 즉시 반영은 `PlayerCheerNameSync.OnAnyCheerNameChanged`. **shared** (`UI.prefab`, Tutorial + 전 M/T).
 - **스모크:** Tutorial ParrelSync 2인 Host/Client 슬롯·Steam(또는 로컬 OS) 이름·CheerName 즉시 반영. Client 이탈 시 슬롯 제거. 반대 라운드 `M.Stage1` TeamStatus (§9B.4).
+- **미해결로 남았던 부분:** 아래 버그 4 — 2인에서는 안 걸리고 **Steam 4인**에서만 재현됐다.
+
+**버그 4 — Tutorial TeamStatus/DisplayName/팀 보이스 (2026-09-05, Steam 4인):** 버그 3 수정이 2인에서 통과한 뒤에도 남아 있던 4건. 원인이 서로 달라 개별 기록.
+
+- **4-1. Host TeamStatus가 빈 채로 남음 (리빌드 데드락).** `RequestRebuild()`가 `_rebuildPending = true`를 세운 **다음** `StartCoroutine`을 호출하는데, GameObject가 비활성이면 코루틴이 시작되지 않는다. 플래그를 되돌리는 곳은 `RebuildNextFrame` 하나뿐이라 이후 모든 요청이 첫 줄에서 막혀 **그 씬 내내 다시 그려지지 않는다.** Host는 씬 로드 직후(UI 루트가 아직 켜지기 전) 자기 스폰에서 Ready+Roster를 발행하므로 여기에 정확히 걸린다 — Client는 UI가 켜진 뒤 합류해서 정상이라 증상이 Host 전용으로 보였다.
+  **수정:** 비활성이면 플래그를 세우지 않고 그냥 return + `OnEnable`에서 재요청 + `OnDisable`에서 플래그 리셋. `TeamStatusUI`·`DeathOverlayUI` **둘 다** (같은 패턴 복붙이라 같이 걸려 있었음 — `DeathOverlayUI`는 `OnDied` 구독이 영구히 안 붙어 M/T 사망 연출까지 영향).
+- **4-2. Steam 닉네임이 `"Player"`로 고착.** `GameSession.GetSessionDisplayName`이 미확정 슬롯에 `"Player"`를 폴백으로 돌려줬는데, non-empty라서 `TeamStatusUI`의 "확정값 → 없으면 실시간 NV" 폴백 체인이 **도달 불가한 죽은 코드**가 됐다. 게이트 통과 순간 한 명의 NV 보고가 안 와 있으면 그 판 내내 고착(재보고·NV 재조회 경로 없음). 같은 `"Player"` 리터럴이 `GameSession`·`TutorialNetworkManager`·`OptionsTeamVoicePanel` 3곳에 하드코딩돼 있어 팀 보이스 패널은 그걸 문자열 비교로 필터링까지 하고 있었다(실제 닉네임이 "Player"인 사람이 목록에서 사라짐).
+  **수정:** `GetSessionDisplayName`/`BuildSessionDisplayNames`의 미확정 값을 **빈 문자열**로 통일(VoiceId와 동일 규약) → 폴백 체인 복구. 플레이스홀더 표기는 UI만 정한다(`TeamStatusUI`는 `"???"`). `HasSessionDisplayNames`는 **삭제** — "확정됨"이 슬롯 단위가 아니라 배열 단위라 게이트로 쓰면 안 되는 API였다. (`HasSessionCheerNames`는 유지 — CheerName의 미확정 폴백은 항상 유효한 색 기본값이라 값만으로 구분이 안 됨.)
+- **4-3. Tutorial에서 팀 보이스 조절 불가.** `OptionsTeamVoicePanel`이 팀원 명단을 `GameSession.ActivePlayerCount`/`GetActiveColors`에서 뽑았는데, `GameSession.OnSceneLoaded`는 씬 이름에 `"Stage"`/`"Boss"`가 있을 때만 플레이어를 재수집하고 `SetActiveColors`도 게이트에서만 호출된다 → Tutorial에서는 항상 0/빈 배열이라 **구조적으로 절대 뜰 수 없었다.** 또 `PlayerDisplayNameSync`는 `_voiceId.OnValueChanged`를 구독하지 않아, Dissonance `LocalPlayerName` 확정을 최대 5초 기다렸다 도착하는 VoiceId를 패널이 열려 있는 동안 영원히 못 봤다(슬라이더 비활성 고착).
+  **수정:** 명단 소스를 `PlayerSpawnCoordinator.GetAllEntries()`(게이트 전에도 채워지는 유일한 SSOT)로 교체하고 자기 자신 제외를 색이 아니라 `clientId`로. 이름/VoiceId는 `TeamStatusUI`와 같은 규칙(세션 확정값 → 실시간 NV)으로 해석. `PlayerDisplayNameSync.OnAnyVoiceIdChanged` 신설 + 패널이 `OnEnable`에서 DisplayName/VoiceId 두 이벤트 구독. **게이트 전 팀원 목록이 비는 건 "의도된 상태"가 아니라 버그로 재분류.**
+- **4-4. CheerName 입력칸 잔여 문제 2건.** (2026-09-01의 Host 동기 ServerRpc 순서 수정 자체는 정상 동작 확인.) ① 확정 성공 시 `persistent: true`로 띄운 `"확인 중..."`을 지우지 않아 다음에 패널을 열면 그대로 남아 있었다. ② `SubmitCheerNameServerRpc`는 sender 검증에 걸리거나 그 사이 Player가 Despawn되면 **아무 응답도 보내지 않는데**, 그러면 `interactable=false`가 영구 고착돼 Host 순서 버그와 증상이 똑같아진다.
+  **수정:** 성공 분기에서 `HideFeedback()`, 3초 응답 타임아웃 복구(`SubmitTimeoutRoutine`), `OnEnable`에서 입력 상태 재확정(닫는 동안 응답을 놓친 경우까지 커버).
+- **스모크:** Steam 4인 Tutorial — ① Host TeamStatus에 나머지 3명 슬롯+Steam 닉네임 ② 4번째 합류자도 슬롯 생성 ③ ESC → 팀 보이스 탭에서 게이트 **전에** 팀원 3명 + 볼륨 슬라이더 활성 ④ 호스트 CheerName 2회 이상 연속 변경 ⑤ 게이트 통과 후 `M.Stage1`에서 사망 → `DeathOverlayUI` 정상 표시 + 씬 리로드(4-1이 M/T에도 영향).
 
 **P3 — 세션 메타데이터**
 
@@ -755,6 +768,7 @@ NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이�
 | **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse`, `SafeZoneWarnSign` (`M.Boss` only — PhaseStartServerTime 로컬 스케줄, RPC 없음) 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
 | **UI** | shared | `DeathOverlayUI` — `UI.prefab`, M/T 전 스테이지. 사망 문구 `{0}` = CheerName(`CheerService.GetCheerName`). Steam/OS DisplayName 아님 (2026-08-29: 로컬 경로에서 `u died`로 보이던 원인). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 | **UI** | shared | `OptionsTeamVoicePanel` / `OptionsMenuController` / `GameSettingsManager` — `Setting_Panel.prefab` (`Title` + `UI.prefab`, 전 M/T). 마이크 송신 볼륨·팀 보이스 수신 볼륨. 사후기록: §6B.7 P3 VoiceId 항목. | 동일 — T 대표 씬(`T.Stage1`) ESC 설정 |
+| **UI** | shared | `PlayerEmoteMenuUI` / `EmoteHintUI` — `UI.prefab`, Tutorial + 전 M/T. T 홀드 도넛 휠 8종(Yes/No/Thanks/Hide/Point/Shame/Fly/Surprise). **루프 4종 = Bool** → NetworkAnimator(Owner 권한) 파라미터 폴링이 그대로 전송, **원샷 4종 = Trigger** → 폴링이 Int/Bool/Float만 비교하므로 `Animator.SetTrigger` 금지, **`NetworkAnimator.SetTrigger`** 사용(2026-09-05). 각도는 링 이미지 분할선(0°/45°/…) 기준 조각 `[k*45°, (k+1)*45°)`, 아이콘은 조각 한가운데 — 반 칸 오프셋 금지. 배치·라벨·링 이미지·패널 크기는 **에디터 소유**(코드가 RectTransform/스프라이트를 덮어쓰지 않음). 열기 게이트 = `CursorUnlockRequestUtil.IsRequested`(ESC 메뉴·채팅·치어네임 중엔 T 무시). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 | **SFX** | shared | `PlayerAudio` / `PlayerPunch` — `Kkultteok.prefab`, 전 M/T. 개인 SFX(ColorChange/Buff/Hit/Death/Run)는 Owner 2D. Punch/PunchHit는 전 클라 3D. 사후기록: 아래 포스트모템. | 동일 — T 대표 씬(`T.Stage1`) |
 
 **그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.
@@ -1337,6 +1351,14 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 새 메커니즘이 아니라 기존 **"Client → Host 한 방향 요청: ServerRpc, Host 검증"** 규칙(`multiplayer-ngo.mdc` Sync 절, Cheer 제출·발사체 히트 리포트와 동일 패턴)의 재적용이다. **코드 반영 완료(2026-07-22)** — `StageNetworkState`에 두 ServerRpc 신설, Host에서 `SequenceRingMinigame.Instance`를 통해 판정 메서드 호출.
 
+**제출은 비멱등 — 중복 수신 가드가 Host 쪽 계약의 일부다 (2026-09-01 발견, 2026-09-05 정식화).** 이 축의 판정은 곧 스텝 진행(`ChallengeStepBegin`)이라, 한 입력이 두 번 판정되면 첫 판정이 올린 스텝을 두 번째가 또 판정해 **한 입력에 두 칸이 소비된다**("client가 누르면 칸이 2번씩 눌린다"로 보고된 증상). 원인은 우리 코드가 아니라 Facepunch 릴레이 트랜스포트의 RPC 중복 전달(NGO [#2704](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/2704), 경위는 [`SteamworksIntegrationDesign.md`](SteamworksIntegrationDesign.md) 트랙6)이고, 근본 대응은 **"웜 리커넥트는 항상 프로세스 재시작"** 정책이다 — 재호스팅(`CreateGameSteamAsync`)에 그 가드가 빠져 있던 것이 실제 재현 조건이었다(13차 세션에서 수정).
+
+그 위에 두 번째 방어선으로 제출 채널에 **발신 측 단조 증가 번호**를 붙인다(`RpcSubmitDedup` — 이 논리의 SSOT, 채팅·버프 토글 등 다른 비멱등 요청도 같은 타입을 쓴다). 지켜야 할 계약:
+
+- 호출부는 `SubmitChallengeStep(color)` / `SubmitChallengeAnyKeyStep()`만 쓴다. **번호 발급은 제출 채널(`StageNetworkState`) 책임** — 챌린지 컴포넌트마다 따로 세면 Phase 전환으로 인스턴스가 바뀔 때 번호가 되돌아가 이후 제출이 전부 중복으로 버려진다.
+- 스텝 인덱스를 중복 판정 키로 쓰지 말 것 — 오답은 인덱스가 그대로라 정상 재시도까지 같이 막힌다.
+- 프레임 번호(`Time.frameCount`) 가드로 되돌리지 말 것 — 중복이 다른 틱에 도착하면 통과한다(2026-09-01 1차 수정의 한계).
+
 **남은 시간 동기화 (SequenceRing 전용 추가):** SequenceRing의 남은 시간은 오답 페널티 등 이벤트 기반 변동이 있어 OX처럼 `ChallengeStepStartServerTime` 역산만으로는 재현할 수 없다. `SurviveTimeObjective`가 이미 쓰는 "Host가 직접 tick + 주기 ClientRpc 브로드캐스트" 패턴(`SyncSurvivalRemainingClientRpc`)을 그대로 재사용해 `StageNetworkState.SyncChallengeTimeClientRpc(float remaining)` + `OnChallengeTimeSync` 이벤트를 추가했다(0.1초 주기, §11B.2에 반영).
 
 ### 11B.2 공통 API (`StageNetworkState` 확장 — 챌린지 공용 슬롯)
@@ -1351,7 +1373,8 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | `ChallengeStart(seed, owner)` / `ChallengeStepBegin(stepIndex)` / `ChallengeCleared(bool)` | Host 전용 메서드 | Writer. `owner`는 호출한 챌린지 자신의 `ChallengeOwnerType` — 반드시 자기 타입을 넘겨야 함 |
 | `OnChallengeStepChanged` / `OnChallengeClearedChanged` / `OnChallengeOutcome` | 이벤트 | 전 챌린지 매니저 공통 구독점(공유 슬롯이므로 핸들러 내부에서 `ChallengeOwner` 가드 필수 — §11B.9) |
 | `NotifyChallengeOutcomeClientRpc(bool success)` | `[ClientRpc]` | ④Judge 결과 1회성 연출(Client만 재생 — Host는 로컬에서 직접 처리하므로 스킵) |
-| `SubmitStepServerRpc(PlayerColorType color)` / `SubmitAnyKeyStepServerRpc()` | `[Rpc(SendTo.Server)]` | §11B.1 — Client 입력 제출 → Host가 `SequenceRingMinigame.Instance.TrySubmit()`/`TrySubmitAnyKey()` 호출 |
+| `SubmitChallengeStep(PlayerColorType color)` / `SubmitChallengeAnyKeyStep()` | 공개 진입점 (Client) | §11B.1 — 제출 번호(`RpcSubmitDedup.NextSeq()`) 발급 후 아래 RPC 호출. 호출부는 이 둘만 쓴다 |
+| `SubmitStepServerRpc(color, submitSeq)` / `SubmitAnyKeyStepServerRpc(submitSeq)` | `[Rpc(SendTo.Server)]` (private) | §11B.1 — Host가 중복 번호를 버린 뒤 `SequenceRingMinigame.Instance.TrySubmit()`/`TrySubmitAnyKey()` 호출 |
 | `OnChallengeTimeSync` / `SyncChallengeTimeClientRpc(float remaining)` | 이벤트 / `[ClientRpc]` | §11B.1 — 이벤트 기반 변동(페널티)이 있어 ServerTime 역산이 불가능한 연속 타이머 전용(SequenceRing). Host가 직접 tick + 주기 브로드캐스트 |
 
 ### 11B.3 4개 챌린지 → 이 축 매핑
@@ -1384,6 +1407,8 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | 오답인데 데미지 없음(온라인) | ⑤ Resolve — `NetworkDamageUtil` 경유 여부 | ④ Judge 호출 여부 |
 | 전원 클리어했는데 다음 Phase로 안 넘어감 | ⑤ Resolve `Complete()` Host 가드 | §11A ③Progress 연결 여부 |
 | SequenceRing류에서 다른 사람이 누른 입력이 반영 안 됨 | §11B.1 ServerRpc 제출 누락 | ④ Judge `TrySubmit()` |
+| 한 번 눌렀는데 두 칸 진행됨(Client만) | §11B.1 제출 번호 가드 — `RpcSubmitDedup` 통과 여부 | 웜 리커넥트 재시작 정책 공백(`SteamworksIntegrationDesign.md` 트랙6) |
+| 입력이 에러 없이 통째로 유실됨 | 활성 인스턴스 소유권 — `SequenceRingMinigame.Instance`가 null이거나 다른 링인지 | 같은 링이 두 개 동시 활성(Phase `objectsToDisable` 배선) |
 | 챌린지 A를 고치면 B가 깨지는 회귀(A→B→C→A 순환) | §11B.9 `ChallengeOwner` 가드 누락 여부 | ② RoundStart의 `ChallengeStart(seed, owner)` 호출이 자기 타입을 넘기는지 |
 
 규칙: 한 칸씩 위로. 깨진 불변식이 설명되면 **정지**. 그 칸 Writer만 고침. 칸에 복구 if 추가 금지.
@@ -1517,7 +1542,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 ### 16.2 Post-Launch
 
 - 관전(Spectator) — **후보**
-- sit/dance 이모트
+- ~~sit/dance 이모트~~ → **이모트는 구현 완료** (T 홀드 휠 8종, §9.1.3 UI shared — Post-Launch 항목 아님, 2026-09-05)
 - (재접속·Late Join·호스트 마이그레이션은 **미지원 유지**)
 - **컷씬: 안 넣음** (로드맵에 넣지 않음)
 
@@ -1525,7 +1550,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 ## 17. Post-Launch (참고)
 
-- 관전(Spectator) 후보, 캐릭터 이모트 (sit, dance)
+- 관전(Spectator) 후보 (이모트는 구현 완료 — §9.1.3)
 - **컷씬: 영구 제외**
 - 재접속·호스트 마이그레이션·Late Join: **미지원** (§12)
 
@@ -1576,7 +1601,7 @@ A. `Tutorial` 씬 내 **상시 HUD**(Invite 버튼, §6B.5 — **룸코드 없�
 A. **아니오 (2026-08-17 확정).** Steam(④) 경로는 오버레이 초대 수락 또는 초대 링크(`steam://joinlobby/...`)로만 조인한다 — 코드 입력 UI 자체가 없다. Deep Rock Galactic/Risk of Rain 2/Overcooked 2 등 같은 조건(사적 파티 전용, 공개 매칭 없음)의 Steam 코업 게임들도 전부 이 방식이다. 룸코드는 **로컬 개발(①②) 전용**으로만 남는다(§4.1).
 
 **Q. 컷씬·관전·이모트를 출시 전에 넣나?**  
-A. **컷씬: 안 넣음(영구).** 관전·이모트: **Post-Launch**. 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). Ship Must·순서는 `ReleaseRoadmap.md` §4 (텔레메트리는 출시 후 OK).
+A. **컷씬: 안 넣음(영구).** 관전: **Post-Launch**. **이모트: 출시 범위에 포함 — 구현 완료**(T 홀드 휠 8종, §9.1.3, 2026-09-05). 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). Ship Must·순서는 `ReleaseRoadmap.md` §4 (텔레메트리는 출시 후 OK).
 
 **Q. Steam 데모 / Playtest 페이지를 만드나?**  
 A. **아니오.** 데모·Playtest 없음. **2026-09-01 정식 출시**만.

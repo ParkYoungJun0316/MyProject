@@ -93,6 +93,15 @@ public class TeamStatusUI : MonoBehaviour
         if (PlayerSpawnCoordinator.IsReady) RequestRebuild();
     }
 
+    /// <summary>
+    /// 패널이 (다시) 켜질 때 재구성. 구독은 Start/OnDestroy 짝이라 비활성 중에도 Ready/Roster를
+    /// 받는데, 그 요청들은 RequestRebuild가 흘려보내므로(아래) 켜지는 시점에 한 번 따라잡는다.
+    /// </summary>
+    void OnEnable() => RequestRebuild();
+
+    /// <summary>비활성화 중 예약된 리빌드는 Unity가 코루틴을 정지시키므로 플래그를 되돌려 놓는다.</summary>
+    void OnDisable() => _rebuildPending = false;
+
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= RequestRebuild;
@@ -114,6 +123,12 @@ public class TeamStatusUI : MonoBehaviour
     void RequestRebuild()
     {
         if (_rebuildPending) return;
+        // 비활성 상태에서는 플래그를 세우지 않는다 — StartCoroutine이 코루틴을 시작하지 못하는데
+        // _rebuildPending만 true로 남으면 되돌릴 곳이 RebuildNextFrame뿐이라 이후 모든 요청이
+        // 첫 줄에서 막혀 그 씬 내내 다시 그려지지 않는다. Host는 씬 로드 직후(UI가 아직 켜지기
+        // 전) 자기 스폰에서 Ready+Roster를 발행하므로 여기에 정확히 걸려 패널이 빈 채로 남았다
+        // (2026-09-05, Steam 4인 테스트). 놓친 요청은 OnEnable이 따라잡는다.
+        if (!isActiveAndEnabled) return;
         _rebuildPending = true;
         StartCoroutine(RebuildNextFrame());
     }
@@ -216,16 +231,18 @@ public class TeamStatusUI : MonoBehaviour
     /// <summary>
     /// colorIndex → Steam 표시 이름(닉네임). 매핑 실패 시 "???".
     /// 우선순위는 CheerService.GetCheerName과 동일 규칙(세션 확정값 우선 → 실시간 NV 폴백) —
-    /// 게이트 후(세션 확정)엔 스냅샷을 그대로 쓰고, 게이트 전(Tutorial, 세션 미확정)에만
+    /// 게이트 후엔 스냅샷을 쓰고, 게이트 전(Tutorial)이거나 그 색 슬롯이 미확정이면
     /// PlayerDisplayNameSync 실시간 NV를 스캔한다. DisplayName은 재제출 UI가 없어 스테이지
-    /// 재스폰 때마다 같은 값이 그대로 재보고되므로 두 값은 항상 수렴하지만, 우선순위 규칙을
-    /// CheerName과 동일하게 맞춰 SSOT 판단 기준을 하나로 통일한다.
+    /// 재스폰 때마다 같은 값이 그대로 재보고되므로 두 값은 항상 수렴한다.
+    /// GetSessionDisplayName은 미확정 슬롯에 빈 문자열을 돌려주므로(2026-09-05, 예전 "Player"
+    /// 폴백이 이 아래 실시간 NV 스캔을 도달 불가하게 만들어 "Player" 고착 버그가 있었음)
+    /// HasSessionDisplayNames를 따로 볼 필요 없이 반환값만으로 판단한다.
     /// CheerName("BERRY" 등)은 응원 시 혼동을 줄이기 위해 캐릭터 머리 위(PlayerNameTagUI)로 이전했고,
     /// 이 코너 패널은 "실제로 누구인지" 확인용 Steam 닉네임을 표시한다.
     /// </summary>
     static string GetPlayerDisplayName(int colorIndex)
     {
-        if (GameSession.Instance != null && GameSession.Instance.HasSessionDisplayNames)
+        if (GameSession.Instance != null)
         {
             string session = GameSession.Instance.GetSessionDisplayName(colorIndex);
             if (!string.IsNullOrEmpty(session)) return session;

@@ -1,26 +1,31 @@
-using TMPro;
-using Unity.Netcode;
+﻿using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// T 홀드로 도넛 이모트 휠을 열고, 커서가 올라간 칸에서 T를 떼면 그 이모트를 재생.
-/// 가운데 구멍·링 바깥에서 떼면 취소. 클릭은 쓰지 않는다.
-///
-/// 로컬 오너 Player Animator에 SetBool/SetTrigger — NetworkAnimator(Owner Authority)가
-/// 다른 클라이언트에 동기화 (Player.cs doHit/doDie, isRun과 동일).
+/// T 홀드로 도넛 이모트 휠을 열고, 커서가 올라간 조각에서 T를 떼면 그 이모트를 재생.
+/// 가운데 구멍·링 바깥에서 떼면 취소. 클릭은 쓰지 않는다(각도 판정 전용).
 ///
 /// [루프 vs 원샷]
-/// Yes/No/Hide/Point: 루프 → Bool, 이동 입력이 들어오면 즉시 취소.
-/// Thanks/Shame/Fly/Surprise: 원샷 → Trigger.
+/// Yes/No/Hide/Point: 루프 → Bool. NetworkAnimator(Owner Authority)의 파라미터 폴링이
+/// 그대로 실어 보낸다. 이동 입력이 들어오면 즉시 취소.
+/// Thanks/Shame/Fly/Surprise: 원샷 → Trigger. Trigger는 그 폴링 대상이 아니라
+/// (Bool/Int/Float만 비교·전송) NetworkAnimator.SetTrigger로 보낸다 — PlayOneShotEmote 참고.
 ///
-/// [칸 순서 — 12시부터 시계방향]
-/// Yes, No, Thanks, Hide, Point, Shame, Fly, Surprise.
+/// [각도 — 피자 조각]
+/// 링 이미지(Figma/Emot/Union.png)의 분할선이 0°/45°/90°/135°(수직·수평·대각)이므로
+/// 조각 k = [k*45°, (k+1)*45°) 이고, 아이콘은 그 조각 한가운데(22.5° + k*45°)에 놓인다.
+/// 12시 오른쪽 조각부터 시계방향: Yes, No, Thanks, Hide, Point, Shame, Fly, Surprise.
 ///
-/// [배치]
+/// [배치 — 에디터 소유]
 /// UI.prefab EmoteMenuController에 부착.
-/// emoteMenuPanel: 휠 루트. 슬롯은 Emote_Panel 자식 Btn.Yes~Btn.Surprise를 자동으로 찾는다.
+/// emoteMenuPanel: 휠 루트(Emote_Panel). 슬롯은 자식 Btn.Yes~Btn.Surprise를 자동으로 찾는다.
+/// 아이콘 위치·크기·색, 라벨(각 아이콘 또는 패널의 자식으로 직접 배치), 링 배경 이미지,
+/// 패널 크기는 **전부 에디터에서 설정한 값을 그대로 쓴다** — 코드는 RectTransform이나
+/// 스프라이트를 덮어쓰지 않는다(2026-09-05: 코드가 매번 되돌려 라벨을 옮길 수 없던 문제).
+/// 판정 반지름(innerRadius/outerRadius)만 인스펙터로 맞춘다.
 /// </summary>
 public class PlayerEmoteMenuUI : MonoBehaviour
 {
@@ -33,44 +38,24 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         "Btn.Point", "Btn.Shame", "Btn.Fly", "Btn.Surprise"
     };
 
-    static readonly string[] SlotLabels =
-    {
-        "Yes", "No", "Thanks", "Hide", "Point", "Shame", "Fly", "Surprise"
-    };
-
-    const string SlotLabelName = "Label";
-    const int RingTextureSize = 512;
-
     [Header("패널")]
-    [Tooltip("T 홀드 동안 켤 휠 루트 (기존 Emote_Panel)")]
+    [Tooltip("T 홀드 동안 켤 휠 루트 (Emote_Panel)")]
     [SerializeField] GameObject emoteMenuPanel;
 
-    [Header("슬롯 (12시부터 시계방향)")]
+    [Header("슬롯 (12시 오른쪽 조각부터 시계방향)")]
     [Tooltip("비워두면 Emote_Panel의 Btn.Yes ~ Btn.Surprise를 자동으로 찾습니다.")]
     [SerializeField] Image[] slotImages;
 
-    [Header("도넛")]
-    [Tooltip("아이콘이 놓일 중심부터의 거리 (패널 로컬 단위)")]
-    [SerializeField] float iconOrbitRadius = 160f;
-    [SerializeField] Vector2 iconSize = new Vector2(120f, 120f);
-    [Tooltip("이 거리보다 안쪽이면 취소 (구멍)")]
+    [Header("판정 반지름 (패널 로컬 단위)")]
+    [Tooltip("이 거리보다 안쪽이면 취소 (링 가운데)")]
     [SerializeField] float innerRadius = 80f;
-    [Tooltip("이 거리보다 바깥이면 취소")]
+    [Tooltip("이 거리보다 바깥이면 취소. 링 이미지의 실제 반지름과 맞추세요 (패널 500 → 250).")]
     [SerializeField] float outerRadius = 250f;
-    [Tooltip("비워두면 반투명 링을 코드로 그립니다. Figma 링 PNG를 넣으면 그걸 씁니다.")]
-    [SerializeField] Sprite donutSprite;
-    [SerializeField] Color ringColor = new Color(0f, 0f, 0f, 0.55f);
-    [SerializeField] Color ringLineColor = new Color(1f, 1f, 1f, 0.18f);
-
-    [Header("라벨")]
-    [SerializeField] TMP_FontAsset labelFont;
-    [SerializeField] float labelFontSize = 22f;
-    [SerializeField] Color labelColor = Color.white;
-    [SerializeField] float labelGap = 6f;
 
     [Header("하이라이트")]
-    [SerializeField] Color slotNormalColor = Color.white;
+    [Tooltip("커서가 올라간 조각의 아이콘 색. 평소 색·크기는 에디터에서 설정한 값을 그대로 씁니다.")]
     [SerializeField] Color slotHighlightColor = Color.white;
+    [Tooltip("에디터에서 설정한 아이콘 크기에 곱할 배율")]
     [SerializeField] float highlightScale = 1.2f;
 
     [Header("커서")]
@@ -88,14 +73,17 @@ public class PlayerEmoteMenuUI : MonoBehaviour
 
     Player _player;
     Animator _anim;
+    NetworkAnimator _netAnim;
     Canvas _canvas;
     RectTransform _wheelRoot;
     bool _isOpen;
     int _hoveredIndex = -1;
     bool _slotsPrepared;
     bool _loggedMissingSlots;
-    Texture2D _ringTex;
-    Sprite _generatedRingSprite;
+
+    /// <summary>에디터에서 설정한 슬롯 색·크기 — 하이라이트를 풀 때 되돌릴 원본.</summary>
+    Color[] _slotBaseColors;
+    Vector3[] _slotBaseScales;
 
     /// <summary>현재 재생 중인 루프 이모트 Bool 파라미터 이름. 없으면 null.</summary>
     string _activeLoopParam;
@@ -129,7 +117,14 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         InitAnimator();
     }
 
-    void InitAnimator() => _anim = _player.GetComponentInChildren<Animator>();
+    void InitAnimator()
+    {
+        _anim = _player.GetComponentInChildren<Animator>();
+        _netAnim = _player.GetComponentInChildren<NetworkAnimator>();
+
+        if (_netAnim == null)
+            Debug.LogWarning("[PlayerEmoteMenuUI] Player에 NetworkAnimator가 없어 원샷 이모트를 보낼 수 없습니다.");
+    }
 
     void OnDestroy()
     {
@@ -142,7 +137,6 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         // (2026-08-22 수정, EscMenuController와 동일 원인).
         if (_isOpen) CursorUnlockRequestUtil.Forget(this);
         IsOpen = false;
-        DestroyGeneratedRing();
     }
 
     void Update()
@@ -170,9 +164,16 @@ public class PlayerEmoteMenuUI : MonoBehaviour
 
         if (!_isOpen)
         {
-            if (Keyboard.current.tKey.wasPressedThisFrame)
-                OpenMenu();
-            return;
+            if (!Keyboard.current.tKey.wasPressedThisFrame) return;
+
+            // ESC 메뉴·채팅·치어네임이 떠 있으면 열지 않는다. 커서 해제 요청 목록이 "지금 마우스를
+            // 쓰는 UI가 있나"의 SSOT라 UI별 플래그를 따로 볼 필요가 없다(EscMenuController는
+            // 공개 IsOpen이 없으므로 이 경로가 유일한 게이트).
+            if (CursorUnlockRequestUtil.IsRequested) return;
+
+            OpenMenu();
+            // 여기서 return하지 않고 같은 프레임의 호버·릴리스까지 처리한다 — 프레임이 길 때
+            // T를 한 프레임 안에 눌렀다 떼면 wasReleasedThisFrame을 놓쳐 휠이 열린 채 남았다.
         }
 
         UpdateHover();
@@ -248,11 +249,15 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         CloseMenu();
     }
 
-    /// <summary>원샷 이모트 재생. 루프 이모트 재생 중이었다면 먼저 꺼서 원샷 종료 후 루프로 되돌아가는 것을 방지.</summary>
+    /// <summary>원샷 이모트 재생. Animator에 직접 SetTrigger하면 안 된다 — NetworkAnimator의 파라미터
+    /// 폴링은 Int/Bool/Float만 비교·전송하고 Trigger 타입은 어느 분기에도 걸리지 않아, 원격 클라이언트에
+    /// 전달되는 건 상태(state) 동기화에 얹혀가는 우연뿐이다. NGO가 따로 제공하는 SetTrigger로 보낸다
+    /// (Owner 권한이라 로컬에도 즉시 적용 + 서버로 큐잉, 2026-09-05).
+    /// 루프 이모트 재생 중이었다면 먼저 꺼서 원샷 종료 후 루프로 되돌아가는 것을 방지.</summary>
     void PlayOneShotEmote(string trigger)
     {
         CancelActiveLoop();
-        if (_anim != null) _anim.SetTrigger(trigger);
+        if (_netAnim != null) _netAnim.SetTrigger(trigger);
         CloseMenu();
     }
 
@@ -287,11 +292,12 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         float dist = local.magnitude;
         if (dist < innerRadius || dist > outerRadius) return -1;
 
-        // Atan2(x, y): 0 = 12시, 양수 = 시계방향. 슬롯 중심이 슬라이스 한가운데가 되도록 반 칸 오프셋.
+        // Atan2(x, y): 0 = 12시, 양수 = 시계방향. 링 이미지의 분할선이 0°/45°/90°/135°라 조각 k는
+        // [k*45°, (k+1)*45°) 이고 아이콘이 그 한가운데에 있다 — 반 칸 오프셋을 주면 안 된다
+        // (2026-09-05: 오프셋 때문에 아이콘 중앙이 경계선에 걸쳐 옆 칸이 잡혔음).
         float angle = Mathf.Atan2(local.x, local.y);
         if (angle < 0f) angle += Mathf.PI * 2f;
-        int index = Mathf.FloorToInt((angle + SliceRadians * 0.5f) / SliceRadians);
-        return index % SlotCount;
+        return Mathf.FloorToInt(angle / SliceRadians) % SlotCount;
     }
 
     void PrepareWheel()
@@ -299,30 +305,8 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         if (_slotsPrepared || emoteMenuPanel == null) return;
 
         _wheelRoot = emoteMenuPanel.transform as RectTransform;
-        _canvas = emoteMenuPanel.GetComponentInParent<Canvas>();
-
-        var layout = emoteMenuPanel.GetComponent<LayoutGroup>();
-        if (layout != null) layout.enabled = false;
-
-        var fitter = emoteMenuPanel.GetComponent<ContentSizeFitter>();
-        if (fitter != null) fitter.enabled = false;
-
-        if (_wheelRoot != null)
-        {
-            _wheelRoot.anchorMin = _wheelRoot.anchorMax = new Vector2(0.5f, 0.5f);
-            _wheelRoot.pivot = new Vector2(0.5f, 0.5f);
-            _wheelRoot.anchoredPosition = Vector2.zero;
-            float size = Mathf.Max(
-                outerRadius * 2f,
-                (iconOrbitRadius + iconSize.y * 0.5f + labelFontSize + labelGap + 20f) * 2f);
-            _wheelRoot.sizeDelta = new Vector2(size, size);
-        }
-
-        ApplyDonutBackground();
-
-        var buttons = emoteMenuPanel.GetComponentsInChildren<Button>(true);
-        for (int i = 0; i < buttons.Length; i++)
-            buttons[i].enabled = false;
+        // 패널은 Awake에서 이미 비활성이므로 includeInactive를 켜야 캔버스를 찾는다.
+        _canvas = emoteMenuPanel.GetComponentInParent<Canvas>(true);
 
         if (!TryResolveSlots())
         {
@@ -334,9 +318,29 @@ public class PlayerEmoteMenuUI : MonoBehaviour
             return;
         }
 
-        HideNonSlotChildren();
-        LayoutSlots();
+        CacheSlotBaseVisuals();
         _slotsPrepared = true;
+    }
+
+    /// <summary>위치·크기·스프라이트·라벨은 전부 에디터 소유라 코드는 원본 색·크기만 기억한다.
+    /// 클릭을 쓰지 않으므로 Button과 레이캐스트만 끈다 — Button을 살려두면 그 ColorTint 전환이
+    /// 호버 하이라이트 색을 덮어쓴다.</summary>
+    void CacheSlotBaseVisuals()
+    {
+        _slotBaseColors = new Color[SlotCount];
+        _slotBaseScales = new Vector3[SlotCount];
+
+        for (int i = 0; i < SlotCount; i++)
+        {
+            Image img = slotImages[i];
+
+            var button = img.GetComponent<Button>();
+            if (button != null) button.enabled = false;
+            img.raycastTarget = false;
+
+            _slotBaseColors[i] = img.color;
+            _slotBaseScales[i] = img.rectTransform.localScale;
+        }
     }
 
     bool TryResolveSlots()
@@ -371,214 +375,29 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         return true;
     }
 
-    void HideNonSlotChildren()
-    {
-        for (int i = 0; i < emoteMenuPanel.transform.childCount; i++)
-        {
-            var child = emoteMenuPanel.transform.GetChild(i).gameObject;
-            bool isSlot = false;
-            for (int s = 0; s < slotImages.Length; s++)
-            {
-                if (slotImages[s] != null && slotImages[s].gameObject == child)
-                {
-                    isSlot = true;
-                    break;
-                }
-            }
-
-            if (!isSlot) child.SetActive(false);
-        }
-    }
-
-    void LayoutSlots()
-    {
-
-        for (int i = 0; i < SlotCount; i++)
-        {
-            Image img = slotImages[i];
-            if (img == null) continue;
-
-            var button = img.GetComponent<Button>();
-            if (button != null) button.enabled = false;
-
-            img.raycastTarget = false;
-            img.preserveAspect = true;
-            img.color = slotNormalColor;
-
-            var layoutElement = img.GetComponent<LayoutElement>();
-            if (layoutElement != null) layoutElement.ignoreLayout = true;
-
-            RectTransform rt = img.rectTransform;
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = iconSize;
-            rt.localScale = Vector3.one;
-
-            EnsureSlotLabel(img, SlotLabels[i]);
-        }
-    }
-
     void ApplyAllSlotVisuals()
     {
-        if (slotImages == null) return;
+        if (slotImages == null || _slotBaseColors == null) return;
         int count = Mathf.Min(slotImages.Length, SlotCount);
         for (int i = 0; i < count; i++)
         {
             Image img = slotImages[i];
             if (img == null) continue;
             bool on = i == _hoveredIndex;
-            img.color = on ? slotHighlightColor : slotNormalColor;
-            img.rectTransform.localScale = Vector3.one * (on ? highlightScale : 1f);
+            img.color = on ? slotHighlightColor : _slotBaseColors[i];
+            img.rectTransform.localScale = on
+                ? _slotBaseScales[i] * highlightScale
+                : _slotBaseScales[i];
         }
     }
 
-    void ApplyDonutBackground()
-    {
-        var bg = emoteMenuPanel.GetComponent<Image>();
-        if (bg == null) return;
-
-        bg.raycastTarget = false;
-        bg.preserveAspect = true;
-        bg.type = Image.Type.Simple;
-
-        if (donutSprite != null)
-        {
-            DestroyGeneratedRing();
-            bg.sprite = donutSprite;
-            bg.color = Color.white;
-            return;
-        }
-
-        float panelRadius = _wheelRoot != null ? _wheelRoot.sizeDelta.x * 0.5f : outerRadius;
-        float innerRatio = panelRadius > 0.01f ? innerRadius / panelRadius : 0.32f;
-        bg.sprite = GetOrCreateRingSprite(innerRatio);
-        bg.color = Color.white;
-    }
-
-    Sprite GetOrCreateRingSprite(float innerRatio)
-    {
-        if (_generatedRingSprite != null) return _generatedRingSprite;
-
-        _ringTex = new Texture2D(RingTextureSize, RingTextureSize, TextureFormat.RGBA32, false);
-        _ringTex.name = "EmoteDonutRing";
-        _ringTex.wrapMode = TextureWrapMode.Clamp;
-        _ringTex.filterMode = FilterMode.Bilinear;
-
-        var pixels = new Color[RingTextureSize * RingTextureSize];
-        float cx = (RingTextureSize - 1) * 0.5f;
-        float outer = cx;
-        float inner = Mathf.Clamp(cx * innerRatio, 0f, outer - 2f);
-        const float edge = 2f;
-
-        for (int y = 0; y < RingTextureSize; y++)
-        {
-            for (int x = 0; x < RingTextureSize; x++)
-            {
-                float dx = x - cx;
-                float dy = y - cx;
-                float r = Mathf.Sqrt(dx * dx + dy * dy);
-                Color c = Color.clear;
-                if (r <= outer && r >= inner)
-                {
-                    c = ringColor;
-                    if (r > outer - edge) c.a *= Mathf.Clamp01((outer - r) / edge);
-                    if (r < inner + edge) c.a *= Mathf.Clamp01((r - inner) / edge);
-
-                    float angle = Mathf.Atan2(dx, dy);
-                    if (angle < 0f) angle += Mathf.PI * 2f;
-                    float wrapped = Mathf.Repeat(angle + SliceRadians * 0.5f, SliceRadians);
-                    float distToLine = Mathf.Min(wrapped, SliceRadians - wrapped) * r;
-                    if (distToLine < 1.6f)
-                    {
-                        float t = 1f - distToLine / 1.6f;
-                        c = Color.Lerp(c, ringLineColor, t * ringLineColor.a);
-                    }
-                }
-
-                pixels[y * RingTextureSize + x] = c;
-            }
-        }
-
-        _ringTex.SetPixels(pixels);
-        _ringTex.Apply(false, true);
-        _generatedRingSprite = Sprite.Create(
-            _ringTex,
-            new Rect(0f, 0f, RingTextureSize, RingTextureSize),
-            new Vector2(0.5f, 0.5f),
-            100f);
-        _generatedRingSprite.name = "EmoteDonutRingSprite";
-        return _generatedRingSprite;
-    }
-
-    void DestroyGeneratedRing()
-    {
-        if (_generatedRingSprite != null)
-        {
-            Destroy(_generatedRingSprite);
-            _generatedRingSprite = null;
-        }
-
-        if (_ringTex != null)
-        {
-            Destroy(_ringTex);
-            _ringTex = null;
-        }
-    }
-
-    void EnsureSlotLabel(Image img, string text)
-    {
-        Transform existing = img.transform.Find(SlotLabelName);
-        TextMeshProUGUI tmp = existing != null ? existing.GetComponent<TextMeshProUGUI>() : null;
-        if (tmp == null)
-        {
-            var go = new GameObject(SlotLabelName, typeof(RectTransform));
-            go.layer = img.gameObject.layer;
-            go.transform.SetParent(img.transform, false);
-            tmp = go.AddComponent<TextMeshProUGUI>();
-        }
-
-        var rt = tmp.rectTransform;
-        rt.anchorMin = new Vector2(0.5f, 1f);
-        rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 0f);
-        rt.anchoredPosition = new Vector2(0f, labelGap);
-        rt.sizeDelta = new Vector2(180f, labelFontSize + 10f);
-        rt.localScale = Vector3.one;
-        rt.localRotation = Quaternion.identity;
-
-        TMP_FontAsset font = ResolveLabelFont();
-        if (font != null) tmp.font = font;
-
-        tmp.text = text;
-        tmp.fontSize = labelFontSize;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.alignment = TextAlignmentOptions.Bottom;
-        tmp.color = labelColor;
-        tmp.raycastTarget = false;
-        tmp.enableWordWrapping = false;
-        tmp.overflowMode = TextOverflowModes.Overflow;
-    }
-
-    TMP_FontAsset ResolveLabelFont()
-    {
-        if (labelFont != null) return labelFont;
-        if (_canvas != null)
-        {
-            var existing = _canvas.GetComponentInChildren<TextMeshProUGUI>(true);
-            if (existing != null && existing.font != null) return existing.font;
-        }
-
-        return TMP_Settings.defaultFontAsset;
-    }
-
-    /// <summary>오프라인: isOwnerControlled=true, 온라인: NetworkObject.IsOwner 기준으로 탐색.</summary>
+    /// <summary>로컬 오너 플레이어 — NetworkObject.IsOwner 기준. 솔로도 Host 1인이라 같은 경로다.</summary>
     static Player FindLocalOwnerPlayer()
     {
         foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
         {
             var netObj = p.GetComponent<NetworkObject>();
             if (netObj != null && netObj.IsOwner) return p;
-            if (p.isOwnerControlled) return p;
         }
         return null;
     }

@@ -99,7 +99,7 @@ public class DirectionalBarrierRound : MonoBehaviour
     readonly List<GameObject> _spawnedBarriers = new();
     readonly List<ColorTile>  _activeTiles      = new();
 
-    // 이번 라운드 4슬롯에 배정된 색 목록 (GameSession 활성색 기준 균등 분배)
+    // 이번 라운드 4슬롯에 배정된 색 목록 (§2.1 확정 표 — BuildBarrierSlots. 균등 분배 아님)
     PlayerColorType[] _roundColors;
 
     StageNetworkState _netState;
@@ -254,10 +254,9 @@ public class DirectionalBarrierRound : MonoBehaviour
             return;
         }
 
-        // GameSession 활성색 기준 4슬롯 균등 분배 (2인→2+2, 3인→2+1+1, 4인→1+1+1+1)
-        // rng를 넘겨 여분 슬롯 배정까지 시드로 결정 — 안 넘기면 UnityEngine.Random이라 갈라짐.
-        int totalSlots = barrierSpawnPoints.Length > 0 ? barrierSpawnPoints.Length : 4;
-        _roundColors = GameSessionColorDistribution.Distribute(totalSlots, rng);
+        // §2.1 확정 표 기반 4슬롯 (CoopStageAudit.M.md §2.1) — GameSessionColorDistribution.Distribute의
+        // 균등 분배(2인→2+2 등)는 더 이상 쓰지 않는다. 1인 4면 전부 고유색 배정 금지.
+        _roundColors = BuildBarrierSlots(GameSessionColorDistribution.GetActiveColorsOrFallback());
 
         // 어떤 방향 슬롯에 어떤 색이 배치될지 셔플
         PlayerColorType[] shuffledForBarriers = (PlayerColorType[])_roundColors.Clone();
@@ -322,10 +321,21 @@ public class DirectionalBarrierRound : MonoBehaviour
             Debug.LogWarning("[DirectionalBarrierRound] tileSpawnPoints 또는 tilePrefabs가 비어 있습니다.");
             return;
         }
-        if (_roundColors == null || _roundColors.Length == 0)
+        if (_colorToDoors.Count == 0)
         {
-            Debug.LogWarning("[DirectionalBarrierRound] _roundColors가 없습니다. SpawnBarriers를 먼저 호출하세요.");
+            Debug.LogWarning("[DirectionalBarrierRound] _colorToDoors가 없습니다. SpawnBarriers를 먼저 호출하세요.");
             return;
+        }
+
+        // 타일은 슬롯이 아니라 "색"당 1개만 스폰한다 — §2.1 "고유 패드 1개 → 고유 문 2개":
+        // 1인은 같은 고유색이 barrierSpawnPoints 2칸(_roundColors 중복)에 배정되지만, 그 색 문은
+        // _colorToDoors에 이미 함께 묶여 있으므로(HandleTileActivated가 색 단위로 open/close) 타일도
+        // 색 단위로 하나만 있어야 한다. _roundColors(중복 포함)로 스폰하면 같은 색 타일이 2개 생겨버림.
+        List<PlayerColorType> distinctColors = new List<PlayerColorType>(_colorToDoors.Keys);
+        for (int i = distinctColors.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(0, i + 1);
+            (distinctColors[i], distinctColors[j]) = (distinctColors[j], distinctColors[i]);
         }
 
         // 스폰 포인트 셔플
@@ -336,18 +346,10 @@ public class DirectionalBarrierRound : MonoBehaviour
             (shuffledPoints[i], shuffledPoints[j]) = (shuffledPoints[j], shuffledPoints[i]);
         }
 
-        // 타일 색 셔플 (베리어 배치와 독립적으로 랜덤화)
-        PlayerColorType[] shuffledColors = (PlayerColorType[])_roundColors.Clone();
-        for (int i = shuffledColors.Length - 1; i > 0; i--)
-        {
-            int j = rng.Next(0, i + 1);
-            (shuffledColors[i], shuffledColors[j]) = (shuffledColors[j], shuffledColors[i]);
-        }
-
-        int count = Mathf.Min(shuffledColors.Length, shuffledPoints.Count);
+        int count = Mathf.Min(distinctColors.Count, shuffledPoints.Count);
         for (int i = 0; i < count; i++)
         {
-            PlayerColorType color  = shuffledColors[i];
+            PlayerColorType color  = distinctColors[i];
             GameObject      prefab = GetTilePrefabForColor(color);
 
             if (prefab == null)
@@ -406,6 +408,39 @@ public class DirectionalBarrierRound : MonoBehaviour
     }
 
     // ── 유틸 ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// §2.1 확정 표(CoopStageAudit.M.md) — 4슬롯 고정 배정. 균등 분배가 아니다.
+    ///
+    ///  1인: 고유, 고유, 백, 흑  (고유 패드 1개가 고유 문 2개를 같이 열게 됨 — 흑·백은 따로)
+    ///  2인: A, B, 백, 흑
+    ///  3인: 고유3 + 백 1  (백은 공용 — 흑 없음)
+    ///  4인: 고유4  (흑백 없음)
+    ///
+    /// activeColors 순서는 GameSessionColorDistribution.GetActiveColorsOrFallback()이 이미
+    /// ColorIndex 기준으로 정렬해서 주므로 Host/Client가 항상 같은 순서를 본다 — 여기선 추가로
+    /// 셔플하지 않는다(어떤 색이 몇 번 인덱스로 배정되는지는 표에서 고정, 물리적 스폰 위치 셔플은
+    /// SpawnBarriers의 Fisher-Yates가 별도로 담당).
+    /// </summary>
+    static PlayerColorType[] BuildBarrierSlots(IReadOnlyList<PlayerColorType> activeColors)
+    {
+        int n = activeColors != null ? activeColors.Count : 0;
+
+        switch (n)
+        {
+            case 0:
+                // 활성색 정보가 아예 없을 때의 최종 폴백 — 정상 플레이에서는 도달하지 않음.
+                return new[] { PlayerColorType.Blue, PlayerColorType.Blue, PlayerColorType.White, PlayerColorType.Black };
+            case 1:
+                return new[] { activeColors[0], activeColors[0], PlayerColorType.White, PlayerColorType.Black };
+            case 2:
+                return new[] { activeColors[0], activeColors[1], PlayerColorType.White, PlayerColorType.Black };
+            case 3:
+                return new[] { activeColors[0], activeColors[1], activeColors[2], PlayerColorType.White };
+            default: // 4명 이상 — 4슬롯 전부 고유색
+                return new[] { activeColors[0], activeColors[1], activeColors[2], activeColors[3] };
+        }
+    }
 
     GameObject GetBarrierPrefabForColor(PlayerColorType color)
     {

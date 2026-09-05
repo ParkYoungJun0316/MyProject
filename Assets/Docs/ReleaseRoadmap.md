@@ -152,7 +152,8 @@
 | **10** | **난이도** | Coming Soon 2주 play test 피드백 흡수 |
 | **11** | **출시 QA** | §6 — 출시 직전 E2E 통과 체크 |
 | **12** | **텔레메트리** | **출시 이후 OK** ([`TelemetryDesign.md`](TelemetryDesign.md)) |
-| — | 파티클(피격·Break) · 이모트 | 여유 시 / Post-Launch |
+| — | 파티클(피격·Break) | 여유 시 / Post-Launch |
+| — | 이모트 (T 홀드 휠 8종) | ✅ 코드 완료 (2026-09-05) — `NetworkDesign.md` §9.1.3. 링 이미지·라벨 배치는 에디터 작업 |
 | — | 컷씬 / 관전 | 영구 제외 / Post-Launch |
 
 ```
@@ -247,7 +248,7 @@
 
 - **텔레메트리** MVP ([`TelemetryDesign.md`](TelemetryDesign.md))
 - 관전(Spectator) 후보
-- sit / dance 이모트
+- ~~sit / dance 이모트~~ → **출시 범위로 이동, 구현 완료** (§4, `NetworkDesign.md` §9.1.3)
 - 파티클 확장
 - (재접속·Late Join·호스트 마이그레이션 **미지원 유지**)
 - **컷씬: 영구 제외**

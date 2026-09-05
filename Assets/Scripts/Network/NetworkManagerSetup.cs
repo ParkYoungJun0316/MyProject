@@ -95,8 +95,23 @@ public class NetworkManagerSetup : MonoBehaviour
     /// </summary>
     public static bool RestartWithCreateGame() => RestartProcess("+create_game");
 
+    // [버그 수정 2026-09-05] 재시작 요청 1회 가드. Application.Quit()은 프레임 끝에서야 처리되고
+    // 그 사이 버튼·콜백이 계속 살아있다 — "방 만들기"를 빠르게 두 번 누르면 TryRestartForCreateGame이
+    // 두 번 통과해 같은 인자로 프로세스가 2개 뜬다(Steam 로비 2개 + 같은 AppID 중복 실행).
+    // Process.Start 성공 이후에만 세우므로, 재실행 실패 시에는 호출부의 인프로세스 폴백이 그대로 산다.
+    private static bool s_restartRequested;
+
+    /// <summary>이미 프로세스 재시작이 요청됐는지. 호출부가 중복 진입 차단·UI 안내에 사용.</summary>
+    public static bool IsRestartRequested => s_restartRequested;
+
     static bool RestartProcess(string args)
     {
+        if (s_restartRequested)
+        {
+            Debug.Log($"[NetworkManagerSetup] 이미 재시작이 요청된 상태 — {args} 중복 요청 무시.");
+            return true;
+        }
+
         try
         {
             string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
@@ -112,6 +127,7 @@ public class NetworkManagerSetup : MonoBehaviour
             return false;
         }
 
+        s_restartRequested = true;
         Debug.Log($"[NetworkManagerSetup] {args}로 재실행 — 현재 프로세스 종료.");
         Application.Quit();
 #if UNITY_EDITOR

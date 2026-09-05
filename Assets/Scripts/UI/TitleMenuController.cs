@@ -185,14 +185,18 @@ public class TitleMenuController : MonoBehaviour
     /// 정책(SteamworksIntegrationDesign.md 트랙6 11차 세션 확정, 상류 Facepunch 트랜스포트 버그 회피).
     /// 재시작 트리거 시 true(호출부는 곧바로 return). 재실행 실패 시 false — 인프로세스 접속 폴백.
     /// </summary>
-    static bool TryRestartForWarmReconnect(SteamId lobbyId)
+    bool TryRestartForWarmReconnect(SteamId lobbyId)
     {
         if (!NetworkManagerSetup.HasStartedSteamNetworkingThisProcess) return false;
 
         Debug.Log($"[TitleMenuController] 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있음 — " +
                   $"프로세스 재시작 후 lobbyId={lobbyId}로 재접속.");
 
-        if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId)) return true;
+        if (NetworkManagerSetup.RestartWithConnectLobby(lobbyId))
+        {
+            ShowRestartNotice();
+            return true;
+        }
 
         Debug.LogWarning("[TitleMenuController] 재시작 실패 — 인프로세스 접속으로 폴백합니다(재현될 수 있음).");
         return false;
@@ -204,18 +208,59 @@ public class TitleMenuController : MonoBehaviour
     /// 트랜스포트 중복 RPC 전달 버그(SequenceRing 이중 판정)가 재현됐다. TryRestartForWarmReconnect와
     /// 동일 구조, lobbyId 없이 <c>+create_game</c>으로만 재시작한다(새 로비는 재시작 후 새로 만듦).
     /// </summary>
-    static bool TryRestartForCreateGame()
+    bool TryRestartForCreateGame()
     {
         if (!NetworkManagerSetup.HasStartedSteamNetworkingThisProcess) return false;
 
         Debug.Log("[TitleMenuController] 이 프로세스에서 이미 Steam 네트워킹을 시작한 적 있음 — " +
                   "프로세스 재시작 후 방 만들기 재시도.");
 
-        if (NetworkManagerSetup.RestartWithCreateGame()) return true;
+        if (NetworkManagerSetup.RestartWithCreateGame())
+        {
+            ShowRestartNotice();
+            return true;
+        }
 
         Debug.LogWarning("[TitleMenuController] 재시작 실패 — 인프로세스 방 만들기로 폴백합니다(재현될 수 있음).");
         return false;
     }
+
+    /// <summary>
+    /// 재시작 확정 직후의 사용자 피드백. Application.Quit()은 프레임 끝에서야 처리되므로 그전까지
+    /// 아무 반응 없는 타이틀이 그대로 보여 "버튼이 안 먹었다"로 읽혔다. 방 만들기 경로는
+    /// joinStatusText가 든 joinPanel이 닫혀 있어 텍스트를 쓸 수 없으므로, 다른 화면 전환과 같은
+    /// 수단(LoadingCurtain)으로 덮어 두 경로에 동일한 피드백을 준다. 커튼이 없는 씬 구성에서는
+    /// 조용히 넘어간다.
+    /// </summary>
+    void ShowRestartNotice() => LoadingCurtain.Instance?.BeginCover();
+
+    // [버그 수정 2026-09-05] Steam 접속 시도 재진입 가드. CreateLobbyAsync/JoinLobbyAsync를 await하는
+    // 동안에도 버튼과 초대 콜백은 계속 살아있고, 재시작 경로의 Application.Quit()은 프레임 끝에서야
+    // 처리된다 — 가드가 없으면 한 번의 조작 실수로 Steam Lobby가 두 개 만들어지거나(냉기동) 같은
+    // 인자로 프로세스가 두 개 뜬다(웜 리커넥트, NetworkManagerSetup.RestartProcess의 가드와 한 쌍).
+    // 방 만들기와 참여는 동시에 성립할 수 없으므로 플래그 하나를 공유한다.
+    bool _steamConnectInFlight;
+
+    bool TryBeginSteamConnect(string what)
+    {
+        if (NetworkManagerSetup.IsRestartRequested)
+        {
+            Debug.Log($"[TitleMenuController] 프로세스 재시작 대기 중 — {what} 입력 무시.");
+            return false;
+        }
+
+        if (_steamConnectInFlight)
+        {
+            Debug.Log($"[TitleMenuController] 접속 시도가 이미 진행 중 — {what} 중복 입력 무시.");
+            return false;
+        }
+
+        _steamConnectInFlight = true;
+        return true;
+    }
+
+    /// <summary>실패로 끝난 시도만 되돌린다 — 성공하면 씬이 바뀌므로 해제할 필요가 없다.</summary>
+    void EndSteamConnectAttempt() => _steamConnectInFlight = false;
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
@@ -267,6 +312,9 @@ public class TitleMenuController : MonoBehaviour
     {
         Debug.Log("[TitleMenuController] CreateGameSteamAsync 진입");
 
+        if (!TryBeginSteamConnect("방 만들기"))
+            return;
+
         // 웜 리커넥트는 항상 재시작(SteamworksIntegrationDesign.md 트랙6 확정 정책) — JoinGameSteamAsync와
         // 동일한 이유로 재호스팅도 인프로세스로 두면 트랜스포트 중복 전달 버그가 재현됨(2026-09-01).
         if (TryRestartForCreateGame())
@@ -275,6 +323,7 @@ public class TitleMenuController : MonoBehaviour
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
+            EndSteamConnectAttempt();
             return;
         }
 
@@ -286,6 +335,7 @@ public class TitleMenuController : MonoBehaviour
             if (lobby == null)
             {
                 Debug.LogError("[TitleMenuController] Steam Lobby 생성 실패. 로비 이동 중단.");
+                EndSteamConnectAttempt();
                 return;
             }
 
@@ -295,6 +345,7 @@ public class TitleMenuController : MonoBehaviour
             {
                 Debug.LogError("[TitleMenuController] StartHostSteam 실패. Lobby 정리 후 중단.");
                 SteamLobbyManager.Instance.LeaveCurrentLobby();
+                EndSteamConnectAttempt();
                 return;
             }
 
@@ -306,6 +357,7 @@ public class TitleMenuController : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogError($"[TitleMenuController] CreateGameSteamAsync 예외 — {e}");
+            EndSteamConnectAttempt();
         }
     }
 
@@ -379,6 +431,9 @@ public class TitleMenuController : MonoBehaviour
     {
         Debug.Log($"[TitleMenuController] JoinGameSteamAsync — source={source}, lobbyId={lobbyId}");
 
+        if (!TryBeginSteamConnect($"참여(source={source})"))
+            return;
+
         // 웜 리커넥트는 항상 재시작(SteamworksIntegrationDesign.md 트랙6 확정 정책) — 인프로세스
         // 재접속은 상류 Facepunch 트랜스포트 버그로 Server Scene Handle 충돌이 재현됨.
         if (TryRestartForWarmReconnect(lobbyId))
@@ -389,6 +444,7 @@ public class TitleMenuController : MonoBehaviour
             Debug.LogError($"[TitleMenuController] JoinGameSteamAsync — source={source}, " +
                            "SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
             SetJoinStatus("Failed to join.");
+            EndSteamConnectAttempt();
             return;
         }
 
@@ -398,6 +454,7 @@ public class TitleMenuController : MonoBehaviour
             if (lobby == null)
             {
                 SetJoinStatus("Room not found.");
+                EndSteamConnectAttempt();
                 return;
             }
 
@@ -413,11 +470,17 @@ public class TitleMenuController : MonoBehaviour
             // 로컬 경로와 동일하게 StartClient 후 씬 전환은 NGO SceneManager가 자동 처리 — 수동 LoadScene 금지.
             bool ok = NetworkManagerSetup.Instance.StartClientSteam(lobby.Value.Owner.Id, vport);
             Debug.Log($"[TitleMenuController] JoinGameSteamAsync — source={source}, StartClientSteam ok={ok}, virtualPort={vport}");
+            if (!ok)
+            {
+                SetJoinStatus("Failed to join.");
+                EndSteamConnectAttempt();
+            }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[TitleMenuController] JoinGameSteamAsync — source={source}, 예외 — {e}");
             SetJoinStatus("Failed to join.");
+            EndSteamConnectAttempt();
         }
     }
 

@@ -14,7 +14,7 @@ using TMPro;
 ///
 /// [버프 선택 입력 — 구 BuffSelectHotkeyInput 흡수, 2026-08-28]
 /// Q 키 → 로컬에서 "지금 내 버프 활성 중?" 확인(즉시 판정) → 활성 중 아니면
-/// NetworkPlayerSetup.RequestToggleBuffTypeServerRpc() 호출 → Host가 다시 검증
+/// NetworkPlayerSetup.RequestToggleBuffType() 호출 → Host가 다시 검증
 /// (CheerService.IsBuffActive) 후 NetworkVariable 갱신 → Idle 아이콘이 즉시 갱신되는 것 자체가 피드백.
 /// 활성 중이면 조용히 무시(별도 UI 없음 — Tutorial에서 규칙 설명).
 ///
@@ -381,7 +381,7 @@ public class CheerProgressUI : MonoBehaviour
              _localBuffSystem.IsActive(PlayerBuffSystem.BuffType.SpeedUp));
         if (isActive) return;
 
-        _localSetup.RequestToggleBuffTypeServerRpc();
+        _localSetup.RequestToggleBuffType();
     }
 
     // ── 이벤트 핸들러 ─────────────────────────────────────────────

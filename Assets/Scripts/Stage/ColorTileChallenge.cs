@@ -10,7 +10,11 @@ using UnityEngine.Events;
 /// [축 SSOT: NetworkDesign.md §11B — 챌린지 축(C 패턴)]
 /// Host Activate → ChallengeStart + Step 0 → 전 머신 GenerateQuotaSession
 /// → Host JudgeQuota → 점수마다 ChallengeStepBegin(packed, spawnIndex)로 재스폰
-/// → 할당 충족 시 OnSuccess. 새 NV/RPC 없음.
+/// → 할당 충족 시 ChallengeCleared + ResetChallengeStep + OnSuccess. 새 NV/RPC 없음.
+///
+/// 점수 1건 = 공유 슬롯 NV 쓰기 1건이라, 라운드제와 달리 "놓치면 자기수복되는 다음 라운드"가
+/// 없다. 그래서 두 장치가 이 축의 전제를 지킨다 — 판정은 서버 틱당 1건으로 예산을 끊고
+/// (JudgeQuotaRoutine), 클리어 시 슬롯을 -1로 되돌린다(ResolveRound).
 ///
 /// 동시 타일 = 생존 고유색 1칸씩 + 흑 1 + 백 1. 할당량만큼 미리 깔지 않음.
 /// 2초 점유 → 그 색 +1 → 다른 spawn으로 이동. 그 색 할당이 끝나면 그 칸만 사라짐.
@@ -76,6 +80,8 @@ public class ColorTileChallenge : MonoBehaviour
     int _blackQuota;
     int _whiteQuota;
     int _scoreGeneration;
+    int _lastScoreTick;
+    System.Random _spawnRng;
     Coroutine _judgeCoroutine;
 
     StageNetworkState _netState;
@@ -96,6 +102,16 @@ public class ColorTileChallenge : MonoBehaviour
     }
 
     // ── 생명주기 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 레거시 스칼라 할당 → 인원별 배열 마이그레이션은 여기서 1회만. 예전엔 QuotaForParty()가 매
+    /// 호출마다 돌려서 UsesQuotaScoring 같은 프로퍼티를 읽는 것만으로 직렬화 필드가 변형됐다.
+    /// OnEnable(아래 TryBindAndSubscribe → UsesQuotaScoring)보다 먼저 도는 것이 보장된다.
+    /// </summary>
+    void Awake()
+    {
+        MigrateLegacyQuotas();
+    }
 
     void OnEnable()
     {
@@ -135,6 +151,9 @@ public class ColorTileChallenge : MonoBehaviour
         _netState.OnDeathReloadStarted   += HandleDeathReloadStarted;
         _subscribed = true;
 
+        // Host는 자기 자신이 Writer라(쓰기 시점에 로컬 콜백이 동기로 돌아간다) 이 경로가 필요 없다.
+        if (IsClientOnly()) CatchUpClientStep();
+
         if (autoStart && !IsClientOnly())
         {
             if (UsesQuotaScoring)
@@ -161,6 +180,13 @@ public class ColorTileChallenge : MonoBehaviour
         return nm != null && nm.IsListening && !nm.IsServer;
     }
 
+    /// <summary>현재 서버 틱. NGO가 안 돌면 -1 — 그 경우 틱 예산 없이 프레임당 1건으로 동작한다.</summary>
+    static int CurrentServerTick()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening ? nm.ServerTime.Tick : -1;
+    }
+
     // ── 외부 호출 (Host 전용 — §11B ①Trigger) ─────────────────────
 
     /// <summary>
@@ -182,13 +208,22 @@ public class ColorTileChallenge : MonoBehaviour
         _netState.ChallengeStepBegin(0);
     }
 
-    /// <summary>챌린지 강제 종료 + 타일 정리. Host 전용 (디버그용).</summary>
+    /// <summary>
+    /// 챌린지 강제 종료 + 타일 정리. Host 전용 (디버그용).
+    /// Client에도 같은 정리를 보내고 공유 슬롯을 -1로 되돌린다 — 안 그러면 Host만 판을 치우고
+    /// Client엔 타일이 남으며, 낡은 packed 스텝이 슬롯에 남아 다음 시작을 오염시킨다.
+    /// </summary>
     public void Cancel()
     {
         if (IsClientOnly()) return;
         if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
+        bool wasRunning = _isRunning;
         _isRunning = false;
         ClearTiles();
+
+        if (!wasRunning) return;
+        _netState?.NotifyChallengeOutcomeClientRpc(false, challengeInstanceId);
+        _netState?.ResetChallengeStep();
     }
 
     // ── 라운드 생성 (전 머신 공통 — StageNetworkState NV 구독, §11B ③Generate) ──
@@ -201,6 +236,33 @@ public class ColorTileChallenge : MonoBehaviour
         if (!isActiveAndEnabled) return;
 
         HandleQuotaStepChanged(stepIndex);
+    }
+
+    /// <summary>
+    /// 늦은 구독 캐치업 (Client 전용). 이 GO가 Phase 컨테이너로 켜지는 시점이 _challengeStep NV
+    /// 도착보다 늦으면, 구독 전에 지나간 값 변경은 C# 이벤트라 재생되지 않아 그 스텝을 영구히
+    /// 놓친다(§11B.9의 NV 도착 순서 미보장 — SequenceRingMinigame과 같은 원인·같은 처방).
+    /// 라운드제는 다음 라운드에 자기수복되지만 점수제는 step 0이 세션당 1회뿐이라 복구 지점이 없다.
+    /// 새 경로가 아니라 같은 핸들러를 1회 재실행하는 것.
+    ///
+    /// 복구 가능한 건 step 0(세션 생성)까지다. packed 점수 스텝(>0)이면 그 시점 seed 칸이 이미
+    /// 마지막 재스폰 인덱스로 덮여 있어(ChallengeStepBegin(stepIndex, seed) 규약) 원래 세션 시드를
+    /// 되찾을 수 없다 — 조용히 빈 판이 되지 않도록 경고만 남긴다.
+    /// </summary>
+    void CatchUpClientStep()
+    {
+        if (_netState.ChallengeOwner != ChallengeOwnerType.ColorTile) return;
+        if (_netState.ChallengeInstanceId != challengeInstanceId) return;
+
+        int stepIndex = _netState.ChallengeStepIndex;
+        if (stepIndex == 0)
+        {
+            HandleChallengeStepChanged(stepIndex);
+            return;
+        }
+
+        if (stepIndex > 0)
+            Debug.LogWarning($"[ColorTileChallenge] 진행 중인 점수제 세션(step {stepIndex})에 늦게 합류 — 이 머신은 타일을 재구성할 수 없습니다.");
     }
 
     void HandleDeathReloadStarted()
@@ -231,6 +293,16 @@ public class ColorTileChallenge : MonoBehaviour
         _judgeCoroutine = null;
         HandleChallengeOutcome(success, challengeInstanceId);
         _netState?.NotifyChallengeOutcomeClientRpc(success, challengeInstanceId);
+
+        if (!success) return;
+
+        // ⑤Resolve 클리어 신호 — 형제 챌린지(GridBW/GridColor/SideSplit/SequenceRing)와 동일 계약.
+        // ResetChallengeStep()까지 부르는 이유는 SequenceRing과 같다: 공유 슬롯에 packed 점수
+        // stepIndex(≫0)가 남아 있으면 같은 슬롯을 쓰는 다음 챌린지가 늦게 활성화될 때 그 값을
+        // "이미 진행 중"으로 오인한다(StageNetworkState.ResetChallengeStep 주석). 위
+        // CatchUpClientStep이 step 0만 복구 대상으로 삼는 것도 이 리셋을 전제로 성립한다.
+        _netState?.ChallengeCleared(true);
+        _netState?.ResetChallengeStep();
     }
 
     void ClearTiles()
@@ -289,8 +361,24 @@ public class ColorTileChallenge : MonoBehaviour
         if (spawnPoints.Length < needed)
             Debug.LogWarning($"[ColorTileChallenge] 점수제 spawnPoints {spawnPoints.Length}개 — 고유+흑+백 {needed}개 이상 권장.");
 
+        int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        var rng = new System.Random(seed);
+        List<int> order = ShuffledSpawnIndices(rng);
+        if (order.Count == 0)
+        {
+            Debug.LogWarning("[ColorTileChallenge] 점수제: spawnPoints 슬롯이 전부 비어 있습니다(참조 미연결).");
+            return false;
+        }
+
+        if (!HasPrefabsForQuota(colors)) return false;
+
+        // ── 여기부터 상태 변경 ────────────────────────────────────
+        // 위 실패 경로가 이 아래에 있으면 _isRunning이 true로 굳은 채 판정 코루틴은 안 돌고,
+        // Activate()의 `if (_isRunning) return;`이 재시도까지 막아 비활성화될 때까지 영구 정지한다.
         _isRunning = true;
         _scoreGeneration = 0;
+        _lastScoreTick = int.MinValue;
+        _spawnRng = rng; // 초기 셔플에 쓴 스트림을 재스폰 추첨까지 이어 쓴다 (PickFreeSpawnIndex 참고)
         _blackScore = 0;
         _whiteScore = 0;
         _blackQuota = QuotaForParty(true);
@@ -298,11 +386,6 @@ public class ColorTileChallenge : MonoBehaviour
         _uniqueScores.Clear();
         foreach (PlayerColorType color in colors)
             _uniqueScores[color] = 0;
-
-        int seed = _netState != null ? _netState.ChallengeSeed : 0;
-        var rng = new System.Random(seed);
-        List<int> order = ShuffledSpawnIndices(rng);
-        if (order.Count == 0) return false;
 
         ClearTiles();
 
@@ -331,11 +414,49 @@ public class ColorTileChallenge : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 할당량이 걸린 색(생존 고유색 + 흑 + 백) 전부에 프리팹이 등록돼 있는지.
+    /// 하나라도 없으면 그 색은 타일이 안 깔리는데 QuotasMet()은 계속 그 할당을 요구해서, 판이
+    /// 승리 불가인 채로 targetTime 초과 Fail까지 조용히 흘러간다. 할당을 빼는 건 §3 잠금("흑백
+    /// 의무 0 금지") 위반이므로 대신 시작 자체를 막고 무엇이 빠졌는지 로그로 남긴다.
+    /// </summary>
+    bool HasPrefabsForQuota(List<PlayerColorType> colors)
+    {
+        var missing = new List<PlayerColorType>();
+
+        foreach (PlayerColorType color in colors)
+            if (GetPrefabForColor(color) == null) missing.Add(color);
+
+        if (QuotaForParty(true) > 0 && GetPrefabForColor(PlayerColorType.Black) == null)
+            missing.Add(PlayerColorType.Black);
+        if (QuotaForParty(false) > 0 && GetPrefabForColor(PlayerColorType.White) == null)
+            missing.Add(PlayerColorType.White);
+
+        if (missing.Count == 0) return true;
+
+        Debug.LogWarning($"[ColorTileChallenge] 점수제 프리팹 없음 ({string.Join(", ", missing)}) — " +
+                         "그 색 할당은 아무도 채울 수 없어 시작하지 않습니다. tilePrefabs에 등록하세요.");
+        return false;
+    }
+
+    /// <summary>
+    /// §11B ④Judge — Host 레인 전용. 이 코루틴은 HandleQuotaStepChanged가 Host에서만 시작하므로
+    /// 루프 안에 IsClientOnly() 가드를 다시 두지 않는다(호스트 마이그레이션이 없어 레인이 도중에
+    /// 바뀌지 않는다 — NetworkDesign.md §12).
+    /// </summary>
     IEnumerator JudgeQuotaRoutine()
     {
         while (_isRunning)
         {
-            if (!IsClientOnly())
+            // 서버 틱당 최대 1점수. NGO는 네트워크 틱마다 "그 시점의 최종값"만 스냅샷으로
+            // 보내므로(StageNetworkState.ChallengeCleared 주석의 그 성질), 프레임당 1건으로
+            // 끊는 것만으로는 부족하다 — 60~144fps에 틱 30이면 연속 두 프레임이 같은 틱에
+            // 들어가 앞 점수가 Client에 아예 도착하지 않는다. 그러면 그 클라의 타일은 옛 자리에
+            // 남아 유령 타일이 되고(판정은 Host 타일 위치 기준이라 Host만 정상으로 보임) 점수
+            // HUD도 영구히 어긋난다. generation은 유실을 감지도 복구도 하지 않으므로 애초에
+            // 유실이 불가능하게 만든다. 2초 점유 게임에 1틱(≈33ms) 지연은 체감이 없다.
+            int tick = CurrentServerTick();
+            if (tick < 0 || tick != _lastScoreTick)
             {
                 for (int i = 0; i < _quotaSlots.Count; i++)
                 {
@@ -346,15 +467,16 @@ public class ColorTileChallenge : MonoBehaviour
                     int spawnIndex = PickFreeSpawnIndex(i);
                     _scoreGeneration++;
                     int packed = PackScoreStep(i, _scoreGeneration);
+                    _lastScoreTick = tick;
                     _netState?.ChallengeStepBegin(packed, spawnIndex);
                     break;
                 }
+            }
 
-                if (QuotasMet())
-                {
-                    ResolveRound(true);
-                    yield break;
-                }
+            if (QuotasMet())
+            {
+                ResolveRound(true);
+                yield break;
             }
 
             yield return null;
@@ -498,14 +620,26 @@ public class ColorTileChallenge : MonoBehaviour
 
     int QuotaForParty(bool black)
     {
-        MigrateLegacyQuotas();
         int[] table = black ? blackQuotaByPlayerCount : whiteQuotaByPlayerCount;
         if (table == null || table.Length == 0) return 0;
-        int party = GameSession.Instance != null
+        int i = Mathf.Min(PartySize() - 1, table.Length - 1);
+        return Mathf.Max(0, table[i]);
+    }
+
+    /// <summary>
+    /// 인원(1~4). 흑·백 할당은 전 머신이 같은 값을 봐야 한다 — 각 머신이 SlotNeedsScore로 같은
+    /// 시점에 그 칸을 없애기 때문에, 값이 갈리면 타일 배치가 어긋난다. 그래서 CollectAliveUniqueColors와
+    /// 같은 우선순위로 PSC NetworkList를 먼저 본다(GameSession.ActivePlayerCount는 그 파생값이라
+    /// 씬 로드 직후 아직 0일 수 있다).
+    /// </summary>
+    static int PartySize()
+    {
+        int registered = PlayerSpawnCoordinator.EntryCount;
+        if (registered > 0) return Mathf.Clamp(registered, 1, 4);
+
+        return GameSession.Instance != null
             ? Mathf.Clamp(GameSession.Instance.ActivePlayerCount, 1, 4)
             : 1;
-        int i = Mathf.Min(party - 1, table.Length - 1);
-        return Mathf.Max(0, table[i]);
     }
 
     void MigrateLegacyQuotas()
@@ -547,6 +681,15 @@ public class ColorTileChallenge : MonoBehaviour
     void OnValidate() => MigrateLegacyQuotas();
 #endif
 
+    /// <summary>
+    /// 점수 후 옮겨갈 자리 — 지금 자리와 다른 살아있는 타일이 쓰는 자리를 뺀 빈 자리 중 무작위 1개.
+    /// 빈 자리가 없으면(스폰 포인트가 필요 개수보다 적은 배치) 제자리 유지.
+    ///
+    /// Host 레인에서만 호출되고 결과는 ChallengeStepBegin(packed, spawnIndex)로 전 머신에 그대로
+    /// 전달된다 — 즉 여기서 뽑는 난수는 머신 간에 일치할 필요가 없다(③Generate의 시드 재현이 아니라
+    /// ④Judge의 산출물). 그래도 전역 UnityEngine.Random을 오염시키지 않도록 세션 시드로 만든
+    /// System.Random 스트림을 이어 쓴다 — GridColor/SequenceRing과 동일 원칙.
+    /// </summary>
     int PickFreeSpawnIndex(int slotIndex)
     {
         if (spawnPoints == null || spawnPoints.Length == 0) return 0;
@@ -560,15 +703,19 @@ public class ColorTileChallenge : MonoBehaviour
         }
 
         int current = _quotaSlots[slotIndex].spawnIndex;
-        for (int n = 1; n <= spawnPoints.Length; n++)
+
+        var free = new List<int>(spawnPoints.Length);
+        for (int i = 0; i < spawnPoints.Length; i++)
         {
-            int candidate = (current + n) % spawnPoints.Length;
-            if (spawnPoints[candidate] == null) continue;
-            if (used.Contains(candidate)) continue;
-            return candidate;
+            if (i == current) continue;
+            if (spawnPoints[i] == null) continue;
+            if (used.Contains(i)) continue;
+            free.Add(i);
         }
 
-        return current;
+        if (free.Count == 0) return current;
+
+        return free[_spawnRng != null ? _spawnRng.Next(0, free.Count) : 0];
     }
 
     List<int> ShuffledSpawnIndices(System.Random rng)
@@ -589,8 +736,29 @@ public class ColorTileChallenge : MonoBehaviour
         return list;
     }
 
+    /// <summary>
+    /// 이번 세션의 고유색 슬롯 목록. 슬롯 인덱스가 PackScoreStep으로 네트워크를 타므로 이 목록은
+    /// 전 머신에서 개수와 순서가 반드시 같아야 한다 — 그래서 순서는 소스가 무엇이든
+    /// PlayerColorUtil.ColorOrder(colorIndex) 기준으로 정규화한다(PSC의 GetActiveColors()는
+    /// HashSet 열거 결과라 그 배열 순서 자체는 계약이 아니다).
+    ///
+    /// 색 소스 우선순위는 GameSessionColorDistribution과 같다 — ① PSC NetworkList(레이스 없는
+    /// SSOT) → ② GameSession 활성색(그 파생) → ③ ColorOrder 4색(최종 폴백).
+    /// </summary>
     List<PlayerColorType> CollectAliveUniqueColors()
     {
+        var activeColors = new HashSet<PlayerColorType>();
+        foreach (PlayerColorType color in PlayerSpawnCoordinator.GetActiveColors())
+            activeColors.Add(color);
+
+        if (activeColors.Count == 0 && GameSession.Instance != null)
+            foreach (PlayerColorType color in GameSession.Instance.GetActiveColors())
+                activeColors.Add(color);
+
+        if (activeColors.Count == 0)
+            foreach (PlayerColorType color in PlayerColorUtil.ColorOrder)
+                activeColors.Add(color);
+
         var aliveColors = new HashSet<PlayerColorType>();
         if (GameSession.Instance != null)
         {
@@ -600,16 +768,19 @@ public class ColorTileChallenge : MonoBehaviour
         else
         {
             foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
-                if (!p.IsDead) aliveColors.Add(p.playerColorType);
+                if (p != null && !p.IsDead) aliveColors.Add(p.playerColorType);
         }
 
-        IReadOnlyList<PlayerColorType> activeColors = GameSession.Instance != null
-            ? GameSession.Instance.GetActiveColors()
-            : (IReadOnlyList<PlayerColorType>)PlayerColorUtil.ColorOrder;
+        // Player 목록이 아직 안 채워진 머신은 활성색 전체를 생존으로 본다. step 0에는 아무도 죽지
+        // 않았으므로 이게 정답이고, 무엇보다 "한쪽 머신만 슬롯이 적은" 상태를 만들지 않는다 —
+        // GameSession._activePlayers는 OnPlayersReady로 채워지는 파생값이라 머신마다 시점이 다르다
+        // (2026-07-28 M.Stage3 ColorTile 미생성 버그와 같은 뿌리, GameSession.OnSceneLoaded 주석).
+        if (aliveColors.Count == 0)
+            aliveColors = activeColors;
 
         var colors = new List<PlayerColorType>();
-        foreach (PlayerColorType color in activeColors)
-            if (aliveColors.Contains(color)) colors.Add(color);
+        foreach (PlayerColorType color in PlayerColorUtil.ColorOrder)
+            if (activeColors.Contains(color) && aliveColors.Contains(color)) colors.Add(color);
         return colors;
     }
 

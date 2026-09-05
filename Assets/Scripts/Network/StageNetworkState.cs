@@ -1032,47 +1032,44 @@ public class StageNetworkState : NetworkBehaviour
 
     // ── 챌린지 입력 제출 (Client → Host, §11B.1) ───────────────────
 
-    // [버그 수정 2026-09-01] 클라이언트별 마지막 제출 프레임. 같은 클라이언트의 같은 프레임 제출은
-    // 1회만 판정한다 — SequenceRing은 판정이 곧 스텝 진행(ChallengeStepBegin)이라 비멱등이고,
-    // 실기 로그에서 Client의 Space 1회가 Host에 같은 프레임 2번 도착해 한 입력이 두 스텝을
-    // 소비했다(첫 판정이 스텝을 올린 뒤 두 번째가 다음 스텝을 또 판정 — 스텝 인덱스 기준
-    // 가드로는 못 막는 이유). 클라이언트는 wasPressedThisFrame로 프레임당 1회만 보내므로
-    // 같은 프레임의 2번째 제출은 항상 중복이다. 색/AnyKey는 한 입력에 둘 중 하나만 오므로
-    // 슬롯을 공유한다.
-    private readonly Dictionary<ulong, int> _lastChallengeSubmitFrame = new();
-
-    bool IsDuplicateChallengeSubmit(ulong senderClientId)
-    {
-        int frame = Time.frameCount;
-        if (_lastChallengeSubmitFrame.TryGetValue(senderClientId, out int lastFrame) && lastFrame == frame)
-            return true;
-
-        _lastChallengeSubmitFrame[senderClientId] = frame;
-        return false;
-    }
+    // [버그 수정 2026-09-01 / 2026-09-05] 챌린지 제출은 비멱등이다 — 판정이 곧 스텝 진행
+    // (ChallengeStepBegin)이라, 한 입력이 두 번 판정되면 첫 판정이 올린 스텝을 두 번째가 또
+    // 판정해 한 번에 두 칸이 소비된다(실기에서 "칸이 2번 눌리는" 증상). 처음엔 같은 프레임
+    // 2번째 수신을 버리는 가드를 뒀지만 중복이 다른 틱에 도착하면 통과해서, 발신 측이 붙이는
+    // 단조 증가 번호 기준으로 바꿨다(RpcSubmitDedup 주석 참고). 색/AnyKey는 한 입력에 둘 중
+    // 하나만 오므로 같은 번호 계열을 공유한다.
+    private readonly RpcSubmitDedup _challengeSubmitDedup = new();
 
     /// <summary>
-    /// Client: 자기 색으로 챌린지 스텝 제출 요청(예: SequenceRing 키 입력). Host만 위치·색 등 실제
-    /// 상태를 갖고 있는 포지션 판정형과 달리, 키 입력형은 "누가 눌렀는가" 자체가 Host에 없는 정보라
-    /// 별도 제출 경로가 필요하다 — Host가 SequenceRingMinigame.TrySubmit()으로 판정한다.
+    /// Client: 자기 색으로 챌린지 스텝 제출(예: SequenceRing 키 입력). 제출 번호 발급이 이 채널의
+    /// 책임이므로 호출부(SequenceRingMinigame)는 이 메서드만 쓰고 RPC를 직접 부르지 않는다 —
+    /// 번호를 링마다 따로 세면 Phase 전환으로 링이 바뀔 때 번호가 되돌아가 전부 중복 처리된다.
+    /// </summary>
+    public void SubmitChallengeStep(PlayerColorType color) =>
+        SubmitStepServerRpc(color, _challengeSubmitDedup.NextSeq());
+
+    /// <summary>Client: Common/Danger 스텝 등 색 구분 없는 "아무 키" 제출.</summary>
+    public void SubmitChallengeAnyKeyStep() =>
+        SubmitAnyKeyStepServerRpc(_challengeSubmitDedup.NextSeq());
+
+    /// <summary>
+    /// Host만 위치·색 등 실제 상태를 갖고 있는 포지션 판정형과 달리, 키 입력형은 "누가 눌렀는가"
+    /// 자체가 Host에 없는 정보라 별도 제출 경로가 필요하다 — Host가
+    /// SequenceRingMinigame.TrySubmit()으로 판정한다. 진입점은 SubmitChallengeStep().
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SubmitStepServerRpc(PlayerColorType color, RpcParams rpcParams = default)
+    void SubmitStepServerRpc(PlayerColorType color, uint submitSeq, RpcParams rpcParams = default)
     {
-        ulong sender = rpcParams.Receive.SenderClientId;
-
-        if (IsDuplicateChallengeSubmit(sender)) return;
+        if (_challengeSubmitDedup.IsDuplicate(rpcParams.Receive.SenderClientId, submitSeq)) return;
 
         SequenceRingMinigame.Instance?.TrySubmit(color);
     }
 
-    /// <summary>Client: Common/Danger 스텝 등 색 구분 없는 "아무 키" 제출 요청.</summary>
+    /// <summary>진입점은 SubmitChallengeAnyKeyStep().</summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SubmitAnyKeyStepServerRpc(RpcParams rpcParams = default)
+    void SubmitAnyKeyStepServerRpc(uint submitSeq, RpcParams rpcParams = default)
     {
-        ulong sender = rpcParams.Receive.SenderClientId;
-
-        if (IsDuplicateChallengeSubmit(sender)) return;
+        if (_challengeSubmitDedup.IsDuplicate(rpcParams.Receive.SenderClientId, submitSeq)) return;
 
         SequenceRingMinigame.Instance?.TrySubmitAnyKey();
     }

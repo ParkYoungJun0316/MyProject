@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 ///   비오너  : PlayerInput 비활성, Rigidbody kinematic, VoiceBroadcastTrigger 비활성
 ///   Host    : HP·함정·낙사 확정 (Owner ReportFallDeath + Host Y 폴백)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
-/// - 응원 버프 선택(SelectedBuffType) — 개인별 Shield/SpeedUp 선택, RequestToggleBuffTypeServerRpc로 전환
+/// - 응원 버프 선택(SelectedBuffType) — 개인별 Shield/SpeedUp 선택, RequestToggleBuffType()으로 전환
 ///
 /// [배치]
 /// Network Player Prefab에 추가.
@@ -57,7 +57,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     // 응원으로 받을 버프 종류(개인 선택): 서버 쓰기(검증 후) / 전원 읽기(UI 표시용).
     // 스폰 시 CheerService.StageBuffType(스테이지 기본값)으로 초기화되고, 이후 플레이어가
-    // RequestToggleBuffTypeServerRpc로 언제든 자유 전환 가능 (버프 활성 중엔 잠금, §CheerService.IsBuffActive).
+    // RequestToggleBuffType()으로 언제든 자유 전환 가능 (버프 활성 중엔 잠금, §CheerService.IsBuffActive).
     private readonly NetworkVariable<int> _selectedBuffType = new(
         (int)PlayerBuffSystem.BuffType.Shield,
         NetworkVariableReadPermission.Everyone,
@@ -562,19 +562,21 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// 순차 처리하므로 CheerService.ApplyBuff 실행 시점 이후 도착한 전환 요청은 항상 거부된다
     /// (레이스 컨디션으로 뚫릴 여지 없음).
     /// </summary>
-    // [버그 수정 2026-09-01] SequenceRing 이중 판정과 동일 원인(재호스팅 시 같은 프레임 RPC
-    // 중복 수신) — 이 토글은 시간 쿨다운/Add류 자연 가드가 없어 그대로 두면 같은 프레임에
-    // 두 번 뒤집혀 결과적으로 원래 값으로 되돌아간다("Q키를 눌러도 반응 없음"으로 보이는 버그).
-    // InvokePermission.Owner라 이 인스턴스를 호출할 수 있는 sender는 항상 이 캐릭터의 Owner
-    // 하나뿐이므로 클라이언트별 Dictionary 없이 단일 프레임 값으로 충분하다.
-    int _lastToggleBuffFrame = -1;
+    // [버그 수정 2026-09-01 / 2026-09-05] SequenceRing 이중 판정과 동일 원인(트랜스포트 레벨 RPC
+    // 중복 수신) — 이 토글은 시간 쿨다운/Add류 자연 가드가 없어 그대로 두면 두 번 뒤집혀
+    // 결과적으로 원래 값으로 되돌아간다("Q키를 눌러도 반응 없음"으로 보이는 버그).
+    // 처음엔 같은 프레임 2번째 수신을 버렸지만 중복이 다른 틱에 도착하면 통과해서, 공용
+    // RpcSubmitDedup(발신 측 단조 증가 번호)으로 통일했다.
+    private readonly RpcSubmitDedup _buffToggleDedup = new();
+
+    /// <summary>Owner: 버프 전환 요청 진입점. 제출 번호 발급이 여기 책임이라 RPC를 직접 부르지 않는다.</summary>
+    public void RequestToggleBuffType() =>
+        RequestToggleBuffTypeServerRpc(_buffToggleDedup.NextSeq());
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void RequestToggleBuffTypeServerRpc()
+    void RequestToggleBuffTypeServerRpc(uint submitSeq, RpcParams rpcParams = default)
     {
-        int frame = Time.frameCount;
-        if (_lastToggleBuffFrame == frame) return;
-        _lastToggleBuffFrame = frame;
+        if (_buffToggleDedup.IsDuplicate(rpcParams.Receive.SenderClientId, submitSeq)) return;
 
         if (CheerService.Instance != null && CheerService.Instance.IsBuffActive(_colorIndex.Value))
             return;

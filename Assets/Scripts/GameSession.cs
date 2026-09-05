@@ -61,11 +61,6 @@ public class GameSession : MonoBehaviour
     // 이번 판 확정 TeamCheerWord. null = 미확정(게이트 전) → Get은 DefaultTeamCheerWord 폴백.
     private string _sessionTeamCheerWord;
 
-    // 팀 버프 쿨 종료 시각 (NetworkManager.ServerTime.Time). 0 = 없음.
-    // CheerService는 씬 NetworkObject라 LoadScene마다 사라지므로, 스테이지 전환·사망 리로드
-    // 뒤에도 같은 서버 시계로 막기 위해 여기(DDOL)에만 남긴다. 개인 버프 쿨은 저장하지 않음.
-    private double _sessionTeamCooldownEnd;
-
     // 이번 판 확정 Steam 표시 이름(DisplayName). 인덱스 = colorIndex.
     // 로비 LobbyPlayerState.DisplayName을 게임 시작 시 1회 그대로 옮겨온 것 — 별도 네트워크 갱신 없음.
     private string[] _sessionDisplayNames;
@@ -229,22 +224,13 @@ public class GameSession : MonoBehaviour
     public string GetSessionTeamCheerWord()
         => string.IsNullOrEmpty(_sessionTeamCheerWord) ? DefaultTeamCheerWord : _sessionTeamCheerWord;
 
-    // ── 세션 팀 버프 쿨 (ServerTime 종료 시각) ──────────────────────
-
-    /// <summary>Host가 팀 버프 쿨 종료 시각을 저장할 때 호출. 0이면 쿨 없음.</summary>
-    public void SetSessionTeamCooldownEnd(double serverTimeEnd)
-        => _sessionTeamCooldownEnd = serverTimeEnd > 0d ? serverTimeEnd : 0d;
-
-    /// <summary>팀 버프 쿨 종료 ServerTime. 0이면 쿨 없음(만료 포함).</summary>
-    public double GetSessionTeamCooldownEnd() => _sessionTeamCooldownEnd;
-
     // ── 세션 Steam 표시 이름 ───────────────────────────────────────
 
-    /// <summary>
-    /// true = SetSessionDisplayNames가 이미 호출됨(Tutorial 게이트 통과 후).
-    /// GetSessionDisplayName은 미확정 시 "Player"로 폴백하므로, 게이트 전 실시간 값과 구분할 때 쓴다.
-    /// </summary>
-    public bool HasSessionDisplayNames => _sessionDisplayNames != null;
+    // HasSessionDisplayNames는 삭제됨(2026-09-05). 배열이 있어도 개별 색 슬롯은 빈 값일 수 있어
+    // (미보고 플레이어) "확정됨"의 의미가 슬롯 단위가 아니라 배열 단위였고, 그걸 게이트로 쓰면
+    // 미보고 슬롯이 실시간 NV 폴백을 못 타고 플레이스홀더로 고착됐다. 이제 표시 이름은
+    // GetSessionDisplayName의 반환값이 비었는지로만 판단한다(CheerName 쪽 HasSessionCheerNames와
+    // 다른 이유: CheerName은 미확정 폴백이 항상 유효한 색 기본값이라 값만으로 구분이 안 된다).
 
     /// <summary>
     /// 이번 판 확정 Steam 표시 이름 배열 저장.
@@ -257,13 +243,20 @@ public class GameSession : MonoBehaviour
         Debug.Log($"[GameSession] 세션 표시 이름 적용: {string.Join(", ", names)}");
     }
 
-    /// <summary>colorIndex → 이번 판 Steam 표시 이름. 미설정/빈 값이면 "Player" 폴백.</summary>
+    /// <summary>
+    /// colorIndex → 이번 판 Steam 표시 이름. 미설정/빈 값이면 빈 문자열(= 확정값 없음).
+    ///
+    /// 예전엔 여기서 "Player"를 폴백으로 돌려줬는데, 그게 non-empty라서 호출자의
+    /// "확정값 → 없으면 실시간 NV" 폴백 체인(TeamStatusUI.GetPlayerDisplayName)이
+    /// 도달 불가한 죽은 코드가 됐다 — 게이트 순간 한 명의 NV 보고가 안 와 있으면 그 판 내내
+    /// "Player"로 고착됐다(2026-09-05, Steam 4인 테스트). 플레이스홀더 표기는 UI가 정한다.
+    /// </summary>
     public string GetSessionDisplayName(int colorIndex)
     {
         if (_sessionDisplayNames != null && colorIndex >= 0 && colorIndex < _sessionDisplayNames.Length
             && !string.IsNullOrEmpty(_sessionDisplayNames[colorIndex]))
             return _sessionDisplayNames[colorIndex];
-        return "Player";
+        return string.Empty;
     }
 
     // ── 세션 Dissonance VoiceId ─────────────────────────────────────
@@ -308,7 +301,6 @@ public class GameSession : MonoBehaviour
         _seenIntroKeys.Clear();
         _sessionCheerNames = null;
         _sessionTeamCheerWord = null;
-        _sessionTeamCooldownEnd = 0d;
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
 
