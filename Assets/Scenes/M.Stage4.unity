@@ -853,7 +853,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &167479387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1143,7 +1143,7 @@ MonoBehaviour:
   trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
-  rotateSpeed: 2
+  rotateSpeed: 10
   rotateYAxisOnly: 1
 --- !u!95 &309475486
 Animator:
@@ -1182,16 +1182,18 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 3167473789573110745, guid: 83ec3a3233bbf6f4c899a09bfec6cf25, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 78d3f9acbb6fc274995abde208fe4b60, type: 3}
   firePoint: {fileID: 309475483}
   fireAtSeconds:
-  - 2
+  - 1
   loopSchedule: 1
-  schedulePeriod: 5
-  baseSpeed: 8
+  schedulePeriod: 3
+  baseSpeed: 10
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
+  - afterSeconds: 30
+    speedMultiplier: 2
   fireSfxId: 25
   fireMinDistance: 25
   fireMaxDistance: 50
@@ -2594,7 +2596,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -0.06666667, z: 0.6333334}
-  m_LocalScale: {x: 0.16666667, y: 0.0033333339, z: 1.3333334}
+  m_LocalScale: {x: 0.20000002, y: 0.003333334, z: 1.3333334}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1995373035}
@@ -2970,7 +2972,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &911747147
 Transform:
   m_ObjectHideFlags: 0
@@ -3118,7 +3120,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: -0.06666667, z: 0.63333344}
-  m_LocalScale: {x: 0.16666666, y: 0.003333334, z: 1.3333333}
+  m_LocalScale: {x: 0.16666666, y: 0.0033333343, z: 1.3333333}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 309475483}
@@ -3273,6 +3275,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 496975481}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1009878772
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1009878773}
+  - component: {fileID: 1009878775}
+  - component: {fileID: 1009878774}
+  m_Layer: 0
+  m_Name: WarnMarker (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1009878773
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009878772}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: -0.06666667, z: 0.6333334}
+  m_LocalScale: {x: 0.20000002, y: 0.0033333343, z: 1.3333334}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1560088688}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1009878774
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009878772}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 495ddf17c849a0449a0ccd5a5a67abae, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1009878775
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009878772}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1046863814
 GameObject:
   m_ObjectHideFlags: 0
@@ -3320,7 +3412,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1069372010
 Transform:
   m_ObjectHideFlags: 0
@@ -3463,7 +3555,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -0.06666667, z: 0.63333404}
-  m_LocalScale: {x: 0.16666666, y: 0.0033333346, z: 1.3333333}
+  m_LocalScale: {x: 0.16666666, y: 0.0033333348, z: 1.3333333}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2095735315}
@@ -5241,6 +5333,7 @@ Transform:
   m_Children:
   - {fileID: 768071012}
   - {fileID: 1499284282}
+  - {fileID: 1009878773}
   m_Father: {fileID: 507148784}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &1560088689
@@ -5255,8 +5348,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0f1dc98696846646a5491995db2e645, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArrowWarnSign
-  warnSignObject: {fileID: 0}
-  targetRenderer: {fileID: 0}
+  warnSignObject: {fileID: 1009878772}
+  targetRenderer: {fileID: 1009878774}
   colorProperty: _BaseColor
   warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   warnEndColor: {r: 1, g: 0, b: 0, a: 1}
@@ -5283,7 +5376,7 @@ MonoBehaviour:
   trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
-  rotateSpeed: 2
+  rotateSpeed: 10
   rotateYAxisOnly: 1
 --- !u!95 &1560088691
 Animator:
@@ -5322,16 +5415,18 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 3167473789573110745, guid: 83ec3a3233bbf6f4c899a09bfec6cf25, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 1560088688}
   fireAtSeconds:
-  - 2
+  - 3
   loopSchedule: 1
   schedulePeriod: 5
-  baseSpeed: 8
+  baseSpeed: 7
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
+  - afterSeconds: 30
+    speedMultiplier: 2
   fireSfxId: 25
   fireMinDistance: 25
   fireMaxDistance: 50
@@ -5442,11 +5537,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorManager
   changeInterval: 10
-  keepBWRatio: 1
+  keepBWRatio: 0.8
   phases:
   - triggerTime: 40
     changeInterval: 7
-    keepBWRatio: 0.8
+    keepBWRatio: 0.6
 --- !u!114 &1601207441
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6918,7 +7013,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 1069372009}
+    - {fileID: 911747146}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -7003,54 +7098,6 @@ MonoBehaviour:
     objectsToDisable:
     - {fileID: 1046863814}
     objectsToEnable:
-    - {fileID: 0}
-    manualAdvanceOnly: 0
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 1852519957}
-          m_TargetAssemblyTypeName: ObjectiveUI, Assembly-CSharp
-          m_MethodName: Refresh
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Stage4.3
-    surviveDuration: 0
-    objectsToDisable: []
-    objectsToEnable: []
-    manualAdvanceOnly: 1
-    onPhaseEnter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: StageManager, Assembly-CSharp
-          m_MethodName: StartStage
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onPhaseComplete:
-      m_PersistentCalls:
-        m_Calls: []
-  - phaseName: Delay3
-    surviveDuration: 3
-    objectsToDisable:
-    - {fileID: 0}
-    objectsToEnable:
     - {fileID: 1069372009}
     manualAdvanceOnly: 0
     onPhaseEnter:
@@ -7071,7 +7118,7 @@ MonoBehaviour:
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
-  - phaseName: Stage4.4
+  - phaseName: Stage4.3
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable: []
@@ -7581,7 +7628,7 @@ MonoBehaviour:
   trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
-  rotateSpeed: 2
+  rotateSpeed: 10
   rotateYAxisOnly: 1
 --- !u!95 &1995373038
 Animator:
@@ -7620,16 +7667,18 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 3167473789573110745, guid: 83ec3a3233bbf6f4c899a09bfec6cf25, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
   firePoint: {fileID: 1995373035}
   fireAtSeconds:
-  - 2
+  - 3
   loopSchedule: 1
   schedulePeriod: 5
-  baseSpeed: 8
+  baseSpeed: 7
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
+  - afterSeconds: 30
+    speedMultiplier: 2
   fireSfxId: 25
   fireMinDistance: 25
   fireMaxDistance: 50
@@ -8368,7 +8417,7 @@ MonoBehaviour:
   trackZone: {fileID: 0}
   dropInterval: 0
   rotateToTarget: 1
-  rotateSpeed: 2
+  rotateSpeed: 10
   rotateYAxisOnly: 1
 --- !u!95 &2095735318
 Animator:
@@ -8407,16 +8456,18 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 3167473789573110745, guid: 83ec3a3233bbf6f4c899a09bfec6cf25, type: 3}
+  arrowPrefab: {fileID: 7126508654143999262, guid: 78d3f9acbb6fc274995abde208fe4b60, type: 3}
   firePoint: {fileID: 2095735315}
   fireAtSeconds:
-  - 2
+  - 1
   loopSchedule: 1
-  schedulePeriod: 5
-  baseSpeed: 8
+  schedulePeriod: 3
+  baseSpeed: 10
   speedPhases:
   - afterSeconds: 30
     speedMultiplier: 1.5
+  - afterSeconds: 30
+    speedMultiplier: 2
   fireSfxId: 25
   fireMinDistance: 25
   fireMaxDistance: 50

@@ -77,7 +77,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | 미끄럼 | PhysicMaterial **안 씀.** `Player.Move()` 얼음: 입력 중엔 가속만 더함(출발이 느리고 밀림). 손 떼면 감속만 약하게(관성으로 쭉). 방향 전환도 얼음(반대 스틱해도 예전 속도가 남음). 목표속도로 끌어당기면 물속 저항이 되므로 폐기 |
 | 수치 | `Player.salivaAccelTime` 기본 1.2초(정지→풀속도). `Player.salivaDecelTime` 기본 3.5초(풀속도→정지). **Decel > Accel.** 플레이어 프리팹 인스펙터 |
 | 씬 GO | 루트 `SalivaHazard`. `SalivaVolume_2_1`(Stage2.1, Ground 25×15 위). `SalivaVolume_2_2`(Stage2.2 자식). LEFT/RIGHT 기둥에는 안 깔음 |
-| 비주얼 | M.Stage2는 `coverRoots` 2 / `coverRenderers` 2 / `coverDropPrefab` **연결됨** (`coverAlpha` 0.9, 스폰 높이 50, 낙하 50). `coverParticles` 슬롯은 코드에 없음. 방울 착지 Y는 볼륨 `bounds.max.y` — 하드코딩 0 아님. 볼륨은 coverRoots 자식으로 넣지 말 것(Awake 경고) |
+| 비주얼 | M.Stage2는 `coverRoots` 2 / `coverRenderers` 2 연결됨 (`coverAlpha` 0.9). **드롭 완전 제거(2026-09-05):** 발판 위로 낙하하는 침방울 연출(`coverDropPrefab`/`SalivaCoverDrop`, 중앙 1회든 주변 반복이든)이 공격처럼 보인다는 피드백으로 폐기 — 코드·스크립트(`SalivaCoverDrop.cs`) 삭제됨. 이제 비주얼은 수면 알파 페이드만. `Assets/Prefab/입/Drop.prefab`은 참조하는 스크립트가 없어졌으니 **에디터에서 정리(삭제 또는 컴포넌트 제거) 남음.** |
 
 **에디터 (침):** 위 표. 수면 연결은 나중에 빈 슬롯에.
 
@@ -316,7 +316,7 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 
 **코드:** `SalivaHazard` + `SalivaVolume` + `Player.Move()`. 씬당 revert는 침 하나.  
 **씬:** `SalivaHazard`, `SalivaVolume_2_1`(2.1 Ground), `SalivaVolume_2_2`(2.2 Floor).  
-**비주얼:** M.Stage2는 coverRoots·coverRenderers·coverDropPrefab 연결됨(알파 페이드 + 볼륨당 방울 1회). 수면 아트만 나중에.
+**비주얼:** M.Stage2는 coverRoots·coverRenderers 연결됨(알파 페이드만). 낙하 드롭 연출은 완전 폐기(§H.5 참고). 수면 아트는 나중에.
 
 **미끄럼 권한:** 전 머신이 로컬로 `AddSalivaOverlap`을 걸지만 `Player.Move()`가 `isOwnerControlled` 게이트라 실제 효과는 오너 머신에서만 — Owner + CNT와 일치. 침 전용 RPC·NV 없음.
 

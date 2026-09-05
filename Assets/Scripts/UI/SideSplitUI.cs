@@ -4,7 +4,7 @@ using UnityEngine.Localization;
 using TMPro;
 
 /// <summary>
-/// 좌/우(+선택적 앞/뒤) 분기 미니게임 전용 UI. 진행도(3/5)는 ObjectiveUI Count 모드가 담당한다.
+/// 좌/우/앞/뒤 4방향 분기 미니게임 전용 UI. 진행도(3/5)는 ObjectiveUI Count 모드가 담당한다.
 ///
 /// [Inspector 연결]
 ///   challenge    : SideSplitChallenge
@@ -12,17 +12,12 @@ using TMPro;
 ///   timerText    : 라운드 진행 중에만 표시되는 타이머 TMP
 ///
 /// [문구 템플릿 — String Table 참조, OXQuizManager.OXQuestion과 동일 원칙(Inspector에서 문자열
-/// 직접 입력이 아니라 Table+Entry 연결)]
-///   promptNoColor    : {0}=왼쪽 인원, {1}=오른쪽 인원 (2방향 모드 — M.Stage2)
-///   promptColorLeft  : {0}=왼쪽 인원, {1}=오른쪽 인원, {2}=필수 색상명 (왼쪽에 색 조건)
-///   promptColorRight : {0}=왼쪽 인원, {1}=오른쪽 인원, {2}=필수 색상명 (오른쪽에 색 조건)
-///   colorName*       : PlayerColorType.Blue/Purple/Green/Yellow 각각의 로컬라이즈된 색상명
-///   인원 숫자 인자는 TMP 노란 강조, 색상명 인자는 PlayerColorUtil.GetHudTextColor로 칠한다.
-///
-/// [4방향 확장 템플릿 — challenge.IsFourDirection == true일 때만 사용, T.Stage4]
+/// 직접 입력이 아니라 Table+Entry 연결). 인자 순서는 항상 앞/뒤/좌/우 고정]
 ///   promptNoColor4      : {0}=앞, {1}=뒤, {2}=왼쪽, {3}=오른쪽 인원
 ///   promptColorFront4/Back4/Left4/Right4 : {0}=앞, {1}=뒤, {2}=왼쪽, {3}=오른쪽 인원, {4}=필수 색상명
 ///                                          (색 조건이 걸린 방향에 대응하는 템플릿 하나만 선택돼 사용됨)
+///   colorName*          : PlayerColorType.Blue/Purple/Green/Yellow 각각의 로컬라이즈된 색상명
+///   인원 숫자 인자는 TMP 노란 강조, 색상명 인자는 PlayerColorUtil.GetHudTextColor로 칠한다.
 ///
 /// [표시 흐름]
 ///   안내 문구 표시
@@ -45,12 +40,7 @@ public class SideSplitUI : MonoBehaviour
     [Header("타이머")]
     [SerializeField] TextMeshProUGUI timerText;
 
-    [Header("안내 문구 템플릿 — 2방향 모드 (String Table 엔트리 연결)")]
-    [SerializeField] LocalizedString promptNoColor;
-    [SerializeField] LocalizedString promptColorLeft;
-    [SerializeField] LocalizedString promptColorRight;
-
-    [Header("안내 문구 템플릿 — 4방향 모드 (challenge.IsFourDirection일 때만 사용, T.Stage4)")]
+    [Header("안내 문구 템플릿 — 4방향 (앞/뒤/좌/우, String Table 엔트리 연결)")]
     [SerializeField] LocalizedString promptNoColor4;
     [SerializeField] LocalizedString promptColorFront4;
     [SerializeField] LocalizedString promptColorBack4;
@@ -79,6 +69,19 @@ public class SideSplitUI : MonoBehaviour
     [Tooltip("안내 문구의 인원 숫자. 알파 0이면 기본 노랑(기존 프리팹 미직렬화 대비).")]
     [SerializeField] Color countHighlightColor = new Color(1f, 0.85f, 0.2f, 1f);
 
+    [Header("텍스트 대비 (배경 패널 없이 아웃라인+언더레이로 항상 보이게)")]
+    [SerializeField] bool useOutline = true;
+    [SerializeField] Color outlineColor = Color.white;
+    [Range(0f, 1f)]
+    [SerializeField] float outlineWidth = 0.2f;
+    [SerializeField] bool useUnderlay = true;
+    [SerializeField] Color underlayColor = new Color(0f, 0f, 0f, 0.6f);
+    [SerializeField] Vector2 underlayOffset = new Vector2(0f, -0.5f);
+    [Range(0f, 1f)]
+    [SerializeField] float underlayDilate = 0.2f;
+    [Range(0f, 1f)]
+    [SerializeField] float underlaySoftness = 0.3f;
+
     static readonly Color FallbackCountHighlight = new Color(1f, 0.85f, 0.2f, 1f);
 
     Coroutine _sequence;
@@ -92,6 +95,8 @@ public class SideSplitUI : MonoBehaviour
         // Start()에 두면 오브젝트 비활성 → Start 지연 → 첫 OnRoundReady 수신 실패.
         RegisterListeners();
         if (mainText != null) mainText.richText = true;
+        ApplyTextContrast(mainText);
+        ApplyTextContrast(timerText);
         gameObject.SetActive(false);
     }
 
@@ -184,23 +189,35 @@ public class SideSplitUI : MonoBehaviour
 
     // ── 내부 유틸 ─────────────────────────────────────────────────
 
-    string BuildPromptText(SideSplitRoundInfo info)
+    /// <summary>
+    /// 배경 패널 없이도 씬 배경색과 무관하게 항상 보이도록 아웃라인+언더레이(그림자)를 적용.
+    /// TMP는 fontMaterial 최초 접근 시 공유 머티리얼을 자동으로 인스턴스화하므로 다른 SideSplit_Panel
+    /// 사용처(다른 프리팹 등)의 머티리얼에는 영향 없음. Awake에서 한 번만 호출.
+    /// </summary>
+    void ApplyTextContrast(TextMeshProUGUI text)
     {
-        if (challenge != null && challenge.IsFourDirection)
-            return BuildPromptText4(info);
+        if (text == null) return;
 
-        if (!info.hasColorRequirement)
-            return FormatPrompt(promptNoColor, HighlightCount(info.leftCount), HighlightCount(info.rightCount));
+        if (useOutline)
+        {
+            text.outlineColor = outlineColor;
+            text.outlineWidth = outlineWidth;
+        }
 
-        LocalizedString template = info.colorDirection == SideSplitDirection.Left ? promptColorLeft : promptColorRight;
-        return FormatPrompt(template,
-            HighlightCount(info.leftCount),
-            HighlightCount(info.rightCount),
-            ColorizeName(info.requiredColor));
+        if (useUnderlay)
+        {
+            Material mat = text.fontMaterial;
+            mat.EnableKeyword(ShaderUtilities.Keyword_Underlay);
+            mat.SetColor(ShaderUtilities.ID_UnderlayColor, underlayColor);
+            mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, underlayOffset.x);
+            mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, underlayOffset.y);
+            mat.SetFloat(ShaderUtilities.ID_UnderlayDilate, underlayDilate);
+            mat.SetFloat(ShaderUtilities.ID_UnderlaySoftness, underlaySoftness);
+        }
     }
 
-    /// <summary>4방향 모드(T.Stage4) 전용 안내 문구 — 인자 순서는 항상 앞/뒤/좌/우 고정.</summary>
-    string BuildPromptText4(SideSplitRoundInfo info)
+    /// <summary>4방향(앞/뒤/좌/우) 안내 문구 — 인자 순서는 항상 앞/뒤/좌/우 고정.</summary>
+    string BuildPromptText(SideSplitRoundInfo info)
     {
         if (!info.hasColorRequirement)
         {
