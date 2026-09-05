@@ -134,9 +134,13 @@ public class ThirdPersonCamera : MonoBehaviour
         // 게임플레이 중(프리뷰/블렌드 아닐 때)에는 Inspector 값을 _active*에 실시간 반영
         if (!_isInPreview)
         {
+            // 옵션 메뉴 마우스 감도 배율 — pull 방식(GameSettingsManager §1과 동일 원칙, push 아님).
+            // 미준비/타이틀 부팅 이전 등 Instance가 없을 때는 배율 1.0(원래 Inspector 감도 그대로)로 폴백.
+            float sensMul = GameSettingsManager.Instance != null ? GameSettingsManager.Instance.MouseSensitivity : 1f;
+
             _activeDist     = distance;
-            _activeSensX    = sensitivityX;
-            _activeSensY    = sensitivityY;
+            _activeSensX    = sensitivityX * sensMul;
+            _activeSensY    = sensitivityY * sensMul;
             _activeOffset   = targetOffset;
             _activePitchMin = minPitch;
             _activePitchMax = maxPitch;

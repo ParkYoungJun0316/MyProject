@@ -29,8 +29,18 @@ public class SpikeLaneWarnMarker : MonoBehaviour
     WarnMarkerColorFx _fx;
     Coroutine _routine;
 
-    void Awake()
+    void Awake() => EnsureInit();
+
+    /// <summary>
+    /// _fx 지연 초기화. 원래는 Awake에서만 만들었는데, 이 마커를 소유하지 않은 다른 컴포넌트가
+    /// (예: TongueController.ResetAllWarnings) 자기 OnEnable에서 곧바로 PlayWarning/ResetWarning을
+    /// 호출하면 이 GO의 Awake가 아직 안 돈 경우 _fx가 null이라 NRE가 났다(Unity는 GameObject 간
+    /// Awake 순서를 보장하지 않음). Awake/PlayWarning/ResetWarning 세 곳 모두 이걸 거쳐 몇 번을
+    /// 호출해도 안전하고 순서에 의존하지 않는다.
+    /// </summary>
+    void EnsureInit()
     {
+        if (_fx != null) return;
         if (targetRenderer == null)
             targetRenderer = GetComponentInChildren<Renderer>();
 
@@ -42,6 +52,7 @@ public class SpikeLaneWarnMarker : MonoBehaviour
     /// 계속 보이는 상태를 유지한다 — 언제 끌지는 호출부(SpikeLane.Trigger())가 결정.</summary>
     public void PlayWarning(float duration)
     {
+        EnsureInit();
         if (_routine != null) StopCoroutine(_routine);
         SetVisible(true);
         _routine = StartCoroutine(WarnRoutine(duration));
@@ -50,6 +61,7 @@ public class SpikeLaneWarnMarker : MonoBehaviour
     /// <summary>발동 즉시(가시가 튀어오르는 순간) 마커를 끈다.</summary>
     public void ResetWarning()
     {
+        EnsureInit();
         if (_routine != null) { StopCoroutine(_routine); _routine = null; }
         SetVisible(false);
     }

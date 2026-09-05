@@ -40,10 +40,16 @@ public class GameSettingsManager : MonoBehaviour
     const string KeyMicDevice    = "Settings.MicDevice";
     const string KeyChatFontSize = "Settings.ChatFontSize";
     const string KeyDigitCheer   = "Settings.DigitCheerEnabled";
+    const string KeyMouseSensitivity = "Settings.MouseSensitivity";
 
     /// <summary>채팅 글자 크기 슬라이더 min/max — OptionsMenuController Slider Inspector 값과 맞춰야 함.</summary>
     public const float MinChatFontSize = 10f;
     public const float MaxChatFontSize = 24f;
+
+    /// <summary>마우스(카메라 회전) 감도 배율 슬라이더 min/max — ThirdPersonCamera의
+    /// sensitivityX/sensitivityY(Inspector 기본값)에 곱연산되는 배율. 1.0 = 원래 감도 그대로.</summary>
+    public const float MinMouseSensitivity = 0.1f;
+    public const float MaxMouseSensitivity = 2f;
 
     [Header("기본값(Reset) 값")]
     [Tooltip("옵션 메뉴 '기본값' 버튼을 누르면 이 값들로 되돌아감. 최초 실행 기본값이기도 함.")]
@@ -52,6 +58,7 @@ public class GameSettingsManager : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultMicVolume    = 1f;
     [Range(MinChatFontSize, MaxChatFontSize)] [SerializeField] float defaultChatFontSize = 14f;
+    [Range(MinMouseSensitivity, MaxMouseSensitivity)] [SerializeField] float defaultMouseSensitivity = 1f;
 
     public float  MasterVolume  { get; private set; } = 1f;
     public float  BgmVolume     { get; private set; } = 1f;
@@ -63,6 +70,9 @@ public class GameSettingsManager : MonoBehaviour
     public float  ChatFontSize  { get; private set; } = 14f;
     /// <summary>숫자키(1=self / 2=team) 응원. 기본 OFF — 음성이 기본 수단. Options에서 켠다.</summary>
     public bool   DigitCheerEnabled { get; private set; }
+    /// <summary>마우스(카메라 회전) 감도 배율. ThirdPersonCamera가 매 프레임 이 값을 pull해서
+    /// sensitivityX/sensitivityY(Inspector 기본값)에 곱연산 — §1 pull 원칙과 동일 패턴(push 아님).</summary>
+    public float  MouseSensitivity { get; private set; } = 1f;
 
     /// <summary>
     /// 채팅 글자 크기가 바뀔 때 발생(옵션 슬라이더 조작 + 기본값 리셋 공통 경로).
@@ -129,6 +139,7 @@ public class GameSettingsManager : MonoBehaviour
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
         ChatFontSize  = PlayerPrefs.GetFloat(KeyChatFontSize, defaultChatFontSize);
         DigitCheerEnabled = PlayerPrefs.GetInt(KeyDigitCheer, 0) == 1;
+        MouseSensitivity = PlayerPrefs.GetFloat(KeyMouseSensitivity, defaultMouseSensitivity);
 
         NativeResolution = QueryNativeResolution();
         ApplySavedDisplay();
@@ -282,6 +293,17 @@ public class GameSettingsManager : MonoBehaviour
         ChatFontSizeChanged?.Invoke(ChatFontSize);
     }
 
+    // ── 카메라 ────────────────────────────────────────────────────
+
+    /// <summary>옵션 메뉴 마우스 감도 슬라이더에서 호출. 즉시 적용 + 저장.
+    /// ThirdPersonCamera가 pull 방식(§1과 동일 원칙)으로 매 프레임 이 값을 읽어 반영하므로
+    /// 여기서는 저장만 하고 별도 이벤트/push가 필요 없음.</summary>
+    public void SetMouseSensitivity(float value)
+    {
+        MouseSensitivity = Mathf.Clamp(value, MinMouseSensitivity, MaxMouseSensitivity);
+        PlayerPrefs.SetFloat(KeyMouseSensitivity, MouseSensitivity);
+    }
+
     // ── 화면 ──────────────────────────────────────────────────────
 
     void ApplySavedDisplay()
@@ -330,6 +352,7 @@ public class GameSettingsManager : MonoBehaviour
         SetMicVolume(defaultMicVolume);
         SetChatFontSize(defaultChatFontSize);
         SetDigitCheerEnabled(false);
+        SetMouseSensitivity(defaultMouseSensitivity);
 
         ApplyDisplay(NativeResolution.width, NativeResolution.height, FullScreenMode.ExclusiveFullScreen);
 

@@ -102,8 +102,11 @@ public static class SetupSettingPanel
         var resolutionDd = CreateDropdownRow(cGeneral.transform, "Row_Resolution", "해상도", fontKr, dropdownBg, dropdownArrow);
         var displayModeDd = CreateDropdownRow(cGeneral.transform, "Row_DisplayMode", "화면 모드", fontKr, dropdownBg, dropdownArrow);
         var languageDd = CreateDropdownRow(cGeneral.transform, "Row_Language", "언어", fontKr, dropdownBg, dropdownArrow);
+        CreateSliderRow(cGeneral.transform, "Row_MouseSensitivity", "마우스 감도", fontKr, out var mouseSensSlider, out var mouseSensValue);
+        ConvertSliderRowToPlainRange(mouseSensSlider, mouseSensValue, GameSettingsManager.MinMouseSensitivity, GameSettingsManager.MaxMouseSensitivity, 1f);
         CreateSliderRow(cGeneral.transform, "Row_ChatFontSize", "채팅 글자 크기", fontKr, out var chatFontSlider, out var chatFontValue);
         ConvertSliderRowToInteger(chatFontSlider, chatFontValue, GameSettingsManager.MinChatFontSize, GameSettingsManager.MaxChatFontSize, 14f);
+        var digitCheerToggle = CreateToggleRow(cGeneral.transform, "Row_DigitCheer", "숫자키로 응원하기", fontKr, toggleOn, toggleOff);
 
         // --- Sound (wired volumes + mic) ---
         // 출력 장치(헤드셋) 선택은 Unity 표준 API로 불가능(OS 기본 출력 장치로만 재생, 네이티브 플러그인
@@ -158,6 +161,8 @@ public static class SetupSettingPanel
         optSo.FindProperty("micMuteToggle").objectReferenceValue = micMuteToggle;
         optSo.FindProperty("micDeviceDropdown").objectReferenceValue = micDeviceDd;
         optSo.FindProperty("chatFontSizeSlider").objectReferenceValue = chatFontSlider;
+        optSo.FindProperty("mouseSensitivitySlider").objectReferenceValue = mouseSensSlider;
+        optSo.FindProperty("digitCheerToggle").objectReferenceValue = digitCheerToggle;
         optSo.ApplyModifiedPropertiesWithoutUndo();
 
         // Wire TitleMenuController
@@ -438,6 +443,24 @@ public static class SetupSettingPanel
         var numSo = new SerializedObject(num);
         numSo.FindProperty("label").objectReferenceValue = valueText;
         numSo.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    /// <summary>
+    /// CreateSliderRow가 기본으로 붙이는 "70%"용 SliderValuePercentLabel(0~1 전용)을 떼어내고
+    /// 임의의 min/max 실수 범위로 바꾸되, 옆 숫자 라벨은 표시하지 않는 슬라이더로 변환.
+    /// (마우스 감도처럼 0~1이 아닌 배율 슬라이더용 — 값 텍스트 자체가 필요 없다는 사용자 결정 반영.)
+    /// </summary>
+    static void ConvertSliderRowToPlainRange(Slider slider, TextMeshProUGUI valueText, float min, float max, float value)
+    {
+        var pct = slider.GetComponent<SliderValuePercentLabel>();
+        if (pct != null) Object.DestroyImmediate(pct);
+
+        slider.minValue = min;
+        slider.maxValue = max;
+        slider.wholeNumbers = false;
+        slider.value = value;
+
+        if (valueText != null) valueText.gameObject.SetActive(false);
     }
 
     static TMP_Dropdown CreateDropdownRow(Transform parent, string name, string label, TMP_FontAsset font,

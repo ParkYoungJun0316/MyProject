@@ -784,3 +784,38 @@ pressMaxDistance, pressRolloffMode)`로 전환, `SpikeTrap`과 동일한 Inspect
 SFX, 2026-09-01) 참고 — `StageNetworkState.NotifyChallengeStepResult`(RPC 보장 전달)로 Host/Client 공통
 채널을 새로 만들고, `SequenceRingMinigame.HandleChallengeStepResult`에서 `OnCorrectInput`/
 `OnWrongInput`을 발동하도록 이동. SFX 자체는 2D 그대로 유지.
+
+---
+
+## 12. 마우스(카메라 회전) 감도 옵션 추가 (2026-09-06)
+
+플레이테스트 피드백("마우스 감도를 만질 수 있는 UI가 있었으면 좋겠다") 반영. `ThirdPersonCamera`의
+`sensitivityX`/`sensitivityY`(Inspector 고정값)에 배율(곱연산)을 곱하는 방식 — 기존 X/Y 비율은 그대로
+유지되고 사용자는 "감도" 슬라이더 하나만 조절.
+
+- **`GameSettingsManager.cs`**: `MouseSensitivity`(PlayerPrefs `Settings.MouseSensitivity`, 기본 1.0,
+  범위 `MinMouseSensitivity~MaxMouseSensitivity` = 0.1~2) + `SetMouseSensitivity()`.
+  `ResetToDefaults()`에도 포함.
+- **`ThirdPersonCamera.cs`**: `LateUpdate`에서 게임플레이 중(`!_isInPreview`)일 때
+  `GameSettingsManager.Instance.MouseSensitivity`를 **pull**해서
+  `_activeSensX = sensitivityX * sensMul` / `_activeSensY = sensitivityY * sensMul`로 반영(§1 pull
+  원칙과 동일 — push 이벤트 불필요). `Instance == null`이면 배율 1.0 폴백.
+- **`OptionsMenuController.cs`**: `mouseSensitivitySlider` 필드, 일반 탭에 배치. 사용자 결정상 옆에
+  숫자 라벨 없음(다른 슬라이더의 "70%"/정수 라벨과 다름).
+- **`SetupSettingPanel.cs`**: 일반 탭 `Row_Language` 다음, `Row_ChatFontSize` **앞**에
+  `Row_MouseSensitivity` 생성 코드 추가(사용자 요청 순서 — 채팅 글자 크기 자리를 밀어내고 배치).
+  새 헬퍼 `ConvertSliderRowToPlainRange()` — `CreateSliderRow`가 기본으로 붙이는 0~1 전용
+  `SliderValuePercentLabel`을 떼고, 값 텍스트를 비활성화한 채 임의 min/max 실수 슬라이더로 전환.
+- **`SetupSettingUILocalization.cs`**: `Row_MouseSensitivity` → `Settings.MouseSensitivity` 키,
+  12개 로케일 번역 추가.
+
+**반영:** MCP로 `Setting_Panel.prefab`에 행 생성·슬라이더 연결·로컬라이즈까지 완료(2026-09-06).
+`Tools > Setup Setting Panel (Title)` 재실행은 하지 말 것 — ContentRoot를 지워서 레이아웃이 날아감.
+이후 패널을 처음부터 다시 만들 때만 에디터 툴을 쓰면 됨. `SetupSettingPanel`/`SetupSettingUILocalization`에는
+`Row_DigitCheer` 생성·`Settings.DigitCheer` 키도 넣어 두었음.
+
+**숫자키 응원 로컬라이즈:** `Row_DigitCheer` 라벨이 `Settings.MicMute`(마이크 음소거)에 잘못 묶여
+이상한 글자가 나왔음. `Settings.DigitCheer` 키(12개 로케일)로 교체 완료.
+
+**NGO 영향 없음** — Owner 로컬 카메라(`LocalPlayerCamera`/`ThirdPersonCamera`) 전용 설정, 네트워크
+동기화 불필요.

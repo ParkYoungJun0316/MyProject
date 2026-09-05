@@ -26,6 +26,9 @@ using UnityEngine.UI;
 /// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
 ///   (Inspector에서 Slider의 minValue/maxValue를 10~24로 설정).
 /// - digitCheerToggle   : Toggle — "숫자키로 응원하기". 미연결이면 설정 UI만 없음(기본 OFF 유지).
+/// - mouseSensitivitySlider : Slider — 마우스(카메라 회전) 감도 배율. min/max는
+///   GameSettingsManager.Min/MaxMouseSensitivity(0.1~2)와 일치시킬 것. ThirdPersonCamera가
+///   pull 방식으로 매 프레임 반영(별도 push 이벤트 불필요).
 ///
 /// 패널이 열릴 때(OnEnable)마다 현재 GameSettingsManager / Screen / LocalizationSettings 값을
 /// 읽어 UI에 반영함.
@@ -61,6 +64,11 @@ public class OptionsMenuController : MonoBehaviour
     [Tooltip("인게임 채팅 글자 크기. Slider의 minValue/maxValue를 " +
              "GameSettingsManager.MinChatFontSize~MaxChatFontSize(10~24)로 맞춰서 배치할 것.")]
     [SerializeField] private Slider chatFontSizeSlider;
+
+    [Header("카메라")]
+    [Tooltip("마우스(카메라 회전) 감도 배율. Slider의 minValue/maxValue를 " +
+             "GameSettingsManager.MinMouseSensitivity~MaxMouseSensitivity(0.1~2)로 맞춰서 배치할 것.")]
+    [SerializeField] private Slider mouseSensitivitySlider;
 
     [Header("화면모드 라벨 (Localization)")]
     [Tooltip("String Table 엔트리 연결용 — 문자열 직접 입력 아님(OXQuizManager와 동일 패턴). " +
@@ -112,6 +120,7 @@ public class OptionsMenuController : MonoBehaviour
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.AddListener(OnMicDeviceChanged);
         if (digitCheerToggle    != null) digitCheerToggle.onValueChanged.AddListener(OnDigitCheerChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.AddListener(OnChatFontSizeChanged);
+        if (mouseSensitivitySlider != null) mouseSensitivitySlider.onValueChanged.AddListener(OnMouseSensitivityChanged);
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
 
         if (GameSettingsManager.Instance != null)
@@ -131,6 +140,7 @@ public class OptionsMenuController : MonoBehaviour
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.RemoveListener(OnMicDeviceChanged);
         if (digitCheerToggle    != null) digitCheerToggle.onValueChanged.RemoveListener(OnDigitCheerChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.RemoveListener(OnChatFontSizeChanged);
+        if (mouseSensitivitySlider != null) mouseSensitivitySlider.onValueChanged.RemoveListener(OnMouseSensitivityChanged);
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
 
         if (GameSettingsManager.Instance != null)
@@ -162,6 +172,7 @@ public class OptionsMenuController : MonoBehaviour
         RefreshMicRow();
         RefreshDigitCheerToggle();
         RefreshChatFontSizeSlider();
+        RefreshMouseSensitivitySlider();
     });
 
     /// <summary>
@@ -331,6 +342,17 @@ public class OptionsMenuController : MonoBehaviour
         if (settings != null) chatFontSizeSlider.value = settings.ChatFontSize;
     }
 
+    void RefreshMouseSensitivitySlider()
+    {
+        if (mouseSensitivitySlider == null) return;
+
+        mouseSensitivitySlider.minValue = GameSettingsManager.MinMouseSensitivity;
+        mouseSensitivitySlider.maxValue = GameSettingsManager.MaxMouseSensitivity;
+
+        GameSettingsManager settings = GameSettingsManager.Instance;
+        if (settings != null) mouseSensitivitySlider.value = settings.MouseSensitivity;
+    }
+
     /// <summary>
     /// Inspector 미연결이어도 기존 Setting_Panel 프리팹의 Row_MicVolume을 찾아 쓴다
     /// (placeholder로 생성된 행이라 serialized 필드가 비어 있음).
@@ -440,6 +462,12 @@ public class OptionsMenuController : MonoBehaviour
     {
         if (_refreshing) return;
         GameSettingsManager.Instance?.SetChatFontSize(value);
+    }
+
+    void OnMouseSensitivityChanged(float value)
+    {
+        if (_refreshing) return;
+        GameSettingsManager.Instance?.SetMouseSensitivity(value);
     }
 
     /// <summary>"기본값" 버튼(Btn_Reset)의 onClick에 연결. 기본값 적용 후 UI를 새로 반영.</summary>

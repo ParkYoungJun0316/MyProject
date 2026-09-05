@@ -12,6 +12,11 @@ using UnityEngine;
 /// M.Boss MixedSweep: 창마다 가운데·L·R 중 하나를 시드로 뽑는다. Hold 없음 —
 ///     가운데도 Rise → 칸 부숨 → Retract로 끝나는 공격이다. 안 외치면 칸이 꺼진 채 남고, 외치면 전부 복구.
 /// Rise/Attack이 시작되면 끊지 않음. MouthBG 혀 쓰지 않음.
+///
+/// 경고 마커: SpikeLaneWarnMarker를 그대로 재사용(신규 컴포넌트 없음). Warning 진입 시 이번 창의
+/// 공격 영역을 PeekNextRegion()으로 미리 계산해 해당 마커만 켠다 — Host/Client 모두 같은 시드/스케줄로
+/// Warning에 진입하므로(§SSOT: 기존 랜덤 스케줄이 이미 동일) 마커 재생도 별도 네트워크 동기화 없이
+/// 로컬 재생만으로 일치한다. 새 RPC/NetworkVariable 없음.
 /// </summary>
 public class TongueController : MonoBehaviour, ITeamCheerRevert
 {
@@ -77,6 +82,16 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     [Tooltip("4.2 오른쪽 2×5 = 10칸")]
     [SerializeField] GameObject[] rightTiles = new GameObject[0];
 
+    [Header("경고 마커 (SpikeLaneWarnMarker 재사용 — 신규 컴포넌트 없음)")]
+    [Tooltip("가운데 영역 경고. RiseHold 전부 + MixedSweep 가운데에 사용. 비우면 경고 생략.")]
+    [SerializeField] SpikeLaneWarnMarker centerWarnMarker = null;
+
+    [Tooltip("왼쪽 영역 경고. AttackSweep + MixedSweep 왼쪽에 사용.")]
+    [SerializeField] SpikeLaneWarnMarker leftWarnMarker = null;
+
+    [Tooltip("오른쪽 영역 경고. AttackSweep + MixedSweep 오른쪽에 사용.")]
+    [SerializeField] SpikeLaneWarnMarker rightWarnMarker = null;
+
     [Header("랜덤 스케줄")]
     [SerializeField] float randomIntervalMin = 5f;
     [SerializeField] float randomIntervalMax = 15f;
@@ -96,6 +111,9 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
 
     HazardPhase _phase = HazardPhase.Idle;
     SweepRegion _sweepRegion = SweepRegion.None;
+    // Warning 진입 시 PeekNextRegion()으로 미리 뽑아 경고 마커를 켠 영역. AttackRoutine이 재추첨 없이
+    // 그대로 재사용(_sweepRegion에 대입)한다 — 경고가 켜진 곳과 실제 공격 영역이 어긋나면 안 됨.
+    SweepRegion _warnRegion = SweepRegion.None;
     bool _available;
     bool _prevented;
     bool _recoverQueued;
@@ -252,6 +270,8 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
 
             float warnElapsed = 0f;
             float warn = Mathf.Max(0f, warnDuration);
+            _warnRegion = PeekNextRegion();
+            PlayRegionWarning(_warnRegion, warn);
             while (warnElapsed < warn && !_prevented)
             {
                 warnElapsed += Time.deltaTime;
@@ -261,6 +281,7 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
             if (_prevented)
             {
                 _prevented = false;
+                ResetRegionWarning(_warnRegion);
                 RestoreAll();
                 TriggerIdle();
                 AdvanceAttack();
@@ -328,6 +349,9 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     IEnumerator AttackRoutine()
     {
         _phase = HazardPhase.Attacking;
+        // 가시가 튀어오르는 순간 규칙과 동일 — 공격이 시작되면 경고 마커는 즉시 끈다.
+        ResetRegionWarning(_warnRegion);
+
         if (pattern == TonguePattern.RiseHold)
         {
             _sweepRegion = SweepRegion.Center;
@@ -337,9 +361,8 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
             yield break;
         }
 
-        _sweepRegion = pattern == TonguePattern.MixedSweep
-            ? PickSeededRegion(_attackCount)
-            : (_attackLeft ? SweepRegion.Left : SweepRegion.Right);
+        // Warning 시작 시 PeekNextRegion()으로 이미 뽑은 값과 같아야 하므로 재추첨하지 않고 재사용.
+        _sweepRegion = _warnRegion;
 
         if (_sweepRegion == SweepRegion.Center)
         {
@@ -474,6 +497,40 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         return MixedRegions[pick];
     }
 
+    /// <summary>
+    /// 이번 창의 공격 영역을 부작용 없이 미리 계산 — Warning 진입 시 경고 마커를 어디에 켤지
+    /// 결정하는 용도. AttackRoutine의 영역 결정 로직과 반드시 같은 값을 내야 하므로 여기 한 곳에서만
+    /// 계산하고 AttackRoutine은 이 값(_warnRegion)을 그대로 재사용한다(재추첨 금지).
+    /// </summary>
+    SweepRegion PeekNextRegion()
+    {
+        if (pattern == TonguePattern.RiseHold) return SweepRegion.Center;
+        if (pattern == TonguePattern.MixedSweep) return PickSeededRegion(_attackCount);
+        return _attackLeft ? SweepRegion.Left : SweepRegion.Right;
+    }
+
+    SpikeLaneWarnMarker MarkerFor(SweepRegion region)
+    {
+        switch (region)
+        {
+            case SweepRegion.Center: return centerWarnMarker;
+            case SweepRegion.Left: return leftWarnMarker;
+            case SweepRegion.Right: return rightWarnMarker;
+            default: return null;
+        }
+    }
+
+    void PlayRegionWarning(SweepRegion region, float duration) => MarkerFor(region)?.PlayWarning(duration);
+
+    void ResetRegionWarning(SweepRegion region) => MarkerFor(region)?.ResetWarning();
+
+    void ResetAllWarnings()
+    {
+        centerWarnMarker?.ResetWarning();
+        leftWarnMarker?.ResetWarning();
+        rightWarnMarker?.ResetWarning();
+    }
+
     static double GetServerTime()
     {
         var nm = NetworkManager.Singleton;
@@ -508,11 +565,13 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     {
         _phase = HazardPhase.Idle;
         _sweepRegion = SweepRegion.None;
+        _warnRegion = SweepRegion.None;
         _available = false;
         _prevented = false;
         _recoverQueued = false;
         _skipNextWindow = false;
         _resyncDeadline = -1d;
+        ResetAllWarnings();
         CheerService.Instance?.NotifyHazardWindow(false);
     }
 

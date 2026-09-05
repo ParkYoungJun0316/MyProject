@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
@@ -69,18 +70,11 @@ public class SideSplitUI : MonoBehaviour
     [Tooltip("안내 문구의 인원 숫자. 알파 0이면 기본 노랑(기존 프리팹 미직렬화 대비).")]
     [SerializeField] Color countHighlightColor = new Color(1f, 0.85f, 0.2f, 1f);
 
-    [Header("텍스트 대비 (배경 패널 없이 아웃라인+언더레이로 항상 보이게)")]
-    [SerializeField] bool useOutline = true;
-    [SerializeField] Color outlineColor = Color.white;
-    [Range(0f, 1f)]
-    [SerializeField] float outlineWidth = 0.2f;
-    [SerializeField] bool useUnderlay = true;
-    [SerializeField] Color underlayColor = new Color(0f, 0f, 0f, 0.6f);
-    [SerializeField] Vector2 underlayOffset = new Vector2(0f, -0.5f);
-    [Range(0f, 1f)]
-    [SerializeField] float underlayDilate = 0.2f;
-    [Range(0f, 1f)]
-    [SerializeField] float underlaySoftness = 0.3f;
+    [Header("배경 (텍스트 대비 확보 — 폰트/언어(한글 폴백 등)와 무관하게 항상 보이도록)")]
+    [SerializeField] bool useBackground = true;
+    [SerializeField] Color backgroundColor = new Color(0f, 0f, 0f, 0.55f);
+    [Tooltip("텍스트 RectTransform 크기에 상하좌우로 더해지는 여백(px). x=좌우 각각, y=상하 각각.")]
+    [SerializeField] Vector2 backgroundPadding = new Vector2(24f, 12f);
 
     static readonly Color FallbackCountHighlight = new Color(1f, 0.85f, 0.2f, 1f);
 
@@ -95,8 +89,7 @@ public class SideSplitUI : MonoBehaviour
         // Start()에 두면 오브젝트 비활성 → Start 지연 → 첫 OnRoundReady 수신 실패.
         RegisterListeners();
         if (mainText != null) mainText.richText = true;
-        ApplyTextContrast(mainText);
-        ApplyTextContrast(timerText);
+        CreateBackground(mainText);
         gameObject.SetActive(false);
     }
 
@@ -190,30 +183,29 @@ public class SideSplitUI : MonoBehaviour
     // ── 내부 유틸 ─────────────────────────────────────────────────
 
     /// <summary>
-    /// 배경 패널 없이도 씬 배경색과 무관하게 항상 보이도록 아웃라인+언더레이(그림자)를 적용.
-    /// TMP는 fontMaterial 최초 접근 시 공유 머티리얼을 자동으로 인스턴스화하므로 다른 SideSplit_Panel
-    /// 사용처(다른 프리팹 등)의 머티리얼에는 영향 없음. Awake에서 한 번만 호출.
+    /// 텍스트 바로 뒤(같은 부모, 텍스트 바로 앞 sibling)에 반투명 배경을 깔아 항상 보이게 한다.
+    /// TMP 폴백 폰트(한글 등)와 무관하게 동작 — 아웃라인/언더레이처럼 폰트 머티리얼에 의존하지 않음.
+    /// Awake에서 한 번만 생성. 텍스트의 RectTransform(anchor/pivot/anchoredPosition/sizeDelta)을
+    /// 그대로 복사해 항상 텍스트와 정확히 맞물리게 한다.
     /// </summary>
-    void ApplyTextContrast(TextMeshProUGUI text)
+    void CreateBackground(TextMeshProUGUI text)
     {
-        if (text == null) return;
+        if (!useBackground || text == null) return;
 
-        if (useOutline)
-        {
-            text.outlineColor = outlineColor;
-            text.outlineWidth = outlineWidth;
-        }
+        RectTransform textRT = text.rectTransform;
+        var go = new GameObject(text.name + "_BG", typeof(RectTransform), typeof(Image));
+        var bgRT = (RectTransform)go.transform;
+        bgRT.SetParent(textRT.parent, false);
+        bgRT.anchorMin = textRT.anchorMin;
+        bgRT.anchorMax = textRT.anchorMax;
+        bgRT.pivot = textRT.pivot;
+        bgRT.anchoredPosition = textRT.anchoredPosition;
+        bgRT.sizeDelta = textRT.sizeDelta + backgroundPadding * 2f;
+        bgRT.SetSiblingIndex(textRT.GetSiblingIndex()); // 텍스트 바로 앞(=렌더링은 뒤)으로 삽입
 
-        if (useUnderlay)
-        {
-            Material mat = text.fontMaterial;
-            mat.EnableKeyword(ShaderUtilities.Keyword_Underlay);
-            mat.SetColor(ShaderUtilities.ID_UnderlayColor, underlayColor);
-            mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, underlayOffset.x);
-            mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, underlayOffset.y);
-            mat.SetFloat(ShaderUtilities.ID_UnderlayDilate, underlayDilate);
-            mat.SetFloat(ShaderUtilities.ID_UnderlaySoftness, underlaySoftness);
-        }
+        var img = go.GetComponent<Image>();
+        img.color = backgroundColor;
+        img.raycastTarget = false;
     }
 
     /// <summary>4방향(앞/뒤/좌/우) 안내 문구 — 인자 순서는 항상 앞/뒤/좌/우 고정.</summary>

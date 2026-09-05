@@ -37,7 +37,9 @@ public static class SetupSettingUILocalization
         { "Row_Resolution", "Settings.Resolution" },
         { "Row_DisplayMode", "Settings.DisplayMode" },
         { "Row_Language", "Settings.Language" },
+        { "Row_MouseSensitivity", "Settings.MouseSensitivity" },
         { "Row_ChatFontSize", "Settings.ChatFontSize" },
+        { "Row_DigitCheer", "Settings.DigitCheer" },
         { "Row_Master", "Settings.MasterVolume" },
         { "Row_BGM", "Settings.BgmVolume" },
         { "Row_SFX", "Settings.SfxVolume" },
@@ -363,6 +365,12 @@ public static class SetupSettingUILocalization
         Add("Settings.ChatFontSize",
             "Chat Font Size", "채팅 글자 크기", "チャット文字サイズ", "聊天字号", "聊天字級",
             "Размер шрифта чата", "Chat-Schriftgröße", "Taille du chat", "Tamaño del chat", "Tamaño del chat", "Tamanho do chat", "Rozmiar czatu");
+        Add("Settings.MouseSensitivity",
+            "Mouse Sensitivity", "마우스 감도", "マウス感度", "鼠标灵敏度", "滑鼠靈敏度",
+            "Чувствительность мыши", "Mausempfindlichkeit", "Sensibilité de la souris", "Sensibilidad del ratón", "Sensibilidad del mouse", "Sensibilidade do mouse", "Czułość myszy");
+        Add("Settings.DigitCheer",
+            "Cheer with Number Keys", "숫자키로 응원하기", "数字キーで応援", "用数字键加油", "用數字鍵加油",
+            "Поддержка цифрами", "Cheer mit Zifferntasten", "Cheer (touches numériques)", "Cheer con teclas numéricas", "Cheer con teclas numéricas", "Cheer com teclas numéricas", "Cheer klawiszami cyfr");
 
         Add("Settings.MasterVolume",
             "Master Volume", "마스터 볼륨", "マスター音量", "主音量", "主音量",
