@@ -202,14 +202,14 @@ flowchart LR
 
 **Interlude 씬 설정 체크리스트 (사용자 작업 — 씬/프리팹 파일은 에이전트가 직접 안 건드림):**
 
-- [ ] `Assets/Scenes/Interlude.unity` 생성 + Build Settings 등록
-- [ ] `SceneFlowManager.sceneSequence`에서 `M.Boss`와 `T.Stage1` 사이에 `"Interlude"` 삽입
-- [ ] 바닥 원점(0,0,0) 정렬 — `PlayerSpawnManager.fixedSpawnPositions`(고정 4좌표)와 동일 규칙
-- [ ] `NetworkObject` + `CheerService` 배치 (TeamCheerWord 세션 복원, 다른 스테이지와 동일 패턴)
-- [ ] `NetworkObject` + `InterludeNetworkManager`(신규) 배치 + `TutorialGatherZone` 트리거 존 배치
-- [ ] `NetworkObject` + `DisconnectManager` 배치 + ESC 나가기 버튼 연결
-- [ ] Tutorial과 동일한 `TutorialCheerNameUI` 패널 + `TutorialCheerNameSignboard` 표지판 배치, 필드 연결
-- [ ] `TimerUI` 등 카운트다운 UI를 `InterludeNetworkManager.OnGateCountdownTick`에 연결
+- [x] `Assets/Scenes/Interlude.unity` 생성 + Build Settings 등록 (2026-09-06 MCP: `InterLude` → `Interlude` 리네임, Build Settings index 8)
+- [x] `SceneFlowManager.sceneSequence`에서 `M.Boss`와 `T.Stage1` 사이에 `"Interlude"` 삽입
+- [x] 바닥 원점(0,0,0) 정렬 — `PlayerSpawnManager.fixedSpawnPositions`(고정 4좌표)와 동일 규칙 (`Floor` 80×80, 표면 y=0)
+- [x] `NetworkObject` + `CheerService` 배치 (TeamCheerWord 세션 복원, 다른 스테이지와 동일 패턴)
+- [x] `NetworkObject` + `InterludeNetworkManager`(신규) 배치 + `TutorialGatherZone` 트리거 존 배치
+- [x] `NetworkObject` + `DisconnectManager` 배치 + ESC 나가기 버튼 연결 (`Btn.Quit` → `OnClickLeaveRoom`)
+- [x] Tutorial과 동일한 `TutorialCheerNameUI` 패널 + `TutorialCheerNameSignboard` 표지판 배치, 필드 연결
+- [x] `TimerUI` 등 카운트다운 UI를 `InterludeNetworkManager.OnGateCountdownTick`에 연결 (`StartCountdownUI.SetRemaining` / `Hide`)
 
 **씬 배치 주의 (2026-09-06 코드 리뷰에서 나온 함정 2건):**
 
@@ -303,8 +303,8 @@ flowchart LR
 - [x] `PlayerCheerNameSync.BuildSessionCheerNames()` 정적 헬퍼 추출 + `TutorialNetworkManager` 재사용 정리
 - [x] `CheerService.GetCheerName`/`GetColorIndex` 우선순위 역전(§3.4.2, 실시간 NV 우선)
 - [x] `InterludeNetworkManager.cs` 신규 (게이트 + 세션 재확정 + `T.Stage1` 전환)
-- [ ] `Interlude.unity` 씬 생성/배치 (체크리스트는 §3.4 하단, 사용자 작업) — `DisconnectManager` 필수 배치(§3.4.3)
-- [ ] `SceneFlowManager.sceneSequence`에 `Interlude` 삽입 (M.Boss ↔ T.Stage1 사이)
+- [x] `Interlude.unity` 씬 생성/배치 (체크리스트는 §3.4 하단) — `DisconnectManager` 필수 배치(§3.4.3)
+- [x] `SceneFlowManager.sceneSequence`에 `Interlude` 삽입 (M.Boss ↔ T.Stage1 사이)
 - [ ] Dev Build ② 2인 — M.Boss 클리어 → Interlude 이름 재변경 + 말해보기 테스트 → T.Stage1 진입 스모크
 
 ---
@@ -325,7 +325,7 @@ flowchart LR
 | Tutorial 네트워크 | `Assets/Scripts/Network/TutorialNetworkManager.cs` |
 | Tutorial CheerName UI | `Assets/Scripts/UI/TutorialCheerNameUI.cs` |
 | Tutorial CheerName 표지판 | `Assets/Scripts/Stage/TutorialCheerNameSignboard.cs` |
-| Interlude 씬 (§1.1, §3.4) | `Assets/Scenes/Interlude.unity` (미구현 — 사용자 에디터 작업) |
+| Interlude 씬 (§1.1, §3.4) | `Assets/Scenes/Interlude.unity` (2026-09-06 MCP 배치 완료) |
 | Interlude 네트워크 (신규) | `Assets/Scripts/Network/InterludeNetworkManager.cs` (코드 완료) |
 
 ---

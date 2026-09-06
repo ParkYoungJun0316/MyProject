@@ -10,8 +10,9 @@ using UnityEngine;
 /// Idle (응원 무시)
 /// → Warning (UI. 이때부터 응원)
 ///      ├─ 외침: Cover 안 넣음. Idle
-///      └─ 없음: Cover 끝까지 → Hold (바닥이 젖은 채) → 외침 시 Recover → Idle
-/// Cover가 시작되면 끊지 않음. 자동 복구 없음.
+///      └─ 없음: Cover 진행 중 외치면 그 자리에서 즉시 멈추고 Recover로 전환(2026-09-06 변경 —
+///          이전엔 Cover가 끝까지(알파 1.0) 다 찬 뒤에야 Recover를 시작했다). 안 외치면 Cover
+///          끝까지 → Hold (바닥이 젖은 채) → 외침 시 Recover → Idle. 자동 복구 없음.
 ///
 /// 미끄럼은 PhysicMaterial이 아니라 Player.Move() 얼음 가속/코스트 + SalivaVolume.
 /// </summary>
@@ -293,6 +294,10 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
             yield return new WaitForSeconds(initialDelay);
     }
 
+    // _recoverQueued를 루프 조건에 넣어 외침이 들어온 즉시 멈춘다 — Revert()가 이 플래그를 세우면
+    // 다음 프레임 조건 검사에서 바로 빠져나오고, HazardCycle이 곧이어 RecoverRoutine을 시작한다.
+    // RecoverRoutine은 하드코딩된 1f가 아니라 _coverVisualAlpha(현재 값)에서 되돌리므로 중간에
+    // 끊겨도 알파가 튀지 않는다.
     IEnumerator CoverRoutine()
     {
         _phase = HazardPhase.Covering;
@@ -302,18 +307,19 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
         float dur = Mathf.Max(0f, coverDuration);
         if (dur <= 0f)
         {
-            ApplyCoverAlpha(1f);
+            if (!_recoverQueued) ApplyCoverAlpha(1f);
             yield break;
         }
 
         float t = 0f;
-        while (t < dur)
+        while (t < dur && !_recoverQueued)
         {
             t += Time.deltaTime;
             ApplyCoverAlpha(Mathf.Clamp01(t / dur));
             yield return null;
         }
-        ApplyCoverAlpha(1f);
+        if (!_recoverQueued)
+            ApplyCoverAlpha(1f);
     }
 
     // _phase = Idle 은 호출부(HazardCycle)가 찍는다 — Idle이 "다음 창을 기다리는 중"만 뜻해야

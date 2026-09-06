@@ -211,6 +211,12 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
             case HazardPhase.Holding:
                 _recoverQueued = true;
                 EndWindow();
+                // 응원 성공 순간 이미 깨진 칸이 있으면(SweepBreak 애니메이션 이벤트가 클립 재생 중
+                // 실시간으로 깨움) 클립이 끝나길 기다리지 않고 그 즉시 복구한다(2026-09-07 추가).
+                // 안 그러면 응원에 성공했는데도 남은 클립 재생 시간 동안 바닥이 깨진 채로 남는다 —
+                // SweepBreak()/BreakRemaining()도 아래에서 _recoverQueued를 봐서 더 이상 새로
+                // 깨지 않게 게이트했으니, 이 시점 이후로는 단 한 칸도 깨지지 않는다.
+                RestoreAll();
                 break;
             case HazardPhase.Idle:
                 // 이 머신은 아직 이번 창을 열지 않았다(씬 로드 시각 차이 등). 예전엔 여기서 명령을
@@ -228,6 +234,9 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     /// <summary>클립 Animation Event. 배열 인덱스 = 스윕 순서 (0부터).</summary>
     public void SweepBreak(int index)
     {
+        // 응원 성공 이후(Revert가 _recoverQueued를 세운 뒤) 늦게 도착하는 이벤트는 무시 —
+        // 클립은 끝까지 재생되지만 이 시점부터는 칸이 더 깨지면 안 된다(2026-09-07).
+        if (_recoverQueued) return;
         BreakTile(CurrentSweepArray(), index);
     }
 
@@ -596,6 +605,9 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
 
     void BreakRemaining()
     {
+        // 응원 성공 후엔 놓친 칸까지 마무리로 깨는 이 catch-all도 건너뛴다(2026-09-07) — 위
+        // SweepBreak 게이트와 같은 이유.
+        if (_recoverQueued) return;
         GameObject[] tiles = CurrentSweepArray();
         if (tiles == null) return;
         for (int i = 0; i < tiles.Length; i++)

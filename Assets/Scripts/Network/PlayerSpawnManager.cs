@@ -282,7 +282,8 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
     /// </summary>
     public static bool IsStageScene(string name) =>
         !string.IsNullOrEmpty(name) &&
-        (name.Contains("Stage") || name.Contains("Boss") || name.Contains("Interlude"));
+        (name.Contains("Stage") || name.Contains("Boss") ||
+         name.IndexOf("Interlude", System.StringComparison.OrdinalIgnoreCase) >= 0);
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: 엔트리 출력")]

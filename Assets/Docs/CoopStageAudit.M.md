@@ -41,7 +41,9 @@ M1–5·M.Boss를 다시 묻지 말 것. T5·T.Boss는 보류.
 
 **되돌림 머신 (입 기준, 혀·침·조임 동일):**  
 Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 넣음 / 없으면 Attack 끝까지 → Hold(유지, 암전·침·혀 나온 채) → 외침이면 Recover 클립 → Idle.  
-입 Recover = **Open**. 침 Recover = 수면 페이드아웃. 혀 4.1 Recover = **Retract**(Hold 포즈에서 시작, Rise 역재생 아님). 혀 4.2 Recover = 꺼진 1×1 복구 + Idle (**Retract 없음**. Hold 대기 없음 — Attack 후 다음 사이클 반대쪽). Close/Cover/Rise/Attack_L/R이 시작되면 끊지 않음. 자동 Open 없음. 닫힘 대가 = 암전만(HP 없음). 침 대가 = 미끄럼(HP 없음). 혀 대가 = 꺼진 1×1 낙사(HP 없음).
+입 Recover = **Open**. 침 Recover = 수면 페이드아웃. 혀 4.1 Recover = **Retract**(Hold 포즈에서 시작, Rise 역재생 아님). 혀 4.2 Recover = 꺼진 1×1 복구 + Idle (**Retract 없음**. Hold 대기 없음 — Attack 후 다음 사이클 반대쪽). 자동 Open 없음. 닫힘 대가 = 암전만(HP 없음). 침 대가 = 미끄럼(HP 없음). 혀 대가 = 꺼진 1×1 낙사(HP 없음).  
+**Attack 중 즉시 중단(2026-09-06, Saliva/식도만 적용):** `SalivaHazard.CoverRoutine`은 이제 Cover 진행 중 외침이 성공하면 즉시 그 알파값에서 멈추고 바로 Recover로 전환한다(예전엔 Cover가 끝까지 찬 뒤에야 Recover 시작). `EsophagusSqueeze`/`EsophagusFog`(T)도 동일 수정. **`Close`/`Rise`/`Attack_L`/`R`(입·혀, Animator 클립 기반)은 여전히 시작되면 끊지 않음** — 클립 중간 인터럽트는 별도 검토 필요, 미착수.  
+**혀만 추가 — "응원 성공 후 칸이 깨진 채 남는" 버그 수정(2026-09-07):** 애니메이션 자체는 여전히 끝까지 재생되지만(위 항목과 별개), `TongueController.Revert()`가 `Attacking`/`Holding` 중 호출되면 `_recoverQueued`를 세우는 즉시 `RestoreAll()`도 같이 호출하고, `SweepBreak()`/`BreakRemaining()`도 `_recoverQueued`면 그 즉시 무시하도록 게이트를 걸었다. 이전엔 가운데 패턴(4.1 Rise / MixedSweep 가운데)에서 외침 성공 시점에 칸이 이미 깨진 상태였다면 `RecoverRoutine`이 `RetractIfCenter`(Retract 클립, 약 1.67초)를 다 기다린 뒤에야 복구해서 그 몇 초간 실제로 칸이 깨진 채 남는 버그가 있었음 — 이제 응원 성공 시점에 즉시 복구되어 그런 구간이 없다. 좌/우 스윕(4.2)은 원래도 클립 끝의 일괄 `BreakRemaining` → 같은 프레임 내 `RestoreAll`이라 실질적 위험은 없었지만 동일 게이트로 구조적으로도 보장.
 
 **코드 (있음):**
 - `CheerService` — 투표 RPC 유지. `ApplyTeamBuff` = Heal/120 없음 → `BuildRevertOrder`로 세대·재개 시각을 정해 `BroadcastTeamBuffActivatedClientRpc(generation, resumeAt)`. `ValidateTeamCheer`는 `_revert.IsAvailable` + 창 소비 latch. `RegisterRevert`(중복 등록 경고) / `NotifyHazardWindow`(창이 닫히면 표 리셋).

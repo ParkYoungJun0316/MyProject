@@ -4,146 +4,199 @@ using UnityEngine;
 
 /// <summary>
 /// 식도 조임 — 팀 응원 되돌림 대상 (ITeamCheerRevert). 초출 T1, 복습 T3.
-/// CoopStageAudit.T.md §3 "지속형 모델 + 정수 스텝" 참고.
+/// CoopStageAudit.T.md §3 "주기적 공격 모델(2026-09-06 재확정)" 참고.
 ///
-/// [동작 — 계단식(정수 스텝)]
-/// 식도 원통(BG) <see cref="target"/>은 속이 빈 튜브라 Box/Sphere/Capsule 같은 convex primitive
-/// 콜라이더로는 표현이 안 되고 non-convex MeshCollider가 필요하다. Unity/PhysX는 MeshCollider의
-/// 스케일이 바뀔 때마다 내부 BVH를 다시 굽는데(re-cook), 이건 매 프레임 부르면 실제로 무거운
-/// 작업이다. 그래서 이 컴포넌트는 스케일을 "매 프레임 조금씩"이 아니라 "<see cref="secondsPerStep"/>초마다
-/// <see cref="scalePerStep"/>만큼 한 번" 정수 계단으로 낮춘다 — re-cook 호출 자체를 초당 1회
-/// 미만으로 억제한다(예: 2초 스텝 = 계단 사이 재굽기 0회, 계단 순간만 1회).
-/// x/y를 <see cref="minScale"/>에서 캡한다(즉사 방지 — 조임 자체는 데미지 없음, 핸디캡만).
-/// ColorWall은 이 컴포넌트와 별개(원통과 독립된 좌우 압박, 되돌림 대상 아님).
+/// [모델 — Mouth/Saliva와 동일한 창 구조로 회귀]
+/// 처음엔 "창 없음, 씬 시작부터 계속 압박" 지속형으로 만들었으나, 실제로는 랜덤 주기로
+/// 압박이 오는 "공격" 형태가 필요해서(SalivaHazard와 동일 개념) 이 구조로 바꿨다:
 ///
-/// [창 없음 — M 계열과의 차이]
-/// MouthController/SalivaHazard/TongueController는 Idle→Warning→Attack의 "창" 안에서만
-/// 응원이 유효하다. 식도 조임은 창 개념이 없다 — 반경이 얼마나 줄어 있든 <see cref="IsAvailable"/>은
-/// 항상 true이고, 팀 응원이 성공하면 그 즉시 원래 스케일로 복귀한 뒤 축소가 다시 시작된다.
-/// 계속 고함쳐도 "누적만 리셋"될 뿐 영구 정지는 없다 — 다음 스텝 시각부터 다시 줄어든다.
+///   Idle (응원 무시, 원래 반경)
+///   → Warning (UI. 이때부터 응원)
+///        ├─ 외침: Squeeze 안 넣음. Idle 유지
+///        └─ 없음: Squeeze(공격, attackDuration에 걸쳐 원래 반경 → squeezeTargetRadius)
+///            → Hold(그 반경 유지, 외침 전까지 무한 대기)
+///            → 외침 시 Recover(recoverDuration에 걸쳐 원래 반경으로) → Idle
+///   Idle 시작마다 랜덤 간격(randomIntervalMin~Max) 대기 후 다음 Warning.
+///
+/// [콜라이더 — MeshCollider 스케일 폐기, Box 조각 링(조리개)으로 교체 2026-09-06]
+/// 원통 하나를 스케일하면 non-convex MeshCollider가 매 프레임 재굽기(re-cook)돼야 했다.
+/// 대신 이 컴포넌트의 GameObject를 원통 중심(=옛 target 자리)에 두고, 그 자식으로
+/// <see cref="segments"/>(평평한 Box 판자, 카메라 조리개 블레이드처럼 방사형 배치)를 건다.
+/// 각 판자는 회전 없이 자기 반경 방향으로만 <c>Rigidbody(kinematic).MovePosition</c>으로
+/// 평행 이동한다 — 스케일이 아니라 위치 이동이라 재굽기 자체가 없고, 매 프레임 완전히
+/// 매끄럽게 움직여도 비용이 없다. 판자 폭을 원래 반경(rest)에서 이웃과 맞물리게 잡으면
+/// 반경이 작아질수록(조여들수록) 인접 판자 사이 간격이 오히려 줄어들어 틈이 안 생긴다.
+/// 또한 kinematic Rigidbody가 실제로 밀고 들어오므로 Player(dynamic Rigidbody)가
+/// MeshCollider 스케일과 달리 정상적으로 밀려난다(AdvancingWall과 동일 원리) — 끼임 위험이 없다.
 ///
 /// [동기화]
-/// 새 RPC/NetworkVariable 없음. 각 머신이 ServerTime만 폴링해 결정론적으로 스텝 수를 계산한다
-/// (AdvancingWall/WallWaveController와 동일 원칙). 팀 응원 성공 시점의 절대 ServerTime을
-/// CheerService.BuildRevertOrder/Revert(generation, resumeAtServerTime) 핸드셰이크로 전 머신에
-/// 맞춰 배포하므로 별도 첫 창 동기화(PhaseStartServerTime 앵커)가 필요 없다 — T.Stage는 대부분
-/// 페이즈 1개뿐이라 씬 로드 시각 차이가 누적 오차로 번지지 않는다.
-///
-/// [연속 재도전 허용 — NotifyHazardWindow 펄스]
-/// CheerService.ValidateTeamCheer는 창이 한 번 소비되면(_teamWindowConsumed) 다음 창이 열릴
-/// 때까지 표를 막는다. M 계열은 다음 Warning이 열릴 때 NotifyHazardWindow(true)를 다시 불러
-/// 이 락을 푼다. 조임은 창이 늘 열려 있으므로 그 시점이 없다 — Revert() 안에서
-/// NotifyHazardWindow(false)→(true)를 즉시 펄스로 호출해 같은 효과를 낸다(새 RPC 추가 없이
-/// 기존 API만 재사용). 이게 없으면 스테이지당 팀 응원이 딱 한 번만 먹는다.
+/// 새 RPC 없음. SalivaHazard/MouthController와 동일한 "PhaseStartServerTime 앵커로 첫 창
+/// 동기화 + ServerTime 폴링 결정론적 랜덤(NetworkSessionData.Seed 기반)"을 그대로 재사용한다.
 /// </summary>
 public class EsophagusSqueeze : MonoBehaviour, ITeamCheerRevert
 {
-    [Header("대상")]
-    [Tooltip("반경을 축소할 식도 원통(BG) Transform. MeshCollider(non-convex)가 붙는 오브젝트.\n" +
-             "비워두면 이 오브젝트 자신.")]
-    [SerializeField] Transform target;
+    enum HazardPhase
+    {
+        Idle,
+        Warning,
+        Squeezing,
+        Holding,
+        Recovering,
+    }
 
-    [Header("조임 속도 — 정수 스텝 (MeshCollider 재굽기 비용 때문에 매 프레임 대신 계단식)")]
-    [Tooltip("한 스텝까지 걸리는 시간(초). 예) 2 = 2초마다 한 단계씩 줄어듦.")]
-    [SerializeField] float secondsPerStep = 2f;
+    [Header("조임 링 조각 (조리개)")]
+    [Tooltip("중심(이 오브젝트)을 향해 방사형으로 이동할 판자들. 각자 Rigidbody(Is Kinematic=true, " +
+             "Interpolate)+BoxCollider(Is Trigger=false) 전제 — AdvancingWall과 동일 계약. " +
+             "에디터에서 이 오브젝트를 원통 중심에 두고, 자식으로 8개 안팎을 등간격 방사형 배치할 것.\n" +
+             "순서 무관 — 각 조각은 자기 로컬 위치(=자기 반경·방향)만 기준으로 움직인다.")]
+    [SerializeField] Transform[] segments;
 
-    [Tooltip("한 스텝마다 줄어드는 스케일 양. 예) 1 = 10,10 → 9,9 → 8,8 … 정수로 튜닝 권장(스텝이\n" +
-             "곧 재굽기 호출이므로 애매한 소수를 쓸 이유가 없음).")]
-    [SerializeField] float scalePerStep = 1f;
+    [Header("조임 강도")]
+    [Tooltip("Hold 상태에서 도달하는 반경(압박 강도) — 작을수록 강하게 조임. 각 조각의 원래 반경보다 작아야 함.")]
+    [SerializeField] float squeezeTargetRadius = 3f;
 
-    [Tooltip("최소 반경(스케일 단위). 이 아래로는 줄지 않음 — 즉사 방지 캡, 데미지 없음.")]
-    [SerializeField] float minScale = 4f;
+    [Header("클립 길이 (초) — 수치는 스테이지 때")]
+    [Tooltip("Warning 종료 후 원래 반경 → squeezeTargetRadius까지 걸리는 시간. 도중에 외치면 그 지점에서 즉시 Recover로 전환된다.")]
+    [SerializeField] float attackDuration = 1.5f;
 
-    [Header("시작")]
-    [Tooltip("켜지는 즉시 조이기 시작. 끄면 Begin()을 대화·카운트다운 등에서 호출할 것.")]
-    [SerializeField] bool startOnEnable = true;
+    [Tooltip("외침 성공 후 squeezeTargetRadius → 원래 반경까지 걸리는 시간.")]
+    [SerializeField] float recoverDuration = 1.0f;
 
-    Vector3 _initialScale;
-    double _anchorServerTime = -1d;
-    bool _anchoredOnNetworkClock;
-    bool _running;
-    int _appliedStep = -1;     // 마지막으로 실제 대입(=재굽기)한 스텝 번호. 같으면 대입 스킵.
-    int _syncGeneration;
+    [Header("랜덤 스케줄")]
+    [SerializeField] float randomIntervalMin = 8f;
+    [SerializeField] float randomIntervalMax = 18f;
+    [SerializeField] float initialDelay = 0f;
+    [SerializeField] bool startOnAwake = true;
+
+    [Header("팀 응원 함정")]
+    [Tooltip("Squeeze 전 Warning 유지 시간(초). 수치는 나중에 튜닝.")]
+    [SerializeField] float warnDuration = 2f;
+
+    [Header("네트워크 시드 (Host/Client 동기화)")]
+    [Tooltip("다른 트랩 seedSalt와 겹치지 않게 유지 " +
+             "(기존 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52, " +
+             "0x434F4C57, 0x574C525A, 0x4D43_0001, 0x544F4E47, 0x53504954).")]
+    [SerializeField] int seedSalt = 0x45534F51;
+
+    // 조각별 캐시 — Awake 1회. 로컬 좌표 기준(부모 = 이 오브젝트)이라 이 오브젝트가 곧 링 중심.
+    Vector3[] _restLocalDir;   // 조각의 원래 로컬 위치 방향(정규화) — "바깥"
+    float[]   _restRadius;     // 조각의 원래 로컬 반경(=원래 로컬 위치 길이)
+    Rigidbody[] _rbs;          // 없으면 null → transform.position 직접 대입으로 폴백
+
+    Coroutine _cycleCoroutine;
     Coroutine _bindRoutine;
 
-    /// <summary>창 없음 — 컴포넌트가 켜져 있으면 언제든 응원 유효.</summary>
-    public bool IsAvailable => isActiveAndEnabled;
+    HazardPhase _phase = HazardPhase.Idle;
+    bool _available;
+    bool _prevented;
+    bool _recoverQueued;
+    bool _skipNextWindow;
+    double _resyncDeadline = -1d;
+
+    // PhaseStartServerTime(Host가 Phase 진입 직전에 찍는 절대 시각)이 전파될 때까지 기다리는 한도.
+    // 그 안에 안 오면 앵커가 없는 씬으로 보고 예전처럼 로컬 시각으로 폴백한다.
+    const float AnchorWaitTimeout = 3f;
+    int _cycleCount;
+    int _syncGeneration;
+
+    // 현재 조임 진행도(0 = 원래 반경, 1 = squeezeTargetRadius). Recover가 "1에서 시작"을 가정하면
+    // 부분 진행 상태(재시작·런타임 값 변경 등)에서 반경이 튄다 — SalivaHazard._coverVisualAlpha와 같은 이유.
+    float _visualNormalized;
+
+    public bool IsAvailable => _available;
 
     void Awake()
     {
-        if (target == null) target = transform;
-        _initialScale = target.localScale;
+        CacheSegments();
+    }
 
-        if (minScale >= Mathf.Min(_initialScale.x, _initialScale.y))
-            Debug.LogWarning(
-                $"[EsophagusSqueeze] minScale({minScale})이 시작 스케일({_initialScale.x}, {_initialScale.y}) 이상입니다 " +
-                "— 조임이 전혀 걸리지 않거나 시작하자마자 원통이 커집니다.", this);
+    void CacheSegments()
+    {
+        int count = segments != null ? segments.Length : 0;
+        _restLocalDir = new Vector3[count];
+        _restRadius   = new float[count];
+        _rbs          = new Rigidbody[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            Transform seg = segments[i];
+            if (seg == null) continue;
+
+            Vector3 localPos = seg.localPosition;
+            _restRadius[i] = localPos.magnitude;
+            _restLocalDir[i] = _restRadius[i] > 0.0001f ? localPos / _restRadius[i] : Vector3.zero;
+
+            _rbs[i] = seg.GetComponent<Rigidbody>();
+            if (_rbs[i] != null) _rbs[i].isKinematic = true;
+
+            if (_restRadius[i] <= squeezeTargetRadius || _restRadius[i] <= 0.0001f)
+                Debug.LogWarning(
+                    $"[EsophagusSqueeze] segments[{i}]('{seg.name}')의 원래 반경({_restRadius[i]:F2})이 " +
+                    $"squeezeTargetRadius({squeezeTargetRadius})보다 작거나 같습니다 — 조임이 전혀 안 걸리거나 반전됩니다.", this);
+
+            if (_rbs[i] == null)
+                Debug.LogWarning(
+                    $"[EsophagusSqueeze] segments[{i}]('{seg.name}')에 Rigidbody가 없습니다 — " +
+                    "transform.position 직접 대입으로 움직이므로 Player를 물리적으로 밀어내지 못합니다. " +
+                    "Rigidbody(Is Kinematic=true, Interpolate) 추가 권장.", seg);
+        }
+
+        if (count == 0)
+            Debug.LogWarning("[EsophagusSqueeze] segments가 비어 있습니다 — 조임이 아무 것도 움직이지 않습니다.", this);
     }
 
     void OnEnable()
     {
-        // _syncGeneration은 리셋하지 않는다 — Mouth/Saliva/Tongue와 같은 규칙.
-        // 한 머신에서만 이 오브젝트가 껐다 켜져 세대가 0으로 돌아가면, 그 머신은 Host가 보낸
-        // 낮은 세대 명령을 "낡은 명령"으로 버리고 혼자 영영 안 돌아온다.
-        _running = startOnEnable;
-        ResetToBaseline();
-        _bindRoutine = StartCoroutine(BindRevert());
+        ResetHazardFlags();
+        SnapSqueeze(0f); // SalivaHazard.OnEnable의 HideCoverImmediate와 같은 자리 — 켜질 때 항상 원래 반경부터
+        _bindRoutine = StartCoroutine(BindAndStartHazard());
     }
 
     void OnDisable()
     {
-        if (_bindRoutine != null) StopCoroutine(_bindRoutine);
-        _bindRoutine = null;
         if (CheerService.Instance != null)
             CheerService.Instance.UnregisterRevert(this);
-        _running = false;
-        ResetToBaseline();
+        StopAllCoroutines();
+        _cycleCoroutine = null;
+        _bindRoutine = null;
+        ResetHazardFlags();
+        SnapSqueeze(0f); // 즉시 원래 반경으로 — 애니메이션 없이 스냅
     }
 
-    IEnumerator BindRevert()
+    IEnumerator BindAndStartHazard()
     {
         while (CheerService.Instance == null)
             yield return null;
         _bindRoutine = null;
         if (!isActiveAndEnabled) yield break;
         CheerService.Instance.RegisterRevert(this);
-        CheerService.Instance.NotifyHazardWindow(true); // 창 없음 — 등록 즉시 상시 유효
+        if (startOnAwake)
+            StartCycle();
     }
 
-    /// <summary>startOnEnable=false로 두고 대화·카운트다운 뒤에 시작할 때(UnityEvent 연결용).</summary>
-    public void Begin()
+    // ── 외부 호출 ────────────────────────────────────────────────
+
+    public void StartCycle()
     {
-        _running = true;
-        ResetToBaseline();
+        if (_cycleCoroutine != null) StopCoroutine(_cycleCoroutine);
+        _cycleCoroutine = StartCoroutine(HazardCycle());
     }
 
-    void Update()
+    public void StopCycle()
     {
-        if (!_running) return;
-
-        // 네트워크 클럭이 붙기 전(DevStageHostBootstrap은 1프레임 뒤에 Host를 띄운다)에 로컬
-        // 시계로 앵커를 잡아두면, ServerTime으로 바뀌는 순간 두 시계의 원점 차이가 그대로
-        // 경과 시간이 돼 스텝이 한 번에 여러 칸 튄다. 클럭 소스가 바뀌면 다시 앵커한다.
-        bool networkClock = HasNetworkClock;
-        if (_anchorServerTime < 0d || networkClock != _anchoredOnNetworkClock)
+        if (_cycleCoroutine != null)
         {
-            _anchoredOnNetworkClock = networkClock;
-            _anchorServerTime = GetServerTime();
-            ApplyStep(0);
-            return;
+            StopCoroutine(_cycleCoroutine);
+            _cycleCoroutine = null;
         }
-
-        double elapsed = System.Math.Max(0d, GetServerTime() - _anchorServerTime);
-        int step = secondsPerStep > 0f ? (int)(elapsed / secondsPerStep) : 0;
-        ApplyStep(step);
+        ResetHazardFlags();
+        SnapSqueeze(0f);
     }
-
-    // ── ITeamCheerRevert ──────────────────────────────────────────
 
     public void BuildRevertOrder(out int generation, out double resumeAtServerTime)
     {
         generation = _syncGeneration + 1;
-        resumeAtServerTime = GetServerTime(); // 창 없음 — 지연 없이 즉시 원상 복귀
+        resumeAtServerTime = GetServerTime() + PickSeededInterval(generation, RevertAxis);
     }
 
     public void Revert(int generation, double resumeAtServerTime)
@@ -151,52 +204,198 @@ public class EsophagusSqueeze : MonoBehaviour, ITeamCheerRevert
         if (generation <= _syncGeneration) return; // 이미 처리한 세대 / 낡은 명령
 
         _syncGeneration = generation;
-        _anchorServerTime = resumeAtServerTime; // Host가 정한 절대 ServerTime — 전 머신 동일
-        _anchoredOnNetworkClock = HasNetworkClock;
-        ApplyStep(0);
+        _resyncDeadline = resumeAtServerTime;
 
-        PulseHazardWindow();
-    }
-
-    // ── 내부 ──────────────────────────────────────────────────────
-
-    void ResetToBaseline()
-    {
-        _anchorServerTime = -1d; // 다음 Update에서 그때의 클럭으로 앵커
-        ApplyStep(0);
-    }
-
-    /// <summary>
-    /// step 번호가 이전과 같으면 아무것도 안 한다 — MeshCollider 재굽기는 실제로 스케일을
-    /// 대입하는 이 경로에서만 발생하므로, 스텝 사이 프레임에는 절대 손대지 않는 것이 핵심이다.
-    /// </summary>
-    void ApplyStep(int step)
-    {
-        if (step == _appliedStep) return;
-        _appliedStep = step;
-
-        float shrink = step * Mathf.Max(0f, scalePerStep);
-        float x = Mathf.Max(minScale, _initialScale.x - shrink);
-        float y = Mathf.Max(minScale, _initialScale.y - shrink);
-        target.localScale = new Vector3(x, y, _initialScale.z);
-    }
-
-    /// <summary>창 소비 락 해제 — 이유는 클래스 주석 참고. 같은 프레임 안의 false→true라 경고 UI는 깜빡이지 않는다.</summary>
-    static void PulseHazardWindow()
-    {
-        var svc = CheerService.Instance;
-        if (svc == null) return;
-        svc.NotifyHazardWindow(false);
-        svc.NotifyHazardWindow(true);
-    }
-
-    static bool HasNetworkClock
-    {
-        get
+        switch (_phase)
         {
-            var nm = NetworkManager.Singleton;
-            return nm != null && nm.IsListening;
+            case HazardPhase.Warning:
+                _prevented = true;
+                EndWindow();
+                break;
+            case HazardPhase.Squeezing:
+            case HazardPhase.Holding:
+                _recoverQueued = true;
+                EndWindow();
+                break;
+            case HazardPhase.Idle:
+                // 이 머신은 아직 이번 창을 열지 않았다(씬 로드 시각 차이 등) — 열지 않고
+                // Host가 준 다음 예약으로 건너뛴다(MouthController.Revert와 동일 원칙).
+                _skipNextWindow = true;
+                break;
+            // Recovering: 직전 창을 되돌리는 중 — 위에서 받은 _resyncDeadline만 따라가면 위상이 맞는다.
         }
+    }
+
+    // ── 코루틴 ────────────────────────────────────────────────────
+
+    IEnumerator HazardCycle()
+    {
+        yield return ResolveFirstWindow();
+
+        while (true)
+        {
+            if (_resyncDeadline > 0d)
+            {
+                yield return WaitForResyncDeadline();
+            }
+            else
+            {
+                yield return new WaitForSeconds(PickSeededInterval(_cycleCount, ScheduleAxis));
+                _cycleCount++;
+            }
+
+            if (_skipNextWindow)
+            {
+                _skipNextWindow = false;
+                _phase = HazardPhase.Idle;
+                continue;
+            }
+
+            _prevented = false;
+            _recoverQueued = false;
+            _phase = HazardPhase.Warning;
+            _available = true;
+            CheerService.Instance?.NotifyHazardWindow(true);
+
+            float warnElapsed = 0f;
+            float warn = Mathf.Max(0f, warnDuration);
+            while (warnElapsed < warn && !_prevented)
+            {
+                warnElapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (_prevented)
+            {
+                _prevented = false;
+                _phase = HazardPhase.Idle;
+                continue;
+            }
+
+            yield return SqueezeRoutine();
+
+            if (_recoverQueued)
+            {
+                _recoverQueued = false;
+                yield return RecoverRoutine();
+                _phase = HazardPhase.Idle;
+                continue;
+            }
+
+            _phase = HazardPhase.Holding;
+            while (!_recoverQueued)
+                yield return null;
+
+            _recoverQueued = false;
+            yield return RecoverRoutine();
+            _phase = HazardPhase.Idle;
+        }
+    }
+
+    /// <summary>첫 창을 Host/Client 공통 절대 시각에 건다 — MouthController.ResolveFirstWindow와 동일 원칙.</summary>
+    IEnumerator ResolveFirstWindow()
+    {
+        yield return null; // PhaseManager.EnterPhase의 MarkAndSyncPhase가 끝난 뒤 앵커를 읽기 위한 1프레임 양보
+
+        double anchor = -1d;
+        float waited = 0f;
+        while (waited < AnchorWaitTimeout)
+        {
+            var sns = StageNetworkState.Instance;
+            if (sns != null && sns.PhaseStartServerTime > 0d)
+            {
+                anchor = sns.PhaseStartServerTime;
+                break;
+            }
+            waited += Time.deltaTime;
+            yield return null;
+        }
+
+        if (anchor > 0d)
+        {
+            _resyncDeadline = anchor + initialDelay + PickSeededInterval(_cycleCount, ScheduleAxis);
+            _cycleCount++;
+            yield break;
+        }
+
+        if (initialDelay > 0f)
+            yield return new WaitForSeconds(initialDelay);
+    }
+
+    // Squeeze/Recover는 Rigidbody.MovePosition으로 실제 물리 이동을 일으키므로 AdvancingWall.LerpTo와
+    // 같이 FixedUpdate 간격으로 진행한다 — Update 간격으로 MovePosition을 호출하면 보간이 덜 매끄럽다.
+    // _recoverQueued를 루프 조건에 넣어 외침이 들어온 즉시 멈춘다(2026-09-06 변경 — 이전엔 끝까지
+    // 조인 뒤에야 Recover를 시작했다). HazardCycle이 곧이어 RecoverRoutine을 시작하며, 그쪽은
+    // 하드코딩된 1f가 아니라 _visualNormalized(현재 진행도)에서 되돌리므로 튀지 않는다.
+    IEnumerator SqueezeRoutine()
+    {
+        _phase = HazardPhase.Squeezing;
+
+        float dur = Mathf.Max(0f, attackDuration);
+        if (dur <= 0f)
+        {
+            if (!_recoverQueued) ApplySqueeze(1f);
+            yield break;
+        }
+
+        float t = 0f;
+        while (t < dur && !_recoverQueued)
+        {
+            t += Time.fixedDeltaTime;
+            ApplySqueeze(Mathf.Clamp01(t / dur));
+            yield return new WaitForFixedUpdate();
+        }
+        if (!_recoverQueued)
+            ApplySqueeze(1f);
+    }
+
+    // _phase = Idle 은 호출부(HazardCycle)가 찍는다 — Idle이 "다음 창을 기다리는 중"만 뜻해야
+    // Revert가 "창 밖이라 건너뛸 머신"과 "직전 창을 되돌리는 중인 머신"을 구분할 수 있다.
+    IEnumerator RecoverRoutine()
+    {
+        _phase = HazardPhase.Recovering;
+        EndWindow();
+
+        float dur = Mathf.Max(0f, recoverDuration);
+        float from = _visualNormalized; // 하드코딩 1f 대신 현재 진행도에서 되돌린다
+        if (dur <= 0f)
+        {
+            ApplySqueeze(0f);
+            yield break;
+        }
+
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.fixedDeltaTime;
+            ApplySqueeze(Mathf.Lerp(from, 0f, Mathf.Clamp01(t / dur)));
+            yield return new WaitForFixedUpdate();
+        }
+        ApplySqueeze(0f);
+    }
+
+    /// <summary>예약된 재개 시각까지 대기 — 대기 중 Revert가 예약을 갱신하면 그 값을 그대로 따라간다.</summary>
+    IEnumerator WaitForResyncDeadline()
+    {
+        while (_resyncDeadline > 0d && GetServerTime() < _resyncDeadline)
+            yield return null;
+        _resyncDeadline = -1d;
+    }
+
+    // 간격을 뽑는 축이 둘이다 — 로컬 스케줄(_cycleCount)과 되돌림 세대(_syncGeneration).
+    const int ScheduleAxis = 0;
+    const int RevertAxis   = 1;
+
+    float PickSeededInterval(int generation, int axis)
+    {
+        int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (generation * 0x2545F491) ^ (axis * 0x27220A95);
+        var prevState = UnityEngine.Random.state;
+        UnityEngine.Random.InitState(mixedSeed);
+        float min = randomIntervalMin;
+        float max = Mathf.Max(min, randomIntervalMax);
+        float interval = Random.Range(min, max);
+        UnityEngine.Random.state = prevState;
+        return interval;
     }
 
     static double GetServerTime()
@@ -205,13 +404,104 @@ public class EsophagusSqueeze : MonoBehaviour, ITeamCheerRevert
         return nm != null && nm.IsListening ? nm.ServerTime.Time : Time.timeAsDouble;
     }
 
-#if UNITY_EDITOR
-    /// <summary>이 머신에서만 되돌린다(Host 핸드셰이크를 안 탐) — 다인 테스트에는 CheerService의 "팀 버프 강제 발동"을 쓸 것.</summary>
-    [ContextMenu("테스트: 로컬만 원상 복구")]
-    void Debug_RevertLocal()
+    void EndWindow()
     {
-        BuildRevertOrder(out int gen, out double t);
-        Revert(gen, t);
+        _available = false;
+        CheerService.Instance?.NotifyHazardWindow(false);
     }
-#endif
+
+    void ResetHazardFlags()
+    {
+        _phase = HazardPhase.Idle;
+        _available = false;
+        _prevented = false;
+        _recoverQueued = false;
+        _skipNextWindow = false;
+        _resyncDeadline = -1d;
+        CheerService.Instance?.NotifyHazardWindow(false);
+    }
+
+    /// <summary>
+    /// normalized 0 = 원래 반경, 1 = squeezeTargetRadius. 조각마다 자기 반경만 보간해 같은 방향으로
+    /// MovePosition — WallWaveController.FixedUpdate와 동일한 "world 목표 계산 후 rb 있으면 MovePosition,
+    /// 없으면 transform 직접 대입" 패턴.
+    /// </summary>
+    void ApplySqueeze(float normalized)
+    {
+        _visualNormalized = normalized;
+        if (segments == null) return;
+
+        for (int i = 0; i < segments.Length; i++)
+        {
+            Transform seg = segments[i];
+            if (seg == null) continue;
+
+            float radius = Mathf.Lerp(_restRadius[i], squeezeTargetRadius, normalized);
+            Vector3 localPos = _restLocalDir[i] * radius;
+            Vector3 worldPos = transform.TransformPoint(localPos);
+
+            if (_rbs[i] != null)
+                _rbs[i].MovePosition(worldPos);
+            else
+                seg.position = worldPos;
+        }
+    }
+
+    /// <summary>즉시 스냅(보간 없이) — OnEnable/OnDisable/StopCycle 전용. kinematic Rigidbody는
+    /// MovePosition이 아니라 rb.position에 직접 대입해야 그 프레임에 바로 이동한다.</summary>
+    void SnapSqueeze(float normalized)
+    {
+        _visualNormalized = normalized;
+        if (segments == null) return;
+
+        for (int i = 0; i < segments.Length; i++)
+        {
+            Transform seg = segments[i];
+            if (seg == null) continue;
+
+            float radius = Mathf.Lerp(_restRadius[i], squeezeTargetRadius, normalized);
+            Vector3 localPos = _restLocalDir[i] * radius;
+            Vector3 worldPos = transform.TransformPoint(localPos);
+
+            if (_rbs[i] != null)
+                _rbs[i].position = worldPos;
+            else
+                seg.position = worldPos;
+        }
+    }
+
+    [ContextMenu("테스트: 사이클 시작")]
+    void TestStartCycle() => StartCycle();
+
+    [ContextMenu("테스트: 사이클 중지")]
+    void TestStopCycle() => StopCycle();
+
+    void OnDrawGizmosSelected()
+    {
+        if (segments == null) return;
+
+        for (int i = 0; i < segments.Length; i++)
+        {
+            Transform seg = segments[i];
+            if (seg == null) continue;
+
+            Vector3 localPos = seg.localPosition;
+            float radius = localPos.magnitude;
+            if (radius <= 0.0001f) continue;
+            Vector3 dir = localPos / radius;
+
+            Vector3 restWorld   = transform.TransformPoint(dir * radius);
+            Vector3 targetWorld = transform.TransformPoint(dir * squeezeTargetRadius);
+
+            // 원래 위치(주황) → 목표 위치(파랑)로 이동 경로 표시. AdvancingWall.OnDrawGizmos와 동일 색상 관례.
+            Gizmos.color = new Color(1f, 0.4f, 0f, 0.9f);
+            Gizmos.DrawWireSphere(restWorld, 0.15f);
+            Gizmos.color = new Color(0.2f, 0.7f, 1f, 0.9f);
+            Gizmos.DrawLine(restWorld, targetWorld);
+            Gizmos.DrawWireSphere(targetWorld, 0.1f);
+        }
+
+        Gizmos.color = Color.white;
+        Gizmos.DrawWireSphere(transform.position, 0.08f);
+    }
 }
