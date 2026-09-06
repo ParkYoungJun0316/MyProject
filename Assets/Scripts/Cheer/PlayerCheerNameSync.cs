@@ -58,9 +58,42 @@ public class PlayerCheerNameSync : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // 씨딩을 OnValueChanged 구독보다 먼저 — 그래야 씨딩 write가 로컬 콜백을 띄우지 않아
+        // 아래 오너 grammar 재빌드와 중복되지 않는다. 이 write는 스폰 페이로드에 실려 나가므로
+        // (CheerService TeamCheerWord 씨딩과 동일) 원격 클라이언트 반영은 그대로다.
+        if (IsServer)
+            SeedFromSessionSnapshot();
+
         _cheerName.OnValueChanged += OnCheerNameChanged;
+
         if (IsOwner)
             RebuildOwnerLocalGrammar();
+    }
+
+    /// <summary>
+    /// Host: 세션 스냅샷(GameSession.HasSessionCheerNames)이 이미 확정돼 있으면(Tutorial 게이트
+    /// 통과 후 재진입하는 모든 씬 — Interlude 포함) 이 Player 색에 해당하는 세션값을 자기 NV에
+    /// 씨딩한다(CheerAndTutorialDesign.md §3.4 코드 변경 #2). CheerService가 TeamCheerWord에
+    /// 이미 하는 것과 동일 패턴.
+    ///
+    /// Interlude 패널의 "현재 이름" 표시·중복검사가 이 씨딩 없이는 빈 값/색 기본값만 보고
+    /// 오작동한다. 기존 M/T 스테이지에는 해가 없다 — 씨딩되는 값 자체가 세션값과 동일하므로
+    /// (역전 전 기준) 그래머·응원 판정 결과가 달라지지 않는다.
+    /// </summary>
+    void SeedFromSessionSnapshot()
+    {
+        if (GameSession.Instance == null || !GameSession.Instance.HasSessionCheerNames) return;
+
+        // 색은 PlayerSpawnCoordinator(NetworkList SSOT)에서 읽는다 — NetworkPlayerSetup의 colorIndex NV는
+        // 스폰 "후" SetColorIndex로 채워지므로 이 시점엔 아직 0(Blue)일 수 있다.
+        if (!PlayerSpawnCoordinator.TryGetColor(OwnerClientId, out var color)) return;
+
+        int colorIndex = PlayerColorUtil.ColorTypeToIndex(color);
+        if (colorIndex < 0) return;
+
+        string sessionName = GameSession.Instance.GetSessionCheerName(colorIndex);
+        if (!string.IsNullOrEmpty(sessionName))
+            _cheerName.Value = new FixedString32Bytes(sessionName);
     }
 
     public override void OnNetworkDespawn()
@@ -168,6 +201,49 @@ public class PlayerCheerNameSync : NetworkBehaviour
             if (netObj == null) continue;
             yield return (netObj.OwnerClientId, ResolveEffectiveName(netObj.OwnerClientId, sync.CustomCheerName));
         }
+    }
+
+    /// <summary>
+    /// 커스텀 값이 실제로 설정된 플레이어만 (clientId, 커스텀 이름)으로 반환.
+    ///
+    /// <see cref="GetAllEffectiveNames"/>는 NV가 비면 색 기본값으로 채워주기 때문에 "이 플레이어가
+    /// 정말 자기 이름을 정했는가"를 구분할 수 없다. 우선순위 판정(CheerService.GetCheerName /
+    /// GetColorIndex, CheerAndTutorialDesign.md §3.4.2)에서 실시간 NV를 세션 스냅샷보다 앞세울 때
+    /// 이쪽을 써야 한다 — 그러지 않으면 빈 NV가 색 기본값 형태로 세션 확정값을 가려 grammar만
+    /// 조용히 틀어지는 회귀(CheerKeywordEngine.ResolveOwnerCheerName 주석의 전례)가 재발한다.
+    /// </summary>
+    public static IEnumerable<(ulong ClientId, string Name)> GetAllCustomCheerNames()
+    {
+        var all = FindObjectsByType<PlayerCheerNameSync>(FindObjectsSortMode.None);
+        foreach (var sync in all)
+        {
+            string custom = sync.CustomCheerName;
+            if (string.IsNullOrEmpty(custom)) continue;
+
+            var netObj = sync.GetComponent<NetworkObject>();
+            if (netObj == null) continue;
+            yield return (netObj.OwnerClientId, custom);
+        }
+    }
+
+    /// <summary>
+    /// 게이트 통과 시점의 각 플레이어 유효 CheerName을 colorIndex 순 배열로 확정.
+    /// clientId→color 매핑은 PlayerSpawnCoordinator(세션 SSOT)에서 직접 읽으므로 호출자가
+    /// dict를 따로 넘길 필요가 없다 — Tutorial `CompleteGate()`·Interlude `CompleteGate()`
+    /// 양쪽이 완전히 동일한 로직을 재사용한다(CheerAndTutorialDesign.md §3.4 코드 변경 #3).
+    /// </summary>
+    public static string[] BuildSessionCheerNames()
+    {
+        var names = new string[4];
+        for (int i = 0; i < 4; i++) names[i] = PlayerColorUtil.DefaultCheerNames[i];
+
+        foreach (var (clientId, name) in GetAllEffectiveNames())
+        {
+            if (!PlayerSpawnCoordinator.TryGetColor(clientId, out var color)) continue;
+            int ci = PlayerColorUtil.ColorTypeToIndex(color);
+            if (ci >= 0) names[ci] = name;
+        }
+        return names;
     }
 
     /// <summary>커스텀 값이 있으면 그대로, 없으면 색 기본값(§3.1) — 색 조회는 PlayerSpawnCoordinator SSOT.</summary>

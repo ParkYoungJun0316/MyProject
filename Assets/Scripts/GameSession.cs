@@ -105,8 +105,11 @@ public class GameSession : MonoBehaviour
     {
         if (scene.name == "DontDestroyOnLoad") return;
 
-        // 스테이지 씬에서만 플레이어 재수집. 타이틀·로비는 플레이어 참조 불필요.
-        if (!scene.name.Contains("Stage") && !scene.name.Contains("Boss")) return;
+        // 플레이어가 스폰되는 씬에서만 재수집. 타이틀은 플레이어 참조 불필요.
+        // 판정은 PlayerSpawnManager.IsStageScene SSOT — 예전엔 여기 "Stage"/"Boss" 문자열 검사를
+        // 따로 들고 있었는데, Interlude처럼 새 씬이 한쪽에만 추가되면 이 씬에서 재수집이 안 돌아
+        // 이전 씬의 파괴된 Player 참조가 _activePlayers에 남는다(2026-09-06 리뷰).
+        if (!PlayerSpawnManager.IsStageScene(scene.name)) return;
 
         // Coordinator(DDOL)는 StartGameServerRpc에서 LoadScene보다 먼저 스폰되므로
         // 씬 로드 시점에 이미 올바른 색 데이터를 보유한다 (NGO FIFO 보장).

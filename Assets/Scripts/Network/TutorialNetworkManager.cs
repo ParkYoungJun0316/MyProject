@@ -272,7 +272,7 @@ public class TutorialNetworkManager : NetworkBehaviour
         // Everyone-read라 전 Client가 로컬로도 동일 배열을 만들 수 있지만, 씬 전환 직전이라는
         // 정확히 같은 시점에 적용되도록 구 LobbyNetworkManager.StartGameInternal과 동일하게
         // Host가 계산해 명시적으로 배포한다.
-        var sessionNames = BuildSessionCheerNames(clientColorDict);
+        var sessionNames = PlayerCheerNameSync.BuildSessionCheerNames();
         GameSession.Instance?.SetSessionCheerNames(sessionNames);
         BroadcastSessionCheerNamesClientRpc(
             new FixedString32Bytes(sessionNames[0]), new FixedString32Bytes(sessionNames[1]),
@@ -331,25 +331,6 @@ public class TutorialNetworkManager : NetworkBehaviour
     void BroadcastSessionStartClientRpc(double serverTime)
     {
         NetworkSessionData.SessionStartServerTime = serverTime;
-    }
-
-    /// <summary>
-    /// 게이트 완료 시점의 각 플레이어 유효 CheerName을 colorIndex 순 배열로 확정(§6B.7 P6).
-    /// PlayerCheerNameSync.GetAllEffectiveNames()가 (clientId, 이름) 전체를 훑어주므로,
-    /// clientColorDict로 clientId→colorIndex만 매칭하면 된다 — 빈 색 인덱스는 기본값 유지.
-    /// </summary>
-    static string[] BuildSessionCheerNames(Dictionary<ulong, PlayerColorType> clientColorDict)
-    {
-        var names = new string[4];
-        for (int i = 0; i < 4; i++) names[i] = PlayerColorUtil.DefaultCheerNames[i];
-
-        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
-        {
-            if (!clientColorDict.TryGetValue(clientId, out var color)) continue;
-            int ci = PlayerColorUtil.ColorTypeToIndex(color);
-            if (ci >= 0) names[ci] = name;
-        }
-        return names;
     }
 
     /// <summary>세션 확정 CheerName을 모든 클라이언트의 GameSession에 배포(§6B.7 P6).</summary>

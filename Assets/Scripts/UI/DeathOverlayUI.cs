@@ -114,7 +114,7 @@ public class DeathOverlayUI : MonoBehaviour
         RebuildSubscriptions();
     }
 
-    // ── 구독 (TeamStatusUI.BuildSlots와 동일한 재구성 패턴) ────────
+    // ── 구독 (TeamStatusUI.RefreshSlots와 동일한 재구성 패턴) ────────
 
     void RebuildSubscriptions()
     {

@@ -272,8 +272,17 @@ public class PlayerSpawnManager : MonoBehaviour, ISessionResettable
         return new Vector3(0f, spawnHeightOffset, 0f);
     }
 
-    static bool IsStageScene(string name) =>
-        !string.IsNullOrEmpty(name) && (name.Contains("Stage") || name.Contains("Boss"));
+    /// <summary>
+    /// "플레이어가 스폰되는 씬"의 단일 판정 — GameSession.OnSceneLoaded(플레이어 재수집)도 이 함수를
+    /// 쓴다. 두 곳에 따로 하드코딩하면 한쪽만 새 씬을 인식해서, 그 씬에서 파괴된 Player 참조가
+    /// GameSession._activePlayers에 그대로 남는다(2026-09-06 리뷰).
+    ///
+    /// "Interlude"는 접두사 규칙(M./T.) 밖의 인터미션 씬이라 Stage/Boss 어느 쪽에도 안 걸린다 —
+    /// 여기서 빠지면 Interlude에 아무도 스폰되지 않는다(CheerAndTutorialDesign.md §3.4 코드 변경 #1).
+    /// </summary>
+    public static bool IsStageScene(string name) =>
+        !string.IsNullOrEmpty(name) &&
+        (name.Contains("Stage") || name.Contains("Boss") || name.Contains("Interlude"));
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: 엔트리 출력")]

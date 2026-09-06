@@ -46,7 +46,7 @@ public class PlayerHPUI : MonoBehaviour
     PlayerEvents _events;
 
     // 델리게이트 필드로 보관 — 익명 람다는 OnDestroy에서 구독 해제가 불가능하므로
-    // (TeamStatusUI.PlayerSlot과 동일 패턴) 반드시 필드에 담아 해제한다.
+    // (TeamStatusUI.ColorSlot과 동일 패턴) 반드시 필드에 담아 해제한다.
     System.Action _onDamaged;
     System.Action       _onHealed;
     System.Action       _onRespawned;

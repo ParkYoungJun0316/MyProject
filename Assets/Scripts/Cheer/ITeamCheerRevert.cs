@@ -2,7 +2,9 @@
 /// 팀 응원 성공 시 「입이 한 일」을 되돌리는 대상.
 /// CheerService는 씬에 하나 등록하고, 투표 성공 시 되돌림 명령만 브로드캐스트한다 (새 RPC 없음).
 /// M1·M3·M.Boss = MouthController. M2 = SalivaHazard. M4 = TongueController.
+/// T1·T3 = EsophagusSqueeze. T2·T4 = EsophagusFog.
 /// Idle에서는 IsAvailable=false. Warning 시작부터 Revert 성공까지 true.
+/// (T1·T2·T3·T4는 창 없음 — IsAvailable이 사실상 항상 true. CoopStageAudit.T.md §3·§5 참고.)
 ///
 /// [되돌림 명령이 Host 권한인 이유 — 2026-09-05]
 /// 함정 머신은 머신마다 로컬로 도는데, 예전 Revert()는 인자 없이 "지금 로컬 창을 닫아라"였다.

@@ -6,9 +6,26 @@ using TMPro;
 
 /// <summary>
 /// TeamStatus_Panel에 붙이는 스크립트.
-/// 씬의 모든 Player(자신 제외)를 자동 수집해 슬롯 생성.
 ///
-/// [각 슬롯 레이아웃]
+/// [고정 슬롯 설계 (2026-09-06)]
+/// 예전엔 씬의 Player를 매 리빌드마다 FindObjectsByType으로 스캔해서 슬롯 GameObject를
+/// Destroy→재생성했다. Tutorial처럼 인원이 한 명씩 순차 합류하는 상황에서 이 방식이
+/// NetworkDesign.md §6B.7 버그3/4(리빌드 데드락, "Player" 고착, 명단 소스 불일치)의
+/// 근본 원인이었다. 지금은 <see cref="PlayerColorUtil.ColorOrder"/> 4색 슬롯을 인스펙터에서
+/// 미리 배치해두고(에디터에서 크기/폰트/간격을 Scene뷰로 직접 조절 가능), 런타임엔 슬롯을
+/// "채우거나 비우기"만 한다 — Destroy/Instantiate 없음.
+///
+/// - 슬롯 = 색 고정(0=Blue/1=Purple/2=Green/3=Yellow, ColorOrder 순). "내 색" 슬롯은 항상
+///   완전히 숨김(root.SetActive(false)) — VerticalLayoutGroup이 비활성 자식을 레이아웃에서
+///   자동으로 빼므로 빈 줄 없이 나머지가 위로 붙는다.
+/// - 아직 아무도 없는 색 슬롯은 <see cref="showEmptySlots"/>가 true면(Tutorial 게이트 전
+///   인스턴스) emptyGroup을 보여주고, false면(M/T 스테이지 인스턴스, 기존 동작) 완전히 숨김.
+/// - 플레이어는 ChangeColorCooldownUI 등으로 게임 중 색을 바꿀 수 있어(PlayerEvents.
+///   OnColorTypeChanged) 슬롯 소속 자체가 바뀔 수 있다. 그래서 "지금 씬에 있는 모든 Player"
+///   (나 포함)의 OnColorTypeChanged를 감시해 변경 시 전체 재배치(RequestRebuild)한다 — 슬롯
+///   하나만 갱신하면 옛 슬롯이 그대로 남는다.
+///
+/// [레이아웃]
 /// 이름(위) / HP 하트(아래). 그 외 아이콘 없음.
 ///
 /// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 하트(PlayerCheerHeartsUI)로 표시한다
@@ -24,21 +41,49 @@ public class TeamStatusUI : MonoBehaviour
         public Sprite fullHeartSprite;
     }
 
+    /// <summary>
+    /// 고정 색 슬롯 하나. 전부 에디터에서 미리 배치 — Scene뷰에서 크기/폰트/간격을 직접 조절.
+    /// 런타임 코드는 root/filledGroup/emptyGroup의 SetActive와 nameText/heartImages 내용만 건드린다.
+    /// </summary>
+    [System.Serializable]
+    public class ColorSlot
+    {
+        [Tooltip("이 슬롯이 담당하는 색. PlayerColorUtil.ColorOrder 순서(Blue/Purple/Green/Yellow)와 맞출 것.")]
+        public PlayerColorType colorType;
+
+        [Tooltip("슬롯 전체 컨테이너. 비활성화하면 VerticalLayoutGroup이 자리를 접어 나머지가 붙는다.")]
+        public GameObject root;
+
+        [Tooltip("실제 데이터(이름+하트) 표시 그룹.")]
+        public GameObject filledGroup;
+        public TextMeshProUGUI nameText;
+        [Tooltip("Player.maxHeart(고정 프리팹 기준) 개수만큼 미리 배치. 실제 maxHeart보다 많으면 나머지는 자동 숨김.")]
+        public Image[] heartImages;
+
+        [Tooltip("아직 합류하지 않은 자리 표시 그룹(플레이스홀더). showEmptySlots가 true일 때만 사용.")]
+        public GameObject emptyGroup;
+
+        // ── 런타임 상태 (인스펙터 비노출) ──────────────────────────
+        [System.NonSerialized] public int colorIndex = -1;
+        [System.NonSerialized] public Player player;
+        [System.NonSerialized] public PlayerEvents events;
+        [System.NonSerialized] public System.Action onDamaged;
+        [System.NonSerialized] public System.Action onHealed;
+        [System.NonSerialized] public System.Action onDied;
+        [System.NonSerialized] public System.Action onRespawned;
+    }
+
     [Header("연결")]
     [Tooltip("팀원 목록에서 제외할 플레이어 (내 캐릭터). 비워두면 자동 탐색.")]
     [SerializeField] Player excludePlayer;
 
-    [Header("슬롯 크기")]
-    [SerializeField] float slotWidth    = 400f;
-    [Tooltip("슬롯 최소 높이. 이름 폰트+하트+간격보다 작으면 자동으로 늘어남(VLG가 슬롯 간격을 유지하므로 플레이어끼리 겹치지 않음).")]
-    [SerializeField] float slotHeight   = 50f;
-    [SerializeField] float slotSpacing  = 6f;
-    [SerializeField] float heartSize    = 20f;
-    [SerializeField] float heartSpacing = 2f;
-    [Tooltip("Steam 닉네임 글자 크기. 길면 한 줄에서 …으로 잘림(오토사이즈 없음).")]
-    [SerializeField] float nameFontSize = 22f;
-    [Tooltip("이름과 HP 하트 사이 세로 간격(px).")]
-    [SerializeField] float nameHeartGap = 4f;
+    [Header("고정 슬롯 — ColorOrder 순(Blue/Purple/Green/Yellow)으로 4개 등록")]
+    [SerializeField] ColorSlot[] slots = new ColorSlot[4];
+
+    [Header("빈 자리 표시")]
+    [Tooltip("체크하면 아직 합류하지 않은 색 슬롯을 emptyGroup으로 표시한다. " +
+             "Tutorial(게이트 전) 인스턴스에서만 켠다 — M/T 스테이지 인스턴스는 꺼서 미참여 색을 완전히 숨긴다(기존 동작).")]
+    [SerializeField] bool showEmptySlots = false;
 
     [Header("스프라이트")]
     [SerializeField] Sprite fullHeartSprite;
@@ -47,31 +92,13 @@ public class TeamStatusUI : MonoBehaviour
     [Header("색별 하트 스프라이트")]
     [SerializeField] ColorHeartEntry[] colorHeartMap;
 
-    [Header("색상")]
-    [SerializeField] Color slotBgColor = Color.clear;
-
-    // ── 런타임 슬롯 ──────────────────────────────────────────────
-    class PlayerSlot
-    {
-        public Player           player;
-        public PlayerEvents     events;
-        public int              colorIndex;   // PlayerColorUtil.ColorOrder 기준
-        public Image            slotBg;
-        public TextMeshProUGUI  nameText;
-        public Image[]          heartImages;
-
-        // BuildSlots 재호출 시 언구독용 (람다 캡처 해제 필수)
-        public System.Action                   onDamaged;
-        public System.Action                   onHealed;
-        public System.Action                   onDied;
-        public System.Action                   onRespawned;
-        public System.Action<PlayerColorType>  onColorTypeChanged;
-    }
-
-    readonly List<PlayerSlot> slots = new();
-
-    // BuildSlots 재호출 코얼레싱 — OnPlayersReady/OnRosterChanged가 같은 프레임에 몰려도 1회만 실행
+    // BuildSlots 재호출 코얼레싱 — OnPlayersReady/OnRosterChanged/색변경이 같은 프레임에 몰려도 1회만 실행
     bool _rebuildPending;
+
+    // "지금 씬에 있는 모든 Player"(나 포함)의 색변경 감시용 — 슬롯 소속 자체가 바뀔 수 있어서
+    // 슬롯에 들어간 player만 보면 안 되고 전원을 봐야 한다.
+    readonly HashSet<PlayerEvents> _watchedColorEvents = new();
+    readonly HashSet<PlayerEvents> _liveColorEvents = new();   // SyncColorWatchers 스크래치(매 리빌드 재사용)
 
     // ── 초기화 ───────────────────────────────────────────────────
 
@@ -83,6 +110,51 @@ public class TeamStatusUI : MonoBehaviour
         Vector2 pivot = rt.pivot;
         pivot.y = 1f;
         rt.pivot = pivot;
+
+        foreach (var slot in slots)
+            if (slot != null)
+                slot.colorIndex = System.Array.IndexOf(PlayerColorUtil.ColorOrder, slot.colorType);
+
+        ValidateSlotWiring();
+    }
+
+    /// <summary>
+    /// 슬롯은 전부 에디터 연결에 의존하므로(코드가 더 이상 생성하지 않음) 빠진 연결을 조용히
+    /// 넘기지 않고 1회 경고한다 — 안 그러면 "패널이 그냥 안 보인다"로만 관측된다.
+    /// </summary>
+    void ValidateSlotWiring()
+    {
+        int usable = 0;
+        var seen = new HashSet<PlayerColorType>();
+
+        foreach (var slot in slots)
+        {
+            if (slot == null) continue;
+
+            if (slot.colorIndex < 0)
+            {
+                Debug.LogWarning($"[TeamStatusUI] 슬롯 colorType이 {slot.colorType} — ColorOrder(Blue/Purple/Green/Yellow)에 없어 이 슬롯은 항상 숨겨집니다. ({name})", this);
+                continue;
+            }
+            if (!seen.Add(slot.colorType))
+                Debug.LogWarning($"[TeamStatusUI] 슬롯 colorType {slot.colorType}이 중복 등록됐습니다 — 같은 플레이어가 두 칸에 표시됩니다. ({name})", this);
+            if (slot.root == null)
+            {
+                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 root가 비어 있어 표시되지 않습니다. ({name})", this);
+                continue;
+            }
+            if (slot.nameText == null)
+                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 nameText가 비어 있습니다 — 닉네임이 표시되지 않습니다. ({name})", this);
+            if (slot.heartImages == null || slot.heartImages.Length == 0)
+                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 heartImages가 비어 있습니다 — HP가 표시되지 않습니다. ({name})", this);
+            if (showEmptySlots && slot.emptyGroup == null)
+                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 emptyGroup이 비어 있습니다 — showEmptySlots가 켜져 있는데 빈 자리 표시가 없습니다. ({name})", this);
+
+            usable++;
+        }
+
+        if (usable == 0)
+            Debug.LogWarning($"[TeamStatusUI] 사용 가능한 고정 슬롯이 없습니다 — 인스펙터에서 ColorOrder 4색 슬롯을 연결해야 팀 상태가 표시됩니다. ({name})", this);
     }
 
     void Start()
@@ -108,26 +180,26 @@ public class TeamStatusUI : MonoBehaviour
         PlayerSpawnCoordinator.OnRosterChanged -= RequestRebuild;
         PlayerDisplayNameSync.OnAnyDisplayNameChanged -= RefreshAllSlotNames;
         UnsubscribeAllSlots();
+        ClearColorWatchers();
     }
 
     /// <summary>
-    /// BuildSlots() 재호출을 다음 프레임으로 1회만 합친다(디바운스).
+    /// RefreshSlots() 재호출을 다음 프레임으로 1회만 합친다(디바운스).
     /// - M/T 배치 스폰: N명이 한 프레임에 각자 OnRosterChanged를 발행 + 곧이어 OnPlayersReady까지 →
     ///   원래는 N+1번 리빌드되던 것을 1번으로 줄인다.
     /// - Despawn 직후 즉시 리빌드하면 문제: NGO는 OnNetworkDespawn(=OnRosterChanged 발행 시점)을
     ///   IsSpawned=false 갱신·GameObject Destroy()보다 먼저 호출한다(InvokeBehaviourNetworkDespawn →
-    ///   ResetOnDespawn → Destroy 순서, NetworkSpawnManager.OnDespawnObject 확인됨). 즉시 BuildSlots를
-    ///   돌리면 방금 나간 플레이어가 FindObjectsByType에 여전히 잡혀 슬롯이 남는다. 한 프레임 미루면
-    ///   그 사이 Destroy()가 반영되어 정상적으로 빠진다.
+    ///   ResetOnDespawn → Destroy 순서, NetworkSpawnManager.OnDespawnObject 확인됨). 즉시 돌리면
+    ///   방금 나간 플레이어가 FindObjectsByType에 여전히 잡혀 그 색 슬롯이 안 비워진다. 한 프레임
+    ///   미루면 그 사이 Destroy()가 반영되어 정상적으로 빠진다.
     /// </summary>
     void RequestRebuild()
     {
         if (_rebuildPending) return;
         // 비활성 상태에서는 플래그를 세우지 않는다 — StartCoroutine이 코루틴을 시작하지 못하는데
         // _rebuildPending만 true로 남으면 되돌릴 곳이 RebuildNextFrame뿐이라 이후 모든 요청이
-        // 첫 줄에서 막혀 그 씬 내내 다시 그려지지 않는다. Host는 씬 로드 직후(UI가 아직 켜지기
-        // 전) 자기 스폰에서 Ready+Roster를 발행하므로 여기에 정확히 걸려 패널이 빈 채로 남았다
-        // (2026-09-05, Steam 4인 테스트). 놓친 요청은 OnEnable이 따라잡는다.
+        // 첫 줄에서 막혀 그 씬 내내 다시 그려지지 않는다(2026-09-05, Steam 4인 테스트).
+        // 놓친 요청은 OnEnable이 따라잡는다.
         if (!isActiveAndEnabled) return;
         _rebuildPending = true;
         StartCoroutine(RebuildNextFrame());
@@ -137,7 +209,7 @@ public class TeamStatusUI : MonoBehaviour
     {
         yield return null;
         _rebuildPending = false;
-        BuildSlots();
+        RefreshSlots();
     }
 
     static Player FindLocalOwnerPlayer()
@@ -152,7 +224,7 @@ public class TeamStatusUI : MonoBehaviour
     }
 
     /// <summary>
-    /// ColorOrder 인덱스(0=berry …). PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType.
+    /// ColorOrder 인덱스(0=Blue …). PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType.
     /// </summary>
     static int ResolveColorIndex(Player player)
     {
@@ -167,65 +239,193 @@ public class TeamStatusUI : MonoBehaviour
         return System.Array.IndexOf(PlayerColorUtil.ColorOrder, player.playerColorType);
     }
 
-    void BuildSlots()
+    // ── 슬롯 배치 ─────────────────────────────────────────────────
+
+    void RefreshSlots()
     {
         if (!isActiveAndEnabled) return;
 
         if (excludePlayer == null)
             excludePlayer = FindLocalOwnerPlayer();
 
-        // BuildSlots 재호출 시 UI만 Destroy하고 OnDied 구독을 남기면
-        // RaiseDied → destroyed Image 접근으로 ForceKillClientRpc가 예외 중단
-        // → Owner ForceKill/씬 리로드가 깨진다. 반드시 전부 언구독 후 재구성.
-        UnsubscribeAllSlots();
+        var allPlayers = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        SyncColorWatchers(allPlayers);
 
-        // Destroy는 프레임 끝이라 새 슬롯과 한 프레임 공존하며 VLG가 겹쳐 그린다.
-        // 비활성 자식은 레이아웃에서 빠지므로 그 전에 끈다.
-        for (int i = transform.childCount - 1; i >= 0; i--)
-        {
-            var go = transform.GetChild(i).gameObject;
-            go.SetActive(false);
-            Destroy(go);
-        }
-        slots.Clear();
+        int myColorIndex = ResolveColorIndex(excludePlayer);
 
-        var vlg = GetComponent<VerticalLayoutGroup>() ?? gameObject.AddComponent<VerticalLayoutGroup>();
-        vlg.spacing                = slotSpacing;
-        vlg.childControlWidth      = true;
-        vlg.childControlHeight     = true;
-        vlg.childForceExpandWidth  = true;
-        vlg.childForceExpandHeight = false;
-        vlg.childAlignment         = TextAnchor.UpperLeft;
-
-        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        var byColor = new Player[PlayerColorUtil.ColorOrder.Length];
+        foreach (var p in allPlayers)
         {
             if (p == null || p == excludePlayer) continue;
             var net = p.GetComponent<NetworkObject>();
             if (net != null && !net.IsSpawned) continue;
-            slots.Add(CreateSlot(p));
+            int idx = ResolveColorIndex(p);
+            if (idx >= 0 && idx < byColor.Length) byColor[idx] = p;
         }
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)transform);
+        foreach (var slot in slots)
+        {
+            if (slot == null || slot.root == null) continue;
+
+            // 슬롯의 색은 colorType(=colorIndex) 하나만이 SSOT. 인스펙터 배열 순서는 "화면에 위에서
+            // 아래로 어떤 순서로 보일지"만 결정하며, 어떤 플레이어가 들어갈지에는 관여하지 않는다.
+            // (배열 순서로 인덱싱하면 사용자가 순서를 바꿔 배치했을 때 이름은 colorIndex 기준,
+            //  HP는 배열 위치 기준이 되어 서로 다른 사람의 정보가 한 슬롯에 섞인다.)
+            int ci = slot.colorIndex;
+            if (ci < 0 || ci >= byColor.Length)
+            {
+                // colorType 미설정(기본값 Common) 등 — ColorOrder에 없는 색. 표시할 대상이 없다.
+                SetSlotPlayer(slot, null);
+                slot.root.SetActive(false);
+                continue;
+            }
+
+            bool isMine = ci == myColorIndex;
+            ApplySlot(slot, isMine ? null : byColor[ci], isMine);
+        }
     }
 
-    void RefreshAllSlotNames()
+    void ApplySlot(ColorSlot slot, Player player, bool isMine)
     {
-        if (!isActiveAndEnabled) return;
-        foreach (var slot in slots)
-            RefreshSlot(slot);
+        if (slot == null || slot.root == null) return;
+
+        if (isMine)
+        {
+            SetSlotPlayer(slot, null);
+            slot.root.SetActive(false);
+            return;
+        }
+
+        if (player != null)
+        {
+            SetSlotPlayer(slot, player);
+            slot.root.SetActive(true);
+            SetFilledVisible(slot, true);
+            if (slot.emptyGroup != null) slot.emptyGroup.SetActive(false);
+            RefreshSlotVisual(slot);   // 하트 개수(maxHeart)까지 여기서 정리 — SetFilledVisible 뒤에 와야 한다
+        }
+        else
+        {
+            SetSlotPlayer(slot, null);
+            if (showEmptySlots)
+            {
+                slot.root.SetActive(true);
+                SetFilledVisible(slot, false);
+                if (slot.emptyGroup != null) slot.emptyGroup.SetActive(true);
+            }
+            else
+            {
+                slot.root.SetActive(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 이름+하트(실데이터) 표시 on/off. filledGroup을 연결했으면 그것만 토글하고,
+    /// 연결하지 않은 배치(이름/하트를 root 직속으로 둔 경우)에는 개별로 끈다 —
+    /// 안 그러면 빈 자리에 직전 플레이어의 닉네임·하트가 그대로 남는다.
+    /// </summary>
+    static void SetFilledVisible(ColorSlot slot, bool visible)
+    {
+        if (slot.filledGroup != null)
+        {
+            slot.filledGroup.SetActive(visible);
+            return;
+        }
+
+        if (slot.nameText != null) slot.nameText.gameObject.SetActive(visible);
+        if (slot.heartImages != null)
+            foreach (var h in slot.heartImages)
+                if (h != null) h.gameObject.SetActive(visible);
+    }
+
+    /// <summary>슬롯이 담당할 Player를 바꾼다. 실제로 바뀔 때만 PlayerEvents 구독을 갈아탄다.</summary>
+    void SetSlotPlayer(ColorSlot slot, Player player)
+    {
+        if (slot.player == player) return;
+
+        if (slot.events != null)
+        {
+            if (slot.onDamaged != null) slot.events.OnDamaged -= slot.onDamaged;
+            if (slot.onHealed != null) slot.events.OnHealed -= slot.onHealed;
+            if (slot.onDied != null) slot.events.OnDied -= slot.onDied;
+            if (slot.onRespawned != null) slot.events.OnRespawned -= slot.onRespawned;
+        }
+
+        slot.player = player;
+        slot.events = player != null ? player.GetComponent<PlayerEvents>() : null;
+
+        if (slot.events != null)
+        {
+            var s = slot; // 클로저 캡처 안전화
+            slot.onDamaged = () => RefreshSlotVisual(s);
+            slot.onHealed = () => RefreshSlotVisual(s);
+            slot.onDied = () => SetDead(s, true);
+            slot.onRespawned = () => SetDead(s, false);
+            slot.events.OnDamaged += slot.onDamaged;
+            slot.events.OnHealed += slot.onHealed;
+            slot.events.OnDied += slot.onDied;
+            slot.events.OnRespawned += slot.onRespawned;
+        }
+        else
+        {
+            slot.onDamaged = slot.onHealed = slot.onDied = slot.onRespawned = null;
+        }
     }
 
     void UnsubscribeAllSlots()
     {
         foreach (var slot in slots)
+            if (slot != null) SetSlotPlayer(slot, null);
+    }
+
+    // ── 색 변경 감시 (슬롯 소속 자체가 바뀌는 케이스) ───────────────
+
+    /// <summary>
+    /// 지금 씬의 모든 Player(나 포함)의 OnColorTypeChanged를 구독/해제 동기화.
+    /// 색이 바뀌면 슬롯 하나만 갱신해서는 안 된다 — 옛 색 슬롯은 비워지고 새 색 슬롯이 채워져야
+    /// 하므로 전체 재배치(RequestRebuild)를 태운다.
+    /// </summary>
+    void SyncColorWatchers(IEnumerable<Player> allPlayers)
+    {
+        _liveColorEvents.Clear();
+        foreach (var p in allPlayers)
         {
-            if (slot?.events == null) continue;
-            if (slot.onDamaged != null)         slot.events.OnDamaged          -= slot.onDamaged;
-            if (slot.onHealed != null)          slot.events.OnHealed           -= slot.onHealed;
-            if (slot.onDied != null)            slot.events.OnDied             -= slot.onDied;
-            if (slot.onRespawned != null)       slot.events.OnRespawned        -= slot.onRespawned;
-            if (slot.onColorTypeChanged != null) slot.events.OnColorTypeChanged -= slot.onColorTypeChanged;
+            var evt = p != null ? p.GetComponent<PlayerEvents>() : null;
+            if (evt != null) _liveColorEvents.Add(evt);
         }
+
+        foreach (var evt in _liveColorEvents)
+            if (_watchedColorEvents.Add(evt))
+                evt.OnColorTypeChanged += OnAnyColorChanged;
+
+        // 이미 사라진(Destroy된) PlayerEvents는 Unity의 == 오버로드가 null로 취급하므로
+        // 구독 해제 시도 없이 목록에서만 빼면 된다 — 델리게이트는 컴포넌트와 함께 죽는다.
+        _watchedColorEvents.RemoveWhere(evt =>
+        {
+            if (evt != null && _liveColorEvents.Contains(evt)) return false;
+            if (evt != null) evt.OnColorTypeChanged -= OnAnyColorChanged;
+            return true;
+        });
+    }
+
+    void OnAnyColorChanged(PlayerColorType _) => RequestRebuild();
+
+    void ClearColorWatchers()
+    {
+        foreach (var evt in _watchedColorEvents)
+            if (evt != null) evt.OnColorTypeChanged -= OnAnyColorChanged;
+        _watchedColorEvents.Clear();
+    }
+
+    // ── 이름 ─────────────────────────────────────────────────────
+
+    void RefreshAllSlotNames()
+    {
+        if (!isActiveAndEnabled) return;
+        foreach (var slot in slots)
+            if (slot != null && slot.player != null)
+                RefreshSlotVisual(slot);
     }
 
     /// <summary>
@@ -259,7 +459,7 @@ public class TeamStatusUI : MonoBehaviour
         return "???";
     }
 
-    // ── 슬롯 생성 ─────────────────────────────────────────────────
+    // ── 갱신 ─────────────────────────────────────────────────────
 
     Sprite GetFullHeartSprite(PlayerColorType colorType)
     {
@@ -269,133 +469,36 @@ public class TeamStatusUI : MonoBehaviour
         return fullHeartSprite;
     }
 
-    PlayerSlot CreateSlot(Player player)
-    {
-        var slot        = new PlayerSlot();
-        slot.player     = player;
-        slot.colorIndex = ResolveColorIndex(player);
-
-        const float topPad    = 4f;
-        const float bottomPad = 4f;
-        // TMP Bold는 fontSize+8보다 실제 줄 높이가 커서 하트와 겹친다.
-        float nameRowH = Mathf.Max(nameFontSize + 14f, nameFontSize * 1.45f);
-        float gap      = Mathf.Max(0f, nameHeartGap);
-        float usedH    = topPad + nameRowH + gap + heartSize + bottomPad;
-        float h        = Mathf.Max(slotHeight, usedH);
-        float panelW   = ((RectTransform)transform).rect.width;
-        float w        = panelW > 1f ? panelW : slotWidth;
-
-        // ── 슬롯 루트 ─────────────────────────────────────────────
-        var root   = new GameObject(player.name);
-        root.transform.SetParent(transform, false);
-        var rootRt = root.AddComponent<RectTransform>();
-        rootRt.sizeDelta  = new Vector2(w, h);
-        var le = root.AddComponent<LayoutElement>();
-        le.minHeight = h;
-        le.preferredHeight = h;
-        le.flexibleHeight = 0f;
-        le.minWidth = w;
-        le.preferredWidth = w;
-        slot.slotBg       = root.AddComponent<Image>();
-        slot.slotBg.color = slotBgColor;
-
-        // ── 이름 (위). 한 줄 고정, 길면 … ────────────────────────
-        var nameObj = new GameObject("Name");
-        nameObj.transform.SetParent(root.transform, false);
-        slot.nameText                  = nameObj.AddComponent<TextMeshProUGUI>();
-        slot.nameText.text             = GetPlayerDisplayName(slot.colorIndex);
-        slot.nameText.fontSize         = nameFontSize;
-        slot.nameText.fontStyle        = FontStyles.Bold;
-        slot.nameText.color            = Color.white;
-        slot.nameText.alignment        = TextAlignmentOptions.MidlineLeft;
-        slot.nameText.textWrappingMode = TextWrappingModes.NoWrap;
-        slot.nameText.overflowMode     = TextOverflowModes.Ellipsis;
-        slot.nameText.enableAutoSizing = false;
-        var nameRt = nameObj.GetComponent<RectTransform>();
-        nameRt.anchorMin = new Vector2(0f, 1f);
-        nameRt.anchorMax = new Vector2(1f, 1f);
-        nameRt.offsetMin = new Vector2(16f, -topPad - nameRowH);
-        nameRt.offsetMax = new Vector2(-4f, -topPad);
-
-        // ── 아래쪽 행 (HorizontalLayoutGroup) ────────────────────
-        var bottomRow = new GameObject("BottomRow");
-        bottomRow.transform.SetParent(root.transform, false);
-        var rowHlg = bottomRow.AddComponent<HorizontalLayoutGroup>();
-        rowHlg.spacing                = heartSpacing;
-        rowHlg.childControlWidth      = false;
-        rowHlg.childControlHeight     = false;
-        rowHlg.childForceExpandWidth  = false;
-        rowHlg.childForceExpandHeight = false;
-        rowHlg.childAlignment         = TextAnchor.MiddleLeft;
-        var rowRt = bottomRow.GetComponent<RectTransform>();
-        rowRt.anchorMin = new Vector2(0f, 0f);
-        rowRt.anchorMax = new Vector2(1f, 0f);
-        rowRt.offsetMin = new Vector2(6f, bottomPad);
-        rowRt.offsetMax = new Vector2(-4f, bottomPad + heartSize);
-
-        // ── 하트 ─────────────────────────────────────────────────
-        slot.heartImages = new Image[player.maxHeart];
-        Sprite resolvedFull = GetFullHeartSprite(player.playerColorType);
-        for (int i = 0; i < player.maxHeart; i++)
-        {
-            var hObj = new GameObject($"H{i}");
-            hObj.transform.SetParent(bottomRow.transform, false);
-            var hImg = hObj.AddComponent<Image>();
-            hImg.sprite         = resolvedFull;
-            hImg.preserveAspect = true;
-            hObj.GetComponent<RectTransform>().sizeDelta = new Vector2(heartSize, heartSize);
-            slot.heartImages[i] = hImg;
-        }
-
-        // ── PlayerEvents 구독 ─────────────────────────────────────
-        slot.events = player.GetComponent<PlayerEvents>();
-        if (slot.events != null)
-        {
-            slot.onDamaged         = () => RefreshSlot(slot);
-            slot.onHealed          = () => RefreshSlot(slot);
-            slot.onDied            = () => SetDead(slot, true);
-            slot.onRespawned       = () => SetDead(slot, false);
-            slot.onColorTypeChanged = _ => RefreshSlot(slot);
-            slot.events.OnDamaged          += slot.onDamaged;
-            slot.events.OnHealed           += slot.onHealed;
-            slot.events.OnDied             += slot.onDied;
-            slot.events.OnRespawned        += slot.onRespawned;
-            slot.events.OnColorTypeChanged += slot.onColorTypeChanged;
-        }
-
-        RefreshSlot(slot);
-        return slot;
-    }
-
-    // ── 갱신 ─────────────────────────────────────────────────────
-
-    void RefreshSlot(PlayerSlot slot)
+    void RefreshSlotVisual(ColorSlot slot)
     {
         if (slot == null || slot.player == null) return;
-        if (slot.slotBg == null) return; // Destroy된 슬롯 잔존 핸들러 방어
+        if (slot.root == null) return; // 방어
 
-        slot.colorIndex = ResolveColorIndex(slot.player);
         if (slot.nameText != null)
             slot.nameText.text = GetPlayerDisplayName(slot.colorIndex);
 
-        Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
         if (slot.heartImages == null) return;
+        Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
+        int max = slot.player.maxHeart;
         for (int i = 0; i < slot.heartImages.Length; i++)
         {
-            if (slot.heartImages[i] == null) continue;
-            slot.heartImages[i].sprite = i < slot.player.heart ? resolvedFull : emptyHeartSprite;
+            var img = slot.heartImages[i];
+            if (img == null) continue;
+            bool inUse = i < max;
+            if (img.gameObject.activeSelf != inUse) img.gameObject.SetActive(inUse);
+            if (inUse) img.sprite = i < slot.player.heart ? resolvedFull : emptyHeartSprite;
         }
     }
 
     /// <summary>사망 시 하트를 전부 빈 하트로 표시. 죽으면 씬이 리셋되므로 별도 배경/텍스트 색 연출은 불필요.</summary>
-    void SetDead(PlayerSlot slot, bool isDead)
+    void SetDead(ColorSlot slot, bool isDead)
     {
-        if (slot == null || slot.slotBg == null) return;
+        if (slot == null || slot.root == null) return;
 
         if (isDead && slot.heartImages != null)
             foreach (var h in slot.heartImages)
                 if (h != null) h.sprite = emptyHeartSprite;
 
-        if (!isDead) RefreshSlot(slot);
+        if (!isDead) RefreshSlotVisual(slot);
     }
 }
