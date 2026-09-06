@@ -20,6 +20,11 @@ using UnityEngine;
 ///  랜덤 색 → colorLeadBeforeWall 초 대기 → 벽 한 사이클(전진·후퇴 완료) 동안 색 유지
 ///  → 벽이 제자리(후퇴)까지 끝나는 시점에 default 색으로 복귀.
 ///  그 다음 wallInterval 랜덤 대기 동안은 계속 default.
+///
+/// [시작 시점]
+///  startOnAwake=true(기본, T.Boss 자유런)면 Start()에서 바로 Begin().
+///  게이트 이후에 돌리려면 startOnAwake=false 후 StageStartGate.OnCountdownComplete → Begin()
+///  (T.Stage1 볼더 BeginSpawning과 동일). Host/Client 모두 로컬로 이벤트가 오므로 양쪽 Begin().
 /// </summary>
 public class WallLineRandomizer : MonoBehaviour
 {
@@ -27,7 +32,11 @@ public class WallLineRandomizer : MonoBehaviour
     [Tooltip("체크 시: AdvancingWall 반복 발동.")]
     [SerializeField] bool useWall = true;
 
-    [Tooltip("씬 시작 후 첫 사이클까지 대기(초). 1회만.")]
+    [Tooltip("켜면 씬 로드 직후 사이클 시작. 끄면 Begin()을 외부에서 호출할 때까지 대기.\n" +
+             "StageStartGate 이후 시작: 끄고 OnCountdownComplete → Begin() 연결.")]
+    [SerializeField] bool startOnAwake = true;
+
+    [Tooltip("Begin() 이후 첫 사이클까지 대기(초). 1회만. 게이트에 연결했으면 0~2.")]
     [SerializeField] float wallFirstDelay = 0f;
 
     [Tooltip("한 사이클(색 복귀·이동 완료) 후 다음 사이클까지 대기(초) — 매번 이 범위에서 랜덤.")]
@@ -129,6 +138,19 @@ public class WallLineRandomizer : MonoBehaviour
 
     void Start()
     {
+        if (startOnAwake)
+            Begin();
+    }
+
+    /// <summary>
+    /// 사이클 시작. StageStartGate.OnCountdownComplete에 연결.
+    /// startOnAwake=false일 때 사용. 이미 돌고 있으면 무시.
+    /// </summary>
+    public void Begin()
+    {
+        if (_mainCoroutine != null) return;
+        if (!isActiveAndEnabled) return;
+
         bool hasWall  = useWall && _wall != null;
         bool hasColor = useColor && _colorWalls != null && _colorWalls.Length > 0;
 
