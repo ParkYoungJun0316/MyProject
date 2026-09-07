@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.Localization;
 using UnityEngine.UI;
 
 /// <summary>
@@ -56,16 +57,14 @@ public class TutorialCheerNameUI : MonoBehaviour
     [SerializeField] Button closeButton;
 
     [Header("표시")]
-    [SerializeField] TMP_Text currentNameText;
     [SerializeField] TMP_Text feedbackText;
     [SerializeField] float feedbackDisplaySeconds = 2.5f;
 
     [Header("TeamCheerWord")]
     [Tooltip("Host 전용 입력 섹션 루트 — teamWordInputField/teamWordConfirmButton을 이 GameObject의 " +
-             "자식으로 배치할 것(SetActive 1회로 같이 꺼짐/켜짐). 비-Host에선 숨김.")]
+             "자식으로 배치할 것(SetActive 1회로 같이 꺼짐/켜짐). 비-Host에선 숨김. " +
+             "currentTeamWordText는 이 섹션 밖(패널 직계)에 있어 Host/Client 공통으로 항상 보인다.")]
     [SerializeField] GameObject hostTeamWordSection;
-    [Tooltip("비-Host 읽기 전용 섹션 루트. Host에선 숨김. 비워도 됨.")]
-    [SerializeField] GameObject clientTeamWordSection;
     [Tooltip("hostTeamWordSection의 자식으로 배치.")]
     [SerializeField] TMP_InputField teamWordInputField;
     [Tooltip("hostTeamWordSection의 자식으로 배치.")]
@@ -76,6 +75,31 @@ public class TutorialCheerNameUI : MonoBehaviour
     [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요 " +
              "(EscMenuController/PlayerEmoteMenuUI와 동일 패턴).")]
     [SerializeField] bool lockCursorOnClose = true;
+
+    // ── Localization (Tutorial 테이블, TutorialTranslations.md §CheerNamePanel) ──────────
+    // 비어 있거나(IsEmpty) 테이블 로드가 아직 안 끝났으면 한국어 폴백 — OptionsMenuController/
+    // DeathOverlayUI와 동일 패턴(LocalizedOrFallback 참고).
+
+    [Header("Localization — 피드백(CheerName)")]
+    [Tooltip("Tutorial/CheerNamePanel.Feedback_Format — TeamWord 쪽과 문구 공용.")]
+    [SerializeField] LocalizedString feedbackFormat;
+    [SerializeField] LocalizedString feedbackReservedName;
+    [Tooltip("Tutorial/CheerNamePanel.Feedback_Blocked — TeamWord 쪽과 문구 공용.")]
+    [SerializeField] LocalizedString feedbackBlocked;
+    [SerializeField] LocalizedString feedbackTakenName;
+    [SerializeField] LocalizedString feedbackGenericName;
+    [SerializeField] LocalizedString feedbackSubmitting;
+    [SerializeField] LocalizedString feedbackTimeout;
+
+    [Header("Localization — 피드백(TeamWord)")]
+    [SerializeField] LocalizedString feedbackReservedTeam;
+    [SerializeField] LocalizedString feedbackTakenTeam;
+    [SerializeField] LocalizedString feedbackGenericTeam;
+    [SerializeField] LocalizedString feedbackNotServer;
+
+    [Header("Localization — 표시")]
+    [Tooltip("{0} 포맷 — GetLocalizedString(팀 키워드 대문자)로 호출.")]
+    [SerializeField] LocalizedString teamKeywordPrefix;
 
     /// <summary>패널이 열려있는 동안 true — Player.cs가 이동 입력을 잠그는 데 사용
     /// (InGameChatUI.IsChatOpen과 동일 패턴, §7.3 타이핑 중 WASD 새는 문제 방지).</summary>
@@ -98,7 +122,6 @@ public class TutorialCheerNameUI : MonoBehaviour
     const float SubmitTimeoutSec = 3f;
 
     PlayerCheerNameSync _mySync;
-    string _lastShownName;
     string _lastShownTeamWord;
     bool? _teamWordHostVisible;
     float _feedbackHideAt = -1f;
@@ -231,9 +254,6 @@ public class TutorialCheerNameUI : MonoBehaviour
         if (_mySync == null)
             TryFindLocalSync();
 
-        if (_mySync != null)
-            RefreshCurrentNameDisplay();
-
         ApplyTeamWordRole();
         RefreshCurrentTeamWordDisplay();
 
@@ -263,11 +283,12 @@ public class TutorialCheerNameUI : MonoBehaviour
 
     // ── 입력 확정 ────────────────────────────────────────────────
 
-    /// <summary>서버 규칙(CheerNameValidator)과 동일한 문자만 입력창에 타이핑 가능(편의용, 최종 검증은 Host).</summary>
+    /// <summary>서버 규칙(CheerNameValidator)과 동일한 문자만 입력창에 타이핑 가능(편의용, 최종 검증은 Host).
+    /// 숫자/밑줄(_) 제외 — 2026-09-07, Vosk 음성 인식이 발음 불가능한 문자라 실제 응원 매칭이 안 됨.</summary>
     static char ValidateCharacter(string text, int charIndex, char addedChar)
     {
         char c = char.ToLowerInvariant(addedChar);
-        bool allowed = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+        bool allowed = c >= 'a' && c <= 'z';
         return allowed ? c : '\0';
     }
 
@@ -284,7 +305,7 @@ public class TutorialCheerNameUI : MonoBehaviour
         // 버그였다(2026-09-01, Steam 4인 테스트에서 발견). Client는 실제 네트워크 왕복이라 이
         // 호출이 즉시 리턴되므로 순서와 무관하게 항상 정상 동작했다.
         SetInteractable(false); // 응답 오기 전까지 중복 제출 방지
-        ShowFeedback("확인 중...", persistent: true);
+        ShowFeedback(LocalizedOrFallback(feedbackSubmitting, "확인 중..."), persistent: true);
         _awaitingSubmitResult = true;
         _mySync.SubmitCheerNameServerRpc(new FixedString32Bytes(nameInputField.text));
 
@@ -307,7 +328,7 @@ public class TutorialCheerNameUI : MonoBehaviour
 
         _awaitingSubmitResult = false;
         SetInteractable(true);
-        ShowFeedback("응답이 없어요. 다시 시도해 주세요.");
+        ShowFeedback(LocalizedOrFallback(feedbackTimeout, "응답이 없어요. 다시 시도해 주세요."));
         StartCoroutine(FocusInputNextFrame());
     }
 
@@ -370,38 +391,35 @@ public class TutorialCheerNameUI : MonoBehaviour
         RefreshCurrentTeamWordDisplay();
     }
 
-    static string ResolveErrorMessage(string key) => key switch
+    string ResolveErrorMessage(string key) => key switch
     {
-        "format"   => "2~12자, 영문 소문자/숫자/밑줄(_)만 사용할 수 있어요.",
-        "reserved" => "시스템 예약어라 사용할 수 없는 이름이에요.",
-        "blocked"  => "사용할 수 없는 단어가 포함되어 있어요.",
-        "taken"    => "이미 다른 팀원이 사용 중인 이름이에요.",
-        _          => "이름을 확정할 수 없어요.",
+        "format"   => LocalizedOrFallback(feedbackFormat, "2~12자, 영문 소문자만 사용할 수 있어요."),
+        "reserved" => LocalizedOrFallback(feedbackReservedName, "시스템 예약어라 사용할 수 없는 이름이에요."),
+        "blocked"  => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
+        "taken"    => LocalizedOrFallback(feedbackTakenName, "이미 다른 팀원이 사용 중인 이름이에요."),
+        _          => LocalizedOrFallback(feedbackGenericName, "이름을 확정할 수 없어요."),
     };
 
-    static string ResolveTeamWordError(string key) => key switch
+    string ResolveTeamWordError(string key) => key switch
     {
-        "format"     => "2~12자, 영문 소문자/숫자/밑줄(_)만 사용할 수 있어요.",
-        "reserved"   => "시스템 예약어라 사용할 수 없는 단어예요.",
-        "blocked"    => "사용할 수 없는 단어가 포함되어 있어요.",
-        "taken"      => "이미 팀원이 응원 이름으로 쓰고 있어요.",
-        "not_server" => "호스트만 팀 키워드를 정할 수 있어요.",
-        _            => "팀 키워드를 확정할 수 없어요.",
+        "format"     => LocalizedOrFallback(feedbackFormat, "2~12자, 영문 소문자만 사용할 수 있어요."),
+        "reserved"   => LocalizedOrFallback(feedbackReservedTeam, "시스템 예약어라 사용할 수 없는 단어예요."),
+        "blocked"    => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
+        "taken"      => LocalizedOrFallback(feedbackTakenTeam, "이미 팀원이 응원 이름으로 쓰고 있어요."),
+        "not_server" => LocalizedOrFallback(feedbackNotServer, "호스트만 팀 키워드를 정할 수 있어요."),
+        _            => LocalizedOrFallback(feedbackGenericTeam, "팀 키워드를 확정할 수 없어요."),
     };
+
+    /// <summary>String Table 엔트리가 아직 연결 안 됐거나(IsEmpty) 로드 레이스로 빈 문자열이면
+    /// 한국어 기본값으로 폴백 (OptionsMenuController.LocalizedOrFallback과 동일 패턴).</summary>
+    static string LocalizedOrFallback(LocalizedString localized, string fallback)
+    {
+        if (localized == null || localized.IsEmpty) return fallback;
+        string value = localized.GetLocalizedString();
+        return string.IsNullOrEmpty(value) ? fallback : value;
+    }
 
     // ── 표시 ────────────────────────────────────────────────────
-
-    void RefreshCurrentNameDisplay()
-    {
-        // 내 이름만 표시하는 라벨이라 전체 플레이어를 훑을 필요가 없다 — 이미 캐싱된 _mySync에서
-        // 바로 읽는다(과거엔 GetAllEffectiveNames()로 전원 스캔 후 내 clientId만 필터링했음, 불필요).
-        if (currentNameText == null || _mySync == null) return;
-
-        string effective = _mySync.EffectiveCheerName;
-        if (effective == _lastShownName) return;
-        _lastShownName = effective;
-        currentNameText.text = string.IsNullOrEmpty(effective) ? "현재 이름: (없음)" : $"현재 이름: {effective}";
-    }
 
     void ApplyTeamWordRole()
     {
@@ -413,10 +431,10 @@ public class TutorialCheerNameUI : MonoBehaviour
             _teamWordHostVisible = isServer;
             // teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식이라
             // 부모 SetActive 1번으로 같이 꺼짐/켜짐 — 개별 SetActive 중복 호출 없음.
+            // 비-Host는 이 섹션이 통째로 꺼지고, currentTeamWordText(패널 직계, 항상 표시)로만
+            // 현재 팀 키워드를 읽기 전용으로 본다 — 별도 clientTeamWordSection 불필요(2026-09-07 정리).
             if (hostTeamWordSection != null)
                 hostTeamWordSection.SetActive(isServer);
-            if (clientTeamWordSection != null)
-                clientTeamWordSection.SetActive(!isServer);
         }
 
         if (teamWordInputField != null)
@@ -425,6 +443,9 @@ public class TutorialCheerNameUI : MonoBehaviour
             teamWordConfirmButton.interactable = canEdit;
     }
 
+    /// <summary>표시 전용 — 저장/매칭용 값은 그대로 소문자 유지, 화면에 보일 때만 대문자로
+    /// 바꾼다(2026-09-07 결정: 개인 이름·팀 키워드 둘 다 표시는 대문자). PlayerHPUI.selfNameLabel의
+    /// name.ToUpper() 패턴과 동일.</summary>
     void RefreshCurrentTeamWordDisplay()
     {
         if (currentTeamWordText == null) return;
@@ -432,9 +453,22 @@ public class TutorialCheerNameUI : MonoBehaviour
         string word = ResolveCurrentTeamWord();
         if (word == _lastShownTeamWord) return;
         _lastShownTeamWord = word;
-        currentTeamWordText.text = string.IsNullOrEmpty(word)
-            ? $"팀 키워드: {GameSession.DefaultTeamCheerWord}"
-            : $"팀 키워드: {word}";
+
+        string display = string.IsNullOrEmpty(word) ? GameSession.DefaultTeamCheerWord : word;
+        currentTeamWordText.text = FormatTeamKeywordPrefix(display.ToUpperInvariant());
+    }
+
+    const string FallbackTeamKeywordPrefix = "팀 키워드: {0}";
+
+    /// <summary>Tutorial/CheerNamePanel.TeamKeywordPrefix — "{0}" 포맷 문자열, 팀 키워드(대문자)를 인자로 채운다.</summary>
+    string FormatTeamKeywordPrefix(string upperWord)
+    {
+        if (teamKeywordPrefix != null && !teamKeywordPrefix.IsEmpty)
+        {
+            string localized = teamKeywordPrefix.GetLocalizedString(upperWord);
+            if (!string.IsNullOrEmpty(localized)) return localized;
+        }
+        return string.Format(FallbackTeamKeywordPrefix, upperWord);
     }
 
     static string ResolveCurrentTeamWord()

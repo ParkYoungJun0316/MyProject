@@ -1,8 +1,14 @@
-# TutorialTranslations — Tutorial 씬 `TutorialInfoBoards` 13개 언어 번역본
+# TutorialTranslations — Tutorial 씬 `TutorialInfoBoards` + `CheerNamePanel` 13개 언어 번역본
 
-> 대상: `Tutorial.unity` → `TutorialInfoBoards` 하위 안내판 6개(`Board_Controls`, `Board_SelfCheer`, `Board_TeamCheer`, `Board_CheerName`, `Board_Test`, `Board_GotoStartZone`)의 정적 TMP 텍스트, 총 15개 필드.
-> 원문 소스: 각 TMP `TextMeshProUGUI.m_text` (에디터에서 직접 확인, 이 문서 작성 시점 기준 — 사용자가 3번 문항 `Board_TeamCheer`/`Board_Test` 본문을 직접 수정한 최신 값 반영함).
-> String Table Collection **`Tutorial`** + `Tutorial.unity`의 15개 TMP `LocalizeStringEvent` 연결은 MCP로 적용됨 (2026-09-07).
+> 대상: `Tutorial.unity` → ①`TutorialInfoBoards` 하위 안내판 6개(`Board_Controls`, `Board_SelfCheer`, `Board_TeamCheer`, `Board_CheerName`, `Board_Test`, `Board_GotoStartZone`)의 정적 TMP 텍스트 15개 필드, ②`CheerNamePanel`(응원 이름/팀 키워드 입력 패널) 정적 텍스트 + 동적 피드백 문구 19개 필드. 총 34개 필드, 같은 String Table Collection **`Tutorial`** 하나로 통합 관리(2026-09-07, 사용자 결정 — 별도 테이블 안 만듦).
+> 원문 소스: 각 TMP `TextMeshProUGUI.m_text` / `TutorialCheerNameUI.cs`의 하드코딩 한국어 폴백 문자열 (에디터에서 직접 확인, 이 문서 작성 시점 기준).
+> `TutorialInfoBoards` 15개 필드의 String Table Collection **`Tutorial`** + `LocalizeStringEvent` 연결은 MCP로 적용됨 (2026-09-07). `CheerNamePanel` 19개 키도 같은 `Tutorial` 테이블에 입력하고, 정적 텍스트 8곳(`LocalizeStringEvent`) + `TutorialCheerNameUI` `LocalizedString` 12필드를 MCP로 연결함 (2026-09-07).
+>
+> **CheerNamePanel 관련 결정 (2026-09-07):**
+> - CheerName/TeamCheerWord 형식: 영문 **소문자만**(a-z) 허용 — 숫자·밑줄(_) 제외. Vosk 음성 인식이 숫자/기호를 발음으로 인식 못 해 실제 응원 매칭이 안 되는 문제 실측 확인.
+> - 금칙어에 `sex` 추가(기존 목록에 성적 단어 카테고리는 있었으나 이 단어 자체가 누락돼 있었음).
+> - 화면 표시(개인 이름, 팀 키워드)는 항상 **대문자** — 저장/매칭용 내부 값은 그대로 소문자 유지, 표시 시점에만 변환(PlayerHPUI.selfNameLabel과 동일 패턴).
+> - 실패 피드백 문구는 카테고리별로 세분화하지 않고 지금처럼 4종(형식/예약어/금칙어/중복) + 팀워드용 `not_server`로 뭉뚱그림 유지 — 어뷰징 유저에게 어떤 금칙어 카테고리에 걸렸는지 정확히 알려주면 우회가 쉬워지므로 의도적으로 모호하게 둠.
 >
 > **번역 원칙:** ①각 언어 문법에 맞게. ②단순 직역이 아니라 그 언어 화자가 게임 튜토리얼에서 실제로 쓸 법한 자연스러운 말투로 다듬음 — 예를 들어 영어는 캐주얼한 명령형, 일본어는 です/ます체, 독일어/프랑스어/러시아어/폴란드어는 비격식 2인칭(du/tu/ты/ty), 스페인어는 스페인(pulsa)과 중남미(presiona) 어휘 차이, 포르투갈은 포르투갈(carrega em)과 브라질(aperte) 어휘 차이를 반영함.
 > **용어 통일:** "host"는 한국어 원문도 번역하지 않고 그대로 쓰므로, 각 언어에서 그 지역 게이머들이 실제로 쓰는 표현을 채택함 — en/de/ru/pl `host`(차용어 그대로), fr `l'hôte`, ja `ホスト`, zh `房主`, es `el host`, pt `anfitrião`, pt-BR `host`.
@@ -24,6 +30,30 @@
 | `Tutorial.Board_CheerName.Title` / `.Body` | `TutorialInfoBoards/Board_CheerName/Face/Title`, `/Body` |
 | `Tutorial.Board_Test.Title` / `.Body` | `TutorialInfoBoards/Board_Test/Face/Title`, `/Body` |
 | `Tutorial.Board_GotoStartZone.Title` / `.Body` | `TutorialInfoBoards/Board_GotoStartZone/Face/Title`, `/Body` |
+
+`CheerNamePanel` 키는 씬 경로 대신 UI 요소별 역할명 사용 (패널이 `TutorialInfoBoards`처럼 Face 구조가 아니라 평면 UI라서):
+
+| 키 | 연결 대상 | 방식 |
+|---|---|---|
+| `Tutorial.CheerNamePanel.Title` | `CheerNamePanel/TitleText` | `LocalizeStringEvent` |
+| `Tutorial.CheerNamePanel.Examples` | `CheerNamePanel/ExamplesText` | `LocalizeStringEvent` |
+| `Tutorial.CheerNamePanel.NameInputPlaceholder` | `CheerNamePanel/NameInputField/Text Area/Placeholder` | `LocalizeStringEvent` |
+| `Tutorial.CheerNamePanel.TeamWordInputPlaceholder` | `.../HostTeamWordSection/TeamWordInputField/Text Area/Placeholder` | `LocalizeStringEvent` |
+| `Tutorial.CheerNamePanel.ConfirmButton` | `ConfirmButton/Text (TMP)` 및 `TeamWordConfirmButton/Text (TMP)` (동일 키 공용) | `LocalizeStringEvent` ×2 |
+| `Tutorial.CheerNamePanel.CloseButton` | `CloseButton/Text (TMP)` | `LocalizeStringEvent` |
+| `Tutorial.CheerNamePanel.HostHint` | `.../HostTeamWordSection/HostHintText` | `LocalizeStringEvent` |
+| `Tutorial.CheerNamePanel.TeamKeywordPrefix` | `TutorialCheerNameUI.teamKeywordPrefix` (코드, `{0}` 포맷) | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Format` | `TutorialCheerNameUI.feedbackFormat` (CheerName/TeamWord 공용) | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Reserved_Name` | `TutorialCheerNameUI.feedbackReservedName` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Reserved_Team` | `TutorialCheerNameUI.feedbackReservedTeam` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Blocked` | `TutorialCheerNameUI.feedbackBlocked` (CheerName/TeamWord 공용) | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Taken_Name` | `TutorialCheerNameUI.feedbackTakenName` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Taken_Team` | `TutorialCheerNameUI.feedbackTakenTeam` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Generic_Name` | `TutorialCheerNameUI.feedbackGenericName` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Generic_Team` | `TutorialCheerNameUI.feedbackGenericTeam` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_NotServer` | `TutorialCheerNameUI.feedbackNotServer` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Submitting` | `TutorialCheerNameUI.feedbackSubmitting` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Timeout` | `TutorialCheerNameUI.feedbackTimeout` | `LocalizedString` 필드 |
 
 언어 순서(13개, `Assets/Localization/Locales/` 전체와 동일): `ko, en, ja, zh-Hans, zh-Hant, es, es-419, fr, de, pt, pt-BR, ru, pl`
 
@@ -293,12 +323,332 @@
 
 ---
 
+## CheerNamePanel (응원 이름 / 팀 키워드 입력 패널)
+
+### `Tutorial.CheerNamePanel.Title`
+
+- ko: 응원 이름을 정해주세요
+- en: Choose your cheer name
+- ja: 応援ネームを決めてください
+- zh-Hans: 请设置你的应援名
+- zh-Hant: 請設定你的應援名
+- es: Elige tu nombre de ánimo
+- es-419: Elige tu nombre de ánimo
+- fr: Choisis ton nom d'encouragement
+- de: Leg deinen Anfeuerungsnamen fest
+- pt: Escolhe o teu nome de incentivo
+- pt-BR: Escolha seu nome de torcida
+- ru: Выбери своё имя для поддержки
+- pl: Wybierz swoje imię dopingowe
+
+### `Tutorial.CheerNamePanel.Examples`
+
+- ko: 이렇게는 안 돼요\n· 욕설/금칙어 (예: fuck)\n· 예약어 (admin, host, cheer)\n· 숫자·밑줄(_)·한글·이모지·1글자\n· 2~12자, 영문 소문자만 가능\n\n확정 후에는 실제로 인식되는지 확인해보세요!
+- en: These won't work\n· Profanity/blocked words (e.g. fuck)\n· Reserved words (admin, host, cheer)\n· Numbers, underscores (_), Korean, emojis, single letters\n· 2–12 characters, lowercase English letters only\n\nAfter confirming, make sure to test if it's actually recognized!
+- ja: これはNGです\n・卑猥な言葉/禁止ワード（例：fuck）\n・予約語（admin、host、cheer）\n・数字・アンダーバー（_）・ハングル・絵文字・1文字\n・2〜12文字、半角英小文字のみ\n\n確定したら実際に認識されるか確認してみましょう！
+- zh-Hans: 以下情况不行\n· 脏话/违禁词（例：fuck）\n· 保留字（admin、host、cheer）\n· 数字、下划线（_）、韩文、表情符号、1个字符\n· 2~12个字符，仅限英文小写字母\n\n确定后请一定测试一下能不能被正确识别！
+- zh-Hant: 以下情況不行\n· 髒話/違禁詞（例：fuck）\n· 保留字（admin、host、cheer）\n· 數字、底線（_）、韓文、表情符號、1個字元\n· 2~12個字元，僅限英文小寫字母\n\n確定後請一定要測試看看能不能被正確辨識！
+- es: Esto no vale\n· Palabrotas/términos prohibidos (ej: fuck)\n· Palabras reservadas (admin, host, cheer)\n· Números, guion bajo (_), coreano, emojis, una sola letra\n· 2-12 caracteres, solo letras minúsculas en inglés\n\nDespués de confirmar, ¡asegúrate de probar si se reconoce de verdad!
+- es-419: Esto no funciona\n· Groserías/palabras prohibidas (ej: fuck)\n· Palabras reservadas (admin, host, cheer)\n· Números, guion bajo (_), coreano, emojis, una sola letra\n· 2 a 12 caracteres, solo letras minúsculas en inglés\n\nDespués de confirmar, ¡no olvides probar si se reconoce de verdad!
+- fr: Ça, ça ne marche pas\n· Insultes/mots interdits (ex. : fuck)\n· Mots réservés (admin, host, cheer)\n· Chiffres, tiret bas (_), coréen, émojis, une seule lettre\n· 2 à 12 caractères, lettres minuscules (alphabet latin) uniquement\n\nUne fois confirmé, pense à tester si c'est bien reconnu !
+- de: Das geht nicht\n· Beleidigungen/gesperrte Wörter (z. B. fuck)\n· Reservierte Wörter (admin, host, cheer)\n· Zahlen, Unterstrich (_), Koreanisch, Emojis, ein einzelner Buchstabe\n· 2–12 Zeichen, nur englische Kleinbuchstaben\n\nTeste nach dem Bestätigen unbedingt, ob es wirklich erkannt wird!
+- pt: Isto não pode\n· Palavrões/palavras proibidas (ex.: fuck)\n· Palavras reservadas (admin, host, cheer)\n· Números, sublinhado (_), coreano, emojis, uma única letra\n· 2 a 12 carateres, apenas letras minúsculas em inglês\n\nDepois de confirmares, testa se é mesmo reconhecido!
+- pt-BR: Isso não pode\n· Palavrões/palavras proibidas (ex.: fuck)\n· Palavras reservadas (admin, host, cheer)\n· Números, sublinhado (_), coreano, emojis, uma única letra\n· 2 a 12 caracteres, apenas letras minúsculas em inglês\n\nDepois de confirmar, teste se realmente é reconhecido!
+- ru: Так нельзя\n· Ругательства/запрещённые слова (напр.: fuck)\n· Зарезервированные слова (admin, host, cheer)\n· Цифры, знак подчёркивания (_), корейские буквы, эмодзи, одна буква\n· 2–12 символов, только строчные латинские буквы\n\nПосле подтверждения обязательно проверь, распознаётся ли имя на самом деле!
+- pl: Tak nie może być\n· Wulgaryzmy/zakazane słowa (np. fuck)\n· Zastrzeżone słowa (admin, host, cheer)\n· Cyfry, podkreślenie (_), koreański, emotikony, jedna litera\n· 2–12 znaków, tylko małe litery angielskiego alfabetu\n\nPo zatwierdzeniu koniecznie sprawdź, czy naprawdę jest rozpoznawane!
+
+### `Tutorial.CheerNamePanel.NameInputPlaceholder`
+
+- ko: 예) happy
+- en: ex) happy
+- ja: 例）happy
+- zh-Hans: 例：happy
+- zh-Hant: 例：happy
+- es: ej: happy
+- es-419: ej: happy
+- fr: ex. : happy
+- de: z. B. happy
+- pt: ex.: happy
+- pt-BR: ex.: happy
+- ru: напр.: happy
+- pl: np. happy
+
+### `Tutorial.CheerNamePanel.TeamWordInputPlaceholder`
+
+- ko: 예) fighting
+- en: ex) fighting
+- ja: 例）fighting
+- zh-Hans: 例：fighting
+- zh-Hant: 例：fighting
+- es: ej: fighting
+- es-419: ej: fighting
+- fr: ex. : fighting
+- de: z. B. fighting
+- pt: ex.: fighting
+- pt-BR: ex.: fighting
+- ru: напр.: fighting
+- pl: np. fighting
+
+### `Tutorial.CheerNamePanel.ConfirmButton`
+
+- ko: 확정
+- en: Confirm
+- ja: 決定
+- zh-Hans: 确定
+- zh-Hant: 確定
+- es: Confirmar
+- es-419: Confirmar
+- fr: Confirmer
+- de: Bestätigen
+- pt: Confirmar
+- pt-BR: Confirmar
+- ru: Подтвердить
+- pl: Potwierdź
+
+### `Tutorial.CheerNamePanel.CloseButton`
+
+- ko: 닫기
+- en: Close
+- ja: 閉じる
+- zh-Hans: 关闭
+- zh-Hant: 關閉
+- es: Cerrar
+- es-419: Cerrar
+- fr: Fermer
+- de: Schließen
+- pt: Fechar
+- pt-BR: Fechar
+- ru: Закрыть
+- pl: Zamknij
+
+### `Tutorial.CheerNamePanel.HostHint`
+
+- ko: 팀 전체가 함께 외칠 단어를 정해주세요 (기본값: FIGHTING)
+- en: Set the word your whole team will shout together (default: FIGHTING)
+- ja: チーム全員で叫ぶ合言葉を決めてください（初期値：FIGHTING）
+- zh-Hans: 请设置全队一起喊的应援词（默认：FIGHTING）
+- zh-Hant: 請設定全隊一起喊的應援詞（預設：FIGHTING）
+- es: Elige la palabra que gritará todo el equipo junto (por defecto: FIGHTING)
+- es-419: Elige la palabra que va a gritar todo el equipo junto (por defecto: FIGHTING)
+- fr: Choisis le mot que toute l'équipe criera ensemble (par défaut : FIGHTING)
+- de: Legt das Wort fest, das das ganze Team gemeinsam ruft (Standard: FIGHTING)
+- pt: Define a palavra que toda a equipa vai gritar em conjunto (predefinição: FIGHTING)
+- pt-BR: Defina a palavra que todo o time vai gritar junto (padrão: FIGHTING)
+- ru: Задайте слово, которое вся команда будет кричать вместе (по умолчанию: FIGHTING)
+- pl: Ustal słowo, które cała drużyna będzie razem krzyczeć (domyślnie: FIGHTING)
+
+### `Tutorial.CheerNamePanel.TeamKeywordPrefix` (`{0}` 포맷 — 팀 키워드 대문자가 채워짐)
+
+- ko: 팀 키워드: {0}
+- en: Team keyword: {0}
+- ja: チームの合言葉：{0}
+- zh-Hans: 团队关键词：{0}
+- zh-Hant: 團隊關鍵詞：{0}
+- es: Palabra de equipo: {0}
+- es-419: Palabra de equipo: {0}
+- fr: Mot d'équipe : {0}
+- de: Team-Wort: {0}
+- pt: Palavra de equipa: {0}
+- pt-BR: Palavra da equipe: {0}
+- ru: Командное слово: {0}
+- pl: Hasło drużyny: {0}
+
+### `Tutorial.CheerNamePanel.Feedback_Format`
+
+- ko: 2~12자, 영문 소문자만 사용할 수 있어요.
+- en: Use 2–12 lowercase English letters only.
+- ja: 2〜12文字の半角英小文字のみ使用できます。
+- zh-Hans: 只能使用2~12个英文小写字母。
+- zh-Hant: 只能使用2~12個英文小寫字母。
+- es: Usa entre 2 y 12 letras minúsculas en inglés.
+- es-419: Usa entre 2 y 12 letras minúsculas en inglés.
+- fr: Utilise entre 2 et 12 lettres minuscules (alphabet latin) uniquement.
+- de: Verwende nur 2–12 englische Kleinbuchstaben.
+- pt: Usa apenas entre 2 e 12 letras minúsculas em inglês.
+- pt-BR: Use apenas entre 2 e 12 letras minúsculas em inglês.
+- ru: Используй от 2 до 12 строчных латинских букв.
+- pl: Użyj od 2 do 12 małych liter angielskiego alfabetu.
+
+### `Tutorial.CheerNamePanel.Feedback_Reserved_Name`
+
+- ko: 시스템 예약어라 사용할 수 없는 이름이에요.
+- en: That name is a reserved system word, so you can't use it.
+- ja: システムの予約語なので、その名前は使用できません。
+- zh-Hans: 这是系统保留字，无法用作名字。
+- zh-Hant: 這是系統保留字，無法用作名字。
+- es: Ese nombre es una palabra reservada del sistema, así que no puedes usarlo.
+- es-419: Ese nombre es una palabra reservada del sistema, así que no lo puedes usar.
+- fr: Ce nom est un mot réservé par le système, tu ne peux pas l'utiliser.
+- de: Das ist ein reserviertes Systemwort und kann nicht als Name verwendet werden.
+- pt: Esse nome é uma palavra reservada do sistema, por isso não podes usá-lo.
+- pt-BR: Esse nome é uma palavra reservada do sistema, então você não pode usar.
+- ru: Это имя — зарезервированное системное слово, его нельзя использовать.
+- pl: To zastrzeżone słowo systemowe, nie możesz go użyć jako imienia.
+
+### `Tutorial.CheerNamePanel.Feedback_Reserved_Team`
+
+- ko: 시스템 예약어라 사용할 수 없는 단어예요.
+- en: That word is a reserved system word, so you can't use it.
+- ja: システムの予約語なので、その単語は使用できません。
+- zh-Hans: 这是系统保留字，无法用作关键词。
+- zh-Hant: 這是系統保留字，無法用作關鍵詞。
+- es: Esa palabra es una palabra reservada del sistema, así que no puedes usarla.
+- es-419: Esa palabra es una palabra reservada del sistema, así que no la puedes usar.
+- fr: Ce mot est réservé par le système, tu ne peux pas l'utiliser.
+- de: Das ist ein reserviertes Systemwort und kann nicht verwendet werden.
+- pt: Essa palavra é uma palavra reservada do sistema, por isso não podes usá-la.
+- pt-BR: Essa palavra é uma palavra reservada do sistema, então você não pode usar.
+- ru: Это слово — зарезервированное системное слово, его нельзя использовать.
+- pl: To zastrzeżone słowo systemowe, nie możesz go użyć.
+
+### `Tutorial.CheerNamePanel.Feedback_Blocked`
+
+- ko: 사용할 수 없는 단어가 포함되어 있어요.
+- en: This contains a word that can't be used.
+- ja: 使用できない単語が含まれています。
+- zh-Hans: 包含了无法使用的词语。
+- zh-Hant: 包含了無法使用的詞語。
+- es: Contiene una palabra que no se puede usar.
+- es-419: Contiene una palabra que no se puede usar.
+- fr: Cela contient un mot qui ne peut pas être utilisé.
+- de: Das enthält ein Wort, das nicht verwendet werden darf.
+- pt: Contém uma palavra que não pode ser usada.
+- pt-BR: Contém uma palavra que não pode ser usada.
+- ru: Здесь есть слово, которое нельзя использовать.
+- pl: Zawiera słowo, którego nie można użyć.
+
+### `Tutorial.CheerNamePanel.Feedback_Taken_Name`
+
+- ko: 이미 다른 팀원이 사용 중인 이름이에요.
+- en: Another teammate is already using that name.
+- ja: 他のチームメイトがすでに使っている名前です。
+- zh-Hans: 已经有其他队友在使用这个名字了。
+- zh-Hant: 已經有其他隊友在使用這個名字了。
+- es: Otro compañero de equipo ya está usando ese nombre.
+- es-419: Otro compañero de equipo ya está usando ese nombre.
+- fr: Un autre coéquipier utilise déjà ce nom.
+- de: Dieser Name wird bereits von einem Teammitglied verwendet.
+- pt: Esse nome já está a ser usado por outro colega de equipa.
+- pt-BR: Esse nome já está sendo usado por outro colega de equipe.
+- ru: Это имя уже использует другой участник команды.
+- pl: Ta nazwa jest już używana przez innego członka drużyny.
+
+### `Tutorial.CheerNamePanel.Feedback_Taken_Team`
+
+- ko: 이미 팀원이 응원 이름으로 쓰고 있어요.
+- en: A teammate is already using that as their cheer name.
+- ja: その単語はすでにチームメイトが応援ネームとして使っています。
+- zh-Hans: 已经有队友把这个词用作应援名了。
+- zh-Hant: 已經有隊友把這個詞用作應援名了。
+- es: Un compañero de equipo ya lo está usando como nombre de ánimo.
+- es-419: Un compañero de equipo ya lo está usando como nombre de ánimo.
+- fr: Un coéquipier l'utilise déjà comme nom d'encouragement.
+- de: Ein Teammitglied verwendet das bereits als Anfeuerungsname.
+- pt: Um colega de equipa já está a usar isso como nome de incentivo.
+- pt-BR: Um colega de equipe já está usando isso como nome de torcida.
+- ru: Кто-то из команды уже использует это как имя для поддержки.
+- pl: Członek drużyny używa już tego jako imienia dopingowego.
+
+### `Tutorial.CheerNamePanel.Feedback_Generic_Name`
+
+- ko: 이름을 확정할 수 없어요.
+- en: Couldn't confirm that name.
+- ja: その名前は確定できません。
+- zh-Hans: 无法确定该名字。
+- zh-Hant: 無法確定該名字。
+- es: No se ha podido confirmar el nombre.
+- es-419: No se pudo confirmar el nombre.
+- fr: Impossible de confirmer ce nom.
+- de: Der Name konnte nicht bestätigt werden.
+- pt: Não foi possível confirmar o nome.
+- pt-BR: Não foi possível confirmar o nome.
+- ru: Не удалось подтвердить имя.
+- pl: Nie udało się zatwierdzić nazwy.
+
+### `Tutorial.CheerNamePanel.Feedback_Generic_Team`
+
+- ko: 팀 키워드를 확정할 수 없어요.
+- en: Couldn't confirm the team keyword.
+- ja: チームの合言葉を確定できません。
+- zh-Hans: 无法确定团队关键词。
+- zh-Hant: 無法確定團隊關鍵詞。
+- es: No se ha podido confirmar la palabra de equipo.
+- es-419: No se pudo confirmar la palabra de equipo.
+- fr: Impossible de confirmer le mot d'équipe.
+- de: Das Team-Wort konnte nicht bestätigt werden.
+- pt: Não foi possível confirmar a palavra de equipa.
+- pt-BR: Não foi possível confirmar a palavra da equipe.
+- ru: Не удалось подтвердить командное слово.
+- pl: Nie udało się zatwierdzić hasła drużyny.
+
+### `Tutorial.CheerNamePanel.Feedback_NotServer`
+
+- ko: 호스트만 팀 키워드를 정할 수 있어요.
+- en: Only the host can set the team keyword.
+- ja: チームの合言葉を決められるのはホストだけです。
+- zh-Hans: 只有房主才能设置团队关键词。
+- zh-Hant: 只有房主才能設定團隊關鍵詞。
+- es: Solo el host puede fijar la palabra de equipo.
+- es-419: Solo el host puede definir la palabra de equipo.
+- fr: Seul l'hôte peut définir le mot d'équipe.
+- de: Nur der Host kann das Team-Wort festlegen.
+- pt: Só o anfitrião pode definir a palavra de equipa.
+- pt-BR: Só o host pode definir a palavra da equipe.
+- ru: Только хост может задать командное слово.
+- pl: Tylko host może ustalić hasło drużyny.
+
+### `Tutorial.CheerNamePanel.Feedback_Submitting`
+
+- ko: 확인 중...
+- en: Checking…
+- ja: 確認中…
+- zh-Hans: 确认中…
+- zh-Hant: 確認中…
+- es: Comprobando…
+- es-419: Verificando…
+- fr: Vérification…
+- de: Wird geprüft …
+- pt: A verificar…
+- pt-BR: Verificando…
+- ru: Проверка…
+- pl: Sprawdzanie…
+
+### `Tutorial.CheerNamePanel.Feedback_Timeout`
+
+- ko: 응답이 없어요. 다시 시도해 주세요.
+- en: No response. Please try again.
+- ja: 応答がありません。もう一度お試しください。
+- zh-Hans: 没有收到响应，请再试一次。
+- zh-Hant: 沒有收到回應，請再試一次。
+- es: No hay respuesta. Inténtalo de nuevo.
+- es-419: No hay respuesta. Inténtalo de nuevo.
+- fr: Pas de réponse. Réessaie.
+- de: Keine Antwort erhalten. Bitte versuch's noch einmal.
+- pt: Sem resposta. Tenta novamente.
+- pt-BR: Sem resposta. Tente novamente.
+- ru: Нет ответа. Попробуйте ещё раз.
+- pl: Brak odpowiedzi. Spróbuj ponownie.
+
+---
+
 ## 적용 상태
+
+### TutorialInfoBoards
 
 1. [x] String Table Collection `Tutorial` 생성 (13개 로케일, `Assets/Localization/StringTables/Tutorial*.asset`)
 2. [x] 15개 키 + 번역 채움
 3. [x] `TutorialInfoBoards` 하위 15개 TMP에 `LocalizeStringEvent` 부착 (`OnUpdateString` → `TMP_Text.text`)
 4. [ ] Play 모드에서 Locale 몇 개 바꿔가며 6개 보드가 바뀌는지 스모크 테스트 (사용자)
+
+### CheerNamePanel
+
+1. [x] `CheerNameValidator.cs` — 형식 a-z만 허용(숫자/밑줄 제외), 금칙어에 `sex` 추가
+2. [x] `TutorialCheerNameUI.cs` — 피드백/표시 문구를 하드코딩 한국어 대신 `LocalizedString` 필드(+한국어 폴백)로 리팩터, 팀 키워드 표시 대문자화
+3. [x] 번역 19키 확정 (위 §CheerNamePanel)
+4. [x] String Table Collection `Tutorial`에 19개 키 + 13로케일 번역 입력 (MCP, 2026-09-07)
+5. [x] 정적 텍스트 8곳(Title/Examples/두 Placeholder/두 ConfirmButton/CloseButton/HostHint)에 `LocalizeStringEvent` 부착 (`OnUpdateString` → `TMP_Text.text`)
+6. [x] `TutorialCheerNameUI` 컴포넌트의 `LocalizedString` 필드 12개 연결
+7. [ ] Play 모드에서 Locale 바꿔가며 패널 문구·피드백이 바뀌는지 스모크 테스트 (사용자)
 
 ## 참고
 

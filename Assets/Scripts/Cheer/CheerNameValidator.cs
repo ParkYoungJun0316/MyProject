@@ -30,7 +30,7 @@ public static class CheerNameValidator
         "cunt", "dick", "cock", "prick", "twat", "wanker", "bollocks", "bugger",
         "crap", "piss", "douche", "bullshit",
         // #10 성/신체
-        "pussy", "penis", "vagina", "boob", "anal", "porn", "cum", "jizz",
+        "sex", "pussy", "penis", "vagina", "boob", "anal", "porn", "cum", "jizz",
         // #11 혐오·차별 (대표적인 것만, 전체 목록 아님)
         "nigger", "chink", "spic", "kike", "fag", "faggot", "retard", "nazi",
         // #12 숫자 치환 우회 — 가장 뻔한 패턴만
@@ -38,7 +38,10 @@ public static class CheerNameValidator
     };
 
     /// <summary>
-    /// 형식 검증(§3.5 #1~4: 길이 2~12, a-z/0-9/_ 만 허용, 예약어 아님).
+    /// 형식 검증(§3.5 #1~4: 길이 2~12, a-z만 허용, 예약어 아님).
+    /// 숫자·밑줄(_)은 2026-09-07부로 제외 — Vosk 음성 인식이 숫자/기호를 발음으로 인식하지
+    /// 못해 실제 응원 매칭이 안 되는 문제가 실측 확인됨(사용자 테스트). 순수 영문 알파벳만
+    /// 발음 가능한 단어이므로 a-z만 허용한다.
     /// 호출 전 trim + 소문자 변환은 호출부 책임 — 빈 문자열(커스텀 해제) 판단도 호출부에서
     /// 이 함수를 부르기 전에 처리할 것(빈 문자열은 여기서 그냥 실패 처리됨).
     /// </summary>
@@ -48,8 +51,7 @@ public static class CheerNameValidator
         if (lower.Length < 2 || lower.Length > 12) { reason = "format"; return false; }
         foreach (char c in lower)
         {
-            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'))
-            { reason = "format"; return false; }
+            if (c < 'a' || c > 'z') { reason = "format"; return false; }
         }
         foreach (string reserved in ReservedNames)
             if (lower == reserved) { reason = "reserved"; return false; }
