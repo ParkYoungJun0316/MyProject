@@ -209,7 +209,7 @@ flowchart LR
 - [x] `NetworkObject` + `InterludeNetworkManager`(신규) 배치 + `TutorialGatherZone` 트리거 존 배치
 - [x] `NetworkObject` + `DisconnectManager` 배치 + ESC 나가기 버튼 연결 (`Btn.Quit` → `OnClickLeaveRoom`)
 - [x] Tutorial과 동일한 `TutorialCheerNameUI` 패널 + `TutorialCheerNameSignboard` 표지판 배치, 필드 연결
-- [x] `TimerUI` 등 카운트다운 UI를 `InterludeNetworkManager.OnGateCountdownTick`에 연결 (`StartCountdownUI.SetRemaining` / `Hide`)
+- [x] `TimerUI` 등 카운트다운 UI를 `InterludeNetworkManager.OnGateCountdownTick`에 연결 (`StartCountdownUI.SetRemaining` / `Hide`) — **[2026-09-07 정정] 이 연결(씬 작업)은 진짜로 되어 있었지만, `InterludeNetworkManager.Update()`가 `if (!IsHost) return;`으로 시작해 이 UnityEvent들이 Host 머신에서만 Invoke됐다 → Client 화면엔 카운트다운이 안 뜨는 상태로 "완료"로 보였다.** 코드 수정 완료(NV + ClientRpc 브릿지). 동기화 축 SSOT는 `NetworkDesign.md` §6B.3 "게이트 카운트다운 동기화". 교훈: 게이트/HUD 항목은 **"인스펙터 연결 완료"와 "Client 화면 확인 완료"를 따로 체크**할 것 — 연결만으로는 발행 주체가 Host 전용인지 드러나지 않는다
 
 **씬 배치 주의 (2026-09-06 코드 리뷰에서 나온 함정 2건):**
 

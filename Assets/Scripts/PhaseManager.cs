@@ -232,6 +232,10 @@ public class PhaseManager : MonoBehaviour
         {
             _allPhasesComplete = true;
             onAllPhasesComplete?.Invoke();
+            // Client 브릿지(2026-09-07 리뷰) — EnterPhaseOnClient()는 onPhaseEnter만 재생하고
+            // onAllPhasesComplete는 재생하지 않아, 이 호출 없이는 인스펙터로 직결된 표시 전용 UI
+            // (ObjectiveUI.ShowSceneClear 등)가 Client에서 절대 발동하지 않는다.
+            StageNetworkState.Instance?.NotifyAllPhasesComplete();
         }
     }
 
@@ -255,6 +259,7 @@ public class PhaseManager : MonoBehaviour
         {
             _allPhasesComplete = true;
             onAllPhasesComplete?.Invoke();
+            StageNetworkState.Instance?.NotifyAllPhasesComplete(); // Client 브릿지, PhaseComplete()와 동일 이유
             return;
         }
 

@@ -533,7 +533,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: StageManager.Update() 클리어 판정 직후 호출.</summary>
     public void NotifyStageCleared()
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         OnAnyStageClearedPulse?.Invoke();
         NotifyStageClearedClientRpc();
     }
@@ -543,6 +543,38 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         OnAnyStageClearedPulse?.Invoke();
+    }
+
+    // ── 씬 전체 클리어(모든 Phase 완료) 표시 동기화 ────────────────
+
+    /// <summary>
+    /// 씬의 모든 Phase가 완료됐을 때 발동 — **표시 전용, Client 레인에서만** 발동하는 펄스.
+    /// PhaseManager.onAllPhasesComplete는 Host 레인에서만 Invoke되고 EnterPhaseOnClient()는
+    /// onPhaseEnter만 재생하므로, 그 UnityEvent에 인스펙터로 직결된 표시 전용 UI
+    /// (ObjectiveUI.ShowSceneClear)는 Client에서 영원히 발동하지 않았다(2026-09-07 리뷰).
+    /// OnAnyStageClearedPulse와 같은 골격이되 Host 로컬 Invoke가 없다 — Host는 이미 UnityEvent로
+    /// 자기 몫을 처리하므로 중복 발동을 만들지 않는다. UnityEvent 자체를 Client에서 재Invoke하면
+    /// 같은 이벤트에 걸린 SceneFlowRelay.LoadNextScene(커튼·진행도 기록)까지 Client 레인에서
+    /// 돌아가므로 그 방식은 쓰지 않는다(§11A Host 레인 단일 진실).
+    /// </summary>
+    public event Action OnAllPhasesCompleteClientPulse;
+
+    /// <summary>
+    /// Host: PhaseManager가 onAllPhasesComplete Invoke 직후 호출.
+    /// IsSpawned 가드 — 사망 리로드/씬 언로드 중 Despawn 이후에 Phase 완료가 들어오면
+    /// 미스폰 객체에서 Rpc를 보내 에러가 난다(SetTrackerTarget과 동일 방어).
+    /// </summary>
+    public void NotifyAllPhasesComplete()
+    {
+        if (!IsServer || !IsSpawned) return;
+        NotifyAllPhasesCompleteClientRpc();
+    }
+
+    [ClientRpc]
+    void NotifyAllPhasesCompleteClientRpc()
+    {
+        if (IsServer) return;
+        OnAllPhasesCompleteClientPulse?.Invoke();
     }
 
     // ── Breakable 파괴 동기화 ─────────────────────────────────────
@@ -692,7 +724,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 전원 점유 → 카운트다운 시작 시각을 ServerTime으로 기록.</summary>
     public void MarkCountdownStart()
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _countdownStartServerTime.Value = NetworkManager.Singleton.ServerTime.Time;
         _isCountdownActive.Value = true;
     }
@@ -700,7 +732,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 이탈로 카운트다운 리셋 시 호출.</summary>
     public void MarkCountdownReset()
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _isCountdownActive.Value = false;
     }
 
@@ -713,7 +745,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void MarkStageStart(int gateId)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _stageStartSignal.Value  = new StageStartSignal { serverTime = NetworkManager.Singleton.ServerTime.Time, gateId = gateId };
         _isCountdownActive.Value = false;
     }
@@ -733,7 +765,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void MarkAndSyncPhase(int phaseIndex)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _phaseStartSignal.Value = new PhaseStartSignal
         {
             phaseIndex = phaseIndex,
@@ -755,7 +787,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 보스 페이즈 클리어 수 갱신. BossFightObjective.NotifyPhaseCleared()에서 호출.</summary>
     public void SetBossPhasesCleared(int cleared)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _bossPhasesCleared.Value = cleared;
     }
 
@@ -770,7 +802,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void InitDoorSlots(int count)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _doorOpenStates.Clear();
         for (int i = 0; i < count; i++)
             _doorOpenStates.Add(false);
@@ -779,7 +811,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 문 index의 개폐 상태 갱신. DoorController.OnOpened/OnClosed에서 호출.</summary>
     public void SetDoorOpen(int index, bool isOpen)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         if (index < 0 || index >= _doorOpenStates.Count) return;
         if (_doorOpenStates[index] == isOpen) return;
         _doorOpenStates[index] = isOpen;
@@ -806,7 +838,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void InitPioneerTiles(int count)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _pioneerTileUnlocked.Clear();
         for (int i = 0; i < count; i++)
             _pioneerTileUnlocked.Add(false);
@@ -815,7 +847,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: index 타일 해금 확정. PioneerPathTile.OnCollisionEnter에서 호출(비-Host 호출은 no-op).</summary>
     public void SetPioneerTileUnlocked(int index)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         if (index < 0 || index >= _pioneerTileUnlocked.Count) return;
         if (_pioneerTileUnlocked[index]) return;
         _pioneerTileUnlocked[index] = true;
@@ -838,7 +870,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 클리어된 구역 수 갱신. MemoryRoundObjective.HandleClear()에서 호출.</summary>
     public void SetMemorySectionsCleared(int cleared)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _memorySectionsCleared.Value = cleared;
     }
 
@@ -855,7 +887,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ChallengeStart(int seed, ChallengeOwnerType owner, int instanceId = 0)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0, owner = owner, instanceId = instanceId };
         _challengeCleared.Value = false;
     }
@@ -874,7 +906,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ChallengeStepBegin(int stepIndex, int seed)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _challengeStep.Value = new ChallengeStepState
         {
             seed                 = seed,
@@ -895,7 +927,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ResetChallengeStep()
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _challengeStep.Value = new ChallengeStepState
         {
             seed                 = _challengeStep.Value.seed,
@@ -920,7 +952,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ChallengeCleared(bool cleared)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         _challengeCleared.Value = cleared;
         if (!cleared) return;
 
@@ -964,7 +996,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void NotifyChallengeStepResult(bool correct)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
         OnChallengeStepResult?.Invoke(correct); // Host 로컬 즉시 발동
         NotifyChallengeStepResultClientRpc(correct);
     }

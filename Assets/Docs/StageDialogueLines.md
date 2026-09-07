@@ -14,11 +14,17 @@
 
 1. 우리, 먹혔어. 이제부터 살아나가는 것만 생각해.
 
-*(연습 구역인 Stealth/색 패드/응원 설명은 `2.Tutorial` 씬 담당 — M.Stage1에서 재설명하지 않음. `CheerAndTutorialDesign.md` §4 참고.)*
+*(색 패드/응원 설명은 `2.Tutorial` 씬 담당 — M.Stage1에서 재설명하지 않음. **단, 은신(Stealth)은 예외** — Tutorial 구역 1이 생략 가능인 데다 실사용처가 `M.Stage2`(2.2)·`M.Stage4`(4.3)·`M.Boss`(1페이즈)뿐으로 희소해서, Tutorial 단독 교육을 신뢰하지 않고 **첫 실사용 스테이지(`M.Stage2` 2.2)에서 다시 짚어준다**(아래 참고). `CheerAndTutorialDesign.md` §4 참고.)*
 
 ## M.Stage2 (OXQuizManager)
 
 > 미정 — 아직 번역 원문 없음. 필요 시 `OXQuizManager`/`OXQuizUI`(문제·타이머·정답 UI가 이미 룰을 설명하므로 대사는 선택 사항, 이전 대화 참고).
+> **주의:** 이 헤더는 구 콘텐츠(OXQuizManager) 기준이라 `CoopStageAudit.M.md`의 M2 재설계(2.1 SideSplit+침 / 2.2 Drop+침)와 이름이 안 맞을 수 있음 — 리팩토링 반영 확인 필요.
+
+**2.2 — 은신 첫 등장 (Drop+침 구간, `TrapPlayerTracker` 최초 사용)**
+1. 위에서 뭔가 떨어져! 움직이는 걸 보고 조준하나 봐.
+2. 바닥 색이랑 내 흑/백을 맞추면 안 보인대. Ctrl로 바꿔봐.
+3. 고유색으로는 절대 안 통해 — 흑백일 때만 숨는 거야.
 
 ## M.Stage3 (ColorTileChallenge)
 

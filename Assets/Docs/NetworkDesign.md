@@ -256,6 +256,19 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 | Writer | `TutorialNetworkManager`(가칭) 내 게이트 컴포넌트. NGO 스타트 로직(시드 생성, `SceneFlowManager.LoadNextScene` 호출)도 여기서 수행 — 구 `LobbyNetworkManager.StartGameServerRpc` 역할 이전 |
 | 솔로 | 1인이면 "존 안 1 == 접속 1"이 즉시 성립 → 카운트다운 즉시 시작 (§2.2) |
 
+**게이트 카운트다운 동기화 (2026-09-07 확정 — 공유 버그 수정, §9B.4 분류)**
+
+| 항목 | 규칙 |
+|------|------|
+| 판정 | **Host 단일 레인.** 헤드카운트 비교·카운트다운 진행·리셋·완료는 전부 Host `UpdateGate()`에서만 |
+| 진행 상태 전파 | **NetworkVariable** (Everyone-read / **Server**-write) 2개 — `_isCountdownActive`(bool) + `_countdownStartServerTime`(double). Client는 `Update()`에서 이 값을 폴링해 `ServerTime` 역산으로 남은 시간을 **로컬 계산**한 뒤 자기 화면의 `OnGateCountdownTick`을 Invoke |
+| 완료 전파 | **ClientRpc** (`BroadcastGateCountdownCompleteClientRpc`) — 1회성 이벤트라 NV 폴링으로는 보장되지 않음. `PhaseDialogueGate.InvokeAllReadyClientRpc` / `StageNetworkState.NotifyStageClearedClientRpc`와 동일한 "Host 로컬 즉시 + ClientRpc 보장 전달" 규약 |
+| NV 소유 위치 | **각 매니저 자신**(`TutorialNetworkManager` / `InterludeNetworkManager`). `StageNetworkState`의 동명 슬롯을 재사용하지 **않는다** — 그 클래스는 M/T 스테이지 씬 전용이고, 의미가 다른 시스템이 슬롯을 공유하면 §11B.8·2026-07-21 PhaseManager 오공유 사고가 재발한다 |
+| 표시 UI | `StartCountdownUI`(`StageStartGate`와 공용). 리셋 시 `OnGateCountdownReset` → `OnGateCountdownTick(duration)` 순서를 지켜야 `_suppressNextTick`이 "3" 재표시를 먹는다 — 순서를 뒤집으면 리셋마다 숫자가 깜빡인다 |
+| 미스폰 가드 | 두 매니저 모두 `Update()` 진입에 `IsSpawned` 필수. `PlayerSpawnCoordinator`는 DDoL이라 `EntryCount > 0` 상태로 씬에 진입할 수 있어, 스폰 전 `CompleteGate()`에 들어가면 세션 확정 ClientRpc가 전부 유실된다(조용한 desync) |
+
+> **버그 클래스 (재발 — 반드시 기억):** 이전 구현은 `Update()`가 `if (!IsHost) return;`으로 시작해서, 인스펙터 연결용 `UnityEvent`(`OnGateCountdownTick` 등)를 **Host 머신에서만** Invoke했다. 인스펙터 연결이 되어 있어도 Client 화면엔 카운트다운이 절대 뜨지 않는다 — Interlude는 연결까지 마쳐놓고도 동작하지 않아 문서상 완료로 보였다(`CheerAndTutorialDesign.md` §3.4). 이는 `MemoryRoundObjective`(Host 레인 `OnStageClear`를 Client UI가 직접 구독 → 진행 카운터 0 고착) / `BossFightObjective`(`_phasesCleared` 로컬 카운터)와 **완전히 동일한 계열**이다. 규칙: **Host 레인에서만 Invoke되는 로컬 이벤트에 UI를 직접 매달지 말 것** — 지속 상태는 NV, 1회성은 ClientRpc로 브릿지한 뒤 전 머신 공통 구독점을 만든다.
+
 ### 6B.4 이탈 정책 (게이트 통과 전)
 
 | 상황 | 결과 |
@@ -487,7 +500,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 **P7 — UI**
 
 - [ ] Tutorial 상시 HUD 컨트롤러(가칭) — Steam: Invite 버튼만 / 로컬: 룸코드 표시만, 공통: 나가기 버튼. 게이트 통과 후 숨김 (§6B.5)
-- [ ] Gate 카운트다운 UI(`TimerUI`/`OnCountdownTick` 재사용)
+- [x] Gate 카운트다운 UI — **코드 완료 (2026-09-07), Tutorial 씬 인스펙터 연결은 사용자 작업.** `UI.prefab`의 `StartCountdown_Panel`(`StartCountdownUI`, `countdownText` 연결됨)을 그대로 재사용한다 — Tutorial/Interlude 두 씬 모두 이 프리팹 인스턴스를 이미 갖고 있어 UI 오브젝트 신규 배치는 불필요. 연결 대상 3개: `OnGateCountdownTick`(dynamic float) → `StartCountdownUI.SetRemaining`, `OnGateCountdownReset` → `Hide`, `OnGateCountdownComplete` → `Hide`. **Interlude는 이미 연결돼 있고, Tutorial만 미연결이었다.** 카운트다운 동기화 축은 아래 §6B.3 "게이트 카운트다운 동기화" 참고
 - [ ] Title: Steam 빌드에서 `OnClickJoinGame`/`joinPanel`/`roomCodeInputField`/`ConfirmJoinSteam` 경로 숨김/미사용 처리 (§5). **로컬 경로(`ConfirmJoinLocal`)는 그대로 유지**
 
 **P8 — Kick 제거 + 구 코드 삭제**

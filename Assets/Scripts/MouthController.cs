@@ -94,6 +94,12 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
 
     public bool IsAvailable => teamCheerHazard && _available;
 
+    /// <summary>
+    /// 팀 응원 창이 열려 있는지(Warning~Opening 전부 포함). 창 하나의 상태는 _phase가 SSOT라
+    /// 외부에서 IsAvailable(Warning~Hold) + IsBusy(Close~Open)를 직접 OR로 조합하지 않는다.
+    /// </summary>
+    public bool IsHazardWindowOpen => teamCheerHazard && _phase != HazardPhase.Idle;
+
     void Awake()
     {
         if (mouthAnimator == null)
@@ -252,52 +258,84 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
                 continue;
             }
 
+            yield return HazardWindowOnce();
+        }
+    }
+
+    /// <summary>
+    /// Warning → (외침 또는 타임아웃) → Close → Hold(외침까지) → Open → Idle. 창 1회분의
+    /// 본체 — HazardCycle(자동 반복)과 StartSingleHazardWindow(수동 단발, Tutorial 표지판 등)가
+    /// 공유한다.
+    /// </summary>
+    IEnumerator HazardWindowOnce()
+    {
+        _prevented = false;
+        _recoverQueued = false;
+        _phase = HazardPhase.Warning;
+        _available = true;
+        CheerService.Instance?.NotifyHazardWindow(true);
+
+        float warnElapsed = 0f;
+        float warn = Mathf.Max(0f, warnDuration);
+        while (warnElapsed < warn && !_prevented)
+        {
+            warnElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (_prevented)
+        {
             _prevented = false;
-            _recoverQueued = false;
-            _phase = HazardPhase.Warning;
-            _available = true;
-            CheerService.Instance?.NotifyHazardWindow(true);
+            _phase = HazardPhase.Idle;
+            TriggerIdle();
+            yield break;
+        }
 
-            float warnElapsed = 0f;
-            float warn = Mathf.Max(0f, warnDuration);
-            while (warnElapsed < warn && !_prevented)
-            {
-                warnElapsed += Time.deltaTime;
-                yield return null;
-            }
+        _phase = HazardPhase.Closing;
+        _isBusy = true;
+        TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
+        screenFader?.FadeOut(closeClipLength > 0f ? closeClipLength : 0f);
+        if (closeClipLength > 0f)
+            yield return new WaitForSeconds(closeClipLength);
 
-            if (_prevented)
-            {
-                _prevented = false;
-                _phase = HazardPhase.Idle;
-                TriggerIdle();
-                continue;
-            }
-
-            _phase = HazardPhase.Closing;
-            _isBusy = true;
-            TriggerSafe(closeTrigger, openTrigger, holdTrigger, idleTrigger);
-            screenFader?.FadeOut(closeClipLength > 0f ? closeClipLength : 0f);
-            if (closeClipLength > 0f)
-                yield return new WaitForSeconds(closeClipLength);
-
-            if (_recoverQueued)
-            {
-                _recoverQueued = false;
-                yield return OpenRoutine();
-                _phase = HazardPhase.Idle;
-                continue;
-            }
-
-            _phase = HazardPhase.Holding;
-            TriggerSafe(holdTrigger, closeTrigger, openTrigger, idleTrigger);
-            while (!_recoverQueued)
-                yield return null;
-
+        if (_recoverQueued)
+        {
             _recoverQueued = false;
             yield return OpenRoutine();
             _phase = HazardPhase.Idle;
+            yield break;
         }
+
+        _phase = HazardPhase.Holding;
+        TriggerSafe(holdTrigger, closeTrigger, openTrigger, idleTrigger);
+        while (!_recoverQueued)
+            yield return null;
+
+        _recoverQueued = false;
+        yield return OpenRoutine();
+        _phase = HazardPhase.Idle;
+    }
+
+    /// <summary>
+    /// 외부(Tutorial 팀 응원 연습 표지판 등)에서 팀 응원 창을 단발로 1회만 연다. HazardCycle의
+    /// 랜덤 자동 반복과 달리 이번 창이 끝나면 다시 열지 않고 Idle로 돌아가 다음 수동 호출을
+    /// 기다린다. teamCheerHazard=false거나 이미 창/사이클이 돌고 있으면 무시.
+    ///
+    /// 돌고 있는 사이클을 StopCoroutine으로 끊지 않는 것이 중요하다 — 자동 랜덤 사이클(StartCycle)을
+    /// 여기서 끊으면 그 함정은 이후 창을 영구히 열지 않는다. 수동 단발은 startOnAwake=false로
+    /// 자동 사이클을 끈 씬(Tutorial 연습용) 전용이다.
+    /// </summary>
+    public void StartSingleHazardWindow()
+    {
+        if (!teamCheerHazard || _cycleCoroutine != null || _phase != HazardPhase.Idle) return;
+        _cycleCoroutine = StartCoroutine(SingleHazardWindowRoutine());
+    }
+
+    // 끝나면 _cycleCoroutine을 비워 다음 수동 호출이 위 가드를 통과하게 한다.
+    IEnumerator SingleHazardWindowRoutine()
+    {
+        yield return HazardWindowOnce();
+        _cycleCoroutine = null;
     }
 
     /// <summary>
@@ -466,6 +504,9 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
 
     [ContextMenu("테스트: 사이클 시작")]
     void TestStartCycle() => StartCycle();
+
+    [ContextMenu("테스트: 팀 응원 창 1회")]
+    void TestSingleHazardWindow() => StartSingleHazardWindow();
 
     [ContextMenu("테스트: 사이클 중지")]
     void TestStopCycle() => StopCycle();

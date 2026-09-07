@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -385,11 +386,62 @@ public class ObjectiveUI : MonoBehaviour
             slot.titleText.text = FormatCountTimer(slot.stage5Captured, slot.stage5Required, slot.stage5Remaining);
     }
 
-    // ── 씬 전체 클리어 ───────────────────────────────────────────
+    // ── 씬 전체 클리어 (Client 레인 보정은 StageClearBannerUI와 동일 골격) ──
+
+    Coroutine _waitSceneClearSubscribe;
+
+    void OnEnable()  => TrySubscribeSceneClear();
+    void OnDisable() => UnsubscribeSceneClear();
+
+    /// <summary>
+    /// 인스펙터의 PhaseManager.onAllPhasesComplete → ShowSceneClear 연결은 Host 레인에서만
+    /// 발동한다(EnterPhaseOnClient는 onPhaseEnter만 재생). Client에서는 대신
+    /// StageNetworkState.OnAllPhasesCompleteClientPulse를 코드로 구독해 같은 문구를 띄운다 —
+    /// StageClearBannerUI가 OnAnyStageClearedPulse를 구독하는 것과 동일한 이유·패턴.
+    /// 펄스는 Client에서만 발동하므로 Host에서 ShowSceneClear가 두 번 불리지 않는다.
+    /// </summary>
+    void TrySubscribeSceneClear()
+    {
+        if (StageNetworkState.Instance != null)
+        {
+            SubscribeSceneClear();
+            return;
+        }
+        if (_waitSceneClearSubscribe != null) return;
+        _waitSceneClearSubscribe = StartCoroutine(WaitAndSubscribeSceneClear());
+    }
+
+    IEnumerator WaitAndSubscribeSceneClear()
+    {
+        while (StageNetworkState.Instance == null)
+            yield return null;
+        _waitSceneClearSubscribe = null;
+        if (isActiveAndEnabled) SubscribeSceneClear();
+    }
+
+    void SubscribeSceneClear()
+    {
+        var state = StageNetworkState.Instance;
+        if (state == null) return;
+        state.OnAllPhasesCompleteClientPulse -= ShowSceneClear;
+        state.OnAllPhasesCompleteClientPulse += ShowSceneClear;
+    }
+
+    void UnsubscribeSceneClear()
+    {
+        if (_waitSceneClearSubscribe != null)
+        {
+            StopCoroutine(_waitSceneClearSubscribe);
+            _waitSceneClearSubscribe = null;
+        }
+        if (StageNetworkState.Instance != null)
+            StageNetworkState.Instance.OnAllPhasesCompleteClientPulse -= ShowSceneClear;
+    }
 
     /// <summary>
     /// 씬 전체 클리어 시 Clear 문구 표시.
-    /// PhaseManager.onAllPhasesComplete 에 연결.
+    /// Host: PhaseManager.onAllPhasesComplete 인스펙터 연결.
+    /// Client: StageNetworkState.OnAllPhasesCompleteClientPulse 코드 구독(위 참고).
     /// </summary>
     public void ShowSceneClear()
     {

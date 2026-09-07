@@ -47,10 +47,20 @@ public class InterludeNetworkManager : NetworkBehaviour
     [Tooltip("카운트다운 완료 직후, T.Stage1 로드 직전에 발동.")]
     public UnityEvent OnGateCountdownComplete;
 
-    // ── 게이트 상태 (Host 전용) ──────────────────────────────────
+    // ── 게이트 상태 ───────────────────────────────────────────────
+    // _countdown은 Host 전용 로컬 카운터. _isCounting/_gateCompleted는 Host·Client 양쪽이 쓴다
+    // (한 머신은 Host이거나 Client이므로 두 경로가 같은 필드를 동시에 건드리는 일은 없다).
     bool  _gateCompleted;
     bool  _isCounting;
     float _countdown;
+
+    // ── 게이트 카운트다운 동기화 (Everyone-read/Server-write) ─────
+    // TutorialNetworkManager와 동일 버그 수정 — 이 NV 없이는 OnGateCountdownTick이 Host
+    // Update()에서만 Invoke돼 Client 화면엔 카운트다운이 절대 뜨지 않았다.
+    readonly NetworkVariable<bool> _isCountdownActive = new(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    readonly NetworkVariable<double> _countdownStartServerTime = new(
+        -1.0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -82,20 +92,23 @@ public class InterludeNetworkManager : NetworkBehaviour
     static bool IsInSceneSequence() =>
         SceneFlowManager.Instance != null && SceneFlowManager.Instance.CurrentSceneIndex >= 0;
 
-    // ── 사전 게이트 (Host 전용, TutorialNetworkManager.UpdateGate와 동일 원칙) ──
+    // ── 사전 게이트 (판정은 Host, 표시는 전 머신 — TutorialNetworkManager와 동일 원칙) ──
 
     void Update()
     {
         // IsSpawned 가드 — 미스폰 상태로 CompleteGate에 들어가면 세션 재확정 ClientRpc 2개가
         // 유실되어 Client만 옛 CheerName/TeamCheerWord를 들고 T.Stage1에 들어가는 조용한 desync가
         // 된다(CheerService.ApplyTeamBuff와 동일한 방어 패턴).
-        if (!IsSpawned || !IsHost || _gateCompleted) return;
-        UpdateGate();
+        if (!IsSpawned || _gateCompleted) return;
+
+        if (IsHost) UpdateGate();
+        else        UpdateGateOnClient();
     }
 
     /// <summary>
     /// 존 안 인원 == 세션 접속 인원(헤드카운트, 색 무관)이면 카운트다운 진행.
     /// 도중 인원이 안 맞게 되면 즉시 리셋 — TutorialNetworkManager.UpdateGate와 동일.
+    /// Host 전용 — _isCountdownActive/_countdownStartServerTime NV로 Client에 진행 상태를 알린다.
     /// </summary>
     void UpdateGate()
     {
@@ -115,6 +128,8 @@ public class InterludeNetworkManager : NetworkBehaviour
         {
             _isCounting = true;
             _countdown  = gateCountdownDuration;
+            _countdownStartServerTime.Value = NetworkManager.ServerTime.Time;
+            _isCountdownActive.Value = true;
             OnGateCountdownTick?.Invoke(_countdown);
         }
 
@@ -129,8 +144,33 @@ public class InterludeNetworkManager : NetworkBehaviour
     {
         _isCounting = false;
         _countdown  = gateCountdownDuration;
+        _isCountdownActive.Value = false;
         OnGateCountdownReset?.Invoke();
         OnGateCountdownTick?.Invoke(gateCountdownDuration);
+    }
+
+    /// <summary>
+    /// Client 전용: TutorialNetworkManager.UpdateGateOnClient와 동일 패턴 — NV를 ServerTime
+    /// 기준으로 역산해 Host와 동일한 OnGateCountdownTick/Reset을 로컬로 Invoke한다.
+    /// </summary>
+    void UpdateGateOnClient()
+    {
+        var nm = NetworkManager;
+        if (nm == null) return;
+
+        if (_isCountdownActive.Value)
+        {
+            float remaining = Mathf.Max(0f,
+                gateCountdownDuration - (float)(nm.ServerTime.Time - _countdownStartServerTime.Value));
+            _isCounting = true;
+            OnGateCountdownTick?.Invoke(remaining);
+        }
+        else if (_isCounting)
+        {
+            _isCounting = false;
+            OnGateCountdownReset?.Invoke();
+            OnGateCountdownTick?.Invoke(gateCountdownDuration);
+        }
     }
 
     /// <summary>
@@ -141,17 +181,29 @@ public class InterludeNetworkManager : NetworkBehaviour
     void CompleteGate()
     {
         if (_gateCompleted) return;
-        _gateCompleted = true;
 
-        // 오설정이면 진행하지 않는다 — 그대로 LoadNextScene()을 부르면 M.Stage1로 되돌아간다(Start 참고).
+        // 오설정이면 완료 플래그를 세우지 않고 카운트다운만 리셋한다(2026-09-07 리뷰 — 선택지 1).
+        // _gateCompleted를 여기서 세우면 Update()가 영구 정지해 Host는 멈추고, Complete
+        // ClientRpc가 안 나가 Client의 _gateCompleted는 false로 남는데 NV만 false가 되어
+        // "누가 존을 나간 것"처럼 타이머가 사라지고 재집결해도 다시 안 돈다. 완료 플래그를
+        // 세우지 않으면 Host UpdateGate()가 다음 all-in 판정에서 다시 카운트를 돌 수 있다
+        // (전원이 계속 존에 있으면 3초 주기로 이 LogError가 반복된다 — 오설정 디버깅 용도로는
+        // 감내 가능한 수준이라 별도 스로틀은 두지 않음).
         if (!IsInSceneSequence())
         {
             Debug.LogError("[InterludeNetworkManager] 게이트 완료 — 이 씬이 SceneFlowManager.sceneSequence에 " +
-                           "없어 다음 씬을 특정할 수 없습니다(그대로 진행하면 M.Stage1로 되돌아감). 씬 전환 중단.", this);
+                           "없어 다음 씬을 특정할 수 없습니다(그대로 진행하면 M.Stage1로 되돌아감). " +
+                           "완료 처리를 보류하고 카운트다운을 리셋합니다 — M.Boss와 T.Stage1 사이에 " +
+                           "\"Interlude\"를 sceneSequence에 삽입하세요.", this);
+            ResetGateCountdown();
             return;
         }
 
+        _gateCompleted = true;
+        _isCountdownActive.Value = false;
+
         OnGateCountdownComplete?.Invoke();
+        BroadcastGateCountdownCompleteClientRpc();
         Debug.Log("[InterludeNetworkManager] 게이트 통과 — T.Stage1 진입 처리 시작");
 
         // CheerName 2차 확정 — Tutorial CompleteGate와 완전히 동일한 헬퍼 재사용(§3.4 코드 변경 #3).
@@ -178,6 +230,18 @@ public class InterludeNetworkManager : NetworkBehaviour
             return;
         }
         SceneFlowManager.Instance.LoadNextScene();
+    }
+
+    /// <summary>
+    /// 게이트 완료를 모든 클라이언트에 보장 전달(TutorialNetworkManager.BroadcastGateCountdownCompleteClientRpc
+    /// 와 동일 패턴). _gateCompleted도 같이 세워 Client의 Update() 폴링을 멈춘다.
+    /// </summary>
+    [ClientRpc]
+    void BroadcastGateCountdownCompleteClientRpc()
+    {
+        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
+        _gateCompleted = true;
+        OnGateCountdownComplete?.Invoke();
     }
 
     /// <summary>세션 확정 CheerName을 모든 클라이언트의 GameSession에 배포(TutorialNetworkManager와 동일 패턴).</summary>

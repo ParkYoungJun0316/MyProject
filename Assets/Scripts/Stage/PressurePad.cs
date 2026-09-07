@@ -102,6 +102,30 @@ public class PressurePad : MonoBehaviour
             Evaluate();
     }
 
+    // 발판 위에 서 있는 동안 색이 바뀌는 경우(예: 검정 발판 위에서 흰→검 전환) 즉시 재판정.
+    // ColorTile.TryAddOccupant(OnTriggerStay 경유)와 동일 원칙 — Enter/Exit만으로는 색 전환을
+    // 못 잡아서 나갔다 들어와야만 인식되던 문제를 해결.
+    void OnTriggerStay(Collider other)
+    {
+        Player p = other.GetComponent<Player>();
+        if (p == null || p.IsDead) return;
+
+        bool allowedNow  = IsAllowed(p);
+        bool alreadyOn   = _players.Contains(p);
+
+        if (allowedNow && !alreadyOn)
+        {
+            _players.Add(p);
+            PlayPressSfx();
+            Evaluate();
+        }
+        else if (!allowedNow && alreadyOn)
+        {
+            _players.Remove(p);
+            Evaluate();
+        }
+    }
+
     // 죽은 플레이어를 매 프레임 정리
     void Update()
     {

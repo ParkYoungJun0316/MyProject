@@ -51,10 +51,24 @@ public class TutorialNetworkManager : NetworkBehaviour
 
     bool _isQuitting;
 
-    // ── 게이트 상태 (Host 전용) ──────────────────────────────────
+    // ── 게이트 상태 ───────────────────────────────────────────────
+    // _countdown은 Host 전용 로컬 카운터. _isCounting/_gateCompleted는 Host·Client 양쪽이 쓴다
+    // (한 머신은 Host이거나 Client이므로 두 경로가 같은 필드를 동시에 건드리는 일은 없다).
     bool  _gateCompleted;
     bool  _isCounting;
     float _countdown;
+
+    // ── 게이트 카운트다운 동기화 (Everyone-read/Server-write, §6B.3) ──
+    // [버그 수정] 예전엔 위 _isCounting/_countdown이 순수 로컬 필드라 OnGateCountdownTick 등
+    // UnityEvent가 Update() 안에서 Host 전용으로만 Invoke됐다 — Client 머신에서는 이 이벤트가
+    // 한 번도 발동하지 않아, 인스펙터로 UI를 연결해도 Client 화면엔 절대 타이머가 뜰 수 없었다.
+    // StageStartGate/StageNetworkState(_isCountdownActive/_countdownStartServerTime)와 동일한
+    // "Host가 시작 서버시각만 NV로 기록 → Client가 ServerTime 역산으로 로컬 Invoke" 패턴을
+    // 그대로 재사용한다.
+    readonly NetworkVariable<bool> _isCountdownActive = new(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    readonly NetworkVariable<double> _countdownStartServerTime = new(
+        -1.0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // ── 스테이지 바로가기 (구 LobbyMenuController 스테이지 드롭다운 대체) ──
     // 2026-08-22 확정: Dev Build 여부와 무관하게 모든 빌드(Release 포함)에서 항상 사용 가능
@@ -173,17 +187,26 @@ public class TutorialNetworkManager : NetworkBehaviour
         TutorialGatherZone.Instance?.RemoveOccupant(clientId);
     }
 
-    // ── 사전 게이트 (§6B.3, Host 전용) ────────────────────────────
+    // ── 사전 게이트 (§6B.3 — 판정은 Host, 표시는 전 머신) ─────────
 
     void Update()
     {
-        if (!IsHost || _gateCompleted) return;
-        UpdateGate();
+        // IsSpawned 가드 — 미스폰 상태로 CompleteGate에 들어가면 세션 확정 ClientRpc(시드·세션시각·
+        // CheerName·TeamCheerWord·DisplayName·VoiceId)가 전부 유실되어 Client만 옛 값을 들고
+        // M.Stage1에 들어가는 조용한 desync가 된다(InterludeNetworkManager와 동일 방어).
+        // PlayerSpawnCoordinator는 DDoL이라 이전 세션 잔재가 남으면 EntryCount > 0으로 씬에
+        // 들어올 수 있어, "스폰 전엔 헤드카운트가 0"이라는 암묵 전제에만 의존하지 않는다.
+        if (!IsSpawned || _gateCompleted) return;
+
+        if (IsHost) UpdateGate();
+        else        UpdateGateOnClient();
     }
 
     /// <summary>
     /// 존 안 인원 == 접속 인원(헤드카운트, 색 무관)이면 카운트다운 진행.
     /// 도중 인원이 안 맞게 되면(이탈/미충족) 즉시 리셋 — StageStartGate와 동일 원칙.
+    /// Host 전용 — 판정은 여기서만 하고, _isCountdownActive/_countdownStartServerTime NV로
+    /// Client에 진행 상태를 원자적으로 알린다(§6B.3).
     /// </summary>
     void UpdateGate()
     {
@@ -203,6 +226,8 @@ public class TutorialNetworkManager : NetworkBehaviour
         {
             _isCounting = true;
             _countdown  = gateCountdownDuration;
+            _countdownStartServerTime.Value = NetworkManager.ServerTime.Time;
+            _isCountdownActive.Value = true;
             OnGateCountdownTick?.Invoke(_countdown);
         }
 
@@ -217,8 +242,35 @@ public class TutorialNetworkManager : NetworkBehaviour
     {
         _isCounting = false;
         _countdown  = gateCountdownDuration;
+        _isCountdownActive.Value = false;
         OnGateCountdownReset?.Invoke();
         OnGateCountdownTick?.Invoke(gateCountdownDuration);
+    }
+
+    /// <summary>
+    /// Client 전용: _isCountdownActive/_countdownStartServerTime NV를 읽어 ServerTime 기준으로
+    /// 남은 시간을 역산하고, Host와 동일한 OnGateCountdownTick/Reset을 로컬로 Invoke한다
+    /// (StageStartGate.UpdateCountdownOnClient와 동일 패턴). 게이트 완료는
+    /// BroadcastGateCountdownCompleteClientRpc가 보장 전달하므로 여기서는 다루지 않는다.
+    /// </summary>
+    void UpdateGateOnClient()
+    {
+        var nm = NetworkManager;
+        if (nm == null) return;
+
+        if (_isCountdownActive.Value)
+        {
+            float remaining = Mathf.Max(0f,
+                gateCountdownDuration - (float)(nm.ServerTime.Time - _countdownStartServerTime.Value));
+            _isCounting = true;
+            OnGateCountdownTick?.Invoke(remaining);
+        }
+        else if (_isCounting)
+        {
+            _isCounting = false;
+            OnGateCountdownReset?.Invoke();
+            OnGateCountdownTick?.Invoke(gateCountdownDuration);
+        }
     }
 
     /// <summary>
@@ -231,8 +283,10 @@ public class TutorialNetworkManager : NetworkBehaviour
     {
         if (_gateCompleted) return;
         _gateCompleted = true;
+        _isCountdownActive.Value = false;
 
         OnGateCountdownComplete?.Invoke();
+        BroadcastGateCountdownCompleteClientRpc();
         Debug.Log("[TutorialNetworkManager] 게이트 통과 — M.Stage1 진입 처리 시작");
 
         var clientColorDict = new Dictionary<ulong, PlayerColorType>();
@@ -317,6 +371,20 @@ public class TutorialNetworkManager : NetworkBehaviour
             return;
         }
         SceneFlowManager.Instance.LoadNextScene();
+    }
+
+    /// <summary>
+    /// 게이트 완료를 모든 클라이언트에 보장 전달(§6B.3 버그 수정). NV 폴링(UpdateGateOnClient)은
+    /// "카운트다운 진행 중" 표시에는 충분하지만, 완료 자체는 NotifyStageClearedClientRpc/
+    /// NotifyChallengeClearedClientRpc와 동일하게 1회성 이벤트라 RPC로 보장 전달해야 한다 —
+    /// _gateCompleted도 여기서 같이 세워 Client의 Update() 폴링을 멈춘다.
+    /// </summary>
+    [ClientRpc]
+    void BroadcastGateCountdownCompleteClientRpc()
+    {
+        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
+        _gateCompleted = true;
+        OnGateCountdownComplete?.Invoke();
     }
 
     /// <summary>시드를 모든 클라이언트에 배포.</summary>

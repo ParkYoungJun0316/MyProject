@@ -69,6 +69,10 @@ public class TutorialCheerNameSignboard : MonoBehaviour
         // 닫기는 Esc/확정 성공/닫기 버튼이 이미 담당하므로 여기서 막아도 닫을 방법이 없어지지 않는다.
         if (isOpen) return;
 
+        // 채팅 입력창도 같은 이유로 양보한다 — 채팅에 'e'가 든 단어를 치면 이 표지판이 그 입력을
+        // 상호작용으로 오인해 이름 패널을 열어버린다(CheerDigitInput·MicMuteHotkeyUI와 동일 게이팅).
+        if (InGameChatUI.IsChatOpen) return;
+
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             cheerNameUI.Toggle();
     }
