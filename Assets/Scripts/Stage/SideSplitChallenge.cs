@@ -496,8 +496,11 @@ public class SideSplitChallenge : MonoBehaviour
             }
         }
 
-        // Host는 방금 직접 호출했으니 Client에만 같은 연출을 전파 (RPC 내부에서 IsServer 스킵)
-        _netState?.NotifyChallengeOutcomeClientRpc(success);
+        // Host는 방금 직접 호출했으니 Client에만 같은 연출을 전파 (RPC 내부에서 IsServer 스킵).
+        // 송신은 캐시(_netState)가 아니라 Instance로 — 캐시는 Despawn 이후에도 살아있어 씬 언로드·사망
+        // 리로드 구간에서 낡은 NetworkObjectId로 메시지가 나간다(수신 측 라우팅 실패 → purge 경고).
+        // Instance는 OnNetworkDespawn에서 null이 되므로 `?.`가 그 창구를 닫는다.
+        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(success);
 
         // 결과와 관계없이 다음 라운드로 진행.
         // 단, 전원 사망이면 §11 사망 문(전원 씬 리로드)으로 넘어가므로 여기서 추가 진행 불필요.

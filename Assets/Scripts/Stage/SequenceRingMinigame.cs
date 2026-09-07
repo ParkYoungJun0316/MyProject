@@ -506,7 +506,11 @@ public class SequenceRingMinigame : MonoBehaviour
         if (_timeSyncTimer <= 0f)
         {
             _timeSyncTimer = TimeSyncInterval;
-            _netState?.SyncChallengeTimeClientRpc(Mathf.Max(0f, _timeRemaining));
+            // Rpc 송신은 캐시(_netState)가 아니라 Instance로 — 캐시는 Despawn 이후에도 살아있어 씬
+            // 언로드·사망 리로드 구간에서 낡은 NetworkObjectId로 메시지가 나간다(수신 측 라우팅 실패 →
+            // purge 경고). 주기 송신인 이 경로가 그 창구에 가장 오래 노출된다. Instance는
+            // OnNetworkDespawn에서 null이 되므로 `?.`가 창구를 닫는다.
+            StageNetworkState.Instance?.SyncChallengeTimeClientRpc(Mathf.Max(0f, _timeRemaining));
         }
 
         if (_timeRemaining <= 0f)
@@ -604,7 +608,7 @@ public class SequenceRingMinigame : MonoBehaviour
     void FailMinigame()
     {
         HandleFailedOutcome();
-        _netState?.NotifyChallengeOutcomeClientRpc(false);
+        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(false); // Instance 송신 이유는 UpdateTimer() 주석
     }
 
     void BroadcastTime()

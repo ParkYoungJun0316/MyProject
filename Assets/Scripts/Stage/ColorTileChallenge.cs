@@ -222,7 +222,11 @@ public class ColorTileChallenge : MonoBehaviour
         ClearTiles();
 
         if (!wasRunning) return;
-        _netState?.NotifyChallengeOutcomeClientRpc(false, challengeInstanceId);
+        // Rpc 송신은 캐시(_netState)가 아니라 Instance로 보낸다 — 캐시는 Despawn 이후에도 살아있어
+        // 씬 언로드·사망 리로드 구간에서 낡은 NetworkObjectId로 메시지가 나가고, 수신 측이 라우팅에
+        // 실패해 지연 처리 후 purge 경고가 뜬다. Instance는 OnNetworkDespawn에서 null이 되므로
+        // `?.`가 그 창구를 닫는다(NV 쓰기는 StageNetworkState 내부 IsDespawned 가드가 담당).
+        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(false, challengeInstanceId);
         _netState?.ResetChallengeStep();
     }
 
@@ -292,7 +296,7 @@ public class ColorTileChallenge : MonoBehaviour
     {
         _judgeCoroutine = null;
         HandleChallengeOutcome(success, challengeInstanceId);
-        _netState?.NotifyChallengeOutcomeClientRpc(success, challengeInstanceId);
+        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(success, challengeInstanceId); // Instance 송신 이유는 Cancel() 주석
 
         if (!success) return;
 

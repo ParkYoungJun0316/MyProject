@@ -433,8 +433,27 @@ public class StageNetworkState : NetworkBehaviour
         Instance = this;
     }
 
+    // ── 쓰기 가드 (프리스폰 vs Despawn 구분) ──────────────────────
+    //
+    // [!IsSpawned 하나로 뭉뚱그리면 안 되는 이유]
+    // · 프리스폰 쓰기는 **정상 경로**다 — 스폰 전에 NV/NetworkList에 넣은 값은 NGO가 스폰
+    //   페이로드에 실어 Client에 그대로 전달한다. InitDoorSlots/InitPioneerTiles처럼 초기
+    //   셋업에서 슬롯을 채우는 호출이 여기 해당하므로, !IsSpawned로 막으면 그 초기화가 조용히
+    //   사라져 Client가 빈 슬롯으로 시작한다.
+    // · Despawn 이후 쓰기는 **버그**다 — 값이 로컬에만 적용되고(Host에서 OnValueChanged까지
+    //   발동) 전송은 안 돼 Host/Client가 조용히 갈라지며, NGO는 "written to during/after
+    //   shutdown" 경고를 남긴다.
+    // · Instance는 OnNetworkDespawn에서 null이 되지만 호출부 다수가 `_netState`로 참조를
+    //   캐시하므로(FloorManager·PioneerPathManager·챌린지들·StagePressurePadSetup 등)
+    //   Instance null 처리만으로는 이 창구가 막히지 않는다 — 그래서 여기서 막는다.
+    //
+    // NV 쓰기 → IsDespawned로 막고, Rpc 송신 → 스폰이 전제라 !IsSpawned로 막는다.
+    bool _wasSpawned;
+    bool IsDespawned => _wasSpawned && !IsSpawned;
+
     public override void OnNetworkSpawn()
     {
+        _wasSpawned = true;
         _phaseStartSignal.OnValueChanged += OnPhaseChanged;
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
@@ -724,7 +743,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 전원 점유 → 카운트다운 시작 시각을 ServerTime으로 기록.</summary>
     public void MarkCountdownStart()
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _countdownStartServerTime.Value = NetworkManager.Singleton.ServerTime.Time;
         _isCountdownActive.Value = true;
     }
@@ -732,7 +751,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 이탈로 카운트다운 리셋 시 호출.</summary>
     public void MarkCountdownReset()
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _isCountdownActive.Value = false;
     }
 
@@ -745,7 +764,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void MarkStageStart(int gateId)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _stageStartSignal.Value  = new StageStartSignal { serverTime = NetworkManager.Singleton.ServerTime.Time, gateId = gateId };
         _isCountdownActive.Value = false;
     }
@@ -765,7 +784,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void MarkAndSyncPhase(int phaseIndex)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _phaseStartSignal.Value = new PhaseStartSignal
         {
             phaseIndex = phaseIndex,
@@ -787,7 +806,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 보스 페이즈 클리어 수 갱신. BossFightObjective.NotifyPhaseCleared()에서 호출.</summary>
     public void SetBossPhasesCleared(int cleared)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _bossPhasesCleared.Value = cleared;
     }
 
@@ -802,7 +821,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void InitDoorSlots(int count)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _doorOpenStates.Clear();
         for (int i = 0; i < count; i++)
             _doorOpenStates.Add(false);
@@ -811,7 +830,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 문 index의 개폐 상태 갱신. DoorController.OnOpened/OnClosed에서 호출.</summary>
     public void SetDoorOpen(int index, bool isOpen)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         if (index < 0 || index >= _doorOpenStates.Count) return;
         if (_doorOpenStates[index] == isOpen) return;
         _doorOpenStates[index] = isOpen;
@@ -838,7 +857,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void InitPioneerTiles(int count)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _pioneerTileUnlocked.Clear();
         for (int i = 0; i < count; i++)
             _pioneerTileUnlocked.Add(false);
@@ -847,7 +866,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: index 타일 해금 확정. PioneerPathTile.OnCollisionEnter에서 호출(비-Host 호출은 no-op).</summary>
     public void SetPioneerTileUnlocked(int index)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         if (index < 0 || index >= _pioneerTileUnlocked.Count) return;
         if (_pioneerTileUnlocked[index]) return;
         _pioneerTileUnlocked[index] = true;
@@ -870,7 +889,7 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 클리어된 구역 수 갱신. MemoryRoundObjective.HandleClear()에서 호출.</summary>
     public void SetMemorySectionsCleared(int cleared)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _memorySectionsCleared.Value = cleared;
     }
 
@@ -887,7 +906,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ChallengeStart(int seed, ChallengeOwnerType owner, int instanceId = 0)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _challengeStep.Value    = new ChallengeStepState { seed = seed, stepIndex = -1, stepStartServerTime = -1.0, owner = owner, instanceId = instanceId };
         _challengeCleared.Value = false;
     }
@@ -906,7 +925,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ChallengeStepBegin(int stepIndex, int seed)
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _challengeStep.Value = new ChallengeStepState
         {
             seed                 = seed,
@@ -927,7 +946,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void ResetChallengeStep()
     {
-        if (!IsServer || !IsSpawned) return;
+        if (!IsServer || IsDespawned) return;
         _challengeStep.Value = new ChallengeStepState
         {
             seed                 = _challengeStep.Value.seed,
@@ -1056,7 +1075,7 @@ public class StageNetworkState : NetworkBehaviour
     /// </summary>
     public void FloorRoll(int seed, float keepBWRatio)
     {
-        if (!IsServer) return;
+        if (!IsServer || IsDespawned) return;
         _floorRoll.Value = new FloorRollState { seed = seed, keepBWRatio = keepBWRatio };
     }
 
@@ -1077,12 +1096,18 @@ public class StageNetworkState : NetworkBehaviour
     /// 책임이므로 호출부(SequenceRingMinigame)는 이 메서드만 쓰고 RPC를 직접 부르지 않는다 —
     /// 번호를 링마다 따로 세면 Phase 전환으로 링이 바뀔 때 번호가 되돌아가 전부 중복 처리된다.
     /// </summary>
-    public void SubmitChallengeStep(PlayerColorType color) =>
+    public void SubmitChallengeStep(PlayerColorType color)
+    {
+        if (!IsSpawned) return; // Despawn 이후 입력은 제출 번호도 소비하지 않는다(중복 판정 방지)
         SubmitStepServerRpc(color, _challengeSubmitDedup.NextSeq());
+    }
 
     /// <summary>Client: Common/Danger 스텝 등 색 구분 없는 "아무 키" 제출.</summary>
-    public void SubmitChallengeAnyKeyStep() =>
+    public void SubmitChallengeAnyKeyStep()
+    {
+        if (!IsSpawned) return;
         SubmitAnyKeyStepServerRpc(_challengeSubmitDedup.NextSeq());
+    }
 
     /// <summary>
     /// Host만 위치·색 등 실제 상태를 갖고 있는 포지션 판정형과 달리, 키 입력형은 "누가 눌렀는가"

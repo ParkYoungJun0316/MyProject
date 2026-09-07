@@ -320,7 +320,10 @@ public class GridBWTileChallenge : MonoBehaviour
         ApplyIndividualDamage(alive);
 
         HandleRoundOutcome(round, roundSuccess);
-        _netState?.NotifyChallengeOutcomeClientRpc(roundSuccess);
+        // Rpc 송신은 캐시(_netState)가 아니라 Instance로 — 캐시는 Despawn 이후에도 살아있어 씬 언로드·
+        // 사망 리로드 구간에서 낡은 NetworkObjectId로 메시지가 나간다(수신 측 라우팅 실패 → purge 경고).
+        // Instance는 OnNetworkDespawn에서 null이 되므로 `?.`가 그 창구를 닫는다.
+        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(roundSuccess);
 
         if (round < totalRounds - 1)
         {
