@@ -225,6 +225,7 @@ public class ArrowTrap : TrapBase
     /// </summary>
     public void FireOnce()
     {
+        if (isFrozen) return; // 스테이지 클리어 정지 — isRunning은 이 경로에서 항상 false라 가드가 안 됨
         if (isRunning) return;
         StartCoroutine(FireOnceRoutine());
     }

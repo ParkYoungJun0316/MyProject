@@ -35,6 +35,7 @@ public class CeilingTrap : MonoBehaviour
     [SerializeField] float cooldown = 5f;
 
     float _cooldownRemaining;
+    bool  _stopped;
 
     Player[] _cachedPlayers;
     int      _playerLayerId;
@@ -51,6 +52,8 @@ public class CeilingTrap : MonoBehaviour
 
     void Update()
     {
+        if (_stopped) return;
+
         if (_cooldownRemaining > 0f)
         {
             _cooldownRemaining -= Time.deltaTime;
@@ -87,6 +90,13 @@ public class CeilingTrap : MonoBehaviour
 
     /// <summary>플레이어가 씬에 추가/리스폰된 후 캐시 갱신.</summary>
     public void RefreshPlayerCache() => CachePlayers();
+
+    /// <summary>
+    /// 스테이지 클리어 정지 — 감지·발동을 멈춘다. 이 함정은 TrapBase를 상속하지 않고 Update에서
+    /// 직접 감지하므로 다른 정지 경로(Deactivate/StopCycle)에 걸리지 않는다(2026-09-08 리뷰).
+    /// 이미 내려오는 중인 천장은 WallMover의 자동 복귀에 맡긴다(하드컷 정책).
+    /// </summary>
+    public void StopTrap() => _stopped = true;
 
     void CachePlayers()
     {

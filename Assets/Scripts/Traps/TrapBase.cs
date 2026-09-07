@@ -19,6 +19,15 @@ public abstract class TrapBase : MonoBehaviour
     [SerializeField] protected bool startActive = true;
 
     protected bool isRunning;
+
+    // 스테이지 클리어로 "이 씬은 끝났다"가 확정된 상태. isRunning과 별개로 둬야 하는 이유:
+    // 감독 컴포넌트(ArrowIncomingDirector / TrapPlayerTracker)가 붙는 레인은 startActive=false로
+    // 자체 루프를 꺼두기 때문에 isRunning이 애초에 항상 false다 — 그래서 ArrowTrap.FireOnce()의
+    // `if (isRunning) return;` 류 가드로는 Deactivate 이후의 단발 발사를 막을 수 없었다
+    // (2026-09-08 리뷰: 클리어 후에도 화살·낙하물이 계속 나오던 원인).
+    // Activate()가 해제하므로 Phase 재활성화 흐름에는 영향 없다.
+    protected bool isFrozen;
+
     Coroutine trapCoroutine;
     Coroutine fireCoroutine;
 
@@ -74,9 +83,22 @@ public abstract class TrapBase : MonoBehaviour
     /// <summary>함정 활성화. 이미 실행 중이면 무시.</summary>
     public void Activate()
     {
+        isFrozen = false;
         if (isRunning) return;
         isRunning = true;
         trapCoroutine = StartCoroutine(TrapLoop());
+    }
+
+    /// <summary>
+    /// 스테이지 클리어 정지. Deactivate()에 더해 이후 도착하는 단발 발사 요청
+    /// (ArrowTrap.FireOnce / DropTrap.FireAt)까지 차단한다 — 감독 컴포넌트의 루프를 세우는 것과
+    /// 별개로, 이미 큐에 걸린 마지막 호출이 새 투사체를 스폰하는 것을 막는 안전장치.
+    /// SceneFlowManager.FreezeAllHazardsNow()에서만 호출한다 (Phase 전환용 정지는 Deactivate()).
+    /// </summary>
+    public void Freeze()
+    {
+        isFrozen = true;
+        Deactivate();
     }
 
     /// <summary>함정 비활성화. 이 인스턴스의 모든 코루틴(TrapLoop, FireWithCharge, DropCycle 등)을 즉시 중단.</summary>

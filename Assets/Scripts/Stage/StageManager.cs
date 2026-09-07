@@ -166,23 +166,10 @@ public class StageManager : MonoBehaviour
     /// <summary>
     /// 씬에 날아다니는 TrapProjectile 전부 즉시 파괴.
     /// 스테이지 클리어 시 자동 호출. 외부에서도 직접 호출 가능.
+    /// 실제 순회는 TrapProjectile.DespawnAllOnServer()가 단독으로 소유한다(Host 가드도 그쪽) —
+    /// SceneFlowManager.FreezeAllHazardsNow()와 같은 코드를 두 벌 들고 있지 않기 위함.
     /// </summary>
-    public void DestroyAllProjectiles()
-    {
-        var  nm         = NetworkManager.Singleton;
-        bool isNetworked = nm != null && nm.IsListening;
-
-        // 온라인: Host만 Despawn (NGO가 전원에 자동 전파)
-        if (isNetworked && !nm.IsServer) return;
-
-        TrapProjectile[] projectiles = FindObjectsByType<TrapProjectile>(FindObjectsSortMode.None);
-        foreach (TrapProjectile p in projectiles)
-        {
-            if (p == null) continue;
-            var netObj = p.GetComponent<NetworkObject>();
-            if (netObj != null && netObj.IsSpawned) netObj.Despawn(true);
-        }
-    }
+    public void DestroyAllProjectiles() => TrapProjectile.DespawnAllOnServer();
 
     // ── 에디터 지원 ──────────────────────────────────────────────
     [ContextMenu("테스트: 스테이지 시작")]

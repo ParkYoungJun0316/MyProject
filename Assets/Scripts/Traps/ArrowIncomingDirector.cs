@@ -62,7 +62,15 @@ public class ArrowIncomingDirector : MonoBehaviour
         _loop = StartCoroutine(WaitForStageStartThenDirect());
     }
 
-    void OnDisable()
+    void OnDisable() => StopDirecting();
+
+    /// <summary>
+    /// 스테이지 클리어 정지 — 감독 루프를 멈춘다. 이 감독이 TrapBase를 상속하지 않아
+    /// SceneFlowManager.FreezeAllHazardsNow()의 TrapBase 순회에 잡히지 않으므로, 여기를 따로
+    /// 멈추지 않으면 레인 트랩을 정지시켜도 감독이 계속 FireOnce()를 불러 화살이 나온다
+    /// (2026-09-08 리뷰).
+    /// </summary>
+    public void StopDirecting()
     {
         if (_loop != null) StopCoroutine(_loop);
         _loop = null;

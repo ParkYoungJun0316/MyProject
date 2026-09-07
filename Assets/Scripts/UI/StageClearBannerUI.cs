@@ -15,7 +15,7 @@ public class StageClearBannerUI : MonoBehaviour
 {
     [Header("타이밍(초)")]
     [SerializeField] float fadeInDuration  = 0.12f;
-    [SerializeField] float holdDuration    = 1.6f;
+    [SerializeField] float holdDuration    = 2f;
     [SerializeField] float fadeOutDuration = 0.25f;
     [SerializeField] float punchScale      = 1.12f;
 

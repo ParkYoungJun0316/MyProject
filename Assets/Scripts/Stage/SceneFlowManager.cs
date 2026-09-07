@@ -19,6 +19,13 @@ using UnityEngine.SceneManagement;
 ///   → SceneFlowRelay.LoadNextScene (씬 배치) → 여기 LoadNextScene
 /// DDOL이라 씬 Inspector에서 직접 연결 불가 — 반드시 Relay 경유.
 ///
+/// [클리어 → 정지 → 배너 → 전환 (2026-09-08)]
+/// LoadNextScene() 진입 즉시 FreezeAllHazardsNow()로 씬의 모든 함정·팀응원 함정을 정지시키고
+/// (이 머신은 로컬 직접 호출 + StageNetworkState.BroadcastStageClearFreezeToClients()로 나머지
+/// 머신에 전파 → 전원 동일 프레임 근처에 정지), clearToTransitionDelay(기본 2.5초,
+/// StageClearBannerUI 총 재생시간과 맞춤)만큼 대기한 뒤에야 암전을 시작한다. 중간 Phase 클리어(OnAnyStageClearedPulse)는 이 정지 대상이 아니다 —
+/// 오직 "다음 씬으로 넘어가는" 이 진입점에서만 씬 전체를 멈춘다.
+///
 /// [사망·Reset 리로드]
 /// 사망·ESC Reset 모두 StageNetworkState.NotifyPlayerDeathServerRpc 담당 (§11.1).
 /// 이 클래스는 클리어 → 다음 씬 전환만 처리한다.
@@ -30,6 +37,13 @@ public class SceneFlowManager : MonoBehaviour
     [Header("씬 순서")]
     [Tooltip("순서대로 진행할 씬 이름. Build Settings 등록 이름과 정확히 일치해야 함.")]
     [SerializeField] private string[] sceneSequence;
+
+    [Header("클리어 → 전환 텀")]
+    [Tooltip("함정 정지(FreezeAllHazardsNow) 이후 암전 시작까지 대기할 시간(초).\n" +
+             "StageClearBannerUI 총 재생시간(fadeIn 0.12 + scale 0.1 + hold 2.0 + fadeOut 0.25 ≈ 2.5초) " +
+             "이상으로 잡아야 배너가 암전에 잘리지 않는다 — 배너 타이밍을 바꾸면 이 값도 같이 맞출 것.\n" +
+             "LoadSceneByIndex(스테이지 선택 등 직접 이동)에는 적용되지 않고 LoadNextScene에만 적용됨.")]
+    [SerializeField] private float clearToTransitionDelay = 2.5f;
 
     [Header("런타임 상태 (읽기 전용)")]
     [SerializeField] private int _currentSceneIndex = -1;
@@ -132,7 +146,80 @@ public class SceneFlowManager : MonoBehaviour
         }
 
         MarkCurrentCleared();
-        StartCoroutine(TransitionTo(sceneSequence[nextIndex]));
+
+        // 함정 정지는 배너/전환 대기보다 먼저 — 클리어 나오는 순간 즉시 멈춰야 한다(2026-09-08).
+        // [순서 주의] 이 머신(Host) 정지는 항상 로컬에서 직접 하고, RPC는 "전파"만 맡는다.
+        // 예전엔 StageNetworkState 경유 한 줄로만 처리했는데, 그쪽 !IsSpawned 가드에 걸리면
+        // Host 정지까지 통째로 스킵되는 구멍이 있었다(2026-09-08 리뷰).
+        FreezeAllHazardsNow();
+        StageNetworkState.Instance?.BroadcastStageClearFreezeToClients();
+
+        // _isTransitioning은 TransitionTo가 첫 yield 전에 세운다(StartCoroutine은 첫 yield까지
+        // 동기 실행) — 여기서 따로 세우지 않아도 재진입 가드가 같은 프레임부터 유효하다.
+        StartCoroutine(TransitionTo(sceneSequence[nextIndex], clearToTransitionDelay));
+    }
+
+    /// <summary>
+    /// 씬에 남아있는 모든 위협을 즉시 정지한다 — 자체 스케줄 트랩(TrapBase), 발사 감독
+    /// (ArrowIncomingDirector/TrapPlayerTracker), Update 감지형(CeilingTrap), 밀어내는 복도
+    /// (MovingCorridor), 추격자(Stage5ChaserAI), 팀응원 함정(Mouth/Tongue/Saliva/Esophagus).
+    /// 어느 머신에서 호출되든 로컬로 안전 — 전부 로컬 상태 변경이고, TrapProjectile Despawn만
+    /// Host 전용으로 가드된다.
+    ///
+    /// [범위: 씬 전체(2026-09-08 확정)] 클리어된 방의 등록 트랩만이 아니라 씬에 남은 전부를 멈춘다 —
+    /// 다음 씬으로 넘어가는 순간이므로 어차피 씬을 나가는 마당에 다른 방 함정이 계속 도는 것도
+    /// 보이면 안 된다는 전제. StageManager별 등록 목록(_registeredTraps) 대신 FindObjectsByType으로
+    /// 직접 찾는 이유가 이것 — 여러 StageManager(방)가 있어도 전부 커버됨.
+    ///
+    /// [정지 방식: 하드컷(2026-09-08 확정)] 충전/공격 애니메이션 중간이어도 그대로 끊는다.
+    /// StopCycle() 쪽(Mouth/Tongue/Saliva/EsophagusSqueeze/EsophagusFog)은 이미 자체적으로
+    /// Idle 트리거 + 상태 복구까지 해주므로 하드컷이어도 어중간한 모습으로 남지 않는다.
+    /// ArrowTrap/DropTrap 쪽은 충전 애니메이션이 마침 중간이면 열린 채로 잠깐 남을 수 있으나,
+    /// 곧 씬이 전환되므로 허용(사용자 확인 완료).
+    /// </summary>
+    public void FreezeAllHazardsNow()
+    {
+        // 자체 스케줄 트랩 — Freeze()는 Deactivate() + 이후 단발 발사(FireOnce/FireAt) 차단.
+        foreach (var trap in FindObjectsByType<TrapBase>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            trap.Freeze();
+
+        // 발사를 "지시"하는 감독들 — TrapBase를 상속하지 않아 위 순회에 안 잡힌다. 이걸 안 멈추면
+        // 트랩을 정지시켜도 감독이 계속 FireOnce()/FireAt()을 불러 화살·낙하물이 계속 나왔다
+        // (2026-09-08 리뷰에서 발견 — arrowtrap/droptrap이 안 멈추던 실제 원인).
+        foreach (var director in FindObjectsByType<ArrowIncomingDirector>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            director.StopDirecting();
+        foreach (var tracker in FindObjectsByType<TrapPlayerTracker>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            tracker.StopTracking();
+
+        // Update에서 직접 감지·발동하는 함정 — 위 두 경로 어디에도 안 걸린다.
+        foreach (var ceiling in FindObjectsByType<CeilingTrap>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            ceiling.StopTrap();
+
+        // 밀어내는 복도 — Activate() 이후 별도 정지 호출이 씬에 전혀 없어 끝까지 계속 미는 설계
+        // (T.Stage4). 클리어 후에도 Kinematic Rigidbody로 계속 밀면 배너 보는 동안 플레이어가
+        // 밀려난다(2026-09-08 조사에서 발견).
+        foreach (var corridor in FindObjectsByType<MovingCorridor>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            corridor.Deactivate();
+
+        // 추격자 — Host 전권 시뮬이지만 Deactivate()는 전 머신 안전(Client는 애님/사운드만 정지).
+        // 클리어 후에도 계속 쫓아와 사람을 죽이면 아래 씬 전환과 사망 리로드가 경합한다.
+        foreach (var chaser in FindObjectsByType<Stage5ChaserAI>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            chaser.Deactivate();
+
+        // 팀 응원 함정 — StopCycle()이 Idle 트리거·깨진 타일·안개·암전 복구까지 같이 해준다.
+        foreach (var m in FindObjectsByType<MouthController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            m.StopCycle();
+        foreach (var t in FindObjectsByType<TongueController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            t.StopCycle();
+        foreach (var s in FindObjectsByType<SalivaHazard>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            s.StopCycle();
+        foreach (var e in FindObjectsByType<EsophagusSqueeze>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            e.StopCycle();
+        foreach (var f in FindObjectsByType<EsophagusFog>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            f.StopCycle();
+
+        // 이미 날아가는 투사체 정리 — Host 가드는 이 메서드 내부에 있다(SSOT: TrapProjectile).
+        TrapProjectile.DespawnAllOnServer();
     }
 
     /// <summary>
@@ -197,9 +284,17 @@ public class SceneFlowManager : MonoBehaviour
         _stageStates[_currentSceneIndex] = StageProgressState.Cleared;
     }
 
-    IEnumerator TransitionTo(string sceneName)
+    IEnumerator TransitionTo(string sceneName, float preDelay = 0f)
     {
         _isTransitioning = true;
+
+        // 배너/함정 정지 상태를 보여줄 시간을 벌기 위한 대기(LoadNextScene 경로만 preDelay > 0).
+        // Host에서만 도는 코루틴이지만 실제 씬 로드(nm.SceneManager.LoadScene)는 이 대기 뒤에
+        // 호출되므로 Client도 같이 늦춰짐 — 별도 RPC 없이 전원 동일하게 지연됨.
+        // Realtime을 쓰는 이유는 LoadingCurtain과 같다 — timeScale=0(스크린샷 일시정지 F8 등)에
+        // 걸리면 전환이 영구히 멈춰버린다.
+        if (preDelay > 0f)
+            yield return new WaitForSecondsRealtime(preDelay);
 
         if (LoadingCurtain.Instance != null)
             yield return StartCoroutine(LoadingCurtain.Instance.BeginCoverRoutine(waitForPlayersReady: true));

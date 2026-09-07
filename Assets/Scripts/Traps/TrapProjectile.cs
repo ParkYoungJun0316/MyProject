@@ -57,6 +57,26 @@ public class TrapProjectile : NetworkBehaviour
 
     void Awake() => _rb = GetComponent<Rigidbody>();
 
+    /// <summary>
+    /// 씬에 남은 모든 투사체를 일괄 제거 — "전체 투사체 정리"의 단일 진입점.
+    /// StageManager.DestroyAllProjectiles()(방 단위 클리어)와 SceneFlowManager.FreezeAllHazardsNow()
+    /// (씬 종료 클리어)가 이 하나를 공유한다 — 예전엔 같은 순회가 두 파일에 복붙돼 있어 한쪽만
+    /// 고치면 갈라지는 구조였다(2026-09-08 리뷰).
+    /// Despawn은 Host 전용(내부 가드) — Client는 NGO 전파로 자동 제거된다.
+    /// </summary>
+    public static void DespawnAllOnServer()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening && !nm.IsServer) return;
+
+        foreach (TrapProjectile p in FindObjectsByType<TrapProjectile>(FindObjectsSortMode.None))
+        {
+            if (p == null) continue;
+            NetworkObject netObj = p.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsSpawned) netObj.Despawn(true);
+        }
+    }
+
     /// <summary>ArrowTrap/DropTrap이 Host에서 NetworkObject.Spawn() 호출 "전"에 호출.</summary>
     public void PrepareVelocity(Vector3 velocity) => _pendingVelocity = velocity;
 

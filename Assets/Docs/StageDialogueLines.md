@@ -10,27 +10,30 @@
 
 ---
 
-## M.Stage1
+## M.Stage1 (`DirectionalBarrier` 이동 + 소리 초출)
 
 1. 우리, 먹혔어. 이제부터 살아나가는 것만 생각해.
+2. 주위에 있는 색깔 입들 위치를 잘 기억해둬. 발판을 밟으면 그 색 입이 솟아올라서 이빨을 부숴줄 거야.
+3. 한 번에 한 색만 올라와. 다 같이 밟아봤자 소용없어.
+4. 여기가 닫히려고 하면... 다 같이 외쳐! 안 그러면 앞이 안 보이게 될 거야.
 
 *(색 패드/응원 설명은 `2.Tutorial` 씬 담당 — M.Stage1에서 재설명하지 않음. **단, 은신(Stealth)은 예외** — Tutorial 구역 1이 생략 가능인 데다 실사용처가 `M.Stage2`(2.2)·`M.Stage4`(4.3)·`M.Boss`(1페이즈)뿐으로 희소해서, Tutorial 단독 교육을 신뢰하지 않고 **첫 실사용 스테이지(`M.Stage2` 2.2)에서 다시 짚어준다**(아래 참고). `CheerAndTutorialDesign.md` §4 참고.)*
 
-## M.Stage2 (OXQuizManager)
+*(2번 "색깔 입" = `DirectionalBarrier`/`MouthBarrier` 프리팹(`DoorController`). 4번 "여기" = `MouthController`(방 전체 닫힘, 소리 초출) — 서로 다른 단어로 분리해 헷갈리지 않게 함.)*
 
-> 미정 — 아직 번역 원문 없음. 필요 시 `OXQuizManager`/`OXQuizUI`(문제·타이머·정답 UI가 이미 룰을 설명하므로 대사는 선택 사항, 이전 대화 참고).
-> **주의:** 이 헤더는 구 콘텐츠(OXQuizManager) 기준이라 `CoopStageAudit.M.md`의 M2 재설계(2.1 SideSplit+침 / 2.2 Drop+침)와 이름이 안 맞을 수 있음 — 리팩토링 반영 확인 필요.
+## M.Stage2 (`SideSplitChallenge` — 2.1 SideSplit+침 / 2.2 Drop+침)
+
+**2.1 — SideSplit 첫 등장 + 침 초출**
+1. 화면에 표시된 대로 안전 구역에 들어가면 돼!
+2. 바닥에 침이 깔려 미끄러울 거야. 다 같이 외치면 없앨 수 있어.
 
 **2.2 — 은신 첫 등장 (Drop+침 구간, `TrapPlayerTracker` 최초 사용)**
-1. 위에서 뭔가 떨어져! 움직이는 걸 보고 조준하나 봐.
-2. 바닥 색이랑 내 흑/백을 맞추면 안 보인대. Ctrl로 바꿔봐.
-3. 고유색으로는 절대 안 통해 — 흑백일 때만 숨는 거야.
+1. 위에서 침이 떨어져! 그중엔 날 조준하고 오는 것도 있는데, Ctrl로 바닥 색이랑 내 색을 맞추면 조준이 풀릴 거야.
 
-## M.Stage3 (ColorTileChallenge)
+## M.Stage3 (`ColorTileChallenge` — 점수제)
 
-1. 이제부터 바닥에 네 색이랑 똑같은 타일이 무작위로 뜰 거야.
-2. 제한 시간 안에 그 위로 올라서야 해.
-3. 못 올라서면... 천장의 이빨이 떨어지기 시작할 거야.
+1. 바닥에 색깔 타일이 뜰 거야. 그 위에 2초간 서 있으면 점수가 올라가.
+2. 흰색이나 검은색 타일은 누구든 밟아도 되지만, 고유색 타일은 그 색만 밟아야 점수가 올라가. 길 막지 말고 빨리 움직여!
 
 ## M.Stage4 (SequenceRingMinigame)
 

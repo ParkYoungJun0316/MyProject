@@ -269,6 +269,7 @@ public class DropTrap : TrapBase
     /// <summary>보스 등 외부에서 직접 낙하 위치를 지정해 호출</summary>
     public void FireAt(Vector3 targetPos)
     {
+        if (isFrozen) return; // 스테이지 클리어 정지 — TrapPlayerTracker.DropLoop의 늦은 호출 차단
         if (dropPrefab == null) return;
 
         // 온라인: Host만 낙하체 스폰 (OnTrapTrigger와 동일 가드).

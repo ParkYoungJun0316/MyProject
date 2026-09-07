@@ -491,6 +491,13 @@ public class StageNetworkState : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void NotifyPlayerDeathServerRpc()
     {
+        // 클리어 전환이 이미 시작됐으면 사망·ESC Reset 리로드를 무시한다(2026-09-08 리뷰).
+        // 안 그러면 "현재 씬 리로드"(여기)와 "다음 씬 로드"(SceneFlowManager.TransitionTo)가 동시에
+        // NGO SceneManager.LoadScene을 호출해, 로드 진행 중 에러 또는 방금 클리어한 스테이지로
+        // 되돌아가는 사고가 난다. 클리어 후 배너 대기(clearToTransitionDelay) 동안 누가 낙사하거나
+        // ESC Reset을 누르는 경로가 실제로 존재한다.
+        if (SceneFlowManager.Instance != null && SceneFlowManager.Instance.IsTransitioning) return;
+
         if (_resetPending) return;
         _resetPending = true;
 
@@ -562,6 +569,29 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         OnAnyStageClearedPulse?.Invoke();
+    }
+
+    /// <summary>
+    /// 씬 전체가 끝나 다음 씬으로 넘어가는 클리어(SceneFlowManager.LoadNextScene() 진입 시)에서만
+    /// 호출 — OnAnyStageClearedPulse(중간 Phase 클리어 배너 펄스, 이 방 저 방마다 울림)와는 별개
+    /// 신호다. 씬의 모든 함정을 멈추는 신호이므로 중간 방 클리어에 얹으면 아직 진행 중인 다른 방
+    /// 함정까지 멈추는 사고가 난다 — 반드시 이 전용 신호로만 호출할 것.
+    ///
+    /// [전파 전용] Host 자신의 정지는 호출부(SceneFlowManager.LoadNextScene)가 로컬에서 이미
+    /// 끝냈다. 여기서 Host 로컬 정지까지 같이 하던 예전 구조는 아래 !IsSpawned 가드에 걸릴 때
+    /// Host 정지마저 스킵되는 구멍이 있었다(2026-09-08 리뷰).
+    /// </summary>
+    public void BroadcastStageClearFreezeToClients()
+    {
+        if (!IsServer || !IsSpawned) return;
+        StageClearFreezeClientRpc();
+    }
+
+    [ClientRpc]
+    void StageClearFreezeClientRpc()
+    {
+        if (IsServer) return;
+        SceneFlowManager.Instance?.FreezeAllHazardsNow();
     }
 
     // ── 씬 전체 클리어(모든 Phase 완료) 표시 동기화 ────────────────

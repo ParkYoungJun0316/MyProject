@@ -1,6 +1,6 @@
 # TutorialTranslations — Tutorial 씬 `TutorialInfoBoards` + `CheerNamePanel` 13개 언어 번역본
 
-> 대상: `Tutorial.unity` → ①`TutorialInfoBoards` 하위 안내판 6개(`Board_Controls`, `Board_SelfCheer`, `Board_TeamCheer`, `Board_CheerName`, `Board_Test`, `Board_GotoStartZone`)의 정적 TMP 텍스트 15개 필드, ②`CheerNamePanel`(응원 이름/팀 키워드 입력 패널) 정적 텍스트 + 동적 피드백 문구 19개 필드. 총 34개 필드, 같은 String Table Collection **`Tutorial`** 하나로 통합 관리(2026-09-07, 사용자 결정 — 별도 테이블 안 만듦).
+> 대상: `Tutorial.unity` → ①`TutorialInfoBoards` 하위 안내판 6개(`Board_Controls`, `Board_SelfCheer`, `Board_TeamCheer`, `Board_CheerName`, `Board_Test`, `Board_GotoStartZone`)의 정적 TMP 텍스트 15개 필드, ②`CheerNamePanel`(응원 이름/팀 키워드 입력 패널) 정적 텍스트 + 동적 피드백 문구 19개 필드. 총 34개 필드, 같은 String Table Collection **`Tutorial`** 하나로 통합 관리(2026-09-07, 사용자 결정 — 별도 테이블 안 만듦). `Interlude.unity` 전용 `Board_NameChange`(2필드)와 Tutorial·Interlude 공용 `Prompt.*`(E-키 안내 2필드)도 같은 테이블에 추가됨(2026-09-08).
 > 원문 소스: 각 TMP `TextMeshProUGUI.m_text` / `TutorialCheerNameUI.cs`의 하드코딩 한국어 폴백 문자열 (에디터에서 직접 확인, 이 문서 작성 시점 기준).
 > `TutorialInfoBoards` 15개 필드의 String Table Collection **`Tutorial`** + `LocalizeStringEvent` 연결은 MCP로 적용됨 (2026-09-07). `CheerNamePanel` 19개 키도 같은 `Tutorial` 테이블에 입력하고, 정적 텍스트 8곳(`LocalizeStringEvent`) + `TutorialCheerNameUI` `LocalizedString` 12필드를 MCP로 연결함 (2026-09-07).
 >
@@ -649,6 +649,99 @@
 5. [x] 정적 텍스트 8곳(Title/Examples/두 Placeholder/두 ConfirmButton/CloseButton/HostHint)에 `LocalizeStringEvent` 부착 (`OnUpdateString` → `TMP_Text.text`)
 6. [x] `TutorialCheerNameUI` 컴포넌트의 `LocalizedString` 필드 12개 연결
 7. [ ] Play 모드에서 Locale 바꿔가며 패널 문구·피드백이 바뀌는지 스모크 테스트 (사용자)
+
+## Interlude.Board_NameChange (Interlude 씬 전용 안내판)
+
+> `Interlude.unity`의 `Board_Test` GameObject(Tutorial의 `TutorialInfoBoards/Board_Test`와 오브젝트 이름만 같고 내용은 다름 — CheerName/TeamCheerWord 2차 변경 안내). 같은 `Tutorial` String Table Collection을 재사용하되, **키는 반드시 `Tutorial.Board_Test.*`와 구분**할 것 — 이름이 같다고 그 키를 재사용하면 Interlude 안내판이 Tutorial의 "팀 응원 연습" 문구로 덮어써진다(2026-09-08 실제 발견·수정: Interlude `Board_Test`가 씬 복제 과정에서 `Tutorial.Board_Test.*` 키를 그대로 물고 있었음).
+
+### `Interlude.Board_NameChange.Title`
+
+- ko: 이름 바꾸기
+- en: Change Your Name
+- ja: 名前の変更
+- zh-Hans: 改名
+- zh-Hant: 改名
+- es: Cambiar nombre
+- es-419: Cambiar nombre
+- fr: Changer de nom
+- de: Namen ändern
+- pt: Mudar de nome
+- pt-BR: Mudar de nome
+- ru: Смена имени
+- pl: Zmiana imienia
+
+### `Interlude.Board_NameChange.Body`
+
+- ko: 개인 이름과 팀 키워드, 마지막으로 한 번 더 바꿀 수 있어요.\n여기서 놓치면 게임이 끝날 때까지 못 바꾸니,\n원하시는 분은 발판에서 지금 다시 정하세요.
+- en: This is your last chance to change your name and team keyword.\nMiss it here and you're locked in until the game ends —\nif you want to change anything, do it at the stand now.
+- ja: 個人の名前とチームの合い言葉を、最後にもう一度だけ変更できます。\nここを逃すとゲームが終わるまで変更できなくなるので、\n変更したい方は今すぐ看板で決め直してください。
+- zh-Hans: 个人名字和团队关键词，这是最后一次修改机会。\n错过这里，就要等到本局游戏结束才能再改，\n想改的话，现在就去牌子那边重新设置吧。
+- zh-Hant: 個人名字和團隊關鍵詞，這是最後一次修改機會。\n錯過這裡的話，要等到本局遊戲結束才能再改，\n想改的話，現在就到牌子那邊重新設定吧。
+- es: Puedes cambiar tu nombre y la palabra de equipo una última vez aquí.\nSi te lo saltas, no podrás cambiarlos hasta que acabe la partida,\nasí que si quieres cambiarlos, hazlo ahora en el letrero.
+- es-419: Puedes cambiar tu nombre y la palabra de equipo una última vez aquí.\nSi te lo pierdes, no vas a poder cambiarlos hasta que termine la partida,\nasí que si quieres cambiarlos, hazlo ahora en el letrero.
+- fr: Tu peux changer ton nom et le mot d'équipe une dernière fois ici.\nSi tu rates ça, tu ne pourras plus les changer avant la fin de la partie,\nalors si tu veux les changer, fais-le maintenant sur le panneau.
+- de: Hier kannst du deinen Namen und das Team-Wort ein letztes Mal ändern.\nVerpasst du das, kannst du sie bis zum Ende der Partie nicht mehr ändern,\nalso ändere sie jetzt am Schild, wenn du willst.
+- pt: Aqui podes mudar o teu nome e a palavra de equipa uma última vez.\nSe perderes esta oportunidade, só podes voltar a mudá-los quando a partida acabar,\npor isso, se quiseres mudar, faz já no letreiro.
+- pt-BR: Aqui você pode mudar seu nome e a palavra da equipe uma última vez.\nSe perder essa chance, só vai poder mudar de novo quando a partida acabar,\nentão, se quiser mudar, faça agora na placa.
+- ru: Здесь можно в последний раз изменить своё имя и командное слово.\nЕсли упустишь этот момент, изменить их будет нельзя до конца партии,\nтак что если хочешь что-то поменять — сделай это сейчас у таблички.
+- pl: Tutaj możesz ostatni raz zmienić swoje imię i hasło drużyny.\nJeśli to przegapisz, nie zmienisz ich już do końca rozgrywki,\nwięc jeśli chcesz coś zmienić, zrób to teraz przy tablicy.
+
+**적용 상태 (2026-09-08, MCP):**
+
+- [x] `Tutorial` 테이블에 `Interlude.Board_NameChange.Title`/`.Body` 13로케일 입력
+- [x] `Interlude.unity`의 `Board_Test/Title`·`Board_Test/Body`에 `LocalizeStringEvent` 부착, 위 새 키로 연결(기존에 `Tutorial.Board_Test.*`를 잘못 물고 있던 것 수정)
+- [ ] Play 모드에서 Locale 바꿔가며 문구가 바뀌는지 스모크 테스트 (사용자)
+
+## Prompt (E-키 상호작용 안내, Tutorial·Interlude 공용)
+
+> `CheerNameSignboard`(응원 이름 패널 오픈)와 `TutorialCheerNameTest`(미니 입 — 팀 응원 인식 테스트)의 월드스페이스 `PromptRoot/PromptText`. 두 씬(`Tutorial.unity`, `Interlude.unity`)에 동일 기능이 각각 존재하고 문구도 동일하므로, `CheerNamePanel.*`과 같은 방식으로 **키를 공유**함(씬별로 따로 안 만듦).
+> `TutorialCheerNameTest`의 프롬프트는 원래 `[E] Team Cheer Test`로 **영어가 하드코딩**되어 있었음(로컬라이즈 미적용 상태로 방치됨) — 2026-09-08에 발견, 한국어 베이스 텍스트로 교정 후 로컬라이즈함.
+
+| 키 | 연결 대상 | 원문(교정 전) |
+|---|---|---|
+| `Tutorial.Prompt.CheerName` | `CheerNameSignboard/PromptRoot/PromptText` (Tutorial·Interlude 공용) | `[E] 이름 설정` |
+| `Tutorial.Prompt.TeamCheerTest` | `TutorialCheerNameTest/PromptRoot/PromptText` (Tutorial·Interlude 공용) | `[E] Team Cheer Test` → `[E] 팀 응원 테스트`로 교정 |
+
+**명칭 결정 (2026-09-08):** "이름 설정"은 패널 제목("응원 이름을 정해주세요")과 결이 맞아 그대로 유지. "Team Cheer Test"는 프로젝트 전체가 한국어 베이스 + 로컬라이즈 오버레이 구조인데 이 프롬프트만 영어였던 것이라 한국어 "팀 응원 테스트"로 교정 — `Board_Test` 타이틀("팀 응원 연습")은 구역 설명, 이 프롬프트는 행동 안내라 "테스트"로 구분해서 사용.
+
+### `Tutorial.Prompt.CheerName`
+
+- ko: [E] 이름 설정
+- en: [E] Set Name
+- ja: [E] 名前設定
+- zh-Hans: [E] 设置名字
+- zh-Hant: [E] 設定名字
+- es: [E] Configurar nombre
+- es-419: [E] Configurar nombre
+- fr: [E] Définir le nom
+- de: [E] Namen festlegen
+- pt: [E] Definir nome
+- pt-BR: [E] Definir nome
+- ru: [E] Задать имя
+- pl: [E] Ustaw imię
+
+### `Tutorial.Prompt.TeamCheerTest`
+
+- ko: [E] 팀 응원 테스트
+- en: [E] Team Cheer Test
+- ja: [E] チーム応援テスト
+- zh-Hans: [E] 团队应援测试
+- zh-Hant: [E] 團隊應援測試
+- es: [E] Prueba de ánimo de equipo
+- es-419: [E] Prueba de ánimo de equipo
+- fr: [E] Test d'encouragement d'équipe
+- de: [E] Team-Anfeuerung testen
+- pt: [E] Teste de incentivo de equipa
+- pt-BR: [E] Teste de torcida em equipe
+- ru: [E] Тест командной поддержки
+- pl: [E] Test dopingu drużynowego
+
+**적용 상태 (2026-09-08, MCP):**
+
+- [x] `Tutorial` 테이블에 `Tutorial.Prompt.CheerName`/`.TeamCheerTest` 13로케일 입력
+- [x] `Tutorial.unity` — `CheerNameSignboard`·`TutorialCheerNameTest`의 `PromptText`에 `LocalizeStringEvent` 부착 + 연결
+- [x] `Interlude.unity` — 동일 구조 2곳에 `LocalizeStringEvent` 부착 + 연결, `TutorialCheerNameTest` 쪽 영어 잔존 텍스트를 한국어로 교정
+- [ ] Play 모드에서 Locale 바꿔가며 두 프롬프트가 바뀌는지 스모크 테스트 (사용자)
 
 ## 참고
 
