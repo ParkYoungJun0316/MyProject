@@ -361,10 +361,13 @@ MonoBehaviour:
   - {fileID: 3249175176033487092}
   leftTiles: []
   rightTiles: []
-  tileDebrisPrefab: {fileID: 0}
+  tileDebrisPrefab: {fileID: 1939712161006852769, guid: 2c5393e52c82e9244b1de096d96e5b15, type: 3}
   tileDebrisLifetime: 2
   tileDebrisImpulseMin: 2
   tileDebrisImpulseMax: 5
+  restorePopDuration: 2
+  restorePopAmplitude: 0.1
+  restorePopJitter: 1
   centerWarnMarker: {fileID: 403338387}
   leftWarnMarker: {fileID: 203518854}
   rightWarnMarker: {fileID: 1216947173}
@@ -3890,7 +3893,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageManager
   objectives:
   - {fileID: 1650345883}
-  autoStart: 1
+  autoStart: 0
   OnStageClear:
     m_PersistentCalls:
       m_Calls:
@@ -4109,7 +4112,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &911747147
 Transform:
   m_ObjectHideFlags: 0
@@ -4257,7 +4260,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: -0.06666667, z: 0.63333344}
-  m_LocalScale: {x: 0.16666666, y: 0.0033333343, z: 1.3333333}
+  m_LocalScale: {x: 0.231, y: 0.0033333343, z: 1.3333333}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 309475483}
@@ -4549,7 +4552,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1069372010
 Transform:
   m_ObjectHideFlags: 0
@@ -4870,7 +4873,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -0.06666667, z: 0.63333404}
-  m_LocalScale: {x: 0.16666666, y: 0.0033333348, z: 1.3333333}
+  m_LocalScale: {x: 0.231, y: 0.0033333348, z: 1.3333333}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2095735315}
@@ -6343,66 +6346,6 @@ Transform:
   - {fileID: 1326820166}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1447471547
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1447471548}
-  - component: {fileID: 1447471549}
-  m_Layer: 0
-  m_Name: TransitionPhase4
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1447471548
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1447471547}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1447471549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1447471547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31852dc02d6e51c4e8bb547c268996cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MouthController
-  mouthAnimator: {fileID: 0}
-  openTrigger: doOpen
-  holdTrigger: doHold
-  closeTrigger: doClose
-  idleTrigger: doIdle
-  closeClipLength: 0
-  holdDuration: 0
-  openClipLength: 0
-  randomIntervalMin: 5
-  randomIntervalMax: 15
-  initialDelay: 0
-  startOnAwake: 1
-  teamCheerHazard: 0
-  warnDuration: 2
-  screenFader: {fileID: 0}
-  seedSalt: 1297044820
 --- !u!1 &1450409858
 GameObject:
   m_ObjectHideFlags: 0
@@ -9541,7 +9484,7 @@ MonoBehaviour:
     surviveDuration: 0
     objectsToDisable: []
     objectsToEnable:
-    - {fileID: 1069372009}
+    - {fileID: 911747146}
     manualAdvanceOnly: 1
     onPhaseEnter:
       m_PersistentCalls:
@@ -10564,10 +10507,13 @@ MonoBehaviour:
   - {fileID: 3249175175740259978}
   leftTiles: []
   rightTiles: []
-  tileDebrisPrefab: {fileID: 0}
+  tileDebrisPrefab: {fileID: 1939712161006852769, guid: 2c5393e52c82e9244b1de096d96e5b15, type: 3}
   tileDebrisLifetime: 2
   tileDebrisImpulseMin: 2
   tileDebrisImpulseMax: 5
+  restorePopDuration: 0
+  restorePopAmplitude: 0.06
+  restorePopJitter: 0
   centerWarnMarker: {fileID: 403338387}
   leftWarnMarker: {fileID: 203518854}
   rightWarnMarker: {fileID: 1216947173}
@@ -10738,6 +10684,9 @@ MonoBehaviour:
   tileDebrisLifetime: 2
   tileDebrisImpulseMin: 2
   tileDebrisImpulseMax: 5
+  restorePopDuration: 0
+  restorePopAmplitude: 0.06
+  restorePopJitter: 0
   centerWarnMarker: {fileID: 403338387}
   leftWarnMarker: {fileID: 203518854}
   rightWarnMarker: {fileID: 1216947173}
@@ -15266,7 +15215,6 @@ SceneRoots:
   - {fileID: 911747147}
   - {fileID: 1046863815}
   - {fileID: 1069372010}
-  - {fileID: 1447471548}
   - {fileID: 1624224525}
   - {fileID: 686489728}
   - {fileID: 45411675}

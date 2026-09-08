@@ -97,6 +97,18 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     [Tooltip("파편에 가할 임펄스 힘 최대값.")]
     [SerializeField] float tileDebrisImpulseMax = 5f;
 
+    [Header("복구 연출 (선택 — 판정은 항상 즉시, 이건 시각 연출만. TileRestorePopGroup 공용)")]
+    [Tooltip("복구 시 살짝 부풀었다 가라앉는 연출 시간(초). 0이면 연출 없음(기존과 동일, 즉시 복구만).")]
+    [SerializeField] float restorePopDuration = 0f;
+
+    [Tooltip("부풀어 오르는 최대 배율(0.06 = 최대 106%). 0이면 연출 없음과 동일.\n" +
+             "콜라이더도 같이 커진다 — 0.06이면 타일 윗면이 약 3cm 올라가고 좌우로 0.15m씩 이웃 칸을 " +
+             "침범해, 복구 순간 근처에 선 플레이어가 살짝 들리거나 밀릴 수 있다.")]
+    [SerializeField] float restorePopAmplitude = 0.06f;
+
+    [Tooltip("여러 타일이 한꺼번에 복구될 때 조금씩 다르게 보이도록 지속시간에 주는 랜덤 폭(초, ±). 0이면 랜덤 없음.")]
+    [SerializeField] float restorePopJitter = 0f;
+
     [Header("경고 마커 (SpikeLaneWarnMarker 재사용 — 신규 컴포넌트 없음)")]
     [Tooltip("가운데 영역 경고. RiseHold 전부 + MixedSweep 가운데에 사용. 비우면 경고 생략.")]
     [SerializeField] SpikeLaneWarnMarker centerWarnMarker = null;
@@ -128,6 +140,10 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     // "멀쩡한 타일 위에 파편이 뒹구는" 그림이 안 나온다. 페이즈 전환(OnDisable)에서도 정리.
     readonly List<GameObject> _spawnedDebris = new();
 
+    // 복구 연출(스케일 팝). 타일별 원래 스케일·코루틴 추적은 전부 여기가 들고 있다
+    // (MouthBossJawSmash와 공용 — 같은 부기를 두 함정이 복제하지 않는다).
+    TileRestorePopGroup _restorePop;
+
     HazardPhase _phase = HazardPhase.Idle;
     SweepRegion _sweepRegion = SweepRegion.None;
     // Warning 진입 시 PeekNextRegion()으로 미리 뽑아 경고 마커를 켠 영역. AttackRoutine이 재추첨 없이
@@ -157,6 +173,8 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     {
         if (tongueAnimator == null)
             tongueAnimator = GetComponent<Animator>() ?? GetComponentInChildren<Animator>(true);
+
+        _restorePop = new TileRestorePopGroup(this);
     }
 
     void OnEnable()
@@ -176,6 +194,9 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         _bindRoutine = null;
         ResetHazardFlags();
         RestoreAll();
+        // StopAllCoroutines()가 진행 중이던 팝 코루틴을 자체 정리(스케일 원복) 없이 죽였을 수
+        // 있다 — 타일이 부푼 채로 멈춰 있는 그림을 막기 위해 명시적으로 되돌린다.
+        _restorePop.ResetAll();
     }
 
     IEnumerator BindAndStartHazard()
@@ -632,7 +653,10 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         GameObject tile = tiles[index];
         if (tile != null && tile.activeSelf)
         {
-            // Breakable.DoBreakVisuals()와 동일한 SFX 재생 패턴 재사용 — 새 SFXId 추가 없음.
+            // 원래 스케일 캐시 + 아직 도는 팝 접기(복구 직후 같은 칸이 다시 부서지는 경우 방어).
+            _restorePop.OnTileBroken(tile);
+
+            // Breakable.DoBreakVisuals()와 동일 SFX 재생 패턴 재사용 — 새 SFXId 추가 없음.
             SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, tile.transform.position, 5f, 50f, AudioRolloffMode.Logarithmic);
             // 파편은 tile의 현재 Renderer.sharedMaterial(Black/White/Reveal)을 그대로 입는다 —
             // 흑/백 전용 파편 프리팹을 따로 만들 필요 없이 항상 실시간 색과 일치.
@@ -678,14 +702,18 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         _spawnedDebris.Clear();
     }
 
-    static void RestoreArray(GameObject[] tiles)
+    void RestoreArray(GameObject[] tiles)
     {
         if (tiles == null) return;
         for (int i = 0; i < tiles.Length; i++)
         {
             GameObject tile = tiles[i];
             if (tile != null && !tile.activeSelf)
+            {
+                // 판정(SetActive)은 항상 먼저 즉시 끝낸다 — 팝은 그 뒤에 얹히는 순수 시각 연출.
                 tile.SetActive(true);
+                _restorePop.Play(tile, restorePopDuration, restorePopAmplitude, restorePopJitter);
+            }
         }
     }
 

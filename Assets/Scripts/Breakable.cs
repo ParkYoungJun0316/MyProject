@@ -149,19 +149,6 @@ public class Breakable : MonoBehaviour
              "false: 각 머신에서 독립 처리 (런타임 스폰 오브젝트에 부착된 Breakable 등).")]
     [SerializeField] bool syncBreakOverNetwork = true;
 
-    [Header("복구 연출 (선택 — 판정은 항상 즉시, 이건 시각 연출만)")]
-    [Tooltip("복구 시 살짝 부풀었다 가라앉는 연출 시간(초). 0이면 연출 없음(기존과 동일, 즉시 복구만).\n" +
-             "스케일은 원래 크기 '이상'으로만 움직인다 — Renderer와 Collider가 같은 Transform을 쓰는 " +
-             "FloorTile류에서 콜라이더가 작아지면 복구 직후 그 칸에 선 플레이어가 빠져 낙사할 수 있다.")]
-    [SerializeField] float restorePopDuration = 0f;
-
-    [Tooltip("부풀어 오르는 최대 배율(0.12 = 최대 112%). 0이면 연출 없음과 동일.")]
-    [SerializeField] float restorePopAmplitude = 0.12f;
-
-    [Tooltip("여러 타일이 한꺼번에 복구될 때 조금씩 다르게 보이도록 지속시간에 주는 랜덤 폭(초, ±). 0이면 랜덤 없음.\n" +
-             "머신마다 다른 값이 나오지만 콜라이더가 원래 크기보다 작아지는 순간이 없으므로 판정은 갈리지 않는다.")]
-    [SerializeField] float restorePopJitter = 0f;
-
     [Header("이벤트")]
     [Tooltip("최종 파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
     public UnityEvent OnBreak;
@@ -171,9 +158,6 @@ public class Breakable : MonoBehaviour
     bool _broken;
     bool _breakPending;
     Coroutine _breakRoutine;
-    Coroutine _restorePopRoutine;
-    Vector3 _originalLocalScale;
-    bool _everEnabled;
     int _netIndex = -1;
 
     // 스폰해 둔 파편. 리셋(OnEnable)·페이즈 종료(OnDisable)에서 즉시 치워야 "멀쩡하게 복구된
@@ -190,7 +174,6 @@ public class Breakable : MonoBehaviour
     {
         _renderers = GetComponentsInChildren<Renderer>(true);
         _colliders = GetComponentsInChildren<Collider>(true);
-        _originalLocalScale = transform.localScale;
 
         // 이번 씬 세대의 레지스트리가 아직 없으면 전체를 한 번에 구성(월드 좌표 정렬).
         // 이미 다른 Breakable의 Awake()나 BreakById()가 먼저 구성해뒀다면 즉시 반환.
@@ -213,7 +196,6 @@ public class Breakable : MonoBehaviour
             _breakRoutine = null;
         }
         _breakPending = false;
-        StopRestorePop();
         // 복구는 항상 부모 SetActive false→true 사이클을 지나므로(클래스 주석의 리셋 규약)
         // 여기 한 곳에서 치우면 되살아난 오브젝트와 파편이 겹치는 경우가 없다.
         ClearDebris();
@@ -293,7 +275,6 @@ public class Breakable : MonoBehaviour
     {
         if (_broken) return;
         _broken = true;
-        StopRestorePop();
 
         // 멀티: Host가 파괴 확정 → Client에 stable ID 브로드캐스트
         if (syncBreakOverNetwork && _netIndex >= 0)
@@ -341,7 +322,6 @@ public class Breakable : MonoBehaviour
     {
         if (_broken) return;
         _broken = true;
-        StopRestorePop();
         DoBreakVisuals();
         SetVisible(false);
         // damagePlayerOnBreak: Host 전용. Client에서는 실행하지 않음.
@@ -398,69 +378,12 @@ public class Breakable : MonoBehaviour
         _breakPending = false;
         _broken = false;
         SetVisible(true);
-
-        // 씬 로드와 Phase 컨테이너 활성화(PhaseManager.EnterPhase의 objectsToEnable.SetActive(true))도
-        // 이 OnEnable을 지난다 — 최초 활성화에서 바닥 전체가 부풀면 복구 연출이 아니라 버그로 보인다.
-        // 두 번째 활성화부터가 실제 복구다(함정 리셋 사이클 / TongueController.RestoreAll 등).
-        // _broken 기준으로 게이트하면 안 된다 — 혀(M.Stage4)·MouthBossJawSmash(M.Boss P4)는
-        // Breakable을 지나지 않고 타일 GameObject를 직접 SetActive로 껐다 켜므로 _broken이 항상 false다.
-        if (_everEnabled)
-            StartRestorePop();
-        _everEnabled = true;
     }
 
     void SetVisible(bool active)
     {
         foreach (Renderer r in _renderers) if (r != null) r.enabled = active;
         foreach (Collider  c in _colliders) if (c != null) c.enabled = active;
-    }
-
-    // ── 복구 연출 (선택 — 판정과 분리된 순수 시각 연출) ──────────────────
-
-    /// <summary>
-    /// restorePopDuration(또는 진폭)이 0이면 아무 것도 안 함 — 기존과 동일한 즉시 복구.
-    /// 판정(SetVisible)은 이 호출 전에 이미 끝나 있고, 스케일도 원래 크기 이상으로만 움직이므로
-    /// 콜라이더가 작아지는 순간이 없다(낙사 판정에 영향 없음).
-    /// </summary>
-    void StartRestorePop()
-    {
-        StopRestorePop();
-        if (restorePopDuration <= 0f || restorePopAmplitude <= 0f) return;
-        _restorePopRoutine = StartCoroutine(RestorePopRoutine());
-    }
-
-    /// <summary>
-    /// 팝이 실제로 돌고 있을 때만 스케일을 원복한다 — Awake가 아직 안 돈 인스턴스
-    /// (EnsureRegistryBuilt가 FindObjectsInactive.Include로 등록한 비활성 오브젝트 등)에서
-    /// _originalLocalScale이 0인 채 덮어써 타일이 0 스케일로 박히는 걸 막는다.
-    /// </summary>
-    void StopRestorePop()
-    {
-        if (_restorePopRoutine == null) return;
-        StopCoroutine(_restorePopRoutine);
-        _restorePopRoutine = null;
-        transform.localScale = _originalLocalScale;
-    }
-
-    IEnumerator RestorePopRoutine()
-    {
-        float duration = restorePopDuration;
-        // 전역 RNG 스트림은 필요할 때만 당긴다(MouthBossJawSmash.ShuffleSeeded와 같은 원칙).
-        if (restorePopJitter > 0f)
-            duration += UnityEngine.Random.Range(-restorePopJitter, restorePopJitter);
-        duration = Mathf.Max(0.01f, duration);
-
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / duration);
-            // 1 → 1+진폭 → 1. 절대 1 미만으로 내려가지 않는다 = 콜라이더가 원래보다 작아지는 순간이 없다.
-            transform.localScale = _originalLocalScale * (1f + restorePopAmplitude * Mathf.Sin(p * Mathf.PI));
-            yield return null;
-        }
-        transform.localScale = _originalLocalScale;
-        _restorePopRoutine = null;
     }
 
     // ── 에디터 기즈모 ─────────────────────────────────────────────────
