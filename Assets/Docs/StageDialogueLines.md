@@ -836,10 +836,14 @@ Czyżbyśmy wreszcie mogli uciec...?
 
 ## T.Stage1 (BoulderSpawnManager + ReachZoneObjective — 조임 초출 + ColorWall 고유)
 
-1. 삼켜져서 식도로 넘어왔어... 이렇게 된 이상, 아래로 내려가서 탈출하는 수밖에 없어.
-2. 식도가 주기적으로 조여올 거야. 경고가 뜨면, 다 같이 팀 구호를 외쳐서 막아!
-3. 양옆에서 색벽이 밀려올 거야. 내 색이 뜬 벽엔 직접 부딪혀 — 그러면 벽이 뒤로 물러날 거야.
-4. ...데구르르르르? 지금 굴러오고 있는 게 설마 사탕이야?! 깔리기 싫으면 달려!!
+1. 삼켜져서 식도로 넘어왔어...  
+이렇게 된 이상, 아래로 내려가서 탈출하는 수밖에 없어.
+2. 식도가 주기적으로 조여올 거야.  
+경고가 뜨면, 다 같이 팀 구호를 외쳐서 막아!
+3. 양옆에서 색벽이 밀려올 거야.  
+내 색이 뜬 벽엔 직접 부딪혀 — 그러면 벽이 뒤로 물러날 거야.
+4. ...데구르르르르?  
+지금 굴러오고 있는 게 설마 사탕이야?! 깔리기 싫으면 달려!!
 
 *(1번 = 식도 진입(M→T 전환). 2번 "조여온다" = 식도 원통 반경 축소(`EsophagusSqueeze`, 전방향, 랜덤 주기 공격) — Warning 중 외치면 공격 취소, Hold 중 외치면 원상 복구. 3번 "색벽" = `ColorWall` 고유색(좌우 압박, 되돌림 대상 아님) — 접촉 시 색 일치면 `AdvancingWall.PauseTemporarily()`로 원점 후퇴 + 일시정지(`ColorWall.cs` `HandleContact`/`PauseRoutine`). **T1은 고유색, 흑백은 T3 초출**(`CoopStageAudit.T.md` §4 잠금). 4번 = `BoulderSpawnManager` 추격 시작(`ReachZoneObjective`).)*
 
@@ -847,13 +851,16 @@ Czyżbyśmy wreszcie mogli uciec...?
 
 **Stage1 — MemoryPath (+ 안개 초출)**
 1. 빛나는 칸만 잘 외워둬. 잘못 밟으면 그대로 즉사야.
-2. 트림이 나오다가 식도에 막혀버렸어... 가스가 차오르기 시작해. 짙어져서 앞이 안 보이면 팀 구호를 외쳐서 걷어내자.
+2. 트림이 나오다가 식도에 막혀버렸어... 가스가 차오르기 시작하고 있어.  
+짙어져서 앞이 안 보이면 팀 구호를 외쳐서 걷어내자.
 
 **Stage2 — ColoredMemoryPath**
-1. 이번엔 색깔별로 보여줄 거야. 반드시 네 색에 맞춰야 해! 색이 맞아도 흑백이면 죽을 거야.
+1. 이번엔 색깔별로 보여줄 거야. 반드시 네 색에 맞춰야 해!  
+색이 맞아도 흑백이면 죽을 거야.
 
 **Stage3 — PioneerPathManager**
-1. 구역마다 담당 색이 있어. 담당이 먼저 지나가야 그제야 길이 안전해져! 꼭 순서를 지켜!
+1. 구역마다 담당 색이 있어. 담당이 먼저 지나가야 그제야 길이 안전해져!  
+꼭 순서를 지켜!
 
 *(Stage1 1번 = `MemoryPathTile`, Trap은 `NetworkDamageUtil.ApplyInstantKill` 즉사. 2번 "가스" = 안개 초출 — 거리 기반 Render Fog(`EsophagusFog`), 씬 전역 적용·구간 분리 없음, 걷혀도 정답 하이라이트가 다시 뜨는 게 아니라 그 순간의 바닥만 보임. Stage2 = `ColoredMemoryPathTile.IsSafeFor`, 고유색 비활성(흑백) 상태면 색이 맞아도 즉사. Stage3 = `PioneerPathTile`, 미개방 타일을 pioneer 아닌 색이 밟거나 흑백 상태면 즉사, Trap 타일은 누가 밟든 항상 즉사.)*
 
@@ -861,32 +868,40 @@ Czyżbyśmy wreszcie mogli uciec...?
 
 1. 바닥을 조심해. 역류성 식도염이 있나 봐. 산성 물질이 올라오잖아!
 2. 안 보이는 곳에서 가시 공격이 올 거야. 항상 유의해.
-3. 양옆의 벽이 흑백으로 바뀔 거야. 색에 맞춰 벽에 부딪혀서, 압박하는 벽을 밀어내!
+3. 양옆의 벽이 흑백으로 바뀔 거야.  
+색에 맞춰 벽에 부딪혀서, 압박하는 벽을 밀어내!
 
 *(1번 = `GreenMucusTrap`(`AcidPool`/`AcidHazardVFX` + `ContactDamage`) — "점액"(압력) 카테고리. 2번 = `SpikeTrap`(바닥에서 올라오는 가시, `ContactDamage`류 데미지) — T.Stage3.unity에 다수 배치. 3번 = `ColorWall` 흑백 초출 — 접촉 시 색 일치면 `AdvancingWall.PauseTemporarily()`로 원점 후퇴+정지(2인 게이트 아님). 조임 복습(`EsophagusSqueeze`)은 T1과 동일 메카닉이라 대사엔 안 넣음 — 2인 장면은 전원 외침 원상 복구.)*
 
 ## T.Stage4 (MovingCorridor + ContactKnockback + 구멍 바닥 + 패드→Door 길 — 안개 복습)
 
-1. 알레르기 반응이 왔나 봐. 식도에 부종들이 생겼어. 이것들에 부딪히면 튕겨져 나갈 거야.
+1. 알레르기 반응이 왔나 봐. 식도에 부종들이 생겼어.  
+이것들에 부딪히면 튕겨져 나갈 거야.
 
 *("부종" = `ContactKnockback`(순수 넉백, HP 무관) + 구멍 바닥(각자 생존, 2인 게이트 아님), T3에 잠깐 나온 걸 T4에서 메인으로. 패드→`DoorController` 길, 안개 복습(`EsophagusFog`)은 T1·T2에서 이미 가르쳐서 대사 없이 감.)*
 
 ## T.Stage5 (Stage5TargetRunner / Stage5ChaserAI)
 
 **Stage1 — Runner 최초 등장** (Stage2도 재사용, 재설명 없음)
-1. 돌아다니는 적혈구를 잡아. 이 몸한테 타격을 주자. 당하기만 할 순 없어!
+1. 돌아다니는 적혈구를 잡아. 이 몸한테 타격을 주자.  
+당하기만 할 순 없어!
 
 **Stage3 — Chaser 최초 등장** (Stage4도 재사용, 재설명 없음)
-1. 적혈구들을 잡았더니 백혈구들이 우리를 적으로 인식했어! 도망쳐서 살아남아!
-2. 벽에 부딪히면 튕겨져 나갈 거야. 이걸 잘 이용하면 도망칠 수 있겠는데?
+1. 적혈구들을 잡았더니 백혈구들이 우리를 적으로 인식했어!  
+도망쳐서 살아남아!
+2. 벽에 부딪히면 튕겨져 나갈 거야.  
+이걸 잘 이용하면 도망칠 수 있겠는데?
 
 *(Stage1 = `Stage5TargetRunner`, 색·고유색 조건 없이 접촉하면 포획. Stage3 1번 = `Stage5ChaserAI` 초출(비은신 최근접 1명 추격, 은신 전환 시 타겟 교체 — Ctrl 은신이 실제 회피 수단). 2번 = `T.Stage5.unity`에 배치된 `ContactKnockback` 벽 다수 확인됨, 튕김을 이용한 회피 팁.)*
 
 ## T.Boss (BossFightObjective — 시간 구간 기반 연속 생존)
 
 **Intro**
-1. 식도의 마지막 부분이야... 이 아래는 분명 위액으로 가득 차있을 거야. 준비 없이 내려가면 위험해.
-2. 천장에 아까의 사탕이 점점 내려오고 있어. 땅에 닿기 전에 바닥을 만들어서 막아야 해 — 안 그러면 우리도 같이 휩쓸려 떨어질 거야.
+1. 식도의 마지막 부분이야...  
+이 아래는 분명 위액으로 가득 차있을 거야. 준비 없이 내려가면 위험해.
+2. 천장에 아까의 사탕이 점점 내려오고 있어.  
+땅에 닿기 전에 바닥을 만들어서 막아야 해.  
+안 그러면 우리도 같이 휩쓸려 떨어질 거야.
 3. 각 구간을 해결하면 바닥이 생겨. 얼른 만들어서 저걸 막아야 해!
 
 **Bossdown**
@@ -908,39 +923,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### EN
 
 **T.Stage1**
-1. We got swallowed and ended up in the esophagus... At this point, there's nothing to do but head down and escape.
-2. The esophagus is going to squeeze in on us at random intervals. When the warning pops up, everyone shout the team cheer to stop it!
-3. Colored walls will push in from both sides. If a wall shows your color, slam right into it — it'll get knocked back.
-4. ...rumble, rumble? Don't tell me that's the candy rolling toward us?! Run if you don't want to get flattened!!
+1. We got swallowed and ended up in the esophagus...  
+At this point, there's nothing to do but head down and escape.
+2. The esophagus is going to squeeze in on us at random intervals.  
+When the warning pops up, everyone shout the team cheer to stop it!
+3. Colored walls will push in from both sides.  
+If a wall shows your color, slam right into it — it'll get knocked back.
+4. ...rumble, rumble?  
+Don't tell me that's the candy rolling toward us?! Run if you don't want to get flattened!!
 
 **T.Stage2 — Stage1**
 1. Remember only the glowing tiles. Step on the wrong one and it's an instant kill.
-2. A burp got stuck in the esophagus... gas is starting to build up. If it gets too thick to see through, shout the team cheer to clear it out.
+2. A burp got stuck in the esophagus... gas is starting to build up.  
+If it gets too thick to see through, shout the team cheer to clear it out.
 
 **T.Stage2 — Stage2**
-1. This time it'll show tiles by color. You have to match your own color! Even if the color's right, you'll still die if it's in black-and-white mode.
+1. This time it'll show tiles by color. You have to match your own color!  
+Even if the color's right, you'll still die if it's in black-and-white mode.
 
 **T.Stage2 — Stage3**
-1. Each zone has an assigned color. The path only becomes safe once that color goes through first! Stick to the order!
+1. Each zone has an assigned color. The path only becomes safe once that color goes through first!  
+Stick to the order!
 
 **T.Stage3**
 1. Watch your step. Feels like acid reflux — that's stomach acid coming up!
 2. Spike attacks will come from places you can't see. Stay alert at all times.
-3. The walls on both sides will turn black-and-white. Match the color and slam into the wall to push back the pressure!
+3. The walls on both sides will turn black-and-white.  
+Match the color and slam into the wall to push back the pressure!
 
 **T.Stage4**
-1. Must be an allergic reaction — swelling's popped up all through the esophagus. Bump into one of these and you'll get knocked flying.
+1. Must be an allergic reaction — swelling's popped up all through the esophagus.  
+Bump into one of these and you'll get knocked flying.
 
 **T.Stage5 — Stage1**
-1. Go catch those red blood cells running around — let's land some damage on this body. We can't just keep taking hits!
+1. Go catch those red blood cells running around — let's land some damage on this body.  
+We can't just keep taking hits!
 
 **T.Stage5 — Stage3**
-1. Catching those red blood cells made the white blood cells mark us as enemies! Run and survive!
-2. Bump into a wall and you'll get knocked back. Might be able to use that to get away, huh?
+1. Catching those red blood cells made the white blood cells mark us as enemies!  
+Run and survive!
+2. Bump into a wall and you'll get knocked back.  
+Might be able to use that to get away, huh?
 
 **T.Boss — Intro**
-1. This is the last stretch of the esophagus... below here has to be full of stomach acid. Going down unprepared is way too risky.
-2. That candy from before is coming down from the ceiling, and it's bigger now. We need to build a floor before it hits bottom — or we'll get swept down with it.
+1. This is the last stretch of the esophagus...  
+Below here has to be full of stomach acid. Going down unprepared is way too risky.
+2. That candy from before is coming down from the ceiling, and it's bigger now.  
+We need to build a floor before it hits bottom.  
+If we don't, we'll get swept down with it.
 3. Clearing each section builds part of the floor. Hurry and build it to block that thing!
 
 **T.Boss — Bossdown**
@@ -952,39 +982,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### JA
 
 **T.Stage1**
-1. 飲み込まれて食道まで来ちゃった…こうなったら、下まで降りて逃げるしかない。
-2. 食道が周期的に締まってくるよ。警告が出たら、みんなでチームの掛け声を叫んで止めよう!
-3. 両側から色の壁が迫ってくるよ。自分の色が出た壁には直接ぶつかって — そうすれば壁が後ろに下がるはず。
-4. …ゴロゴロゴロ…?今転がってきてるの、まさかアメ玉じゃないよね?!踏まれたくないなら走れ!!
+1. 飲み込まれて食道まで来ちゃった…  
+こうなったら、下まで降りて逃げるしかない。
+2. 食道が周期的に締まってくるよ。  
+警告が出たら、みんなでチームの掛け声を叫んで止めよう!
+3. 両側から色の壁が迫ってくるよ。  
+自分の色が出た壁には直接ぶつかって — そうすれば壁が後ろに下がるはず。
+4. …ゴロゴロゴロ…?  
+今転がってきてるの、まさかアメ玉じゃないよね?!踏まれたくないなら走れ!!
 
 **T.Stage2 — Stage1**
 1. 光ってるマスだけしっかり覚えて。間違えて踏んだら即死だよ。
-2. ゲップが出かけて食道でつっかえちゃった…ガスが溜まり始めてる。濃くなって前が見えなくなったら、みんなでチームの掛け声を叫んで払おう。
+2. ゲップが出かけて食道でつっかえちゃった…ガスが溜まり始めてるよ。  
+濃くなって前が見えなくなったら、みんなでチームの掛け声を叫んで払おう。
 
 **T.Stage2 — Stage2**
-1. 今度は色ごとに見せるよ。必ず自分の色に合わせて!色が合ってても白黒状態なら死ぬから気をつけて。
+1. 今度は色ごとに見せるよ。必ず自分の色に合わせて!  
+色が合ってても白黒状態なら死ぬから気をつけて。
 
 **T.Stage2 — Stage3**
-1. 区域ごとに担当の色があるよ。担当が先に通らないと道は安全にならない!順番は絶対守って!
+1. 区域ごとに担当の色があるよ。担当が先に通らないと道は安全にならない!  
+順番は絶対守って!
 
 **T.Stage3**
 1. 足元に気をつけて。逆流性食道炎かも…酸性の液体が上がってきてる!
 2. 見えない場所から棘の攻撃が来るよ。常に気を抜かないで。
-3. 両側の壁が白黒に切り替わるよ。色を合わせて壁にぶつかって、迫ってくる壁を押し返せ!
+3. 両側の壁が白黒に切り替わるよ。  
+色を合わせて壁にぶつかって、迫ってくる壁を押し返せ!
 
 **T.Stage4**
-1. アレルギー反応が出たみたい。食道にむくみができてる。ぶつかると弾き飛ばされるよ。
+1. アレルギー反応が出たみたい。食道にむくみができてる。  
+ぶつかると弾き飛ばされるよ。
 
 **T.Stage5 — Stage1**
-1. 動き回る赤血球を捕まえて。この体にダメージを与えよう。やられっぱなしじゃいられない!
+1. 動き回る赤血球を捕まえて。この体にダメージを与えよう。  
+やられっぱなしじゃいられない!
 
 **T.Stage5 — Stage3**
-1. 赤血球を捕まえたら、白血球たちに敵として認識された!逃げて生き延びろ!
-2. 壁にぶつかると弾き飛ばされるよ。これを上手く使えば逃げられそうだね?
+1. 赤血球を捕まえたら、白血球たちに敵として認識された!  
+逃げて生き延びろ!
+2. 壁にぶつかると弾き飛ばされるよ。  
+これを上手く使えば逃げられそうだね?
 
 **T.Boss — Intro**
-1. 食道の最後の部分だ…この下は絶対胃液でいっぱいのはず。準備なしで降りるのは危険すぎる。
-2. さっきのアメ玉が天井からどんどん下がってきてる。地面に着く前に足場を作って止めないと — じゃないと私たちも一緒に飲み込まれて落ちちゃう。
+1. 食道の最後の部分だ…  
+この下は絶対胃液でいっぱいのはず。準備なしで降りるのは危険すぎる。
+2. さっきのアメ玉が天井からどんどん下がってきてる。  
+地面に着く前に足場を作って止めないと。  
+じゃないと私たちも一緒に飲み込まれて落ちちゃう。
 3. 各区間を突破すれば足場ができるよ。早く作ってあれを止めよう!
 
 **T.Boss — Bossdown**
@@ -996,39 +1041,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### ZH-Hans
 
 **T.Stage1**
-1. 被吞下去掉进食道里了……到这一步,只能往下走想办法逃出去了。
-2. 食道会周期性地收缩。警告一出现,大家一起喊团队口号把它顶回去!
-3. 两侧的彩色墙会挤过来。哪面墙是你的颜色,就直接撞上去——墙会被撞退回去。
-4. ……咕噜咕噜咕噜?现在滚过来的这个,难道是糖果吗?!不想被压扁就快跑!!
+1. 被吞下去掉进食道里了……  
+到这一步,只能往下走想办法逃出去了。
+2. 食道会周期性地收缩。  
+警告一出现,大家一起喊团队口号把它顶回去!
+3. 两侧的彩色墙会挤过来。  
+哪面墙是你的颜色,就直接撞上去——墙会被撞退回去。
+4. ……咕噜咕噜咕噜?  
+现在滚过来的这个,难道是糖果吗?!不想被压扁就快跑!!
 
 **T.Stage2 — Stage1**
 1. 只记住发光的格子就行。踩错格子会立刻死。
-2. 打嗝打到一半被食道堵住了……气体开始积起来了。变浓看不清路的时候,大家一起喊团队口号把它清掉。
+2. 打嗝打到一半被食道堵住了……气体开始积起来了。  
+变浓看不清路的时候,大家一起喊团队口号把它清掉。
 
 **T.Stage2 — Stage2**
-1. 这次会按颜色分别显示。一定要对上你自己的颜色!颜色对了也没用,黑白状态照样会死。
+1. 这次会按颜色分别显示。一定要对上你自己的颜色!  
+颜色对了也没用,黑白状态照样会死。
 
 **T.Stage2 — Stage3**
-1. 每个区域都有对应的负责颜色。负责的颜色先走一遍,路才会变安全!一定要按顺序来!
+1. 每个区域都有对应的负责颜色。负责的颜色先走一遍,路才会变安全!  
+一定要按顺序来!
 
 **T.Stage3**
 1. 小心脚下。是不是有反流性食道炎啊,胃酸都涌上来了!
 2. 看不见的地方会有尖刺攻击过来。时刻保持警惕。
-3. 两侧的墙会变成黑白色。对上颜色撞上去,把压过来的墙推回去!
+3. 两侧的墙会变成黑白色。  
+对上颜色撞上去,把压过来的墙推回去!
 
 **T.Stage4**
-1. 好像是过敏反应,食道里长出了一堆浮肿。撞到这些东西会被弹飞出去。
+1. 好像是过敏反应,食道里长出了一堆浮肿。  
+撞到这些东西会被弹飞出去。
 
 **T.Stage5 — Stage1**
-1. 去抓住到处跑的红细胞,咱们也给这身体来点伤害。不能一直只挨打!
+1. 去抓住到处跑的红细胞,咱们也给这身体来点伤害。  
+不能一直只挨打!
 
 **T.Stage5 — Stage3**
-1. 抓了红细胞之后,白细胞把我们当成敌人了!快跑,活下来!
-2. 撞到墙会被弹开。好好利用这个说不定能逃掉?
+1. 抓了红细胞之后,白细胞把我们当成敌人了!  
+快跑,活下来!
+2. 撞到墙会被弹开。  
+好好利用这个说不定能逃掉?
 
 **T.Boss — Intro**
-1. 这是食道的最后一段了……下面肯定全是胃液。毫无准备就下去太危险了。
-2. 天花板上那块糖果正在慢慢降下来,而且越来越大。得赶紧搭出地面挡住它——不然我们也会一起被冲下去。
+1. 这是食道的最后一段了……  
+下面肯定全是胃液。毫无准备就下去太危险了。
+2. 天花板上那块糖果正在慢慢降下来,而且越来越大。  
+得赶紧搭出地面挡住它。  
+不然我们也会一起被冲下去。
 3. 每解决一个区间就会生成一块地面。赶紧搭好挡住那东西!
 
 **T.Boss — Bossdown**
@@ -1040,39 +1100,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### ZH-Hant
 
 **T.Stage1**
-1. 被吞下去掉進食道裡了……到這一步,只能往下走想辦法逃出去了。
-2. 食道會週期性地收縮。警告一出現,大家一起喊團隊口號把它頂回去!
-3. 兩側的彩色牆會擠過來。哪面牆是你的顏色,就直接撞上去——牆會被撞退回去。
-4. ……咕嚕咕嚕咕嚕?現在滾過來的這個,難道是糖果嗎?!不想被壓扁就快跑!!
+1. 被吞下去掉進食道裡了……  
+到這一步,只能往下走想辦法逃出去了。
+2. 食道會週期性地收縮。  
+警告一出現,大家一起喊團隊口號把它頂回去!
+3. 兩側的彩色牆會擠過來。  
+哪面牆是你的顏色,就直接撞上去——牆會被撞退回去。
+4. ……咕嚕咕嚕咕嚕?  
+現在滾過來的這個,難道是糖果嗎?!不想被壓扁就快跑!!
 
 **T.Stage2 — Stage1**
 1. 只要記住發光的格子就好。踩錯格子會立刻死掉。
-2. 打嗝打到一半被食道卡住了……氣體開始積起來了。變濃看不清路的時候,大家一起喊團隊口號把它清掉。
+2. 打嗝打到一半被食道卡住了……氣體開始積起來了。  
+變濃看不清路的時候,大家一起喊團隊口號把它清掉。
 
 **T.Stage2 — Stage2**
-1. 這次會按顏色分別顯示。一定要對上你自己的顏色!顏色對了也沒用,黑白狀態照樣會死。
+1. 這次會按顏色分別顯示。一定要對上你自己的顏色!  
+顏色對了也沒用,黑白狀態照樣會死。
 
 **T.Stage2 — Stage3**
-1. 每個區域都有對應的負責顏色。負責的顏色要先走一遍,路才會變安全!一定要按順序來!
+1. 每個區域都有對應的負責顏色。負責的顏色要先走一遍,路才會變安全!  
+一定要按順序來!
 
 **T.Stage3**
 1. 小心腳下。是不是有胃食道逆流啊,胃酸都湧上來了!
 2. 看不見的地方會有尖刺攻擊過來。要隨時保持警覺。
-3. 兩側的牆會變成黑白色。對上顏色撞上去,把壓過來的牆推回去!
+3. 兩側的牆會變成黑白色。  
+對上顏色撞上去,把壓過來的牆推回去!
 
 **T.Stage4**
-1. 好像是過敏反應,食道裡長出了一堆浮腫。撞到這些東西會被彈飛出去。
+1. 好像是過敏反應,食道裡長出了一堆浮腫。  
+撞到這些東西會被彈飛出去。
 
 **T.Stage5 — Stage1**
-1. 去抓住到處亂跑的紅血球,大家一起給這身體來點傷害。不能一直只挨打!
+1. 去抓住到處亂跑的紅血球,大家一起給這身體來點傷害。  
+不能一直只挨打!
 
 **T.Stage5 — Stage3**
-1. 抓了紅血球之後,白血球把我們當成敵人了!快逃,活下來!
-2. 撞到牆會被彈開。好好利用這個,說不定能逃掉?
+1. 抓了紅血球之後,白血球把我們當成敵人了!  
+快逃,活下來!
+2. 撞到牆會被彈開。  
+好好利用這個,說不定能逃掉?
 
 **T.Boss — Intro**
-1. 這是食道的最後一段了……下面肯定全是胃液。毫無準備就下去太危險了。
-2. 天花板上那顆糖果正在慢慢降下來,而且越變越大。得趕緊搭出地板擋住它——不然我們也會一起被沖下去。
+1. 這是食道的最後一段了……  
+下面肯定全是胃液。毫無準備就下去太危險了。
+2. 天花板上那顆糖果正在慢慢降下來,而且越變越大。  
+得趕緊搭出地板擋住它。  
+不然我們也會一起被沖下去。
 3. 每解決一個區段就會生成一塊地板。趕緊搭好擋住那東西!
 
 **T.Boss — Bossdown**
@@ -1084,39 +1159,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### ES
 
 **T.Stage1**
-1. Nos tragó y acabamos en el esófago... Así las cosas, no queda otra que bajar y escapar.
-2. El esófago se va a contraer a intervalos aleatorios. En cuanto salga el aviso, ¡gritad todos el grito de equipo para detenerlo!
-3. Unas paredes de colores avanzarán desde los lados. Si una pared muestra tu color, chócate contra ella sin miedo — retrocederá.
-4. ...¿ese ruido de algo rodando? ¡No me digáis que es el caramelo de antes!? ¡Corred si no queréis quedar aplastados!!
+1. Nos tragó y acabamos en el esófago...  
+Así las cosas, no queda otra que bajar y escapar.
+2. El esófago se va a contraer a intervalos aleatorios.  
+En cuanto salga el aviso, ¡gritad todos el grito de equipo para detenerlo!
+3. Unas paredes de colores avanzarán desde los lados.  
+Si una pared muestra tu color, chócate contra ella sin miedo — retrocederá.
+4. ...¿ese ruido de algo rodando?  
+¡No me digáis que es el caramelo de antes!? ¡Corred si no queréis quedar aplastados!!
 
 **T.Stage2 — Stage1**
 1. Memorizad solo las baldosas que brillan. Si pisáis la equivocada, es muerte instantánea.
-2. Se le atascó un eructo en el esófago... está empezando a acumularse el gas. Si se pone tan espeso que no se ve nada, gritad el grito de equipo para despejarlo.
+2. Se le atascó un eructo en el esófago... está empezando a acumularse el gas.  
+Si se pone tan espeso que no se ve nada, gritad el grito de equipo para despejarlo.
 
 **T.Stage2 — Stage2**
-1. Esta vez las va a mostrar por colores. ¡Tenéis que acertar con vuestro propio color! Aunque el color sea el correcto, si está en blanco y negro, morís igual.
+1. Esta vez las va a mostrar por colores. ¡Tenéis que acertar con vuestro propio color!  
+Aunque el color sea el correcto, si está en blanco y negro, morís igual.
 
 **T.Stage2 — Stage3**
-1. Cada zona tiene un color asignado. ¡El camino solo se vuelve seguro después de que pase primero ese color! ¡Respetad el orden!
+1. Cada zona tiene un color asignado. ¡El camino solo se vuelve seguro después de que pase primero ese color!  
+¡Respetad el orden!
 
 **T.Stage3**
 1. Cuidado con el suelo. Debe tener reflujo — ¡le está subiendo ácido del estómago!
 2. Vendrán ataques de púas desde donde no se ve. Estad siempre alerta.
-3. Las paredes de los lados se van a poner en blanco y negro. ¡Igualad el color y chocad contra la pared para hacer retroceder la presión!
+3. Las paredes de los lados se van a poner en blanco y negro.  
+¡Igualad el color y chocad contra la pared para hacer retroceder la presión!
 
 **T.Stage4**
-1. Debe ser una reacción alérgica — le han salido bultos por todo el esófago. Si chocáis con uno, saldréis despedidos.
+1. Debe ser una reacción alérgica — le han salido bultos por todo el esófago.  
+Si chocáis con uno, saldréis despedidos.
 
 **T.Stage5 — Stage1**
-1. Id a atrapar a los glóbulos rojos que andan sueltos, a ver si le hacemos daño a este cuerpo. ¡No podemos quedarnos solo aguantando golpes!
+1. Id a atrapar a los glóbulos rojos que andan sueltos, a ver si le hacemos daño a este cuerpo.  
+¡No podemos quedarnos solo aguantando golpes!
 
 **T.Stage5 — Stage3**
-1. ¡Al atrapar a los glóbulos rojos, los glóbulos blancos nos marcaron como enemigos! ¡Corred y sobrevivid!
-2. Si chocáis contra una pared, saldréis despedidos. Podríamos usar eso para escapar, ¿no?
+1. ¡Al atrapar a los glóbulos rojos, los glóbulos blancos nos marcaron como enemigos!  
+¡Corred y sobrevivid!
+2. Si chocáis contra una pared, saldréis despedidos.  
+Podríamos usar eso para escapar, ¿no?
 
 **T.Boss — Intro**
-1. Este es el último tramo del esófago... ahí abajo tiene que estar lleno de ácido del estómago. Bajar sin prepararnos es demasiado peligroso.
-2. El caramelo de antes está bajando por el techo, y cada vez es más grande. Tenemos que construir suelo antes de que toque fondo — si no, nos arrastrará con él.
+1. Este es el último tramo del esófago...  
+Ahí abajo tiene que estar lleno de ácido del estómago. Bajar sin prepararnos es demasiado peligroso.
+2. El caramelo de antes está bajando por el techo, y cada vez es más grande.  
+Tenemos que construir suelo antes de que toque fondo.  
+Si no, nos arrastrará con él.
 3. Al superar cada tramo se genera parte del suelo. ¡Rápido, construidlo para detener a eso!
 
 **T.Boss — Bossdown**
@@ -1128,39 +1218,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### ES-419
 
 **T.Stage1**
-1. Nos tragó y terminamos en el esófago... Así las cosas, no queda de otra más que bajar y escapar.
-2. El esófago se va a contraer a intervalos aleatorios. En cuanto aparezca la advertencia, ¡griten todos el grito de equipo para detenerlo!
-3. Van a avanzar paredes de colores desde los costados. Si una pared muestra tu color, chócate contra ella sin miedo — va a retroceder.
-4. ...¿ese ruido de algo rodando? ¡No me digan que es el caramelo de antes!? ¡Corran si no quieren terminar aplastados!!
+1. Nos tragó y terminamos en el esófago...  
+Así las cosas, no queda de otra más que bajar y escapar.
+2. El esófago se va a contraer a intervalos aleatorios.  
+En cuanto aparezca la advertencia, ¡griten todos el grito de equipo para detenerlo!
+3. Van a avanzar paredes de colores desde los costados.  
+Si una pared muestra tu color, chócate contra ella sin miedo — va a retroceder.
+4. ...¿ese ruido de algo rodando?  
+¡No me digan que es el caramelo de antes!? ¡Corran si no quieren terminar aplastados!!
 
 **T.Stage2 — Stage1**
 1. Memoricen solo las baldosas que brillan. Si pisan la equivocada, es muerte instantánea.
-2. Se le atoró un eructo en el esófago... está empezando a acumularse el gas. Si se pone tan espeso que no se ve nada, griten el grito de equipo para despejarlo.
+2. Se le atoró un eructo en el esófago... está empezando a acumularse el gas.  
+Si se pone tan espeso que no se ve nada, griten el grito de equipo para despejarlo.
 
 **T.Stage2 — Stage2**
-1. Esta vez las va a mostrar por colores. ¡Tienen que acertar con su propio color! Aunque el color sea el correcto, si está en blanco y negro, mueren igual.
+1. Esta vez las va a mostrar por colores. ¡Tienen que acertar con su propio color!  
+Aunque el color sea el correcto, si está en blanco y negro, mueren igual.
 
 **T.Stage2 — Stage3**
-1. Cada zona tiene un color asignado. ¡El camino solo se vuelve seguro después de que pase primero ese color! ¡Respeten el orden!
+1. Cada zona tiene un color asignado. ¡El camino solo se vuelve seguro después de que pase primero ese color!  
+¡Respeten el orden!
 
 **T.Stage3**
 1. Cuidado con el piso. Debe tener reflujo — ¡le está subiendo ácido del estómago!
 2. Van a venir ataques de púas desde donde no se ve. Estén siempre alerta.
-3. Las paredes de los costados se van a poner en blanco y negro. ¡Igualen el color y choquen contra la pared para hacer retroceder la presión!
+3. Las paredes de los costados se van a poner en blanco y negro.  
+¡Igualen el color y choquen contra la pared para hacer retroceder la presión!
 
 **T.Stage4**
-1. Debe ser una reacción alérgica — le salieron bultos por todo el esófago. Si chocan con uno, van a salir volando.
+1. Debe ser una reacción alérgica — le salieron bultos por todo el esófago.  
+Si chocan con uno, van a salir volando.
 
 **T.Stage5 — Stage1**
-1. Vayan a atrapar a los glóbulos rojos que andan sueltos, a ver si le hacemos daño a este cuerpo. ¡No podemos quedarnos solo aguantando golpes!
+1. Vayan a atrapar a los glóbulos rojos que andan sueltos, a ver si le hacemos daño a este cuerpo.  
+¡No podemos quedarnos solo aguantando golpes!
 
 **T.Stage5 — Stage3**
-1. ¡Al atrapar a los glóbulos rojos, los glóbulos blancos nos marcaron como enemigos! ¡Corran y sobrevivan!
-2. Si chocan contra una pared, van a salir despedidos. Podríamos usar eso para escapar, ¿no?
+1. ¡Al atrapar a los glóbulos rojos, los glóbulos blancos nos marcaron como enemigos!  
+¡Corran y sobrevivan!
+2. Si chocan contra una pared, van a salir despedidos.  
+Podríamos usar eso para escapar, ¿no?
 
 **T.Boss — Intro**
-1. Este es el último tramo del esófago... ahí abajo debe estar lleno de ácido del estómago. Bajar sin prepararnos es demasiado peligroso.
-2. El caramelo de antes está bajando por el techo, y cada vez está más grande. Tenemos que construir piso antes de que toque fondo — si no, nos va a arrastrar con él.
+1. Este es el último tramo del esófago...  
+Ahí abajo debe estar lleno de ácido del estómago. Bajar sin prepararnos es demasiado peligroso.
+2. El caramelo de antes está bajando por el techo, y cada vez está más grande.  
+Tenemos que construir piso antes de que toque fondo.  
+Si no, nos va a arrastrar con él.
 3. Al superar cada tramo se genera parte del piso. ¡Rápido, constrúyanlo para detener a eso!
 
 **T.Boss — Bossdown**
@@ -1172,39 +1277,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### FR
 
 **T.Stage1**
-1. On a été avalés et on s'est retrouvés dans l'œsophage... Vu la situation, il ne reste plus qu'à descendre pour s'échapper.
-2. L'œsophage va se resserrer à intervalles aléatoires. Dès que l'alerte apparaît, criez tous le cri d'équipe pour l'arrêter !
-3. Des murs colorés vont avancer des deux côtés. Si un mur montre ta couleur, jette-toi dessus sans hésiter — il reculera.
-4. ...ce bruit de truc qui roule ? Ne me dites pas que c'est le bonbon d'avant !? Courez si vous ne voulez pas finir écrasés !!
+1. On a été avalés et on s'est retrouvés dans l'œsophage...  
+Vu la situation, il ne reste plus qu'à descendre pour s'échapper.
+2. L'œsophage va se resserrer à intervalles aléatoires.  
+Dès que l'alerte apparaît, criez tous le cri d'équipe pour l'arrêter !
+3. Des murs colorés vont avancer des deux côtés.  
+Si un mur montre ta couleur, jette-toi dessus sans hésiter — il reculera.
+4. ...ce bruit de truc qui roule ?  
+Ne me dites pas que c'est le bonbon d'avant !? Courez si vous ne voulez pas finir écrasés !!
 
 **T.Stage2 — Stage1**
 1. Mémorisez juste les dalles qui brillent. Marchez sur la mauvaise et c'est la mort instantanée.
-2. Un rot est resté coincé dans l'œsophage... le gaz commence à s'accumuler. S'il devient trop épais pour voir, criez le cri d'équipe pour le dissiper.
+2. Un rot est resté coincé dans l'œsophage... le gaz commence à s'accumuler.  
+S'il devient trop épais pour voir, criez le cri d'équipe pour le dissiper.
 
 **T.Stage2 — Stage2**
-1. Cette fois, ça va s'afficher par couleur. Tu dois absolument faire correspondre ta propre couleur ! Même si la couleur est correcte, tu meurs quand même si c'est en noir et blanc.
+1. Cette fois, ça va s'afficher par couleur. Tu dois absolument faire correspondre ta propre couleur !  
+Même si la couleur est correcte, tu meurs quand même si c'est en noir et blanc.
 
 **T.Stage2 — Stage3**
-1. Chaque zone a une couleur assignée. Le chemin ne devient sûr qu'une fois que cette couleur est passée en premier ! Respectez bien l'ordre !
+1. Chaque zone a une couleur assignée. Le chemin ne devient sûr qu'une fois que cette couleur est passée en premier !  
+Respectez bien l'ordre !
 
 **T.Stage3**
 1. Attention au sol. On dirait un reflux — c'est de l'acide gastrique qui remonte !
 2. Des attaques de pics vont venir d'endroits invisibles. Restez toujours sur vos gardes.
-3. Les murs des deux côtés vont passer en noir et blanc. Fais correspondre la couleur et jette-toi sur le mur pour repousser la pression !
+3. Les murs des deux côtés vont passer en noir et blanc.  
+Fais correspondre la couleur et jette-toi sur le mur pour repousser la pression !
 
 **T.Stage4**
-1. On dirait une réaction allergique — des gonflements sont apparus dans tout l'œsophage. Si vous en touchez un, vous serez projetés en arrière.
+1. On dirait une réaction allergique — des gonflements sont apparus dans tout l'œsophage.  
+Si vous en touchez un, vous serez projetés en arrière.
 
 **T.Stage5 — Stage1**
-1. Allez attraper les globules rouges qui traînent, et infligeons des dégâts à ce corps. On ne peut pas se contenter d'encaisser !
+1. Allez attraper les globules rouges qui traînent, et infligeons des dégâts à ce corps.  
+On ne peut pas se contenter d'encaisser !
 
 **T.Stage5 — Stage3**
-1. En attrapant les globules rouges, les globules blancs nous ont pris pour des ennemis ! Courez et survivez !
-2. Si vous touchez un mur, vous serez repoussés. On pourrait s'en servir pour s'échapper, non ?
+1. En attrapant les globules rouges, les globules blancs nous ont pris pour des ennemis !  
+Courez et survivez !
+2. Si vous touchez un mur, vous serez repoussés.  
+On pourrait s'en servir pour s'échapper, non ?
 
 **T.Boss — Intro**
-1. C'est la dernière partie de l'œsophage... en bas, ça doit être plein d'acide gastrique. Descendre sans préparation est bien trop dangereux.
-2. Le bonbon d'avant descend du plafond, et il grossit de plus en plus. On doit construire un sol avant qu'il touche le fond — sinon on sera emportés avec lui.
+1. C'est la dernière partie de l'œsophage...  
+En bas, ça doit être plein d'acide gastrique. Descendre sans préparation est bien trop dangereux.
+2. Le bonbon d'avant descend du plafond, et il grossit de plus en plus.  
+On doit construire un sol avant qu'il touche le fond.  
+Sinon on sera emportés avec lui.
 3. Chaque section terminée fait apparaître une partie du sol. Vite, construisez-le pour bloquer ce truc !
 
 **T.Boss — Bossdown**
@@ -1216,39 +1336,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### DE
 
 **T.Stage1**
-1. Wir wurden verschluckt und sind in der Speiseröhre gelandet... So wie die Dinge stehen, bleibt uns nur, nach unten zu gehen und zu entkommen.
-2. Die Speiseröhre wird sich in zufälligen Abständen zusammenziehen. Sobald die Warnung erscheint, ruft alle zusammen den Teamruf, um sie zu stoppen!
-3. Von beiden Seiten drängen bunte Wände heran. Zeigt eine Wand deine Farbe, ramm einfach direkt rein — dann wird sie zurückgestoßen.
-4. ...dieses Rumpeln? Sag bloß, das ist das Bonbon von vorhin, das da angerollt kommt?! Rennt, wenn ihr nicht zerquetscht werden wollt!!
+1. Wir wurden verschluckt und sind in der Speiseröhre gelandet...  
+So wie die Dinge stehen, bleibt uns nur, nach unten zu gehen und zu entkommen.
+2. Die Speiseröhre wird sich in zufälligen Abständen zusammenziehen.  
+Sobald die Warnung erscheint, ruft alle zusammen den Teamruf, um sie zu stoppen!
+3. Von beiden Seiten drängen bunte Wände heran.  
+Zeigt eine Wand deine Farbe, ramm einfach direkt rein — dann wird sie zurückgestoßen.
+4. ...dieses Rumpeln?  
+Sag bloß, das ist das Bonbon von vorhin, das da angerollt kommt?! Rennt, wenn ihr nicht zerquetscht werden wollt!!
 
 **T.Stage2 — Stage1**
 1. Merkt euch nur die aufleuchtenden Felder. Tretet ihr aufs falsche, ist es sofort vorbei.
-2. Ein Rülpser blieb in der Speiseröhre stecken... es sammelt sich langsam Gas an. Wird es zu dicht, um noch etwas zu sehen, ruft den Teamruf, um es zu vertreiben.
+2. Ein Rülpser blieb in der Speiseröhre stecken... es sammelt sich langsam Gas an.  
+Wird es zu dicht, um noch etwas zu sehen, ruft den Teamruf, um es zu vertreiben.
 
 **T.Stage2 — Stage2**
-1. Diesmal wird es nach Farben angezeigt. Du musst unbedingt deine eigene Farbe treffen! Selbst wenn die Farbe stimmt, stirbst du trotzdem, wenn es schwarz-weiß ist.
+1. Diesmal wird es nach Farben angezeigt. Du musst unbedingt deine eigene Farbe treffen!  
+Selbst wenn die Farbe stimmt, stirbst du trotzdem, wenn es schwarz-weiß ist.
 
 **T.Stage2 — Stage3**
-1. Jede Zone hat eine zuständige Farbe. Der Weg wird erst sicher, wenn diese Farbe zuerst durchgeht! Haltet unbedingt die Reihenfolge ein!
+1. Jede Zone hat eine zuständige Farbe. Der Weg wird erst sicher, wenn diese Farbe zuerst durchgeht!  
+Haltet unbedingt die Reihenfolge ein!
 
 **T.Stage3**
 1. Passt auf den Boden auf. Das sieht nach Reflux aus — da steigt Magensäure hoch!
 2. Aus unsichtbaren Stellen kommen Stachelangriffe. Bleibt immer wachsam.
-3. Die Wände an beiden Seiten werden schwarz-weiß. Pass die Farbe an und ramm gegen die Wand, um den Druck zurückzudrängen!
+3. Die Wände an beiden Seiten werden schwarz-weiß.  
+Pass die Farbe an und ramm gegen die Wand, um den Druck zurückzudrängen!
 
 **T.Stage4**
-1. Sieht nach einer allergischen Reaktion aus — überall in der Speiseröhre sind Schwellungen entstanden. Berührt ihr eine davon, werdet ihr zurückgeschleudert.
+1. Sieht nach einer allergischen Reaktion aus — überall in der Speiseröhre sind Schwellungen entstanden.  
+Berührt ihr eine davon, werdet ihr zurückgeschleudert.
 
 **T.Stage5 — Stage1**
-1. Fangt die roten Blutkörperchen, die hier herumlaufen — lasst uns diesem Körper Schaden zufügen. Wir können nicht einfach nur einstecken!
+1. Fangt die roten Blutkörperchen, die hier herumlaufen — lasst uns diesem Körper Schaden zufügen.  
+Wir können nicht einfach nur einstecken!
 
 **T.Stage5 — Stage3**
-1. Weil wir die roten Blutkörperchen gefangen haben, halten uns die weißen Blutkörperchen jetzt für Feinde! Rennt und überlebt!
-2. Berührt ihr eine Wand, werdet ihr zurückgeschleudert. Vielleicht können wir das nutzen, um zu entkommen, was?
+1. Weil wir die roten Blutkörperchen gefangen haben, halten uns die weißen Blutkörperchen jetzt für Feinde!  
+Rennt und überlebt!
+2. Berührt ihr eine Wand, werdet ihr zurückgeschleudert.  
+Vielleicht können wir das nutzen, um zu entkommen, was?
 
 **T.Boss — Intro**
-1. Das ist der letzte Abschnitt der Speiseröhre... da unten muss es voller Magensäure sein. Unvorbereitet runterzugehen ist viel zu riskant.
-2. Das Bonbon von vorhin kommt von der Decke herab und wird immer größer. Wir müssen einen Boden bauen, bevor es unten aufschlägt — sonst werden wir mit runtergerissen.
+1. Das ist der letzte Abschnitt der Speiseröhre...  
+Da unten muss es voller Magensäure sein. Unvorbereitet runterzugehen ist viel zu riskant.
+2. Das Bonbon von vorhin kommt von der Decke herab und wird immer größer.  
+Wir müssen einen Boden bauen, bevor es unten aufschlägt.  
+Sonst werden wir mit runtergerissen.
 3. Schafft man jeden Abschnitt, entsteht ein Stück Boden. Schnell, baut ihn, um das Ding zu stoppen!
 
 **T.Boss — Bossdown**
@@ -1260,39 +1395,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### PT-BR
 
 **T.Stage1**
-1. A gente foi engolido e acabou no esôfago... Já que é assim, só resta descer e escapar.
-2. O esôfago vai se contrair em intervalos aleatórios. Quando aparecer o aviso, gritem todos juntos o grito do time pra parar isso!
-3. Paredes coloridas vão avançar dos dois lados. Se uma parede mostrar sua cor, bate direto nela — ela vai recuar.
-4. ...esse barulho de coisa rolando? Não me diga que é aquela bala rolando de novo?! Corram se não quiserem ser esmagados!!
+1. A gente foi engolido e acabou no esôfago...  
+Já que é assim, só resta descer e escapar.
+2. O esôfago vai se contrair em intervalos aleatórios.  
+Quando aparecer o aviso, gritem todos juntos o grito do time pra parar isso!
+3. Paredes coloridas vão avançar dos dois lados.  
+Se uma parede mostrar sua cor, bate direto nela — ela vai recuar.
+4. ...esse barulho de coisa rolando?  
+Não me diga que é aquela bala rolando de novo?! Corram se não quiserem ser esmagados!!
 
 **T.Stage2 — Stage1**
 1. Decorem só os blocos que brilham. Se pisarem no errado, é morte instantânea.
-2. Um arroto ficou entalado no esôfago... o gás está começando a se acumular. Se ficar tão denso que não dá pra ver nada, gritem o grito do time pra limpar isso.
+2. Um arroto ficou entalado no esôfago... o gás está começando a se acumular.  
+Se ficar tão denso que não dá pra ver nada, gritem o grito do time pra limpar isso.
 
 **T.Stage2 — Stage2**
-1. Agora vai mostrar por cor. Você tem que acertar a sua própria cor! Mesmo se a cor bater, se estiver em preto e branco, você morre do mesmo jeito.
+1. Agora vai mostrar por cor. Você tem que acertar a sua própria cor!  
+Mesmo se a cor bater, se estiver em preto e branco, você morre do mesmo jeito.
 
 **T.Stage2 — Stage3**
-1. Cada área tem uma cor responsável. O caminho só fica seguro depois que essa cor passar primeiro! Respeitem bem a ordem!
+1. Cada área tem uma cor responsável. O caminho só fica seguro depois que essa cor passar primeiro!  
+Respeitem bem a ordem!
 
 **T.Stage3**
 1. Cuidado com o chão. Deve ser refluxo — tá subindo ácido do estômago!
 2. Vão vir ataques de espinho de lugares que a gente não vê. Fiquem sempre atentos.
-3. As paredes dos dois lados vão virar preto e branco. Acerte a cor e bata na parede pra empurrar a pressão de volta!
+3. As paredes dos dois lados vão virar preto e branco.  
+Acerte a cor e bata na parede pra empurrar a pressão de volta!
 
 **T.Stage4**
-1. Deve ser uma reação alérgica — surgiram inchaços por todo o esôfago. Se baterem em um desses, vão ser lançados pra trás.
+1. Deve ser uma reação alérgica — surgiram inchaços por todo o esôfago.  
+Se baterem em um desses, vão ser lançados pra trás.
 
 **T.Stage5 — Stage1**
-1. Vão atrás dos glóbulos vermelhos que estão correndo por aí, vamos dar um dano nesse corpo. A gente não pode só ficar levando pancada!
+1. Vão atrás dos glóbulos vermelhos que estão correndo por aí, vamos dar um dano nesse corpo.  
+A gente não pode só ficar levando pancada!
 
 **T.Stage5 — Stage3**
-1. Depois que capturamos os glóbulos vermelhos, os glóbulos brancos passaram a nos marcar como inimigos! Corram e sobrevivam!
-2. Se baterem numa parede, vão ser lançados pra trás. Dá pra usar isso pra fugir, né?
+1. Depois que capturamos os glóbulos vermelhos, os glóbulos brancos passaram a nos marcar como inimigos!  
+Corram e sobrevivam!
+2. Se baterem numa parede, vão ser lançados pra trás.  
+Dá pra usar isso pra fugir, né?
 
 **T.Boss — Intro**
-1. Esse é o último trecho do esôfago... aí embaixo deve estar cheio de ácido do estômago. Descer sem se preparar é arriscado demais.
-2. Aquela bala de antes tá descendo do teto, e cada vez maior. A gente precisa construir um chão antes que ela toque o fundo — senão vamos ser arrastados junto.
+1. Esse é o último trecho do esôfago...  
+Aí embaixo deve estar cheio de ácido do estômago. Descer sem se preparar é arriscado demais.
+2. Aquela bala de antes tá descendo do teto, e cada vez maior.  
+A gente precisa construir um chão antes que ela toque o fundo.  
+Senão vamos ser arrastados junto.
 3. Cada trecho que a gente vence gera uma parte do chão. Rápido, construam isso pra bloquear aquilo!
 
 **T.Boss — Bossdown**
@@ -1304,39 +1454,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### RU
 
 **T.Stage1**
-1. Нас проглотили, и мы оказались в пищеводе... В такой ситуации остаётся только спускаться вниз и искать выход.
-2. Пищевод будет периодически сжиматься. Как только появится предупреждение, кричите все вместе командный клич, чтобы остановить это!
-3. С обеих сторон на нас будут надвигаться цветные стены. Если стена показывает твой цвет — врезайся в неё прямо, она отступит назад.
-4. ...это что, что-то катится? Только не говорите, что это та самая конфета?! Бегите, если не хотите быть раздавленными!!
+1. Нас проглотили, и мы оказались в пищеводе...  
+В такой ситуации остаётся только спускаться вниз и искать выход.
+2. Пищевод будет периодически сжиматься.  
+Как только появится предупреждение, кричите все вместе командный клич, чтобы остановить это!
+3. С обеих сторон на нас будут надвигаться цветные стены.  
+Если стена показывает твой цвет — врезайся в неё прямо, она отступит назад.
+4. ...это что, что-то катится?  
+Только не говорите, что это та самая конфета?! Бегите, если не хотите быть раздавленными!!
 
 **T.Stage2 — Stage1**
 1. Запоминайте только светящиеся плитки. Наступишь на неправильную — мгновенная смерть.
-2. Отрыжка застряла в пищеводе... начал скапливаться газ. Если станет так густо, что ничего не видно, кричите командный клич, чтобы его развеять.
+2. Отрыжка застряла в пищеводе... газ начинает скапливаться.  
+Если станет так густо, что ничего не видно, кричите командный клич, чтобы его развеять.
 
 **T.Stage2 — Stage2**
-1. На этот раз плитки будут показаны по цветам. Обязательно совпади со своим цветом! Даже если цвет верный, при чёрно-белом режиме всё равно умрёшь.
+1. На этот раз плитки будут показаны по цветам. Обязательно совпади со своим цветом!  
+Даже если цвет верный, при чёрно-белом режиме всё равно умрёшь.
 
 **T.Stage2 — Stage3**
-1. У каждой зоны есть свой цвет-ответственный. Путь станет безопасным только после того, как этот цвет пройдёт первым! Обязательно соблюдайте порядок!
+1. У каждой зоны есть свой цвет-ответственный. Путь станет безопасным только после того, как этот цвет пройдёт первым!  
+Обязательно соблюдайте порядок!
 
 **T.Stage3**
 1. Осторожно с полом. Похоже на рефлюкс — это желудочный сок поднимается!
 2. Атаки шипами будут прилетать из невидимых мест. Будьте всегда начеку.
-3. Стены с обеих сторон станут чёрно-белыми. Совпади цветом и врежься в стену, чтобы оттолкнуть напирающее давление!
+3. Стены с обеих сторон станут чёрно-белыми.  
+Совпади цветом и врежься в стену, чтобы оттолкнуть напирающее давление!
 
 **T.Stage4**
-1. Похоже на аллергическую реакцию — по всему пищеводу появились отёки. Столкнёшься с одним из них — тебя отбросит.
+1. Похоже на аллергическую реакцию — по всему пищеводу появились отёки.  
+Столкнёшься с одним из них — тебя отбросит.
 
 **T.Stage5 — Stage1**
-1. Ловите эритроциты, которые бегают повсюду — давайте нанесём урон этому телу. Мы не можем всё время только получать!
+1. Ловите эритроциты, которые бегают повсюду — давайте нанесём урон этому телу.  
+Мы не можем всё время только получать!
 
 **T.Stage5 — Stage3**
-1. После того как мы поймали эритроциты, лейкоциты приняли нас за врагов! Бегите и выживайте!
-2. Врежешься в стену — тебя отбросит назад. Можно этим воспользоваться, чтобы сбежать, да?
+1. После того как мы поймали эритроциты, лейкоциты приняли нас за врагов!  
+Бегите и выживайте!
+2. Врежешься в стену — тебя отбросит назад.  
+Можно этим воспользоваться, чтобы сбежать, да?
 
 **T.Boss — Intro**
-1. Это последний участок пищевода... там внизу наверняка всё заполнено желудочным соком. Спускаться без подготовки слишком опасно.
-2. Та самая конфета опускается с потолка сверху и становится всё больше. Нужно построить пол, пока она не коснулась дна — иначе нас снесёт вместе с ней.
+1. Это последний участок пищевода...  
+Там внизу наверняка всё заполнено желудочным соком. Спускаться без подготовки слишком опасно.
+2. Та самая конфета опускается с потолка сверху и становится всё больше.  
+Нужно построить пол, пока она не коснулась дна.  
+Иначе нас снесёт вместе с ней.
 3. За каждый пройденный участок появляется часть пола. Быстрее строим его, чтобы остановить эту штуку!
 
 **T.Boss — Bossdown**
@@ -1348,39 +1513,54 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### PL
 
 **T.Stage1**
-1. Zostaliśmy połknięci i wylądowaliśmy w przełyku... W takiej sytuacji nie ma innego wyjścia, jak zejść niżej i uciec.
-2. Przełyk będzie się ściskał w losowych odstępach. Jak tylko pojawi się ostrzeżenie, krzyczcie wszyscy okrzyk drużyny, żeby to zatrzymać!
-3. Z obu stron będą napierać kolorowe ściany. Jeśli ściana pokazuje twój kolor, walnij w nią prosto — odskoczy do tyłu.
-4. ...ten dźwięk czegoś, co się kotłuje? Tylko nie mówcie, że to ten sam cukierek?! Biegnijcie, jeśli nie chcecie zostać rozgnieceni!!
+1. Zostaliśmy połknięci i wylądowaliśmy w przełyku...  
+W takiej sytuacji nie ma innego wyjścia, jak zejść niżej i uciec.
+2. Przełyk będzie się ściskał w losowych odstępach.  
+Jak tylko pojawi się ostrzeżenie, krzyczcie wszyscy okrzyk drużyny, żeby to zatrzymać!
+3. Z obu stron będą napierać kolorowe ściany.  
+Jeśli ściana pokazuje twój kolor, walnij w nią prosto — odskoczy do tyłu.
+4. ...ten dźwięk czegoś, co się kotłuje?  
+Tylko nie mówcie, że to ten sam cukierek?! Biegnijcie, jeśli nie chcecie zostać rozgnieceni!!
 
 **T.Stage2 — Stage1**
 1. Zapamiętajcie tylko świecące płytki. Nadepniecie na złą — to natychmiastowa śmierć.
-2. Odbicie zatrzymało się w przełyku... gaz zaczyna się gromadzić. Jak zrobi się tak gęsto, że nic nie widać, krzyczcie okrzyk drużyny, żeby go rozgonić.
+2. Odbicie zatrzymało się w przełyku... gaz zaczyna się gromadzić.  
+Jak zrobi się tak gęsto, że nic nie widać, krzyczcie okrzyk drużyny, żeby go rozgonić.
 
 **T.Stage2 — Stage2**
-1. Tym razem będzie pokazywać po kolorach. Musisz koniecznie trafić w swój kolor! Nawet jeśli kolor się zgadza, i tak zginiesz, jeśli będzie czarno-białe.
+1. Tym razem będzie pokazywać po kolorach. Musisz koniecznie trafić w swój kolor!  
+Nawet jeśli kolor się zgadza, i tak zginiesz, jeśli będzie czarno-białe.
 
 **T.Stage2 — Stage3**
-1. Każda strefa ma przypisany kolor. Droga staje się bezpieczna tylko wtedy, gdy ten kolor przejdzie pierwszy! Koniecznie trzymajcie się kolejności!
+1. Każda strefa ma przypisany kolor. Droga staje się bezpieczna tylko wtedy, gdy ten kolor przejdzie pierwszy!  
+Koniecznie trzymajcie się kolejności!
 
 **T.Stage3**
 1. Uważajcie na podłogę. Musi mieć refluks — podchodzi kwas żołądkowy!
 2. Ataki kolcami będą nadchodzić z miejsc, których nie widać. Bądźcie stale czujni.
-3. Ściany po obu stronach zmienią się na czarno-białe. Dopasuj kolor i uderz w ścianę, żeby odeprzeć napór!
+3. Ściany po obu stronach zmienią się na czarno-białe.  
+Dopasuj kolor i uderz w ścianę, żeby odeprzeć napór!
 
 **T.Stage4**
-1. To pewnie reakcja alergiczna — w całym przełyku powstały obrzęki. Uderzycie w jeden z nich, i zostaniecie odrzuceni.
+1. To pewnie reakcja alergiczna — w całym przełyku powstały obrzęki.  
+Uderzycie w jeden z nich, i zostaniecie odrzuceni.
 
 **T.Stage5 — Stage1**
-1. Łapcie krwinki czerwone, które biegają wokół — zadajmy temu ciału jakieś obrażenia. Nie możemy tylko ciągle oberwać!
+1. Łapcie krwinki czerwone, które biegają wokół — zadajmy temu ciału jakieś obrażenia.  
+Nie możemy tylko ciągle oberwać!
 
 **T.Stage5 — Stage3**
-1. Skoro złapaliśmy krwinki czerwone, krwinki białe uznały nas za wrogów! Biegnijcie i przetrwajcie!
-2. Uderzysz w ścianę i zostaniesz odrzucony. Może da się to wykorzystać, żeby uciec, co?
+1. Skoro złapaliśmy krwinki czerwone, krwinki białe uznały nas za wrogów!  
+Biegnijcie i przetrwajcie!
+2. Uderzysz w ścianę i zostaniesz odrzucony.  
+Może da się to wykorzystać, żeby uciec, co?
 
 **T.Boss — Intro**
-1. To ostatni odcinek przełyku... tam w dole musi być pełno kwasu żołądkowego. Zejście bez przygotowania jest zbyt ryzykowne.
-2. Ten cukierek z wcześniej opada z sufitu i robi się coraz większy. Musimy zbudować podłogę, zanim dotknie dna — inaczej zniesie nas razem z nim.
+1. To ostatni odcinek przełyku...  
+Tam w dole musi być pełno kwasu żołądkowego. Zejście bez przygotowania jest zbyt ryzykowne.
+2. Ten cukierek z wcześniej opada z sufitu i robi się coraz większy.  
+Musimy zbudować podłogę, zanim dotknie dna.  
+Inaczej zniesie nas razem z nim.
 3. Za każdy pokonany odcinek powstaje kawałek podłogi. Szybko, budujcie ją, żeby to zablokować!
 
 **T.Boss — Bossdown**

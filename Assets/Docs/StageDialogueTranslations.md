@@ -21,15 +21,15 @@
 
 `StageDialogueLines.md` 섹션 구조를 그대로 키로 사용:
 
-- `M.Stage1.Line1`
-- `M.Stage3.Line1~3`
-- `M.Stage4.Stage1.Line1~3` (Stage2는 대사 없음 — 원문 참고)
+- `M.Stage1.Line1~5`
+- `M.Stage3.Line1~2`
+- `M.Stage4.Stage1.Line1~3`, `M.Stage4.Stage2.Line1`, `M.Stage4.Stage3.Line1~3`
 - `M.Stage5.Line1`
-- `M.Boss.Intro.Line1~2`, `M.Boss.Bossdown.Line1~4`
-- `T.Stage1.Line1~3`
-- `T.Stage2.Stage1.Line1`, `T.Stage2.Stage2.Line1~2`, `T.Stage2.Stage3.Line1`
-- `T.Stage5.Stage1.Line1`, `T.Stage5.Stage3.Line1`
-- `T.Boss.Intro.Line1~3`, `T.Boss.Bossdown.Line1~3`
+- `M.Boss.Intro.Line1`, `M.Boss.Bossdown.Line1~3`
+- `T.Stage1.Line1~4`
+- `T.Stage2.Stage1.Line1~2`, `T.Stage2.Stage2.Line1`, `T.Stage2.Stage3.Line1`
+- `T.Stage5.Stage1.Line1`, `T.Stage5.Stage3.Line1~2`
+- `T.Boss.Intro.Line1~3`, `T.Boss.Bossdown.Line1~4`
 
 번역 대상에서 제외 (원문 미정 — `StageDialogueLines.md` "열려 있는 항목" 참고):
 
@@ -89,24 +89,9 @@
 - ru: Тебе нужно успеть встать на неё до конца отведённого времени.
 - pl: Musisz na nią wejść, zanim skończy się czas.
 
-### M.Stage3.Line3
-
-- ko: 못 올라서면... 천장의 이빨이 떨어지기 시작할 거야.
-- en: If you don't make it... the teeth on the ceiling will start falling.
-- ja: 乗れなかったら…天井の歯が落ちてくる。
-- zh-Hans: 如果站不上去……天花板上的牙齿就会开始掉下来。
-- zh-Hant: 如果站不上去……天花板上的牙齒就會開始掉下來。
-- es: Si no lo logras... los dientes del techo empezarán a caer.
-- es-419: Si no lo logras... los dientes del techo van a empezar a caer.
-- fr: Si tu n'y arrives pas... les dents du plafond commenceront à tomber.
-- de: Wenn du es nicht schaffst... fangen die Zähne von der Decke an zu fallen.
-- pt-BR: Se não conseguir... os dentes do teto vão começar a cair.
-- ru: Если не успеешь... зубы с потолка начнут падать.
-- pl: Jeśli nie zdążysz... zęby z sufitu zaczną spadać.
-
 ---
 
-## M.Stage4 (Stage1만 — Stage2는 대사 없음)
+## M.Stage4
 
 ### M.Stage4.Stage1.Line1
 
@@ -193,21 +178,6 @@
 - ru: Это последний участок во рту.
 - pl: To już ostatni odcinek w ustach.
 
-### M.Boss.Intro.Line2
-
-- ko: 조금만 버티면 나갈 수 있을 것 같아...
-- en: If we just hold on a little longer, we might get out...
-- ja: あと少し耐えれば出られそう…
-- zh-Hans: 再撑一会儿好像就能出去了……
-- zh-Hant: 再撐一下好像就能出去了……
-- es: Si aguantamos un poco más, parece que podremos salir...
-- es-419: Si resistimos un poco más, parece que vamos a poder salir...
-- fr: Si on tient encore un peu, on devrait pouvoir sortir...
-- de: Wenn wir noch etwas durchhalten, kommen wir vielleicht raus...
-- pt-BR: Se aguentarmos só um pouco mais, parece que vamos conseguir sair...
-- ru: Если ещё немного продержаться, кажется, можно будет выбраться...
-- pl: Jeśli jeszcze trochę wytrzymamy, chyba zdołamy się wydostać...
-
 ### M.Boss.Bossdown.Line1
 
 - ko: 입 안이 조용해졌다... 다 멈춘 건가.
@@ -252,21 +222,6 @@
 - pt-BR: ...
 - ru: ...
 - pl: ...
-
-### M.Boss.Bossdown.Line4
-
-- ko: 이런, 삼켜진다...!!
-- en: Oh no, we're being swallowed...!!
-- ja: まずい、飲み込まれる…!!
-- zh-Hans: 糟了，又被吞下去了……!!
-- zh-Hant: 糟了，又被吞下去了……!!
-- es: ¡No, nos están tragando otra vez...!!
-- es-419: ¡No, nos están tragando de nuevo...!!
-- fr: Non, on est encore avalés...!!
-- de: Oh nein, wir werden wieder verschluckt...!!
-- pt-BR: Não, estamos sendo engolidos de novo...!!
-- ru: О нет, нас снова глотают...!!
-- pl: O nie, znowu nas przełykają...!!
 
 ---
 
@@ -350,21 +305,6 @@
 - pt-BR: Dessa vez vai mostrar por cor. Não esqueça de combinar com a sua própria cor!
 - ru: Теперь будет показано по цветам. Обязательно соответствуй своему цвету!
 - pl: Tym razem pokaże się według kolorów. Koniecznie dopasuj do własnego koloru!
-
-### T.Stage2.Stage2.Line2
-
-- ko: 색이 맞아도 흑백이면 죽을 거야.
-- en: Even if the color's right, black-and-white will kill you.
-- ja: 色が合っていても、白黒だったら死ぬよ。
-- zh-Hans: 颜色对了，但如果是黑白的话也会死。
-- zh-Hant: 顏色對了，但如果是黑白的話也會死。
-- es: Aunque el color sea correcto, si está en blanco y negro morirás.
-- es-419: Aunque el color sea correcto, si está en blanco y negro vas a morir.
-- fr: Même si la couleur est bonne, le noir et blanc te tuera.
-- de: Selbst wenn die Farbe stimmt, bringt Schwarz-Weiß dich um.
-- pt-BR: Mesmo com a cor certa, se estiver em preto e branco você morre.
-- ru: Даже если цвет верный, чёрно-белое убьёт тебя.
-- pl: Nawet jeśli kolor się zgadza, czarno-białe cię zabije.
 
 ### T.Stage2.Stage3.Line1
 
@@ -514,7 +454,7 @@
 ## 적용 체크리스트 (사용자 — 에디터 작업)
 
 1. `Window > Asset Management > Localization Tables`에서 `Dialogue` 컬렉션 열기.
-2. `M.Stage1.Intro.Line1~4` 기존 4개 키 처리: 삭제 또는 `2.Tutorial` 씬 대사용으로 재배치 (위 "먼저 확인할 것" 참고).
+2. `M.Stage1.Intro.Line1~4` 파일럿 4개 키는 `Dialogue_en` 고아 엔트리까지 삭제됨. Tutorial 씬 키는 별도 테이블.
 3. 위 키 네이밍(예: `M.Stage3.Line1`)으로 각 스테이지 씬에 필요한 만큼 새 키 추가.
 4. 각 언어 컬럼(en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl)에 이 문서의 값을 그대로 복사해 채우기. `ko` 컬럼도 이 문서 값으로 채워두면 이후 한국어도 String Table 경로로 통일 가능(지금은 씬 TMP에 직접 하드코딩하는 방식과 병행 중).
 5. 각 스테이지 씬의 `Dialogue_Panel` 하위 TMP 오브젝트에 `LocalizeStringEvent` 부착 → `SetTable("Dialogue")` + `SetEntry(키)` → `OnUpdateString` → 해당 TMP `text`에 바인딩 (`M.Stage1` 파일럿과 동일 패턴, `SteamworksIntegrationDesign.md` 트랙4 §4 참고).
