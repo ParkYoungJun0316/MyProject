@@ -31,7 +31,7 @@ M·T1–T4를 다시 묻지 말 것. **T5·T.Boss 응원·페이즈는 보류** 
 | T3 | 조임 **복습**(같은 원통 반경 메카닉). 2인 장면 = **전원 외침 원상 복구**만. ColorWall **흑백** 초출 = 색 일(잠깐 멈춤), 2인 게이트 아님. 패드 Door_3 커먼. Door_1형 4색 겹침 삭제. Spike·볼더·Thron·점액·넉백은 압력 |
 | T4 | **ContactKnockback + 뚫린 바닥 낙사**가 판. 각자 생존, 2인 게이트 아님. **패드 밟으면 Door가 올라와 구멍 위 길이 됨** (Door_3 1:1·커먼). 그 길도 2인 게이트 아님. SideSplit **삭제 예정**. MovingCorridor는 압력. 2인 장면 = **안개 걷힘**. 조임 원상 복구 없음 |
 | T5 | Floor + Runner/Chaser **유지**. 응원·2인 장면 **보류**. 지금 재설계·안개 재사용 없음 |
-| T.Boss | ColorTile = M. 초출 시드 §4. **응원 보류.** 페이즈 초안 §6 **[미잠금]** (P3 미정). 조임 쓰면 T1·T3와 같은 원통 반경 메카닉(축 선택 불필요) |
+| T.Boss | ColorTile = M. 초출 시드 §4. **응원 보류.** 페이즈 초안 §6 **[미잠금]** (P1·P2·P4 확정, **P3도 확정** — ColorWall 수직 재사용 + 신규 튕김 발판). 조임 쓰면 T1·T3와 같은 원통 반경 메카닉(축 선택 불필요) |
 | 조임 원상 복구 | **T1·T3만** |
 | 안개 | **T2 초출, T4 복습.** 거리 기반(Render Fog), 씬 전역 — 구간 분리 없음. 미리보기 정답 다시 보여주기 금지 |
 
@@ -57,6 +57,7 @@ M·T1–T4를 다시 묻지 말 것. **T5·T.Boss 응원·페이즈는 보류** 
 - `EsophagusSqueeze`(`Assets/Scripts/Cheer/EsophagusSqueeze.cs`) — **MeshCollider 스케일 폐기, Box 조각 링(조리개) 방식으로 최종 교체(2026-09-06).** 원통을 스케일하는 대신 이 컴포넌트를 원통 중심에 두고 자식 `segments[]`(평평한 Box 판자 8개, 카메라 조리개처럼 방사형 배치)를 건다. 각 판자는 회전 없이 자기 반경 방향으로만 `Rigidbody(kinematic).MovePosition`으로 평행 이동 — 스케일이 아니라 위치 이동이라 재굽기 자체가 없어 Attack/Recover뿐 아니라 매 프레임 완전히 매끄럽게 움직여도 비용이 없다. Attack 중 원래 반경 → **`squeezeTargetRadius`(압박 강도, 인스펙터)**로 Lerp, Hold 중엔 고정. 판자 폭을 원래 반경(rest)에서 이웃과 맞물리게 잡으면 조여들수록 인접 판자 간격이 더 줄어 틈이 안 생김(계산상 보장). kinematic Rigidbody가 실제로 밀고 들어와 Player(dynamic Rigidbody)가 물리적으로 밀려나므로 MeshCollider 스케일 때의 끼임 위험도 사라짐(AdvancingWall과 동일 원리).
 - `EsophagusFog`(`Assets/Scripts/Cheer/EsophagusFog.cs`) — `RenderSettings.fogDensity`를 Attack 중 0 → **`maxDensity`(압박 강도, 인스펙터)**로 Lerp, Hold 중 고정. 콜라이더 비용은 원래 없어서 이 구조 자체는 성능 사유가 아니라 "랜덤 주기로 팀 응원을 계속 유도" 사유로 채택.
 - `ColorWall`은 조임과 별개(좌우 압박, 되돌림 대상 아님) — 변경 없음.
+- **T.Boss P3 튕김 발판(2026-09-08):** `ContactKnockback.launchMode = VerticalUp` (신규 파일 없음 — 상세·근거는 §6 P3). 천장 `ColorWall`+`AdvancingWall` 수직 재사용도 `moveDirection` 인스펙터 설정만으로 되므로 코드 변경 없음.
 - **에디터(사용자, 남음):** T1/T3 씬에 `EsophagusSqueeze` 배치 — 이 오브젝트를 식도 원통 중심에 두고, 자식으로 판자 8개를 45°씩 등간격 방사형 배치(각 판자 = Box 오브젝트 + `Rigidbody(Is Kinematic=true, Interpolate)` + `BoxCollider`, 폭은 원래 반경에서 이웃과 맞물리는 값). `segments[]`에 그 8개 Transform 연결, `squeezeTargetRadius`/`attackDuration`/`recoverDuration`/`randomIntervalMin~Max`/`warnDuration` 튜닝(선택 시 Gizmo로 원래→목표 반경 이동 경로 확인 가능). T2/T4 씬에 `EsophagusFog` 배치(`maxDensity`/`fogColor`/같은 랜덤·클립 필드 튜닝). 안개는 URP **빌트인 Fog**(Lighting > Environment)를 코드가 켜므로 별도 Volume 오버라이드 없음 — URP Lit 계열만 반영, 커스텀/Unlit 셰이더(Boulder 등)는 범위 밖. `TeamCheerWarningUI`는 M과 동일하게 `CheerService.OnHazardWindowChanged` 구독 — 씬에 해당 UI prefab 배치 여부만 확인. 둘 다 씬당 **하나만** 둘 것(`CheerService.RegisterRevert`가 중복 등록 경고).
 
 ### H.5 다음 (우선)
@@ -100,7 +101,7 @@ ColorWall 일치 = 그 벽만 잠깐 멈춤 (색 일). 팀 외침 조임 = **전
 | T.Stage3 | Wall·볼더·Spike·패드 + 조임 복습 | **A [확정]** §3 | 같은 원통 반경 조임. **전원 외침 원상 복구** | ColorWall은 2인 게이트 아님. **흑백** 초출 = 색 일. Door_1형 4색 겹침 삭제. Door_3 커먼 | Spike·볼더·Thron·점액·넉백은 압력 |
 | T.Stage4 | MovingCorridor + ContactKnockback + 구멍 바닥 + 패드→Door 길 | **A [확정]** §5 | **안개 걷힘** (2인 장면) | 패드 밟으면 Door가 올라와 길이 됨 (Door_3). 넉백→구멍 낙사·그 길은 각자 생존. SideSplit **삭제 예정**. 조임 원상 복구 없음 | 넉백은 압력. 협동으로 안 바꿈 |
 | T.Stage5 | Floor + Runner/Chaser | 보류 | 판 유지 | 응원·재설계 지금 없음 | |
-| T.Boss | ColorTile + SurviveTime + AdvancingWall/ColorWall | 보류 | ColorTile = M. 초출 시드 §4. 페이즈 초안 §6 | 응원·P3 미정. 확정 아님. 조임 쓰면 T1·T3와 같은 원통 반경(축 선택 불필요) | |
+| T.Boss | ColorTile + SurviveTime + AdvancingWall/ColorWall | 보류 | ColorTile = M. 초출 시드 §4. 페이즈 초안 §6(P3 확정 포함) | 응원 미정. 페이즈 자체는 확정. 조임 쓰면 T1·T3와 같은 원통 반경(축 선택 불필요) | |
 
 **T.Stage1.** 리맵 유지. Door_1 중첩 4색이 뒤죽박죽. Door_3 = 패드가 바로 앞 문과 1:1.
 
@@ -209,7 +210,11 @@ Memory 미리보기 정답을 다시 켜지 않음(안개가 걷혀도 정답 �
 |---|------|-----|-----------|
 | 1 | 25×100 | Pioneer로 긴 쪽을 뚫음 | 조임 |
 | 2 | 50×100 | Door가 올라와 길, 반대편 도착. SpikeTrap = 폭탄 피하기(압력) | 안개 |
-| 3 | 75×100 | **미정** | **미정** |
+| 3 | 75×100 | 천장 ColorWall(계속 색 변경)+`AdvancingWall` 압박(수직 재사용) + 바닥 튕김 발판(신규 컴포넌트) — 튕겨 올라가 색 맞춰 부딪히면 `ColorWall.PauseRoutine`으로 stopDuration 정지, 생존시간까지 반복 | 없음(ColorWall 수직 재사용) |
 | 4 | 100×100 | ColorWall **고유+흑백**(좌우 압박), 원통 반경 조임 | 안개 |
 
-P3은 비움. 응원(조임 원상 / 안개 걷힘)을 페이즈에 어떻게 붙일지는 아직.
+**P3 확정(2026-09-08):** 천장 ColorWall+`AdvancingWall`(계속 색 바뀌는 압박 벽, T1·T3의 좌우 압박을 수직축으로 재사용 — `moveDirection`이 임의 로컬 벡터라 인스펙터 설정만으로 가능, 코드 변경 없음)이 내려오고, 바닥 튕김 발판으로 튕겨 올라가 색 맞춰 부딪히면 `ColorWall.HandleContact`의 기존 색 일치 로직이 그대로 `PauseRoutine`(stopDuration간 정지)을 실행 — 이걸 반복해 생존시간(예: 60초)까지 버팀. **튕김 발판 코드 됨(2026-09-08) — 신규 컴포넌트 아님, `ContactKnockback`에 모드 추가로 확정:** 별도 `BouncePad`를 만들었다가 `ContactKnockback`과 90% 중복이라 폐기하고, `ContactKnockback.launchMode` 열거형으로 합쳤다 — `HorizontalFromCenter`(기본값 0 = 기존 벽·범퍼 동작, T3/T4/T5·Tutorial 씬 무영향) / `VerticalUp`(`transform.up` 고정 발사 = 튕김 발판). `NetworkDamageUtil.ApplyKnockback`(임의 방향 지원) 그대로 사용, 새 RPC 없음.
+
+**수직 발사가 성립하는 근거(코드 확인):** ① `Player.Move()`는 velocity.x/z만 입력값으로 덮어쓰고 velocity.y는 전혀 건드리지 않으며, Rigidbody 제약도 `FreezeRotation X·Z`뿐이라 Y 위치가 자유다. ② `Move()`에 **접지 검사가 없다** — `NetworkPlayerSetup.ApplyKnockbackClientRpc`가 부르는 `SuppressMoveForKnockback` 억제(기본 0.25초)가 끝나면 **공중에서도 이동 입력이 지상과 동일하게 100% 먹힌다.** 그래서 수평 혼합 성분이 불필요(어차피 0.25초 뒤 v.x/z는 0으로 정리되고 입력이 덮어씀) → 수직 고정 발사 + 공중 조작으로 천장 색을 맞추는 게 판. ③ 튜닝 기준: Player `mass = 1`, 중력 -9.81이라 force가 그대로 초기 속도(m/s), 정점 높이 ≈ force² / 19.62 (force 10 → 약 5.1m). 힘/간격은 씬에서 튜닝.
+
+**폐기된 혼합 방식(기록):** "발판 중심→플레이어" 벡터의 y를 지우지 않는 혼합안은 실패 — Player 피벗이 발밑(루트 CapsuleCollider `center (0,1,0)`, `height 2.1`)이라 평평한 발판 위에서 dir.y는 수 cm뿐인데 수평 오프셋은 발판 반폭(m 단위)까지 나와, 정규화하면 거의 수평 발사가 된다(중심에서 1m 벗어나면 발사각 약 6°). 발판 피벗이 표면에 있으면 순수 수평, 표면보다 위면 아래로 처박음. 응원(조임 원상/안개 걷힘)을 페이즈에 어떻게 붙일지는 아직.
