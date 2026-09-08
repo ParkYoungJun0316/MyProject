@@ -69,7 +69,7 @@ M·T 개별 버린 목록은 각 문서 H.3.
 
 ### H.4 코드
 
-`CheerService` 팀 = Heal·120초 **폐기됨**. `ITeamCheerRevert` + Warning 창. 입 닫힘·침·혀 **됨** (플레이 확인 2026-09-04). ColorTile 점수제 코드 됨(M.Stage3 에디터 할당 남음). 수면 아트는 슬롯만 비움. T 조임 원상 복구·안개 걷힘은 **아직 없음**. 새 RPC 없음. NGO 챌린지 축(`NetworkDesign` §11B) 유지.
+`CheerService` 팀 = Heal·120초 **폐기됨**. `ITeamCheerRevert` + Warning 창. 입 닫힘·침·혀 **됨** (플레이 확인 2026-09-04). M.Boss P4 `MouthBossJawSmash` **됨** (2026-09-09). ColorTile 점수제 코드 됨(M.Stage3 에디터 할당 남음). 수면 아트는 슬롯만 비움. T 조임 원상 복구·안개 걷힘은 **아직 없음**. 새 RPC 없음. NGO 챌린지 축(`NetworkDesign` §11B) 유지.
 
 `MinigameDesign.md`와 충돌하면 **감사 문서가 이김**. 팀 응원 **효과·쿨**이 `CheerSystemDesign.md`와 충돌하면 **이 맵 + M/T 문서가 이김**. RPC·투표·그래머·개인 버프는 `CheerSystemDesign`.
 

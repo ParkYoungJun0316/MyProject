@@ -5,8 +5,8 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// M.Boss 마지막 페이즈(P4) 전용 — 입 닫힘이 무조건 발동하고, 암전 중 이빨이 바닥 타일을 부수는
-/// 보스 전용 팀 응원 되돌림 + 페이즈 완료 판정. CoopStageAudit.M.md §7 P4(2026-09-08 확정).
+/// M.Boss 마지막 페이즈(P4) 전용 — 입 닫힘이 무조건 발동하고, 암전 중 바닥 타일이 파괴음과 함께
+/// 부서지는 보스 전용 팀 응원 되돌림 + 페이즈 완료 판정. CoopStageAudit.M.md §7 P4(2026-09-08 확정).
 ///
 /// 기존 <see cref="MouthController"/>.teamCheerHazard 로는 이 인과관계를 표현할 수 없다 —
 /// 응원이 Close를 막는 게 아니라, Close→Open이 끝난 뒤에만 사후 복구 창이 열린다(지금까지의
@@ -18,7 +18,9 @@ using UnityEngine.Events;
 /// [머신 (총 6회 반복)]
 /// 1. Warning  — 이번 회차에 부술 타일에 마커 표시. 응원 없음, 예고만.
 /// 2. Closing  — 무조건 발동(응원으로 못 막음). 암전.
-/// 3. Breaking — 암전 중 이빨이 내려와 경고된 타일을 부순다(1타일=1이빨, 연출).
+/// 3. Breaking — 암전 중(플레이어가 못 보는 구간) 경고된 타일이 파괴음과 함께 사라진다.
+///    임팩트는 순전히 사운드로 전달 — 이 구간은 화면이 이미 최대 암전(ScreenFader)이라
+///    시각 연출을 넣어도 안 보인다. 부서진 자리는 그냥 빈 구멍(타일 SetActive(false))으로 남는다.
 /// 4. Opening  — 암전 걷힘.
 /// 5. CheerWindow — Open이 끝난 시점부터 열리는 사후 복구 창. 성공하면 바닥 전체 원상복구,
 ///    타임아웃(실패)이면 깨진 채로 다음 회차로.
@@ -58,13 +60,32 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [Tooltip("바닥 타일 전체. 부서지면 SetActive(false), 복구되면 true.")]
     [SerializeField] GameObject[] floorTiles = new GameObject[0];
 
-    [Tooltip("floorTiles와 같은 인덱스로 매칭되는 이빨 프롭. 그 타일이 부서진 동안만 활성화.\n" +
-             "비워두면 이빨 연출 생략(타일만 꺼짐).")]
-    [SerializeField] GameObject[] toothProps = new GameObject[0];
+    [Tooltip("floorTiles와 같은 인덱스로 매칭되는 SpikeLaneWarnMarker. Warning 중 이번 회차에 부술 타일만 PlayWarning.\n" +
+             "비워두면 경고 연출 생략. SpikeTrap/혀와 동일 컴포넌트(노랑→빨강).")]
+    [SerializeField] SpikeLaneWarnMarker[] warnMarkers = new SpikeLaneWarnMarker[0];
 
-    [Tooltip("floorTiles와 같은 인덱스로 매칭되는 경고 마커. Warning 중 이번 회차에 부술 타일만 켜짐.\n" +
-             "비워두면 경고 연출 생략.")]
-    [SerializeField] GameObject[] warnMarkers = new GameObject[0];
+    [Header("파괴음 (3D — Breaking 순간 재생. 암전 중이라 시각 연출 대신 사운드로 임팩트 전달)")]
+    [Tooltip("이 거리(m) 이내에서는 최대 볼륨")]
+    [SerializeField] float breakSfxMinDistance = 5f;
+    [Tooltip("이 거리(m) 밖에서는 완전 무음. 0이면 500으로 처리")]
+    [SerializeField] float breakSfxMaxDistance = 50f;
+    [SerializeField] AudioRolloffMode breakSfxRolloffMode = AudioRolloffMode.Logarithmic;
+
+    [Header("파편 연출 (TileDebrisUtil 공용 — 신규 컴포넌트 없음)")]
+    [Tooltip("타일 파괴 시 스폰할 파편 프리팹. 비우면 파편 생략(기존처럼 SFX+비활성만).\n" +
+             "크기는 타일 월드 크기와 같게 만들 것 — FloorTile 기준 5 × 1 × 5.\n" +
+             "주의: Breaking 구간은 화면이 이미 최대 암전(ScreenFader)이라 파편이 안 보인다 —\n" +
+             "엔딩(ForceBreakAllTilesForEnding)에서만 실제로 보인다.")]
+    [SerializeField] GameObject tileDebrisPrefab = null;
+
+    [Tooltip("파편 자동 소멸 시간(초). 0이면 자동 소멸 안 함.")]
+    [SerializeField] float tileDebrisLifetime = 2f;
+
+    [Tooltip("파편에 가할 임펄스 힘 최소값.")]
+    [SerializeField] float tileDebrisImpulseMin = 2f;
+
+    [Tooltip("파편에 가할 임펄스 힘 최대값.")]
+    [SerializeField] float tileDebrisImpulseMax = 5f;
 
     [Header("입 애니메이터 (이 페이즈 전용 — MouthController와 별개, 응원 없이 무조건 발동)")]
     [Tooltip("비워두면 이 GO 또는 자식(비활성 포함)에서 자동 탐색")]
@@ -81,7 +102,8 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [Tooltip("Close 전 경고 시간. 응원 없이 예고만 — 놓쳐도 Close는 그대로 진행됨.")]
     [SerializeField] float warnDuration = 2f;
 
-    [Tooltip("암전(Closing 종료) 후 이빨이 타일을 부수는 연출 시간. 지난 뒤 Opening 시작.")]
+    [Tooltip("암전(Closing 종료) 후 타일 파괴음이 나가고 Opening으로 넘어가기 전까지의 대기 시간.\n" +
+             "이 구간은 화면이 이미 최대 암전이라 시각 연출 없음 — 사운드로만 임팩트 전달.")]
     [SerializeField] float toothBreakDuration = 1f;
 
     [Tooltip("Open이 끝난 뒤 응원이 열려 있는 시간. 이 안에 팀 전원 외침 성공하면 즉시 복구,\n" +
@@ -130,8 +152,13 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     readonly HashSet<int> _brokenIndices = new();
 
+    // 스폰해 둔 파편. 회차 복구/중지/재시작이 전부 RestoreAllTiles()를 지나므로 거기 한 곳에서만
+    // 정리하면 lifetime을 기다리지 않고 즉시 치워진다(TongueController와 동일 패턴).
+    readonly List<GameObject> _spawnedDebris = new();
+
     const float AnchorWaitTimeout = 3f;
     const int TileAxis = 2;
+    const int DebrisAxis = 3;
 
     public bool IsAvailable => _available;
 
@@ -291,9 +318,9 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
         // 1. Warning — 응원 없음, 예고만.
         _phase = HazardPhase.Warning;
-        ShowWarnMarkers(targets, true);
+        PlayWarnMarkers(targets, Mathf.Max(0f, warnDuration));
         yield return WaitUntilServerTime(warnEnd);
-        ShowWarnMarkers(targets, false);
+        ResetAllWarnMarkers();
 
         // 2. Closing — 무조건.
         _phase = HazardPhase.Closing;
@@ -301,7 +328,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         screenFader?.FadeOut(Mathf.Max(0f, closeClipLength));
         yield return WaitUntilServerTime(closeEnd);
 
-        // 3. Breaking — 암전 중 이빨이 타일 파괴.
+        // 3. Breaking — 암전 중(화면 안 보임) 파괴음만으로 타일 파괴를 전달.
         _phase = HazardPhase.Breaking;
         BreakTiles(targets);
         yield return WaitUntilServerTime(breakEnd);
@@ -401,24 +428,53 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     int MixSeed(int index, int axis)
         => NetworkSessionData.Seed ^ seedSalt ^ (index * 0x2545F491) ^ (axis * 0x27220A95);
 
+    /// <summary>
+    /// 파편 임펄스 시드. 전 머신이 같은 값을 뽑아야 파편이 똑같이 튄다(로컬 Random 금지 원칙).
+    /// _cycleIndex는 절대 ServerTime 스케줄(RunCycles의 for 변수)로만 올라가므로 전 머신 동일 —
+    /// TongueController의 _attackCount와 같은 역할.
+    /// </summary>
+    int DebrisSeed(int tileIndex) => MixSeed(tileIndex + _cycleIndex * 101, DebrisAxis);
+
     void BreakTiles(List<int> targets)
     {
         foreach (int i in targets)
         {
             _brokenIndices.Add(i);
+            PlayBreakSfx(i);
+            SpawnDebris(i, DebrisSeed(i));
             SetTileActive(i, false);
-            SetToothActive(i, true);
         }
+    }
+
+    /// <summary>tile의 현재 재질을 그대로 입혀 파편을 스폰 — Breaking 구간은 암전이라 안 보이지만
+    /// ForceBreakAllTilesForEnding(컷신)에서는 실제로 보인다. tileDebrisPrefab 비우면 아무 것도 안 함.</summary>
+    void SpawnDebris(int index, int seed)
+    {
+        if (index < 0 || index >= floorTiles.Length || floorTiles[index] == null) return;
+        GameObject debris = TileDebrisUtil.BreakTile(floorTiles[index], tileDebrisPrefab, tileDebrisLifetime,
+                                                      tileDebrisImpulseMin, tileDebrisImpulseMax, seed);
+        if (debris != null)
+            _spawnedDebris.Add(debris);
     }
 
     void RestoreAllTiles()
     {
         for (int i = 0; i < floorTiles.Length; i++)
-        {
             SetTileActive(i, true);
-            SetToothActive(i, false);
-        }
         _brokenIndices.Clear();
+        ClearDebris();
+    }
+
+    /// <summary>남아 있는 파편을 즉시 삭제. RestoreAllTiles 한 곳에서만 부른다(TongueController와 동일).</summary>
+    void ClearDebris()
+    {
+        for (int i = 0; i < _spawnedDebris.Count; i++)
+        {
+            GameObject debris = _spawnedDebris[i];
+            if (debris != null)
+                Destroy(debris);
+        }
+        _spawnedDebris.Clear();
     }
 
     void SetTileActive(int index, bool active)
@@ -427,24 +483,26 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         if (floorTiles[index] != null) floorTiles[index].SetActive(active);
     }
 
-    void SetToothActive(int index, bool active)
+    /// <summary>Breakable.DoBreakVisuals() / TongueController와 동일 SFX 재생 패턴 재사용(새 SFXId 없음).
+    /// Breaking 구간은 이미 최대 암전이라 시각 연출 대신 이 사운드가 임팩트를 전달한다.</summary>
+    void PlayBreakSfx(int index)
     {
-        if (index < 0 || index >= toothProps.Length) return;
-        if (toothProps[index] != null) toothProps[index].SetActive(active);
+        if (index < 0 || index >= floorTiles.Length || floorTiles[index] == null) return;
+        SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, floorTiles[index].transform.position,
+            breakSfxMinDistance, breakSfxMaxDistance, breakSfxRolloffMode);
     }
 
-    void ShowWarnMarkers(List<int> targets, bool show)
+    void PlayWarnMarkers(List<int> targets, float duration)
     {
-        if (show)
-        {
-            foreach (int i in targets)
-                if (i >= 0 && i < warnMarkers.Length && warnMarkers[i] != null)
-                    warnMarkers[i].SetActive(true);
-            return;
-        }
+        foreach (int i in targets)
+            if (i >= 0 && i < warnMarkers.Length && warnMarkers[i] != null)
+                warnMarkers[i].PlayWarning(duration);
+    }
 
+    void ResetAllWarnMarkers()
+    {
         for (int i = 0; i < warnMarkers.Length; i++)
-            if (warnMarkers[i] != null) warnMarkers[i].SetActive(false);
+            warnMarkers[i]?.ResetWarning();
     }
 
     // ── 엔딩 연출 ─────────────────────────────────────────────────
@@ -461,11 +519,13 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         _endingBroken = true;
         StopCycleInternal(restoreTiles: false);
 
+        // 여긴 암전이 아니라 컷신이라 파편이 실제로 보인다 — 회차 중 BreakTiles와 달리 여기만
+        // 유의미한 시각 연출. 회차 인덱스가 없으므로 타일 인덱스만으로 시드(한 번만 도는 이벤트).
         for (int i = 0; i < floorTiles.Length; i++)
         {
             _brokenIndices.Add(i);
+            SpawnDebris(i, MixSeed(i, DebrisAxis));
             SetTileActive(i, false);
-            SetToothActive(i, true);
         }
     }
 
@@ -482,12 +542,13 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         _phase = HazardPhase.Idle;
         _available = false;
         _recoverQueued = false;
+        ResetAllWarnMarkers();
         CheerService.Instance?.NotifyHazardWindow(false);
     }
 
     /// <summary>
     /// 조용한 오설정을 콘솔에 드러낸다(SalivaHazard의 배선 경고와 동일 관례) — 타일이 안 부서지거나
-    /// 이빨/예고가 일부만 뜨는 증상은 인스펙터 배선에서 오는 경우가 대부분이다.
+    /// 예고가 일부만 뜨는 증상은 인스펙터 배선에서 오는 경우가 대부분이다.
     /// </summary>
     void ValidateWiring()
     {
@@ -496,10 +557,6 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
             Debug.LogWarning($"[MouthBossJawSmash] floorTiles가 비어 있습니다 — 부술 타일이 없어 회차가 헛돕니다. ({name})", this);
             return;
         }
-
-        if (toothProps != null && toothProps.Length != 0 && toothProps.Length != floorTiles.Length)
-            Debug.LogWarning($"[MouthBossJawSmash] toothProps({toothProps.Length})와 floorTiles({floorTiles.Length}) 길이가 다릅니다 — " +
-                             $"인덱스가 큰 타일은 이빨 연출이 빠집니다. ({name})", this);
 
         if (warnMarkers != null && warnMarkers.Length != 0 && warnMarkers.Length != floorTiles.Length)
             Debug.LogWarning($"[MouthBossJawSmash] warnMarkers({warnMarkers.Length})와 floorTiles({floorTiles.Length}) 길이가 다릅니다 — " +

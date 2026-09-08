@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -82,6 +83,20 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     [Tooltip("4.2 오른쪽 2×5 = 10칸")]
     [SerializeField] GameObject[] rightTiles = new GameObject[0];
 
+    [Header("파편 연출 (TileDebrisUtil 공용 — 신규 컴포넌트 없음)")]
+    [Tooltip("타일 파괴 시 스폰할 파편 프리팹. 비우면 파편 생략(기존처럼 SFX+비활성만).\n" +
+             "크기는 타일 월드 크기와 같게 만들 것 — FloorTile 기준 5 × 1 × 5.")]
+    [SerializeField] GameObject tileDebrisPrefab = null;
+
+    [Tooltip("파편 자동 소멸 시간(초). 0이면 자동 소멸 안 함.")]
+    [SerializeField] float tileDebrisLifetime = 2f;
+
+    [Tooltip("파편에 가할 임펄스 힘 최소값.")]
+    [SerializeField] float tileDebrisImpulseMin = 2f;
+
+    [Tooltip("파편에 가할 임펄스 힘 최대값.")]
+    [SerializeField] float tileDebrisImpulseMax = 5f;
+
     [Header("경고 마커 (SpikeLaneWarnMarker 재사용 — 신규 컴포넌트 없음)")]
     [Tooltip("가운데 영역 경고. RiseHold 전부 + MixedSweep 가운데에 사용. 비우면 경고 생략.")]
     [SerializeField] SpikeLaneWarnMarker centerWarnMarker = null;
@@ -108,6 +123,10 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
 
     Coroutine _cycleCoroutine;
     Coroutine _bindRoutine;
+
+    // 스폰해 둔 파편. 응원 성공으로 칸이 복구되면 lifetime을 기다리지 않고 즉시 치워야
+    // "멀쩡한 타일 위에 파편이 뒹구는" 그림이 안 나온다. 페이즈 전환(OnDisable)에서도 정리.
+    readonly List<GameObject> _spawnedDebris = new();
 
     HazardPhase _phase = HazardPhase.Idle;
     SweepRegion _sweepRegion = SweepRegion.None;
@@ -468,6 +487,18 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     const int ScheduleAxis = 0;
     const int RevertAxis   = 1;
     const int RegionAxis   = 2;
+    const int DebrisAxis   = 3;
+
+    /// <summary>
+    /// 파편 임펄스 시드. 전 머신이 같은 값을 뽑아야 파편이 똑같이 튄다(로컬 Random 금지 원칙).
+    /// 창마다 모양이 바뀌도록 창 번호를 섞는데, 축은 전 머신이 반드시 같은 값을 갖는 둘만 쓴다 —
+    /// _attackCount(창당 정확히 1회 증가) + _syncGeneration(Host가 준 되돌림 세대).
+    /// RiseHold는 AdvanceAttack을 지나지 않아 _attackCount가 고정이므로 _syncGeneration이 변화를 준다.
+    /// _cycleCount는 예약 재개(_resyncDeadline) 경로에서 증가하지 않아 머신마다 달라질 수 있으므로 금지.
+    /// 창 안에서 이 값이 바뀌는 일은 없다 — Revert가 세대를 올리는 순간 _recoverQueued가 서고,
+    /// 그 뒤로는 SweepBreak/BreakRemaining이 단 한 칸도 깨지 않는다.
+    /// </summary>
+    int DebrisSeed(int index) => MixSeed(index + (_attackCount + _syncGeneration) * 101, DebrisAxis);
 
     int MixSeed(int index, int axis)
         => NetworkSessionData.Seed ^ seedSalt ^ (index * 0x2545F491) ^ (axis * 0x27220A95);
@@ -600,7 +631,17 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         if (tiles == null || index < 0 || index >= tiles.Length) return;
         GameObject tile = tiles[index];
         if (tile != null && tile.activeSelf)
+        {
+            // Breakable.DoBreakVisuals()와 동일한 SFX 재생 패턴 재사용 — 새 SFXId 추가 없음.
+            SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, tile.transform.position, 5f, 50f, AudioRolloffMode.Logarithmic);
+            // 파편은 tile의 현재 Renderer.sharedMaterial(Black/White/Reveal)을 그대로 입는다 —
+            // 흑/백 전용 파편 프리팹을 따로 만들 필요 없이 항상 실시간 색과 일치.
+            GameObject debris = TileDebrisUtil.BreakTile(tile, tileDebrisPrefab, tileDebrisLifetime,
+                                                         tileDebrisImpulseMin, tileDebrisImpulseMax, DebrisSeed(index));
+            if (debris != null)
+                _spawnedDebris.Add(debris);
             tile.SetActive(false);
+        }
     }
 
     void BreakRemaining()
@@ -619,6 +660,22 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         RestoreArray(centerTiles);
         RestoreArray(leftTiles);
         RestoreArray(rightTiles);
+        ClearDebris();
+    }
+
+    /// <summary>
+    /// 남아 있는 파편을 즉시 삭제. RestoreAll 한 곳에서만 부르므로(복구·스킵·OnEnable/OnDisable
+    /// 전부 RestoreAll을 지난다) 정리 경로가 갈라지지 않는다.
+    /// </summary>
+    void ClearDebris()
+    {
+        for (int i = 0; i < _spawnedDebris.Count; i++)
+        {
+            GameObject debris = _spawnedDebris[i];
+            if (debris != null)
+                Destroy(debris);
+        }
+        _spawnedDebris.Clear();
     }
 
     static void RestoreArray(GameObject[] tiles)

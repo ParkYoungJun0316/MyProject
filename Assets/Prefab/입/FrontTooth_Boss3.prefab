@@ -208,8 +208,11 @@ MonoBehaviour:
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
-  debrisPrefab: {fileID: 0}
-  debrisLifetime: 0
+  debrisPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  debrisLifetime: 4
+  debrisImpulseMin: 6
+  debrisImpulseMax: 12
+  debrisScale: 10
   damagePlayerOnBreak: 1
   breakDamage: 1
   knockbackForceMin: 15
@@ -219,6 +222,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  restorePopDuration: 0
+  restorePopAmplitude: 0.12
+  restorePopJitter: 0
   OnBreak:
     m_PersistentCalls:
       m_Calls: []

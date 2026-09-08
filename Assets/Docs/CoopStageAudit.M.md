@@ -18,15 +18,15 @@
 
 M1–5·M.Boss를 다시 묻지 말 것. T5·T.Boss는 보류.
 
-### H.5 다음 에이전트 — 여기부터 (2026-09-04)
+### H.5 다음 에이전트 — 여기부터 (2026-09-09)
 
-**닫힌 트랙:** M 팀 응원 되돌림 (입 닫힘·침·혀). 코드+에디터+플레이 확인 **됨** (2026-09-04). 입/침/혀 머신 다시 열지 말 것.
+**닫힌 트랙:** M 팀 응원 되돌림 (입 닫힘·침·혀). 코드+에디터+플레이 확인 **됨** (2026-09-04). 입/침/혀 머신 다시 열지 말 것. **M.Boss P4 입 닫힘** 코드+에디터 **됨** (2026-09-09) — `MouthBossJawSmash` 다시 열지 말 것. **연출 재검토(2026-09-09):** Breaking 구간이 이미 최대 암전이라 "이빨 프롭" 시각 연출은 안 보임을 확인 → `toothProps` 제거, 파괴음(`SFXId.Breakable_Destroy`)만으로 임팩트 전달. 부서진 자리는 빈 구멍.
 
 **다음 트랙:** M 인게임 판을 잠금에 맞추기. T1 조임은 이 트랙 뒤.
 
-1. **읽기:** 이 절 → §2 Barrier · §3 ColorTile. 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §H.5. T는 아직 구현하지 않음.
+1. **읽기:** 이 절 → §2 Barrier · §3 ColorTile · §7 P4(참고만). 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §H.5. T는 아직 구현하지 않음.
 2. **할 일:** ColorTile 점수제 §3 — 코드 됨. 타이머·발동 스케줄·실패 패널티 **폐기**. **에디터:** M.Stage3 `uniqueQuota`=6, 흑·백 배열 1인 4/4 · 2인 6/6 · 3인 7/7 · 4인 8/8, `tilePrefabs`에 Black·White, `ColorTileRoundObjective.targetTime`=180. Barrier §2.1 슬롯 코드 됨(2026-09-05) — M.Stage1 이동은 에디터 남음. **Barrier incoming = §2.2 감독 — `ArrowIncomingDirector` + `ArrowTrap.FireOnce()` 코드 됨(2026-09-05). 에디터(사용자) 남음: §2.2 표 참고.** Sequence / Grid 손대지 않음.
-3. **하지 말 것:** ColorTile에 넉백·문 내림·광장화. 입/침/혀 재설계. 팀 힐·120초. 새 RPC. Tutorial 팀 외침(마지막). T 조임·안개. T5. **Incoming 감독을 Barrier 색 배정·리빌·입 닫힘 창과 연동(§2.2 재확인).**
+3. **하지 말 것:** ColorTile에 넉백·문 내림·광장화. 입/침/혀 재설계. P4 입 닫힘 머신 재설계. 팀 힐·120초. 새 RPC. Tutorial 팀 외침(마지막). T 조임·안개. T5. **Incoming 감독을 Barrier 색 배정·리빌·입 닫힘 창과 연동(§2.2 재확인).**
 
 **혀 반영 (2026-09-04) [확정]**
 
@@ -51,11 +51,12 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 - `MouthController.teamCheerHazard` — true면 위 머신. false면 옛 Close→Hold초→Open.
 - `SalivaHazard` — M2 revert. Warning→Cover→Hold→Recover. `SalivaVolume`이 발판 위일 때만 `Player` 얼음 미끄럼.
 - `TongueController` — M4 revert. 4.1 RiseHold / 4.2 AttackSweep. `SweepBreak` 이벤트 안 씀(클립 끝 `BreakRemaining`).
-- `TeamCheerWarningUI` — `OnHazardWindowChanged`. `TeamCheerCleared` — `OnTeamBuffActivated`. 팀 쿨 HUD는 **삭제됨**(스크립트·NV·세션 저장까지).
+- `MouthBossJawSmash` — M.Boss P4 전용. Close는 무조건, 응원은 Open 뒤 사후 복구만. 새 RPC 없음. Mouth/Tongue의 `_skipNextWindow`(창 건너뛰기) **쓰지 않음**.
+- `TeamCheerWarningUI` — `OnHazardWindowChanged`. `TeamCheerCleared` — `OnTeamBuffActivated`. 팀 쿨 HUD는 **삭제됨**(스크립트·NV·세션 저장까지). 이 UI는 창이 열린 동안 같은 스프라이트를 띄움 — P4에서는 "막아라"가 아니라 "복구하라".
 
 **되돌림 동기화 (2026-09-05 리뷰 반영) — 함정 3종 공통:**
 - 명령은 **Host 권한**. 세대 번호가 낮거나 같으면 무시하므로 같은 창이 두 번 발동해도 되돌림은 1회.
-- 명령을 받은 시점에 창이 아직 안 열린 머신은 그 창을 **열지 않고 건너뛴다**(`_skipNextWindow`). 혀 4.2는 건너뛸 때도 복구·공격 방향 소비를 같이 해 Host와 좌/우가 어긋나지 않게 한다.
+- 명령을 받은 시점에 창이 아직 안 열린 머신은 그 창을 **열지 않고 건너뛴다**(`_skipNextWindow`). 혀 4.2는 건너뛸 때도 복구·공격 방향 소비를 같이 해 Host와 좌/우가 어긋나지 않게 한다. **예외 — `MouthBossJawSmash`:** 응원이 공격을 막는 게 아니라 사후 복구라서 `_skipNextWindow`를 **쓰지 않는다**. Revert는 창 안/밖 어디서 받아도 바닥 전체 복구만 하고, 6회차는 성공/실패 무관하게 전부 돈다. 건너뛰면 Host만 다음 회차를 진행하고 그 클라이언트 바닥이 멀쩡한 채로 남아 낙사가 갈린다.
 - 첫 창은 `StageNetworkState.PhaseStartServerTime` 앵커(WindTrap/ArrowTrap과 같은 패턴). 앵커가 없는 씬은 예전대로 로컬 폴백. 앵커를 읽기 전에 **한 프레임 양보**한다 — `PhaseManager.EnterPhase`가 `objectsToEnable.SetActive(true)`를 `MarkAndSyncPhase`보다 먼저 하므로, Phase가 켜주는 함정(혀 4.1↔4.2)이 곧바로 읽으면 Host만 직전 Phase의 낡은 앵커를 잡는다(`SafeZoneWarnSign`과 같은 이유).
 - 간격 추첨은 `Random.state`를 저장·복원한다. `InitState`가 전역 RNG를 갈아엎어 같은 씬의 다른 시스템이 이 시드 스트림을 물려받는 걸 막는다(결정성은 그대로).
 - 간격 시드는 **축을 분리**한다(`ScheduleAxis` / `RevertAxis`). `_cycleCount`와 되돌림 세대가 둘 다 1,2,3…이라 축을 안 섞으면 같은 간격이 반복된다.
@@ -66,7 +67,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 - 연출 전용 입(`teamCheerHazard=false`, `AutoCycle`)도 같은 `ResolveFirstWindow` 앵커를 쓴다. 이 입들은 `screenFader`가 비어 있어 암전은 없지만 배경 연출 위상을 맞춘다.
 - Hold는 **외침 전까지 무한 대기**가 설계다(자동 Open 없음). Closing·Holding 내내 `_available`이 true라 Hold 중 외침이 먹힌다.
 
-**에디터 (됨):** `M.Stage1` / `M.Stage3` / `M.Boss`의 GO 이름 `MouthController`만 `teamCheerHazard=true`. `TransitionPhase*`·M2 입·M4·M5는 false. `UI.prefab`에 `TeamCheerWarning` + `Assets/Figma/Lobby/Warning.png`, Fadeout보다 위(마지막 형제).
+**에디터 (됨):** `M.Stage1` / `M.Stage3` / `M.Boss`의 GO 이름 `MouthController`만 `teamCheerHazard=true`. `TransitionPhase*`·M2 입·M4·M5는 false. `UI.prefab`에 `TeamCheerWarning` + `Assets/Figma/Lobby/Warning.png`, Fadeout보다 위(마지막 형제). M.Boss P4(`Boss 270-360`)에는 `MouthController`를 **붙이지 않음** — `MouthBossJawSmash`가 이 페이즈의 입 애니메이터(MouthBG Close/Open)를 직접 구동. P2 `MouthController`는 그대로(닫힘 되돌림).
 
 **침 구현 (2026-09-03) [확정]**
 
@@ -97,7 +98,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | 침 초출 | **M2 (2.1부터).** 2.2·보스 복습. PhysicMaterial 아님 — `Player.Move()` 얼음 가속/코스트 (`salivaAccelTime` / `salivaDecelTime`). §6 |
 | 혀 초출 | **M4.1.** 보스·M4.2 복습. M6·M7 없음. 4.1 가운데 1칸. 클립 끝에 칸 끔 (`SweepBreak` 안 씀). 꺼진 칸 낙사→방 리셋. §5 |
 | 입 창 리듬 | **개념만.** M1·M3·보스. M2·M5 없음. 초·횟수·데미지는 나중에 |
-| M.Boss | §7 (2026-09-08 재확정, 5→**4페이즈**). 1 Barrier+침, 2 SafeZoneWarnSign+닫힘, 3 Drop+화살+혀, **4 입 닫힘(무조건)+이빨이 타일 파괴, 6회 누적 4N개, Open 후 응원 창 → 마지막 1칸 남고 삼켜 T**(2026-09-08, 혀 MixedSweep 폐기). Grid·Sequence·ColorTile·WindTrap·SideSplit 안 씀 — 페이즈당 되돌림 대상 하나(침/닫힘/혀)만. 시드=Host ChallengeStart |
+| M.Boss | §7 (2026-09-08 재확정, 5→**4페이즈**). 1 Barrier+침, 2 SafeZoneWarnSign+닫힘, 3 Drop+화살+혀, **4 입 닫힘(무조건)+타일 파괴(파괴음), 6회 누적 4N개, Open 후 응원 창 → 마지막 1칸 남고 삼켜 T**(2026-09-08, 혀 MixedSweep 폐기). Grid·Sequence·ColorTile·WindTrap·SideSplit 안 씀 — 페이즈당 되돌림 대상 하나(침/닫힘/혀)만. 시드=Host ChallengeStart |
 
 ### H.3 M에서 버린 제안
 
@@ -125,7 +126,8 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | CheerService 팀 | **됨.** Heal·120초 폐기. Warning~Revert만 유효. 새 RPC 없음. 입 닫힘·침·혀 연결 |
 | MouthController | **됨.** hazard 씬만 Close→Hold(외침까지)→Open. 자동 재오픈 없음 |
 | 침 | **됨.** `SalivaHazard` / `SalivaVolume` / `Player` 얼음. 수면 비주얼은 슬롯만 비움 |
-| 혀 | **됨(4.1·4.2만).** `TongueController` + M.Stage4 에디터. 4.1=1칸, `SweepBreak` 안 씀. 플레이 확인 (2026-09-04). 보스용 `MixedSweep` 패턴은 **코드는 있지만 보스에서 폐기(2026-09-08)** — M.Boss는 대신 P3에서 `AttackSweep` 복습만 쓰고, P4는 §7의 입 닫힘+이빨 신규 컴포넌트로 교체(아직 코드 없음) |
+| 혀 | **됨(4.1·4.2만).** `TongueController` + M.Stage4 에디터. 4.1=1칸, `SweepBreak` 안 씀. 플레이 확인 (2026-09-04). 보스용 `MixedSweep` 패턴은 **코드는 있지만 보스에서 폐기(2026-09-08)** — M.Boss는 P3에서 `AttackSweep` 복습만 쓰고, P4는 `MouthBossJawSmash`(입 닫힘+파괴음) |
+| M.Boss P4 | **됨(2026-09-09, 연출 재검토 반영).** `MouthBossJawSmash` (`Assets/Scripts/Cheer/MouthBossJawSmash.cs`). 새 RPC·NV 없음. 회차·구간 경계 = 절대 `PhaseStartServerTime`. Revert = 사후 복구만(회차 건너뛰기 없음). `SceneFlowManager.FreezeAllHazardsNow()`가 `StopCycle()` 순회. **연출:** Breaking이 이미 최대 암전이라 시각 연출(이빨 프롭) 대신 파괴음(`SFXId.Breakable_Destroy`, `breakSfxMinDistance`/`Max`/`RolloffMode`)만 재생 — `toothProps` 필드 제거. **에디터 됨:** M.Boss `Boss 270-360`/`StageManager_Boss5`에 GO `MouthBossJawSmash`. `floorTiles` 25(Ground, x→z 정렬) + `warnMarkers` 25(`SpikeLaneWarnMarker`, 혀/SpikeTrap과 동일). `mouthAnimator`=MouthBG, `screenFader`=Fadeout/Image, Close/Open 클립 길이 2.966667. `OnChallengeComplete`→`BossFightObjective.NotifyPhaseCleared`. `Bossdown` `OnAllReady` = `ForceBreakAllTilesForEnding` → `SceneFlowRelay.LoadNextScene`. P4 `onPhaseEnter`에 `StageManager_Boss5.StartStage`. `BossFightObjective.totalPhases`=4(이미). 낙사 = Player `enableFallDeath`(M4와 동일, 방 리셋). **에디터 남음:** 씬에 남은 예전 `Boss_Final` 이빨 프롭 복제 25개(정리 필요) |
 | ColorTile | **점수제만.** unique 6 + 인원별 흑/백(4/4, 6/6, 7/7, 8/8). 목표 시간 = `targetTime`(기본 180, 권장 120–300). 타일 `Black`/`White`. M.Stage3 인스펙터 남음 |
 | Barrier | §2.1 색 슬롯 표 **코드 됨(2026-09-05)** — `DirectionalBarrierRound.BuildBarrierSlots`가 균등 분배(`GameSessionColorDistribution.Distribute`) 대신 확정 표(1인=고유2+백+흑 / 2인=A+B+백+흑 / 3인=고유3+백1 / 4인=고유4)로 배정. 타일도 슬롯 중복 없이 색당 1개만 스폰(1인 고유 패드 1개 → 고유 문 2개). 시작 흐름 **Reveal/CloseAndSpawnTiles 2단계로 분리(2026-09-05)** — `Activate()`(단일 호출) 폐기. `Reveal()`은 배치+Open만 하고 자동으로 안 닫힘(다이얼로그 프리뷰용), `CloseAndSpawnTiles()`가 Close+타일 스폰(진짜 라운드 시작). Reveal 없이 CloseAndSpawnTiles만 호출해도 그 자리에서 스폰부터 자동 수행(무프리뷰). Incoming 감독(§2.2) — `ArrowIncomingDirector`·`ArrowTrap.FireOnce()` **코드 됨(2026-09-05)**. **에디터(사용자, 남음):** M.Boss→M.Stage1 이동, `barrierPrefabs`/`tilePrefabs`에 White·Black 문/타일 프리팹 추가, 화살 `Breakable` 부착, M.Stage1 Phase0 onPhaseEnter→`Reveal()` + `StageStartGate.OnCountdownComplete`→`CloseAndSpawnTiles()` 연결 |
 | Sequence / Grid | 룰 유지. 손대지 않음 |
@@ -159,7 +161,7 @@ M = 한정된 발판. 한 입에 붙어 있는 협동. 시계 = 입이 열린 �
 | M.Stage3 | ColorTile + Drop + AdvancingWall | **B** §3 · §4 | 흑백 할당량 + 입 시계 | 점수제 | 실패 이빨은 남을 수 있음 |
 | M.Stage4 | 4.1 링+혀. 4.2 화살+혀 | **A** §5 | 색 차례 + 혀. 혀가 바닥을 줄임 | 링 위에 화살 없음 | 4.1 Drop은 C. 4.2 화살은 혀의 압력 |
 | M.Stage5 | Grid + Wind | **A** | BW 후반 | **입 열기 없음** | Wind **유지** |
-| M.Boss | **4페이즈** §7 (2026-09-08) | 초출 금지 | 1–3 복습, **4 입 닫힘+이빨 6회 누적 → 삼켜 T** | 시드=Host ChallengeStart | Grid·Sequence·ColorTile·WindTrap·SideSplit 없음. 바람만 페이즈 없음. 혀 MixedSweep도 보스에서 뺌 |
+| M.Boss | **4페이즈** §7 (2026-09-08) | 초출 금지 | 1–3 복습, **4 입 닫힘+타일 파괴 6회 누적 → 삼켜 T** | 시드=Host ChallengeStart | Grid·Sequence·ColorTile·WindTrap·SideSplit 없음. 바람만 페이즈 없음. 혀 MixedSweep도 보스에서 뺌 |
 
 **M.Stage2.** 한 씬 두 구간. 이심전심 암전은 보스 후보만.
 
@@ -335,31 +337,39 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 | 1 | Barrier + 침 — 패드가 미끄러움 | 침 |
 | 2 | SafeZoneWarnSign + 닫힘 — 크로스파이어, 암전 중엔 안전지대도 안 보임 | 닫힘 |
 | 3 | Drop + 화살 + 혀 — 혀가 장면 | 혀 |
-| 4 | 입 닫힘(무조건) + 이빨이 타일 파괴, 6회 누적 → 삼켜 T | 닫힘(보스 전용 새 변형) |
+| 4 | 입 닫힘(무조건) + 타일 파괴(파괴음), 6회 누적 → 삼켜 T | 닫힘(보스 전용 새 변형) |
 
 페이즈 3은 혀가 본체. 드롭·화살이 동등한 숙제가 되면 다시 짠다. 랜덤 = Host `ChallengeStart(seed)`만. 클라이언트마다 `Random` 없음.
 
 **P2 [확정 2026-09-08]:** `SafeZoneWarnSign`은 순수 연출·스케줄이라 `ITeamCheerRevert`가 아니다 — 되돌림 대상은 같은 페이즈의 `MouthController`(닫힘)뿐, SafeZoneWarnSign 자체는 등록하지 않는다. 암전(Closing/Holding) 중엔 안전지대 마커도 안 보여서 "빛이 있어야 화살을 피한다"는 압박이 자연스럽게 생긴다. 세이프존 입문은 이전에 "빼기"로 잠갔던 걸 여기서 되살린 것 — `SafeZoneWarnSign` 자체(크로스파이어 안전지대 표시)는 보스 전용이라 새 메카닉 초출이 아니고, 짝인 화살(`ArrowTrap`)은 이미 M1·M4.2에서 가르침.
 
-**P4 [확정 2026-09-08 — 입 닫힘 기반으로 전면 교체, 혀 `MixedSweep`은 보스에서 폐기]:** 혀가 아니라 `MouthController`의 닫힘을 마지막 공격 수단으로 쓴다. **인과관계가 지금까지의 닫힘(M1·M3·P2)과 반대다** — 응원이 Close를 막는 게 아니라, Close→Open이 끝난 뒤에만 응원 창이 열려 사후 복구만 한다. 보스 전용 새 변형이 필요(기존 `teamCheerHazard` 플래그로 못 표현).
+**P4 [확정 2026-09-08 — 입 닫힘 기반으로 전면 교체, 혀 `MixedSweep`은 보스에서 폐기. 코드+에디터 2026-09-09]:** 혀가 아니라 입 닫힘을 마지막 공격 수단으로 쓴다. **인과관계가 지금까지의 닫힘(M1·M3·P2)과 반대다** — 응원이 Close를 막는 게 아니라, Close→Open이 끝난 뒤에만 응원 창이 열려 사후 복구만 한다. 기존 `MouthController.teamCheerHazard`로는 못 표현 → **`MouthBossJawSmash`** (P4 전용 클래스, MouthBG Close/Open을 직접 구동). 같은 아레나에 `MouthController`를 붙이지 않는다(씬당 `ITeamCheerRevert` 하나).
 
 머신 (6회 반복):
 1. **경고** — 바닥 25칸 중 이번 회차에 부술 대상에 마커 표시(시드 기반, `TongueController.MixSeed`/`PickSeededRegion`과 같은 패턴을 K개 픽으로 확장). 이 단계엔 응원 없음, 예고만.
 2. **Close(무조건 발동, 응원으로 못 막음)** — 암전.
-3. 암전 중 경고 뜬 칸들이 깨진다. **연출 = 이빨 1개가 타일 1개를 부순다(1타일=1이빨)** — 이번 회차에 깰 타일 수만큼 이빨이 내려옴.
+3. 암전 중 경고 뜬 칸들이 파괴음과 함께 깨진다. **연출 재검토(2026-09-09):** 이 구간은 화면이 이미 최대 암전(`ScreenFader`)이라 "이빨 프롭이 내려와 부순다" 같은 시각 연출을 넣어도 플레이어가 못 본다 — 그래서 시각 연출 없이 **사운드로만** 임팩트 전달(`SFXId.Breakable_Destroy`, `Breakable`/`TongueController`와 동일 3D 재생 패턴 재사용, 새 SFXId 없음). 부서진 자리는 그냥 빈 구멍(`floorTiles[i].SetActive(false)`) — 원래 있던 `toothProps`(`Boss_Final` 비주얼 복제) 필드는 제거함.
 4. **Open** — 암전 걷힘. **이 시점부터 응원 창이 열린다.** 성공하면 바닥 전체 원상복구. 실패하면 깨진 채로 다음 회차로.
 5. 다음 회차 경고로 이어짐. 총 **6회**.
 
-**크기 누적(회차 번호 기준, 응원 성공 여부와 무관):** 회차 N의 목표 파괴 수 = **4×N**(1=4, 2=8, 3=12, 4=16, 5=20, 6=24). 직전 회차가 복구됐으면 이번에 4N개를 새로 뽑고, 복구 안 됐으면 이미 깨진 4(N-1)개에 새 4개만 추가로 뽑아 4N을 채운다(응원은 항상 전체 복구라 회차 사이 깨진 수는 0 또는 4(N-1)만 나옴 — 산수가 갈라지지 않음). **총 타일 수 = 25**(4×6+1) — 수치를 나중에 바꾸더라도 "총 타일 = 4×회차수 + 1" 관계는 유지해야 "마지막 1칸" 결말이 보장됨. 연속으로 여러 회차를 놓쳐서 남은 칸이 목표보다 적으면 남은 칸 전부를 깨는 걸로 캡.
+**크기 누적(회차 번호 기준, 응원 성공 여부와 무관):** 회차 N의 목표 파괴 수 = **4×N**(1=4, 2=8, 3=12, 4=16, 5=20, 6=24). 직전 회차가 복구됐으면 이번에 4N개를 새로 뽑고, 복구 안 됐으면 이미 깨진 4(N-1)개에 새 4개만 추가로 뽑아 4N을 채운다(응원은 항상 전체 복구라 회차 사이 깨진 수는 0 또는 4(N-1)만 나옴 — 산수가 갈라지지 않음). **총 타일 수 = 25**(4×6+1) — 수치를 나중에 바꾸더라도 "총 타일 = 4×회차수 + 1" 관계는 유지해야 "마지막 1칸" 결말이 보장됨. 연속으로 여러 회차를 놓쳐서 남은 칸이 목표보다 적으면 남은 칸 전부를 깨는 걸로 캡. `ValidateWiring()`이 이 불변식과 배열 길이 불일치를 Awake에서 경고.
 
-**클리어:** 6회차가 끝나면(성공/실패 무관, 팀이 살아있으면) 클리어. 시간 기반 `PhaseSurviveChallenge`가 아니라 **회차 카운트 기반** — 새 컴포넌트가 6회 완료 시 `BossFightObjective.NotifyPhaseCleared()`를 직접 호출(Host 레인 가드, 기존 챌린지들과 동일 연결 방식).
+**클리어:** 6회차가 끝나면(성공/실패 무관, 팀이 살아있으면) 클리어. 시간 기반 `PhaseSurviveChallenge`가 아니라 **회차 카운트 기반** — `MouthBossJawSmash`가 6회 완료 시 `BossFightObjective.NotifyPhaseCleared()`를 직접 호출(Host 레인 가드, 기존 챌린지들과 동일 연결 방식).
 
-**엔딩:** 클리어 → 대화 → 마지막 남은 1칸까지 이빨이 부수는 연출 → T로 전환. 원래 잠긴 "혀가 바닥을 부숨 → 삼켜 T"는 폐기 — 주체가 혀에서 입(이빨)으로 바뀜.
+**낙사:** 꺼진 칸 = M4 혀와 동일. `Player.enableFallDeath` / `fallDeathY`(Owner 신고 → Host 적용 → 사망 리로드 = 방 리셋). P4 컴포넌트에 사망 코드 없음.
+
+**리듬 (2026-09-08 리뷰 확정):** 회차 길이는 고정. 응원을 창 초반에 성공해도 다음 회차가 앞당겨지지 않는다 — 복구는 즉시, 남은 창 시간은 숨 돌리기. 로컬 `WaitForSeconds` 누적은 Host/Client 창 종료·타일 추첨을 갈라놓으므로 **쓰지 않음**. 회차 N 시작 = `PhaseStartServerTime + interCycleGap + (N-1)×CycleDuration`(절대 ServerTime).
+
+**되돌림:** 새 RPC 없음. `ITeamCheerRevert` 기존 채널. Mouth/Tongue의 `_skipNextWindow` **금지**(위 H.5 예외). `StartCycle()`은 `_brokenIndices`만 비우지 않고 `RestoreAllTiles()`로 집합과 `activeSelf`를 같이 맞춘다.
+
+**정지/엔딩:** `SceneFlowManager.FreezeAllHazardsNow()`가 `MouthBossJawSmash.StopCycle()`을 순회한다. `ForceBreakAllTilesForEnding()`은 루프·창을 먼저 끊고 `_endingBroken`을 세워, 이후 `StopCycle`/`OnDisable`이 바닥을 되살리지 않게 한다. Bossdown `OnAllReady` 순서: `ForceBreakAllTilesForEnding` → `SceneFlowRelay.LoadNextScene`.
+
+**엔딩:** 클리어 → 대화(Bossdown) → 마지막 남은 1칸까지 파괴음과 함께 부서지는 연출 → T로 전환. 원래 잠긴 "혀가 바닥을 부숨 → 삼켜 T"는 폐기 — 주체가 혀에서 입(파괴음 기반)으로 바뀜.
 
 **초출 판단:** 새 메카닉 아님. "경고→파괴→응원 복구"라는 핵심 상호작용은 M4가 이미 가르쳤다. 다만 "닫힘→바닥 파괴"라는 조합과 "응원이 사후 복구만 한다"는 인과관계는 보스에서 처음 나오는 변형 — 플레이어가 배울 새 스킬은 아니라 초출 금지 위반은 아니라고 판단.
 
 **P2와 연출 중복 (미해결, 나중에):** P2도 닫힘(암전)을 쓰므로 보스 4페이즈 중 2개가 "화면이 까매짐" 연출을 공유한다. 지금은 괜찮다고 보고 넘어감 — 나중에 재검토 여지 있음.
 
-**에디터 (아직 안 됨, 코드 먼저 필요):** M.Boss에 새 컴포넌트(가칭, 코드 작성 시 확정) 배치 — 25칸 타일 배열 + 이빨 오브젝트(회차당 필요한 수만큼), `MouthController`(암전용 Close/Open, 응원 없이 무조건 발동하는 별도 인스턴스 또는 새 클래스). **에디터(보스 세이프존, 아직 안 됨):** P2에 `SafeZoneWarnSign` GO 배치, `cycles[]`에 해당 페이즈 `ArrowTrap` 발사 시각과 안전 타일 연결. Barrier(P1)는 M.Boss→M.Stage1 이동(§2.2 에디터 항목)과 별개로 보스용 인스턴스를 따로 유지.
+**에디터 (됨 2026-09-09):** `Boss 270-360` / `StageManager_Boss5` 아래 `MouthBossJawSmash`. Ground 25칸 → `floorTiles`(x→z). 경고 = `SpikeLaneWarnMarker` 25(혀/SpikeTrap과 동일, White URP Lit, 노랑→빨강 `PlayWarning`). MouthBG + Fadeout/Image. `BossFightObjective.totalPhases`=4. P4 `onPhaseEnter` → `StartStage`. **에디터 남음(2026-09-09 연출 재검토로 추가):** `toothProps` 필드가 삭제되어 씬에 남아있는 `Boss_Final` 비주얼 복제 25개(예전 이빨 프롭)는 더 이상 코드가 참조하지 않음 — 정리(삭제 또는 비활성 유지)는 사용자가 에디터에서. `breakSfxMinDistance`/`Max`/`RolloffMode`는 기본값(5/50/Logarithmic)이라 별도 배선 불필요, `SFXManager`가 씬에 있으면 그대로 동작. **에디터(보스 세이프존, 아직 안 됨):** P2에 `SafeZoneWarnSign` GO 배치, `cycles[]`에 해당 페이즈 `ArrowTrap` 발사 시각과 안전 타일 연결. Barrier(P1)는 M.Boss→M.Stage1 이동(§2.2 에디터 항목)과 별개로 보스용 인스턴스를 따로 유지.
 
 빼는 것 (2026-09-08 재확정): ColorTile, Sequence, Grid, SideSplit, WindTrap, 혀 `MixedSweep`(P4 대체로 폐기, P3 `AttackSweep`만 남음) — 보스 페이즈 구성·복습 파트너 어느 쪽으로도 안 씀. 깨물림 모이기, 바람만 페이즈는 그대로 빠짐.
