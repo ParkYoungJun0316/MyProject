@@ -162,7 +162,7 @@ public class SceneFlowManager : MonoBehaviour
     /// <summary>
     /// 씬에 남아있는 모든 위협을 즉시 정지한다 — 자체 스케줄 트랩(TrapBase), 발사 감독
     /// (ArrowIncomingDirector/TrapPlayerTracker), Update 감지형(CeilingTrap), 밀어내는 복도
-    /// (MovingCorridor), 추격자(Stage5ChaserAI), 팀응원 함정(Mouth/Tongue/Saliva/Esophagus).
+    /// (MovingCorridor), 추격자(Stage5ChaserAI), 팀응원 함정(Mouth/Tongue/Saliva/Esophagus/JawSmash).
     /// 어느 머신에서 호출되든 로컬로 안전 — 전부 로컬 상태 변경이고, TrapProjectile Despawn만
     /// Host 전용으로 가드된다.
     ///
@@ -217,6 +217,10 @@ public class SceneFlowManager : MonoBehaviour
             e.StopCycle();
         foreach (var f in FindObjectsByType<EsophagusFog>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             f.StopCycle();
+        // M.Boss P4 — MouthController를 상속하지 않는 별도 클래스라 위 순회에 안 잡힌다.
+        // 엔딩 연출로 이미 부순 뒤라면 StopCycle()이 바닥을 되살리지 않는다(자기 안에서 판단).
+        foreach (var j in FindObjectsByType<MouthBossJawSmash>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            j.StopCycle();
 
         // 이미 날아가는 투사체 정리 — Host 가드는 이 메서드 내부에 있다(SSOT: TrapProjectile).
         TrapProjectile.DespawnAllOnServer();
