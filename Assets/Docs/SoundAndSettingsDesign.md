@@ -274,6 +274,7 @@ Inspector에서 특정 SFX만 보정 가능:
 - **마이크 음소거 on/off — 구현 완료(§9.5).** `DissonanceComms.IsMuted` 바인딩. 네트워크 전송(인코더)만
   끊고 로컬 캡처는 유지되므로 응원 키워드 감지(Cheer)에는 영향 없음(코드 확인함).
 - **마이크 볼륨(게인) 조절 — 구현 완료 (2026-09-01).** `GameSettingsManager.MicVolume`(PlayerPrefs `Settings.MicVolume`, 기본 1). 슬라이더는 `OptionsMenuController`가 `Row_MicVolume`을 찾아 연결(Inspector 미연결 폴백). 적용은 로컬 `VoiceBroadcastTrigger.ActivationFader.Volume`(상대가 듣는 송신 게인). Dissonance 로컬 `VoicePlayerState.Volume` setter는 미지원이라 쓰지 않음. CheerKeywordEngine/Vosk 캡처 레벨은 바꾸지 않음.
+  - **범위 확장 + 팀 보이스 무음 버그 수정 (2026-09-10).** 마이크 송신·팀 보이스 수신을 0~1(100%)에서 **0~2(200%)**로 통일. 마이크는 `SetMicVolume` 클램프만 바꿈(`ChannelProperties.AmplitudeMultiplier`가 원래 0~2 지원 프로토콜, 플러그인 미수정 — 0이면 채널 진폭이 정확히 0이라 수신측이 프레임을 하드 클리어해 이미 완전 무음). 팀 보이스 수신(`OptionsTeamVoicePanel`)은 `VoicePlayerState.Volume`(0~1 초과시 throw, 내부 `PlaybackInternal`은 런타임 접근 불가)을 더 안 쓰고, `Playback`을 실제 구현체 `Dissonance.Audio.Playback.VoicePlayback`으로 캐스트해 `AudioSource.volume`을 직접 제어(상한 없는 Unity 표준 API, 플러그인 미수정) — 슬라이더 0이면 `IsLocallyMuted=true`도 같이 켜서 이중으로 완전 무음. `SliderValuePercentLabel`은 하드코딩 0~100 대신 슬라이더 자신의 min/max를 읽도록 일반화(기존 0~1 슬라이더 회귀 없음, 200% 표시 지원).
   - **후속 수정(같은 날, 스폰 타이밍 버그).** 최초 구현은 `ApplyMicTransmitVolume()`이
     `NetworkManager.LocalClient.PlayerObject`로 트리거를 다시 찾았는데, NGO
     `NetworkSpawnManager`가 이 필드를 `InvokeBehaviourNetworkSpawn()`(= `OnNetworkSpawn`, 즉

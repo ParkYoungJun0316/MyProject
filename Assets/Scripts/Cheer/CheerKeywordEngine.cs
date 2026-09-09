@@ -30,8 +30,10 @@ using Vosk;
 ///    5초 내 오디오 없으면 직접 마이크 fallback
 ///
 /// [키워드 감지 방식]
-/// FinalResult  : 침묵 후 발화 확정 → "text" 파싱
-/// PartialResult: 10 AcceptWaveform 호출마다 → "partial" 파싱 (실시간 감지)
+/// FinalResult  : 침묵 후 발화 확정 → "text" 파싱 — 응원 제출은 이것만 사용.
+/// PartialResult: 워커는 여전히 10 AcceptWaveform마다 계산해 큐에 넣지만, DrainResultQueue가
+///   버린다(미확정 중간 추측이라 다른 말이 잠깐 CheerName/TeamCheerWord로 잘못 들렸다가 스스로
+///   정정되는 경우까지 제출해버려 오탐이 났음 — 2026-09-10 수정, 부활 금지).
 ///
 /// [스레드 구조]
 /// 메인 스레드 : 오디오 캡처 → float→short 변환 → _pcmQueue 에 넣기
@@ -589,21 +591,19 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             if (sep < 0) continue;
 
             string kind = entry.Substring(0, sep);
-            string json = entry.Substring(sep + 1);
 
+            // partial(미확정 중간 추측)은 응원 제출에 쓰지 않는다 — 오탐 방지(2026-09-10).
+            // 문장 중간에 잠깐 다른 단어로 잘못 들렸다가 스스로 정정되는 경우가 있었는데,
+            // 그 튄 순간을 그대로 제출해버려 "다른 말을 했는데 버프가 켜짐" 오탐이 났다.
+            // Vosk가 발화 후 짧은 침묵을 감지해 확정한 "final"만 신뢰한다. 부활 금지.
+            if (kind != "final") continue;
+
+            string json = entry.Substring(sep + 1);
             var node = JSONNode.Parse(json);
             if (node == null) continue;
 
-            if (kind == "final")
-            {
-                if (!string.IsNullOrEmpty(node["text"]?.Value))
-                    ParseAndSubmit(node, "text");
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(node["partial"]?.Value))
-                    ParseAndSubmit(node, "partial");
-            }
+            if (!string.IsNullOrEmpty(node["text"]?.Value))
+                ParseAndSubmit(node, "text");
         }
     }
 

@@ -39,7 +39,14 @@ public class TrapProjectile : NetworkBehaviour
     [Tooltip("충돌 파괴 시 스폰할 파티클 프리팹")]
     [SerializeField] private GameObject hitEffectPrefab = null;
 
+    [Tooltip("hitEffectPrefab 자동 소멸 시간(초). 0이면 자동 소멸 안 함(영구 잔존 주의).\n" +
+             "TileDebrisUtil.BreakTile의 debrisLifetime과 같은 역할 — Breakable과 달리 이 이펙트는 " +
+             "런타임 Instantiate라 PhaseManager.objectsToDisable / DespawnAllOnServer 어느 쪽 정리에도 " +
+             "걸리지 않으므로 여기서 직접 타이머를 걸어야 한다.")]
+    [SerializeField] private float hitEffectLifetime = 4f;
+
     bool    _isDestroyed;
+    bool    _hitEffectSpawned;
     Vector3 _lastHitPoint  = Vector3.zero;
     Vector3 _lastHitNormal = Vector3.up;
     Rigidbody _rb;
@@ -174,7 +181,13 @@ public class TrapProjectile : NetworkBehaviour
 
             // 로컬에서 즉시 숨김: Despawn RTT 동안 화살이 플레이어를 통과하며
             // 중간에서 사라지는 것을 방지. rb는 건드리지 않아 비행 방향 유지.
-            if (destroyOnPlayer) HideLocal();
+            // 이펙트도 같이 로컬 스폰 — 숨김과 같은 이유(RTT 지연 없이 지금 이 자리에서 보여야 함)에
+            // 더해, 접촉 지점이 유효한 건 이 프레임뿐이다(SpawnHitEffect 주석).
+            if (destroyOnPlayer)
+            {
+                HideLocal();
+                SpawnHitEffect();
+            }
 
             // 보고 대상 = 상주 StageNetworkState (발사체 자신 X, 2026-07-28 수정).
             // 발사체는 다른 보고로 먼저 Despawn될 수 있는 짧은 수명 NetworkObject라, 자신을
@@ -229,7 +242,6 @@ public class TrapProjectile : NetworkBehaviour
     {
         if (_isDestroyed) return;
         _isDestroyed = true;
-        SpawnHitEffect();
         var netObj = GetComponent<NetworkObject>();
         if (netObj != null && netObj.IsSpawned)
             netObj.Despawn(true);
@@ -250,12 +262,27 @@ public class TrapProjectile : NetworkBehaviour
             rend.enabled = false;
     }
 
+    /// <summary>
+    /// 피격 이펙트를 이 머신 로컬에 1회 스폰. 각 머신이 자기 로컬 비행·자기 충돌 판정으로
+    /// 직접 부르므로(B안 §9.0.1) 새 Rpc 없이 전 머신에 같은 연출이 뜬다.
+    ///
+    /// [버그 수정 2026-09-09] 예전엔 Host 전용 `DestroyProjectileOnServer()`에서 불렀다. 그래서
+    /// (1) Client에는 이펙트가 아예 안 떴고, (2) 접촉 없이 `lifetime` 만료로 죽는 발사체는
+    /// `_lastHitPoint`가 초기값 (0,0,0)인 채로 나가 파편이 **월드 원점**에 생겼으며,
+    /// (3) 예전에 벽을 한 번 스치고 계속 날아간 발사체는 그 **옛 좌표**에 파편을 떨어뜨렸다.
+    /// 접촉 지점은 접촉한 프레임에만 유효하므로 호출 자체를 접촉 시점(`HandleContact`)으로 옮겼다.
+    /// 수명 만료·일괄 정리(`DespawnAllOnServer`)는 "피격"이 아니므로 이펙트를 남기지 않는다.
+    /// </summary>
     void SpawnHitEffect()
     {
-        if (hitEffectPrefab == null) return;
+        if (hitEffectPrefab == null || _hitEffectSpawned) return;
+        _hitEffectSpawned = true;
+
         Quaternion rot = _lastHitNormal != Vector3.zero
             ? Quaternion.LookRotation(_lastHitNormal)
             : Quaternion.identity;
-        Instantiate(hitEffectPrefab, _lastHitPoint, rot);
+        GameObject effect = Instantiate(hitEffectPrefab, _lastHitPoint, rot);
+        if (hitEffectLifetime > 0f)
+            Destroy(effect, hitEffectLifetime);
     }
 }

@@ -367,6 +367,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - [x] DisplayName 보고 (2026-08-22) — 구 `SubmitDisplayNameServerRpc`(슬롯 귀속)를 `PlayerDisplayNameSync`(Player 인스턴스 귀속, `PlayerCheerNameSync`와 동일 패턴)로 재구현. `OnNetworkSpawn`에서 Owner가 자기 표시 이름(Steam 경로: `SteamClient.Name`, 로컬 경로: OS 계정 이름)을 1회 자동 보고. HUD 읽기 우선순위는 CheerName과 동일: 게이트 후 `GameSession` 세션 스냅샷, 게이트 전(세션 미확정)에만 이 NV 실시간 표시 (2026-09-01, 위 버그 3). 게이트 통과 시 `GameSession.SetSessionDisplayNames()` + `BroadcastSessionDisplayNamesClientRpc`로 스테이지용 스냅샷만 복사.
 - [x] VoiceId 보고 (2026-08-26) — 구 `SubmitVoiceIdServerRpc`(슬롯 귀속)를 별도 클래스 신설 없이 `PlayerDisplayNameSync`에 필드 추가로 재구현(DisplayName과 동일 "검증 없는 1회 자동 self-report" 뼈대라 한 컴포넌트로 합침 — CheerName은 입력·검증·재제출이 있는 별도 도메인이라 `PlayerCheerNameSync`에 그대로 분리 유지). Dissonance 초기화 지연 대비 `ReportVoiceIdRoutine` 코루틴이 `LocalPlayerName` 확정까지 최대 5회(1초 간격) 재시도 후 1회 보고 → `TutorialNetworkManager.CompleteGate()`에서 `GameSession.SetSessionVoiceIds()` + `BroadcastSessionVoiceIdsClientRpc`로 전원 배포(DisplayName과 동일 시점). **원인 회귀:** 2026-08-20 구 로비 삭제 때 `SubmitVoiceIdServerRpc`가 함께 삭제된 뒤 새 Tutorial 게이트 구조로 이식되지 않아 `OptionsTeamVoicePanel`의 팀 보이스 볼륨 슬라이더가 항상 비활성(100% 고정)이었음 — 이번 수정으로 해소. **ParrelSync/실제 멀티 검증 대기.**
 - **공유 포스트모템 (2026-09-01, 마이크/팀 보이스 슬라이더):** `Row_MicVolume`은 placeholder라 `GameSettingsManager`/`OptionsMenuController`에 볼륨 필드가 없었고, 생성 기본값 70% + `interactable=false`로 고착. 팀 보이스는 `BindVolumeSlider`가 `SetValueWithoutNotify`만 써서 `%` 라벨이 70%에 남고, `FindPlayer` 실패 시 재시도가 없었다. 수정: `MicVolume` PlayerPrefs + `VoiceBroadcastTrigger.ActivationFader`(Cheer/Vosk 미변경), 슬라이더 런타임 탐색, `SliderValuePercentLabel.RefreshNow`, `OnPlayerJoinedSession` 재바인딩. 반대 라운드 스모크: `T.Stage1` Host+Client ESC 설정 (§9B.4).
+- **공유 포스트모템 (2026-09-10, 볼륨 0~2 확장 + 팀 보이스 최소값 잔향):** 팀 보이스 수신 슬라이더를 최소로 내려도 완전 무음이 안 됐다 — `BindVolumeSlider`가 `VoicePlayerState.Volume`(선형 0~1, mute 결합 없음)만 썼기 때문. 사용자 요구로 마이크 송신·팀 보이스 수신을 0~2(200%)로 통일: 마이크는 `GameSettingsManager.SetMicVolume` 클램프만 `Clamp01`→`Clamp(0,2)`로 변경(채널 진폭 프로토콜 `ChannelProperties.AmplitudeMultiplier`가 원래 0~2 지원, 플러그인 미수정). 팀 보이스 수신은 `VoicePlayerState.Volume`이 0~1 초과시 throw하고 그 내부 `PlaybackInternal`은 `InternalsVisibleTo`가 Dissonance Editor 어셈블리 전용이라 런타임 우회 불가라서, `Playback`을 실제 구현체 `VoicePlayback`(공개, 기본 PlaybackPrefab에 항상 붙음)으로 캐스트해 `AudioSource.volume`을 직접 제어(상한 없는 Unity 표준 API)하도록 교체. 슬라이더 0 = `AudioSource.volume=0` + `IsLocallyMuted=true` 이중 적용으로 완전 무음 보장. `SliderValuePercentLabel`은 하드코딩 0~100 대신 슬라이더 자신의 min/max로 퍼센트 계산하도록 일반화(기존 Master/Bgm/Sfx 0~1 슬라이더 회귀 없음). 스모크: ParrelSync 2인 Host+Client 팀 보이스 0%(무음)·100%·200%(부스트) 확인 + 반대 라운드 `T.Stage1` ESC 마이크 슬라이더.
 
 **P4 — `TutorialGatherZone` (§6B.3, 신규)** — **코드 완료 + 씬 배치·검증 통과 (2026-08-18, 솔로+ParrelSync 2인)**
 
@@ -699,6 +700,58 @@ NetworkTransformMessage 등)와 무관하게** "발신 시점에 로컬에 그 N
 **Axis B에는 Axis A 패턴을 그대로 적용할 수 없다:** `ClientNetworkTransform`은 Rpc가 아니라
 NGO가 매 틱 자동 전송하는 위치 델타라 재타겟도, Spawn 페이로드 번들도 불가능하다. 이 경고
 하나만으로 Owner + CNT 이동 권한(§7.3 확정)을 바꾸는 방향은 채택하지 않는다.
+
+#### 9.0.1-c `hitEffectPrefab` 파편 — 영구 잔존 · 월드 원점 스폰 · Client 미표시 (2026-09-09)
+
+**증상 (사용자 보고):** M.Boss P1 이빨(`ArrowTrap.arrowPrefab` = `FrontTooth_Boss`/`FrontTooth_Boss3`/
+`Tooth1_Boss`/`Tooth2_Boss`/`BackTooth_Stage4.3,Boss`)이 파괴되며 생긴 `RubbleShards` 파편이
+Phase 전환(P1→P2) 이후에도 끝까지 남아 있었음. 리뷰 중 같은 함수에서 버그 2건이 더 나왔다.
+
+**원인 3종 (모두 `TrapProjectile.SpawnHitEffect()` 하나에서):**
+
+1. **영구 잔존** — `hitEffectPrefab`을 `Instantiate`만 하고 삭제 타이머·부모 연결·정리 등록이 전혀
+   없었다. `Breakable`/`TileDebrisUtil.BreakTile`의 파편(`debrisLifetime` + `ClearDebris()`)과 달리 이
+   이펙트는 런타임에 부모 없이 스폰되는 별개 GameObject라 `PhaseManager.objectsToDisable`(씬 배치
+   오브젝트만 토글)에도, `DespawnAllOnServer()`/`StageManager.DestroyAllProjectiles()`
+   (`FindObjectsByType<TrapProjectile>()`만 순회 — 이펙트 클론은 `TrapProjectile`이 없음)에도 걸리지
+   않아 씬이 끝날 때까지 남았다.
+2. **월드 원점(0,0,0) 스폰** — 스폰 위치로 쓰는 `_lastHitPoint`는 `Vector3.zero` 초기값이고 접촉이
+   일어난 순간에만 채워지는데, 호출부가 `DestroyProjectileOnServer()`(= `LifetimeRoutine()` 수명 만료도
+   포함)였다. 아무것도 안 스치고 만료된 발사체는 파편이 월드 원점에, 예전에 벽을 한 번 스치고 계속
+   날아간 발사체는 그 **옛 좌표**에 생겼다.
+3. **Client 미표시** — `DestroyProjectileOnServer()`는 Host 전용이고 `Instantiate`는 로컬이라, Client
+   화면에선 이빨이 아무 연출 없이 사라졌다(§9.0 매트릭스의 VFX = "ClientRpc → All 또는 로컬" 위반).
+
+**수정:**
+
+- `hitEffectLifetime`(기본 4초, 인스펙터) 필드 추가 → `Destroy(effect, hitEffectLifetime)`
+  (`TileDebrisUtil.BreakTile`의 `debrisLifetime`과 같은 규약).
+- 호출부를 `DestroyProjectileOnServer()`(Host) → `HandleContact()`의 플레이어 접촉 분기(`destroyOnPlayer`
+  일 때, `HideLocal()` 옆)로 이동. **각 머신이 자기 로컬 비행·자기 충돌 판정으로 직접 부른다** —
+  B안(§9.0.1) 그대로라 **새 Rpc 없이** 전 머신에 연출이 뜨고(3 해결), 접촉 프레임에 부르므로 위치가
+  항상 신선하다(2 해결).
+- 수명 만료·일괄 정리(`DespawnAllOnServer`)는 "피격"이 아니므로 이펙트를 남기지 않는다 —
+  Phase 클리어 일괄 Despawn 때 파편이 무더기로 튀는 회귀도 같이 막힌다.
+- 중복 스폰 가드 `_hitEffectSpawned` — 콜라이더·플레이어가 여러 번 트리거돼도(Client는 `_isDestroyed`가
+  안 세워져 계속 트리거됨) 발사체당 1회.
+
+**영향 범위:** `hitEffectPrefab`이 설정된 프리팹은 이빨 7종뿐이고 전부 `destroyOnPlayer = 1`이다
+(Boulder/Drop/Food/BossDrop은 전부 `{fileID: 0}`) — 다른 함정 동작 변화 없음.
+
+**의도적으로 두는 것:** 이 파편은 `TileDebrisUtil`처럼 `excludeLayers`로 플레이어를 제외하지 **않는다**
+— 파편이 플레이어를 밀 수 있는 게 사용자 결정(2026-09-09). `TileDebrisUtil` 주석의 "파편이 플레이어를
+밀면 Owner+CNT가 오염된다"는 경고는 그 유틸 경로에만 적용.
+
+**에디터:** `hitEffectLifetime`은 필수 아님 — 기존 프리팹 YAML에 키가 없어 C# 필드 초기값(4초)이
+그대로 적용된다. 단 **`FrontTooth_Boss3.prefab`의 `Breakable.syncBreakOverNetwork`는 체크 해제 필요**:
+런타임 스폰 Breakable은 `_netIndex`가 -1로 남아(`Breakable.DebrisSeed` 주석) Host는
+`SyncBreakClientRpc`를 못 보내고 Client는 `StartBreakSequence()`에서 조기 return → Client에선 이빨이
+벽에 부딪혀도 안 부서진 채 계속 날아간다.
+
+**반대쪽 라운드 스모크 노트 (§9B.4):** `TrapProjectile.hitEffectPrefab`을 쓰는 T 대표 씬(`ArrowTrap`/
+`DropTrap` 사용 씬 — 예: `T.Stage1`/`T.Boss`)에서 `hitEffectPrefab`이 실제로 지정돼 있는지, 지정돼
+있다면 파괴 후 이펙트가 정상적으로 사라지는지 ParrelSync 스모크 검증 필요 (미실시 — 다음 T 작업
+시 확인).
 
 **AI 주의:** 새 Deferred OnSpawn/PurgeTrigger 경고가 보고되면 먼저 이 표로 Axis A/B(또는
 신규 축)인지 분류한다. Axis A 재발이면 위 3개 패턴 중 어긋난 지점만 찾는다. Axis B(또는

@@ -17,7 +17,7 @@ using UnityEngine.UI;
 ///
 /// [Inspector 연결]
 /// - masterVolumeSlider / bgmVolumeSlider / sfxVolumeSlider : Slider (0~1)
-/// - micVolumeSlider     : Slider (0~1, 미연결이면 Row_MicVolume 자동 탐색)
+/// - micVolumeSlider     : Slider (0~2 = 0~200%, 미연결이면 Row_MicVolume 자동 탐색)
 /// - languageDropdown    : TMP_Dropdown — LocalizationSettings.AvailableLocales 기반 자동 채움
 /// - displayModeDropdown : TMP_Dropdown — 전체화면 / 창모드 / 테두리없는 창모드 (고정 3항목, 자동 채움)
 /// - resolutionDropdown  : TMP_Dropdown — Screen.resolutions 기반 자동 채움
@@ -51,7 +51,7 @@ public class OptionsMenuController : MonoBehaviour
     [Header("마이크")]
     [Tooltip("Dissonance IsMuted 토글 — 네트워크 전송만 끊김, 응원 키워드 감지엔 영향 없음.")]
     [SerializeField] private Toggle micMuteToggle;
-    [Tooltip("송신 게인 0~1. Inspector 미연결이면 Row_MicVolume/Slider 를 런타임에 찾음.")]
+    [Tooltip("송신 게인 0~2(200%). Inspector 미연결이면 Row_MicVolume/Slider 를 런타임에 찾음.")]
     [SerializeField] private Slider micVolumeSlider;
     [Tooltip("Dissonance.GetMicrophoneDevices() 기반 자동 채움. 첫 항목은 '시스템 기본'.")]
     [SerializeField] private TMP_Dropdown micDeviceDropdown;
@@ -302,7 +302,7 @@ public class OptionsMenuController : MonoBehaviour
         {
             volumeSlider.interactable = true;
             volumeSlider.minValue = 0f;
-            volumeSlider.maxValue = 1f;
+            volumeSlider.maxValue = 2f;
             if (settings != null) volumeSlider.value = settings.MicVolume;
         }
 

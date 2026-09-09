@@ -167,10 +167,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
   ShowTopMostFoldoutHeaderGroup: 1
   damage: 1
-  lifetime: 7
+  lifetime: 15
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
-  hitEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  hitEffectLifetime: 4
 --- !u!64 &-3426818365736031283
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -217,7 +218,7 @@ MonoBehaviour:
   debrisImpulseMin: 6
   debrisImpulseMax: 12
   debrisScale: 10
-  damagePlayerOnBreak: 1
+  damagePlayerOnBreak: 0
   breakDamage: 1
   knockbackForceMin: 15
   knockbackForceMax: 20
@@ -225,10 +226,7 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 384
-  syncBreakOverNetwork: 1
-  restorePopDuration: 0
-  restorePopAmplitude: 0.12
-  restorePopJitter: 0
+  syncBreakOverNetwork: 0
   OnBreak:
     m_PersistentCalls:
       m_Calls: []

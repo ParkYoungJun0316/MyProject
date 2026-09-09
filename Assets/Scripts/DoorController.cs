@@ -208,9 +208,16 @@ public class DoorController : MonoBehaviour
         CheckPadState();
     }
 
-    /// <summary>래치 초기화 후 즉시 닫힌 위치로 텔레포트.</summary>
-    public void Reset()
+    /// <summary>
+    /// 래치 초기화 후 즉시 닫힌 위치로 텔레포트.
+    /// 이름 주의: "Reset"은 Unity가 컴포넌트 추가/Inspector "Reset" 메뉴에서 자동 호출하는
+    /// 예약 메시지 이름이라 겹치면 Edit 모드에서 Awake 전에 호출돼 _rb가 null인 채로 NRE가 난다.
+    /// 그래서 일부러 ResetDoorState로 이름을 피한다 — 이 메서드는 런타임(Play 중)에만 호출할 것.
+    /// </summary>
+    public void ResetDoorState()
     {
+        if (_rb == null) return; // Awake 전(Edit 모드 등) 호출 방지
+
         StopAllCoroutines();
         _isOpen    = false;
         _isLatched = false;

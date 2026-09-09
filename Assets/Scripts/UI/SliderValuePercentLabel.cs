@@ -86,6 +86,11 @@ public class SliderValuePercentLabel : MonoBehaviour
         _input.SetTextWithoutNotify(Mathf.RoundToInt(_slider.value * 100f).ToString());
     }
 
+    /// <summary>
+    /// 퍼센트 범위는 하드코딩 0~100이 아니라 슬라이더 자신의 min/max를 그대로 따른다 —
+    /// 팀 보이스 수신/마이크 송신처럼 0~2(200%)로 확장된 슬라이더도 이 컴포넌트를 그대로
+    /// 재사용할 수 있게 함(2026-09-10, 기존 0~1 슬라이더는 동작 동일해 회귀 없음).
+    /// </summary>
     void OnInputEndEdit(string raw)
     {
         if (_slider == null || !_slider.interactable)
@@ -100,7 +105,11 @@ public class SliderValuePercentLabel : MonoBehaviour
             return;
         }
 
-        _slider.value = Mathf.Clamp01(pct / 100f);
+        int minPct = Mathf.RoundToInt(_slider.minValue * 100f);
+        int maxPct = Mathf.RoundToInt(_slider.maxValue * 100f);
+        pct = Mathf.Clamp(pct, minPct, maxPct);
+
+        _slider.value = Mathf.Clamp(pct / 100f, _slider.minValue, _slider.maxValue);
         RefreshNow();
     }
 
@@ -113,10 +122,6 @@ public class SliderValuePercentLabel : MonoBehaviour
         if (raw.EndsWith("%", System.StringComparison.Ordinal))
             raw = raw.Substring(0, raw.Length - 1).Trim();
 
-        if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out pct))
-            return false;
-
-        pct = Mathf.Clamp(pct, 0, 100);
-        return true;
+        return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out pct);
     }
 }

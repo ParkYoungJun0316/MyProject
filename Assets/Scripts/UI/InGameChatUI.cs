@@ -13,7 +13,7 @@ using TMPro;
 ///
 /// [히스토리 유지]
 /// 씬 재로드·전환이 되어도 static s_history로 메시지가 유지됨.
-/// 타이틀 복귀 시 ClearHistory()로 초기화.
+/// 타이틀 복귀 시 TitleReturnFlow가 ResetForTitleReturn()으로 초기화.
 ///
 /// [UI 계층 구조 — 씬에서 직접 생성]
 /// HUD Canvas
@@ -97,9 +97,6 @@ public class InGameChatUI : NetworkBehaviour
         IsChatOpen = false;
     }
 
-    /// <summary>타이틀 복귀 시 채팅 히스토리 초기화. GameSession.ResetSession()에서 호출.</summary>
-    public static void ClearHistory() => s_history.Clear();
-
     // ── 런타임 ────────────────────────────────────────────────────
 
     bool      _inputOpen;
@@ -136,8 +133,13 @@ public class InGameChatUI : NetworkBehaviour
     /// <summary>씬 언로드 등으로 입력창이 열린 채로 파괴돼도 커서 요청 목록에 잔여 참조가 새지
     /// 않도록 하는 안전장치(EscMenuController/TutorialCheerNameUI와 동일 패턴). 정상적으로 닫힐 때는
     /// CloseInput()의 Release가 처리하므로, 여긴 그 경로를 타지 못한 비정상 파괴에서만 의미 있다.</summary>
-    void OnDestroy()
+    public override void OnDestroy()
     {
+        // NetworkBehaviour.OnDestroy는 virtual이고 NGO 정리(InternalOnDestroy,
+        // NetworkObject의 ChildNetworkBehaviours에서 자기 제거)를 수행한다. 예전엔 override 없이
+        // void OnDestroy()로 가려버려서(CS0114) 그 정리가 아예 실행되지 않았다.
+        base.OnDestroy();
+
         if (_inputOpen) CursorUnlockRequestUtil.Forget(this);
     }
 
@@ -316,7 +318,9 @@ public class InGameChatUI : NetworkBehaviour
 
     void SendChat(string trimmed)
     {
-        SendMessageServerRpc(trimmed, _sendDedup.NextSeq());
+        // Host가 어차피 다시 검증하지만(검증 권한 SSOT), 거대한 문자열이 트랜스포트에 올라가는
+        // 것 자체를 막는다. 여기서만 자르면 변조 클라이언트를 못 막으니 Host 검증이 본체다.
+        SendMessageServerRpc(ChatTextSanitizeUtil.Clamp(trimmed), _sendDedup.NextSeq());
     }
 
     // ── 네트워크 ──────────────────────────────────────────────────
@@ -334,12 +338,17 @@ public class InGameChatUI : NetworkBehaviour
 
         if (_sendDedup.IsDuplicate(senderId, submitSeq)) return;
 
+        // Host 검증 — 길이 자르기 + rich text 태그 무력화를 중계 "전에" 한 번만 한다.
+        // 이 지점을 건너뛰면 누가 <size=1000%>를 치는 순간 전원의 채팅 UI가 같이 망가진다.
+        string safeMessage = ChatTextSanitizeUtil.ToSafeDisplayFragment(message);
+        if (string.IsNullOrEmpty(safeMessage)) return;
+
         int colorIdx = -1;
         // PlayerSpawnCoordinator(NetworkList) — 서버·클라이언트 공통 단일 소스
         if (PlayerSpawnCoordinator.TryGetColor(senderId, out var color))
             colorIdx = System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
 
-        ReceiveMessageClientRpc(message, colorIdx);
+        ReceiveMessageClientRpc(safeMessage, colorIdx);
     }
 
     [ClientRpc]
@@ -377,8 +386,13 @@ public class InGameChatUI : NetworkBehaviour
     /// <summary>메시지 UI 오브젝트를 생성하고 _messages에 추가.</summary>
     void CreateMessageObject(string message, int senderColorIndex)
     {
+        // 치어 이름도 플레이어가 입력한 텍스트다. 채팅 본문과 달리 Host를 경유하지 않고
+        // CheerService에서 로컬 조회하므로 표시 시점에 태그를 무력화한다.
+        // ToUpperInvariant — 12개 로케일을 지원하니 현재 컬처 기준 대문자화(터키어 i→İ)는 피한다.
         string cheerName = CheerService.GetCheerName(senderColorIndex);
-        cheerName = string.IsNullOrEmpty(cheerName) ? "???" : cheerName.ToUpper();
+        cheerName = string.IsNullOrEmpty(cheerName)
+            ? "???"
+            : ChatTextSanitizeUtil.NeutralizeMarkup(cheerName.ToUpperInvariant());
         Color  nameColor = GetPlayerColor(senderColorIndex);
         string hex       = ColorUtility.ToHtmlStringRGB(nameColor);
 
