@@ -170,6 +170,7 @@ public class CheerProgressUI : MonoBehaviour
             {
                 _localEvents.OnBlackWhiteChanged  += HandlePlayerColorChanged;
                 _localEvents.OnUniqueColorChanged += HandlePlayerColorChanged;
+                _localEvents.OnColorTypeChanged   += HandlePlayerColorTypeChanged;
             }
         }
     }
@@ -185,6 +186,7 @@ public class CheerProgressUI : MonoBehaviour
         {
             _localEvents.OnBlackWhiteChanged  -= HandlePlayerColorChanged;
             _localEvents.OnUniqueColorChanged -= HandlePlayerColorChanged;
+            _localEvents.OnColorTypeChanged   -= HandlePlayerColorTypeChanged;
         }
         _localBuffSystem = null;
         _localPlayer     = null;
@@ -419,6 +421,10 @@ public class CheerProgressUI : MonoBehaviour
     /// <summary>흑/백·고유색 전환 시 표시 중인 아이콘 색을 즉시 갱신.</summary>
     void HandlePlayerColorChanged(bool _) => RefreshIconColor();
     void HandlePlayerColorChanged(int _)  => RefreshIconColor();
+
+    // 스폰 시 색 NetworkVariable이 늦게 도착하면 그 사이 기본값(Blue)로 그려질 수 있다 —
+    // 실제 색이 확정되는 이 이벤트에서도 다시 그린다 (2026-09-11 버그 수정).
+    void HandlePlayerColorTypeChanged(PlayerColorType _) => RefreshIconColor();
 
     // ── 유틸 ─────────────────────────────────────────────────────
 

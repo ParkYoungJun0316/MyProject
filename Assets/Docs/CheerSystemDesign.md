@@ -359,7 +359,8 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 | `cheerCooldownSeconds` | `CheerService` | 개인 버프 종료 후 쿨 | 15초 (기존 유지) |
 | `teamCheerTimeoutSeconds` | `CheerService` | 팀 첫 인식 후 전원 미달 타임아웃 | 10초 |
 | `chatRateLimitSeconds` | `CheerService` | 숫자키 응원 간격 | 0.5~1초 (기존 유지) |
-| ~~`teamCheerCooldownSeconds`~~ / ~~`teamHealAmount`~~ | — | **삭제됨** — 팀 쿨 120초·+2힐 폐기(§0 오버라이드). 함정별 창 주기는 각 함정의 `randomIntervalMin/Max` + `warnDuration` | — |
+| `TeamCheerSchedule.IdleMin/MaxSeconds` | 전역 | 팀 응원 Idle 간격 (인스펙터 `randomIntervalMin/Max`보다 우선) | **55–80초** |
+| ~~`teamCheerCooldownSeconds`~~ / ~~`teamHealAmount`~~ | — | **삭제됨** — 팀 쿨 120초·+2힐 폐기(§0 오버라이드). 창 주기는 위 전역 간격 + 함정 `warnDuration` | — |
 
 ---
 

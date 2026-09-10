@@ -51,8 +51,7 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
     [SerializeField] float recoverDuration = 0.6f;
 
     [Header("랜덤 스케줄")]
-    [SerializeField] float randomIntervalMin = 5f;
-    [SerializeField] float randomIntervalMax = 15f;
+    [Tooltip("Idle 간격은 TeamCheerSchedule 55–80. 이 값은 첫 창 앞 추가 대기만.")]
     [SerializeField] float initialDelay = 0f;
     [SerializeField] bool startOnAwake = true;
 
@@ -372,8 +371,8 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
         // (Drop 트랩, VFX 등)이 이 시드 스트림을 물려받지 않는다. 결정성은 그대로.
         var prevState = UnityEngine.Random.state;
         UnityEngine.Random.InitState(mixedSeed);
-        float min = randomIntervalMin;
-        float max = Mathf.Max(min, randomIntervalMax);
+        float min = TeamCheerSchedule.IdleMinSeconds;
+        float max = TeamCheerSchedule.IdleMaxSeconds;
         float interval = Random.Range(min, max);
         UnityEngine.Random.state = prevState;
         return interval;

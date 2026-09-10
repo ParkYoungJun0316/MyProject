@@ -14,8 +14,10 @@ using UnityEngine;
 ///  3. 각 항목을 Inspector에서 설정.
 ///
 /// [흔들림]
-///  Visual Root 에 지정한 자식 Transform만 로컬 좌표로 흔들림.
-///  Rigidbody / 물리 위치는 변경하지 않음.
+///  Visual Root 의 로컬 좌표만 흔들림. 자식 메시를 넣는 게 정석.
+///  T.Boss P4처럼 Visual Root = AdvancingWall 루트(이동하는 Transform)여도
+///  Play()마다 현재 localPosition을 원점으로 잡는다. Awake 좌표를 고정하면
+///  순전진 이후 다음 경고가 벽을 처음 자리로 강제 되돌린다.
 /// </summary>
 public class AdvancingWallTelegraph : MonoBehaviour
 {
@@ -69,6 +71,10 @@ public class AdvancingWallTelegraph : MonoBehaviour
     public void Play()
     {
         if (_routine != null) StopCoroutine(_routine);
+        // 순전진으로 루트가 옮겨진 뒤에도 흔들림이 Awake 자리로 점프하지 않게,
+        // 이번 경고 시작 시점의 localPosition을 원점으로 쓴다.
+        if (visualRoot != null)
+            _visualOrigin = visualRoot.localPosition;
         _routine = StartCoroutine(TelegraphRoutine());
     }
 

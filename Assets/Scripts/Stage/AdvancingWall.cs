@@ -141,6 +141,9 @@ public class AdvancingWall : MonoBehaviour
     bool    _isPausedByColor;
     float   _totalAdvanced;
     Vector3 _currentOrigin;
+    /// <summary>Awake 시점의 시작 위치(불변 앵커). SnapToDistance()가 "시작 위치 기준 절대 거리"를
+    /// 계산하는 기준점으로 쓴다 — _currentOrigin은 이동마다 갱신되지만 이건 고정.</summary>
+    Vector3 _startOrigin;
     /// <summary>현재 진행 중인 AdvanceEntry의 목표 지점(전진 완료 위치). RunEntry가 사이클마다 갱신.
     /// CompleteCurrentEntryNow()가 중단 시 스냅 대상으로 참조한다.</summary>
     Vector3 _advanceTarget;
@@ -159,6 +162,7 @@ public class AdvancingWall : MonoBehaviour
         _rb             = GetComponent<Rigidbody>();
         _rb.isKinematic = true;
         _currentOrigin  = transform.position;
+        _startOrigin    = _currentOrigin;
         // 엔트리가 한 번도 안 돈 상태에서 CompleteCurrentEntryNow()가 불려도 월드 원점(0,0,0)으로
         // 순간이동하지 않도록 현재 위치로 초기화.
         _advanceTarget  = _currentOrigin;
@@ -260,6 +264,39 @@ public class AdvancingWall : MonoBehaviour
         _currentOrigin  = _advanceTarget;
         _totalAdvanced += advancedDist;
         _isActive = false;
+    }
+
+    /// <summary>
+    /// 시작 위치(Awake 시점, _startOrigin) 기준 절대 거리로 원점을 강제 스냅.
+    /// 진행 중인 이동·색 정지가 있으면 전부 취소하고 값을 덮어쓴다. CompleteCurrentEntryNow()와 달리
+    /// "이번 엔트리의 목표(_advanceTarget)"가 아니라 임의의 절대 거리로 이동한다 — 목적지가 항상
+    /// 종점(바닥)인 T.Boss Sphere 체크포인트 모델(BossSpherePhaseDriver, 2026-09-11 재설계) 전용.
+    /// 클리어 시 "그 페이즈가 시작한 체크포인트"로 위로 되돌리는 데 쓴다.
+    /// OnAdvanceCompleted 등 이벤트는 발동하지 않음(스냅 전용, 자연 완료와 구분).
+    /// </summary>
+    public void SnapToDistance(float distanceFromStart)
+    {
+        if (_pauseCoroutine != null)
+        {
+            StopCoroutine(_pauseCoroutine);
+            _pauseCoroutine = null;
+        }
+        _isPausedByColor = false;
+
+        if (_advanceCoroutine != null)
+        {
+            StopCoroutine(_advanceCoroutine);
+            _advanceCoroutine = null;
+        }
+        telegraph?.Cancel();
+        StopMoveLoop();
+        _isActive = false;
+
+        Vector3 worldDir = transform.TransformDirection(moveDirection.normalized);
+        _currentOrigin  = _startOrigin + worldDir * distanceFromStart;
+        _advanceTarget  = _currentOrigin;
+        _totalAdvanced  = distanceFromStart;
+        _rb.MovePosition(_currentOrigin);
     }
 
     /// <summary>시작 위치로 완전 초기화.</summary>

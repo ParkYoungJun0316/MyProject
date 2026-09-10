@@ -153,9 +153,18 @@ public class PlayerHPUI : MonoBehaviour
     void RefreshSelfName()
     {
         if (selfNameLabel == null || player == null) return;
-        int ci = System.Array.IndexOf(PlayerColorUtil.ColorOrder, player.playerColorType);
+        int ci = ResolveColorIndex();
         string name = CheerService.GetCheerName(ci);
         selfNameLabel.text = selfNamePrefix + (string.IsNullOrEmpty(name) ? "???" : name.ToUpper());
+    }
+
+    /// <summary>ColorOrder 인덱스(0=berry …). PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType. PlayerNameTagUI.ResolveColorIndex와 동일 패턴.</summary>
+    int ResolveColorIndex()
+    {
+        var net = player.GetComponent<NetworkObject>();
+        if (net != null && PlayerSpawnCoordinator.TryGetColor(net.OwnerClientId, out var color))
+            return System.Array.IndexOf(PlayerColorUtil.ColorOrder, color);
+        return System.Array.IndexOf(PlayerColorUtil.ColorOrder, player.playerColorType);
     }
 
     Sprite GetFullHeartSprite()

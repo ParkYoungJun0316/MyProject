@@ -112,6 +112,7 @@ public class ChangeColorCooldownUI : MonoBehaviour
         {
             _events.OnBlackWhiteChanged  += OnBlackWhiteChanged;
             _events.OnUniqueColorChanged += OnUniqueColorChanged;
+            _events.OnColorTypeChanged   += OnColorTypeChanged;
         }
 
         RefreshIcon();
@@ -124,6 +125,7 @@ public class ChangeColorCooldownUI : MonoBehaviour
         {
             _events.OnBlackWhiteChanged  -= OnBlackWhiteChanged;
             _events.OnUniqueColorChanged -= OnUniqueColorChanged;
+            _events.OnColorTypeChanged   -= OnColorTypeChanged;
         }
     }
 
@@ -209,14 +211,27 @@ public class ChangeColorCooldownUI : MonoBehaviour
 
     void OnUniqueColorChanged(int _)       => RefreshIcon();
 
+    // 스폰 시 색 NetworkVariable이 늦게 도착하면 그 사이 기본값(Blue)로 그려질 수 있다 —
+    // 실제 색이 확정되는 이 이벤트에서도 다시 그린다 (2026-09-11 버그 수정).
+    void OnColorTypeChanged(PlayerColorType _) => RefreshIcon();
+
     void RefreshIcon()
     {
         if (_iconImage == null || player == null) return;
 
         if (player.isUniqueColor)
-            _iconImage.sprite = GetUniqueColorIcon(player.playerColorType);
+            _iconImage.sprite = GetUniqueColorIcon(ResolveColorType());
         else
             _iconImage.sprite = player.isBlack ? blackIcon : whiteIcon;
+    }
+
+    /// <summary>PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType. PlayerNameTagUI.ResolveColorIndex와 동일 패턴.</summary>
+    PlayerColorType ResolveColorType()
+    {
+        var net = player.GetComponent<NetworkObject>();
+        if (net != null && PlayerSpawnCoordinator.TryGetColor(net.OwnerClientId, out var color))
+            return color;
+        return player.playerColorType;
     }
 
     Sprite GetUniqueColorIcon(PlayerColorType colorType)
