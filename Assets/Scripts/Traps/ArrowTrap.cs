@@ -148,10 +148,8 @@ public class ArrowTrap : TrapBase
     }
 
     // Mouth 연출(Open/Hold)을 Host 발행 신호에서만 파생시키기 위한 릴레이.
-    // Client도 이 TrapBase 이벤트를 로컬로 받지만(자기 스케줄 추정), MouthTrapAnimatorAnim /
-    // MouthTrapAnimator 둘 다 Client에서는 이 로컬 이벤트를 구독하지 않고 아래 RPC로 도착한
-    // 신호만 쓴다 (Mouth↔Arrow 타이밍 수정 — 두 개의 다른 시계가 같은 Animator/BlendShape를
-    // 다투던 문제 해소).
+    // Client도 이 TrapBase 이벤트를 로컬로 받지만(자기 스케줄 추정), MouthTrapAnimatorAnim은
+    // Client에서 이 로컬 이벤트를 구독하지 않고 아래 RPC로 도착한 신호만 쓴다.
     void RelayChargeToClients()
     {
         var nm = NetworkManager.Singleton;
@@ -168,15 +166,12 @@ public class ArrowTrap : TrapBase
 
     /// <summary>
     /// StageNetworkState.SyncArrowChargeClientRpc 수신 시 Client에서 호출. Mouth Open 연출만 재생.
-    /// Mouth 연출 컴포넌트는 프리팹마다 Animator 기반(MouthTrapAnimatorAnim) 또는 BlendShape
-    /// 기반(MouthTrapAnimator) 중 하나만 붙어 있으므로 둘 다 시도해도 중복 재생되지 않는다.
     /// </summary>
     public static void PlayChargeById(int id)
     {
         _registry.TryGetValue(id, out ArrowTrap t);
         if (t == null) return;
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayOpenFromNetwork();
-        t.GetComponent<MouthTrapAnimator>()?.PlayOpenFromNetwork();
         t.GetComponent<ArrowWarnSign>()?.PlayWarnFromNetwork();
     }
 
@@ -190,7 +185,6 @@ public class ArrowTrap : TrapBase
         _registry.TryGetValue(id, out ArrowTrap t);
         if (t == null) return;
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayHoldFromNetwork();
-        t.GetComponent<MouthTrapAnimator>()?.PlayHoldFromNetwork();
         t.GetComponent<ArrowWarnSign>()?.PlayHideFromNetwork();
         t.PlayFireSfxLocal();
     }

@@ -25,7 +25,7 @@ public class StageManager : MonoBehaviour
 
     [Header("시작 설정")]
     [Tooltip("true: 씬 로드 즉시 자동 시작\n" +
-             "false: StartStage() 호출 대기 (PlayerTriggerZone 연결 필요)")]
+             "false: StartStage() 호출 대기 (StageStartGate 등 외부 연결 필요)")]
     public bool autoStart = false;
 
     [Header("이벤트")]
@@ -127,7 +127,7 @@ public class StageManager : MonoBehaviour
 
     /// <summary>
     /// 플레이어가 트리거를 밟으면 호출. Objective 타이머/목표를 시작.
-    /// PlayerTriggerZone.OnPlayerEnter에 연결.
+    /// StageStartGate 등 외부에서 연결.
     /// </summary>
     public void StartStage()
     {

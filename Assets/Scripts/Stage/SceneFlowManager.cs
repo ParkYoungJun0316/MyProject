@@ -161,7 +161,7 @@ public class SceneFlowManager : MonoBehaviour
 
     /// <summary>
     /// 씬에 남아있는 모든 위협을 즉시 정지한다 — 자체 스케줄 트랩(TrapBase), 발사 감독
-    /// (ArrowIncomingDirector/TrapPlayerTracker), Update 감지형(CeilingTrap), 밀어내는 복도
+    /// (ArrowIncomingDirector/TrapPlayerTracker), 밀어내는 복도
     /// (MovingCorridor), 추격자(Stage5ChaserAI), 팀응원 함정(Mouth/Tongue/Saliva/Esophagus/JawSmash).
     /// 어느 머신에서 호출되든 로컬로 안전 — 전부 로컬 상태 변경이고, TrapProjectile Despawn만
     /// Host 전용으로 가드된다.
@@ -190,10 +190,6 @@ public class SceneFlowManager : MonoBehaviour
             director.StopDirecting();
         foreach (var tracker in FindObjectsByType<TrapPlayerTracker>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             tracker.StopTracking();
-
-        // Update에서 직접 감지·발동하는 함정 — 위 두 경로 어디에도 안 걸린다.
-        foreach (var ceiling in FindObjectsByType<CeilingTrap>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-            ceiling.StopTrap();
 
         // 밀어내는 복도 — Activate() 이후 별도 정지 호출이 씬에 전혀 없어 끝까지 계속 미는 설계
         // (T.Stage4). 클리어 후에도 Kinematic Rigidbody로 계속 밀면 배너 보는 동안 플레이어가

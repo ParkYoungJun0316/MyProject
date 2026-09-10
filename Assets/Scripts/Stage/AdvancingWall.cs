@@ -141,6 +141,9 @@ public class AdvancingWall : MonoBehaviour
     bool    _isPausedByColor;
     float   _totalAdvanced;
     Vector3 _currentOrigin;
+    /// <summary>현재 진행 중인 AdvanceEntry의 목표 지점(전진 완료 위치). RunEntry가 사이클마다 갱신.
+    /// CompleteCurrentEntryNow()가 중단 시 스냅 대상으로 참조한다.</summary>
+    Vector3 _advanceTarget;
 
     Rigidbody _rb;
     Coroutine _advanceCoroutine;
@@ -156,6 +159,9 @@ public class AdvancingWall : MonoBehaviour
         _rb             = GetComponent<Rigidbody>();
         _rb.isKinematic = true;
         _currentOrigin  = transform.position;
+        // 엔트리가 한 번도 안 돈 상태에서 CompleteCurrentEntryNow()가 불려도 월드 원점(0,0,0)으로
+        // 순간이동하지 않도록 현재 위치로 초기화.
+        _advanceTarget  = _currentOrigin;
     }
 
     void Update()
@@ -218,6 +224,44 @@ public class AdvancingWall : MonoBehaviour
         StopMoveLoop();
     }
 
+    /// <summary>
+    /// 진행 중인 이동을 즉시 멈추고 이번 엔트리의 목표 지점(_advanceTarget)으로 스냅.
+    /// OnAdvanceCompleted는 발동하지 않음(자연 완료와 구분) — T.Boss 페이즈 시간 내 클리어처럼
+    /// "아직 안 끝났지만 강제로 끝낸다"는 신호를 자연 완료(OnAdvanceCompleted → 시간 초과 처리)와
+    /// 구분해야 하는 외부 스케줄러(BossSpherePhaseDriver 등) 전용.
+    /// 코루틴 중단이라 _isActive = false로 정리한다.
+    ///
+    /// 색 일치 일시정지(PauseByColorRoutine)가 진행 중이면 그것도 같이 취소한다 —
+    /// 안 그러면 ① 그 코루틴의 LerpTo가 스냅한 위치를 다시 덮어쓰고,
+    /// ② _isPausedByColor가 남아 다음 RunOnce()가 통째로 무시된다.
+    /// 진행 중인 엔트리가 없으면(이미 자연 완료 / 정지 상태) 위치는 건드리지 않는다.
+    /// </summary>
+    public void CompleteCurrentEntryNow()
+    {
+        if (_pauseCoroutine != null)
+        {
+            StopCoroutine(_pauseCoroutine);
+            _pauseCoroutine = null;
+        }
+        _isPausedByColor = false;
+
+        if (_advanceCoroutine != null)
+        {
+            StopCoroutine(_advanceCoroutine);
+            _advanceCoroutine = null;
+        }
+        telegraph?.Cancel();
+        StopMoveLoop();
+
+        if (!_isActive) return;
+
+        float advancedDist = Vector3.Distance(_currentOrigin, _advanceTarget);
+        _rb.MovePosition(_advanceTarget);
+        _currentOrigin  = _advanceTarget;
+        _totalAdvanced += advancedDist;
+        _isActive = false;
+    }
+
     /// <summary>시작 위치로 완전 초기화.</summary>
     public void ResetToStart()
     {
@@ -242,8 +286,20 @@ public class AdvancingWall : MonoBehaviour
     /// <summary>현재까지 순전진한 총 거리 (패널티 포함).</summary>
     public float TotalAdvanced => _totalAdvanced;
 
+    /// <summary>
+    /// 진행 중인 이동분까지 포함한 실시간 전진 거리 (표시용).
+    /// TotalAdvanced는 엔트리가 완료될 때만 갱신되므로 이동 중에는 값이 멈춘다 —
+    /// 진행도 바·마커처럼 이동을 실시간으로 보여주는 UI는 이 값을 쓸 것.
+    /// </summary>
+    public float LiveAdvancedDistance =>
+        _rb != null ? _totalAdvanced + Vector3.Distance(_currentOrigin, _rb.position) : _totalAdvanced;
+
     /// <summary>현재 전진·후퇴 이동 중인지. WallLineRandomizer 등 외부 스케줄러가 완료 대기에 사용.</summary>
     public bool IsMoving => _isActive;
+
+    /// <summary>ColorWall 색 일치로 일시정지 중인지. 이 상태에서는 RunOnce()가 무시된다 —
+    /// 외부 스케줄러가 "정지가 끝났는지" 판별하는 데 사용.</summary>
+    public bool IsPausedByColor => _isPausedByColor;
 
     /// <summary>
     /// 한 번 전진·후퇴 실행 (WallLineRandomizer 등 외부 스케줄 전용).
@@ -347,8 +403,9 @@ public class AdvancingWall : MonoBehaviour
                 yield break;
             }
 
-            Vector3 worldDir      = transform.TransformDirection(moveDirection.normalized);
-            Vector3 advanceTarget = _currentOrigin + worldDir * advDist;
+            Vector3 worldDir  = transform.TransformDirection(moveDirection.normalized);
+            _advanceTarget    = _currentOrigin + worldDir * advDist;
+            Vector3 advanceTarget = _advanceTarget;
             float   net           = advDist - retDist;
             Vector3 newOrigin     = _currentOrigin + worldDir * net;
 

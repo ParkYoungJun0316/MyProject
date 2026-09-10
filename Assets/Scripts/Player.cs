@@ -395,23 +395,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         TakeDamage(amount);
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (IsDead) return;
-
-        if (other.CompareTag("EnemyBullet"))
-        {
-            var nm = NetworkManager.Singleton;
-            // Host만 데미지 확정. Despawn은 NGO가 담당.
-            if (nm != null && nm.IsServer)
-            {
-                Bullet enemyBullet = other.GetComponent<Bullet>();
-                if (enemyBullet != null)
-                    NetworkDamageUtil.ApplyDamage(this, enemyBullet.damage);
-            }
-        }
-    }
-
     // ── 사망 / 리스폰 ─────────────────────────────────────────
 
     IEnumerator OnDamage()

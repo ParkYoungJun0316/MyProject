@@ -59,7 +59,7 @@ public class SpikeLaneField : TrapBase
         if (lanes == null || lanes.Length == 0)
             lanes = GetComponentsInChildren<SpikeLane>(true);
 
-        // MouthTrapAnimator와 동일한 관례: 이 값이 TrapLoop의 fireAtSeconds/activateInterval
+        // MouthTrapAnimatorAnim과 동일한 관례: 이 값이 TrapLoop의 fireAtSeconds/activateInterval
         // 대기시간 계산(FireWithCharge)에 자동으로 반영되어 별도 타이밍 계산이 필요 없다.
         SetPreFireChargeTime(warningDuration);
     }

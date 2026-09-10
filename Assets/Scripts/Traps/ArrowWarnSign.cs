@@ -81,7 +81,7 @@ public class ArrowWarnSign : MonoBehaviour
     {
         if (_trap == null) return;
 
-        // Host만 로컬 TrapBase 이벤트를 직접 구독 (MouthTrapAnimator와 동일 이유 — 위 클래스 주석 참조)
+        // Host만 로컬 TrapBase 이벤트를 직접 구독 (MouthTrapAnimatorAnim과 동일 이유)
         var nm = NetworkManager.Singleton;
         if (nm == null || !nm.IsServer) return;
 

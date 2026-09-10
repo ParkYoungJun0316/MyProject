@@ -31,7 +31,7 @@ using UnityEngine.Events;
 ///
 /// [시작]
 ///  - autoStart = true: 씬 로드 후 자동 Activate()
-///  - autoStart = false: Activate()를 PlayerTriggerZone·StageStartGate 등에 연결
+///  - autoStart = false: Activate()를 StageStartGate 등에 연결
 /// </summary>
 public class GridColorChallenge : MonoBehaviour
 {
@@ -51,7 +51,7 @@ public class GridColorChallenge : MonoBehaviour
 
     [Header("시작 설정")]
     [Tooltip("true: 씬 로드 후 자동 Activate()\n" +
-             "false: Activate()를 PlayerTriggerZone·StageStartGate 등에 연결")]
+             "false: Activate()를 StageStartGate 등에 연결")]
     [SerializeField] bool autoStart = false;
 
     [Tooltip("autoStart=true일 때 Activate()까지 대기(초). 0이면 Start() 직후")]

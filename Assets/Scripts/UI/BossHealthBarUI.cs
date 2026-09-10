@@ -18,12 +18,16 @@ using TMPro;
 ///          ├─ Seg3  (Image)
 ///          ├─ Seg4  (Image)
 ///          └─ Seg5  (Image)  ← segments[4]
+///     └─ SphereTrack       (Image, T.Boss 전용/선택) — Sphere 하강 진행도 트랙
+///          └─ SphereMarker (Image)  ← sphereMarkerRect (트랙의 자식으로 둘 것)
 ///
 /// [Inspector 연결]
-///  objective    : 씬의 BossFightObjective
-///  segments[]   : 체력 칸 Image 배열, 왼→오 순서로 5개 등록
-///  segmentsBg   : (선택) 세그먼트 뒤에 까는 고정 배경 — color tint 대상 아님
-///  bossNameText : (선택) 보스 이름 표시 텍스트
+///  objective        : 씬의 BossFightObjective
+///  segments[]       : 체력 칸 Image 배열, 왼→오 순서로 5개 등록
+///  segmentsBg       : (선택) 세그먼트 뒤에 까는 고정 배경 — color tint 대상 아님
+///  bossNameText     : (선택) 보스 이름 표시 텍스트
+///  sphereDriver     : (T.Boss 전용) 씬의 BossSpherePhaseDriver — 진행도·전체거리 SSOT
+///  sphereMarkerRect : (T.Boss 전용) 트랙 위를 움직이는 마커
 ///
 /// [BossFightObjective 쪽 설정]
 ///  OnPhaseCleared → BossHealthBarUI.OnPhaseCleared 연결
@@ -51,7 +55,18 @@ public class BossHealthBarUI : MonoBehaviour
     [SerializeField] TextMeshProUGUI bossNameText;
     [SerializeField] string          bossName = "입 보스";
 
+    [Header("Sphere 진행도 마커 (T.Boss 전용, 선택)")]
+    [Tooltip("씬의 BossSpherePhaseDriver. 진행도(0~1)와 전체 하강거리를 여기서만 읽는다 —\n" +
+             "전체 거리를 UI에 다시 적지 않기 위함(SSOT는 driver의 checkpointDistances[]).\n" +
+             "비우면 마커 갱신을 하지 않음 — M.Boss 등 Sphere가 없는 씬은 비워둘 것.")]
+    [SerializeField] BossSpherePhaseDriver sphereDriver;
+    [Tooltip("트랙(Track) 위를 움직이는 마커 RectTransform. 마커는 트랙의 자식으로 두고,\n" +
+             "이 컴포넌트가 anchorMin/Max.x를 진행도(0~1)로 갱신한다\n" +
+             "(ObjectiveUI의 Ratio 슬롯 Track/Marker 구조와 동일).")]
+    [SerializeField] RectTransform sphereMarkerRect;
+
     RectTransform _rt;
+    float         _lastMarkerProgress = -1f;
 
     // ── Unity ────────────────────────────────────────────────────
 
@@ -75,6 +90,19 @@ public class BossHealthBarUI : MonoBehaviour
         // 초기 상태: 전 세그먼트 체력 풀
         int total = objective != null ? objective.TotalPhases : segments != null ? segments.Length : 0;
         RefreshSegments(0, total);
+
+        if (sphereMarkerRect != null)
+            SetSphereMarkerProgress(0f);
+    }
+
+    void Update()
+    {
+        // sphereDriver가 비어있으면(M.Boss 등 Sphere 없는 씬) 갱신하지 않음.
+        // 이벤트 구독 없이 매 프레임 값을 직접 읽는다(§H.4) — 단 값이 실제로 바뀐 프레임만
+        // anchor를 다시 써서 UI를 매 프레임 dirty로 만들지 않는다.
+        if (sphereDriver == null || sphereMarkerRect == null) return;
+
+        SetSphereMarkerProgress(sphereDriver.Progress01);
     }
 
     // ── 이벤트 수신 ──────────────────────────────────────────────
@@ -102,6 +130,17 @@ public class BossHealthBarUI : MonoBehaviour
             if (segments[i] == null) continue;
             segments[i].gameObject.SetActive(i < remaining);
         }
+    }
+
+    /// <summary>ObjectiveUI.SetMarkerProgress와 동일한 코드 형태 — 트랙 위 마커를 진행도(0~1)로 이동.</summary>
+    void SetSphereMarkerProgress(float progress01)
+    {
+        float p = Mathf.Clamp01(progress01);
+        if (Mathf.Approximately(p, _lastMarkerProgress)) return;
+
+        _lastMarkerProgress        = p;
+        sphereMarkerRect.anchorMin = new Vector2(p, 0.5f);
+        sphereMarkerRect.anchorMax = new Vector2(p, 0.5f);
     }
 
     IEnumerator ShakeRoutine()

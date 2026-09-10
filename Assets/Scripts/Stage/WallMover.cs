@@ -115,7 +115,7 @@ public class WallMover : MonoBehaviour
         _moveCoroutine = StartCoroutine(MoveRoutine());
     }
 
-    /// <summary>스케줄 시작. scheduleOnStart=false일 때 외부(PlayerTriggerZone 등)에서 호출.</summary>
+    /// <summary>스케줄 시작. scheduleOnStart=false일 때 외부에서 호출.</summary>
     public void StartSchedule()
     {
         if (_scheduleCoroutine != null) StopCoroutine(_scheduleCoroutine);

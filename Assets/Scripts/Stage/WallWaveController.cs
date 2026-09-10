@@ -49,7 +49,7 @@ public class WallWaveController : MonoBehaviour
 
     [Header("활성화")]
     [Tooltip("true: 플레이어가 Collider에 진입하면 자동으로 파형 시작\n" +
-             "false: Play()를 PlayerTriggerZone 등 외부에서 직접 호출")]
+             "false: Play()를 외부에서 직접 호출")]
     [SerializeField] bool activateOnPlayerTrigger = true;
 
     [Tooltip("true: 최초 1회만 발동 / false: 플레이어 재진입 시마다 재발동")]
@@ -95,7 +95,7 @@ public class WallWaveController : MonoBehaviour
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>파형 시작. PlayerTriggerZone.OnPlayerEnter 또는 외부에서 직접 호출.</summary>
+    /// <summary>파형 시작. 외부에서 직접 호출하거나, activateOnPlayerTrigger면 플레이어 진입 시 호출.</summary>
     public void Play()
     {
         if (_isPlaying) return;
