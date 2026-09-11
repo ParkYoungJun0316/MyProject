@@ -2,7 +2,7 @@
 
 네트워크 동기화 아키텍처 문서 — 권한(Authority)·룸/세션·플레이어·스테이지 진행·챌린지 축의 SSOT.  
 **출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고.**  
-**데모 / Playtest 없음.** 목표 = **2026-09-01 Steam 정식 출시**만.  
+**데모 / Playtest 없음.** 목표 = **2026-09-16 Steam 정식 출시**만.  
 스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**.  
 (`End.Demo` = 클리어 UI 씬명 레거시. 리네임은 별도 작업.)
 
@@ -759,7 +759,7 @@ Phase 전환(P1→P2) 이후에도 끝까지 남아 있었음. 리뷰 중 같은
 
 ### MVP 동기화 대상
 
-**우선순위:** `Must (Ship / 9/1)` → `Should (여유)` → `Post (출시 이후)`
+**우선순위:** `Must (Ship / 9/16)` → `Should (여유)` → `Post (출시 이후)`
 
 **M.Stage1**
 
@@ -1588,7 +1588,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 > **현재 실행 체크리스트:** `ReleaseRoadmap.md` §5.  
 > **Authority:** §9.0 확정 (**이동=Owner+CNT**, 발사체=B안). Phase 2 이동 Host화 **폐기**.  
-> **목표:** **2026-09-01** 정식 (`ReleaseRoadmap.md`).
+> **목표:** **2026-09-16** 정식 (`ReleaseRoadmap.md`).
 
 1. NGO + `UnityTransport` + Title `NetworkManager`
 2. Tutorial 사전 게이트 구간 — 접속 스폰/색 자동배정/`TutorialGatherZone` 동기화 (§6B, 구 "로비 Ready/캐릭터/Start 동기화") — **실행용 체크리스트는 §6B.7**
@@ -1601,7 +1601,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 9. **응원** — CheerService, Dissonance, Vosk (`CheerAndTutorialDesign.md`)
 10. **Steamworks (전부)** — P2P · Lobby · Depot/알파 · Invite (**출시 하드 블로커**, `ReleaseRoadmap.md` §4)
 11. 애니 → SFX → 응원 확장 → Tutorial → 난이도(Coming Soon play test) → 출시 QA
-12. **2026-09-01 정식 출시**
+12. **2026-09-16 정식 출시**
 13. **텔레메트리** — [`TelemetryDesign.md`](TelemetryDesign.md) (**출시 후 OK**)
 14. M/T 풀코스+보스 (`sceneSequence`) + `End.Demo` + UI 옵션
 
@@ -1670,4 +1670,4 @@ A. **아니오 (2026-08-17 확정).** Steam(④) 경로는 오버레이 초대 �
 A. **컷씬: 안 넣음(영구).** 관전: **Post-Launch**. **이모트: 출시 범위에 포함 — 구현 완료**(T 홀드 휠 8종, §9.1.3, 2026-09-05). 재접속·호스트 마이그레이션·Late Join은 **미지원**(§12). Ship Must·순서는 `ReleaseRoadmap.md` §4 (텔레메트리는 출시 후 OK).
 
 **Q. Steam 데모 / Playtest 페이지를 만드나?**  
-A. **아니오.** 데모·Playtest 없음. **2026-09-01 정식 출시**만.
+A. **아니오.** 데모·Playtest 없음. **2026-09-16 정식 출시**만.

@@ -24,8 +24,8 @@ M1–5·M.Boss를 다시 묻지 말 것. T5·T.Boss는 보류.
 
 **다음 트랙:** M 인게임 판을 잠금에 맞추기. T1 조임은 이 트랙 뒤.
 
-1. **읽기:** 이 절 → §2 Barrier · §3 ColorTile · §7 P4(참고만). 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §H.5. T는 아직 구현하지 않음.
-2. **할 일:** ColorTile 점수제 §3 — 코드 됨. 타이머·발동 스케줄·실패 패널티 **폐기**. **에디터:** M.Stage3 `uniqueQuota`=6, 흑·백 배열 1인 4/4 · 2인 6/6 · 3인 7/7 · 4인 8/8, `tilePrefabs`에 Black·White, `ColorTileRoundObjective.targetTime`=180. Barrier §2.1 슬롯 코드 됨(2026-09-05) — M.Stage1 이동은 에디터 남음. **Barrier incoming = §2.2 감독 — `ArrowIncomingDirector` + `ArrowTrap.FireOnce()` 코드 됨(2026-09-05). 에디터(사용자) 남음: §2.2 표 참고.** Sequence / Grid 손대지 않음.
+1. **읽기:** 이 절 → §2 Barrier · §3 ColorTile · §7 P4(참고만). Grid 잠금은 §8 (이 트랙에서 코드로 열지 않음). 공유 [`CoopStageAudit.md`](CoopStageAudit.md) §H.5. T는 아직 구현하지 않음.
+2. **할 일:** ColorTile 점수제 §3 — 코드 됨. 타이머·발동 스케줄·실패 패널티 **폐기**. **에디터:** M.Stage3 `uniqueQuota`=6, 흑·백 배열 1인 4/4 · 2인 6/6 · 3인 7/7 · 4인 8/8, `tilePrefabs`에 Black·White, `ColorTileRoundObjective.targetTime`=180. Barrier §2.1 슬롯 코드 됨(2026-09-05) — M.Stage1 이동은 에디터 남음. **Barrier incoming = §2.2 감독 — `ArrowIncomingDirector` + `ArrowTrap.FireOnce()` 코드 됨(2026-09-05). 에디터(사용자) 남음: §2.2 표 참고.** Sequence 손대지 않음. **Grid 룰 = §8 (2026-09-11 잠금, 코드 됨 — H.4 참고). 에디터 배선 남음.**
 3. **하지 말 것:** ColorTile에 넉백·문 내림·광장화. 입/침/혀 재설계. P4 입 닫힘 머신 재설계. 팀 힐·120초. 새 RPC. Tutorial 팀 외침(마지막). T 조임·안개. T5. **Incoming 감독을 Barrier 색 배정·리빌·입 닫힘 창과 연동(§2.2 재확인).**
 
 **혀 반영 (2026-09-04) [확정]**
@@ -92,7 +92,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | M2 | **한 씬, 두 구간.** 2.1 SideSplit + **침**. 2.2 Drop + **침**. 암전 안 씀. 2.1 위에 Drop 안 얹음. 라운드로 시간 안 벌음 |
 | M3 ColorTile | **컷 취소.** 점수제 §3. 각자 칸 서기 폐기. **입 시계.** 3분(2–5) |
 | M4 | **한 씬, 두 구간.** 4.1 SequenceRing 턴제 + **혀 초출.** 4.2 ArrowTrap + **혀 복습**. 링 위에 화살 없음. M6·M7 없음. 리듬·16칸 암기·검정만 늘리기 **폐기** |
-| M5 | Grid Color+BW **유지.** 2인 장면 = BW 후반. Color/1인 쉬움 수용. **WindTrap 유지**, 강도만 사용자. 바람에서 협동 찾지 않음. **입 열기 없음** |
+| M5 | Grid **혼합판 §8.** 한 보드·한 라운드 줄. 고유+흑+백을 같이 깐다. 내 고유색 칸이 나왔으면 그 칸만. 2인 장면 = 후반 1칸 모이기. **WindTrap 유지**, 강도만 사용자. 바람에서 협동 찾지 않음. **입 열기 없음** |
 | ColorTile 점수 | 2초(기본) 또는 3초 점유 → 뽕 → 그 색 +1 → **다른 칸에 재스폰**. 고유는 주인만, 흑백은 아무나. 통과 = 고유+흑+백 의무. 흑백 의무 0 금지. 통로 좁게. **압력 = 할당량 + 입 창.** 함정으로 협동 안 만듦. 넉백·문 내림·광장화 안 씀 |
 | 소리 초출 | **M1.** 외침으로 닫힘 막기. 닫힘의 맛 = **암흑 시야 정도는 가져감.** 데미지·둘 다는 나중에. M3·보스 복습 |
 | 침 초출 | **M2 (2.1부터).** 2.2·보스 복습. PhysicMaterial 아님 — `Player.Move()` 얼음 가속/코스트 (`salivaAccelTime` / `salivaDecelTime`). §6 |
@@ -106,6 +106,8 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 - M2를 암전·보이스 차단·이심전심으로 길게 (보스 의식 후보만. M2 본체 아님)
 - SequenceRing 메트로놈/리듬, 16칸 한꺼번에 외우기, 검정만 늘리기
 - Grid / Wind 컷, Wind로 협동
+- Grid Color 7 + BW 7 구간 분리. 고유색은 위치만, 흑백은 토글만
+- 고유색 칸이 나왔는데 그 색이 흑/백 칸으로 통과
 - Barrier를 통과·알코브 퍼즐, 1인 4문 동일색
 - 흑백 할당량 0인 ColorTile
 - M6·M7, 링 위에 ArrowTrap, 2.1 위에 Drop
@@ -130,7 +132,8 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | M.Boss P4 | **됨(2026-09-09, 연출 재검토 반영).** `MouthBossJawSmash` (`Assets/Scripts/Cheer/MouthBossJawSmash.cs`). 새 RPC·NV 없음. 회차·구간 경계 = 절대 `PhaseStartServerTime`. Revert = 사후 복구만(회차 건너뛰기 없음). `SceneFlowManager.FreezeAllHazardsNow()`가 `StopCycle()` 순회. **연출:** Breaking이 이미 최대 암전이라 시각 연출(이빨 프롭) 대신 파괴음(`SFXId.Breakable_Destroy`, `breakSfxMinDistance`/`Max`/`RolloffMode`)만 재생 — `toothProps` 필드 제거. **에디터 됨:** M.Boss `Boss 270-360`/`StageManager_Boss5`에 GO `MouthBossJawSmash`. `floorTiles` 25(Ground, x→z 정렬) + `warnMarkers` 25(`SpikeLaneWarnMarker`, 혀/SpikeTrap과 동일). `mouthAnimator`=MouthBG, `screenFader`=Fadeout/Image, Close/Open 클립 길이 2.966667. `OnChallengeComplete`→`BossFightObjective.NotifyPhaseCleared`. `Bossdown` `OnAllReady` = `ForceBreakAllTilesForEnding` → `SceneFlowRelay.LoadNextScene`. P4 `onPhaseEnter`에 `StageManager_Boss5.StartStage`. `BossFightObjective.totalPhases`=4(이미). 낙사 = Player `enableFallDeath`(M4와 동일, 방 리셋). **에디터 남음:** 씬에 남은 예전 `Boss_Final` 이빨 프롭 복제 25개(정리 필요) |
 | ColorTile | **점수제만.** unique 6 + 인원별 흑/백(4/4, 6/6, 7/7, 8/8). 목표 시간 = `targetTime`(기본 180, 권장 120–300). 타일 `Black`/`White`. M.Stage3 인스펙터 남음 |
 | Barrier | §2.1 색 슬롯 표 **코드 됨(2026-09-05)** — `DirectionalBarrierRound.BuildBarrierSlots`가 균등 분배(`GameSessionColorDistribution.Distribute`) 대신 확정 표(1인=고유2+백+흑 / 2인=A+B+백+흑 / 3인=고유3+백1 / 4인=고유4)로 배정. 타일도 슬롯 중복 없이 색당 1개만 스폰(1인 고유 패드 1개 → 고유 문 2개). 시작 흐름 **Reveal/CloseAndSpawnTiles 2단계로 분리(2026-09-05)** — `Activate()`(단일 호출) 폐기. `Reveal()`은 배치+Open만 하고 자동으로 안 닫힘(다이얼로그 프리뷰용), `CloseAndSpawnTiles()`가 Close+타일 스폰(진짜 라운드 시작). Reveal 없이 CloseAndSpawnTiles만 호출해도 그 자리에서 스폰부터 자동 수행(무프리뷰). Incoming 감독(§2.2) — `ArrowIncomingDirector`·`ArrowTrap.FireOnce()` **코드 됨(2026-09-05)**. **에디터(사용자, 남음):** M.Boss→M.Stage1 이동, `barrierPrefabs`/`tilePrefabs`에 White·Black 문/타일 프리팹 추가, 화살 `Breakable` 부착, M.Stage1 Phase0 onPhaseEnter→`Reveal()` + `StageStartGate.OnCountdownComplete`→`CloseAndSpawnTiles()` 연결 |
-| Sequence / Grid | 룰 유지. 손대지 않음 |
+| Sequence | 룰 유지. 손대지 않음 |
+| Grid | **혼합판 §8. 코드 됨(2026-09-11).** `GridColorChallenge`+`GridBWTileChallenge` → `GridChallenge` 하나로 통합, `GridColorTile`+`GridBWTile` → `GridTile` 하나로 통합(둘 다 삭제됨, `ChallengeOwnerType.GridColor`/`GridBW`는 번호 재사용 금지로 자리만 유지, 신규 `ChallengeOwnerType.Grid` 사용). 풀 = 활성 고유색(GameSession 기준)+Black+White. 라운드 생성은 `GridSafePhase`(afterRound/tileCount/minBwCount) 커브 — 흑/백 최소 개수를 먼저 강제 추첨 후 나머지를 전체 풀에서 채우는 결정적 알고리즘(거부 샘플링 없음). 판정은 플레이어별 분기: 내 고유색이 이번 라운드 풀에 있으면 고유색 모드+내 색 칸, 없으면 흑백 모드+내 `isBlack` 일치 칸(공유 가능). **`minBwCount`는 "흑+백 합산 최소 개수"로 해석**(§8 표 마지막 행 `tileCount=1,minBwCount=1`이 "그 1칸이 흑이든 백이든 통과"가 되려면 이 해석만 성립 — "흑 각각 최소·백 각각 최소"였다면 타일 1개로는 불가능하므로 모순). 네트워크 골격(owner 가드·Host 레인 판정·시드 결정성·사망 처리)은 기존 두 챌린지와 동일 — §11B 챌린지 축 재사용, 새 RPC/NV 없음. **에디터 남음:** M.Stage5 씬에 `GridTile` 25개 배치(머티리얼 7종: Blue/Purple/Green/Yellow/Black/White/Default), `GridChallenge` GameObject에 tiles 연결, `safeTilePhases`(§8 표 수치) + `totalRounds`/`roundDuration`/`individualDamageOnFail` 인스펙터 설정, `GridRoundObjective.gridChallenge` 연결(구 `colorChallenge`/`bwChallenge` 필드는 제거됨) |
 
 잔여 버킷 C: M3 Drop, 4.1 Drop. 수치는 해당 스테이지 때. Tutorial 팀 외침 = 마지막(지금은 빈 성공).
 
@@ -155,19 +158,19 @@ M = 한정된 발판. 한 입에 붙어 있는 협동. 시계 = 입이 열린 �
 | 씬 | 컨텐츠 | 버킷 | 남길 장면 | 바꿀 판정 | 빼도 되는 함정 |
 |----|--------|------|-----------|-----------|----------------|
 | ColorTile | 공유 룰 | **B** 점수제 | 흑·백 할당량. 좁은 길 | 각자 칸 서기 폐기. §3 | 함정으로 협동 안 만듦. Drop은 C |
-| Grid | Color+BW | **A** 유지 | BW 후반 붙거나 흑백 분기 | Color 각자 칸·1인 쉬움 수용 | Wind 유지, 강도는 사용자 |
+| Grid | 혼합판 §8 | **A** | 후반 1칸 모이기. 고유 없으면 흑백 | 고유 칸 있으면 그 칸만. Color/BW 7+7 폐기 | Wind 유지, 강도는 사용자 |
 | M.Stage1 | Barrier + 소리 초출 | A. §2 · §4 | 부수기 + 뮤텍스. 닫힘 막기 | `Distribute` 2+2 / 1인 4면 동일색 안 씀 | 함정은 부술 대상 |
 | M.Stage2 | 2.1 SideSplit+침. 2.2 Drop+침 | **A** §6 | 갈라서기. 침이 남아 미끄러짐 | 암전 안 씀. 라운드로 시간 안 벌음 | 2.1 위에 Drop 없음. 2.2 Drop은 침의 압력 |
 | M.Stage3 | ColorTile + Drop + AdvancingWall | **B** §3 · §4 | 흑백 할당량 + 입 시계 | 점수제 | 실패 이빨은 남을 수 있음 |
 | M.Stage4 | 4.1 링+혀. 4.2 화살+혀 | **A** §5 | 색 차례 + 혀. 혀가 바닥을 줄임 | 링 위에 화살 없음 | 4.1 Drop은 C. 4.2 화살은 혀의 압력 |
-| M.Stage5 | Grid + Wind | **A** | BW 후반 | **입 열기 없음** | Wind **유지** |
+| M.Stage5 | Grid + Wind | **A** §8 | 후반 1칸 모이기 | **입 열기 없음.** Color/BW 구간 분리 폐기 | Wind **유지** |
 | M.Boss | **4페이즈** §7 (2026-09-08) | 초출 금지 | 1–3 복습, **4 입 닫힘+타일 파괴 6회 누적 → 삼켜 T** | 시드=Host ChallengeStart | Grid·Sequence·ColorTile·WindTrap·SideSplit 없음. 바람만 페이즈 없음. 혀 MixedSweep도 보스에서 뺌 |
 
 **M.Stage2.** 한 씬 두 구간. 이심전심 암전은 보스 후보만.
 
 **M.Stage4.** M6·M7 없음. 흰은 아무나, 검은 누르면 안 됨(무입력 시 자동 통과).
 
-**M.Stage5.** 입 열기 없음 — 바람과 안 맞음.
+**M.Stage5.** 입 열기 없음 — 바람과 안 맞음. Grid = 혼합판 §8.
 
 T.Boss ColorTile 인스턴스는 이 문서 §3과 같은 점수제.
 
@@ -373,3 +376,77 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 **에디터 (됨 2026-09-09):** `Boss 270-360` / `StageManager_Boss5` 아래 `MouthBossJawSmash`. Ground 25칸 → `floorTiles`(x→z). 경고 = `SpikeLaneWarnMarker` 25(혀/SpikeTrap과 동일, White URP Lit, 노랑→빨강 `PlayWarning`). MouthBG + Fadeout/Image. `BossFightObjective.totalPhases`=4. P4 `onPhaseEnter` → `StartStage`. **에디터 남음(2026-09-09 연출 재검토로 추가):** `toothProps` 필드가 삭제되어 씬에 남아있는 `Boss_Final` 비주얼 복제 25개(예전 이빨 프롭)는 더 이상 코드가 참조하지 않음 — 정리(삭제 또는 비활성 유지)는 사용자가 에디터에서. `breakSfxMinDistance`/`Max`/`RolloffMode`는 기본값(5/50/Logarithmic)이라 별도 배선 불필요, `SFXManager`가 씬에 있으면 그대로 동작. **에디터(보스 세이프존, 아직 안 됨):** P2에 `SafeZoneWarnSign` GO 배치, `cycles[]`에 해당 페이즈 `ArrowTrap` 발사 시각과 안전 타일 연결. Barrier(P1)는 M.Boss→M.Stage1 이동(§2.2 에디터 항목)과 별개로 보스용 인스턴스를 따로 유지.
 
 빼는 것 (2026-09-08 재확정): ColorTile, Sequence, Grid, SideSplit, WindTrap, 혀 `MixedSweep`(P4 대체로 폐기, P3 `AttackSweep`만 남음) — 보스 페이즈 구성·복습 파트너 어느 쪽으로도 안 씀. 깨물림 모이기, 바람만 페이즈는 그대로 빠짐.
+
+---
+
+## 8. Grid 혼합판 **[확정: 개념, 2026-09-11]**
+
+M.Stage5. 코드 아직. 새 미니게임 아님 — Color 7 + BW 7을 **한 보드·한 라운드 줄**로 합친다. WindTrap 유지. **입 열기 없음.** 네트워크는 지금 Grid와 같은 챌린지 축(시드 Generate → Host 판정). 새 RPC 없음.
+
+**한 줄:** 매 라운드 고유·흑·백을 섞어 깐다. **내 고유색 칸이 나왔으면 그 칸만** 성공. 없으면 흑백.
+
+### 보드 · 진행
+
+챌린지 하나, 5×5 하나. Stage5.1 Color / Stage5.2 BW 페이즈 폐기. `totalRounds`는 인스펙터 (커브가 11라운드부터 1칸이면 12 이상이 자연스러움. 값은 에디터).
+
+실패 = 지금처럼 **개인 데미지**. Objective는 라운드 실패로 Fail하지 않음. HP 0이면 기존 방 리셋.
+
+### 색 풀 (Generate 후보)
+
+활성 고유색 + 흑 + 백. 없는 플레이어 고유색은 안 깔음 (가짜 칸 없음).
+
+- 4인: 6색 (고유4 + 흑 + 백)
+- 2인: 4색 (고유2 + 흑 + 백)
+
+### 깔기
+
+라운드마다 안전 칸 = **색당 1칸**, 위치는 시드 랜덤. 나머지 Default.
+
+단계 표는 인스펙터 배열 (`afterRound`는 0부터, 옛 `SafeCountPhase`와 같음):
+
+| 필드 | 의미 |
+|------|------|
+| `afterRound` | 이 라운드 인덱스부터 적용 |
+| `tileCount` | 이번 단계 안전 칸 수 (= 나오는 색 수) |
+| `minBwCount` | 그중 흑·백 **최소** 개수 (흑과 백은 따로 셈) |
+
+풀에서 `tileCount`개를 겹치지 않게 뽑되, 흑/백이 `minBwCount` 미만이면 안 됨. `tileCount`가 풀보다 크면 풀 크기로 클램프.
+
+**4인 기본 커브** (라운드 번호 1-based. 인스펙터 `afterRound`는 0-based):
+
+| 라운드 | afterRound | tileCount | minBwCount |
+|--------|------------|-----------|------------|
+| 1–6 | 0 | 4 | 0 |
+| 7–8 | 6 | 3 | 1 |
+| 9–10 | 8 | 2 | 1 |
+| 11+ | 10 | 1 | 1 |
+
+1·2인도 **같은 표·같은 알고리즘**. 풀이 작아서 초반 4칸이면 고유가 항상 나올 수 있다 — 버그 아님. 숫자 조이는 건 인스펙터.
+
+### 정산 (Judge) — 난이도
+
+정산 시 생존자 각자:
+
+1. **내 고유색이 이번 라운드 안전 칸에 있다** → 고유색 모드 + **자기 색 칸**. 흑/백 칸에 서면 **데미지**. 다른 사람 고유 칸도 데미지.
+2. **내 고유색이 없다** → 고유색 끄고 흑/백 모드 + 나온 흑 또는 백 칸과 `isBlack` 일치. 흑백 칸은 **공유 가능**.
+3. Default·칸 밖·모드 틀림 → 데미지.
+
+예: 흑·백·노랑·파랑이 나옴. 파랑은 파란 칸. 초록·보라는 흑/백. 파랑이 흰칸에 서면 데미지.
+
+**겹침 판정 = 관대 [확정 2026-09-11]:** 칸 경계에 걸쳐 서면 캡슐 콜라이더가 트리거 두 개에 동시에 닿아 두 칸 모두에 점유 등록된다. 이때 **밟은 칸 중 내 정답 칸이 하나라도 있으면 통과**로 본다(대표 칸 하나를 골라 검사하면 배열 순서에 따라 내 칸을 밟고도 옆 칸 기준으로 실패하는 억울한 판정이 남 — `GridChallenge.PlayerPassed` 주석). 잘못된 칸만 밟고 있으면 정답 칸이 없으니 그대로 실패라 "내 색이 나왔는데 흑백에 서면 데미지" 규칙은 그대로. 엄격 판정(잘못된 칸에 닿기만 해도 실패)은 폐기 — 5×5 칸에 캡슐 콜라이더라 경계 걸침이 잦고 억울함이 누적됨.
+
+**모드 불일치 = 칸과 무관하게 실패 [확정 2026-09-11]:** 내 고유색이 나왔는데 흑백 모드이거나, 안 나왔는데 고유색 모드면 어느 칸에 서 있든 실패. 옛 `GridBWTileChallenge`는 `isUniqueColor`를 아예 안 봤지만 혼합판은 "고유색 끄고 흑백 모드"(§8 정산 2)가 규칙의 일부라 검사한다. `isBlack`/`isUniqueColor`는 `NetworkPlayerSetup`의 NV로 Owner→Host 복제되므로 Host 단독 판정이 성립.
+
+후반 1칸(흑 또는 백) = 전원 그 칸에 모여 같은 흑/백 모드. 옛 BW 후반 2인 장면.
+
+### 안 함
+
+- 고유색 구간 / 흑백 구간을 다시 나누기
+- 고유 칸이 있는데 흑백으로 통과
+- 흑백 칸을 “아무 모드나 가능”
+- 비활성 고유색 decoy
+- 겹침 엄격 판정(잘못된 칸에 닿기만 해도 실패) — 관대 판정으로 확정(2026-09-11)
+- 라운드 수로 시간만 벌기 (칸 수·흑백 최소가 난이도)
+- Grid를 새 미니게임으로 교체. 이 룰로 한 챌린지로 합치는 것만
+- Wind로 협동. 입 열기
+

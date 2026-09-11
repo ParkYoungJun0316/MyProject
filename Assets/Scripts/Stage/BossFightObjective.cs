@@ -10,7 +10,7 @@ using UnityEngine.Events;
 ///  1. StageStartGate.OnCountdownComplete → Begin()  (카운터 초기화)
 ///  2. 각 페이즈의 챌린지가 완료되면 → NotifyPhaseCleared()
 ///  3. PhaseManager.AdvancePhase() → 다음 아레나 on/off + onPhaseEnter 발동
-///  4. onPhaseEnter 에서 다음 챌린지 시작 (PhaseSurviveChallenge.Begin / SequenceRingObjective.Begin / GridBWTileChallenge.Activate)
+///  4. onPhaseEnter 에서 다음 챌린지 시작 (PhaseSurviveChallenge.Begin / SequenceRingObjective.Begin / GridChallenge.Activate)
 ///  5. 마지막 페이즈 완료 → OnBossDefeated 발동
 ///
 /// [Inspector 연결]
@@ -24,7 +24,7 @@ using UnityEngine.Events;
 /// [각 챌린지 이벤트 연결 — Inspector에서]
 ///  PhaseSurviveChallenge.OnChallengeComplete    → NotifyPhaseCleared()
 ///  SequenceRingObjective.OnCompleted            → NotifyPhaseCleared()
-///  GridBWTileChallenge.OnChallengeComplete      → NotifyPhaseCleared()
+///  GridChallenge.OnChallengeComplete            → NotifyPhaseCleared()
 ///
 /// [챌린지 시작 연결 — PhaseManager.onPhaseEnter 에서]
 ///  Phase 0 : StageStartGate.OnCountdownComplete → PhaseSurviveChallenge.Begin()
@@ -103,13 +103,13 @@ public class BossFightObjective : MonoBehaviour
 
     /// <summary>
     /// 페이즈 1개 클리어 처리. Host 레인에서만 실제로 진행한다 — 이 메서드를 호출하는
-    /// 챌린지들(PhaseSurviveChallenge/SequenceRingObjective/GridBWTileChallenge)은 이미
+    /// 챌린지들(PhaseSurviveChallenge/SequenceRingObjective/GridChallenge)은 이미
     /// 전부 Host 판정 확정 후에만 호출하도록 가드돼 있지만, 방어적으로 한 번 더 막는다.
     ///
     /// 연결 방법 (Inspector):
     ///   PhaseSurviveChallenge.OnChallengeComplete   → 이 메서드
     ///   SequenceRingObjective.OnCompleted           → 이 메서드
-    ///   GridBWTileChallenge.OnChallengeComplete     → 이 메서드
+    ///   GridChallenge.OnChallengeComplete           → 이 메서드
     /// </summary>
     public void NotifyPhaseCleared()
     {

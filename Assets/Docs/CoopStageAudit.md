@@ -215,7 +215,7 @@ M·T 개별 버린 목록은 각 문서 H.3.
 
 | 순서 | 대상 | 문서 |
 |------|------|------|
-| 1 | ColorTile 점수제 / Grid | [`CoopStageAudit.M.md`](CoopStageAudit.M.md). T.Boss ColorTile도 같은 룰 |
+| 1 | ColorTile 점수제 / Grid | [`CoopStageAudit.M.md`](CoopStageAudit.M.md) §3 / **§8**. T.Boss ColorTile도 같은 룰 |
 | 2 | M1 → M.Boss | 잠금. 다시 묻지 말 것 |
 | 3 | T1 → T.Boss | [`CoopStageAudit.T.md`](CoopStageAudit.T.md) |
 

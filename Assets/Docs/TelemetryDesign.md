@@ -2,7 +2,7 @@
 
 텔레메트리 스펙 전용. 일정/체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 네트워크는 [`NetworkDesign.md`](NetworkDesign.md) 참고.
 
-> **범위:** **출시 후 OK** — 9/1 블로커 아님 (`ReleaseRoadmap.md` §4 순위 8). 관전 대신 이탈·체류·사망·응원 거부로 상황 파악.
+> **범위:** **출시 후 OK** — 9/16 블로커 아님 (`ReleaseRoadmap.md` §4 순위 8). 관전 대신 이탈·체류·사망·응원 거부로 상황 파악.
 > **구현 에이전트:** 이 문서만 읽고 구현 가능. 착수 = Steamworks(전부) 이후·출시 전후 여유 시.
 > 순서: ① Google Sheet + Apps Script upsert → ② `TelemetryService` + 게임 연동.
 

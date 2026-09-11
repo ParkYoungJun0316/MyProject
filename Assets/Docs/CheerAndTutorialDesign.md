@@ -12,7 +12,7 @@
 
 | 태그 | 의미 |
 |------|------|
-| **[Ship Must]** | **2026-09-01 정식 출시** 전 필수 |
+| **[Ship Must]** | **2026-09-16 정식 출시** 전 필수 |
 | **[Post-Launch]** | 정식 이후 |
 
 ---
@@ -28,7 +28,7 @@
 | **말해보기** | Tutorial에서 확정↔재변경 반복 가능. 상세는 `CheerSystemDesign.md` §5 |
 | 인게임 설명 | Tutorial(핵심 메카) + `DialogueUI`(M/T 구역별) |
 | **멀티 연결** | Steam P2P + Lobby(`NetworkDesign.md` ④) |
-| **목표** | 2026-09-01 원격 협동 + 보이스 + 응원 + Tutorial |
+| **목표** | 2026-09-16 원격 협동 + 보이스 + 응원 + Tutorial |
 | **개발자 테스트** | PC 2대 → Steam 2인 Must; 4인 1회 권장 |
 
 > **데모/Playtest 없음.** 원격 IP Join/UDP discovery 미사용. 개발=ParrelSync·localhost, 배포=Steam(`ReleaseRoadmap.md` §3).

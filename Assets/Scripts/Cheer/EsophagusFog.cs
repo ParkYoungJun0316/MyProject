@@ -54,13 +54,15 @@ public class EsophagusFog : MonoBehaviour, ITeamCheerRevert
     [SerializeField] float recoverDuration = 1.0f;
 
     [Header("랜덤 스케줄")]
-    [Tooltip("Idle 간격은 TeamCheerSchedule 55–80. 이 값은 첫 창 앞 추가 대기만.")]
+    [SerializeField] float randomIntervalMin = 52f;
+    [SerializeField] float randomIntervalMax = 66f;
+    [Tooltip("Idle 간격은 randomIntervalMin/Max. 이 값은 첫 창 앞 추가 대기만.")]
     [SerializeField] float initialDelay = 0f;
     [SerializeField] bool startOnAwake = true;
 
     [Header("팀 응원 함정")]
-    [Tooltip("Thicken 전 Warning 유지 시간(초). 수치는 나중에 튜닝.")]
-    [SerializeField] float warnDuration = 2f;
+    [Tooltip("Thicken 전 Warning 유지 시간(초). T 팀 응원 = 4.")]
+    [SerializeField] float warnDuration = 4f;
 
     [Header("네트워크 시드 (Host/Client 동기화)")]
     [Tooltip("다른 트랩 seedSalt와 겹치지 않게 유지 " +
@@ -353,8 +355,8 @@ public class EsophagusFog : MonoBehaviour, ITeamCheerRevert
         int mixedSeed = NetworkSessionData.Seed ^ seedSalt ^ (generation * 0x2545F491) ^ (axis * 0x27220A95);
         var prevState = UnityEngine.Random.state;
         UnityEngine.Random.InitState(mixedSeed);
-        float min = TeamCheerSchedule.IdleMinSeconds;
-        float max = TeamCheerSchedule.IdleMaxSeconds;
+        float min = randomIntervalMin;
+        float max = Mathf.Max(min, randomIntervalMax);
         float interval = Random.Range(min, max);
         UnityEngine.Random.state = prevState;
         return interval;

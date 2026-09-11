@@ -2,7 +2,9 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// GridColorChallenge 또는 GridBWTileChallenge 공용 Objective.
+/// GridChallenge(혼합판) 전용 Objective.
+/// [2026-09-11] GridColorChallenge/GridBWTileChallenge 분리 구조 폐기 — 하나의 GridChallenge로 통합
+/// (`CoopStageAudit.M.md` §8).
 ///
 /// [클리어 조건]
 /// - 연결된 챌린지의 OnChallengeComplete → Complete()
@@ -15,18 +17,14 @@ using UnityEngine;
 /// - Gate OnCountdownComplete → Activate() 연결 불필요 (StageStartGate → StartStage만 연결)
 ///
 /// [Inspector 설정]
-/// - colorChallenge / bwChallenge 중 하나만 연결
+/// - gridChallenge 연결
 /// - StageManager.objectives[]에 이 Objective 등록
 /// - StageManager.autoStart = false (StageStartGate가 StartStage 호출)
 /// </summary>
 public class GridRoundObjective : RoundProgressObjective
 {
-    [Header("Grid 챌린지 (하나만 연결)")]
-    [Tooltip("Color 모드 페이즈 챌린지")]
-    [SerializeField] GridColorChallenge colorChallenge;
-
-    [Tooltip("BW 모드 페이즈 챌린지")]
-    [SerializeField] GridBWTileChallenge bwChallenge;
+    [Header("Grid 챌린지")]
+    [SerializeField] GridChallenge gridChallenge;
 
     // ── 상태 ──────────────────────────────────────────────────────
 
@@ -52,33 +50,21 @@ public class GridRoundObjective : RoundProgressObjective
         _playedRounds      = 0;
         _currentRoundIndex = -1;
 
-        if (colorChallenge != null)
+        if (gridChallenge != null)
         {
-            _totalRounds = colorChallenge.TotalRounds;
-            colorChallenge.OnRoundStarted.AddListener(HandleRoundStarted);
-            colorChallenge.OnRoundSettled.AddListener(HandleRoundSettled);
-            colorChallenge.OnChallengeComplete.AddListener(HandleChallengeComplete);
-            colorChallenge.OnChallengeCancelled.AddListener(HandleChallengeCancelled);
+            _totalRounds = gridChallenge.TotalRounds;
+            gridChallenge.OnRoundStarted.AddListener(HandleRoundStarted);
+            gridChallenge.OnRoundSettled.AddListener(HandleRoundSettled);
+            gridChallenge.OnChallengeComplete.AddListener(HandleChallengeComplete);
+            gridChallenge.OnChallengeCancelled.AddListener(HandleChallengeCancelled);
 
             // StageManager.StartStage() → Begin() → 챌린지 시작
-            colorChallenge.Cancel();   // 이미 실행 중이면 정리 후 재시작
-            colorChallenge.Activate();
-        }
-        else if (bwChallenge != null)
-        {
-            _totalRounds = bwChallenge.TotalRounds;
-            bwChallenge.OnRoundStarted.AddListener(HandleRoundStarted);
-            bwChallenge.OnRoundSettled.AddListener(HandleRoundSettled);
-            bwChallenge.OnChallengeComplete.AddListener(HandleChallengeComplete);
-            bwChallenge.OnChallengeCancelled.AddListener(HandleChallengeCancelled);
-
-            // StageManager.StartStage() → Begin() → 챌린지 시작
-            bwChallenge.Cancel();      // 이미 실행 중이면 정리 후 재시작
-            bwChallenge.Activate();
+            gridChallenge.Cancel();    // 이미 실행 중이면 정리 후 재시작
+            gridChallenge.Activate();
         }
         else
         {
-            Debug.LogWarning($"[GridRoundObjective] colorChallenge 또는 bwChallenge가 연결되지 않았습니다. ({gameObject.name})");
+            Debug.LogWarning($"[GridRoundObjective] gridChallenge가 연결되지 않았습니다. ({gameObject.name})");
         }
 
         OnProgressChanged?.Invoke();
@@ -126,21 +112,12 @@ public class GridRoundObjective : RoundProgressObjective
 
     void Unsubscribe()
     {
-        if (colorChallenge != null)
-        {
-            colorChallenge.OnRoundStarted.RemoveListener(HandleRoundStarted);
-            colorChallenge.OnRoundSettled.RemoveListener(HandleRoundSettled);
-            colorChallenge.OnChallengeComplete.RemoveListener(HandleChallengeComplete);
-            colorChallenge.OnChallengeCancelled.RemoveListener(HandleChallengeCancelled);
-        }
+        if (gridChallenge == null) return;
 
-        if (bwChallenge != null)
-        {
-            bwChallenge.OnRoundStarted.RemoveListener(HandleRoundStarted);
-            bwChallenge.OnRoundSettled.RemoveListener(HandleRoundSettled);
-            bwChallenge.OnChallengeComplete.RemoveListener(HandleChallengeComplete);
-            bwChallenge.OnChallengeCancelled.RemoveListener(HandleChallengeCancelled);
-        }
+        gridChallenge.OnRoundStarted.RemoveListener(HandleRoundStarted);
+        gridChallenge.OnRoundSettled.RemoveListener(HandleRoundSettled);
+        gridChallenge.OnChallengeComplete.RemoveListener(HandleChallengeComplete);
+        gridChallenge.OnChallengeCancelled.RemoveListener(HandleChallengeCancelled);
     }
 
     void OnDestroy() => Unsubscribe();

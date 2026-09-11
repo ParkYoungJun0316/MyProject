@@ -45,11 +45,11 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
     [SerializeField] private float openClipLength  = 0f;
 
     [Header("랜덤 스케줄")]
-    [Tooltip("연출 전용 입(teamCheerHazard=false) Idle 최소(초). 팀 응원 함정은 TeamCheerSchedule 55–80이 우선.")]
-    [SerializeField] private float randomIntervalMin = 55f;
+    [Tooltip("Idle 최소(초). 팀 응원 함정은 스테이지 인스펙터 값.")]
+    [SerializeField] private float randomIntervalMin = 32f;
 
-    [Tooltip("연출 전용 입(teamCheerHazard=false) Idle 최대(초). 팀 응원 함정은 TeamCheerSchedule 55–80이 우선.")]
-    [SerializeField] private float randomIntervalMax = 80f;
+    [Tooltip("Idle 최대(초). 팀 응원 함정은 스테이지 인스펙터 값.")]
+    [SerializeField] private float randomIntervalMax = 38f;
 
     [Tooltip("게임 시작 후 첫 발동까지의 딜레이(초)")]
     [SerializeField] private float initialDelay = 0f;
@@ -61,8 +61,8 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
     [Tooltip("켜면 Close/Hold가 팀 응원 되돌림 대상이 된다. M1·M3·M.Boss만 켠다. M2는 SalivaHazard가 revert. M4·M5는 끈다.")]
     [SerializeField] private bool teamCheerHazard = false;
 
-    [Tooltip("Close 전 Warning 유지 시간(초). 수치는 나중에 튜닝.")]
-    [SerializeField] private float warnDuration = 2f;
+    [Tooltip("Close 전 Warning 유지 시간(초). M1–4 팀 응원 = 4.")]
+    [SerializeField] private float warnDuration = 4f;
 
     [Header("암전 연동 (선택)")]
     [Tooltip("입 닫힐 때 FadeOut, 열릴 때 FadeIn 을 자동 호출.\n비워두면 암전 없음.")]
@@ -437,10 +437,8 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
         // 이 시드 스트림을 물려받지 않는다. 결정성은 그대로.
         var prevState = UnityEngine.Random.state;
         UnityEngine.Random.InitState(mixedSeed);
-        float min = teamCheerHazard ? TeamCheerSchedule.IdleMinSeconds : randomIntervalMin;
-        float max = teamCheerHazard
-            ? TeamCheerSchedule.IdleMaxSeconds
-            : Mathf.Max(min, randomIntervalMax);
+        float min = randomIntervalMin;
+        float max = Mathf.Max(min, randomIntervalMax);
         float interval = Random.Range(min, max);
         UnityEngine.Random.state = prevState;
         return interval;

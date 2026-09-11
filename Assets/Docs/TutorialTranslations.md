@@ -25,6 +25,8 @@
 | `Tutorial.Board_Controls.Row_Color` | `.../Row_Color/Label` |
 | `Tutorial.Board_Controls.Row_Color2` | `.../Row_Color2/Label` |
 | `Tutorial.Board_Controls.Row_Buff` | `.../Row_Buff/Label` |
+| `Tutorial.Board_Controls.Row_BuffNote` | `.../Row_Buff/Note` (신규 TMP — Q 행 바로 아래) |
+| `Tutorial.Board_Controls.Row_Voice` | `.../Row_Voice/Label` (신규 행 — 아이콘 `Assets/Figma/Tutorial/Speek.png`) |
 | `Tutorial.Board_SelfCheer.Title` / `.Body` | `TutorialInfoBoards/Board_SelfCheer/Face/Title`, `/Body` |
 | `Tutorial.Board_TeamCheer.Title` / `.Body` | `TutorialInfoBoards/Board_TeamCheer/Face/Title`, `/Body` |
 | `Tutorial.Board_CheerName.Title` / `.Body` | `TutorialInfoBoards/Board_CheerName/Face/Title`, `/Body` |
@@ -59,7 +61,9 @@
 
 ---
 
-## Board_Controls (조작 안내 — 라벨 5개, Title 없음)
+## Board_Controls (조작 안내)
+
+> **2026-09-11 개편 (카피 확정):** 라벨 5개 유지 + Q 행 아래 Note 1줄 + Speek 행 1개. 화살표는 TMP에서 `↔`. Q 아이콘은 버프 교체 행에 유지. 음성 행은 키보드 아이콘 쓰지 않고 `Assets/Figma/Tutorial/Speek.png`.
 
 ### `Tutorial.Board_Controls.Row_Move`
 
@@ -79,67 +83,99 @@
 
 ### `Tutorial.Board_Controls.Row_Push`
 
-- ko: 밀치기(데미지 0)
-- en: Push (0 damage)
-- ja: 突き飛ばし（ダメージ0）
-- zh-Hans: 推开（伤害为0）
-- zh-Hant: 推開（傷害為0）
-- es: Empujón (0 de daño)
-- es-419: Empujón (0 de daño)
-- fr: Poussée (0 dégâts)
-- de: Stoßen (0 Schaden)
-- pt: Empurrão (0 de dano)
-- pt-BR: Empurrão (0 de dano)
-- ru: Толчок (0 урона)
-- pl: Pchnięcie (0 obrażeń)
+- ko: 밀치기 (데미지 없음)
+- en: Push (no damage)
+- ja: 突き飛ばし（ダメージなし）
+- zh-Hans: 推开（无伤害）
+- zh-Hant: 推開（無傷害）
+- es: Empujón (sin daño)
+- es-419: Empujón (sin daño)
+- fr: Poussée (sans dégâts)
+- de: Stoßen (kein Schaden)
+- pt: Empurrão (sem dano)
+- pt-BR: Empurrão (sem dano)
+- ru: Толчок (без урона)
+- pl: Pchnięcie (bez obrażeń)
 
 ### `Tutorial.Board_Controls.Row_Color`
 
-- ko: 흑/백
-- en: Black & White
-- ja: 白黒
-- zh-Hans: 黑白
-- zh-Hant: 黑白
-- es: Blanco y negro
-- es-419: Blanco y negro
-- fr: Noir et blanc
-- de: Schwarz-Weiß
-- pt: Preto e branco
-- pt-BR: Preto e branco
-- ru: Чёрно-белый режим
-- pl: Czerń i biel
+- ko: 색 변경 흑/백
+- en: Color change B/W
+- ja: 色変更 白黒
+- zh-Hans: 颜色切换 黑白
+- zh-Hant: 顏色切換 黑白
+- es: Cambiar color b/n
+- es-419: Cambiar color b/n
+- fr: Couleur N/B
+- de: Farbe S/W
+- pt: Mudar cor P/B
+- pt-BR: Mudar cor P/B
+- ru: Смена цвета ч/б
+- pl: Zmiana koloru c/b
 
 ### `Tutorial.Board_Controls.Row_Color2`
 
-- ko: 고유색
-- en: Your Color
-- ja: 自分の色
-- zh-Hans: 专属颜色
-- zh-Hant: 專屬顏色
-- es: Tu color
-- es-419: Tu color
-- fr: Ta couleur
-- de: Deine Farbe
-- pt: A tua cor
-- pt-BR: Sua cor
-- ru: Свой цвет
-- pl: Twój kolor
+- ko: 색 변경 고유색
+- en: Color change Unique
+- ja: 色変更 自分の色
+- zh-Hans: 颜色切换 专属色
+- zh-Hant: 顏色切換 專屬色
+- es: Cambiar color propio
+- es-419: Cambiar color propio
+- fr: Couleur perso
+- de: Farbe Eigenfarbe
+- pt: Mudar cor própria
+- pt-BR: Mudar cor própria
+- ru: Смена цвета свой
+- pl: Zmiana koloru własny
 
 ### `Tutorial.Board_Controls.Row_Buff`
 
-- ko: 버프 교체
-- en: Swap Buff
-- ja: バフ切り替え
-- zh-Hans: 切换增益
-- zh-Hant: 切換增益
-- es: Cambiar de mejora
-- es-419: Cambiar de mejora
-- fr: Changer de bonus
-- de: Buff wechseln
-- pt: Trocar de bónus
-- pt-BR: Trocar de buff
-- ru: Смена баффа
-- pl: Zmiana buffa
+- ko: 버프 교체(방어↔이속)
+- en: Swap buff (Guard ↔ Speed)
+- ja: バフ切替（防御↔速度）
+- zh-Hans: 切换增益（防御↔加速）
+- zh-Hant: 切換增益（防禦↔加速）
+- es: Cambiar mejora (defensa ↔ velocidad)
+- es-419: Cambiar mejora (defensa ↔ velocidad)
+- fr: Changer de bonus (défense ↔ vitesse)
+- de: Buff wechseln (Abwehr ↔ Tempo)
+- pt: Trocar bónus (defesa ↔ velocidade)
+- pt-BR: Trocar buff (defesa ↔ velocidade)
+- ru: Смена баффа (защита ↔ скорость)
+- pl: Zmiana buffa (obrona ↔ prędkość)
+
+### `Tutorial.Board_Controls.Row_BuffNote`
+
+- ko: 방어는 라운드 데미지도 막습니다.
+- en: Guard also blocks round damage.
+- ja: 防御はラウンドダメージも防ぎます。
+- zh-Hans: 防御也能挡住回合伤害。
+- zh-Hant: 防禦也能擋下回合傷害。
+- es: La defensa también bloquea el daño de ronda.
+- es-419: La defensa también bloquea el daño de ronda.
+- fr: La défense bloque aussi les dégâts de round.
+- de: Abwehr blockt auch Rundenschaden.
+- pt: A defesa também bloqueia o dano da ronda.
+- pt-BR: A defesa também bloqueia o dano da rodada.
+- ru: Защита блокирует и урон за раунд.
+- pl: Obrona blokuje też obrażenia rundy.
+
+### `Tutorial.Board_Controls.Row_Voice`
+
+- ko: 자신의 이름을 말하면 버프가 켜집니다.
+- en: Say your own name to turn on your buff.
+- ja: 自分の名前を言うとバフが発動します。
+- zh-Hans: 喊出自己的名字就会开启增益。
+- zh-Hant: 喊出自己的名字就會開啟增益。
+- es: Di tu propio nombre para activar tu mejora.
+- es-419: Di tu propio nombre para activar tu mejora.
+- fr: Dis ton propre nom pour activer ton bonus.
+- de: Sag deinen eigenen Namen, um deinen Buff zu aktivieren.
+- pt: Diz o teu próprio nome para activares o teu bónus.
+- pt-BR: Diga seu próprio nome para ativar seu buff.
+- ru: Скажи своё имя — бафф включится.
+- pl: Powiedz swoje imię, żeby włączyć buffa.
 
 ---
 
@@ -639,6 +675,13 @@
 2. [x] 15개 키 + 번역 채움
 3. [x] `TutorialInfoBoards` 하위 15개 TMP에 `LocalizeStringEvent` 부착 (`OnUpdateString` → `TMP_Text.text`)
 4. [ ] Play 모드에서 Locale 몇 개 바꿔가며 6개 보드가 바뀌는지 스모크 테스트 (사용자)
+
+### Board_Controls 개편 (2026-09-11, MCP 적용)
+
+1. [x] `TutorialTranslations.md` Controls 7키 한국어+13로케일 확정 (`Row_Move` 유지, Push/Color/Color2/Buff 문구 변경, `Row_BuffNote`·`Row_Voice` 신규)
+2. [x] `Tutorial` String Table에 기존 4키 번역 갱신 + `Row_BuffNote`/`Row_Voice` 2키 추가 (13로케일)
+3. [x] 씬 `Board_Controls/Face`: Q 행 아래 `Note` TMP → `Row_BuffNote`. 새 `Row_Voice`(아이콘 `Speek.png`) → `Row_Voice`. Q 아이콘은 `Row_Buff`에 유지.
+4. [ ] Play 모드에서 Controls 보드 6행+Note 스모크 (사용자)
 
 ### CheerNamePanel
 

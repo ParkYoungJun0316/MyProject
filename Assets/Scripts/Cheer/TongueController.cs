@@ -120,13 +120,15 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     [SerializeField] SpikeLaneWarnMarker rightWarnMarker = null;
 
     [Header("랜덤 스케줄")]
-    [Tooltip("Idle 간격은 TeamCheerSchedule 55–80. 이 값은 첫 창 앞 추가 대기만.")]
+    [SerializeField] float randomIntervalMin = 24f;
+    [SerializeField] float randomIntervalMax = 30f;
+    [Tooltip("Idle 간격은 randomIntervalMin/Max. 이 값은 첫 창 앞 추가 대기만.")]
     [SerializeField] float initialDelay = 0f;
     [SerializeField] bool startOnAwake = true;
 
     [Header("팀 응원 함정")]
-    [Tooltip("Attack 전 Warning (초). 수치는 나중에 튜닝.")]
-    [SerializeField] float warnDuration = 2f;
+    [Tooltip("Attack 전 Warning (초). M1–4 팀 응원 = 4.")]
+    [SerializeField] float warnDuration = 4f;
 
     [Header("네트워크 시드")]
     [Tooltip("Mouth 0x4D4F5554 / Saliva 0x53504954 와 겹치지 않게.")]
@@ -529,8 +531,8 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
         // 이 시드 스트림을 물려받지 않는다. 결정성은 그대로.
         var prevState = UnityEngine.Random.state;
         UnityEngine.Random.InitState(MixSeed(generation, axis));
-        float min = TeamCheerSchedule.IdleMinSeconds;
-        float max = TeamCheerSchedule.IdleMaxSeconds;
+        float min = randomIntervalMin;
+        float max = Mathf.Max(min, randomIntervalMax);
         float interval = Random.Range(min, max);
         UnityEngine.Random.state = prevState;
         return interval;

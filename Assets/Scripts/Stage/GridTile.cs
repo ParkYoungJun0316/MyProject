@@ -2,21 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 5×5 고유색 보드의 칸 하나. 씬에 25개 미리 배치.
-/// GridColorChallenge가 라운드마다 Default / SafeBlue / SafePurple / SafeGreen / SafeYellow 를 설정합니다.
+/// 5×5 혼합판(Grid) 보드의 칸 하나. 씬에 25개 미리 배치.
+/// GridColorTile/GridBWTile 통합 — 고유색 4종 + 흑/백을 같은 칸 타입으로 다룬다
+/// (`CoopStageAudit.M.md` §8, 2026-09-11 확정).
+/// State는 PlayerColorType을 그대로 재사용: Common = Default(안전 칸 아님),
+/// Blue/Purple/Green/Yellow = 고유색 안전 칸, Black/White = 흑백 안전 칸.
+/// GridChallenge가 라운드마다 SetState()로 배정한다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class GridColorTile : MonoBehaviour
+public class GridTile : MonoBehaviour
 {
-    public enum TileState
-    {
-        Default    = 0,
-        SafeBlue   = 1,
-        SafePurple = 2,
-        SafeGreen  = 3,
-        SafeYellow = 4,
-    }
-
     [Header("보드")]
     [Tooltip("0~24. 비어 있으면 형제 순서로 Challenge가 자동 부여")]
     [SerializeField] int gridIndex = 0;
@@ -27,27 +22,22 @@ public class GridColorTile : MonoBehaviour
     [SerializeField] Material materialPurple;
     [SerializeField] Material materialGreen;
     [SerializeField] Material materialYellow;
+    [SerializeField] Material materialBlack;
+    [SerializeField] Material materialWhite;
 
     readonly HashSet<Player> _occupants = new HashSet<Player>();
 
-    Renderer  _renderer;
-    TileState _state = TileState.Default;
+    Renderer _renderer;
+    PlayerColorType _state = PlayerColorType.Common;
 
     public int GridIndex => gridIndex;
-    public TileState State => _state;
-    public bool IsSafe => _state != TileState.Default;
+
+    /// <summary>Common = 안전 칸 아님. Blue/Purple/Green/Yellow = 고유색. Black/White = 흑백.</summary>
+    public PlayerColorType State => _state;
+
+    public bool IsSafe => _state != PlayerColorType.Common;
 
     public void SetGridIndex(int index) => gridIndex = index;
-
-    /// <summary>이 안전 칸에 대응하는 PlayerColorType. Default 칸이면 Common 반환.</summary>
-    public PlayerColorType RequiredColorType => _state switch
-    {
-        TileState.SafeBlue   => PlayerColorType.Blue,
-        TileState.SafePurple => PlayerColorType.Purple,
-        TileState.SafeGreen  => PlayerColorType.Green,
-        TileState.SafeYellow => PlayerColorType.Yellow,
-        _                    => PlayerColorType.Common,
-    };
 
     public bool ContainsPlayer(Player p) => p != null && _occupants.Contains(p);
 
@@ -63,7 +53,7 @@ public class GridColorTile : MonoBehaviour
             _renderer = GetComponentInChildren<Renderer>();
     }
 
-    public void SetState(TileState state)
+    public void SetState(PlayerColorType state)
     {
         _state = state;
         ApplyMaterial();
@@ -75,11 +65,13 @@ public class GridColorTile : MonoBehaviour
 
         Material m = _state switch
         {
-            TileState.SafeBlue   => materialBlue,
-            TileState.SafePurple => materialPurple,
-            TileState.SafeGreen  => materialGreen,
-            TileState.SafeYellow => materialYellow,
-            _                    => materialDefault,
+            PlayerColorType.Blue   => materialBlue,
+            PlayerColorType.Purple => materialPurple,
+            PlayerColorType.Green  => materialGreen,
+            PlayerColorType.Yellow => materialYellow,
+            PlayerColorType.Black  => materialBlack,
+            PlayerColorType.White  => materialWhite,
+            _                      => materialDefault,
         };
 
         if (m != null)

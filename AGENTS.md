@@ -6,7 +6,7 @@
 
 ## Identity
 
-- Solo-dev **4-player co-op** survival/action game, **Steam 정식 출시 목표 2026-09-01** (데모/Playtest 없음)
+- Solo-dev **4-player co-op** survival/action game, **Steam 정식 출시 목표 2026-09-16** (데모/Playtest 없음)
 - **Unity 6.3 LTS (6000.3.9f1)**, C#, URP, Input System, **uGUI**
 - Network: **Netcode for GameObjects 2.9**, Listen-Server (Host + Clients)
 - Camera: **ThirdPersonCamera** (do not treat Cinemachine as camera source of truth)
@@ -50,7 +50,7 @@
 | Topic | Location |
 |-------|----------|
 | Authority, projectiles, session, traps, lobby, 관측성(구조화 로그) | `Assets/Docs/NetworkDesign.md` |
-| 출시 일정·범위·QA (9/1 정식만) | `Assets/Docs/ReleaseRoadmap.md` |
+| 출시 일정·범위·QA (9/16 정식만) | `Assets/Docs/ReleaseRoadmap.md` |
 | 텔레메트리 MVP 스펙 | `Assets/Docs/TelemetryDesign.md` |
 | Cheer / voice / Vosk / tutorial | `Assets/Docs/CheerAndTutorialDesign.md` |
 | 협동 체감·인원·2인 테스트 | `Assets/Docs/CoopStageAudit.md` |

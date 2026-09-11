@@ -8,7 +8,7 @@
 
 - Play path **현재:** Title → Lobby → Tutorial → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`. **5스테이지 채우기 의무 없음** — 컷은 [`CoopStageAudit.md`](CoopStageAudit.md) §1.5. 시퀀스는 컷 확정 후에만 줄임. 판별 감사는 M/T 문서.
 - Solo = **NGO Host 1인** (`partySize=1`) — same path as multi. No offline mode.
-- **목표:** **2026-09-01 Steam 정식 출시.** 데모 / Playtest / Open·Release 이원화 **없음** (`ReleaseRoadmap.md`).
+- **목표:** **2026-09-16 Steam 정식 출시.** 데모 / Playtest / Open·Release 이원화 **없음** (`ReleaseRoadmap.md`).
 - Multiplayer: NGO 2.9 Listen-Server
 - No persistent cross-run checkpoint save in MVP (`NetworkDesign` §13) — respawn via **`ColoredStartZone`**
 
