@@ -76,12 +76,15 @@
 3. 경고가 떠 있을 때 팀 구호를 외쳐야만 원상복구가 돼.  
 바닥이 부서지고 나면, 다음 경고가 뜰 때까지는 버티는 수밖에 없어.
 
-## M.Stage5 (GridColorChallenge / GridBWTileChallenge)
+## M.Stage5 (GridChallenge 혼합판)
 
-1. 운동하고 있나 봐! 숨이 갑자기 거칠어졌어.  
-바람이 불어온다! 맞는 바닥 위에 올라가서 버텨!
+1. 운동하고 있나 봐! 숨이 갑자기 거칠어졌어.
+2. 바닥에 색 칸이 켜질 거야.  
+네 색이 나오면 그 칸에만 서.  
+안 나왔으면 검은색이나 흰색, 네 흑백에 맞춰서 버텨!
+3. 반드시 색에 맞춰서 캐릭터 색도 맞춰야 해!
 
-*(Color/BW 모드 공용 — BW 모드용 별도 문구 없음.)*
+*(한 보드·한 라운드 줄. Color/BW 페이즈 분리 없음. 네 색이 나온 라운드는 그 칸만, 없으면 흑백. 캐릭터 색도 맞출 것.)*
 
 ## M.Boss (BossFightObjective — 몬스터 없음, 스테이지 함정 자체가 보스)
 
@@ -160,8 +163,11 @@ Shout the team cheer to block it — if you don't, it'll just break.
 Once the floor breaks, you'll just have to hold out until the next warning.
 
 **M.Stage5**
-1. Feels like it's working out! Its breathing suddenly got rough.  
-Here comes the wind! Get on the matching tile and hold your ground!
+1. Feels like it's working out! Its breathing suddenly got rough.
+2. Colored tiles will light up on the floor.  
+If your color appears, stand on that tile only.  
+If it doesn't, hold out on black or white — match yours.
+3. You have to match your character's color too!
 
 **M.Boss — Intro**
 1. Haah... haah... just a little more and we might actually make it out alive...
@@ -226,8 +232,11 @@ KKUL-TTEOKで中和しようとしてるんだ、絶対!
 床が壊れたら、次の警告が出るまで持ちこたえるしかない。
 
 **M.Stage5**
-1. 運動でもしてるのかな!急に息が荒くなった。  
-風が吹いてくる!合ってるタイルに乗って耐えて!
+1. 運動でもしてるのかな!急に息が荒くなった。
+2. 床に色のマスがつくよ。  
+自分の色が出たら、そのマスにだけ立って。  
+出てなかったら黒か白、自分の白黒に合わせて耐えて!
+3. 色に合わせて、キャラの色も必ず合わせなきゃ!
 
 **M.Boss — Intro**
 1. はあ…はあ…もう少し耐えれば、生きて出られそうだ…
@@ -292,8 +301,11 @@ KKUL-TTEOKで中和しようとしてるんだ、絶対!
 地板碎了之后,只能撑到下一次警告出现。
 
 **M.Stage5**
-1. 好像在运动!呼吸突然变粗重了。  
-风吹过来了!站到对应的地板上撑住!
+1. 好像在运动!呼吸突然变粗重了。
+2. 地上会亮起颜色格子。  
+出现你的颜色就只能站在那一格。  
+没出现就站黑或白，按你的黑白撑住!
+3. 一定要让角色颜色也对上!
 
 **M.Boss — Intro**
 1. 呼……呼……再撑一下,好像就能活着出去了……
@@ -358,8 +370,11 @@ KKUL-TTEOKで中和しようとしてるんだ、絶対!
 地板碎了之後,只能撐到下一次警告出現。
 
 **M.Stage5**
-1. 好像在運動!呼吸突然變粗重了。  
-風吹過來了!站到對應的地板上撐住!
+1. 好像在運動!呼吸突然變粗重了。
+2. 地上會亮起顏色格子。  
+出現你的顏色就只能站在那一格。  
+沒出現就站黑或白，按你的黑白撐住!
+3. 一定要讓角色顏色也對上!
 
 **M.Boss — Intro**
 1. 呼……呼……再撐一下,好像就能活著出去了……
@@ -424,8 +439,11 @@ Gritad el grito de equipo para bloquearla; si no lo hacéis, se romperá sin má
 Una vez roto el suelo, no queda más remedio que aguantar hasta el próximo aviso.
 
 **M.Stage5**
-1. ¡Parece que está haciendo ejercicio! De repente respira con más fuerza.  
-¡Viene viento! ¡Subid a la baldosa correcta y aguantad!
+1. ¡Parece que está haciendo ejercicio! De repente respira con más fuerza.
+2. En el suelo se encenderán casillas de color.  
+Si sale tu color, párate solo en esa casilla.  
+Si no sale, aguanta en negro o blanco, según el tuyo.
+3. ¡También tienes que igualar el color de tu personaje!
 
 **M.Boss — Intro**
 1. Fiu... fiu... con un poco más de aguante, parece que podremos salir con vida...
@@ -490,8 +508,11 @@ Griten el grito de equipo para bloquearla; si no lo hacen, se rompe nomás.
 Una vez que se rompe el piso, no queda otra que aguantar hasta la próxima advertencia.
 
 **M.Stage5**
-1. ¡Parece que está haciendo ejercicio! De repente empezó a respirar más fuerte.  
-¡Viene viento! ¡Súbanse a la baldosa correcta y aguanten!
+1. ¡Parece que está haciendo ejercicio! De repente empezó a respirar más fuerte.
+2. En el piso se van a encender casillas de color.  
+Si sale tu color, párate solo en esa casilla.  
+Si no sale, aguanta en negro o blanco, según el tuyo.
+3. ¡También tienes que igualar el color de tu personaje!
 
 **M.Boss — Intro**
 1. Fiu... fiu... con un poco más de aguante, parece que vamos a poder salir con vida...
@@ -556,8 +577,11 @@ Criez le cri d'équipe pour la bloquer ; sinon, ça se casse tout simplement.
 Une fois le sol détruit, il faudra tenir jusqu'à la prochaine alerte.
 
 **M.Stage5**
-1. On dirait qu'il fait de l'exercice ! Sa respiration est devenue soudainement plus forte.  
-Le vent arrive ! Montez sur la bonne dalle et tenez bon !
+1. On dirait qu'il fait de l'exercice ! Sa respiration est devenue soudainement plus forte.
+2. Des cases de couleur vont s'allumer au sol.  
+Si ta couleur apparaît, tiens-toi uniquement sur cette case.  
+Sinon, tiens bon sur le noir ou le blanc, selon le tien.
+3. Il faut aussi faire correspondre la couleur de ton perso !
 
 **M.Boss — Intro**
 1. Hah... hah... encore un peu, et on devrait pouvoir sortir vivants...
@@ -622,8 +646,11 @@ Ruft den Teamruf, um sie zu blockieren – wenn nicht, bricht er einfach zusamme
 Ist der Boden erst zerstört, müsst ihr bis zur nächsten Warnung durchhalten.
 
 **M.Stage5**
-1. Sieht aus, als würde es trainieren! Der Atem ist plötzlich schwerer geworden.  
-Der Wind kommt! Stellt euch auf die passende Kachel und haltet durch!
+1. Sieht aus, als würde es trainieren! Der Atem ist plötzlich schwerer geworden.
+2. Auf dem Boden leuchten Farbfelder auf.  
+Wenn deine Farbe kommt, stell dich nur auf dieses Feld.  
+Wenn nicht, halt dich auf Schwarz oder Weiß — passend zu deinem.
+3. Du musst die Farbe auch bei deinem Charakter anpassen!
 
 **M.Boss — Intro**
 1. Haah... haah... noch ein bisschen durchhalten, dann schaffen wir es vielleicht lebend raus...
@@ -688,8 +715,11 @@ Gritem o grito do time pra bloquear; se não conseguirem, ela quebra do mesmo je
 Depois que o chão quebra, só resta aguentar até o próximo aviso.
 
 **M.Stage5**
-1. Parece que tá se exercitando! A respiração ficou pesada do nada.  
-O vento tá vindo! Suba no bloco certo e aguenta firme!
+1. Parece que tá se exercitando! A respiração ficou pesada do nada.
+2. Casas coloridas vão acender no chão.  
+Se a sua cor aparecer, fique só naquela casa.  
+Se não aparecer, aguente no preto ou branco, do seu.
+3. Tem que acertar a cor do personagem também!
 
 **M.Boss — Intro**
 1. Haah... haah... com mais um pouco de esforço, parece que a gente sai vivo daqui...
@@ -754,8 +784,11 @@ Será que finalmente dá pra escapar...?
 После того как пол разрушен, остаётся только продержаться до следующего предупреждения.
 
 **M.Stage5**
-1. Похоже, оно тренируется! Дыхание вдруг стало тяжёлым.  
-Начинается ветер! Встаньте на нужную плитку и держитесь!
+1. Похоже, оно тренируется! Дыхание вдруг стало тяжёлым.
+2. На полу загорятся цветные клетки.  
+Если выпал твой цвет — стой только на той клетке.  
+Если нет — держись на чёрной или белой, под свою.
+3. Цвет персонажа тоже обязательно нужно подогнать!
 
 **M.Boss — Intro**
 1. Ха... ха... ещё немного продержаться, и мы, кажется, сможем выбраться живыми...
@@ -820,8 +853,11 @@ Krzyczcie okrzyk drużyny, żeby to zablokować – jeśli się nie uda, po pros
 Gdy podłoga już się zniszczy, trzeba wytrzymać do następnego ostrzeżenia.
 
 **M.Stage5**
-1. Chyba właśnie ćwiczy! Oddech nagle zrobił się ciężki.  
-Nadchodzi wiatr! Wejdźcie na właściwą płytkę i trzymajcie się!
+1. Chyba właśnie ćwiczy! Oddech nagle zrobił się ciężki.
+2. Na podłodze zapalą się kolorowe pola.  
+Jeśli wypadnie twój kolor, stań tylko na tym polu.  
+Jeśli nie — wytrzymaj na czarnym lub białym, według swojego.
+3. Kolor postaci też musisz dopasować!
 
 **M.Boss — Intro**
 1. Hał... hał... jeszcze trochę wytrzymać i chyba uda nam się wyjść stąd żywi...
@@ -1590,7 +1626,7 @@ Inaczej zniesie nas razem z nim.
 | M.Stage2 | `Stage2.1` / `Stage2.2` (신규 게이트) | `Dialogue_Panel` / `Dialogue_Panel (1)` | `M.Stage2.Stage1.Line1`~`3` / `M.Stage2.Stage2.Line1`~`2` |
 | M.Stage3 | `Stage3.1` | `Dialogue_Panel` | `M.Stage3.Line1`~`Line2` |
 | M.Stage4 | `Stage4.1` / `Stage4.2` / `Stage4.3` | `Dialogue_Panel` / `(2)` / `(1)` | `Stage1.Line1`~`3` / `Stage2.Line1` / `Stage3.Line1`~`3` |
-| M.Stage5 | `Stage5.1` | `Dialogue_Panel` | `M.Stage5.Line1` |
+| M.Stage5 | `Stage5.1` | `Dialogue_Panel` | `M.Stage5.Line1`~`Line3` |
 | M.Boss | `Boss.Intro` / `Bossdown` | `Dialogue_Panel` / `(1)` | `Intro.Line1` / `Bossdown.Line1`~`3` |
 
 M.Stage2: `StageStartGate2.armOnStart`를 false로 바꾸고, 2.1 대화 완료 후 `Arm()`. 2.2 대화 완료 후 `StageManager2.2.StartStage()`.

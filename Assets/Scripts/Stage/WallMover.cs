@@ -29,7 +29,9 @@ using UnityEngine.Events;
 public class WallMover : MonoBehaviour
 {
     [Header("이동 설정")]
-    [Tooltip("시작 위치(현재 위치)에서 얼마나 어느 방향으로 이동할지 (로컬 오프셋)")]
+    [Tooltip("시작 위치에서 이동할 로컬 오프셋. 이 오브젝트의 회전을 따르고 스케일은 무시함.\n" +
+             "Y를 올려도 오브젝트가 기울어져 있으면 월드 위가 아니라 로컬 Y로 감.\n" +
+             "씬 기즈모(주황 화살표+도착 메시)가 실제 도착 위치다.")]
     public Vector3 moveOffset = Vector3.zero;
 
     [Tooltip("이동 완료까지 걸리는 시간(초)")]
@@ -247,13 +249,93 @@ public class WallMover : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        if (moveOffset.sqrMagnitude < 0.0001f) return;
+
         Vector3 start = Application.isPlaying ? _startPos : transform.position;
-        Vector3 end   = start + transform.TransformDirection(moveOffset);
+        // runtime과 동일: TransformDirection (회전만, 스케일 미포함)
+        Vector3 worldDelta = transform.TransformDirection(moveOffset);
+        Vector3 end = start + worldDelta;
+        float mark = Mathf.Clamp(worldDelta.magnitude * 0.04f, 0.8f, 8f);
 
-        Gizmos.color = new Color(1f, 0.4f, 0f, 0.8f);
-        Gizmos.DrawLine(start, end);
+        // 시작(파랑) → 도착(주황). AdvancingWall / EsophagusSqueeze와 같은 색 관례.
+        Gizmos.color = new Color(0.2f, 0.7f, 1f, 0.9f);
+        Gizmos.DrawWireSphere(start, mark * 0.6f);
 
-        Gizmos.color = new Color(1f, 0.4f, 0f, 0.35f);
-        Gizmos.DrawWireCube(end, transform.lossyScale);
+        Gizmos.color = new Color(1f, 0.4f, 0f, 0.95f);
+        DrawGizmoArrow(start, end, mark);
+        Gizmos.DrawWireSphere(end, mark * 0.7f);
+
+        // 도착 위치의 실제 메시/콜라이더 (회전·스케일 유지).
+        // 예전 DrawWireCube(end, lossyScale)는 월드축 AABB라 Thron처럼
+        // 기울어진 가시와 발동 위치가 전혀 다르게 보였다.
+        DrawColliderGhost(end, new Color(1f, 0.4f, 0f, 0.7f));
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (moveOffset.sqrMagnitude < 0.0001f) return;
+
+        Vector3 start = Application.isPlaying ? _startPos : transform.position;
+        Vector3 worldDelta = transform.TransformDirection(moveOffset);
+        Vector3 end = start + worldDelta;
+
+        DrawColliderGhost(start, new Color(0.2f, 0.7f, 1f, 0.35f));
+
+#if UNITY_EDITOR
+        UnityEditor.Handles.color = new Color(1f, 0.75f, 0.2f, 1f);
+        UnityEditor.Handles.Label(
+            end + Vector3.up * 0.4f,
+            $"moveOffset {moveOffset}\nworld {worldDelta.magnitude:0.##}m");
+#endif
+    }
+
+    void DrawColliderGhost(Vector3 position, Color color)
+    {
+        Gizmos.color = color;
+
+        Mesh mesh = null;
+        var meshCol = GetComponent<MeshCollider>();
+        if (meshCol != null) mesh = meshCol.sharedMesh;
+        if (mesh == null)
+        {
+            var mf = GetComponent<MeshFilter>();
+            if (mf != null) mesh = mf.sharedMesh;
+        }
+
+        if (mesh != null)
+        {
+            Gizmos.DrawWireMesh(mesh, position, transform.rotation, transform.lossyScale);
+            return;
+        }
+
+        var box = GetComponent<BoxCollider>();
+        if (box == null) return;
+
+        Matrix4x4 prev = Gizmos.matrix;
+        Gizmos.matrix = Matrix4x4.TRS(position, transform.rotation, transform.lossyScale);
+        Gizmos.DrawWireCube(box.center, box.size);
+        Gizmos.matrix = prev;
+    }
+
+    static void DrawGizmoArrow(Vector3 from, Vector3 to, float headSize)
+    {
+        Vector3 dir = to - from;
+        float mag = dir.magnitude;
+        if (mag < 0.001f) return;
+        dir /= mag;
+
+        Gizmos.DrawLine(from, to);
+
+        Vector3 right = Vector3.Cross(dir, Vector3.up);
+        if (right.sqrMagnitude < 0.001f) right = Vector3.Cross(dir, Vector3.right);
+        right.Normalize();
+        Vector3 up = Vector3.Cross(right, dir);
+
+        float h = Mathf.Min(headSize, mag * 0.2f);
+        Vector3 back = to - dir * h;
+        Gizmos.DrawLine(to, back + right * h * 0.35f);
+        Gizmos.DrawLine(to, back - right * h * 0.35f);
+        Gizmos.DrawLine(to, back + up * h * 0.35f);
+        Gizmos.DrawLine(to, back - up * h * 0.35f);
     }
 }

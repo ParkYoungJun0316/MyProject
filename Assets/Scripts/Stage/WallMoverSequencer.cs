@@ -210,4 +210,37 @@ public class WallMoverSequencer : NetworkBehaviour
 
     [ContextMenu("테스트: 전체 리셋")]
     void Debug_Reset() => ResetAll();
+
+    void OnDrawGizmos()
+    {
+        // 발동은 moveOffset이 아니라 이 트리거 존이다.
+        var box = GetComponent<BoxCollider>();
+        if (box != null)
+        {
+            Matrix4x4 prev = Gizmos.matrix;
+            Gizmos.matrix = transform.localToWorldMatrix;
+            Gizmos.color = new Color(1f, 0.85f, 0.1f, 0.12f);
+            Gizmos.DrawCube(box.center, box.size);
+            Gizmos.color = new Color(1f, 0.85f, 0.1f, 0.9f);
+            Gizmos.DrawWireCube(box.center, box.size);
+            Gizmos.matrix = prev;
+        }
+
+        if (wallEntries == null) return;
+        for (int i = 0; i < wallEntries.Length; i++)
+        {
+            WallMover wall = wallEntries[i].wall;
+            if (wall == null) continue;
+            Gizmos.color = new Color(1f, 0.75f, 0.1f, 0.85f);
+            Gizmos.DrawLine(transform.position, wall.transform.position);
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+#if UNITY_EDITOR
+        UnityEditor.Handles.color = new Color(1f, 0.9f, 0.2f, 1f);
+        UnityEditor.Handles.Label(transform.position + Vector3.up * 1.2f, name + " 발동");
+#endif
+    }
 }

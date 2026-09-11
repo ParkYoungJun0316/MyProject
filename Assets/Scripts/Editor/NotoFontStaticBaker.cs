@@ -23,7 +23,7 @@ using UnityEngine.TextCore.LowLevel;
 /// 공통(모든 폰트): ASCII + Latin-1 Supplement + 자주 쓰는 기호
 /// 폰트별: 담당 스크립트 범위(Latin Ext-A / 키릴 / 한글 자모 / 카나 / CJK 문장부호)
 ///        + 담당 로케일 String Table에 등장하는 문자 전량
-///        + 담당 로케일의 CultureInfo.NativeName 문자(언어 드롭다운에 뜨는 "한국어" 등)
+///        + 담당 로케일의 언어 드롭다운 표시명 문자(<see cref="LocaleDisplayName"/>)
 ///
 /// [주의 — 워크플로]
 /// Static은 굽지 않은 문자를 렌더링하지 못한다. 따라서 <b>대사·UI 텍스트를 추가하거나 번역을
@@ -306,22 +306,13 @@ public static class NotoFontStaticBaker
     }
 
     /// <summary>
-    /// 옵션 메뉴 언어 드롭다운은 CultureInfo.NativeName을 그대로 보여준다
-    /// (OptionsMenuController.DisplayNameOf). "한국어" · "日本語" · "中文(简体)"처럼 String Table엔
-    /// 없는 문자가 UI에 뜨므로, 담당 폰트에 넣어두면 폴백이 알아서 찾아간다.
-    /// 예전엔 이 글자들을 상수로 박아뒀는데(로케일 추가 시 조용히 누락) 이제 로케일 코드에서 유도한다.
+    /// 옵션 메뉴 언어 드롭다운은 <see cref="LocaleDisplayName"/>을 보여준다.
+    /// "한국어" · "日本語" · "中文 (简体)"처럼 String Table엔 없는 문자가 UI에 뜨므로,
+    /// 담당 폰트에 넣어두면 폴백이 알아서 찾아간다.
     /// </summary>
     static void AddNativeNameCharacters(string localeCode, HashSet<int> codes)
     {
-        try
-        {
-            AddNonAsciiText(CultureInfo.GetCultureInfo(localeCode).NativeName, codes);
-        }
-        catch (CultureNotFoundException)
-        {
-            Debug.LogWarning($"[FontBaker] '{localeCode}'에 해당하는 CultureInfo가 없어 언어 이름 문자를 " +
-                             "수집하지 못했습니다. 드롭다운에 그 언어 이름이 두부로 뜨면 이 경고를 보세요.");
-        }
+        AddNonAsciiText(LocaleDisplayName.Of(localeCode), codes);
     }
 
     /// <summary>

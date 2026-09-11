@@ -24,7 +24,7 @@
 - `M.Stage1.Line1~5`
 - `M.Stage3.Line1~2`
 - `M.Stage4.Stage1.Line1~3`, `M.Stage4.Stage2.Line1`, `M.Stage4.Stage3.Line1~3`
-- `M.Stage5.Line1`
+- `M.Stage5.Line1~3`
 - `M.Boss.Intro.Line1`, `M.Boss.Bossdown.Line1~3`
 - `T.Stage1.Line1~4`
 - `T.Stage2.Stage1.Line1~2`, `T.Stage2.Stage2.Line1`, `T.Stage2.Stage3.Line1`
@@ -34,7 +34,7 @@
 번역 대상에서 제외 (원문 미정 — `StageDialogueLines.md` "열려 있는 항목" 참고):
 
 - `M.Stage2` (OX퀴즈) — 한국어 원문 자체가 없음
-- `M.Stage5` BW 모드용 별도 문구 — 없음 (Color 모드와 공용, `M.Stage5.Line1` 그대로 사용)
+- `M.Stage5` BW 페이즈 전용 문구 — 없음 (혼합판 3줄 `M.Stage5.Line1~3`이 Color/BW를 같이 설명)
 
 ---
 
@@ -142,22 +142,52 @@
 
 ---
 
-## M.Stage5 (Color/BW 모드 공용 — BW 모드용 별도 문구 없음)
+## M.Stage5 (GridChallenge 혼합판)
 
 ### M.Stage5.Line1
 
-- ko: 네 색 타일 위에 올라가서 버텨!
-- en: Get onto your color's tile and hold your ground!
-- ja: 自分の色のタイルに乗って持ちこたえて!
-- zh-Hans: 站到你颜色的方块上，撑住!
-- zh-Hant: 站到你顏色的方塊上，撐住!
-- es: ¡Sube a la baldosa de tu color y resiste!
-- es-419: ¡Súbete a la baldosa de tu color y resiste!
-- fr: Monte sur la tuile de ta couleur et tiens bon!
-- de: Stell dich auf die Kachel deiner Farbe und halt durch!
-- pt-BR: Suba no bloco da sua cor e aguente firme!
-- ru: Встань на плитку своего цвета и держись!
-- pl: Wejdź na płytkę swojego koloru i trzymaj się!
+- ko: 운동하고 있나 봐! 숨이 갑자기 거칠어졌어.
+- en: Feels like it's working out! Its breathing suddenly got rough.
+- ja: 運動でもしてるのかな!急に息が荒くなった。
+- zh-Hans: 好像在运动!呼吸突然变粗重了。
+- zh-Hant: 好像在運動!呼吸突然變粗重了。
+- es: ¡Parece que está haciendo ejercicio! De repente respira con más fuerza.
+- es-419: ¡Parece que está haciendo ejercicio! De repente empezó a respirar más fuerte.
+- fr: On dirait qu'il fait de l'exercice ! Sa respiration est devenue soudainement plus forte.
+- de: Sieht aus, als würde es trainieren! Der Atem ist plötzlich schwerer geworden.
+- pt-BR: Parece que tá se exercitando! A respiração ficou pesada do nada.
+- ru: Похоже, оно тренируется! Дыхание вдруг стало тяжёлым.
+- pl: Chyba właśnie ćwiczy! Oddech nagle zrobił się ciężki.
+
+### M.Stage5.Line2
+
+- ko: 바닥에 색 칸이 켜질 거야.\n네 색이 나오면 그 칸에만 서.\n안 나왔으면 검은색이나 흰색, 네 흑백에 맞춰서 버텨!
+- en: Colored tiles will light up on the floor.\nIf your color appears, stand on that tile only.\nIf it doesn't, hold out on black or white — match yours.
+- ja: 床に色のマスがつくよ。\n自分の色が出たら、そのマスにだけ立って。\n出てなかったら黒か白、自分の白黒に合わせて耐えて!
+- zh-Hans: 地上会亮起颜色格子。\n出现你的颜色就只能站在那一格。\n没出现就站黑或白，按你的黑白撑住!
+- zh-Hant: 地上會亮起顏色格子。\n出現你的顏色就只能站在那一格。\n沒出現就站黑或白，按你的黑白撐住!
+- es: En el suelo se encenderán casillas de color.\nSi sale tu color, párate solo en esa casilla.\nSi no sale, aguanta en negro o blanco, según el tuyo.
+- es-419: En el piso se van a encender casillas de color.\nSi sale tu color, párate solo en esa casilla.\nSi no sale, aguanta en negro o blanco, según el tuyo.
+- fr: Des cases de couleur vont s'allumer au sol.\nSi ta couleur apparaît, tiens-toi uniquement sur cette case.\nSinon, tiens bon sur le noir ou le blanc, selon le tien.
+- de: Auf dem Boden leuchten Farbfelder auf.\nWenn deine Farbe kommt, stell dich nur auf dieses Feld.\nWenn nicht, halt dich auf Schwarz oder Weiß — passend zu deinem.
+- pt-BR: Casas coloridas vão acender no chão.\nSe a sua cor aparecer, fique só naquela casa.\nSe não aparecer, aguente no preto ou branco, do seu.
+- ru: На полу загорятся цветные клетки.\nЕсли выпал твой цвет — стой только на той клетке.\nЕсли нет — держись на чёрной или белой, под свою.
+- pl: Na podłodze zapalą się kolorowe pola.\nJeśli wypadnie twój kolor, stań tylko na tym polu.\nJeśli nie — wytrzymaj na czarnym lub białym, według swojego.
+
+### M.Stage5.Line3
+
+- ko: 반드시 색에 맞춰서 캐릭터 색도 맞춰야 해!
+- en: You have to match your character's color too!
+- ja: 色に合わせて、キャラの色も必ず合わせなきゃ!
+- zh-Hans: 一定要让角色颜色也对上!
+- zh-Hant: 一定要讓角色顏色也對上!
+- es: ¡También tienes que igualar el color de tu personaje!
+- es-419: ¡También tienes que igualar el color de tu personaje!
+- fr: Il faut aussi faire correspondre la couleur de ton perso !
+- de: Du musst die Farbe auch bei deinem Charakter anpassen!
+- pt-BR: Tem que acertar a cor do personagem também!
+- ru: Цвет персонажа тоже обязательно нужно подогнать!
+- pl: Kolor postaci też musisz dopasować!
 
 ---
 

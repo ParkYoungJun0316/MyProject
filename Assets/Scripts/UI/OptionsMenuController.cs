@@ -200,18 +200,17 @@ public class OptionsMenuController : MonoBehaviour
     {
         if (languageDropdown == null) return;
 
-        _locales = LocalizationSettings.AvailableLocales.Locales.ToList();
+        _locales = LocalizationSettings.AvailableLocales.Locales
+            .Where(LocaleDisplayName.IsOfferedInSettings)
+            .ToList();
         languageDropdown.ClearOptions();
-        languageDropdown.AddOptions(_locales.Select(DisplayNameOf).ToList());
+        languageDropdown.AddOptions(_locales.Select(LocaleDisplayName.Of).ToList());
 
         Locale current = LocalizationSettings.SelectedLocale;
         int index = _locales.FindIndex(l => l == current);
         languageDropdown.value = Mathf.Max(0, index);
         languageDropdown.RefreshShownValue();
     }
-
-    static string DisplayNameOf(Locale locale) =>
-        locale.Identifier.CultureInfo != null ? locale.Identifier.CultureInfo.NativeName : locale.LocaleName;
 
     /// <summary>
     /// String Table 엔트리가 아직 연결 안 됐으면(IsEmpty) 한국어 기본값으로 폴백.
