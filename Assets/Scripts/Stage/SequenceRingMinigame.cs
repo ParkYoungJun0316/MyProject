@@ -58,12 +58,18 @@ public class SequenceRingMinigame : MonoBehaviour
     [Header("타일 (자식 SequenceRingTile, ringIndex 0~15)")]
     [SerializeField] SequenceRingTile[] ringTiles = new SequenceRingTile[0];
 
-    [Header("목표·시간")]
-    [Tooltip("클리어에 필요한 성공 스텝 수 (예: 30)")]
-    [SerializeField] int targetStepCount = 0;
+    [Header("목표·시간 (인원별, 2026-09-11)")]
+    [Tooltip("클리어에 필요한 성공 스텝 수. 인덱스 0=1인 … 3=4인. 해당 칸이 없으면 마지막 칸.\n" +
+             "1인은 색 풀이 1개뿐이라 단조로워지므로 step 수·시간을 함께 줄여 짧게 넘기는 용도.")]
+    [SerializeField] int[] targetStepCountByPlayerCount = new int[4];
 
-    [Tooltip("제한 시간(초). 0 이하면 무제한")]
-    [SerializeField] float timeLimit = 0f;
+    [Tooltip("제한 시간(초). 0 이하면 무제한. 인덱스 0=1인 … 3=4인. 해당 칸이 없으면 마지막 칸.")]
+    [SerializeField] float[] timeLimitByPlayerCount = new float[4];
+
+    // 레거시 스칼라 — MigrateLegacyDifficulty()가 1회 인원별 배열로 이관 후 0으로 비움
+    // (ColorTileChallenge.MigrateLegacyQuotas()와 동일 절차, 기존 씬 값 보존용).
+    [SerializeField, HideInInspector] int targetStepCount = 0;
+    [SerializeField, HideInInspector] float timeLimit = 0f;
 
     [Tooltip("틀렸을 때 줄어드는 시간(초)")]
     [SerializeField] float timePenaltyOnWrong = 0f;
@@ -122,6 +128,17 @@ public class SequenceRingMinigame : MonoBehaviour
     float _dangerStepTimer;
     float _timeSyncTimer;
 
+    // 이번 판 확정 난이도. 인원별 배열을 매번 다시 푸는 대신 여기에 담아 쓴다.
+    // _runTargetStepCount는 GenerateSteps가 매 스텝 갱신한다 — 그 재해석이 "색 풀이 스폰 동기화보다
+    // 먼저 조회되면 폴백 4색이 섞이는" 창을 자기수복하는 기존 장치라(GenerateSteps 주석) 래칭으로
+    // 얼려버리면 그 복구가 사라진다. 반대로 _runTimeLimit은 런 시작에 한 번만 확정한다 —
+    // _timeRemaining이 이미 StartMinigame에서 1회 래칭된 값이라, 그걸 쓰는 가드가 매 프레임
+    // 재해석되면 "타이머는 도는데 가드는 무제한" 같은 어긋남이 생긴다.
+    int _runPartySize = 1;
+    int _runTargetStepCount;
+    float _runTimeLimit;
+    bool _warnedNoGameSession;
+
     StageNetworkState _netState;
 
     /// <summary>씬당 1개 전제 — StageNetworkState의 제출 RPC가 Host에서 참조 (§11B.1).</summary>
@@ -131,9 +148,10 @@ public class SequenceRingMinigame : MonoBehaviour
     public int CurrentStepIndex => _currentStepIndex;
     public int SuccessCount => _successCount;
     public float TimeRemaining => _timeRemaining;
-    public int TargetStepCount => targetStepCount;
-    /// <summary>Inspector에 설정된 제한 시간. 0 이하면 무제한 설정. SequenceRingObjective가 읽음.</summary>
-    public float TimeLimit => timeLimit;
+    /// <summary>이번 판 목표 스텝 수(인원별 배열에서 확정된 값). 시작 전에는 0. SequenceRingObjective가 읽음.</summary>
+    public int TargetStepCount => _runTargetStepCount;
+    /// <summary>이번 판 제한 시간. 0 이하면 무제한. 시작 전에는 0. SequenceRingObjective가 읽음.</summary>
+    public float TimeLimit => _runTimeLimit;
 
     /// <summary>현재 스텝이 위치한 링 칸(0~15)이 바뀔 때 발동. SequenceRingCurrentStepMarker 등
     /// 표시용 컴포넌트가 구독 — Host/Client 전 머신 공통으로 HandleChallengeStepChanged에서 발동되므로
@@ -142,6 +160,8 @@ public class SequenceRingMinigame : MonoBehaviour
 
     void Awake()
     {
+        MigrateLegacyDifficulty();
+
         // 타일 세팅은 생애 1회만 하면 되므로 Awake에 둔다.
         // Instance 점유/해제는 OnEnable/OnDisable로 옮김 — 씬당 1개가 아니라
         // "Phase 전환으로 지금 활성화된 것 1개"가 진짜 불변식이기 때문 (아래 OnEnable 참고).
@@ -264,13 +284,16 @@ public class SequenceRingMinigame : MonoBehaviour
             return;
         }
 
-        if (targetStepCount <= 0)
+        int partySize = GetUniqueColorPool().Length;
+        if (PickByParty(targetStepCountByPlayerCount, partySize) <= 0)
         {
-            Debug.LogWarning("[SequenceRingMinigame] targetStepCount는 1 이상이어야 합니다.", this);
+            Debug.LogWarning($"[SequenceRingMinigame] targetStepCountByPlayerCount의 {partySize}인 칸이 " +
+                             "1 이상이어야 합니다.", this);
             return;
         }
 
-        _timeRemaining = timeLimit > 0f ? timeLimit : float.MaxValue;
+        _runTimeLimit  = PickByParty(timeLimitByPlayerCount, partySize);
+        _timeRemaining = _runTimeLimit > 0f ? _runTimeLimit : float.MaxValue;
         _timeSyncTimer = TimeSyncInterval;
 
         int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
@@ -287,9 +310,11 @@ public class SequenceRingMinigame : MonoBehaviour
     public void ResetMinigame()
     {
         StopMinigame();
-        _steps            = Array.Empty<StepData>();
-        _currentStepIndex = 0;
-        _successCount     = 0;
+        _steps              = Array.Empty<StepData>();
+        _currentStepIndex   = 0;
+        _successCount       = 0;
+        _runTargetStepCount = 0;
+        _runTimeLimit       = 0f;
     }
 
     // ── 라운드 생성·결과 반영 (전 머신 공통 — StageNetworkState NV/RPC 구독) ────
@@ -312,9 +337,16 @@ public class SequenceRingMinigame : MonoBehaviour
         _successCount     = stepIndex;
 
         GenerateSteps();
+
+        // 제한 시간은 런당 1회만 확정한다(Host는 StartMinigame에서 이미 같은 값으로 래칭 —
+        // Client는 그 경로를 안 타므로 전 머신 공통인 여기가 유일한 래칭 지점이다).
+        if (firstEntry)
+            _runTimeLimit = PickByParty(timeLimitByPlayerCount, _runPartySize);
+
         if (_currentStepIndex >= _steps.Length)
         {
-            Debug.LogWarning("[SequenceRingMinigame] 스텝 배열이 targetStepCount보다 짧습니다.", this);
+            Debug.LogWarning($"[SequenceRingMinigame] 스텝 배열({_steps.Length})이 현재 스텝 " +
+                             $"{_currentStepIndex}보다 짧습니다 — {_runPartySize}인 기준 목표 스텝 수 확인 필요.", this);
             return;
         }
 
@@ -373,6 +405,13 @@ public class SequenceRingMinigame : MonoBehaviour
     void HandleChallengeTimeSync(float remaining)
     {
         _timeRemaining = remaining;
+
+        // 이 RPC가 왔다는 것 자체가 Host가 제한 시간 모드로 돌고 있다는 증거다 — TickTimer는
+        // _runTimeLimit <= 0이면 아예 송신하지 않는다. 이 머신이 인원수를 다르게 풀어 0으로
+        // 래칭했더라도 여기서 교정해, Host는 카운트다운 중인데 이 클라만 타이머 UI가 멈춘 채
+        // 영문 모르고 Fail당하는 조용한 desync를 막는다.
+        if (_runTimeLimit <= 0f) _runTimeLimit = remaining;
+
         BroadcastTime();
     }
 
@@ -497,7 +536,7 @@ public class SequenceRingMinigame : MonoBehaviour
     /// 역산이 불가능 — 직접 tick하며 주기적으로 SyncChallengeTimeClientRpc로 브로드캐스트한다.</summary>
     void TickTimer(float dt)
     {
-        if (timeLimit <= 0f) return;
+        if (_runTimeLimit <= 0f) return;
 
         _timeRemaining -= dt;
         BroadcastTime();
@@ -560,7 +599,7 @@ public class SequenceRingMinigame : MonoBehaviour
 
         _successCount++;
 
-        if (_successCount >= targetStepCount)
+        if (_successCount >= _runTargetStepCount)
         {
             SucceedMinigame();
             return;
@@ -579,7 +618,7 @@ public class SequenceRingMinigame : MonoBehaviour
 
     void ApplyWrongPenalty()
     {
-        if (timePenaltyOnWrong > 0f && timeLimit > 0f)
+        if (timePenaltyOnWrong > 0f && _runTimeLimit > 0f)
         {
             _timeRemaining -= timePenaltyOnWrong;
             BroadcastTime();
@@ -614,7 +653,7 @@ public class SequenceRingMinigame : MonoBehaviour
     void BroadcastTime()
     {
         // 무제한(timeLimit <= 0) 일 때는 float.MaxValue가 UI에 노출되지 않도록 브로드캐스트 생략
-        if (timeLimit <= 0f) return;
+        if (_runTimeLimit <= 0f) return;
         OnTimeRemainingChanged?.Invoke(Mathf.Max(0f, _timeRemaining));
     }
 
@@ -630,15 +669,19 @@ public class SequenceRingMinigame : MonoBehaviour
         // 스텝 변경마다 호출되므로 배열은 크기가 같으면 재사용한다 — 결과는 시드로 결정되니 덮어써도
         // 동일하다. 시드 기준으로 캐싱해 아예 건너뛰지는 않는다: 색 풀(GetUniqueColorPool)이 스폰
         // 동기화보다 먼저 조회되면 폴백 4색이 섞이는데, 매번 다시 만드는 지금 구조가 그걸 스스로 고친다.
-        if (_steps.Length != targetStepCount)
-            _steps = new StepData[targetStepCount];
-
+        // 목표 스텝 수도 같은 이유로 여기서 갱신한다 — 색 풀 길이가 곧 인원수라(GetUniqueColorPool
+        // 주석) 폴백 창에서 잘못 잡힌 길이가 다음 스텝 재생성 때 함께 교정된다.
         PlayerColorType[] pool = GetUniqueColorPool();
+        _runPartySize        = Mathf.Clamp(pool.Length, 1, 4);
+        _runTargetStepCount  = PickByParty(targetStepCountByPlayerCount, _runPartySize);
+
+        if (_steps.Length != _runTargetStepCount)
+            _steps = new StepData[_runTargetStepCount];
 
         int seed = _netState != null ? _netState.ChallengeSeed : 0;
         var rng  = new System.Random(seed);
 
-        for (int i = 0; i < targetStepCount; i++)
+        for (int i = 0; i < _runTargetStepCount; i++)
         {
             float roll = (float)rng.NextDouble();
             float dChance = Mathf.Clamp01(dangerSpawnChance);
@@ -665,14 +708,24 @@ public class SequenceRingMinigame : MonoBehaviour
     /// <summary>
     /// [버그 수정 2026-08-06] 이번 판 실제 활성 색만 반환 — 이전엔 기본 4색만 봐서 실제 접속
     /// 인원과 무관하게 항상 4색이 나왔다(1인은 존재하지도 않는 3색이 섞여 못 깨고, 3인은 미접속
-    /// 1색이 섞여 그 스텝을 아무도 못 눌렀음). ColorTileChallenge/GridColorChallenge 등 다른
-    /// 챌린지와 동일한 SSOT 체인으로 통일(architecture.mdc: "Prefer extending existing systems").
+    /// 1색이 섞여 그 스텝을 아무도 못 눌렀음).
+    ///
+    /// [SSOT: GameSession — 2026-09-11] **색 정보와 인원수의 단일 출처.** 배열 길이가 곧 인원수다.
+    /// 인원수를 별도 체인(PSC 직행)으로 따로 풀면 폴백 정책이 색 쪽과 어긋난다 — 실제로 색은
+    /// 4색 폴백인데 인원수는 1인 폴백이라, 그 창에서 4색짜리 시퀀스가 1인용 길이·시간으로
+    /// 생성되는 버그가 있었다. 한 배열에서 둘 다 파생시키면 그 불일치가 구조적으로 불가능해진다.
+    ///
+    /// 챌린지는 PlayerSpawnCoordinator를 직접 보지 않는다 — GameSession이 PSC(NetworkList)를 씬 로드
+    /// 시점에 이미 흡수하고(OnSceneLoaded → SetActiveColors), 늦게 도착하면 OnPlayersReady로
+    /// 재적용한다. Player 오브젝트 스폰과 무관하게 _activeColors가 채워지므로(GameSession.Apply ①)
+    /// ActivePlayerCount와 달리 씬 로드 직후에도 비어 있지 않다. GridChallenge.PickRandomTiles와 동일 규약.
+    ///
+    /// 순서도 GameSession이 보장한다(GetActiveColors는 ColorIndex 정렬) — GenerateSteps가
+    /// pool[rng.Next(pool.Length)]로 색을 뽑으므로 배열 순서가 곧 시드 결정성의 일부이고, 폴백인
+    /// PlayerColorUtil.ColorOrder도 같은 정렬이라 두 경로 모두 전 머신 동일 순서가 나온다.
     /// </summary>
     PlayerColorType[] GetUniqueColorPool()
     {
-        PlayerColorType[] psColors = PlayerSpawnCoordinator.GetActiveColors();
-        if (psColors.Length > 0) return psColors;
-
         if (GameSession.Instance != null)
         {
             IReadOnlyList<PlayerColorType> active = GameSession.Instance.GetActiveColors();
@@ -684,13 +737,17 @@ public class SequenceRingMinigame : MonoBehaviour
             }
         }
 
-        return new[]
+        // 폴백은 Host/Client가 서로 다른 색 풀을 만들 수 있는 자리다 — 2인 세션인데 이 머신만 4색이면
+        // 같은 시드를 써도 스텝 색과 목표 스텝 수가 함께 갈라진다(GridChallenge와 동일한 위험·동일한
+        // 처방). 라운드마다 찍으면 묻히므로 1회만 경고한다.
+        if (!_warnedNoGameSession)
         {
-            PlayerColorType.Blue,
-            PlayerColorType.Green,
-            PlayerColorType.Yellow,
-            PlayerColorType.Purple,
-        };
+            _warnedNoGameSession = true;
+            Debug.LogWarning("[SequenceRingMinigame] GameSession 활성 색이 없어 고유색 4색 폴백으로 " +
+                             "시퀀스를 만듭니다 — Host와 색 풀이 다르면 스텝 색·목표 스텝 수가 어긋납니다.", this);
+        }
+
+        return PlayerColorUtil.ColorOrder;
     }
 
     // ── 미리보기 가시 스텝 ───────────────────────────────────────
@@ -882,6 +939,72 @@ public class SequenceRingMinigame : MonoBehaviour
     void OnValidate()
     {
         previewLookahead = Mathf.Max(0, previewLookahead);
-        targetStepCount  = Mathf.Max(0, targetStepCount);
+
+        if (targetStepCountByPlayerCount != null)
+            for (int i = 0; i < targetStepCountByPlayerCount.Length; i++)
+                targetStepCountByPlayerCount[i] = Mathf.Max(0, targetStepCountByPlayerCount[i]);
+
+        MigrateLegacyDifficulty();
+    }
+
+    // ── 인원별 난이도 (2026-09-11, CoopStageAudit.M.md H.2 Sequence 예외) ─────
+    // 룰(판정·미리보기·시드 재생성)은 그대로 두고 목표 스텝 수·제한 시간만 인원별로 분리한다.
+    // 배열 규약은 ColorTileChallenge.QuotaForParty()와 동일(인덱스 0=1인 … 3=4인, 부족하면 마지막 칸).
+    //
+    // 인원수는 **인자로만 받는다** — 별도 PartySize() 조회 체인을 두지 않는다. 유일한 출처는
+    // GetUniqueColorPool()의 길이이고(그 SSOT 근거는 해당 메서드 주석), 그래야 "색 풀과 인원수가
+    // 서로 다른 폴백으로 갈라지는" 경우가 구조적으로 생기지 않는다.
+
+    static int PickByParty(int[] table, int partySize)
+    {
+        if (table == null || table.Length == 0) return 0;
+        int i = Mathf.Clamp(partySize - 1, 0, table.Length - 1);
+        return Mathf.Max(0, table[i]);
+    }
+
+    static float PickByParty(float[] table, int partySize)
+    {
+        if (table == null || table.Length == 0) return 0f;
+        int i = Mathf.Clamp(partySize - 1, 0, table.Length - 1);
+        return table[i];
+    }
+
+    /// <summary>레거시 스칼라 targetStepCount/timeLimit → 인원별 배열 마이그레이션은 여기서 1회만.
+    /// ColorTileChallenge.MigrateLegacyQuotas()와 동일 절차 — 배열이 이미 채워져 있으면 손대지
+    /// 않고, 아니면 기존 씬에 박아둔 스칼라 값을 4칸에 복제한다.</summary>
+    void MigrateLegacyDifficulty()
+    {
+        MigrateScalarToArray(ref targetStepCountByPlayerCount, ref targetStepCount);
+        MigrateScalarToArray(ref timeLimitByPlayerCount, ref timeLimit);
+    }
+
+    static void MigrateScalarToArray(ref int[] table, ref int legacy)
+    {
+        if (legacy <= 0) return;
+        bool any = false;
+        if (table != null)
+            for (int i = 0; i < table.Length; i++)
+                if (table[i] > 0) { any = true; break; }
+
+        if (any) { legacy = 0; return; }
+
+        if (table == null || table.Length == 0) table = new int[4];
+        for (int i = 0; i < table.Length; i++) table[i] = legacy;
+        legacy = 0;
+    }
+
+    static void MigrateScalarToArray(ref float[] table, ref float legacy)
+    {
+        if (legacy <= 0f) return;
+        bool any = false;
+        if (table != null)
+            for (int i = 0; i < table.Length; i++)
+                if (table[i] > 0f) { any = true; break; }
+
+        if (any) { legacy = 0f; return; }
+
+        if (table == null || table.Length == 0) table = new float[4];
+        for (int i = 0; i < table.Length; i++) table[i] = legacy;
+        legacy = 0f;
     }
 }
