@@ -2,6 +2,7 @@
 
 네트워크 동기화 아키텍처 문서 — 권한(Authority)·룸/세션·플레이어·스테이지 진행·챌린지 축의 SSOT.  
 **출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고.**  
+**다운/부활 시스템 스펙(게임플레이 + 네트워크 동기화)은 [`DownedReviveSystemDesign.md`](DownedReviveSystemDesign.md) — §9.0 권위 매트릭스에는 아직 별도 행으로 미편입, 해당 문서가 1차 SSOT.**  
 **데모 / Playtest 없음.** 목표 = **2026-09-16 Steam 정식 출시**만.  
 스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**.  
 (`End.Demo` = 클리어 UI 씬명 레거시. 리네임은 별도 작업.)
@@ -407,7 +408,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
   - `TeamStatusUI` — 나를 응원 중인 팀원에 "Cheering" 라벨 — **[2026-09-01] Phase C: 숫자키 아이콘 → 팀워드 진행도 체크**
   
   즉 "말해보기"는 **별도 모드가 아니라 진짜 응원 제출 그 자체**로 이미 충족된다. 별도 로컬 전용 인식 확인 UI(`TutorialCheerSayTestUI`)는 만들지 않기로 확정
-- [x] ~~"말해보기" 테스트 UI 자체(`TutorialCheerSayTestUI`)~~ — **폐기 (2026-08-19).** 위 근거로 신규 컴포넌트 불필요. 대신 `CheerNamePanel`의 `ExamplesText`에 "확정 후에는 팀원에게 이 이름을 외쳐달라 해서 실제로 인식되는지 확인해보세요!" 안내 문구 추가(2026-08-19, MCP 반영·씬 저장 완료)로 대체. `CheerKeywordEngine`의 `_sayTestMode`/`GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`/`OnKeywordDetected`는 로비 의존 제거 과정에서 이미 만들어둔 코드라 남겨두되(부작용 없음, 어떤 컴포넌트도 `_sayTestMode=true`로 설정 안 함), 이걸 소비하는 UI는 더 만들지 않음
+- [x] ~~"말해보기" 테스트 UI 자체(`TutorialCheerSayTestUI`)~~ — **폐기 (2026-08-19).** 위 근거로 신규 컴포넌트 불필요. 대신 `CheerNamePanel`의 `ExamplesText`에 "확정 후에는 팀원에게 이 이름을 외쳐달라 해서 실제로 인식되는지 확인해보세요!" 안내 문구 추가(2026-08-19, MCP 반영·씬 저장 완료)로 대체. `CheerKeywordEngine`의 `_sayTestMode`/`GetTutorialColorIndex`/`BuildTutorialTestGrammarJson`/`OnKeywordDetected`는 **2026-09-14 전부 삭제**(어떤 씬·프리팹도 `_sayTestMode=true`로 설정하지 않았고 구독자도 없던 죽은 코드). 말해보기는 `TutorialTeamCheerTestSignboard`처럼 실제 응원 제출 경로로만 한다
   - **후속(지금 착수 안 함):** 구역 3(응원 1회 체험) 자체가 아직 미구현(§9.2, 체크리스트 미착수)이라 그 Dialogue에 같은 안내를 넣을 자리가 아직 씬에 없음. 구역 3 구현 시 Dialogue 문구에 "실제로 외쳐서 확인" 안내를 같이 넣을 것 — 그때 처리
 - [x] 금칙어 blocklist(`CheerNameValidator.cs`, §3.5 #9~12) — **구현 완료 (2026-08-19).** `CheerNameValidator.Blocklist`(부분 문자열 매칭) + `ContainsBlockedWord()` 추가, `PlayerCheerNameSync.SubmitCheerNameServerRpc`에서 형식·예약어 통과 후 호출 → 거절 시 `"blocked"` 사유 반환, `TutorialCheerNameUI.ResolveErrorMessage`에 메시지 매핑 추가. 스코프는 아래 표 그대로("완벽 필터 아님, 대놓고 심한 단어만"):
 

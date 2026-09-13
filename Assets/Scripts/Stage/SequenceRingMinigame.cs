@@ -144,6 +144,18 @@ public class SequenceRingMinigame : MonoBehaviour
     /// <summary>씬당 1개 전제 — StageNetworkState의 제출 RPC가 Host에서 참조 (§11B.1).</summary>
     public static SequenceRingMinigame Instance { get; private set; }
 
+    static int s_spaceConsumedFrame = -1;
+
+    /// <summary>
+    /// 지금 Space를 개인 버프로 쓰면 안 되는지 — Player.GetInput이 확인(CheerSystemDesign.md §6.1).
+    /// 진행 중이면 Space는 링 입력 전용. 소비 프레임도 함께 본다: Host는 제출 즉시 판정하므로 마지막 정답
+    /// Space로 링이 끝나면 같은 프레임에 이미 Playing이 아니게 되고, 실행 순서상 Player가 뒤에 돌면
+    /// 그 Space가 버프로도 나간다.
+    /// </summary>
+    public static bool BlocksSelfBuffSpace =>
+        s_spaceConsumedFrame == Time.frameCount
+        || (Instance != null && Instance._state == MinigameState.Playing);
+
     public MinigameState State => _state;
     public int CurrentStepIndex => _currentStepIndex;
     public int SuccessCount => _successCount;
@@ -489,6 +501,7 @@ public class SequenceRingMinigame : MonoBehaviour
         // 가드 자체는 Update()의 IsActiveInstance()로 올렸다(판정 레인 전체가 같은 불변식).
         if (Keyboard.current == null) return;
         if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
+        s_spaceConsumedFrame = Time.frameCount; // 이 Space는 링 것 — 같은 프레임에 개인 버프로 새지 않게(BlocksSelfBuffSpace)
         if (_currentStepIndex < 0 || _currentStepIndex >= _steps.Length) return;
 
         if (_steps[_currentStepIndex].kind != StepKind.Normal)

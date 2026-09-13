@@ -5,7 +5,7 @@ using UnityEngine;
 /// 색 기억 경로 발판 하나.
 ///
 /// safeColors에 등록된 색의 플레이어가 고유색 활성 상태(isUniqueColor=true)일 때만 통과.
-/// 고유색 미활성(흑/백 모드) 상태이거나 색이 불일치하면 즉사.
+/// 고유색 미활성(흑/백 모드) 상태이거나 색이 불일치하면 닿을 때마다 데미지 (ColoredMemoryPath.wrongTileDamage, 단독 배치 시 기본 6).
 /// safeColors에 여러 색 입력 시 해당 색 모두 통과.
 ///
 /// [단독 사용]
@@ -21,13 +21,13 @@ public class ColoredMemoryPathTile : MonoBehaviour
 
     // 색은 ColoredMemoryPath(매니저)에서 일괄 설정. Inspector 중복 방지.
     [HideInInspector] public Color normalColor = new Color(0.45f, 0.45f, 0.45f);
+    [HideInInspector] public int wrongTileDamage = 6;
 
     // ColoredMemoryPath.Awake()에서 주입
     [HideInInspector] public ColoredMemoryPath coloredMemoryPath;
 
     Collider   _col;
     Material[] _mats;
-    bool _isDisabled;
     bool _isSafeTriggered;
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -54,8 +54,6 @@ public class ColoredMemoryPathTile : MonoBehaviour
 
     void OnCollisionEnter(Collision col)
     {
-        if (_isDisabled) return;
-
         // ColoredMemoryPath와 연결된 경우: Challenge 단계에서만 판정
         if (coloredMemoryPath != null &&
             coloredMemoryPath.State != ColoredMemoryPath.PathState.Challenge) return;
@@ -68,9 +66,7 @@ public class ColoredMemoryPathTile : MonoBehaviour
 
         if (!safe)
         {
-            _isDisabled = true;
-            NetworkDamageUtil.ApplyInstantKill(player);
-            coloredMemoryPath?.OnWrongTileStepped(this, player);
+            NetworkDamageUtil.ApplyDamage(player, wrongTileDamage);
         }
         else if (!_isSafeTriggered)
         {
@@ -120,7 +116,6 @@ public class ColoredMemoryPathTile : MonoBehaviour
     public void Restore()
     {
         StopAllCoroutines();
-        _isDisabled      = false;
         _isSafeTriggered = false;
 
         if (_col != null) _col.enabled = true;

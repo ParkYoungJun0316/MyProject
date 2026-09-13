@@ -46,7 +46,7 @@ public class MicMuteHotkeyUI : MonoBehaviour
         if (Keyboard.current == null) return;
 
         // 채팅/치어네임 입력 중엔 'm' 타이핑이 mute 토글로 새지 않도록 양보
-        // (PlayerEmoteMenuUI의 T키 게이팅과 동일한 우선순위).
+        // (PlayerEmoteMenuUI 숫자키·CheerDigitInput T키와 동일한 우선순위).
         if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
 
         if (Keyboard.current.mKey.wasPressedThisFrame)

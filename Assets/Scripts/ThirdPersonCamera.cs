@@ -187,37 +187,40 @@ public class ThirdPersonCamera : MonoBehaviour
         Vector3 pivot    = target.position + _activeOffset;
         Vector3 desiredPos = pivot + _currentRot * (Vector3.back * currentDistance);
 
-        // 벽 충돌 회피: 피벗→desiredPos 사이를 SphereCast로 검사해 장애물에 막히면 그 앞까지만 당긴다.
-        // 붙을 때(pull-in)는 한 프레임도 뚫려 보이면 안 되므로 즉시 스냅하고, 장애물이 사라져 다시
-        // 멀어질 때(pull-out)는 기존 positionDamping으로 부드럽게 복귀한다 — God of War/Uncharted류
-        // 3인칭 카메라와 Cinemachine Collider 확장이 쓰는 것과 동일한 비대칭 처리.
         Vector3 toDesired = desiredPos - pivot;
         float desiredDist = toDesired.magnitude;
         Vector3 dir = desiredDist > 0.0001f ? toDesired / desiredDist : Vector3.back;
 
         // 탑다운 프리뷰는 pivot 위 수십 m에서 내려다보는 연출이라 천장·배경에 막혀 당겨지면 구도가 깨진다.
-        float safeDist = desiredDist;
-        if (!_isInPreview &&
-            Physics.SphereCast(pivot, cameraCollisionRadius, dir, out RaycastHit hit, desiredDist,
-                               cameraObstructionLayers, QueryTriggerInteraction.Ignore))
-            safeDist = Mathf.Max(hit.distance - cameraCollisionBuffer, 0.05f);
+        RaycastHit hit = default;
+        bool blocked = !_isInPreview &&
+            Physics.SphereCast(pivot, cameraCollisionRadius, dir, out hit, desiredDist,
+                               cameraObstructionLayers, QueryTriggerInteraction.Ignore);
 
-        Vector3 safeDesiredPos = pivot + dir * safeDist;
-        float currentDistFromPivot = Vector3.Distance(transform.position, pivot);
-
-        if (safeDist < currentDistFromPivot - 0.001f)
+        if (blocked)
         {
-            // 새로 막힘 — 즉시 스냅해서 벽 뒤가 보이는 프레임을 만들지 않는다.
-            transform.position = safeDesiredPos;
-            _posVelocity = Vector3.zero;
+            // 벽에 막혔을 때만 개입. 벽 쪽으로 붙어야 하면 즉시 스냅(한 프레임도 벽 뒤가 보이면 안 됨),
+            // 이미 그보다 가까우면 평소 댐핑으로 벌어진다.
+            float safeDist = Mathf.Max(hit.distance - cameraCollisionBuffer, 0.05f);
+            Vector3 safePos = pivot + dir * safeDist;
+
+            if (positionDamping <= 0f || Vector3.Distance(transform.position, pivot) > safeDist)
+            {
+                transform.position = safePos;
+                _posVelocity = Vector3.zero;
+            }
+            else
+            {
+                transform.position = Vector3.SmoothDamp(transform.position, safePos, ref _posVelocity, positionDamping);
+            }
         }
         else if (positionDamping > 0f)
         {
-            transform.position = Vector3.SmoothDamp(transform.position, safeDesiredPos, ref _posVelocity, positionDamping);
+            transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref _posVelocity, positionDamping);
         }
         else
         {
-            transform.position = safeDesiredPos;
+            transform.position = desiredPos;
         }
 
         transform.rotation = _currentRot;

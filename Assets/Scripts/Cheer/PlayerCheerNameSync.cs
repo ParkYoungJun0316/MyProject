@@ -16,8 +16,10 @@ using UnityEngine;
 /// - NetworkVariable&lt;FixedString32Bytes&gt; (Server write, Everyone read). 빈 문자열 = 색 기본값 취급(§3.1).
 /// - SubmitCheerNameServerRpc — Host가 형식·예약어(CheerNameValidator) + 세션 내 중복을 검증 후 반영/거절.
 /// - Tutorial엔 Ready 잠금이 없으므로 언제든 재제출 가능(§3.4) — 별도 잠금 로직 없음.
-/// - 내 CheerName이 바뀔 때만 로컬 CheerKeywordEngine grammar를 재적용. 남의 이름 변경은
-///   이름표용 OnAnyCheerNameChanged만 발행하고 grammar에는 넣지 않는다(CheerSystemDesign.md §3.4).
+/// - [2026-09-14] CheerName은 더 이상 grammar와 무관 — 개인 버프가 Space 키로 바뀌면서
+///   음성 인식 대상에서 빠졌다. 이름 변경은 이름표용 OnAnyCheerNameChanged만 발행한다
+///   (CheerSystemDesign.md §3.1/§3.4). RebuildOwnerLocalGrammar()는 CheerService의
+///   TeamCheerWord 변경 경로에서만 호출된다.
 ///
 /// [세션 확정]
 /// 별도 "확정" 단계 없음 — TutorialGatherZone 통과 시점(TutorialNetworkManager.CompleteGate())의
@@ -65,9 +67,6 @@ public class PlayerCheerNameSync : NetworkBehaviour
             SeedFromSessionSnapshot();
 
         _cheerName.OnValueChanged += OnCheerNameChanged;
-
-        if (IsOwner)
-            RebuildOwnerLocalGrammar();
     }
 
     /// <summary>
@@ -101,10 +100,9 @@ public class PlayerCheerNameSync : NetworkBehaviour
         _cheerName.OnValueChanged -= OnCheerNameChanged;
     }
 
+    /// <summary>[2026-09-14] CheerName은 grammar와 무관해짐 — 표시용 닉네임 갱신 이벤트만 발행.</summary>
     void OnCheerNameChanged(FixedString32Bytes previous, FixedString32Bytes current)
     {
-        if (IsOwner)
-            RebuildOwnerLocalGrammar();
         OnAnyCheerNameChanged?.Invoke();
     }
 
@@ -209,8 +207,9 @@ public class PlayerCheerNameSync : NetworkBehaviour
     /// <see cref="GetAllEffectiveNames"/>는 NV가 비면 색 기본값으로 채워주기 때문에 "이 플레이어가
     /// 정말 자기 이름을 정했는가"를 구분할 수 없다. 우선순위 판정(CheerService.GetCheerName /
     /// GetColorIndex, CheerAndTutorialDesign.md §3.4.2)에서 실시간 NV를 세션 스냅샷보다 앞세울 때
-    /// 이쪽을 써야 한다 — 그러지 않으면 빈 NV가 색 기본값 형태로 세션 확정값을 가려 grammar만
-    /// 조용히 틀어지는 회귀(CheerKeywordEngine.ResolveOwnerCheerName 주석의 전례)가 재발한다.
+    /// 이쪽을 써야 한다 — 그러지 않으면 빈 NV가 색 기본값 형태로 세션 확정값을 가려 표시용
+    /// 닉네임(TeamStatusUI 등)이 조용히 틀어지는 회귀가 재발한다. [2026-09-14] CheerName은 더
+    /// 이상 grammar와 무관하므로 이 우선순위는 순수 표시용으로만 쓰인다.
     /// </summary>
     public static IEnumerable<(ulong ClientId, string Name)> GetAllCustomCheerNames()
     {

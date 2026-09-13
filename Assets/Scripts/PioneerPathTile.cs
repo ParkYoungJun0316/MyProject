@@ -5,11 +5,11 @@ using UnityEngine;
 ///
 /// [타일 종류]
 ///  Path : 담당 구역 pioneer 색이 먼저 밟으면 영구 개방 → 이후 모든 고유색 통과
-///         pioneer가 아닌 색이 미개방 타일 밟으면 즉사
-///  Trap : 누가 밟아도 즉사 (영구 함정)
+///         pioneer가 아닌 색이 미개방 타일 밟으면 데미지
+///  Trap : 누가 밟아도 데미지 (영구 함정)
 ///
 /// [isUniqueColor 규칙]
-///  isUniqueColor = false (흑/백 모드) → 어떤 타일이든 즉사
+///  isUniqueColor = false (흑/백 모드) → 어떤 타일이든 데미지
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class PioneerPathTile : MonoBehaviour
@@ -17,7 +17,7 @@ public class PioneerPathTile : MonoBehaviour
     public enum TileType { Path, Trap }
 
     [Header("타일 역할")]
-    [Tooltip("Path: pioneer가 먼저 밟아야 개방 / Trap: 항상 즉사")]
+    [Tooltip("Path: pioneer가 먼저 밟아야 개방 / Trap: 항상 데미지")]
     public TileType tileType = TileType.Path;
 
     // PioneerPathZone.Init()에서 주입
@@ -33,7 +33,6 @@ public class PioneerPathTile : MonoBehaviour
     [HideInInspector] public Color trapColor     = new Color(1f,    0.2f,  0.2f);
 
     bool _isUnlocked;
-    bool _isDisabled;
 
     Material[] _mats;
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -65,31 +64,27 @@ public class PioneerPathTile : MonoBehaviour
         Player player = col.transform.GetComponentInParent<Player>();
         if (player == null || player.IsDead) return;
 
-        // ── Trap 타일 — 항상 즉사 ──────────────────────────────
+        // ── Trap 타일 — 항상 데미지 ────────────────────────────
         if (tileType == TileType.Trap)
         {
-            if (_isDisabled) return;
-            _isDisabled = true;
             ApplyColor(trapColor);
-            NetworkDamageUtil.ApplyInstantKill(player);
+            NetworkDamageUtil.ApplyDamage(player, zone.Manager.TrapDamage);
             return;
         }
 
         // ── Path 타일 ──────────────────────────────────────────
 
-        // 고유색 모드 꺼져있으면 즉사
+        // 고유색 모드 꺼져있으면 데미지
         if (!player.isUniqueColor)
         {
-            if (_isDisabled) return;
-            _isDisabled = true;
-            NetworkDamageUtil.ApplyInstantKill(player);
+            NetworkDamageUtil.ApplyDamage(player, zone.Manager.TrapDamage);
             return;
         }
 
         // 이미 개방된 타일 — 모든 고유색 통과
         if (_isUnlocked) return;
 
-        // 미개방 타일 — pioneer 색이면 Host에 개방 확정 요청, 아니면 즉사
+        // 미개방 타일 — pioneer 색이면 Host에 개방 확정 요청, 아니면 데미지
         if (player.playerColorType == zone.EffectivePioneerColor)
         {
             // Unlock()을 여기서 직접 호출하지 않는다 — 원격 플레이어는 Rigidbody가 kinematic이라
@@ -102,9 +97,7 @@ public class PioneerPathTile : MonoBehaviour
         }
         else
         {
-            if (_isDisabled) return;
-            _isDisabled = true;
-            NetworkDamageUtil.ApplyInstantKill(player);
+            NetworkDamageUtil.ApplyDamage(player, zone.Manager.TrapDamage);
         }
     }
 
@@ -120,7 +113,6 @@ public class PioneerPathTile : MonoBehaviour
     public void Restore()
     {
         _isUnlocked = false;
-        _isDisabled = false;
 
         var col = GetComponent<Collider>();
         if (col != null) col.enabled = true;

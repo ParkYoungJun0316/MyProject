@@ -10,13 +10,12 @@ using UnityEngine.Events;
 /// [개념]
 ///  10×10 타일을 5×5 구역 4개로 나누고, 구역마다 담당 고유색(pioneer)이 먼저 Path 타일을
 ///  밟아 개방해야 함. 개방된 타일은 이후 모든 고유색이 통과 가능.
-///  Trap 타일은 영구 즉사. 길은 1붓그리기로 이어지므로 구역 순서 강제.
+///  Trap 타일은 밟을 때마다 trapDamage(영구 함정). 길은 1붓그리기로 이어지므로 구역 순서 강제.
 ///
 /// [진행 흐름]
 ///  Idle → StartPreview()
 ///  → Previewing: zones 순서대로 각 구역 Path 타일 색상 표시
 ///  → Challenge: 모든 타일 normalColor. pioneer가 먼저 밟아야 개방
-///  실패(즉사) → 씬 리셋 (StageResetOnPlayerDeath)
 ///
 /// [계층 구조]
 ///  PioneerPathManager  ← 이 컴포넌트
@@ -45,6 +44,9 @@ public class PioneerPathManager : MonoBehaviour
 
     [Tooltip("구역 전환 사이 암전 대기(초). 0이면 바로 전환.")]
     public float zonePreviewGap = 0f;
+
+    [Tooltip("Trap 타일, 또는 밟을 자격이 없는 Path 타일을 밟았을 때 입히는 데미지")]
+    [SerializeField, Min(0)] int trapDamage = 6;
 
     [Header("공통 색상")]
     [Tooltip("Challenge 중 모든 타일 기본 색")]
@@ -79,6 +81,7 @@ public class PioneerPathManager : MonoBehaviour
     StageNetworkState _netState;
 
     public PathState State => _state;
+    public int TrapDamage => trapDamage;
 
     // ── Unity 라이프사이클 ────────────────────────────────────────
 

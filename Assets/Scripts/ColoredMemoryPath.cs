@@ -13,7 +13,7 @@ using UnityEngine.Serialization;
 ///    (Yellow 경로 표시 → 끄기 → Blue 경로 표시 → 끄기 → ...)
 ///  → Challenge: 모든 타일이 normalColor로 동일하게 보임
 ///    - 자기 색에 포함된 타일 → 안전 통과
-///    - 자기 색에 포함되지 않은 타일 → 즉사 + Failed
+///    - 자기 색에 포함되지 않은 타일 → 데미지 (wrongTileDamage)
 ///  → 안전 타일을 모두 밟으면 Complete
 ///
 /// [하나의 타일이 여러 색에 속하는 경우]
@@ -31,7 +31,7 @@ using UnityEngine.Serialization;
 /// </summary>
 public class ColoredMemoryPath : MonoBehaviour
 {
-    public enum PathState { Idle, Previewing, Challenge, Complete, Failed }
+    public enum PathState { Idle, Previewing, Challenge, Complete }
 
     [Header("경로 설정")]
     [Tooltip("씬 로드(Start) 시 자동으로 미리보기를 시작할지 여부.\n" +
@@ -45,6 +45,9 @@ public class ColoredMemoryPath : MonoBehaviour
 
     [Tooltip("색 전환 사이 짧은 암전 대기(초). 0이면 바로 전환")]
     public float colorPreviewGap = 0f;
+
+    [Tooltip("자기 색이 아닌 타일을 밟았을 때 입히는 데미지")]
+    [SerializeField, Min(0)] int wrongTileDamage = 6;
 
     [Header("미리보기 색 순서")]
     [Tooltip("이 순서대로 색 경로를 하나씩 표시. 원하는 색만 포함 가능")]
@@ -72,9 +75,6 @@ public class ColoredMemoryPath : MonoBehaviour
 
     [Tooltip("안전 타일을 모두 통과했을 때")]
     public UnityEvent OnCompleted;
-
-    [Tooltip("잘못된 타일을 밟아 즉사했을 때")]
-    public UnityEvent OnFailed;
 
     PathState _state;
     int _safeStepped;
@@ -109,6 +109,7 @@ public class ColoredMemoryPath : MonoBehaviour
         {
             if (_tiles[i] == null) continue;
             _tiles[i].normalColor = normalColor;
+            _tiles[i].wrongTileDamage = wrongTileDamage;
             _tiles[i].HidePreview();
         }
     }
@@ -146,15 +147,6 @@ public class ColoredMemoryPath : MonoBehaviour
         _safeStepped++;
         if (_safeStepped >= _safeTotalCount)
             Complete();
-    }
-
-    /// <summary>잘못된 타일을 밟았을 때 호출</summary>
-    public void OnWrongTileStepped(ColoredMemoryPathTile tile, Player player)
-    {
-        if (_state != PathState.Challenge) return;
-
-        _state = PathState.Failed;
-        OnFailed?.Invoke();
     }
 
     // ── 내부 ────────────────────────────────────────────────────

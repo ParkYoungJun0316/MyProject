@@ -2,7 +2,9 @@
 
 정식 **Tutorial** 씬 설계 문서 (구 Lobby 흡수 — 사전 게이트 구간 + 조작 연습 + CheerName/TeamCheerWord 설정) + **Interlude** 씬 설계 문서 (M.Boss → T.Stage1 사이, CheerName/TeamCheerWord 2차 변경 기회, §3.4).
 
-> **2026-09 문서 분리.** 응원(Cheer) 시스템의 규칙·네트워크·UI 상세는 **[`CheerSystemDesign.md`](CheerSystemDesign.md)**로 이동했다. 이 문서는 **Tutorial/Interlude 씬의 콘텐츠·구역 배치·게이트 흐름**만 다룬다 — 응원 버프 규칙은 이 문서에서 다루지 않음.
+> **2026-09 문서 분리.** 응원(Cheer) 시스템의 네트워크·RPC·UI 상세는 **[`CheerSystemDesign.md`](CheerSystemDesign.md)**가 SSOT. 이 문서는 **Tutorial/Interlude 씬의 콘텐츠·구역 배치·게이트 흐름**을 다룬다.
+>
+> **2026-09-14 확정 [Ship Must] — 팀 응원 1회 통과.** 구 규칙(첫 인식 후 10초 안에 전원 미달이면 표 전부 리셋)은 **폐기**. 창이 열려 있는 동안 한 번 인식되면 그 사람은 통과·재외침 없음. 성공 조건은 그대로 **전원 각자 1회**. 플레이어가 배우는 규칙은 **§2.1**, 시스템 표는 `CheerSystemDesign.md` §2.2. **코드 미착수.**
 
 > **2026-09-06 확정 [Ship Must]:** CheerName/TeamCheerWord는 한 판에 **정확히 2번** 바꿀 수 있다 — ①**Tutorial** (게임 시작 전), ②**Interlude** (M.Boss 클리어 후, T.Stage1 진입 전, "쉬어가는" 인터미션 씬). 그 외 모든 M/T 스테이지에는 변경 UI 자체가 없다 — 별도 잠금 플래그가 아니라 **"UI가 존재하는 씬이 두 곳뿐"이라는 사실 자체가 2회 제한을 강제**한다(§3.4).
 
@@ -33,7 +35,7 @@
 
 > **데모/Playtest 없음.** 원격 IP Join/UDP discovery 미사용. 개발=ParrelSync·localhost, 배포=Steam(`ReleaseRoadmap.md` §3).
 
-응원 버프 규칙(개인/팀 버프, CheerName/TeamCheerWord 검증 규칙, Vosk 인식, 네트워크 RPC, 버프 UI)은 전부 **`CheerSystemDesign.md`** SSOT.
+응원 버프의 네트워크·RPC·파라미터는 **`CheerSystemDesign.md`** SSOT. 팀 응원 **1회 통과**만 이 문서 §2.1이 플레이어 규칙 잠금이다.
 
 ---
 
@@ -68,16 +70,43 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 |---|------|------|------|--------|
 | (사전) | 접속/스폰 | 접속 즉시 스폰 + 색 자동배정(중복없음) + Invite HUD(구 로비 흡수, `NetworkDesign.md` §6B) | 필수 | 필수 (생략 불가) |
 | 1 | 스텔스 체험 | 은신 플레이 감 잡기 | 있음 | **생략 가능** |
-| 2 | CheerName/TeamCheerWord 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → 개인 CheerName 입력·확정·말해보기(자유 반복) + **Host 전용 TeamCheerWord 입력 필드**(신규, §3) | 표지판 상호작용으로 개폐 — `PlayerPrefs` 스킵 없음 | **생략 불가** (매 판 재입력) |
-| 3 | 응원 1회 체험 | 자기 CheerName 발화 → 개인 버프 발동 감 잡기 + (인원 2+ 시) TeamCheerWord 다같이 외쳐서 팀 버프 체험 | 있음 — **개편 필요**(구 cross-target 체험 → self+team 체험으로 교체) | **생략 가능** |
+| 2 | CheerName/TeamCheerWord 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → 개인 CheerName 입력·확정(닉네임 표시용, 2026-09-14부터 음성 테스트 없음) + **Host 전용 TeamCheerWord 입력 필드**(신규, §3) | 표지판 상호작용으로 개폐 — `PlayerPrefs` 스킵 없음 | **생략 불가** (매 판 재입력) |
+| 3 | 응원 1회 체험 | **[2026-09-14 개편]** 개인 버프는 `Q`(전환)/`Space`(발동) 키 입력 감 잡기 + (인원 2+ 시) TeamCheerWord를 **각자 1회** 외쳐 팀 버프 체험(음성, §2.1) | 있음 — 구 cross-target 체험 → self(키)+team(음성) 체험으로 교체 | **생략 가능** |
 | 4 | `TutorialGatherZone` | 전원이 존에 모이면 카운트다운 → `M.Stage1` (§5) | **필수** | **필수** |
 
 > **색 패드 연습(후보로 검토했던 것):** 보류. 필요성이 재확인되면 별도 구역으로 추가 논의.
 
 **구역 2/3 안내 문구 갱신 필요:**
-- 구역 2 패널에 "확정 후 팀원에게 이 이름을 외쳐달라 해서 인식되는지 확인해보세요" 안내는 유지.
-- **[신규]** "음성 인식이 잘 안 되거나 마이크가 없으면 옵션(Options) → 숫자키로 응원하기를 켜세요" 안내 추가 (`CheerSystemDesign.md` §6.2).
+- **[2026-09-14 변경]** 구역 2 패널의 "팀원에게 이름을 외쳐달라 해서 확인" 안내는 **삭제** — CheerName은 이제 표시용 닉네임이라 음성 테스트 대상이 아님. 대신 "팀 전체가 함께 외칠 단어는 아래 TeamCheerWord에서 확인하세요" 안내로 대체.
+- **[2026-09-14 변경]** "팀 응원 인식이 잘 안 되거나 마이크가 없으면 옵션(Options) → T키로 응원하기를 켜세요" 안내 추가 (`CheerSystemDesign.md` §6.3, 구 "숫자키로 응원하기"에서 재배정) — **개인 버프는 항상 `Space`라 이 안내 대상이 아님.**
 - **[신규]** Host에게만 보이는 TeamCheerWord 입력 섹션에 "팀 전체가 함께 외칠 단어를 정해주세요(기본값: fighting)" 안내.
+- **[2026-09-14 신규]** 구역 2 또는 3에 "개인 버프는 `Q`로 종류 전환, `Space`로 발동" 조작 안내 추가.
+- **[2026-09-14 신규]** 구역 3: 팀 응원은 **10초 안에 다 같이**가 아니라, 창이 열린 동안 **한 번 인식되면 그 사람은 끝·느낌표가 사라짐. 아직 안 외친 사람만 계속.** 전원이 통과해야 함정이 되돌아간다(§2.1).
+
+### 2.1 팀 응원 통과 규칙 **[2026-09-14 확정, 코드 완료]**
+
+인게임·Tutorial 구역 3이 같은 규칙이다. "실패로 창이 닫힌다"는 없다 — **단, 아래 두 함정은 예외**(사용자 결정 2026-09-14).
+
+> **예외 — 발동 후 창이 닫히는 함정 2종:** 팀 응원은 **팀 응원 배너(`TeamCheerWarningUI`, = 창)가 떠 있을 때만** 인식된다. 아래 두 함정은 함정이 발동하고 나면 배너가 사라지므로, 그 뒤에 외쳐도 **원상복구되지 않는다**(표도 그 창과 함께 리셋, 다음 창에서 전원 미통과로 다시 시작).
+>
+> | 함정 | 창이 닫히는 시점 | 코드 |
+> |---|---|---|
+> | 혀 휩쓸기 (`TongueController`, `RiseHold`를 제외한 패턴) | 공격(휩쓸기)이 끝나면 | `TongueController.cs` 공격 루틴 뒤 `EndWindow()` |
+> | 보스 턱 내려찍기 (`MouthBossJawSmash`) | 응원 창 제한 시각(`windowEnd`)이 지나면 — 타일 깨진 채 다음 회차 | `MouthBossJawSmash.cs` `CheerWindow` 루프 뒤 `EndWindow()` |
+>
+> 나머지(입 `MouthController`, 침 `SalivaHazard`, 식도 `EsophagusFog`/`EsophagusSqueeze`, 혀 `RiseHold`)는 외칠 때까지 Hold로 창을 유지한다.
+
+| 항목 | 규칙 |
+|------|------|
+| 창 | 함정이 팀 응원 창을 연 동안만 외침이 통한다. 창은 **전원이 통과할 때까지 유지**된다. |
+| 1회 통과 | 그 창에서 TeamCheerWord가 **한 번** 인식되면 그 사람은 통과. 다시 외칠 필요 없음. |
+| 성공 | `GameSession.ActivePlayerCount` **전원**이 각자 통과해야 함정이 되돌려진다. 한 명 통과 ≠ 성공. |
+| 솔로 | `ActivePlayerCount == 1`이면 자기 1회로 성공. |
+| 폐기 | 첫 인식 후 N초 안에 전원 미달이면 **표 전부 리셋** (`teamCheerTimeoutSeconds`, 기본 10초). 이미 통과한 사람도 다시 외치게 만들던 규칙. |
+| 머리 위 UI | 창이 열리면 미통과 플레이어만 **빨간 느낌표**. 통과한 사람 것은 **즉시 사라짐**(초록으로 남겨 두지 않음). 전원 통과 → 창 종료. |
+| 다음 창 | 되돌림 성공 후 다음 함정 창이 열리면 전원 미통과로 다시 시작. |
+
+코너 패널(`TeamStatusUI`)에는 팀워드 체크를 두지 않는다. 진행도는 머리 위 느낌표만.
 
 ---
 
@@ -90,7 +119,7 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 - **씬:** `Tutorial` 하나. 별도 로비 씬 없음.
 - **개인 CheerName:** Tutorial 진입(=접속) 즉시 스폰돼 있는 **Player별로 독립된 이름** — "슬롯" 개념 없음. 각자 자기 화면에서 자기 캐릭터의 이름만 입력.
 - **TeamCheerWord [신규]:** 같은 패널에 **Host에게만 보이는** 별도 입력 섹션. 비-Host는 현재 값을 읽기 전용으로 확인만.
-- **UI:** `TutorialCheerNameUI`(로컬 입력창). 확정 시 자기 캐릭터 머리 위 이름표(`PlayerNameTagUI`)·팀원 화면에 즉시 반영.
+- **UI:** `TutorialCheerNameUI`(로컬 입력창). 확정 시 팀원 화면의 `TeamStatusUI` 코너 패널(게임 닉네임+Steam 닉네임)에 즉시 반영. **[2026-09-13] 머리 위 이름표(`PlayerNameTagUI`)는 삭제됨 — CheerSystemDesign.md §10.3 참고.**
 - 채팅 UI로 설정하지 않음. 타이틀에서 설정하지 않음. `PlayerPrefs` 기억 없음 — 매 판 새로 입력.
 
 ### 3.2 확정 → 말해보기 → 재변경 (자유 반복)
@@ -242,7 +271,7 @@ flowchart LR
 - CheerName/TeamCheerWord **입력·확정(자유 재변경)** — `TutorialCheerNameUI`(§3.2, Tutorial 상시 HUD Canvas에 부착, Player 프리팹 아님) + 구역 2 상호작용 표지판(`TutorialCheerNameSignboard`)이 개폐.
 - "말해보기"는 별도 테스트 기능이 아니라 패널의 안내 문구로 대체 — 실제 응원 제출이 곧 테스트(`CheerSystemDesign.md` §5).
 - Gate 카운트다운 — `TimerUI`/`OnCountdownTick` 재사용.
-- **[신규]** 마이크 없음/인식 실패 대비 "설정에서 숫자키 켜기" 안내 (§2 구역 2/3).
+- **[2026-09-14 변경]** 마이크 없음/인식 실패 대비 "설정에서 T키 응원 켜기" 안내 (§2 구역 2/3, 구 "숫자키 켜기"에서 재배정).
 
 ---
 
@@ -290,7 +319,7 @@ flowchart LR
 - [x] `TutorialCheerNameSignboard` — 구역 2 상호작용 표지판 (완료)
 - [ ] **[필수] Title/Tutorial UI 로컬라이제이션** — 하드코딩된 한국어 문자열을 String Table 방식으로 전환
 - [ ] 구역 3 재설계 — 구 cross-target 응원 체험 → **자기 응원 + 팀 응원(TeamCheerWord)** 체험으로 교체 (미구현)
-- [ ] 구역 2 안내 문구에 "숫자키 응원 설정" 안내 — **코드 없음, 사용자 씬 텍스트** (`CheerSystemDesign.md` D3 제외)
+- [ ] 구역 2 안내 문구에 "T키 응원 설정"(2026-09-14 재배정, 구 숫자키) 안내 — **코드 없음, 사용자 씬 텍스트** (`CheerSystemDesign.md` D3 제외)
 - [ ] 연습 구역(Stealth/응원 1회) — 색 패드는 보류
 - [ ] Dev Build ② 2인 (중간) — Tutorial 이름+TeamCheerWord+말해보기+인게임 응원
 - [ ] Steam P2P ④ 2인 (2PC — 출시 게이트)
@@ -313,7 +342,7 @@ flowchart LR
 
 | 항목 | 경로 / 비고 |
 |------|-------------|
-| 응원 시스템 전체 | **`CheerSystemDesign.md`** |
+| 응원 시스템 전체 | **`CheerSystemDesign.md`** (팀 1회 통과 플레이어 규칙은 이 문서 §2.1) |
 | 게이트(M/T 스테이지) | `Assets/Scripts/Stage/StageStartGate.cs` |
 | 발판(M/T 스테이지) | `Assets/Scripts/Stage/ColoredStartZone.cs` |
 | `TutorialGatherZone` | 색 무관 단일 게이트 (§5) |

@@ -194,7 +194,9 @@ public class Stage5TargetRunner : NetworkBehaviour
         for (int i = 0; i < _allPlayers.Length; i++)
         {
             Player p = _allPlayers[i];
-            if (p == null || p.IsDead) continue;
+            // IsDowned도 제외 — 다운된 플레이어는 스스로 움직여 잡을 수 없으므로 도망 AI의
+            // 회피 대상에서 빼야 한다(적 AI 감지 제외, DownedReviveSystemDesign.md §5).
+            if (p == null || p.IsDead || p.IsDowned) continue;
 
             float dSq = (p.transform.position - transform.position).sqrMagnitude;
             if (dSq < bestDistSq)
@@ -382,7 +384,8 @@ public class Stage5TargetRunner : NetworkBehaviour
         if (!other.CompareTag("Player")) return;
 
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead) return;
+        // 다운 중엔 오브젝트 상호작용 전부 차단(§5) — 콜라이더가 유지돼 밀려 들어와도 포획되지 않는다.
+        if (p == null || p.IsDead || p.IsDowned) return;
 
         _isCaptured = true;
         PlayCapturedFxClientRpc(transform.position);

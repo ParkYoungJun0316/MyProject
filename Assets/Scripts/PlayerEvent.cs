@@ -10,6 +10,8 @@ public class PlayerEvents : MonoBehaviour
     public event Action OnFallDeath;               // 추락 사망 애니 시작 시점
     public event Action OnRespawned;
     public event Action OnHealed;
+    public event Action OnDowned;   // 다운 진입 (DownedReviveSystemDesign.md §5)
+    public event Action OnRevived;  // 부활 완료
     public event Action<int> OnUniqueColorChanged; // -1=해제, 그 외=고유색 활성
     public event Action<PlayerColorType> OnColorTypeChanged; // 네트워크 색 동기화 완료 시
 
@@ -20,6 +22,8 @@ public class PlayerEvents : MonoBehaviour
     public void RaiseFallDeath()                             => OnFallDeath?.Invoke();
     public void RaiseRespawned()                             => OnRespawned?.Invoke();
     public void RaiseHealed()                                => OnHealed?.Invoke();
+    public void RaiseDowned()                                => OnDowned?.Invoke();
+    public void RaiseRevived()                               => OnRevived?.Invoke();
     public void RaiseUniqueColorChanged(int colorIndex)      => OnUniqueColorChanged?.Invoke(colorIndex);
     public void RaiseColorTypeChanged(PlayerColorType type)  => OnColorTypeChanged?.Invoke(type);
 }

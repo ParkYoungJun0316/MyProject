@@ -24,7 +24,7 @@ using Vosk;
 ///
 /// [초기화 순서]
 /// 1. VoskModelLoader.GetSharedModel() → 공유 Model (null이면 초기화 중단)
-/// 2. OwnerGrammarWords(ResolveOwnerCheerName()) → [내 CheerName, TeamCheerWord] grammar 빌드
+/// 2. OwnerGrammarWords() → [TeamCheerWord] 1단어 grammar 빌드 (2026-09-14, 개인 버프는 음성 삭제)
 /// 3. DissonanceComms 준비 대기
 /// 4. SubscribeToRecordedAudio → 5초 대기 → ResetAudioStream 으로 워커 리셋 신호
 ///    5초 내 오디오 없으면 직접 마이크 fallback
@@ -44,11 +44,6 @@ using Vosk;
 public class CheerKeywordEngine : BaseMicrophoneSubscriber
 {
     // ── Inspector ─────────────────────────────────────────────────
-
-    [Header("말해보기 테스트 모드")]
-    [Tooltip("true: ServerRpc 미제출, OnKeywordDetected 이벤트만 발행(로컬 인식 확인용).\n" +
-             "Tutorial \"말해보기\" 테스트 UI가 이 컴포넌트를 쓸 때 체크. 인게임(응원 실제 제출)은 false.")]
-    [SerializeField] bool _sayTestMode = false;
 
     [Header("솔로 마이크 게인")]
     [Tooltip("autoNormalizeMic=true 이면 이 값은 무시되고 자동 보정만 사용됨.\n" +
@@ -119,14 +114,6 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     // NormalizeBuffer 청크 간 게인 스무딩 상태 (메인 스레드 전용). 1f = 무증폭.
     float _smoothedGain = 1f;
 
-    // ── 이벤트 (말해보기 테스트 모드 전용) ───────────────────────
-    /// <summary>
-    /// 말해보기 테스트 모드(_sayTestMode=true)에서 키워드 감지 시 발행.
-    /// arg = targetColorIndex (해당 CheerName 소유자의 ColorIndex).
-    /// ServerRpc 미제출. Tutorial "말해보기" 테스트 UI에서 구독.
-    /// </summary>
-    public event System.Action<int> OnKeywordDetected;
-
     // 중복 제출 방지 (keyword → 마지막 감지 Time.time)
     readonly Dictionary<string, float> _lastDetected = new();
 
@@ -152,20 +139,10 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     {
         StartWorker();
         StartCoroutine(InitCoroutine());
-
-        // 색 해석(ResolveOwnerColorIndex → PlayerSpawnCoordinator.TryGetColor) 실패로 grammar가
-        // 팀워드만 남는 레이스 대비 자동 재시도. 표준 구독 패턴(PlayerSpawnCoordinator 문서 헤더) —
-        // 늦은 구독 대비 IsReady 즉시 체크. ApplyOwnerLocalGrammar는 결과가 같으면 no-op이라
-        // (§3.4/이 파일 ApplyOwnerLocalGrammar 참고) 여러 번 걸려도 안전하다.
-        PlayerSpawnCoordinator.OnPlayersReady   += ApplyOwnerLocalGrammar;
-        PlayerSpawnCoordinator.OnRosterChanged  += ApplyOwnerLocalGrammar;
-        if (PlayerSpawnCoordinator.IsReady) ApplyOwnerLocalGrammar();
     }
 
     void OnDisable()
     {
-        PlayerSpawnCoordinator.OnPlayersReady  -= ApplyOwnerLocalGrammar;
-        PlayerSpawnCoordinator.OnRosterChanged -= ApplyOwnerLocalGrammar;
         StopAllCoroutines();
         Shutdown();
     }
@@ -181,7 +158,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             yield break;
         }
 
-        _grammarJson = CheerLexiconBuilder.BuildGrammarJson(OwnerGrammarWords(ResolveOwnerCheerName()));
+        _grammarJson = CheerLexiconBuilder.BuildGrammarJson(OwnerGrammarWords());
 
         DissonanceComms comms = null;
         while (comms == null) { comms = DissonanceComms.GetSingleton(); yield return null; }
@@ -619,48 +596,26 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             if (string.IsNullOrEmpty(rawWord) || rawWord == "[unk]") continue;
 
             // §5.2 B — 고정 4종(berry/guma/sook/dan) 발음 변형 대체 단어가 등록되면 원래 CheerName으로 되돌림.
+            // (CheerName 자체는 더 이상 grammar 후보가 아니지만 ResolveVariant는 공용 유틸이라 그대로 통과시킨다.)
             string word = CheerLexiconBuilder.ResolveVariant(rawWord);
 
             if (_lastDetected.TryGetValue(word, out float lastTime) &&
                 Time.time - lastTime < KeywordCooldown)
                 continue;
 
+            // [2026-09-14] 개인 버프 음성 인식 삭제 — grammar가 TeamCheerWord 1단어뿐이라
+            // 매칭되는 다른 단어가 나올 일이 없다. 팀워드만 판정한다.
             string teamWord = ResolveTeamCheerWord();
-            int myColorIndex = ResolveOwnerColorIndex();
-            int colorIndex = _sayTestMode
-                ? GetTutorialColorIndex(word)
-                : CheerService.GetColorIndex(word);
-
-            bool isTeam = word == teamWord;
-            bool isSelf = myColorIndex >= 0 && colorIndex == myColorIndex;
-
-            if (!isTeam && colorIndex < 0)
+            if (word != teamWord)
             {
-                Debug.Log($"[CheerKeywordEngine] 인식됐으나 CheerName/TeamCheerWord 불일치: '{word}'");
-                continue;
-            }
-
-            if (!isTeam && !isSelf && !_sayTestMode)
-            {
-                _lastDetected[word] = Time.time;
+                Debug.Log($"[CheerKeywordEngine] 인식됐으나 TeamCheerWord 불일치: '{word}'");
                 continue;
             }
 
             _lastDetected[word] = Time.time;
-            Debug.Log($"[CheerKeywordEngine] 키워드 감지: '{word}' team={isTeam} self={isSelf} colorIndex={colorIndex}");
+            Debug.Log($"[CheerKeywordEngine] 키워드 감지: '{word}' (team)");
 
-            if (_sayTestMode)
-            {
-                if (colorIndex >= 0)
-                    OnKeywordDetected?.Invoke(colorIndex);
-                continue;
-            }
-
-            if (CheerService.Instance == null) continue;
-            if (isSelf)
-                CheerService.Instance.SubmitSelfCheerServerRpc(isVoice: true);
-            else if (isTeam)
-                CheerService.Instance.SubmitTeamCheerServerRpc(isVoice: true);
+            CheerService.Instance?.SubmitTeamCheerServerRpc(isVoice: true);
         }
     }
 
@@ -673,80 +628,31 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         return GameSession.DefaultTeamCheerWord;
     }
 
-    int ResolveOwnerColorIndex()
-    {
-        var netObj = GetComponent<NetworkObject>();
-        if (netObj == null) return -1;
-        if (!PlayerSpawnCoordinator.TryGetColor(netObj.OwnerClientId, out var color)) return -1;
-        return PlayerColorUtil.ColorTypeToIndex(color);
-    }
-
-    // ── 말해보기 테스트 모드 헬퍼 ─────────────────────────────────
+    // ── grammar ───────────────────────────────────────────────────
 
     /// <summary>
-    /// 현재 Tutorial에 스폰된 PlayerCheerNameSync 전원의 유효 CheerName으로 colorIndex 역탐색.
-    /// 구 GetLobbyColorIndex(LobbyNetworkManager.Instance 슬롯 순회)를 대체 — 로비 의존 제거
-    /// (NetworkDesign.md §6B.7 "CheerKeywordEngine에 Tutorial 전용 판정 분기 신설").
-    /// CheerService RPC를 부르지 않는 로컬 전용 조회라 CheerService.GetColorIndex는
-    /// 쓰지 않는다(그건 실제 응원 제출 경로).
-    /// </summary>
-    static int GetTutorialColorIndex(string lower)
-    {
-        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllEffectiveNames())
-        {
-            if (name != lower) continue;
-            if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color))
-                return PlayerColorUtil.ColorTypeToIndex(color);
-        }
-        return -1;
-    }
-
-    /// <summary>
-    /// 로컬 grammar를 [내 유효 CheerName, TeamCheerWord]로 재적용 (CheerSystemDesign.md §3.4).
+    /// 로컬 grammar를 [TeamCheerWord]로 재적용 (CheerSystemDesign.md §3.4, 2026-09-14 — 1단어로 축소).
     /// 모델 로드 전이면 무시 — InitCoroutine이 같은 헬퍼로 초기 grammar를 만든다.
-    /// PlayerSpawnCoordinator.OnPlayersReady/OnRosterChanged로도 걸려 여러 번 호출될 수 있으므로
-    /// 결과가 이전과 같으면(_grammarJson 비교) 워커 리셋을 스킵한다 — _workerNextModel/_workerNextGrammar는
-    /// "Dissonance 오디오 수신 여부" 판단(InitCoroutine)에도 쓰여 여기서 그 값과 비교하면 안 된다.
+    /// PlayerCheerNameSync.RebuildOwnerLocalGrammar()(CheerService.TeamCheerWord NV 변경 경로)로
+    /// 여러 번 호출될 수 있으므로 결과가 이전과 같으면(_grammarJson 비교) 워커 리셋을 스킵한다 —
+    /// _workerNextModel/_workerNextGrammar는 "Dissonance 오디오 수신 여부" 판단(InitCoroutine)에도
+    /// 쓰여 여기서 그 값과 비교하면 안 된다.
     /// </summary>
     public void ApplyOwnerLocalGrammar()
     {
         if (_model == null) return;
-        string newJson = CheerLexiconBuilder.BuildGrammarJson(OwnerGrammarWords(ResolveOwnerCheerName()));
+        string newJson = CheerLexiconBuilder.BuildGrammarJson(OwnerGrammarWords());
         if (newJson == _grammarJson) return;
         _grammarJson = newJson;
         SignalWorkerReset(_model, newJson);
         Debug.Log($"[CheerKeywordEngine] owner grammar 갱신: {newJson}");
     }
 
-    /// <summary>내 CheerName + TeamCheerWord. 남의 이름은 넣지 않는다.</summary>
-    static string[] OwnerGrammarWords(string ownerName)
+    /// <summary>TeamCheerWord 1개뿐 — 개인 CheerName은 더 이상 음성 인식 대상이 아니다(2026-09-14).</summary>
+    static string[] OwnerGrammarWords()
     {
         string team = ResolveTeamCheerWord();
-        var list = new List<string>(2);
-        if (!string.IsNullOrEmpty(ownerName) && !list.Contains(ownerName))
-            list.Add(ownerName);
-        if (!string.IsNullOrEmpty(team) && !list.Contains(team))
-            list.Add(team);
-        return list.Count > 0 ? list.ToArray() : new[] { GameSession.DefaultTeamCheerWord };
-    }
-
-    /// <summary>
-    /// 내 CheerName. UI와 동일 SSOT(<see cref="CheerService.GetCheerName"/>) —
-    /// 게이트 후 세션값, 게이트 전 PlayerCheerNameSync, 없으면 색 기본값.
-    /// EffectiveCheerName을 직접 읽으면 스테이지 재스폰 후 빈 NV가 기본색 이름으로
-    /// 세션값을 가려 grammar만 틀어지는 전례가 있다.
-    /// </summary>
-    string ResolveOwnerCheerName()
-    {
-        int ci = ResolveOwnerColorIndex();
-        if (ci < 0)
-        {
-            // 이 상태로 grammar가 굳으면 TeamCheerWord만 남아 자기 응원이 이번 스테이지 내내 죽는다.
-            // OnPlayersReady/OnRosterChanged 재시도(OnEnable)가 곧 다시 부를 것이므로 여기선 경고만.
-            Debug.LogWarning("[CheerKeywordEngine] 색 해석 실패(PlayerSpawnCoordinator.TryGetColor) — 이번 호출은 CheerName 없이 진행, 재시도 대기");
-            return "";
-        }
-        return CheerService.GetCheerName(ci);
+        return !string.IsNullOrEmpty(team) ? new[] { team } : new[] { GameSession.DefaultTeamCheerWord };
     }
 
     // ── 버퍼 용량 보장 ────────────────────────────────────────────

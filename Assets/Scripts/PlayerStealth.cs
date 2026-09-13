@@ -88,10 +88,14 @@ public class PlayerStealth : MonoBehaviour
     {
         if (player == null) return;
 
-        if (player.IsDead != isDead_prev)
+        // 다운 상태(IsDowned)도 IsDead와 동일하게 취급 — 그렇지 않으면 매 프레임 스텔스 판정이
+        // Player.EnterDownState()가 강제한 deadLayer를 즉시 덮어써 버린다(DownedReviveSystemDesign.md §5).
+        bool incapacitated = player.IsDead || player.IsDowned;
+
+        if (incapacitated != isDead_prev)
         {
-            isDead_prev = player.IsDead;
-            if (!player.IsDead)
+            isDead_prev = incapacitated;
+            if (!incapacitated)
             {
                 isStealth = false;
                 visualsDirty = true;
@@ -99,7 +103,7 @@ public class PlayerStealth : MonoBehaviour
             }
         }
 
-        if (player.IsDead)
+        if (incapacitated)
         {
             isStealth = false;
             stealthRevealTimer = 0f;

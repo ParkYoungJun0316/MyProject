@@ -1,53 +1,43 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// 캐릭터 머리 위에 "이번 팀워드 라운드에 이 플레이어가 이미 외쳤는지"를
-/// World Space 하트 1개 온/오프로 표시. Player 프리팹에 부착 (PlayerNameTagUI와 나란히).
+/// 캐릭터 머리 위에 "팀 응원 창이 열려 있는 동안, 이 플레이어가 이번 창에서 아직 통과 못 했는지"를
+/// 느낌표 1개로 표시. Player 프리팹에 부착.
+/// [2026-09-14 3차 변경] 회색/초록 2색 구 + 타임아웃 표 리셋 방식 폐기 — 통과하면 표시가 꺼진다.
+/// [2026-09-14] 메시/색/크기를 코드가 만들지 않는다. CheerExclamation 프리팹을 Instantiate하고
+/// offset만 적용한다. 스케일·색은 프리팹 값을 그대로 쓴다.
 ///
-/// [무엇을 보여주나]
-/// CheerService.OnTeamVoteChanged의 voterColorIndices에 이 캐릭터 colorIndex가 있으면 하트 ON.
-/// 타임아웃·팀 버프 발동 시 Host가 빈 배열로 같은 이벤트를 다시 보내므로 자동으로 OFF.
+/// [뜨는 시점]
+/// CheerService.OnHazardWindowChanged(true) — 성공 스탬프(TeamCheerCleared)가 아니라 경고 창 시작 시점.
+/// OnTeamVoteChanged의 voterColorIndices에 이 캐릭터 colorIndex가 있으면(=통과) 표시 소거,
+/// 없으면 계속 표시. 창이 열려 있는 동안 타임아웃으로 인한 재표시는 없다 — 한 번 통과하면
+/// 그 창이 끝날 때까지(성공 또는 강제 종료) 계속 꺼진 채로 유지된다.
 ///
 /// [네트워크 불필요 · 전원에게 보임]
-/// CheerService가 이미 ClientRpc로 투표 명단을 전 클라이언트에 브로드캐스트하므로,
-/// 이 컴포넌트는 자기 colorIndex만 필터링해 로컬에서 그리기만 한다.
+/// 창 열림은 각 피어 함정이 로컬로 알리고, 표 명단은 Host ClientRpc로 온다. 둘의 도착 순서가
+/// 피어마다 다를 수 있으므로 마지막 표 상태(_voted)를 기억해 창이 열릴 때 그 값으로 켠다.
 ///
 /// [씬 설정]
-/// 1. Player 프리팹 루트에 PlayerCheerHeartsUI (UI는 코드로 자동 생성).
-/// 2. colorHeartMap : PlayerColorType별 하트 스프라이트
-///    (Assets/Figma/Ingame/Heart — TeamStatusUI colorHeartMap과 동일 에셋 재사용 가능).
-/// 3. offset : 머리 위 위치. PlayerNameTagUI 이름표보다 위쪽 권장(예: 0, 2.6, 0).
+/// 1. Player 프리팹 루트에 PlayerCheerHeartsUI.
+/// 2. exclamationPrefab : Assets/Prefab/CheerExclamation.prefab.
+/// 3. offset : 머리 위 위치 (예: 0, 2.6, 0).
 /// </summary>
 [RequireComponent(typeof(Player))]
 public class PlayerCheerHeartsUI : MonoBehaviour
 {
-    [System.Serializable]
-    public class ColorHeartEntry
-    {
-        public PlayerColorType colorType;
-        public Sprite heartSprite;
-    }
-
-    [Header("표시 위치")]
-    [Tooltip("머리 위 하트 위치 오프셋 (이름표보다 위쪽 권장)")]
+    [Header("표시")]
+    [Tooltip("머리 위 표시 위치 오프셋 (이름표보다 위쪽 권장)")]
     [SerializeField] Vector3 offset = new Vector3(0f, 2.6f, 0f);
-    [Tooltip("World Space Canvas 축소 비율 — 픽셀 단위로 만든 UI를 월드 크기로 줄임")]
-    [SerializeField] Vector3 worldScale = new Vector3(0.01f, 0.01f, 0.01f);
+    [Tooltip("Assets/Prefab/CheerExclamation. 스케일·색은 프리팹 그대로.")]
+    [SerializeField] GameObject exclamationPrefab;
 
-    [Header("아이콘")]
-    [Tooltip("PlayerColorType별 하트 스프라이트 (Figma Heart 폴더)")]
-    [SerializeField] ColorHeartEntry[] colorHeartMap;
-    [SerializeField] float heartSize = 40f;
-
-    Player    _player;
-    int       _myColorIndex = -1;
-    Image     _heartIcon;
-    Transform _canvasTransform;
-    Transform _camTransform;
-    Coroutine _waitSubscribe;
+    Player     _player;
+    int        _myColorIndex = -1;
+    bool       _voted;
+    GameObject _markGo;
+    Coroutine  _waitSubscribe;
 
     void Awake()
     {
@@ -56,7 +46,7 @@ public class PlayerCheerHeartsUI : MonoBehaviour
 
     void Start()
     {
-        BuildUI();
+        BuildMark();
 
         PlayerSpawnCoordinator.OnPlayersReady += HandlePlayersReady;
         HandlePlayersReady();
@@ -66,16 +56,6 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     {
         PlayerSpawnCoordinator.OnPlayersReady -= HandlePlayersReady;
         UnsubscribeCheerService();
-    }
-
-    void LateUpdate()
-    {
-        if (_canvasTransform == null) return;
-        // Y 축만 카메라를 따라 수평 회전 — PlayerNameTagUI / PressurePadCountUI와 동일 패턴
-        if (_camTransform == null) _camTransform = Camera.main?.transform;
-        if (_camTransform == null) return;
-        float yaw = _camTransform.eulerAngles.y;
-        _canvasTransform.rotation = Quaternion.Euler(0f, yaw, 0f);
     }
 
     // ── 준비 시점 ────────────────────────────────────────────────
@@ -120,79 +100,61 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     {
         var svc = CheerService.Instance;
         if (svc == null) return;
+
+        svc.OnHazardWindowChanged -= HandleHazardWindowChanged;
+        svc.OnHazardWindowChanged += HandleHazardWindowChanged;
         svc.OnTeamVoteChanged -= HandleTeamVoteChanged;
         svc.OnTeamVoteChanged += HandleTeamVoteChanged;
+
+        HandleHazardWindowChanged(svc.IsHazardWindowActive);
     }
 
     void UnsubscribeCheerService()
     {
         var svc = CheerService.Instance;
         if (svc == null) return;
+        svc.OnHazardWindowChanged -= HandleHazardWindowChanged;
         svc.OnTeamVoteChanged -= HandleTeamVoteChanged;
+    }
+
+    void HandleHazardWindowChanged(bool active)
+    {
+        ApplyVisibility(active);
     }
 
     void HandleTeamVoteChanged(int current, int required, int[] voterColorIndices)
     {
         if (_myColorIndex < 0) _myColorIndex = ResolveColorIndex();
-        bool voted = _myColorIndex >= 0
+        _voted = _myColorIndex >= 0
             && voterColorIndices != null
             && System.Array.IndexOf(voterColorIndices, _myColorIndex) >= 0;
-        SetHeartVisible(voted);
+
+        var svc = CheerService.Instance;
+        ApplyVisibility(svc != null && svc.IsHazardWindowActive);
     }
 
-    // ── UI 갱신 ──────────────────────────────────────────────────
+    // ── 표시 갱신 ────────────────────────────────────────────────
 
-    void SetHeartVisible(bool visible)
+    /// <summary>창이 열려 있고 아직 통과 못 했을 때만 보인다 — 통과하면(1회) 그 창이 끝날 때까지 소거.</summary>
+    void ApplyVisibility(bool windowActive)
     {
-        if (_heartIcon == null) return;
-        if (visible)
+        if (_markGo == null) return;
+        _markGo.SetActive(windowActive && !_voted);
+    }
+
+    // ── 표시 생성 ────────────────────────────────────────────────
+
+    void BuildMark()
+    {
+        if (exclamationPrefab == null)
         {
-            PlayerColorType color = _myColorIndex >= 0 && _myColorIndex < PlayerColorUtil.ColorOrder.Length
-                ? PlayerColorUtil.ColorOrder[_myColorIndex]
-                : _player.playerColorType;
-            _heartIcon.sprite = GetHeartSprite(color);
-            _heartIcon.gameObject.SetActive(true);
+            Debug.LogWarning("[PlayerCheerHeartsUI] exclamationPrefab 미연결.", this);
+            return;
         }
-        else
-        {
-            _heartIcon.gameObject.SetActive(false);
-        }
-    }
 
-    Sprite GetHeartSprite(PlayerColorType colorType)
-    {
-        if (colorHeartMap != null)
-            foreach (var entry in colorHeartMap)
-                if (entry.colorType == colorType) return entry.heartSprite;
-        return null;
-    }
-
-    // ── UI 생성 (전부 코드 생성 — 프리팹 수정 없이 컴포넌트만 붙이면 됨) ─────
-
-    void BuildUI()
-    {
-        var canvasGo = new GameObject("CheerHearts");
-        canvasGo.transform.SetParent(transform, false);
-        canvasGo.transform.localPosition = offset;
-        canvasGo.transform.localRotation = Quaternion.identity;
-        canvasGo.transform.localScale    = worldScale;
-        _canvasTransform = canvasGo.transform;
-
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-
-        var canvasRt = canvasGo.GetComponent<RectTransform>();
-        canvasRt.sizeDelta = new Vector2(80f, 60f);
-
-        var iconGo = new GameObject("Heart");
-        iconGo.transform.SetParent(canvasGo.transform, false);
-        _heartIcon = iconGo.AddComponent<Image>();
-        _heartIcon.preserveAspect = true;
-        var iconRt = iconGo.GetComponent<RectTransform>();
-        iconRt.anchorMin = new Vector2(0.5f, 0.5f);
-        iconRt.anchorMax = new Vector2(0.5f, 0.5f);
-        iconRt.sizeDelta = new Vector2(heartSize, heartSize);
-        iconRt.anchoredPosition = Vector2.zero;
-        iconGo.SetActive(false);
+        _markGo = Instantiate(exclamationPrefab, transform, false);
+        _markGo.name = "CheerStatusMark";
+        _markGo.transform.localPosition = offset;
+        _markGo.SetActive(false);
     }
 }

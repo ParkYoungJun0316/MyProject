@@ -26,9 +26,13 @@ using TMPro;
 ///   하나만 갱신하면 옛 슬롯이 그대로 남는다.
 ///
 /// [레이아웃]
-/// 이름(위) / HP 하트(아래). 그 외 아이콘 없음.
+/// 이름(위, "게임 닉네임 (Steam 닉네임)" 형식 — 예: "BERRY (영준)") / HP 하트(아래). 그 외 아이콘 없음.
+/// 게임 닉네임(CheerName)을 캐릭터 머리 위(PlayerNameTagUI)에 따로 띄우던 것은 2026-09-13 삭제 —
+/// 개인 버프가 자기 자신에게만 적용돼 남의 CheerName을 외칠 일이 없다(사용자 결정). 이 코너 패널
+/// 한 곳에서만 게임 닉네임+Steam 닉네임을 같이 보여준다.
 ///
-/// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 하트(PlayerCheerHeartsUI)로 표시한다
+/// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 빨간 느낌표(PlayerCheerHeartsUI, 미통과만
+/// 표시 — 통과하면 소거, 2026-09-14 3차 변경)로 표시한다
 /// (CheerSystemDesign.md §10.3, 사용자 결정 2026-09-01 — 코너 패널에 새 아이콘 추가하지 않음).
 /// </summary>
 public class TeamStatusUI : MonoBehaviour
@@ -162,6 +166,7 @@ public class TeamStatusUI : MonoBehaviour
         PlayerSpawnCoordinator.OnPlayersReady += RequestRebuild;
         PlayerSpawnCoordinator.OnRosterChanged += RequestRebuild;
         PlayerDisplayNameSync.OnAnyDisplayNameChanged += RefreshAllSlotNames;
+        PlayerCheerNameSync.OnAnyCheerNameChanged += RefreshAllSlotNames;
         if (PlayerSpawnCoordinator.IsReady) RequestRebuild();
     }
 
@@ -179,6 +184,7 @@ public class TeamStatusUI : MonoBehaviour
         PlayerSpawnCoordinator.OnPlayersReady -= RequestRebuild;
         PlayerSpawnCoordinator.OnRosterChanged -= RequestRebuild;
         PlayerDisplayNameSync.OnAnyDisplayNameChanged -= RefreshAllSlotNames;
+        PlayerCheerNameSync.OnAnyCheerNameChanged -= RefreshAllSlotNames;
         UnsubscribeAllSlots();
         ClearColorWatchers();
     }
@@ -437,8 +443,6 @@ public class TeamStatusUI : MonoBehaviour
     /// GetSessionDisplayName은 미확정 슬롯에 빈 문자열을 돌려주므로(2026-09-05, 예전 "Player"
     /// 폴백이 이 아래 실시간 NV 스캔을 도달 불가하게 만들어 "Player" 고착 버그가 있었음)
     /// HasSessionDisplayNames를 따로 볼 필요 없이 반환값만으로 판단한다.
-    /// CheerName("BERRY" 등)은 응원 시 혼동을 줄이기 위해 캐릭터 머리 위(PlayerNameTagUI)로 이전했고,
-    /// 이 코너 패널은 "실제로 누구인지" 확인용 Steam 닉네임을 표시한다.
     /// </summary>
     static string GetPlayerDisplayName(int colorIndex)
     {
@@ -459,6 +463,22 @@ public class TeamStatusUI : MonoBehaviour
         return "???";
     }
 
+    /// <summary>
+    /// 슬롯 이름 텍스트 = "게임 닉네임 (Steam 닉네임)", 예: "BERRY (영준)".
+    /// 게임 닉네임(CheerName)은 예전엔 캐릭터 머리 위(PlayerNameTagUI, 2026-09-13 삭제)에
+    /// 따로 떠 있었다 — 개인 버프가 자기 자신에게만 적용되는 구조라 남의 CheerName을 외칠 일이
+    /// 없어(사용자 결정 2026-09-13) 이 코너 패널 한 곳으로 합쳤다. Steam 닉네임(GetPlayerDisplayName)은
+    /// "실제로 누구인지" 확인용으로 그대로 유지.
+    /// </summary>
+    static string GetSlotNameLabel(int colorIndex)
+    {
+        string cheerName = CheerService.GetCheerName(colorIndex);
+        string steamName = GetPlayerDisplayName(colorIndex);
+        return string.IsNullOrEmpty(cheerName)
+            ? steamName
+            : $"{cheerName.ToUpperInvariant()} ({steamName})";
+    }
+
     // ── 갱신 ─────────────────────────────────────────────────────
 
     Sprite GetFullHeartSprite(PlayerColorType colorType)
@@ -475,7 +495,7 @@ public class TeamStatusUI : MonoBehaviour
         if (slot.root == null) return; // 방어
 
         if (slot.nameText != null)
-            slot.nameText.text = GetPlayerDisplayName(slot.colorIndex);
+            slot.nameText.text = GetSlotNameLabel(slot.colorIndex);
 
         if (slot.heartImages == null) return;
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);

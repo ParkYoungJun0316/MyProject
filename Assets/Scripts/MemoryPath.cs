@@ -11,7 +11,7 @@ using UnityEngine.Events;
 ///  → Previewing: Safe 발판이 previewDuration 초 동안 빛남
 ///  → Challenge: 모든 발판이 동일하게 보임. 플레이어가 경로를 걸어가야 함
 ///     - Safe 발판 → 통과
-///     - Trap 발판 → 사라지고 낙사
+///     - Trap 발판 → 데미지 (trapDamage)
 ///  → 모든 Safe 발판을 밟으면 Complete (OnCompleted 발동)
 ///
 /// [설정]
@@ -24,7 +24,7 @@ using UnityEngine.Events;
 /// </summary>
 public class MemoryPath : MonoBehaviour
 {
-    public enum PathState { Idle, Previewing, Challenge, Complete, Failed }
+    public enum PathState { Idle, Previewing, Challenge, Complete }
 
     [Header("경로 설정")]
     [Tooltip("씬 로드(Start) 시 자동으로 미리보기를 시작할지 여부.\n" +
@@ -38,6 +38,9 @@ public class MemoryPath : MonoBehaviour
 
     [Tooltip("Safe 발판을 전부 밟지 않아도 됨. true면 Trap만 안 밟으면 Complete")]
     public bool completeOnNoTrap = false;
+
+    [Tooltip("Trap 발판을 밟았을 때 입히는 데미지")]
+    [SerializeField, Min(0)] int trapDamage = 6;
 
     [Header("공통 색상")]
     [Tooltip("도전 중 모든 발판에 적용되는 기본 색")]
@@ -54,13 +57,11 @@ public class MemoryPath : MonoBehaviour
     [Tooltip("Safe 발판을 모두 통과했을 때")]
     public UnityEvent OnCompleted;
 
-    [Tooltip("Trap 발판을 밟아 낙사했을 때")]
-    public UnityEvent OnFailed;
-
     PathState _state;
     int _safeStepped;
 
     public PathState State => _state;
+    public int TrapDamage => trapDamage;
 
     List<MemoryPathTile> _safeTiles = new();
     List<MemoryPathTile> _trapTiles = new();
@@ -145,15 +146,6 @@ public class MemoryPath : MonoBehaviour
         _safeStepped++;
         if (_safeStepped >= _safeTiles.Count)
             Complete();
-    }
-
-    /// <summary>Trap 발판을 밟았을 때 MemoryPathTile이 호출</summary>
-    public void OnTrapStepped(MemoryPathTile tile)
-    {
-        if (_state != PathState.Challenge) return;
-
-        _state = PathState.Failed;
-        OnFailed?.Invoke();
     }
 
     // ── 내부 ────────────────────────────────────────────────────

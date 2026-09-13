@@ -13,10 +13,10 @@ using TMPro;
 /// Cooldown   → 다음 버프까지 카운트다운 숫자 (아이콘 대신 숫자만)
 ///
 /// [버프 선택 입력 — 구 BuffSelectHotkeyInput 흡수, 2026-08-28]
-/// Q 키 → 로컬에서 "지금 내 버프 활성 중?" 확인(즉시 판정) → 활성 중 아니면
-/// NetworkPlayerSetup.RequestToggleBuffType() 호출 → Host가 다시 검증
-/// (CheerService.IsBuffActive) 후 NetworkVariable 갱신 → Idle 아이콘이 즉시 갱신되는 것 자체가 피드백.
-/// 활성 중이면 조용히 무시(별도 UI 없음 — Tutorial에서 규칙 설명).
+/// Q 키 → NetworkPlayerSetup.RequestToggleBuffType() 호출 → Host가 SelectedBuffType 갱신.
+/// [2026-09-14] 발동/쿨타임 중에도 항상 전환 가능(잠금 삭제) — 단, 지금 진행 중인 효과는
+/// ApplyCheerBuff 호출 시점에 이미 스냅샷됐으므로 바뀌지 않는다. 바뀐 선택은 다음 Space
+/// 발동부터 적용된다(CheerSystemDesign.md §2.1). Idle 아이콘이 즉시 갱신되는 것 자체가 피드백.
 ///
 /// [이전 역할 이동]
 /// "나를 응원 중인 플레이어" 표시 → TeamStatusUI로 이동.
@@ -366,6 +366,7 @@ public class CheerProgressUI : MonoBehaviour
     /// <summary>
     /// Q키 → 버프 선택 토글 (구 BuffSelectHotkeyInput 흡수).
     /// InGameChatUI/TutorialCheerNameUI 열려있으면 무시 (CheerDigitInput과 동일 게이팅).
+    /// [2026-09-14] 발동/쿨타임 중 로컬 차단 삭제 — 언제나 전환 요청 가능(§2.1).
     /// </summary>
     void HandleBuffSelectInput()
     {
@@ -375,13 +376,6 @@ public class CheerProgressUI : MonoBehaviour
         if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
         if (!kb.qKey.wasPressedThisFrame) return;
         if (_localSetup == null) return;
-
-        // 로컬 선(先)검증 — 내 버프가 지금 활성 중이면 조용히 무시.
-        // (권위 있는 최종 판정은 여전히 Host의 RequestToggleBuffTypeServerRpc.)
-        bool isActive = _localBuffSystem != null &&
-            (_localBuffSystem.IsActive(PlayerBuffSystem.BuffType.Shield) ||
-             _localBuffSystem.IsActive(PlayerBuffSystem.BuffType.SpeedUp));
-        if (isActive) return;
 
         _localSetup.RequestToggleBuffType();
     }

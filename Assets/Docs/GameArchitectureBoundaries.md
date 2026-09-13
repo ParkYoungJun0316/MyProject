@@ -2,7 +2,8 @@
 
 > Domain ownership only. Network / session / authority SSOT: `NetworkDesign.md`.  
 > Cheer / voice SSOT: `CheerAndTutorialDesign.md`.  
-> Co-op stage/minigame content SSOT: [`CoopStageAudit.md`](CoopStageAudit.md) (공유) · [`CoopStageAudit.M.md`](CoopStageAudit.M.md) · [`CoopStageAudit.T.md`](CoopStageAudit.T.md).
+> Co-op stage/minigame content SSOT: [`CoopStageAudit.md`](CoopStageAudit.md) (공유) · [`CoopStageAudit.M.md`](CoopStageAudit.M.md) · [`CoopStageAudit.T.md`](CoopStageAudit.T.md).  
+> Downed/Revive 시스템 SSOT (설계 중, 네트워크 권위 TBD): [`DownedReviveSystemDesign.md`](DownedReviveSystemDesign.md).
 
 ## Scope (full release)
 

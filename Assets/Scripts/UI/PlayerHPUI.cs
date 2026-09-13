@@ -158,7 +158,7 @@ public class PlayerHPUI : MonoBehaviour
         selfNameLabel.text = selfNamePrefix + (string.IsNullOrEmpty(name) ? "???" : name.ToUpper());
     }
 
-    /// <summary>ColorOrder 인덱스(0=berry …). PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType. PlayerNameTagUI.ResolveColorIndex와 동일 패턴.</summary>
+    /// <summary>ColorOrder 인덱스(0=berry …). PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType. TeamStatusUI.ResolveColorIndex와 동일 패턴.</summary>
     int ResolveColorIndex()
     {
         var net = player.GetComponent<NetworkObject>();

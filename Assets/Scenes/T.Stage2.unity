@@ -1971,6 +1971,7 @@ MonoBehaviour:
   startOnAwake: 0
   colorPreviewDuration: 3
   colorPreviewGap: 1
+  wrongTileDamage: 6
   colorSequence: 04000000010000000200000003000000
   normalColor: {r: 0, g: 0, b: 0, a: 1}
   yellowPreviewColor: {r: 0.8509804, g: 0.6431373, b: 0.25490198, a: 1}
@@ -1981,9 +1982,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   OnCompleted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnFailed:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &644347437
@@ -2786,6 +2784,11 @@ MonoBehaviour:
   positionDamping: 0
   rotationDamping: 0
   lockCursor: 1
+  cameraObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 973078529
+  cameraCollisionRadius: 0.3
+  cameraCollisionBuffer: 0.15
   previewDistance: 40
   previewPitch: 85
   previewYaw: 0
@@ -3010,7 +3013,7 @@ GameObject:
   - component: {fileID: 849278496}
   - component: {fileID: 849278495}
   m_Layer: 5
-  m_Name: Space
+  m_Name: LeftClick
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3055,9 +3058,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 449c0c703fbb30c488971b946ec9c86e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: fd1a0dff4c167f04898c69eedd2b810c, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -3106,7 +3109,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
   cheerCooldownSeconds: 10
-  teamCheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
 --- !u!114 &852227902
 MonoBehaviour:
@@ -4367,6 +4369,7 @@ MonoBehaviour:
   startOnAwake: 0
   zonePreviewDuration: 3
   zonePreviewGap: 2
+  trapDamage: 6
   normalColor: {r: 0, g: 0, b: 0, a: 1}
   unlockedColor: {r: 1, g: 0, b: 0.4862745, a: 1}
   trapColor: {r: 1, g: 1, b: 1, a: 1}
@@ -5042,7 +5045,7 @@ GameObject:
   - component: {fileID: 1599369550}
   - component: {fileID: 1599369549}
   m_Layer: 5
-  m_Name: Space
+  m_Name: LeftClick
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5087,9 +5090,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 449c0c703fbb30c488971b946ec9c86e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: fd1a0dff4c167f04898c69eedd2b810c, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -7072,6 +7075,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6305786061873140881, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.000034332275
+      objectReference: {fileID: 0}
     - target: {fileID: 6366122804983461842, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -7095,6 +7102,10 @@ PrefabInstance:
     - target: {fileID: 6366122804983461842, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6417479575125417010, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3152759346
       objectReference: {fileID: 0}
     - target: {fileID: 6435224728753211295, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
@@ -37974,6 +37985,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539102643524
 MonoBehaviour:
@@ -37989,6 +38001,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539105015709
 MonoBehaviour:
@@ -38004,6 +38017,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539109492292
 MonoBehaviour:
@@ -38019,6 +38033,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000020000000300000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539114785691
 MonoBehaviour:
@@ -38034,6 +38049,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 03000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539117174615
 MonoBehaviour:
@@ -38049,6 +38065,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0100000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539147048219
 MonoBehaviour:
@@ -38064,6 +38081,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539151034606
 MonoBehaviour:
@@ -38079,6 +38097,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 010000000200000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539175025156
 MonoBehaviour:
@@ -38094,6 +38113,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539232899561
 MonoBehaviour:
@@ -38109,6 +38129,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539244807800
 MonoBehaviour:
@@ -38124,6 +38145,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539319445760
 MonoBehaviour:
@@ -38139,6 +38161,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 02000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539328071840
 MonoBehaviour:
@@ -38154,6 +38177,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539376720358
 MonoBehaviour:
@@ -38169,6 +38193,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539405277524
 MonoBehaviour:
@@ -38184,6 +38209,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539411352991
 MonoBehaviour:
@@ -38199,6 +38225,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000020000000300000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539432323805
 MonoBehaviour:
@@ -38214,6 +38241,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539471842515
 MonoBehaviour:
@@ -38229,6 +38257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539475415697
 MonoBehaviour:
@@ -38244,6 +38273,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539491946837
 MonoBehaviour:
@@ -38259,6 +38289,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539498383326
 MonoBehaviour:
@@ -38274,6 +38305,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539513378414
 MonoBehaviour:
@@ -38289,6 +38321,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539529749820
 MonoBehaviour:
@@ -38304,6 +38337,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0100000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539560417710
 MonoBehaviour:
@@ -38319,6 +38353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000020000000300000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539578466985
 MonoBehaviour:
@@ -38334,6 +38369,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539586013663
 MonoBehaviour:
@@ -38349,6 +38385,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 02000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539598689076
 MonoBehaviour:
@@ -38364,6 +38401,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539607848905
 MonoBehaviour:
@@ -38379,6 +38417,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539626677271
 MonoBehaviour:
@@ -38394,6 +38433,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539660376941
 MonoBehaviour:
@@ -38409,6 +38449,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0100000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539679320224
 MonoBehaviour:
@@ -38424,6 +38465,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 03000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539712473255
 MonoBehaviour:
@@ -38439,6 +38481,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539775498484
 MonoBehaviour:
@@ -38454,6 +38497,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 04000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539815548771
 MonoBehaviour:
@@ -38469,6 +38513,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000020000000300000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539818889826
 MonoBehaviour:
@@ -38484,6 +38529,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539823330369
 MonoBehaviour:
@@ -38499,6 +38545,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 03000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539906792960
 MonoBehaviour:
@@ -38514,6 +38561,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539969091359
 MonoBehaviour:
@@ -38529,6 +38577,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 03000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539992723425
 MonoBehaviour:
@@ -38544,6 +38593,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573539999924313
 MonoBehaviour:
@@ -38559,6 +38609,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 04000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540022728621
 MonoBehaviour:
@@ -38574,6 +38625,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540060370956
 MonoBehaviour:
@@ -38589,6 +38641,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540061929639
 MonoBehaviour:
@@ -38604,6 +38657,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540073433956
 MonoBehaviour:
@@ -38619,6 +38673,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540199200439
 MonoBehaviour:
@@ -38634,6 +38689,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 04000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540203405509
 MonoBehaviour:
@@ -38649,6 +38705,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540257937026
 MonoBehaviour:
@@ -38664,6 +38721,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540305321354
 MonoBehaviour:
@@ -38679,6 +38737,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540334485712
 MonoBehaviour:
@@ -38694,6 +38753,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540334874069
 MonoBehaviour:
@@ -38709,6 +38769,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540437609384
 MonoBehaviour:
@@ -38724,6 +38785,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 02000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540439353137
 MonoBehaviour:
@@ -38739,6 +38801,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 03000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540453170868
 MonoBehaviour:
@@ -38754,6 +38817,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540485283835
 MonoBehaviour:
@@ -38769,6 +38833,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0100000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540534245809
 MonoBehaviour:
@@ -38784,6 +38849,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540591913079
 MonoBehaviour:
@@ -38799,6 +38865,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540621438353
 MonoBehaviour:
@@ -38814,6 +38881,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540649604302
 MonoBehaviour:
@@ -38829,6 +38897,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 010000000200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540710680233
 MonoBehaviour:
@@ -38844,6 +38913,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540744769435
 MonoBehaviour:
@@ -38859,6 +38929,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540795190565
 MonoBehaviour:
@@ -38874,6 +38945,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540803008241
 MonoBehaviour:
@@ -38889,6 +38961,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 01000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540812356841
 MonoBehaviour:
@@ -38904,6 +38977,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540834906611
 MonoBehaviour:
@@ -38919,6 +38993,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 04000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540836966378
 MonoBehaviour:
@@ -38934,6 +39009,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540840091435
 MonoBehaviour:
@@ -38949,6 +39025,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540843813383
 MonoBehaviour:
@@ -38964,6 +39041,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540871820701
 MonoBehaviour:
@@ -38979,6 +39057,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540895538378
 MonoBehaviour:
@@ -38994,6 +39073,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 02000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540911346404
 MonoBehaviour:
@@ -39009,6 +39089,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0100000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540911450467
 MonoBehaviour:
@@ -39024,6 +39105,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540914407997
 MonoBehaviour:
@@ -39039,6 +39121,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573540926862636
 MonoBehaviour:
@@ -39054,6 +39137,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541020500648
 MonoBehaviour:
@@ -39069,6 +39153,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 02000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541022132735
 MonoBehaviour:
@@ -39084,6 +39169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 04000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541122814621
 MonoBehaviour:
@@ -39099,6 +39185,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0100000003000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541165442177
 MonoBehaviour:
@@ -39114,6 +39201,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 02000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541202206912
 MonoBehaviour:
@@ -39129,6 +39217,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 0200000004000000
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541218074048
 MonoBehaviour:
@@ -39144,6 +39233,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!114 &7205573541222039236
 MonoBehaviour:
@@ -39159,6 +39249,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredMemoryPathTile
   safeColors: 
   normalColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  wrongTileDamage: 6
   coloredMemoryPath: {fileID: 0}
 --- !u!65 &7977680420816904270
 BoxCollider:

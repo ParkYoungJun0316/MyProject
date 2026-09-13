@@ -71,6 +71,8 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     [HideInInspector] public bool isOwnerControlled = true;
 
     public bool IsDead   { get; private set; }
+    /// <summary>다운 상태(부활 가능한 유예). DownedReviveSystemDesign.md §5 — PlayerDownState(Host)가 EnterDownState/ExitDownState로 제어.</summary>
+    public bool IsDowned { get; private set; }
     public int PlayerId => playerId;
 
     /// <summary>피격 무적 시간 중 true. NetworkPlayerSetup이 서버에서 중복 피격 방지에 사용.</summary>
@@ -82,7 +84,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     bool isDamage;
     bool isKnockback;
 
-    bool bwDown, altDown;
+    bool bwDown, altDown, spaceDown;
 
     // 낙사 Die 애니메이션이 이미 재생됐는지 추적 (매 프레임 중복 트리거 방지)
     // Owner→Host 낙사 신고 1회 가드 (ReportFallDeathServerRpc 스팸 방지)
@@ -104,11 +106,12 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     PlayerEvents events;
     PlayerStealth playerStealth;
     PlayerBuffSystem playerBuffSystem;
+    PlayerDownState downState;
 
 
     public void OnMove(InputValue value)
     {
-        if (IsDead || !isOwnerControlled) return;
+        if (IsDead || IsDowned || !isOwnerControlled) return;
         if (fallAnimTriggered) { moveInput = Vector2.zero; return; }
         if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { moveInput = Vector2.zero; return; }
         moveInput = value.Get<Vector2>();
@@ -128,6 +131,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (events == null) events = gameObject.AddComponent<PlayerEvents>();
 
         playerStealth = GetComponent<PlayerStealth>();
+        downState = GetComponent<PlayerDownState>();
 
         playerBuffSystem = GetComponent<PlayerBuffSystem>();
         if (playerBuffSystem == null) playerBuffSystem = gameObject.AddComponent<PlayerBuffSystem>();
@@ -139,7 +143,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         // Die 애니: Owner 로컬. 낙사 확정: Owner Y → ReportFallDeathServerRpc → Host ApplyFallDeath.
         // (Host-only Y는 Owner+CNT void에서 Client를 놓칠 수 있음 — Host Update는 Host-as-Owner 폴백)
-        if (!IsDead && enableFallDeath && isOwnerControlled)
+        if (!IsDead && !IsDowned && enableFallDeath && isOwnerControlled)
         {
             float y = transform.position.y;
             // fallAnimY 통과 시 Die 애니메이션 1회 재생 (fallDeathY보다 높은 지점에서 미리 트리거)
@@ -162,7 +166,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             }
         }
 
-        if (IsDead)
+        if (IsDead || IsDowned)
         {
             Vector3 p = transform.position;
             p.y = fixedY;
@@ -185,12 +189,15 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             anim?.SetTrigger("doChangeColor");
         }
 
-        if (altDown)
+        if (altDown && !isUniqueColor)
         {
-            isUniqueColor = !isUniqueColor;
-            events?.RaiseUniqueColorChanged(isUniqueColor ? 0 : -1);
+            isUniqueColor = true;
+            events?.RaiseUniqueColorChanged(0);
             anim?.SetTrigger("doChangeColor");
         }
+
+        if (spaceDown)
+            CheerService.Instance?.RequestSelfBuffServerRpc();
     }
 
     void FixedUpdate()
@@ -199,10 +206,22 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         // 비오너(Host 복사본 포함)는 NT로 위치 수신 → Move() 불필요.
         if (!isOwnerControlled) return;
 
-        if (IsDead)
+        if (IsDead || IsDowned)
         {
             rigid.linearVelocity  = Vector3.zero;
             rigid.angularVelocity = Vector3.zero;
+            return;
+        }
+
+        // 부활 시전 중 이동 불가(DownedReviveSystemDesign.md §4/§9.3) — Host가 위치를 묶지 않고 Owner가 스스로 멈춘다.
+        // moveInput은 계속 받아두어 시전이 끝나면 누르고 있던 방향으로 바로 이어진다. 중력(y)은 유지.
+        if (downState != null && downState.IsRevivingOther)
+        {
+            Vector3 v = rigid.linearVelocity;
+            v.x = 0f; v.z = 0f;
+            rigid.linearVelocity = v;
+            anim?.SetBool("isRun", false);
+            FreezeRotation();
             return;
         }
 
@@ -213,9 +232,14 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
-        if (!isOwnerControlled || InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { bwDown = altDown = false; return; }
+        if (!isOwnerControlled || InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { bwDown = altDown = spaceDown = false; return; }
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
+
+        // SequenceRing 진행 중엔 Space가 링 입력 전용 — 개인 버프는 발동하지 않는다(CheerSystemDesign.md §6.1).
+        // ESC 메뉴 등 커서를 쓰는 UI가 떠 있을 때도 발동하지 않는다.
+        spaceDown = !SequenceRingMinigame.BlocksSelfBuffSpace && !CursorUnlockRequestUtil.IsRequested
+            && Keyboard.current.spaceKey.wasPressedThisFrame;
     }
 
     void Move()
@@ -294,7 +318,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     /// </summary>
     public void TakeDamageVisualOnly()
     {
-        if (IsDead) return;
+        if (IsDead || IsDowned) return;
 
         // HP UI 갱신은 무적 여부와 무관하게 항상 수행
         // (무적 중 연속 피격 시 _player.heart가 갱신됐어도 UI가 멈추는 버그 방지)
@@ -313,7 +337,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     /// </summary>
     public void PlayPunchHitReaction()
     {
-        if (IsDead) return;
+        if (IsDead || IsDowned) return;
         anim?.SetTrigger("doPunchHit");
     }
 
@@ -342,7 +366,11 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     /// IsDead=false로 남아 트랩·피격 판정(OnTriggerEnter)에서 사망 상태를 놓칠 수 있음 —
     /// 실제로는 HP NetworkVariable 가드가 이중 방어하지만, 이 플래그도 맞춰 둔다.
     /// </summary>
-    public void SyncDeadFlag() => IsDead = true;
+    public void SyncDeadFlag()
+    {
+        IsDead = true;
+        IsDowned = false;
+    }
 
     /// <summary>고유색 모드면 uniqueColor, 아니면 blackColor/whiteColor.</summary>
     public Color GetCurrentBaseColor()
@@ -370,7 +398,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     /// <summary>무적·피격 쿨 중이면 false, 실제 피격 시 true.</summary>
     public bool TryTakeDamage(int amount)
     {
-        if (IsDead) return false;
+        if (IsDead || IsDowned) return false;
         if (isDamage) return false;
         TakeDamage(amount);
         return true;
@@ -378,7 +406,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     public void TakeDamage(int amount)
     {
-        if (IsDead) return;
+        if (IsDead || IsDowned) return;
         if (isDamage) return;
 
         // 비오너 플레이어: 피격 판정은 Host 경로에서만. 로컬 직접 호출 무시
@@ -439,10 +467,76 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         _knockbackSuppressRoutine = null;
     }
 
+    /// <summary>
+    /// 다운 진입(부활 가능한 유예). 완전사망(Die)과 달리 콜라이더는 유지하고 입력만 차단한다
+    /// (DownedReviveSystemDesign.md §5). PlayerDownState(Host)의 PlayerDownedClientRpc에서 호출.
+    /// </summary>
+    public void EnterDownState()
+    {
+        if (IsDead || IsDowned) return;
+        IsDowned = true;
+
+        if (_knockbackSuppressRoutine != null)
+        {
+            StopCoroutine(_knockbackSuppressRoutine);
+            _knockbackSuppressRoutine = null;
+        }
+        isKnockback = false; isDamage = false;
+        moveSpeedMultiplier = 1f;
+        _salivaOverlaps = 0;
+        moveInput = Vector2.zero;
+        fixedY = transform.position.y;
+
+        if (!rigid.isKinematic)
+        {
+            rigid.linearVelocity  = Vector3.zero;
+            rigid.angularVelocity = Vector3.zero;
+        }
+
+        // 적 감지/타겟팅 제외용 레이어 전환(콜라이더는 그대로 유지 — 물리 차단 유지 의도).
+        if (playerStealth != null)
+            playerStealth.ForceLayer(deadLayer);
+        else
+            SetLayerRecursively(gameObject, deadLayer);
+
+        // 트리거는 Owner만 — NetworkAnimator(Owner Authority)가 다른 머신에 동기화한다(Die()와 동일).
+        if (anim != null && isOwnerControlled)
+        {
+            anim.SetBool("isRun", false);
+            anim.ResetTrigger("doDie");
+            anim.SetTrigger("doDie"); // 신규 애니메이션 불필요 — 기존 die 모션 재사용(§5)
+        }
+
+        events?.RaiseDowned();
+    }
+
+    /// <summary>부활 완료 시 다운 상태 해제. PlayerDownState.ReviveCompletedClientRpc에서 호출.</summary>
+    public void ExitDownState()
+    {
+        if (!IsDowned) return;
+        IsDowned = false;
+
+        if (playerStealth != null)
+            playerStealth.ForceLayer(normalLayer);
+        else
+            SetLayerRecursively(gameObject, normalLayer);
+
+        // Kkultteok.controller의 Die 상태는 나가는 전환이 없다(원래 되돌릴 수 없는 사망용).
+        // 트리거 리셋만으로는 누운 포즈에 갇히므로 기본 상태(Idle)로 재바인드 — 전 머신에서 로컬 수행.
+        if (anim != null)
+        {
+            anim.Rebind();
+            anim.Update(0f);
+        }
+
+        events?.RaiseRevived();
+    }
+
     void Die()
     {
         if (IsDead) return;
         IsDead = true;
+        IsDowned = false;
 
         CancelInvoke();
 

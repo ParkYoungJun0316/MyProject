@@ -25,7 +25,7 @@ using UnityEngine.UI;
 ///   라벨의 String Table 엔트리 연결(OXQuizManager와 동일 패턴). 미연결 시 한국어 기본값 폴백.
 /// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
 ///   (Inspector에서 Slider의 minValue/maxValue를 10~24로 설정).
-/// - digitCheerToggle   : Toggle — "숫자키로 응원하기". 미연결이면 설정 UI만 없음(기본 OFF 유지).
+/// - digitCheerToggle   : Toggle — "T키로 응원하기". 미연결이면 설정 UI만 없음(기본 OFF 유지).
 /// - mouseSensitivitySlider : Slider — 마우스(카메라 회전) 감도 배율. min/max는
 ///   GameSettingsManager.Min/MaxMouseSensitivity(0.1~2)와 일치시킬 것. ThirdPersonCamera가
 ///   pull 방식으로 매 프레임 반영(별도 push 이벤트 불필요).
@@ -57,7 +57,7 @@ public class OptionsMenuController : MonoBehaviour
     [SerializeField] private TMP_Dropdown micDeviceDropdown;
 
     [Header("응원")]
-    [Tooltip("숫자키 1=자기 응원, 2=팀 응원. 기본 OFF. 체크박스 오브젝트는 씬에서 연결.")]
+    [Tooltip("T키 = 팀 응원 대체 입력. 기본 OFF. 체크박스 오브젝트는 씬에서 연결.")]
     [SerializeField] private Toggle digitCheerToggle;
 
     [Header("채팅")]

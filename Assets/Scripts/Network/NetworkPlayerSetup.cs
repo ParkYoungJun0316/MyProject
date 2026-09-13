@@ -57,7 +57,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     // 응원으로 받을 버프 종류(개인 선택): 서버 쓰기(검증 후) / 전원 읽기(UI 표시용).
     // 스폰 시 CheerService.StageBuffType(스테이지 기본값)으로 초기화되고, 이후 플레이어가
-    // RequestToggleBuffType()으로 언제든 자유 전환 가능 (버프 활성 중엔 잠금, §CheerService.IsBuffActive).
+    // RequestToggleBuffType()으로 언제든 자유 전환 가능 — 발동/쿨타임 중에도 잠기지 않는다(2026-09-14).
     private readonly NetworkVariable<int> _selectedBuffType = new(
         (int)PlayerBuffSystem.BuffType.Shield,
         NetworkVariableReadPermission.Everyone,
@@ -73,6 +73,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     private VoiceBroadcastTrigger   _voiceBroadcast;
     private CheerKeywordEngine      _cheerKeyword;
     private PlayerAudio             _audio;
+    private PlayerDownState         _downState;
 
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
@@ -91,6 +92,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
         _cheerKeyword    = GetComponent<CheerKeywordEngine>();
         _audio           = GetComponent<PlayerAudio>();
+        _downState       = GetComponent<PlayerDownState>();
     }
 
     public override void OnNetworkSpawn()
@@ -404,13 +406,45 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // (예전엔 여기서도 무조건 NotifyHitClientRpc를 호출해 안 맞았는데 맞은 것처럼 보이는 버그가 있었음).
         if (amount <= 0) return;
 
+        // 이 플레이어가 지금 누군가를 부활 시전 중이었다면, 실제 HP 감소가 확정된 이 시점에 캔슬
+        // (DownedReviveSystemDesign.md §4 — 캔슬 판정은 "피격"이 아니라 "HP 감소 발생"에 건다).
+        PlayerDownState.CancelIfReviving(OwnerClientId);
+
         int newHp = Mathf.Max(0, _hp.Value - amount);
         _hp.Value = newHp;
 
         if (newHp > 0)
             NotifyHitClientRpc();
+        else if (_downState != null)
+            _downState.EnterDown();
         else
-            ForceKillClientRpc();
+            ForceKillClientRpc(); // PlayerDownState 미부착 시 기존 즉시 사망으로 폴백
+    }
+
+    /// <summary>
+    /// Host 전용: 부활 완료 시 PlayerDownState가 호출. HP를 지정 값으로 복구하고 그레이스 무적을 부여
+    /// (DownedReviveSystemDesign.md §4 — 부활 직후 HP·1초 무적).
+    /// </summary>
+    public void ReviveFromServer(int heartAmount, float invulnerabilityDuration)
+    {
+        if (!IsServer) return;
+        if (_player == null) return;
+
+        _hp.Value = Mathf.Clamp(heartAmount, 1, _player.maxHeart);
+        _damageInvulnEndTime = Time.time + invulnerabilityDuration;
+    }
+
+    /// <summary>
+    /// Host 전용: 다운 중 방치 타임아웃(완전사망) 시 PlayerDownState가 호출. HP는 이미 0이므로
+    /// 기존 즉사 확정 파이프라인(ForceKillClientRpc)을 그대로 재사용한다.
+    /// TODO(Stage/UI 도메인): STAGE FAILED 2초 배너 후 리로드로 교체 필요(§6, §9.2) — 지금은
+    /// 기존 즉시 리로드(StageResetOnPlayerDeath 경로) 그대로.
+    /// </summary>
+    public void FinalizeDownDeath()
+    {
+        if (!IsServer) return;
+        if (_player == null || _player.IsDead) return;
+        ForceKillClientRpc();
     }
 
     /// <summary>
@@ -475,7 +509,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public void ApplyKnockbackFromServer(Vector3 direction, float force)
     {
         if (!IsServer) return;
-        if (_player == null || _player.IsDead) return;
+        if (_player == null || _player.IsDead || _player.IsDowned) return;
 
         ApplyKnockbackClientRpc(direction, force);
     }
@@ -501,7 +535,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public void NotifyPunchHitFromServer()
     {
         if (!IsServer) return;
-        if (_player == null || _player.IsDead) return;
+        if (_player == null || _player.IsDead || _player.IsDowned) return;
 
         NotifyPunchHitClientRpc();
     }
@@ -516,7 +550,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     // ── 즉사 확정 (Die 애니로 통일) ──────────────────────────────────
-    // 함정 타일(MemoryPath/PioneerPath 등)·StageManager Fail·SequenceRing 전용.
+    // StageManager Fail·SequenceRing·BossSpherePhaseDriver 전용.
     // 문(DoorController)은 즉사 아님 — ApplyKnockback 사용 (닫힘 넉백).
 
     /// <summary>
@@ -526,7 +560,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public void ApplyInstantKillFromServer()
     {
         if (!IsServer) return;
-        if (_player == null || _player.IsDead || _hp.Value <= 0) return;
+        if (!CanApplyLethalFromServer()) return;
+        _downState?.ClearForDeath();
         _hp.Value = 0;
         ForceInstantKillClientRpc();
     }
@@ -558,9 +593,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// <summary>
     /// 응원으로 받을 버프 종류를 Shield ↔ SpeedUp으로 토글.
     /// Owner만 호출 가능(InvokePermission.Owner) — CheerProgressUI(Q키 입력)에서 호출.
-    /// 이 플레이어의 버프가 지금 활성 중이면 무조건 거부(잠금) — Host가 RPC를 단일 스레드로
-    /// 순차 처리하므로 CheerService.ApplyBuff 실행 시점 이후 도착한 전환 요청은 항상 거부된다
-    /// (레이스 컨디션으로 뚫릴 여지 없음).
+    /// [2026-09-14] 발동 중/쿨타임 중에도 언제나 전환 가능 — 예전엔 버프 활성 중이면 무조건
+    /// 거부하던 잠금이 있었으나 제거했다. 이미 나가고 있는 효과는 ApplyCheerBuff 호출 시점에
+    /// duration/value가 스냅샷되므로 전환의 영향을 받지 않고, 바뀐 선택은 다음 Space 발동부터
+    /// 적용된다(CheerSystemDesign.md §2.1).
     /// </summary>
     // [버그 수정 2026-09-01 / 2026-09-05] SequenceRing 이중 판정과 동일 원인(트랜스포트 레벨 RPC
     // 중복 수신) — 이 토글은 시간 쿨다운/Add류 자연 가드가 없어 그대로 두면 두 번 뒤집혀
@@ -577,9 +613,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
     void RequestToggleBuffTypeServerRpc(uint submitSeq, RpcParams rpcParams = default)
     {
         if (_buffToggleDedup.IsDuplicate(rpcParams.Receive.SenderClientId, submitSeq)) return;
-
-        if (CheerService.Instance != null && CheerService.Instance.IsBuffActive(_colorIndex.Value))
-            return;
 
         var next = SelectedBuffType == PlayerBuffSystem.BuffType.Shield
             ? PlayerBuffSystem.BuffType.SpeedUp
@@ -659,9 +692,21 @@ public class NetworkPlayerSetup : NetworkBehaviour
     void ApplyFallDeathFromServer()
     {
         if (!IsServer) return;
-        if (_player == null || _player.IsDead || _hp.Value <= 0) return;
+        if (!CanApplyLethalFromServer()) return;
+        _downState?.ClearForDeath();
         _hp.Value = 0;
         ForceKillClientRpc();
+    }
+
+    /// <summary>
+    /// 즉사/낙사 적용 가능 여부. HP 0은 원래 중복 사망 방지 가드였지만, 다운 상태도 HP 0이므로
+    /// 다운 중에는 통과시킨다 — 다운 중 즉사도 즉시 완전사망(DownedReviveSystemDesign.md §2).
+    /// </summary>
+    bool CanApplyLethalFromServer()
+    {
+        if (_player == null || _player.IsDead) return false;
+        bool downed = _downState != null && _downState.IsDowned;
+        return _hp.Value > 0 || downed;
     }
 
     /// <summary>

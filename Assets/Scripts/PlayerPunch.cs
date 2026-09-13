@@ -77,7 +77,9 @@ public class PlayerPunch : NetworkBehaviour
     public void OnAttack(InputValue value)
     {
         if (!value.isPressed) return;
-        if (!IsOwner || _player == null || _player.IsDead) return;
+        if (!IsOwner || _player == null || _player.IsDead || _player.IsDowned) return;
+        // 대화창이 떠 있는 동안 좌클릭은 대사 넘기기 전용 (DialogueUI).
+        if (DialogueUI.BlocksPrimaryClick) return;
         if (Time.time < _nextLocalPunchTime) return;
 
         // Host의 _nextPunchTime보다 항상 늦게 풀리도록 여유 버퍼를 더한다 (localCooldownBuffer 참고).
@@ -95,7 +97,7 @@ public class PlayerPunch : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     void PunchServerRpc()
     {
-        if (_player == null || _player.IsDead) return;
+        if (_player == null || _player.IsDead || _player.IsDowned) return;
         if (Time.time < _nextPunchTime) return;
 
         _nextPunchTime = Time.time + cooldown;
@@ -139,7 +141,7 @@ public class PlayerPunch : NetworkBehaviour
     {
         if (!IsServer) return;
         if (!_swingActive || _hitThisSwing) return;
-        if (target == null || target == _player || target.IsDead) return;
+        if (target == null || target == _player || target.IsDead || target.IsDowned) return;
 
         _hitThisSwing = true;
 

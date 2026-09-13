@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 인게임에 동시에 열릴 수 있는 여러 마우스-필요 UI(치어네임 패널/ESC 메뉴/이모트 메뉴 등)가
+/// 인게임에 동시에 열릴 수 있는 여러 마우스-필요 UI(치어네임 패널/ESC 메뉴 등)가
 /// 커서 lock/visible을 각자 무조건 덮어써서 "마지막에 닫은 쪽이 이긴다"로 서로 충돌하는 문제를
 /// 막기 위한 공유 요청 카운트. 각 UI는 열 때 Request(this), 닫을 때 Release(this)만 호출하면
 /// 되고, 실제 Cursor 반영은 여기 한 곳에서만 "아직 다른 요청이 남아있는지"로 계산한다
 /// (요청 목록 → 실제 Cursor 상태로만 흐르는 단방향 — 2026-08-22, Bug Hunter 리뷰 3항목 중 2번 수정).
 ///
-/// [사용처] TutorialCheerNameUI, EscMenuController, PlayerEmoteMenuUI.
+/// [사용처] TutorialCheerNameUI, EscMenuController. (IsRequested만 읽는 쪽: Player Space 버프·PlayerEmoteMenuUI 숫자키·EmoteHintUI·ThirdPersonCamera)
 /// TitleReturnFlow/EndDemoController처럼 인게임을 완전히 벗어나는 전역 전환은 이 유틸을 거치지
 /// 않고 Cursor를 직접 강제 설정한다 — 그 시점엔 다른 UI 상태가 의미 없어지므로 정상.
 ///
@@ -25,7 +25,7 @@ public static class CursorUnlockRequestUtil
 {
     static readonly HashSet<object> _requesters = new();
 
-    /// <summary>지금 마우스가 필요한 UI(Esc메뉴/이모트메뉴/치어네임패널/채팅 등)가 하나라도 떠 있는지 —
+    /// <summary>지금 마우스가 필요한 UI(Esc메뉴/치어네임패널 등)가 하나라도 떠 있는지 —
     /// 커서 해제 상태의 SSOT. ThirdPersonCamera 등 "이 UI 켜져있나?"를 개별로 알 필요 없이 이 값 하나만
     /// 보면 되는 소비자가 쓴다(2026-08-22, 특정 UI를 하드코딩해서 체크하던 걸 이걸로 대체).</summary>
     public static bool IsRequested => _requesters.Count > 0;

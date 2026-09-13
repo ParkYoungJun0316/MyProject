@@ -225,7 +225,7 @@ public class ChangeColorCooldownUI : MonoBehaviour
             _iconImage.sprite = player.isBlack ? blackIcon : whiteIcon;
     }
 
-    /// <summary>PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType. PlayerNameTagUI.ResolveColorIndex와 동일 패턴.</summary>
+    /// <summary>PlayerSpawnCoordinator(NetworkList) 우선, 없으면 playerColorType. TeamStatusUI.ResolveColorIndex와 동일 패턴.</summary>
     PlayerColorType ResolveColorType()
     {
         var net = player.GetComponent<NetworkObject>();

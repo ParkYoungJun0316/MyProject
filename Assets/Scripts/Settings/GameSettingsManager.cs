@@ -246,7 +246,7 @@ public class GameSettingsManager : MonoBehaviour
         MicMutedChanged?.Invoke(value);
     }
 
-    /// <summary>옵션 메뉴 "숫자키로 응원하기" 토글에서 호출. 즉시 적용 + 저장. 기본 OFF.</summary>
+    /// <summary>옵션 메뉴 "T키로 응원하기" 토글에서 호출. 즉시 적용 + 저장. 기본 OFF.</summary>
     public void SetDigitCheerEnabled(bool value)
     {
         DigitCheerEnabled = value;

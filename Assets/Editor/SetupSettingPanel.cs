@@ -106,7 +106,7 @@ public static class SetupSettingPanel
         ConvertSliderRowToPlainRange(mouseSensSlider, mouseSensValue, GameSettingsManager.MinMouseSensitivity, GameSettingsManager.MaxMouseSensitivity, 1f);
         CreateSliderRow(cGeneral.transform, "Row_ChatFontSize", "채팅 글자 크기", fontKr, out var chatFontSlider, out var chatFontValue);
         ConvertSliderRowToInteger(chatFontSlider, chatFontValue, GameSettingsManager.MinChatFontSize, GameSettingsManager.MaxChatFontSize, 14f);
-        var digitCheerToggle = CreateToggleRow(cGeneral.transform, "Row_DigitCheer", "숫자키로 응원하기", fontKr, toggleOn, toggleOff);
+        var digitCheerToggle = CreateToggleRow(cGeneral.transform, "Row_DigitCheer", "T키로 응원하기", fontKr, toggleOn, toggleOff);
 
         // --- Sound (wired volumes + mic) ---
         // 출력 장치(헤드셋) 선택은 Unity 표준 API로 불가능(OS 기본 출력 장치로만 재생, 네이티브 플러그인

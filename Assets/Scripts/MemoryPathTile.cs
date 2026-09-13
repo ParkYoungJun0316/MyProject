@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// 기억 경로 발판 하나.
 /// Safe : 미리보기 때 잠깐 빛났다가 꺼짐 → 밟아도 통과
-/// Trap : 미리보기에 표시 안 됨 → 조금이라도 닿으면 즉사
+/// Trap : 미리보기에 표시 안 됨 → 닿을 때마다 데미지 (MemoryPath.trapDamage)
 ///
 /// MemoryPath 자식으로 배치. MemoryPath.Awake()가 자동으로 참조·역할을 주입.
 /// </summary>
@@ -13,7 +13,7 @@ public class MemoryPathTile : MonoBehaviour
     public enum TileRole { Safe, Trap }
 
     [Header("발판 역할")]
-    [Tooltip("Safe: 미리보기에 표시되는 안전 경로 / Trap: 닿으면 즉사")]
+    [Tooltip("Safe: 미리보기에 표시되는 안전 경로 / Trap: 닿으면 데미지 (값은 MemoryPath에서 설정)")]
     public TileRole role = TileRole.Trap;
 
     // 색은 MemoryPath(매니저)에서 일괄 설정. Inspector 중복 방지.
@@ -26,7 +26,6 @@ public class MemoryPathTile : MonoBehaviour
 
     Collider   _col;
     Material[] _mats;
-    bool       _isDisabled;
     bool       _isSafeTriggered;
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -53,7 +52,6 @@ public class MemoryPathTile : MonoBehaviour
 
     void OnCollisionEnter(Collision col)
     {
-        if (_isDisabled) return;
         if (memoryPath == null || memoryPath.State != MemoryPath.PathState.Challenge) return;
 
         Player player = col.transform.GetComponentInParent<Player>();
@@ -61,10 +59,8 @@ public class MemoryPathTile : MonoBehaviour
 
         if (role == TileRole.Trap)
         {
-            _isDisabled = true;
             ApplyColor(dangerColor);
-            NetworkDamageUtil.ApplyInstantKill(player);
-            memoryPath.OnTrapStepped(this);  // 스테이지 실패 처리
+            NetworkDamageUtil.ApplyDamage(player, memoryPath.TrapDamage);
         }
         else if (!_isSafeTriggered)
         {
@@ -93,7 +89,6 @@ public class MemoryPathTile : MonoBehaviour
     public void Restore()
     {
         StopAllCoroutines();
-        _isDisabled      = false;
         _isSafeTriggered = false;
 
         if (_col != null) _col.enabled = true;

@@ -1,6 +1,6 @@
 # Cheer System Design
 
-음성·숫자키 **응원 시스템** 설계 문서 — 개인 버프(자기 응원) + 팀 버프(팀 공용 키워드) 이원 구조.
+**응원 시스템** 설계 문서 — 개인 버프(키 입력, 2026-09-14부터) + 팀 버프(음성/`T`키, 팀 공용 키워드) 이원 구조.
 관련: [`NetworkDesign.md`](NetworkDesign.md) (네트워크 검증 단계·Host 권한·출시 달력), [`CheerAndTutorialDesign.md`](CheerAndTutorialDesign.md) (Tutorial 구역·게이트 흐름 — CheerName/TeamCheerWord 설정 UI는 Tutorial 씬에 있음).
 
 **범례**
@@ -17,6 +17,13 @@
 > **2026-09-01 전면 개편.** 구 "팀원이 나를 응원해야 버프" 방식(전원 투표로 타인 타겟에게 버프)는 **폐기**. 신규: ①자기 응원 → 즉시 개인 버프, ②팀 전원 공용 키워드 → 팀 전체 버프. 남을 지목해서 응원하는 기능(cross-targeting)은 완전히 삭제됐다.
 >
 > **구현 현황:** Phase A·B·C·D1·D2 코드 완료 (인수인계 **§10.1**~**§10.4**). D3 안내 문구는 코드에서 제외(사용자 씬 텍스트). D0는 Tutorial 씬에 `CheerService` 배치됨. 남은 건 D4(구역 3) + Phase E 에디터.
+>
+> **2026-09-14 개인 버프 입력 전면 개편 [설계 확정, 코드 완료].** 음성 인식의 구조적 한계(지연·오인식 — 원하는 타이밍에 즉시 발동이 안 됨)로 인한 플레이어 불만 때문에 **개인 버프 트리거를 음성/숫자키에서 완전히 키 입력으로 전환**한다: `Ctrl`=색변환(기존 유지, 손 안 댐) → `Q`=버프 종류 전환(기존 `RequestToggleBuffTypeServerRpc` 그대로 유지) → `Space`=버프 발동(신규). **자기 CheerName을 외쳐서 개인 버프를 발동하는 음성 경로, 개인 버프 숫자키는 전부 삭제.** CheerName 자체는 없어지지 않지만 `TeamStatusUI` 표시용 닉네임 기능만 남고, Vosk grammar 등록·말해보기 테스트·Tutorial 구역3 개인 응원 체험에서는 제외된다(사용자 결정, 2026-09-14). **추가로 같은 날 확정:** `Q` 버프 종류 전환은 **발동 중·쿨타임 중에도 항상 허용**(기존 `IsBuffActive` 잠금 제거) — 전환은 다음 `Space` 발동부터 적용, 이미 나간 효과에는 영향 없음. 상세는 §1.2·§2.1·§3.1·§3.4·§6, 신규 작업은 **Phase F(§10.5)**.
+>
+> **2026-09-14 (같은 날 2차 변경) — 팀 응원 `T`키로 재배정 + 이모트 시스템 숫자키 전면 개편 [설계 확정, 코드 완료].** 이모트를 숫자키 `1`~`8` 직접 트리거로 바꾸면서(§6.4, 구 `T`홀드 마우스 휠 폐지) 팀 응원의 숫자키 대체 입력이 **`T`키로 재배정**됐다(그 직전엔 `1`, 그 전엔 `2`였음 — 두 번 재배정). 상세는 §6.3·§6.4. 아래 본문 중 "개인 버프 = 음성/숫자키1", "팀 응원 숫자키 = 1 또는 2", "Q는 발동 중 잠김", "이모트는 T 홀드 휠"이라는 서술은 전부 이 항목들이 우선한다.
+>
+> **2026-09-14 (같은 날 3차 변경) — 팀 응원 1회 통과, 10초 표 리셋 폐기 [설계 확정, 코드 완료].** 구: 첫 인식 후 `teamCheerTimeoutSeconds`(10초) 안에 전원 미달이면 표 전부 초기화 → 이미 외친 사람도 다시 외침. 신: 창이 열린 동안 **1회 인식 = 그 사람 통과**, 재외침 없음, 느낌표 소거. 성공 조건은 그대로 **전원 각자 1회**. 창은 전원이 통과할 때까지 유지(실패로 닫히지 않음) — **예외 2종: 혀 휩쓸기(`RiseHold` 외 패턴)·보스 턱(`MouthBossJawSmash`)은 함정 발동 후 창(=팀 응원 배너)이 닫혀 뒤늦게 외쳐도 원상복구 안 됨**(사용자 결정 2026-09-14, `CheerAndTutorialDesign.md` §2.1). 플레이어 규칙 잠금은 [`CheerAndTutorialDesign.md`](CheerAndTutorialDesign.md) §2.1. 아래 본문 중 "첫 인식 후 N초 타임아웃으로 표 리셋", "회색=대기 / 초록=인식"은 이 항목이 우선한다.
+>
 
 ---
 
@@ -32,8 +39,8 @@
 
 | | 개인 버프 | 팀 버프 |
 |---|---|---|
-| 트리거 | **자기** CheerName 외치기 (또는 숫자키 `1`, 기본 비활성) | **전원**(예외 없이 자기 자신 포함)이 **팀 공용 키워드(TeamCheerWord)** 외치기 (또는 숫자키 `2`, 기본 비활성) |
-| 발동 방식 | **즉시** — 필요 인원 1명(자기 자신)이라 투표 집계 자체가 불필요 | 투표 집계 + 타임아웃(첫 인식 후 N초 내 전원 미달 시 초기화) |
+| 트리거 | **[2026-09-14 변경] `Space`키 (키 입력 전용)** — 음성/숫자키 완전 삭제 | **전원**(예외 없이 자기 자신 포함)이 **팀 공용 키워드(TeamCheerWord)** 외치기 (또는 **`T`키**[2026-09-14 재배정, 구 숫자키 `1`→그 전엔 `2`], 기본 비활성) |
+| 발동 방식 | **즉시** — 필요 인원 1명(자기 자신)이라 투표 집계 자체가 불필요, 쿨/버프 중이 아니면 Space 입력 순간 발동 | **1회 통과 누적** — 창 안에서 각자 1회 인식되면 그 사람 통과, 전원 통과 시 발동. **10초 표 리셋 없음** (`CheerAndTutorialDesign.md` §2.1) |
 | 효과 | 본인이 Q키로 고른 `Shield`/`SpeedUp` (기존 유지) | 그 씬 함정이 한 일을 **되돌림**(`ITeamCheerRevert`) — 힐 아님(§0 오버라이드) |
 | 쿨다운 | 개인별 (`cheerCooldownSeconds`) | **없음** — 함정이 창(Warning~되돌림)을 열었을 때만 유효하므로 쿨이 곧 함정 주기 |
 | 대상 | 항상 자기 자신 (솔로/멀티 구분 없음 — 구 "솔로만 self 허용" 예외 폐기, 이제 기본 규칙) | `GameSession.ActivePlayerCount` 전원 |
@@ -47,34 +54,43 @@
 
 ┌─ [② Vosk + CheerKeywordEngine] ────────────────────┐
 │  각 Client: 자기 마이크만 분석                        │
-│  → 로컬 grammar = [내 CheerName, TeamCheerWord] 2개  │
-│  → 감지 시 SubmitSelfCheerServerRpc / SubmitTeamCheerServerRpc │
+│  → 로컬 grammar = [TeamCheerWord] 1개 [2026-09-14]  │
+│  → 감지 시 SubmitTeamCheerServerRpc                  │
 └──────────────────────────────────────────────────────┘
 
-┌─ [③ CheerService (Host)] ────────────────────────────┐
-│  개인: 즉시 발동/쿨. 팀: 투표·타임아웃·쿨·Heal 적용    │
+┌─ [③ Space 키 입력] [2026-09-14 신규] ─────────────────┐
+│  개인 버프는 음성이 아니라 키 입력 — Q(버프 전환)/     │
+│  Space(발동) → RequestSelfBuffServerRpc류             │
+└──────────────────────────────────────────────────────┘
+
+┌─ [④ CheerService (Host)] ────────────────────────────┐
+│  개인: 즉시 발동/쿨. 팀: 1회 통과 누적 → 전원 시 되돌림   │
 └──────────────────────────────────────────────────────┘
 ```
 
-**그래머 크기:** 클라이언트당 2단어(내 이름 + 팀워드)만 인식 대상. 구 방식(4명 전부 이름을 넣던 것)보다 오히려 후보가 줄어 인식률이 더 좋아진다 — cross-targeting이 없어져서 남의 이름을 들을 필요가 없기 때문.
+**그래머 크기 [2026-09-14 변경]:** 개인 버프가 키 입력으로 바뀌면서 클라이언트 로컬 grammar에서 **내 CheerName이 빠지고 TeamCheerWord 1단어만 남는다.** 구 방식(4명 전부 이름) → 2단어(내 이름+팀워드) → **1단어**로 두 번 축소된 것 — 인식 후보가 줄어들수록 인식률은 계속 좋아진다.
 
 ---
 
 ## 2. 코어 규칙
 
-### 2.1 개인 버프 (자기 응원)
+### 2.1 개인 버프 (키 입력) **[2026-09-14 트리거 변경]**
 
 | 규칙 | 내용 |
 |------|------|
 | 수혜자 | 항상 자기 자신 |
-| 필요 인원 | 1 (자기 자신) — **투표 없음, 첫 인식 즉시 발동** |
-| 버프 중 재트리거 | 무시 (표 자체가 없으므로 "쌓임" 개념 없음, 그냥 무시) |
-| 쿨타임 중 재트리거 | 무시 |
+| 트리거 | **`Space`키 입력** (음성/숫자키 `1` 삭제) — 로컬에서 곧바로 `RequestSelfBuffServerRpc`류 호출, 인식 지연 없음 |
+| 필요 인원 | 1 (자기 자신) — **투표 없음, 입력 즉시 발동** |
+| 버프 중 재트리거(Space 재입력) | 무시 |
+| 쿨타임 중 재트리거(Space 재입력) | 무시 |
 | 사망 | 씬 리로드로 자동 초기화(`StageResetOnPlayerDeath`, 기존 동일) |
 
-**쿨타임:** 버프 종료(`remainingTime == 0`) 순간부터 `cheerCooldownSeconds`(기존 15초 유지) 시작.
+**쿨타임:** 버프 종료(`remainingTime == 0`) 순간부터 `cheerCooldownSeconds`(기존 15초 유지) 시작. 트리거 수단만 바뀌었을 뿐 쿨타임 규칙 자체는 변경 없음.
 
-**버프 종류:** 기존 §1.4 버프 선택제 **그대로 유지** — `NetworkPlayerSetup.SelectedBuffType` + Q키 토글 + `RequestToggleBuffTypeServerRpc`. Shield/SpeedUp 모두 M/T 전 스테이지(Boss 포함)에서 자유 선택 가능. 이 문서에서 재변경 없음.
+**버프 종류:** 기존 §1.4 버프 선택제 **그대로 유지** — `NetworkPlayerSetup.SelectedBuffType` + **`Q`키 토글**(기존 `RequestToggleBuffTypeServerRpc`) + **`Space`로 발동(신규)**. Shield/SpeedUp 모두 M/T 전 스테이지(Boss 포함)에서 자유 선택 가능. `Ctrl`(색변환)은 이번 변경과 무관 — 별도 3단 순환 리팩터링 없이 기존 2키(Ctrl=흑백토글, Alt=고유색복귀) 구조 그대로 유지, `Alt`/`Space` 둘 다 색변환과 무관해짐(Space는 자유였고, Alt는 원래 계획했던 후보에서 제외).
+
+**[2026-09-14 변경] Q 토글 잠금 해제:** 기존엔 `CheerService.Instance.IsBuffActive(_colorIndex.Value)`가 true면(버프 발동 중) `RequestToggleBuffTypeServerRpc`가 무조건 거부됐다(쿨타임 중에도 마찬가지로 막혔던 건 아니고, "발동 중"만 막던 잠금). **이 잠금을 없앤다** — 버프 발동 중이든 쿨타임 중이든 언제나 `Q`로 `SelectedBuffType`을 바꿀 수 있다. 단, **이미 적용된 효과는 전환의 영향을 받지 않는다**: `ApplyCheerBuff(type)`가 호출된 시점에 그 버프의 duration/value가 이미 스냅샷됐으므로, 발동 중에 `Q`를 눌러 선택을 바꿔도 지금 돌고 있는 버프는 원래 종류·지속시간 그대로 끝까지 간다. 바뀐 선택은 **다음 번 `Space` 발동부터** 적용된다.
+예: SpeedUp을 Space로 발동한 직후 Q로 Shield로 전환 → 지금 진행 중인 SpeedUp은 그대로 유지, 다음 Space 발동 시 Shield가 나간다.
 
 ### 2.2 팀 버프 (팀 공용 키워드)
 
@@ -82,12 +98,16 @@
 |------|------|
 | 수혜자 | 팀 전원 (그 순간 스폰돼 있는 활성 플레이어 전부) |
 | 필요 인원 | `GameSession.ActivePlayerCount` (제외 없음 — 자기 자신도 포함해서 셈) |
-| 타임아웃 | 첫 인식 후 `teamCheerTimeoutSeconds`(기본값, Inspector 노출) 내 전원 미달 시 표 전부 초기화 |
+| 1회 통과 | 창 안에서 TeamCheerWord **1회** 인식 = 그 사람 통과. 같은 창에서 표 유지. 재외침 불필요(중복 Submit은 기존처럼 무시) |
+| 타임아웃 | **없음.** `teamCheerTimeoutSeconds` / `CheckTeamTimeout` / 미달 시 표 전부 리셋 **폐기**. 구 규칙(첫 인식 후 10초)은 `CheerAndTutorialDesign.md` §2.1 |
 | 효과 | 씬에 등록된 `ITeamCheerRevert` 되돌림 — 입 Open / 침 수면 페이드아웃 / 혀 복구. **Heal 아님**(§0 오버라이드) |
 | 유효 구간 | 함정이 창을 연 동안(Warning~되돌림)만. Idle 중 외침은 무시되고 표도 안 쌓임 |
-| 쿨다운 | **없음.** 팀 쿨 state·NV·세션 저장 전부 삭제(2026-09-05). 창이 닫히면 표도 함께 리셋 |
+| 창 종료 | 전원이 통과해 되돌림이 성공한 뒤에만 닫힘. **실패로 창이 닫히지 않음.** 다음 사이클 창이 열리면 전원 미통과로 다시 시작. **예외(2026-09-14):** 혀 휩쓸기(`RiseHold` 외 패턴)는 공격이 끝나면, 보스 턱(`MouthBossJawSmash`)은 응원 창 제한 시각이 지나면 창(=팀 응원 배너)이 닫힌다 — 그 뒤 외침은 무시, 원상복구 없음, 표는 창과 함께 리셋 (`CheerAndTutorialDesign.md` §2.1) |
+| 인식 조건 | 팀 응원 배너(`TeamCheerWarningUI`, `OnHazardWindowChanged` 구독)가 떠 있는 동안만. Host 판정은 등록된 revert의 `IsAvailable`(창 열림) + 이번 창 미성공(`_teamWindowConsumed == false`) — `ValidateTeamCheer` |
+| 쿨다운 | **없음.** 팀 쿨 state·NV·세션 저장 전부 삭제(2026-09-05). 성공으로 창이 닫히면 표도 리셋(다음 창과 섞이지 않게) |
 | 발동 피드백 | 전원 화면에 짧게 배너 표시 (`TeamCheerCleared`, §8.2) |
 | 솔로(1인) | `ActivePlayerCount==1`이면 자기 혼자 TeamCheerWord 1회로 발동 — 자연스럽게 축소, 별도 예외 코드 불필요 |
+| 머리 위 UI | 미통과 = 빨간 느낌표, 통과 = 그 사람 표시 **소거**. 회색/초록 유지 **폐기** (`PlayerCheerHeartsUI`) |
 
 **개인 버프와 팀 버프는 서로 독립.** 같은 순간에 개인 버프 쿨타임 중이어도 팀 버프 투표/발동에는 영향 없음(그 반대도 마찬가지).
 
@@ -97,12 +117,15 @@
 - 타겟 전환(`HandleTargetSwitch`), 응원자→타겟 매핑(`_cheererTarget`) — 개념 자체가 없어짐.
 - "나를 제외한 전원" 공식(`max(1, ActivePlayerCount-1)`) — 개인 버프는 항상 1(자기 자신), 팀 버프는 `ActivePlayerCount`(제외 없음)로 대체.
 - 숫자키 `3`, `4` — 더 이상 컬러 인덱스를 지목할 대상이 없으므로 제거. `1`=자기 응원, `2`=팀 응원만 남음.
+- **[2026-09-14 신규 삭제]** 개인 버프의 음성 트리거(자기 CheerName 외치기) 전체, 숫자키 `1`(self) — `Space`키로 대체. `2`(team)는 유지.
 
 ---
 
 ## 3. CheerName & TeamCheerWord
 
-### 3.1 CheerName (개인 호출명) — 기존 유지
+### 3.1 CheerName (개인 호출명) — **[2026-09-14 표시 전용으로 축소]**
+
+> **역할 변경:** 개인 버프가 `Space`키로 발동되면서 CheerName은 더 이상 음성 인식 대상이 아니다. 이제 남는 역할은 `TeamStatusUI` 코너 패널에 표시되는 **닉네임**뿐이다. Vosk grammar 등록, "말해보기" 개인 버프 테스트, Tutorial 구역3 개인 응원 체험은 전부 제거 대상(§10.5 Phase F).
 
 | PlayerColorType | 기본 CheerName |
 |-----------------|----------------|
@@ -111,9 +134,10 @@
 | Green | sook |
 | Yellow | dan |
 
-- Tutorial 씬에서 각자 자유 입력·확정·재변경 (`PlayerCheerNameSync`, 잠금 없음, 세션 중 반복 가능).
-- 형식/금칙어 검증: `CheerNameValidator` (길이 2~12, `a-z`/`0-9`/`_`, 예약어·블록리스트).
-- **[신규]** 중복 검사 풀에 **TeamCheerWord도 포함** — 개인 이름이 현재 TeamCheerWord와 겹치면 거절 (§3.3).
+- Tutorial 씬에서 각자 자유 입력·확정·재변경 (`PlayerCheerNameSync`, 잠금 없음, 세션 중 반복 가능) — **이 입력 UI 자체는 유지**(닉네임 커스터마이징 기능으로).
+- 형식/금칙어 검증: `CheerNameValidator` (길이 2~12, `a-z`/`0-9`/`_`, 예약어·블록리스트) — 표시용 문자열이라도 그대로 유지.
+- 중복 검사 풀에 **TeamCheerWord도 포함** — 개인 이름이 현재 TeamCheerWord와 겹치면 거절 (§3.3). TeamCheerWord는 여전히 음성 인식 대상이라 이 충돌 검사는 계속 의미 있음.
+- **[2026-09-14 삭제]** Vosk grammar 등록 대상에서 제외(§3.4), "말해보기"로 자기 CheerName을 발화해 개인 버프를 테스트하는 흐름 삭제.
 
 ### 3.2 TeamCheerWord (팀 공용 키워드) **[신규]**
 
@@ -141,12 +165,14 @@ Host가 TeamCheerWord 설정 시도
 
 두 검증 다 Host 프로세스 내부에서 인스턴스 참조만으로 처리 — 새로운 RPC 경로 불필요.
 
-### 3.4 Vosk 그래머 슬림화 **[변경]**
+### 3.4 Vosk 그래머 슬림화 **[2026-09-14 재축소 — 1단어]**
 
-- 각 클라이언트 로컬 grammar = **[내 CheerName, TeamCheerWord, `[unk]`]** — 딱 2단어. 남의 CheerName은 더 이상 넣지 않음(구 방식은 cross-targeting 때문에 4명 전부 넣었음).
-- 재빌드 트리거: **내 CheerName 변경** 또는 **TeamCheerWord 변경** 시에만 (구 "누구든 이름이 바뀌면 전체 재빌드"에서 축소).
-- `PlayerCheerNameSync.RebuildOwnerLocalGrammar()`와 `CheerService._teamCheerWord.OnValueChanged` 양쪽 다 결국 "내 이름 + 현재 팀워드로 로컬 grammar 재적용"이라는 동일 동작이므로 작은 공용 헬퍼로 묶어서 양쪽에서 호출.
-- Tutorial "말해보기" 테스트 grammar도 인게임과 동일하게 **[내 유효 CheerName, TeamCheerWord]** (`ApplyOwnerLocalGrammar`). 확정 전 입력 후보는 grammar에 넣지 않음(말해보기 전용 UI는 폐기됨).
+- **[2026-09-14 변경]** 각 클라이언트 로컬 grammar = **[TeamCheerWord, `[unk]`]** — 딱 1단어. 개인 버프가 키 입력으로 바뀌면서 내 CheerName은 grammar에서 완전히 빠진다.
+- 재빌드 트리거: **TeamCheerWord 변경** 시에만 (내 CheerName 변경은 더 이상 재빌드 트리거가 아님 — 음성 인식과 무관해졌으므로).
+- `CheerService._teamCheerWord.OnValueChanged` → "현재 팀워드로 로컬 grammar 재적용"이 유일한 재빌드 경로. `PlayerCheerNameSync.RebuildOwnerLocalGrammar()`는 더 이상 grammar에 관여하지 않음(§10.5 Phase F에서 정리).
+- Tutorial/Interlude "말해보기"는 **TeamCheerWord 테스트만** 남는다 — 개인 CheerName 말해보기는 삭제(§10.5).
+
+> (기존 이력, 참고용) 구 방식(cross-targeting): 4명 전부 이름 → 2026-09-01: [내 이름, TeamCheerWord] 2단어 → 2026-09-14: [TeamCheerWord] 1단어. 인식 후보가 줄어들수록 오인식 확률도 계속 낮아졌다.
 
 ---
 
@@ -168,7 +194,7 @@ Host가 TeamCheerWord 설정 시도
 | 항목 | 내용 |
 |------|------|
 | 종류 | 오픈소스 STT (Apache 2.0) |
-| 모드 | **grammar** — 세션 CheerName(내 것) + TeamCheerWord + `[unk]`만 후보 (§3.4) |
+| 모드 | **grammar** — TeamCheerWord + `[unk]`만 후보 (§3.4, 2026-09-14 개인 CheerName 제외) |
 | 비용 | $0, 클라이언트 로컬 처리, 서버 저장 없음 |
 
 ### 4.3 마이크 공유 **[Ship Must · 코드 확정]**
@@ -187,7 +213,8 @@ Dissonance와 Vosk가 동일 마이크를 쓰되, OS `Microphone.Start` **이중
 ```
 [메인]  Dissonance(또는 솔로 마이크) PCM 캡처 → float→short → _pcmQueue
 [워커]  VoskWorker: AcceptWaveform → JSON → _resultQueue
-[메인]  결과 drain → CheerName/TeamCheerWord 매칭 → SubmitSelfCheerServerRpc / SubmitTeamCheerServerRpc
+[메인]  결과 drain(final만) → TeamCheerWord 매칭 → SubmitTeamCheerServerRpc(isVoice: true)
+        (개인 버프는 음성 경로 없음 — Space → RequestSelfBuffServerRpc, §6.1)
 ```
 
 `AcceptWaveform`은 반드시 백그라운드 워커. 메인에서 돌리면 프레임 히치.
@@ -225,31 +252,80 @@ Metaphone/Soundex류 발음 근사로 후보 제안하는 방식은 작업량이
 
 ---
 
-## 6. 입력 — 음성 · 숫자키
+## 6. 입력 — 개인(Space) · 팀(음성·T) · 이모트(숫자키)
 
-### 6.1 음성 흐름
+> **[2026-09-14 구조 변경, 같은 날 2차 조정]** 개인 버프·팀 버프·이모트 셋 다 입력 수단이 서로 다르다. 개인 = `Space` 키 입력 전용(음성 없음). 팀 = 기존대로 음성 우선 + `T`키 대체(§6.3, 구 숫자키). 이모트 = 숫자키 `1`~`8` 직접 트리거(§6.4, 구 `T`홀드 마우스 휠).
+
+### 6.1 개인 버프 — 키 입력 **[2026-09-14 신규]**
+
+| 키 | 동작 | 비고 |
+|---|---|---|
+| `Ctrl` | 색변환(흑백 토글 + 고유색 해제) | 기존 그대로, 이번 변경과 무관 |
+| `Alt` | 고유색 복귀 | 기존 그대로, 이번 변경과 무관 |
+| `Q` | 버프 종류 전환 (Shield ↔ SpeedUp) | 기존 `RequestToggleBuffTypeServerRpc` 재사용, **[2026-09-14] 발동 중/쿨타임 중에도 항상 전환 가능**하도록 잠금 제거(§2.1) |
+| `Space` | 선택된 버프 발동 | **신규.** 로컬 입력 즉시 Host에 요청, 인식 지연 없음 |
+
+```
+[Client Owner] Space 입력
+  → (Host) 버프/쿨 중 아니면 즉시 개인 버프 발동
+```
+
+**[2026-09-14 확정] 입력 소유권:**
+
+| 상황 | Space | 마우스 왼쪽 클릭 |
+|---|---|---|
+| 평소 | 개인 버프 발동 | 펀치 |
+| 대화창(`DialogueUI`, `handleInputLocally=true`) 열림 | 개인 버프 발동(대화와 무관) | **대사 넘기기 전용 — 펀치 안 나감** (`DialogueUI.BlocksPrimaryClick`, 닫힌 프레임 포함). 열린 직후 0.25초는 넘기기도 무시(펀치 연타가 첫 줄을 넘기지 않게) |
+| SequenceRing 진행 중(`Playing`) | **링 입력 전용 — 개인 버프 안 나감** (`SequenceRingMinigame.BlocksSelfBuffSpace`, 링이 Space를 소비한 프레임 포함) | 펀치 |
+| 채팅·치어네임·ESC 메뉴 열림 | 무시 | 대사 넘기기 무시 |
+
+구 규칙("대화 중 Space = 넘기기, 버프 무시")은 폐기 — 대화 넘기기가 좌클릭으로 옮겨졌다.
+
+### 6.2 팀 버프 — 음성 흐름 (기존 유지)
 
 ```
 [Client Owner] 마이크 (Dissonance/Vosk 공유)
-  → Vosk grammar = [내 CheerName, TeamCheerWord]
-  → 내 CheerName 인식 → SubmitSelfCheerServerRpc(isVoice: true)
+  → Vosk grammar = [TeamCheerWord] (2026-09-14, §3.4)
   → TeamCheerWord 인식 → SubmitTeamCheerServerRpc(isVoice: true)
 ```
 
-### 6.2 숫자키 — 기본 비활성, 설정에서 켜기 **[변경]**
+### 6.3 팀 버프 — `T`키 대체 입력, 기본 비활성 **[2026-09-14 숫자키 → T 재배정]**
+
+> **왜 T인가:** 같은 날 이모트 시스템이 숫자키 `1`~`8`을 직접 트리거로 전부 가져가면서(§6.4), 팀 응원용 숫자키 자리가 없어졌다. 마침 `T`는 구 이모트 휠을 여는 키였는데 그 휠 자체가 폐지되면서(§6.4) 비었으므로, 팀 응원 대체 입력을 `T`로 옮긴다.
 
 | 항목 | 규칙 |
 |---|---|
-| 매핑 | `1` = 자기 응원(self), `2` = 팀 응원(team). `3`/`4` 제거 |
+| 매핑 | **[2026-09-14 재배정] `T` = 팀 응원(team)** (구 숫자키 `1`, 그 전엔 `2`). 개인 버프는 `Space`(§6.1), 이모트는 숫자키 `1`~`8`(§6.4) — 이제 세 입력 수단이 서로 겹치지 않는다 |
 | 기본 상태 | **비활성(OFF)** — 음성이 기본 응원 수단이므로 |
-| 활성화 | 옵션(Options) 메뉴에서 토글 (`GameSettingsManager.DigitCheerEnabled`, PlayerPrefs 저장, 마이크 mute 토글과 동일 패턴) |
-| 안내 | Tutorial CheerName/응원 체험 구역에서 "인식이 잘 안 되거나 마이크가 없으면 설정에서 숫자키 응원을 켜세요" 문구 안내 (자동 감지 팝업은 범위 밖 — 텍스트 안내만) |
-| 구현 | `CheerDigitInput.Update()` 최상단에 `if (GameSettingsManager.Instance?.DigitCheerEnabled != true) return;` 가드. Rate limit(`chatRateLimitSeconds`)은 기존 그대로 |
-| 서버 검증 | 음성과 동일 RPC 경로(`SubmitSelfCheerServerRpc`/`SubmitTeamCheerServerRpc`, `isVoice=false`)를 그대로 재사용 |
+| 활성화 | 옵션(Options) 메뉴에서 토글 (`GameSettingsManager.DigitCheerEnabled` → 이름은 더 이상 "숫자키"가 아니므로 `KeyCheerEnabled`류로 개명 검토, PlayerPrefs 저장, 마이크 mute 토글과 동일 패턴) |
+| 안내 | Tutorial CheerName/응원 체험 구역에서 "팀 응원 인식이 잘 안 되거나 마이크가 없으면 설정에서 T키 응원을 켜세요" 문구 안내 (개인 버프는 이제 항상 Space라 이 안내 대상이 아님) |
+| 구현 | `CheerDigitInput`(개명 검토: `CheerKeyInput`) `Update()` 최상단에 `if (GameSettingsManager.Instance?.DigitCheerEnabled != true) return;` 가드는 유지, 감지 키만 숫자 `1` → `Keyboard.current.tKey`로 교체 |
+| 서버 검증 | 음성과 동일 RPC 경로(`SubmitTeamCheerServerRpc`, `isVoice=false`)를 그대로 재사용 |
 
-### 6.3 응원 주체
+### 6.4 이모트 — 숫자키 `1`~`8` 직접 트리거 **[2026-09-14 전면 개편 — 휠 UI 폐지]**
 
-- 자기 CheerName은 **자기가 말함**. 다른 사람 목소리에서 이름을 찾을 필요 없음 (구조 동일, cross-targeting이 없어져서 오히려 더 확실해짐).
+> 이 절은 Cheer 시스템이 아니라 **별도의 이모트 시스템**(`PlayerEmoteMenuUI.cs`) 관련이지만, 오늘 Cheer 쪽 키 재배치와 같은 세션에서 숫자키 소유권이 함께 정리됐으므로 충돌 방지 기록 차원에서 여기 남긴다.
+
+**변경 전:** `T` 홀드 → 도넛형 이모트 휠 열림 → 마우스로 8조각 중 하나를 겨냥한 채 `T`를 떼서 확정. 각도 판정·호버 하이라이트·휠 패널 UI 필요.
+
+**변경 후:** 휠 UI 완전 폐지. 숫자키를 누르면 그 즉시 해당 이모트 애니메이션 발동 — 마우스 조작·홀드·판정 로직 불필요.
+
+| 키 | 이모트 | 재생 방식 |
+|---|---|---|
+| `1` | Yes | 루프(Bool `isYes`) |
+| `2` | No | 루프(Bool `isNo`) |
+| `3` | Thanks | 원샷(Trigger `doThanks`) |
+| `4` | Hide | 루프(Bool `isHide`) |
+| `5` | Point | 루프(Bool `isPoint`) |
+| `6` | Shame | 원샷(Trigger `doShame`) |
+| `7` | Fly | 원샷(Trigger `doFly`) |
+| `8` | Surprise | 원샷(Trigger `doSurprise`) |
+
+- 매핑은 기존 휠의 12시 오른쪽부터 시계방향 순서(Yes→No→Thanks→Hide→Point→Shame→Fly→Surprise)를 그대로 숫자 순서에 대입한 것 — 순서 변경 없음.
+- 루프 이모트(Yes/No/Hide/Point) 중지: **별도 토글 불필요** — 기존처럼 이동 입력이 들어오면 자동 취소(`Player.moveInput` 체크), 또는 다른 이모트 숫자키를 누르면 그걸로 교체. 사용자 확인 완료(2026-09-14): "다른 이모트 들어오면 그게 발동되니 문제없다."
+- 원샷 이모트는 `NetworkAnimator.SetTrigger`로 전송(기존 `PlayByIndex`/`PlayOneShotEmote` 로직과 동일 원칙 유지, 트리거 경로만 마우스 판정 대신 숫자키 직접 매핑으로 교체).
+- **코드 영향:** `PlayerEmoteMenuUI.cs`의 각도 판정(`ResolveHoveredIndex`)·호버 하이라이트(`ApplyAllSlotVisuals`)·휠 패널 열기/닫기(`OpenMenu`/`CloseMenu`)·`T`키 홀드-릴리스 로직이 전부 불필요해지고, `CheerDigitInput`과 유사한 "숫자키 → 즉시 Animator 파라미터 세팅" 단순 컴포넌트로 대체된다. **씬의 `Emote_Panel`(도넛 UI 프리팹)도 더 이상 쓰이지 않음 — 삭제는 사용자 에디터 작업.**
+- Dialogue UI 등 기존 UI-오픈 가드(`InGameChatUI.IsChatOpen`, `TutorialCheerNameUI.IsOpen`)는 그대로 유지 — 그 구간에는 숫자키 이모트 입력도 무시.
 
 ---
 
@@ -260,32 +336,33 @@ Metaphone/Soundex류 발음 근사로 후보 제안하는 방식은 작업량이
 ```
 [각 Client]
   Dissonance: 팀 보이스 송수신
-  Vosk: 로컬 키워드(내 이름/팀워드)
-  CheerDigitInput: 숫자키 1/2 (설정 ON일 때만)
-  → SubmitSelfCheerServerRpc(isVoice) / SubmitTeamCheerServerRpc(isVoice)
+  Vosk: 로컬 키워드(팀워드만, 2026-09-14)
+  CheerDigitInput(개명검토 CheerKeyInput): T키 (팀, 설정 ON일 때만. 2026-09-14 재배정, self·숫자키 매핑은 삭제)
+  Space: 개인 버프 발동 (2026-09-14 신규, 키 입력 — 음성 아님)
+  → RequestSelfBuffServerRpc() / SubmitTeamCheerServerRpc(isVoice)
 
 [Host]
   CheerService:
     개인: sender 색 조회 → 즉시 버프 발동/쿨 체크
-    팀: 가상 풀에 표 누적 → 타임아웃/쿨 체크 → 발동 시 전원 Heal
+    팀: 가상 풀에 1회 통과 누적 → 전원 시 되돌림
     → NetworkVariable / ClientRpc (UI, 버프·팀워드 미러링)
 ```
 
 - 응원 판정용 음성은 서버로 스트리밍하지 않음. 팀 대화 음성은 Dissonance P2P.
 - 게임 규칙(집계·버프·Heal) = **Host**.
 
-### 7.2 RPC 구조 **[변경]**
+### 7.2 RPC 구조 **[2026-09-14 개인 버프 RPC 시그니처 변경]**
 
 | RPC | 방향 | 처리 |
 |---|---|---|
-| `SubmitSelfCheerServerRpc(bool isVoice)` | Client→Host | 서버가 `PlayerSpawnCoordinator.TryGetColor(senderId)`로 자기 색 조회 → 버프 중/쿨 중 아니면 즉시 `ApplyBuff` |
-| `SubmitTeamCheerServerRpc(bool isVoice)` | Client→Host | 가상 "team" 풀에 표 추가 → `ActivePlayerCount` 충족 시 `ApplyTeamBuff`(= 등록된 `ITeamCheerRevert` 되돌림. **Heal 아님** — §0 오버라이드) |
-| `RequestToggleBuffTypeServerRpc` | Owner→Host | 기존 유지 (Shield/SpeedUp 선택) |
+| `RequestSelfBuffServerRpc()` (구 `SubmitSelfCheerServerRpc(bool isVoice)`) | Client→Host | **[2026-09-14]** `isVoice` 파라미터 삭제 — 트리거가 항상 Space 키 입력이라 음성 여부 구분이 무의미해짐. 서버가 `PlayerSpawnCoordinator.TryGetColor(senderId)`로 자기 색 조회 → 버프 중/쿨 중 아니면 즉시 `ApplyBuff` |
+| `SubmitTeamCheerServerRpc(bool isVoice)` | Client→Host | 변경 없음. 가상 "team" 풀에 표 추가 → `ActivePlayerCount` 충족 시 `ApplyTeamBuff`(= 등록된 `ITeamCheerRevert` 되돌림. **Heal 아님** — §0 오버라이드) |
+| `RequestToggleBuffTypeServerRpc` | Owner→Host | Shield/SpeedUp 선택(`Q`키). **[2026-09-14]** `IsBuffActive` 체크로 발동 중 전환을 막던 잠금 제거 — 언제나 `SelectedBuffType`만 바꿈, 이미 적용된 효과엔 영향 없음(§2.1) |
 | `ApplyCheerBuffClientRpc` | Host→All | 기존 유지 |
 | `BroadcastTeamBuffActivatedClientRpc(int generation, double resumeAt)` | Host→All | 되돌림 명령(세대 + 다음 창 재개 ServerTime) + 배너(`OnTeamBuffActivated`). 팀 쿨 없음 |
-| `BroadcastTeamVoteChangedClientRpc` | Host→All | **신규** — 팀 진행도 UI (누가 이미 외쳤는지) |
+| `BroadcastTeamVoteChangedClientRpc` | Host→All | 팀 진행도 UI (누가 이미 외쳤는지) |
 
-**삭제:** `SubmitCheerServerRpc(targetColorIndex, isVoice)`, `HandleTargetSwitch`, `_cheererTarget`, `GetCheererColorIndices`(개인 타겟용) — cross-targeting 제거로 불필요.
+**삭제:** `SubmitCheerServerRpc(targetColorIndex, isVoice)`, `HandleTargetSwitch`, `_cheererTarget`, `GetCheererColorIndices`(개인 타겟용) — cross-targeting 제거로 불필요. **[2026-09-14 추가 삭제 대상]** `SubmitSelfCheerServerRpc`의 `isVoice` 파라미터, `CheerKeywordEngine`의 self-cheer 음성 인식 분기, `CheerDigitInput`의 `1`(self) 분기.
 
 ### 7.3 Heal 파이프라인 **[현재 팀 응원은 안 씀]**
 
@@ -315,17 +392,17 @@ public void ApplyHealFromServer(int amount)
 
 ### 7.4 치팅 방어 (Open 수준)
 
-- 개인: 버프 중/쿨 중 재요청 무시.
-- 팀: 동일 클라이언트 중복 투표 무시(Set 기반), rate limit(숫자키).
+- 개인: 버프 중/쿨 중 재요청 무시. 연타 제한은 쓰지 않음(2026-09-14 — 팀 응원 T키와 버킷을 공유해 Space가 조용히 거절되던 문제 제거, 중복 RPC도 버프 중 체크로 거절).
+- 팀: 동일 클라이언트 중복 투표 무시(Set 기반), rate limit(`T`키 입력만, 음성은 제외).
 - Host가 모든 최종 판정.
 
 ---
 
 ## 8. UI
 
-### 8.1 개인 버프 — `CheerProgressUI` (기존 유지)
+### 8.1 개인 버프 — `CheerProgressUI` (구조 유지, 트리거만 변경)
 
-Idle(선택 아이콘) / BuffActive(fill) / Cooldown(숫자) 3상태, Q키 입력 통합. **변경 없음.**
+Idle(선택 아이콘) / BuffActive(fill) / Cooldown(숫자) 3상태 구조는 **변경 없음.** `Q`키(버프 종류 전환)도 기존 그대로. **[2026-09-14]** Idle 상태에서 발동을 기다리는 입력이 음성 인식이 아니라 `Space`키 대기로 바뀜 — UI 상 "지금 눌러야 하는 키" 안내가 있다면 `Space`로 갱신 필요.
 
 ### 8.2 팀 버프 UI **[신규]**
 
@@ -334,7 +411,7 @@ Idle(선택 아이콘) / BuffActive(fill) / Cooldown(숫자) 3상태, Q키 입�
 | **`TeamCheerCleared`** (구 이름 `TeamBuffBannerUI`) | 팀 응원 성공 시 화면 가운데 스탬프. `CheerService.OnTeamBuffActivated` 구독. `UI.prefab`에 배치됨 |
 | **`TeamCheerWarningUI`** | 팀 응원 가능 구간(Warning~되돌림) 경고. `CheerService.OnHazardWindowChanged` 구독. `UI.prefab`에 배치됨 |
 | ~~`TeamBuffCooldownUI`~~ | **삭제됨** — 팀 쿨(120초) 폐기와 함께 스크립트·NV·이벤트 전부 제거(2026-09-05) |
-| `PlayerCheerHeartsUI` (역할 재정의) | 구: "나를 응원 중인 남들" 표시 → **신: "이 플레이어가 이번 팀워드 라운드에 이미 외쳤는지"**를 그 플레이어 자기 머리 위에 하트 1개 온/오프로 표시 |
+| `PlayerCheerHeartsUI` (역할 재정의) | 구: "나를 응원 중인 남들" → 팀워드 라운드 머리 위 표시. **[2026-09-14]** 창 동안 미통과=빨간 느낌표, 1회 통과=그 사람 표시 소거. 회색/초록 구 **폐기** (`CheerAndTutorialDesign.md` §2.1) |
 | `TeamStatusUI` (숫자키 아이콘 자리 교체) | 구: 팀원별 숫자키(1~4) 아이콘 → **신: 팀워드 진행도**(그 팀원이 이미 외쳤는지 체크마크) |
 | `PlayerNameTagUI` | 본인 "지금 응원 중인 대상" 표시 제거 (더 이상 타겟 개념 없음) |
 
@@ -347,7 +424,7 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 
 ### 8.4 숫자키 옵션 토글 **[신규]**
 
-`OptionsMenuController`에 마이크 mute 토글과 동일한 방식으로 "숫자키로 응원하기" 체크박스 추가.
+`OptionsMenuController`에 마이크 mute 토글과 동일한 방식으로 "숫자키로 응원하기" 체크박스 추가. **[2026-09-14]** 키가 `T`로 재배정돼 라벨은 "T키로 응원하기"가 맞다(코드 설정명 `DigitCheerEnabled`는 유지, 라벨만 에디터에서 변경).
 
 ---
 
@@ -357,7 +434,7 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 |---|---|---|---|
 | `PlayerBuffSystem.buffSettings[type].duration` | `PlayerBuffSystem` | Shield/SpeedUp 지속 | Shield 5초 / SpeedUp 10초 (기존 유지) |
 | `cheerCooldownSeconds` | `CheerService` | 개인 버프 종료 후 쿨 | 15초 (기존 유지) |
-| `teamCheerTimeoutSeconds` | `CheerService` | 팀 첫 인식 후 전원 미달 타임아웃 | 10초 |
+| ~~`teamCheerTimeoutSeconds`~~ | — | **삭제됨 (2026-09-14).** 첫 인식 후 10초 표 리셋 폐기. 1회 통과는 창이 끝날 때까지 유지 | — |
 | `chatRateLimitSeconds` | `CheerService` | 숫자키 응원 간격 | 0.5~1초 (기존 유지) |
 | 함정 `randomIntervalMin/Max` + `warnDuration` | M/T 각 함정 | Idle / 경고 | 스테이지별 인스펙터 (경고 **4초**) |
 | ~~`teamCheerCooldownSeconds`~~ / ~~`teamHealAmount`~~ | — | **삭제됨** — 팀 쿨 120초·+2힐 폐기(§0 오버라이드). 창 주기는 함정 인스펙터 | — |
@@ -413,8 +490,8 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 
 | # | 작업 | 파일 |
 |---|---|---|
-| C1 | 머리 위 하트 = "이번 팀워드 라운드에 이미 외쳤는지" | `PlayerCheerHeartsUI` |
-| C2 | 죽은 숫자키 아이콘 슬롯 제거(교체 아이콘 없음 — 사용자 결정 2026-09-01, 팀워드 진행도는 C1 머리 위 하트로만) | `TeamStatusUI` |
+| C1 | 머리 위 표시 = 이번 창 미통과 여부. **[2026-09-14]** 빨간 느낌표 / 통과 시 소거 (구 회색·초록 구는 폐기) | `PlayerCheerHeartsUI` |
+| C2 | 죽은 숫자키 아이콘 슬롯 제거(교체 아이콘 없음 — 사용자 결정 2026-09-01, 팀워드 진행도는 C1 머리 위 구로만) | `TeamStatusUI` |
 | C3 | "지금 응원 중인 대상" 표시 제거 | `PlayerNameTagUI` |
 | C4 | **"Team Buff!"** 배너 (2~3초) | 신규 컴포넌트 (오브젝트 배치는 사용자) |
 
@@ -438,7 +515,7 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 사용자 에디터:
 
 - ~~Tutorial 씬에 `CheerService` 배치 (D0)~~ **완료**
-- `CheerService` Inspector: 팀 쿨 / 타임아웃(시작 10초) / Heal 2
+- `CheerService` Inspector: 개인 쿨 15초 유지. ~~팀 쿨 / 타임아웃 10초 / Heal 2~~ 폐기. **[2026-09-14]** `teamCheerTimeoutSeconds` 필드 제거 예정
 - Options 체크박스, Team Buff 배너 연결
 - Tutorial CheerName 패널: Host 팀워드 입력 필드·확정 버튼·현재값 텍스트 연결 (D1)
 - Tutorial 구역 3 체험 재배치 (D4)
@@ -446,8 +523,58 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 
 테스트:
 
-- ParrelSync 2인: Host 팀워드 설정, 전원 외침, Heal, 쿨/타임아웃
+- ParrelSync 2인: Host 팀워드 설정, 각자 1회 통과 누적, 전원 시 되돌림. **10초 표 리셋이 없어야 함**
 - Steam 2인·4인은 Tutorial 문서 출시 게이트 — Phase D 이후
+
+---
+
+## 10.5 Phase F — 개인 버프 키 입력 전환 (2026-09-14 설계 확정, **코드 완료 2026-09-14**)
+
+> **왜:** 음성 인식은 지연·오인식이 구조적 한계라 "원하는 타이밍에 정확히 발동"이 필요한 개인 버프와 안 맞았다(§0 오버라이드 참고). 팀 버프(TeamCheerWord)는 타이밍 정밀도가 중요하지 않아 그대로 음성 유지, 개인 버프만 키 입력으로 전환한다.
+>
+> **추가 확정(2026-09-14, 코드 반영 완료 — 같은 날 재변경):** 대화 넘기기는 Space가 아니라 **마우스 왼쪽 클릭**(대화창이 떠 있는 동안 펀치 안 나감). **SequenceRing 진행 중 Space는 링 입력 전용 — 개인 버프 안 나감.** 대화 중 Space 버프 차단은 폐기. 입력 소유권 표는 §6.1.
+
+| # | 작업 | 파일 | 상태 |
+|---|---|---|---|
+| F1 | `RequestSelfBuffServerRpc()` — `isVoice` 파라미터 제거, `SubmitSelfCheerServerRpc` 대체 | `CheerService.cs` | **완료** |
+| F2 | `Player.cs`의 `GetInput()`에 `Space` 읽기 추가, SequenceRing 진행 중·ESC 등 커서 UI 열림 중엔 무시(위 추가 확정), 그 외엔 F1 호출(서버가 버프/쿨 최종 판정). 대화 넘기기는 좌클릭(`DialogueUI`) + 대화 중 펀치 차단(`PlayerPunch`) | `Player.cs`, `DialogueUI.cs`, `PlayerPunch.cs`, `SequenceRingMinigame.cs` | **완료** |
+| F3 | `CheerKeywordEngine`에서 self-cheer 음성 인식 분기 삭제, grammar를 `[TeamCheerWord, [unk]]` 1단어로 축소(§3.4) | `CheerKeywordEngine.cs` | **완료** |
+| F4 | `PlayerCheerNameSync`의 grammar 관련 로직에서 CheerName 관여 제거 — CheerName 변경이 더 이상 grammar 재빌드를 트리거하지 않음 | `PlayerCheerNameSync.cs` | **완료** |
+| F5 | `CheerDigitInput`에서 self(숫자 `1`) 분기 삭제, 팀 응원 감지 키를 `Keyboard.current.tKey`로 교체(§6.3) | `CheerDigitInput.cs` | **완료**(클래스명 `CheerKeyInput` 개명은 보류) |
+| F6 | Tutorial 구역3 "개인 응원 체험" → Space 키 안내로 교체(또는 팀 응원 체험만 남기고 개인은 구역2/HUD 안내로 대체) — 콘텐츠 결정은 `CheerAndTutorialDesign.md` §2 | `CheerAndTutorialDesign.md`, 사용자 에디터 | **미착수** |
+| F7 | "말해보기" 테스트 범위를 TeamCheerWord로만 한정 — 개인 CheerName 말해보기 UI 문구/흐름 제거 | `TutorialCheerNameUI.cs` 관련 문구 | **미착수**(코드상 self 테스트 경로는 F3에서 이미 제거됨 — 남은 건 씬 텍스트/흐름) |
+| F8 | `RequestToggleBuffTypeServerRpc`의 `IsBuffActive` 잠금 제거 — 발동 중/쿨타임 중에도 항상 `SelectedBuffType` 전환 가능하게. `CheerProgressUI`의 로컬 선(先)차단도 함께 제거 | `NetworkPlayerSetup.cs`, `CheerProgressUI.cs` | **완료** |
+| F9 | **[이모트, Cheer와 별개 시스템이지만 같은 세션에 결정됨, §6.4]** `PlayerEmoteMenuUI`를 휠 UI 대신 숫자키 `1`~`8` 직접 트리거 컴포넌트로 재작성. `PlayerEmoteMenuUI.IsOpen`/`ConsumedEscThisFrame` 삭제에 맞춰 `EscMenuController`의 참조도 함께 정리 | `PlayerEmoteMenuUI.cs`, `EscMenuController.cs` | **코드 완료** — 씬의 `Emote_Panel` 삭제는 사용자 에디터 |
+
+**변경 없음(재작성 금지):** `Ctrl`/`Alt` 색변환 로직, TeamCheerWord 음성 경로, `CheerProgressUI`의 3상태 구조.
+
+**남은 사용자 에디터 작업(§10.6 참고):** Inspector 필드 정리, 씬의 `Emote_Panel` 삭제, Tutorial 구역3/말해보기 콘텐츠(F6·F7).
+
+## 10.6 Phase F 사용자 에디터 체크리스트 (2026-09-14)
+
+Phase F 코드 반영 후 씬/프리팹/Inspector에서 사용자가 정리해야 할 것. 에이전트는 `.cs`/Docs만 건드렸고 아래는 전부 미반영 상태.
+
+**삭제**
+
+- [ ] `UI.prefab`의 `Emote_Panel`(도넛 이모트 휠 루트, `Btn.Yes`~`Btn.Surprise` 8슬롯 포함) — `PlayerEmoteMenuUI`가 더 이상 참조하지 않음
+- [ ] `PlayerEmoteMenuUI` 컴포넌트의 구 Inspector 필드 값(비워도 무방, 필드 자체는 코드에서 이미 제거됨): `emoteMenuPanel`, `slotImages`, `innerRadius`/`outerRadius`, `slotHighlightColor`, `highlightScale`, `lockCursorOnClose` — 재작성된 스크립트에 해당 필드가 없으므로 재부착 시 자동으로 사라짐. 씬에 남은 컴포넌트가 있다면 Missing Script/필드 경고가 뜨는지 확인
+- [ ] Tutorial 구역3의 구 "개인 응원(자기 CheerName 외치기)" 체험 오브젝트/안내판 — cross-target 폐기 이후로도 남아있던 개인 음성 체험이라면 제거 대상(F6)
+- [ ] Tutorial "말해보기" UI에서 개인 CheerName 테스트 관련 문구/버튼 — 팀워드 테스트만 남김(F7)
+
+**변경**
+
+- [ ] `EmoteHintUI`의 `hintLabel` 텍스트: "T: 이모트" → "1~8: 이모트" 류로 문구 수정 (T는 이제 팀 응원 키)
+- [ ] 모든 `Dialogue_Panel`의 `skipHint`(스킵 안내 이미지/문구): "Space" → "좌클릭"으로 교체 (대화 넘기기 입력 변경)
+- [ ] SequenceRing(M.Stage4) 안내에 "링 진행 중 Space는 버프 대신 링 입력" 설명이 필요하면 추가
+- [ ] Player 프리팹 `PlayerCheerHeartsUI.exclamationPrefab`에 `Assets/Prefab/CheerExclamation.prefab` 연결 (구 `sphereMaterial`/색 필드는 삭제됨)
+- [ ] Tutorial 팀 응원 안내 문구: "숫자키 응원을 켜세요" → "T키 응원을 켜세요"로 수정(§6.3) — Options 토글 이름 자체(`DigitCheerEnabled`)는 코드상 안 바꿨으니 UI 라벨만 맞추면 됨
+- [ ] `CheerProgressUI`/HUD 쪽에 "지금 눌러야 하는 키" 텍스트가 있다면 Space로 갱신(§8.1)
+- [ ] Options 메뉴 "숫자키로 응원하기" 체크박스 라벨을 "T키로 응원하기"류로 검토(선택)
+
+**확인(값 변경 불필요, 동작 점검용)**
+
+- [ ] `CheerService` Inspector의 `cheerCooldownSeconds`(15초)·`chatRateLimitSeconds`(0.5~1초). ~~`teamCheerTimeoutSeconds`(10초)~~ **폐기 (2026-09-14)** — ParrelSync로 Space 발동/쿨/Q 전환 + 팀 1회 통과 누적 플레이테스트
+- [ ] Player 프리팹에 `Keyboard.current.spaceKey` 입력이 다른 UI(예: 커스텀 InputAction)와 충돌하지 않는지 — 이 프로젝트는 Player.cs가 `Keyboard.current`를 직접 읽는 방식이라 Input Action 에셋 수정은 불필요
 
 ---
 
@@ -467,12 +594,14 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 | Phase D D1·D2 (Tutorial UI + 세션 저장) | **코드 완료** (§10.4) |
 | 플레이테스트 | 아직 없음 (Phase E) |
 
-### 한 줄 계약 (이미 살아 있음)
+### 한 줄 계약 (Phase A 시점 기록 — **2026-09-14 Phase F로 대체됨, §10.5 참고**)
 
 ```
 숫자키 1 / 내 CheerName 인식 → SubmitSelfCheerServerRpc → Host 즉시 개인 버프/쿨
 숫자키 2 / TeamCheerWord 인식 → SubmitTeamCheerServerRpc → Host 팀 투표·타임아웃·전원 Heal
 ```
+
+> **현재는 다르다:** 개인 버프는 `Space`키(§6.1), 팀 응원 대체 입력은 `T`키(§6.3), 이모트는 숫자키 `1`~`8`(§6.4), 팀 표는 1회 통과 누적·10초 리셋 없음(§2.2). 이 블록은 Phase A 완료 시점 기록으로만 보존.
 
 구 `SubmitCheerServerRpc(targetColorIndex)` / `_cheererTarget` / `HandleTargetSwitch` **삭제됨. 부활 금지.**
 
@@ -496,22 +625,22 @@ CheerService가 호출할 것들부터 만든 뒤, 코어를 새 RPC 계약으�
 
 공개/RPC:
 
-- `SubmitSelfCheerServerRpc(bool isVoice)` — sender 색 → `ValidateSelfCheer` → `ApplyBuff`
-- `SubmitTeamCheerServerRpc(bool isVoice)` — `ValidateTeamCheer` → `_teamVotes` HashSet → 충족 시 `ApplyTeamBuff`
+- `RequestSelfBuffServerRpc()` (구 `SubmitSelfCheerServerRpc(bool isVoice)`, 2026-09-14) — sender 색 → `ValidateSelfCheer`(버프 중/쿨 중만, 연타 제한 없음) → `ApplyBuff`
+- `SubmitTeamCheerServerRpc(bool isVoice)` — `ValidateTeamCheer` → `_teamVotes` HashSet(1회 통과, 타임아웃 없음) → 충족 시 `ApplyTeamBuff`(되돌림 브로드캐스트 → 표 리셋 순서)
 - `TrySetTeamCheerWord(string, out reason)` — Host(`IsServer`)만. 실패: `"format"` / `"reserved"` / `"blocked"` / `"taken"` / `"not_server"`. RPC 없음
 - `MatchesTeamCheerWord(string lower)` / `TeamCheerWord` 프로퍼티
 - `_teamCheerWord` NV: Server write, Everyone read, 기본 `"fighting"`
 - `OnNetworkSpawn`: 전원 `_teamCheerWord.OnValueChanged` 구독 + `RebuildOwnerLocalGrammar`. Host만 `HasSessionTeamCheerWord`면 세션값을 NV에 복사
 - `RegisterRevert` / `UnregisterRevert` / `NotifyHazardWindow(bool)` — 씬당 `ITeamCheerRevert` 하나. 중복 등록은 경고 로그
-- Inspector: `cheerCooldownSeconds`(15), `teamCheerTimeoutSeconds`(10), `chatRateLimitSeconds`(0.5)
+- Inspector: `cheerCooldownSeconds`(15), `chatRateLimitSeconds`(0.5). ~~`teamCheerTimeoutSeconds`(10)~~ **폐기 (2026-09-14)**
 
 Host 내부:
 
 - 개인: `_buffEnd` / `_cooldownEnd` (colorIndex), `_chatRateEnd` (clientId, 숫자키만, 음성은 rate skip)
-- 팀: `_teamVotes`, `_teamTimeoutStart`, `_teamWindowConsumed`(이번 창 이미 되돌림 — 창이 새로 열릴 때 해제). **팀 쿨 state 없음**
+- 팀: `_teamVotes`, `_teamWindowConsumed`(이번 창 이미 되돌림 — 창이 새로 열릴 때 해제). **팀 쿨 없음. `_teamTimeoutStart` / `CheckTeamTimeout` 폐기 (2026-09-14, 코드 미착수).**
 - `GetRequiredTeamVotes()` = `max(1, ActivePlayerCount)` (폴백: `ConnectedClientsIds.Count`)
 - `ApplyTeamBuff`: `_revert.BuildRevertOrder`로 세대·재개 시각을 Host가 정하고 `BroadcastTeamBuffActivatedClientRpc`로 전 머신에 그대로 전달 (전원 Heal **아님**)
-- `ResetTeamVotes`: Host 전용 + 이미 비어 있으면 no-op + `IsSpawned`일 때만 ClientRpc. 창이 닫힐 때(`NotifyHazardWindow(false)`)도 호출돼 표가 창을 넘어가지 않음
+- `ResetTeamVotes`: Host 전용 + 이미 비어 있으면 no-op + `IsSpawned`일 때만 ClientRpc. **성공으로 창이 닫힐 때**(`NotifyHazardWindow(false)`) 호출해 표가 다음 창으로 넘어가지 않음. 미달 N초 리셋으로는 **호출하지 않음** (2026-09-14)
 
 UI 이벤트:
 
@@ -520,7 +649,7 @@ UI 이벤트:
 | `OnBuffActivated` / `OnCooldownStart` | ClientRpc → 로컬 이벤트. 개인 버프 HUD | `CheerProgressUI` (유지, 손대지 않음) |
 | `OnTeamBuffActivated` | 되돌림 ClientRpc 직후 | `TeamCheerCleared` (§10.3). **GO 미배치면 배너만 없음** |
 | `OnHazardWindowChanged(bool)` | 함정이 `NotifyHazardWindow` 호출 (머신 로컬) | `TeamCheerWarningUI` |
-| `OnTeamVoteChanged(current, required, voterColorIndices)` | 표 추가/리셋 때 ClientRpc | `PlayerCheerHeartsUI` / `TeamStatusUI` (§10.3) |
+| `OnTeamVoteChanged(current, required, voterColorIndices)` | 표 추가 때 ClientRpc (미달 N초 리셋 **없음**) | `PlayerCheerHeartsUI` (§10.3). `TeamStatusUI` 구독 **금지** |
 
 ### 리뷰 결정 (이미 반영)
 
@@ -593,18 +722,26 @@ Phase C에서 하지 말 것은 유지됐다: CheerService RPC 재작성, gramma
 
 ### 한 줄
 
-팀워드 투표 중 → 머리 위 하트 1개(코너 패널엔 표시 없음). 발동 → 배너(`TeamCheerCleared`). 타겟 개념/구 투표 이벤트/팀 쿨 HUD 없음.
+팀 응원 창 동안 → 미통과만 머리 위 빨간 느낌표, 1회 통과 시 그 사람 표시 소거(코너 패널엔 없음). 전원 통과 → 되돌림 + 배너(`TeamCheerCleared`). 10초 표 리셋 없음 (`CheerAndTutorialDesign.md` §2.1).
 
 ### 파일별
 
 | 파일 | 무엇을 넣었나 | 다음 에이전트가 알 것 |
 |---|---|---|
-| `PlayerCheerHeartsUI.cs` | `OnTeamVoteChanged` — 자기 colorIndex가 voter에 있으면 자기 색 하트 1개 ON | 구 "누가 나를 응원 중" 하트 여러 개 **부활 금지**. 타임아웃/발동은 빈 voter 배열로 OFF. 팀워드 진행도를 보여주는 **유일한** UI(코너 패널엔 없음) |
+| `PlayerCheerHeartsUI.cs` | `OnHazardWindowChanged` → 표시 ON/OFF, `OnTeamVoteChanged` — 자기 colorIndex가 voter에 있으면 **소거**, 없으면 빨간 느낌표 | 구 하트 여러 개 **부활 금지**. 구 회색/초록 유지 **폐기**. 미달 N초로 표를 비우지 않음. 팀워드 진행도를 보여주는 **유일한** UI(코너 패널엔 없음) |
 | `TeamStatusUI.cs` | `keyIconSprites`(죽은 숫자키 3/4 아이콘) 삭제, 대체 아이콘 없음. 이름+HP 하트만 | **사용자 결정(2026-09-01): 코너 패널에 팀워드 체크 아이콘 추가하지 않음.** `CheerService.OnTeamVoteChanged` 구독 **부활 금지** — 팀워드 진행도는 오직 `PlayerCheerHeartsUI`(머리 위)로만 표시 |
 | `PlayerNameTagUI.cs` | 로컬 오너 "응원 대상" 분기 삭제. 타인 CheerName만 | `hideForLocalOwner` 유지. 타겟 텍스트 슬롯 **부활 금지** |
 | `TeamCheerCleared.cs` (구 `TeamBuffBannerUI.cs`) | `OnTeamBuffActivated` → 페이드 배너 (`StageClearBannerUI` 패턴) | `UI.prefab`에 배치 완료 |
 | ~~`TeamBuffCooldownUI.cs`~~ | **삭제됨** (2026-09-05) — 팀 쿨 폐기. `OnTeamCooldownClockChanged` / `_teamCooldownEndNv` / `GameSession` 쿨 저장도 함께 제거 | **부활 금지** |
 | `CheerService.cs` | `OnVoteChanged` / `OnVoteReset` / `OnCheerersChanged` 삭제 | 구 이벤트 **부활 금지.** RPC 재작성 금지 |
+
+> **2026-09-13 수정:** `PlayerCheerHeartsUI`의 표시 방식을 재정의. World Space 2D 하트 스프라이트(`colorHeartMap`) → 코드 생성 3D 구로 교체. 인스펙터 `sphereMaterial`에 흰색 URP Unlit 머티리얼 1개를 연결하고, 색은 `_BaseColor`만 MaterialPropertyBlock으로 회색=대기/초록=인식으로 바꾼다(빌드에서 `Shader.Find`가 셰이더 스트리핑으로 실패하므로 코드 생성 머티리얼 사용 안 함). 창 열림(피어 로컬)과 표 명단(Host RPC)의 도착 순서가 달라도 마지막 표 상태를 기억해 창 열림 시 그 값으로 칠한다.
+> 뜨는 시점도 `OnTeamVoteChanged`(발동/타임아웃)뿐 아니라 `OnHazardWindowChanged(true)`(경고 창 시작)로 확장 — 창이 열리면 전원 회색 구가 먼저 뜨고, 투표가 들어오면 그 사람만 초록, 타임아웃으로 리셋되면(창 유지) 다시 회색, 창이 닫히면 구 자체가 꺼진다.
+> 색은 플레이어 고유색이 아니라 회색/초록 2색 고정(전원 동일). "팀워드 진행도를 보여주는 유일한 UI(코너 패널엔 없음)" 원칙은 그대로 유지.
+>
+> **2026-09-14 재정의:** 위 회색/초록 구·타임아웃 시 다시 회색은 **폐기**. 메시는 3D 느낌표(`CheerExclamation`). 미통과=빨강, 1회 통과=그 사람 표시 소거. 10초 표 리셋 없음. `CheerAndTutorialDesign.md` §2.1.
+>
+> **같은 날 추가 수정:** `PlayerNameTagUI.cs` 삭제(사용자 결정) — 개인 버프가 자기 자신에게만 적용되는 구조라 캐릭터 머리 위에 남의 CheerName을 띄울 이유가 없다(과거 "서로 응원" 구조의 잔재). 그 정보(게임 닉네임)는 `TeamStatusUI`로 옮겨, 기존 Steam 닉네임 옆에 `"BERRY (영준)"` 형식으로 같이 표시한다(`TeamStatusUI.GetSlotNameLabel`). `PlayerCheerNameSync.OnAnyCheerNameChanged` 구독을 추가해 CheerName이 바뀌면 코너 패널도 즉시 갱신한다. 머리 위에는 이제 `PlayerCheerHeartsUI` 구만 남는다.
 
 ### Phase D 착수점 — **D1·D2 완료.** 상세는 §10.4.
 
@@ -687,6 +824,19 @@ Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheer
 - [ ] 구역 3 재설계 — 구 cross-target 체험 → 자기 응원 + 팀 응원 (에디터)
 - [x] 인수인계 기록 (`CheerSystemDesign.md` §10.4)
 
+**Phase F (2026-09-14 신규 — 개인 버프 키 입력 전환)**
+
+- [ ] `CheerService.RequestSelfBuffServerRpc()` — `isVoice` 제거, 기존 `SubmitSelfCheerServerRpc` 대체
+- [ ] `Player.cs` — `Space` 입력 읽기 + 버프 발동 요청, Dialogue UI 열림 가드
+- [ ] `CheerKeywordEngine` — self-cheer 음성 분기 삭제, grammar `[TeamCheerWord]` 1단어로 축소
+- [ ] `PlayerCheerNameSync` — grammar 관련 CheerName 관여 제거
+- [ ] `CheerDigitInput` — self 분기 삭제, 팀 응원 감지 키를 `T`로 교체(숫자키 아님)
+- [ ] Tutorial 구역3 콘텐츠 교체 (에디터)
+- [ ] "말해보기" 문구/흐름을 TeamCheerWord 전용으로 축소
+- [ ] `NetworkPlayerSetup.RequestToggleBuffTypeServerRpc` — `IsBuffActive` 잠금 제거(발동/쿨타임 중에도 Q 전환 허용)
+- [ ] `PlayerEmoteMenuUI` — 휠 UI 폐지, 숫자키 `1`~`8` 직접 트리거로 재작성 (§6.4, Cheer와 별개 시스템)
+- [ ] 인수인계 기록 (`CheerSystemDesign.md` §10.5)
+
 ---
 
 ## 12. 관련 코드
@@ -710,13 +860,13 @@ Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheer
 | 로컬 HP UI | `Assets/Scripts/UI/PlayerHPUI.cs` |
 | 팀 UI | `Assets/Scripts/UI/TeamStatusUI.cs` |
 | 진행도 UI | `Assets/Scripts/UI/PlayerCheerHeartsUI.cs` |
-| 이름표 UI | `Assets/Scripts/UI/PlayerNameTagUI.cs` |
 | 팀 응원 성공 배너 | `Assets/Scripts/UI/TeamCheerCleared.cs` |
 | 팀 응원 경고 | `Assets/Scripts/UI/TeamCheerWarningUI.cs` |
 | 되돌림 계약 | `Assets/Scripts/Cheer/ITeamCheerRevert.cs` |
 | 되돌림 대상 | `Assets/Scripts/MouthController.cs` · `Assets/Scripts/Cheer/SalivaHazard.cs` · `Assets/Scripts/Cheer/TongueController.cs` |
 | Tutorial 이름 설정 UI | `Assets/Scripts/UI/TutorialCheerNameUI.cs` |
 | Tutorial 네트워크 | `Assets/Scripts/Network/TutorialNetworkManager.cs` |
+| 이모트 (별도 시스템, §6.4 참고) | `Assets/Scripts/UI/PlayerEmoteMenuUI.cs` |
 
 ---
 
@@ -738,7 +888,25 @@ A. 어느 쪽이든 나중에 확정하려는 값이 거절된다(§3.3, 양방�
 A. 사용자 결정 — 전체 체력회복 +2, 지속시간 있는 버프(무적/스피드업 등)는 이번 범위에서 드랍.
 
 **Q. 숫자키는 기본으로 켜져 있나?**
-A. **아니오.** 음성이 기본이라 기본 꺼짐. 옵션에서 켜야 `1`(self)/`2`(team)가 동작.
+A. **아니오.** 팀 응원(`T`키, 2026-09-14 재배정)은 음성이 기본이라 기본 꺼짐, 옵션에서 켜야 동작. **개인 버프는 숫자키가 아니라 항상 `Space`.** 숫자키 `1`~`8`은 이제 이모트 전용(§6.4)이라 Cheer 시스템과는 무관.
 
 **Q. 그래머 단어 수가 줄어드는 게 맞나?**
-A. 맞다. 구 방식은 클라이언트마다 팀원 4명 이름을 전부 grammar에 넣었지만(cross-targeting 때문), 이제는 **내 이름 + 팀워드 2개뿐**이라 오히려 인식 후보가 줄어 인식률이 더 좋아진다.
+A. 맞다. 구 방식(cross-targeting, 4명 전부) → 2026-09-01(내 이름+팀워드 2개) → **2026-09-14(팀워드 1개)** 순으로 계속 줄었다. 개인 버프가 키 입력으로 완전히 바뀌면서 내 CheerName도 grammar에서 빠졌기 때문 — 인식 후보가 줄어들수록 인식률은 계속 좋아진다.
+
+**Q. 개인 버프는 왜 음성에서 키 입력으로 바꿨나?**
+A. 음성 인식은 지연·오인식이 구조적 한계라 "원하는 타이밍에 정확히 발동"이 필요한 개인 버프와 안 맞았다(2026-09-14 결정). 팀 버프는 타이밍 정밀도가 중요하지 않아 그대로 음성 유지.
+
+**Q. CheerName은 이제 왜 필요한가?**
+A. `TeamStatusUI`에 표시되는 닉네임 용도로만 남는다. 음성 인식·버프 발동과는 더 이상 관련 없다.
+
+**Q. 버프 발동 중에 Q로 종류를 바꾸면 지금 버프가 취소되나?**
+A. **아니오.** 지금 진행 중인 효과는 발동 시점에 이미 확정된 값(`ApplyCheerBuff`)이라 그대로 끝까지 간다. Q로 바꾼 선택은 다음 `Space` 발동부터 적용된다(2026-09-14, §2.1).
+
+**Q. 팀 응원 대체 입력은 왜 T키인가?**
+A. 2026-09-14 안에서만 두 번 바뀌었다: 개인 self 숫자키 삭제로 잠깐 `1`이 됐다가, 같은 날 이모트 시스템이 숫자키 `1`~`8`을 전부 직접 트리거로 가져가면서(§6.4) 팀 응원이 마침 폐지된 이모트 휠의 `T`키로 다시 옮겨갔다.
+
+**Q. 팀 응원은 10초 안에 전원이 외쳐야 하나?**
+A. **아니오 (2026-09-14).** 창이 열린 동안 한 번 인식되면 그 사람은 통과고, 다시 외칠 필요 없다. 성공은 여전히 전원 각자 1회. 구 10초 표 리셋은 폐기. `CheerAndTutorialDesign.md` §2.1.
+
+**Q. 이모트는 왜 휠 UI가 없어졌나?**
+A. 마우스로 8조각 중 하나를 겨냥하다 놓치는 경우가 있어, 숫자키 `1`~`8` 직접 트리거로 단순화했다(2026-09-14, §6.4). 매핑 순서는 기존 휠 순서(Yes→No→Thanks→Hide→Point→Shame→Fly→Surprise) 그대로.

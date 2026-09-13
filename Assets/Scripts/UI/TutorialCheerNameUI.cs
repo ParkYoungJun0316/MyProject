@@ -73,7 +73,7 @@ public class TutorialCheerNameUI : MonoBehaviour
 
     [Header("커서")]
     [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요 " +
-             "(EscMenuController/PlayerEmoteMenuUI와 동일 패턴).")]
+             "(EscMenuController와 동일 패턴).")]
     [SerializeField] bool lockCursorOnClose = true;
 
     // ── Localization (Tutorial 테이블, TutorialTranslations.md §CheerNamePanel) ──────────
