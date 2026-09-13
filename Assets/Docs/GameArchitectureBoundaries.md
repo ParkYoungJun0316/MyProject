@@ -15,7 +15,7 @@
 
 ## Domain Ownership
 
-- **Player:** input, movement, stamina, dodge, respawn lifecycle, own state events. **No** Vosk / mic / cheer-submit.
+- **Player:** input, movement, stamina, dodge, respawn lifecycle, **downed/revive lifecycle** (`PlayerDownState` Host-side state, `PlayerReviveInteract` input — `DownedReviveSystemDesign.md`), own state events. **No** Vosk / mic / cheer-submit.
 - **Enemy:** detection / chase / attack and local combat state only.
 - **Stage:** `StageObjective` + `StageManager` — stage-local win/fail. 축 SSOT: `NetworkDesign.md` §11A.
 - **Spawn / respawn (MVP):** `ColoredStartZone` + `spawnPoint` (not ColorSavePoint / StageCheckpoint save pipeline).

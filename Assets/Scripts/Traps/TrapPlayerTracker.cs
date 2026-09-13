@@ -380,7 +380,9 @@ public class TrapPlayerTracker : MonoBehaviour
 
     bool IsValidTarget(Player p)
     {
-        return p != null && !p.IsDead && IsVisible(p) && IsInZone(p);
+        // IsDowned는 레이어(PlayerDead)로도 걸러지지만, playerVisibleLayer가 0(미설정)이면 IsVisible이
+        // 항상 true라 씬 설정에 의존하게 된다 — 명시적으로 제외(DownedReviveSystemDesign.md §5).
+        return p != null && !p.IsDead && !p.IsDowned && IsVisible(p) && IsInZone(p);
     }
 
     /// <summary>

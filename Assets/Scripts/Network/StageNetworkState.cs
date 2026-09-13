@@ -506,6 +506,10 @@ public class StageNetworkState : NetworkBehaviour
         // 리로드 코루틴(아래)이 실제로 씬을 갈아엎기 전에 각자 자기 루프를 멈추게 한다.
         OnDeathReloadStarted?.Invoke();
 
+        // 즉사·완전사망(다운 방치 만료) 공통 — 이 메서드가 사망→리로드의 유일한 진입점이므로
+        // 여기 한 곳에서만 STAGE FAILED를 울리면 원인과 무관하게 항상 뜬다(DownedReviveSystemDesign.md §6/§9.2).
+        NotifyStageFailed();
+
         // 사망 리로드 시 새 시드 생성 + 전체 클라이언트에 배포
         int newSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         NetworkSessionData.Seed = newSeed;
@@ -570,6 +574,26 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         OnAnyStageClearedPulse?.Invoke();
+    }
+
+    /// <summary>
+    /// 스테이지 실패(즉사·완전사망) 시 배너 연출 전용 신호. STAGE CLEAR와 대칭
+    /// (DownedReviveSystemDesign.md §6). NotifyPlayerDeathServerRpc 내부에서만 호출 — 사망→리로드
+    /// 진입점이 하나이므로 별도 IsServer/IsSpawned 가드 없이 그 호출부의 가드에 편승한다.
+    /// </summary>
+    public event Action OnAnyStageFailedPulse;
+
+    void NotifyStageFailed()
+    {
+        OnAnyStageFailedPulse?.Invoke();
+        NotifyStageFailedClientRpc();
+    }
+
+    [ClientRpc]
+    void NotifyStageFailedClientRpc()
+    {
+        if (IsServer) return;
+        OnAnyStageFailedPulse?.Invoke();
     }
 
     /// <summary>

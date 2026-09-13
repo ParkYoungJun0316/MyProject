@@ -490,13 +490,22 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         // HP가 실제로 줄었을 때만 피격 이벤트 발행.
         // HP 증가(스폰·리스폰 회복)에서 Hit SFX·연출이 울리는 버그 방지.
-        if (next > 0 && next < prev)
-            _events?.RaiseDamaged();
-        // 0 → 양수: 씬 리로드 후 HP 복구 = 리스폰 신호 (비오너만 — Owner는 OnNetworkSpawn에서 처리).
-        else if (prev == 0 && next > 0 && !IsOwner)
-            _events?.RaiseRespawned();
-        else if (next > prev && prev > 0)
+        // 0 도달(다운 진입)도 포함 — 빼면 다운 중 HP UI가 마지막 값에 멈춘다. 즉사 RPC가 NV보다 먼저 와서
+        // 이미 사망 처리된 경우는 사망 연출과 겹치므로 제외(DownedReviveSystemDesign.md §6).
+        if (next < prev)
+        {
+            if (!_player.IsDead) _events?.RaiseDamaged();
+        }
+        else if (next > prev)
+        {
+            // 0 → 양수: 씬 리로드 후 HP 복구 = 리스폰 신호 (비오너만 — Owner는 OnNetworkSpawn에서 처리).
+            // 부활(0→3)도 이 분기를 탄다 — 비오너에게 리스폰 신호가 가도 사망 표시 해제·색 갱신뿐이라 무해.
+            if (prev == 0 && !IsOwner)
+                _events?.RaiseRespawned();
+
+            // HP UI 갱신. 부활은 Owner에게 다른 신호가 없으므로 여기서 반영된다(OnHealed 구독자는 UI뿐, SFX 없음).
             _events?.RaiseHealed();
+        }
     }
 
     // ── 넉백 (순수, HP 미변경) ────────────────────────────────────

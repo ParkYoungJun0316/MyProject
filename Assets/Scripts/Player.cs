@@ -106,7 +106,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     PlayerEvents events;
     PlayerStealth playerStealth;
     PlayerBuffSystem playerBuffSystem;
-    PlayerDownState downState;
 
 
     public void OnMove(InputValue value)
@@ -131,7 +130,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (events == null) events = gameObject.AddComponent<PlayerEvents>();
 
         playerStealth = GetComponent<PlayerStealth>();
-        downState = GetComponent<PlayerDownState>();
 
         playerBuffSystem = GetComponent<PlayerBuffSystem>();
         if (playerBuffSystem == null) playerBuffSystem = gameObject.AddComponent<PlayerBuffSystem>();
@@ -210,18 +208,6 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         {
             rigid.linearVelocity  = Vector3.zero;
             rigid.angularVelocity = Vector3.zero;
-            return;
-        }
-
-        // 부활 시전 중 이동 불가(DownedReviveSystemDesign.md §4/§9.3) — Host가 위치를 묶지 않고 Owner가 스스로 멈춘다.
-        // moveInput은 계속 받아두어 시전이 끝나면 누르고 있던 방향으로 바로 이어진다. 중력(y)은 유지.
-        if (downState != null && downState.IsRevivingOther)
-        {
-            Vector3 v = rigid.linearVelocity;
-            v.x = 0f; v.z = 0f;
-            rigid.linearVelocity = v;
-            anim?.SetBool("isRun", false);
-            FreezeRotation();
             return;
         }
 
@@ -469,7 +455,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     /// <summary>
     /// 다운 진입(부활 가능한 유예). 완전사망(Die)과 달리 콜라이더는 유지하고 입력만 차단한다
-    /// (DownedReviveSystemDesign.md §5). PlayerDownState(Host)의 PlayerDownedClientRpc에서 호출.
+    /// (DownedReviveSystemDesign.md §5). PlayerDownState의 IsDowned NV 변경 콜백에서 전 머신 호출.
     /// </summary>
     public void EnterDownState()
     {
@@ -510,7 +496,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         events?.RaiseDowned();
     }
 
-    /// <summary>부활 완료 시 다운 상태 해제. PlayerDownState.ReviveCompletedClientRpc에서 호출.</summary>
+    /// <summary>부활 완료 시 다운 상태 해제. PlayerDownState의 IsDowned NV(true→false) 변경 콜백에서 전 머신 호출.</summary>
     public void ExitDownState()
     {
         if (!IsDowned) return;

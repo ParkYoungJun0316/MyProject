@@ -604,6 +604,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 |----------|------|------|
 | 플레이어 이동 | **Owner + CNT** | 입력 레이턴시 없음. **이 모델 유지 (Host 이동화 안 함)** |
 | 플레이어 HP / 데미지 | **Host** | 치트 방지·판정 신뢰 |
+| 다운 / 부활 (상태·방치 만료·시전 완료·위치 기반 캔슬) | **Host** (`PlayerDownState` NV) — 입력 캔슬만 Owner가 ServerRpc로 신고 | HP와 같은 게임 규칙. 상세 `DownedReviveSystemDesign.md` §9 |
 | 함정 (ArrowTrap 등 발사자) | **Host** | 스폰 시점·스케줄을 전원 동일하게 |
 | 발사체 **비행** | **Client (로컬 시뮬)** | Host 물리 복제 끊김 방지·시각 부드러움 |
 | 발사체 **피격 판정** | **Host** (B안: Client 보고 → Host 확정) | §9.0.1 |

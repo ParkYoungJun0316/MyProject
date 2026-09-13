@@ -565,7 +565,7 @@ Phase F 코드 반영 후 씬/프리팹/Inspector에서 사용자가 정리해�
 
 - [ ] `EmoteHintUI`의 `hintLabel` 텍스트: "T: 이모트" → "1~8: 이모트" 류로 문구 수정 (T는 이제 팀 응원 키)
 - [ ] 모든 `Dialogue_Panel`의 `skipHint`(스킵 안내 이미지/문구): "Space" → "좌클릭"으로 교체 (대화 넘기기 입력 변경)
-- [ ] SequenceRing(M.Stage4) 안내에 "링 진행 중 Space는 버프 대신 링 입력" 설명이 필요하면 추가
+- [x] SequenceRing(M.Stage4) 안내에 "링 진행 중 Space는 버프 대신 링 입력" 설명 추가
 - [ ] Player 프리팹 `PlayerCheerHeartsUI.exclamationPrefab`에 `Assets/Prefab/CheerExclamation.prefab` 연결 (구 `sphereMaterial`/색 필드는 삭제됨)
 - [ ] Tutorial 팀 응원 안내 문구: "숫자키 응원을 켜세요" → "T키 응원을 켜세요"로 수정(§6.3) — Options 토글 이름 자체(`DigitCheerEnabled`)는 코드상 안 바꿨으니 UI 라벨만 맞추면 됨
 - [ ] `CheerProgressUI`/HUD 쪽에 "지금 눌러야 하는 키" 텍스트가 있다면 Space로 갱신(§8.1)

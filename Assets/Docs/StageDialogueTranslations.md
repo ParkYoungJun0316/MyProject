@@ -97,18 +97,18 @@
 
 > **강조 표기:** 키워드를 `<b><color=#FFC400>...</color></b>`로 감싸서 강조 (골드/노란 계열 — 키 입력 안내에 세계적으로 가장 흔히 쓰이는 색. 빨강은 이 프로젝트에서 이미 `OXQuizUI.cs`의 오답 색이라 배제, 순수 Yellow(`#DCA524`)는 플레이어 팀 색과 겹쳐서 그보다 밝은 골드 톤으로 구분).
 
-- ko: 네 색이 바닥에 뜨면 <b><color=#FFC400>스페이스</color></b>를 눌러.
-- en: Press <b><color=#FFC400>Space</color></b> when your color appears on the floor.
-- ja: 自分の色が床に出たら<b><color=#FFC400>スペース</color></b>を押して。
-- zh-Hans: 你的颜色出现在地板上时按<b><color=#FFC400>空格键</color></b>。
-- zh-Hant: 你的顏色出現在地板上時按<b><color=#FFC400>空格鍵</color></b>。
-- es: Pulsa <b><color=#FFC400>Espacio</color></b> cuando aparezca tu color en el suelo.
-- es-419: Presiona <b><color=#FFC400>Espacio</color></b> cuando aparezca tu color en el piso.
-- fr: Appuie sur <b><color=#FFC400>Espace</color></b> quand ta couleur apparaît sur le sol.
-- de: Drück <b><color=#FFC400>Leertaste</color></b>, wenn deine Farbe auf dem Boden erscheint.
-- pt-BR: Aperte <b><color=#FFC400>Espaço</color></b> quando sua cor aparecer no chão.
-- ru: Нажимай <b><color=#FFC400>пробел</color></b>, когда на полу появится твой цвет.
-- pl: Wciśnij <b><color=#FFC400>spację</color></b>, gdy twój kolor pojawi się na podłodze.
+- ko: 네 색이 바닥에 뜨면 <b><color=#FFC400>스페이스</color></b>를 눌러.\n링이 진행 중일 땐 <b><color=#FFC400>스페이스</color></b>가 버프 대신 링 입력으로 쓰여.
+- en: Press <b><color=#FFC400>Space</color></b> when your color appears on the floor.\nWhile the ring is going, <b><color=#FFC400>Space</color></b> is for the ring, not your buff.
+- ja: 自分の色が床に出たら<b><color=#FFC400>スペース</color></b>を押して。\nリング進行中は<b><color=#FFC400>スペース</color></b>はバフではなくリング入力になるよ。
+- zh-Hans: 你的颜色出现在地板上时按<b><color=#FFC400>空格键</color></b>。\n环进行时，<b><color=#FFC400>空格</color></b>是环的输入，不会放增益。
+- zh-Hant: 你的顏色出現在地板上時按<b><color=#FFC400>空格鍵</color></b>。\n環進行時，<b><color=#FFC400>空格</color></b>是環的輸入，不會放增益。
+- es: Pulsa <b><color=#FFC400>Espacio</color></b> cuando aparezca tu color en el suelo.\nMientras el anillo está en marcha, <b><color=#FFC400>Espacio</color></b> es para el anillo, no para tu mejora.
+- es-419: Presiona <b><color=#FFC400>Espacio</color></b> cuando aparezca tu color en el piso.\nMientras el anillo esté en marcha, <b><color=#FFC400>Espacio</color></b> es para el anillo, no para tu mejora.
+- fr: Appuie sur <b><color=#FFC400>Espace</color></b> quand ta couleur apparaît sur le sol.\nPendant l'anneau, <b><color=#FFC400>Espace</color></b> sert à l'anneau, pas à ton bonus.
+- de: Drück <b><color=#FFC400>Leertaste</color></b>, wenn deine Farbe auf dem Boden erscheint.\nLäuft der Ring, ist <b><color=#FFC400>Leertaste</color></b> die Ring-Eingabe — nicht dein Buff.
+- pt-BR: Aperte <b><color=#FFC400>Espaço</color></b> quando sua cor aparecer no chão.\nEnquanto o anel estiver rolando, <b><color=#FFC400>Espaço</color></b> é do anel, não do seu buff.
+- ru: Нажимай <b><color=#FFC400>пробел</color></b>, когда на полу появится твой цвет.\nПока кольцо идёт, <b><color=#FFC400>пробел</color></b> — ввод кольца, а не бафф.
+- pl: Wciśnij <b><color=#FFC400>spację</color></b>, gdy twój kolor pojawi się na podłodze.\nGdy ring trwa, <b><color=#FFC400>spacja</color></b> to wejście ringa, nie twój buff.
 
 ### M.Stage4.Stage1.Line2
 
