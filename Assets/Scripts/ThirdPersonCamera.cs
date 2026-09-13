@@ -64,6 +64,19 @@ public class ThirdPersonCamera : MonoBehaviour
     [Tooltip("게임 시작 시 커서를 화면 중앙에 고정. 마우스 델타 입력에 필수")]
     [SerializeField] bool lockCursor = true;
 
+    [Header("벽 충돌 회피 (SphereCast pull-in)")]
+    [Tooltip("카메라가 이 레이어들에 막히면 피벗 쪽으로 당겨진다.\n" +
+             "벽·바닥 등 정적 지형만 넣을 것 — 플레이어·적·발사체·함정(Ring 등)을 넣으면 카메라가 그런 " +
+             "것들 때문에 밀려서 안 된다. 기본값은 Default/Ground/Wall/BoulderStop/BackGround.")]
+    [SerializeField] LayerMask cameraObstructionLayers =
+        (1 << 0) | (1 << 25) | (1 << 27) | (1 << 28) | (1 << 29); // Default, Ground, Wall, BoulderStop, BackGround
+
+    [Tooltip("SphereCast 반지름(m). 근평면 폭 정도로 — 너무 작으면 벽 모서리를 못 걸러 살짝 뚫려 보인다.")]
+    [SerializeField] float cameraCollisionRadius = 0.3f;
+
+    [Tooltip("장애물 표면에서 추가로 띄워 두는 여유 거리(m). 0이면 표면에 딱 붙어 z-fighting/근평면 클리핑 위험.")]
+    [SerializeField] float cameraCollisionBuffer = 0.15f;
+
     // ── Preview Preset ──────────────────────────────────────────────
     [Header("Preview Preset (Inspector에서 직접 지정)")]
     [Tooltip("탑다운 프리뷰 시 카메라 거리. 경로 발판 전체가 화면에 들어오도록 조정.")]
@@ -174,10 +187,38 @@ public class ThirdPersonCamera : MonoBehaviour
         Vector3 pivot    = target.position + _activeOffset;
         Vector3 desiredPos = pivot + _currentRot * (Vector3.back * currentDistance);
 
-        if (positionDamping > 0f)
-            transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref _posVelocity, positionDamping);
+        // 벽 충돌 회피: 피벗→desiredPos 사이를 SphereCast로 검사해 장애물에 막히면 그 앞까지만 당긴다.
+        // 붙을 때(pull-in)는 한 프레임도 뚫려 보이면 안 되므로 즉시 스냅하고, 장애물이 사라져 다시
+        // 멀어질 때(pull-out)는 기존 positionDamping으로 부드럽게 복귀한다 — God of War/Uncharted류
+        // 3인칭 카메라와 Cinemachine Collider 확장이 쓰는 것과 동일한 비대칭 처리.
+        Vector3 toDesired = desiredPos - pivot;
+        float desiredDist = toDesired.magnitude;
+        Vector3 dir = desiredDist > 0.0001f ? toDesired / desiredDist : Vector3.back;
+
+        // 탑다운 프리뷰는 pivot 위 수십 m에서 내려다보는 연출이라 천장·배경에 막혀 당겨지면 구도가 깨진다.
+        float safeDist = desiredDist;
+        if (!_isInPreview &&
+            Physics.SphereCast(pivot, cameraCollisionRadius, dir, out RaycastHit hit, desiredDist,
+                               cameraObstructionLayers, QueryTriggerInteraction.Ignore))
+            safeDist = Mathf.Max(hit.distance - cameraCollisionBuffer, 0.05f);
+
+        Vector3 safeDesiredPos = pivot + dir * safeDist;
+        float currentDistFromPivot = Vector3.Distance(transform.position, pivot);
+
+        if (safeDist < currentDistFromPivot - 0.001f)
+        {
+            // 새로 막힘 — 즉시 스냅해서 벽 뒤가 보이는 프레임을 만들지 않는다.
+            transform.position = safeDesiredPos;
+            _posVelocity = Vector3.zero;
+        }
+        else if (positionDamping > 0f)
+        {
+            transform.position = Vector3.SmoothDamp(transform.position, safeDesiredPos, ref _posVelocity, positionDamping);
+        }
         else
-            transform.position = desiredPos;
+        {
+            transform.position = safeDesiredPos;
+        }
 
         transform.rotation = _currentRot;
     }

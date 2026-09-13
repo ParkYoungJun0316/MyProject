@@ -86,6 +86,9 @@ public class CheerService : NetworkBehaviour
     /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열). PlayerCheerHeartsUI / TeamStatusUI 구독.</summary>
     public event System.Action<int, int, int[]> OnTeamVoteChanged;
 
+    /// <summary>TeamCheerWord NV 변경. TeamCheerWordUI 구독. 문법 재빌드는 기존처럼 이 콜백에서 같이 돈다.</summary>
+    public event System.Action OnTeamCheerWordChanged;
+
     // ── 공개 프로퍼티 ─────────────────────────────────────────────
 
     public float CooldownDuration => cheerCooldownSeconds;
@@ -111,7 +114,7 @@ public class CheerService : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        _teamCheerWord.OnValueChanged += OnTeamCheerWordChanged;
+        _teamCheerWord.OnValueChanged += HandleTeamCheerWordNv;
 
         if (IsServer && GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
         {
@@ -125,7 +128,7 @@ public class CheerService : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        _teamCheerWord.OnValueChanged -= OnTeamCheerWordChanged;
+        _teamCheerWord.OnValueChanged -= HandleTeamCheerWordNv;
         _revert = null;
 
         // NotifyHazardWindow(false)의 표 리셋이 despawn 중에 ClientRpc를 쏘지 않도록 먼저 비운다.
@@ -137,8 +140,11 @@ public class CheerService : NetworkBehaviour
         if (Instance == this) Instance = null;
     }
 
-    void OnTeamCheerWordChanged(FixedString32Bytes previous, FixedString32Bytes current)
-        => PlayerCheerNameSync.RebuildOwnerLocalGrammar();
+    void HandleTeamCheerWordNv(FixedString32Bytes previous, FixedString32Bytes current)
+    {
+        PlayerCheerNameSync.RebuildOwnerLocalGrammar();
+        OnTeamCheerWordChanged?.Invoke();
+    }
 
     void Update()
     {

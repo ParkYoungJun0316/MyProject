@@ -641,6 +641,19 @@ public class StageNetworkState : NetworkBehaviour
         Debug.Log($"[StageNetworkState] Breakable(id={breakableId}) 파괴 동기화");
     }
 
+    /// <summary>
+    /// Host: Breakable이 파괴 지연(breakDelay)에 들어가는 순간 호출 — Client도 같은 순간부터
+    /// 경고색(노랑→빨강) 보간을 시작하게 한다. breakDelay 자체는 씬에 저장된 동일 직렬화
+    /// 값이라 지속시간을 실어보낼 필요 없이 "지금 시작" 트리거만 보낸다.
+    /// 실제 파괴 확정은 이 RPC와 별개로 SyncBreakClientRpc가 담당한다.
+    /// </summary>
+    [ClientRpc]
+    public void SyncBreakPendingClientRpc(int breakableId)
+    {
+        if (IsServer) return;
+        Breakable.BreakPendingById(breakableId);
+    }
+
     // ── DropTrap 경고 마커 동기화 ─────────────────────────────────
 
     /// <summary>
@@ -693,6 +706,17 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (IsServer) return;
         ArrowTrap.PlayFireById(trapId);
+    }
+
+    /// <summary>
+    /// Host: ArrowTrap.OnChargeCancelled(충전 중 Deactivate/Freeze) 발행 시점에 호출.
+    /// Client: 경고 사인 숨김 + Mouth 닫기. 이게 없으면 Fire RPC가 영영 안 와 연출이 켜진 채 남는다.
+    /// </summary>
+    [ClientRpc]
+    public void SyncArrowCancelClientRpc(int trapId)
+    {
+        if (IsServer) return;
+        ArrowTrap.PlayCancelById(trapId);
     }
 
     // ── 함정 조준 타겟 동기화 (TrapPlayerTracker 슬롯, Door §3.1과 동일 원칙) ──────

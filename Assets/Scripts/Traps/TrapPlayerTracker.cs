@@ -122,41 +122,8 @@ public class TrapPlayerTracker : MonoBehaviour
     // ── 타겟 브로드캐스트용 stable ID 레지스트리 (ArrowTrap과 동일 패턴) ──────────────
     // Awake 호출 순서는 Host/Client 간 PhaseManager SetActive 타이밍에 따라 달라질 수 있어
     // (ArrowTrap 2026-07-27 수정 사유와 동일) 씬 계층 경로로 정렬한 결정적 순서로 ID를 부여한다.
-    static readonly Dictionary<int, TrapPlayerTracker> _registry = new Dictionary<int, TrapPlayerTracker>();
-    static bool _registryBuilt = false;
+    static readonly SceneStableRegistry<TrapPlayerTracker> _registry = new SceneStableRegistry<TrapPlayerTracker>();
     int _netIndex = -1;
-
-    // NV 슬롯 개수 기준 — _registry.Count를 쓰면 트래커가 개별 파괴될 때 개수가 줄어
-    // 슬롯이 재생성되며 index가 오염된다(Door InitDoorSlots와 동일한 "배정 후 개수 고정" 원칙).
-    static int _registrySize = 0;
-
-    static void EnsureRegistryBuilt()
-    {
-        if (_registryBuilt) return;
-        _registryBuilt = true;
-
-        TrapPlayerTracker[] all = FindObjectsByType<TrapPlayerTracker>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            .OrderBy(a => GetHierarchyPath(a.transform), StringComparer.Ordinal)
-            .ToArray();
-
-        for (int i = 0; i < all.Length; i++)
-        {
-            all[i]._netIndex = i;
-            _registry[i] = all[i];
-        }
-        _registrySize = all.Length;
-    }
-
-    static string GetHierarchyPath(Transform t)
-    {
-        string path = t.name + "#" + t.GetSiblingIndex().ToString("D4");
-        while (t.parent != null)
-        {
-            t = t.parent;
-            path = t.name + "#" + t.GetSiblingIndex().ToString("D4") + "/" + path;
-        }
-        return path;
-    }
 
     /// <summary>현재 락온 중인(보이는) 타겟 플레이어. 없으면 null.</summary>
     public Player CurrentTarget => _currentTarget;
@@ -173,7 +140,7 @@ public class TrapPlayerTracker : MonoBehaviour
         _dropTrap        = GetComponent<DropTrap>();
         _stageManager    = GetComponentInParent<StageManager>();
         _initialRotation = transform.rotation;
-        EnsureRegistryBuilt();
+        _netIndex = _registry.Register(this);
 
         // 회전이 없으면 "지금 누구 조준 중"을 볼 소비자가 없다 → 추적·NV 쓰기 생략.
         _needsVisualTarget = rotateToTarget;
@@ -205,13 +172,7 @@ public class TrapPlayerTracker : MonoBehaviour
         if (StageNetworkState.Instance != null)
             StageNetworkState.Instance.OnTrackerTargetChanged -= HandleNetworkTrackerTarget;
 
-        _registry.Remove(_netIndex);
-        // 씬의 마지막 TrapPlayerTracker가 사라지면 레지스트리를 비워 다음 씬 로드 시 재구성되게 한다.
-        if (_registry.Count == 0)
-        {
-            _registryBuilt = false;
-            _registrySize  = 0;
-        }
+        _registry.Unregister(this, _netIndex);
     }
 
     // Stage SetActive(false → true) 사이클 시 자동 재시작
@@ -491,7 +452,7 @@ public class TrapPlayerTracker : MonoBehaviour
             // Host: 씬의 트래커 수만큼 NV 슬롯 확보. 모든 트래커가 호출하지만 개수가 맞으면
             // InitTrackerTargetSlots가 no-op이라 멱등하다. OnPlayersReady 경로로 오면
             // StageNetworkState 스폰이 끝난 뒤라 IsSpawned 가드도 통과한다.
-            StageNetworkState.Instance?.InitTrackerTargetSlots(_registrySize);
+            StageNetworkState.Instance?.InitTrackerTargetSlots(_registry.BuiltCount);
         }
         else
         {

@@ -97,11 +97,9 @@ public class DropTrap : TrapBase
     // warnDuration + 낙하 채움 애니메이션 동안 Deactivate 시 고아 오브젝트가 남지 않도록 추적
     readonly List<GameObject> _pendingObjects = new List<GameObject>();
 
-    // ── 경고 마커 네트워크 동기화 (stable ID 레지스트리, Breakable과 동일 패턴) ──
-    // ID는 씬 로드마다 0부터 순서대로 부여. Host/Client 모두 씬 로드 시 동일 순서로
-    // Awake가 실행되므로 ID가 일치. StageNetworkState.SyncDropWarnClientRpc에서 사용.
-    static readonly Dictionary<int, DropTrap> _registry = new Dictionary<int, DropTrap>();
-    static int _nextId = 0;
+    // ── 경고 마커 네트워크 동기화 (stable ID 레지스트리) ──
+    // StageNetworkState.SyncDropWarnClientRpc / SyncDropFireClientRpc에서 사용.
+    static readonly SceneStableRegistry<DropTrap> _registry = new SceneStableRegistry<DropTrap>();
     int _netIndex = -1;
 
     /// <summary>
@@ -114,28 +112,25 @@ public class DropTrap : TrapBase
     protected override void Awake()
     {
         base.Awake();
-
-        // 씬 리로드 시 첫 DropTrap이 Awake되는 시점에 레지스트리 초기화 (stale 항목 방지)
-        if (_registry.Count == 0) _nextId = 0;
-
-        _netIndex = _nextId++;
-        _registry[_netIndex] = this;
+        _netIndex = _registry.Register(this);
     }
 
     void OnDestroy()
     {
-        _registry.Remove(_netIndex);
+        _registry.Unregister(this, _netIndex);
     }
 
     /// <summary>StageNetworkState.SyncDropWarnClientRpc 수신 시 Client에서 호출. 마커 연출만 재생(낙하체 스폰 없음).</summary>
     public static void PlayWarnById(int id, Vector3 targetPos, float warnDuration, float startY, float speed, Vector3 markerScale)
     {
-        if (_registry.TryGetValue(id, out DropTrap t))
-            t?.ApplyWarnFromNetwork(targetPos, warnDuration, startY, speed, markerScale);
+        DropTrap t = _registry.Get(id);
+        if (t != null) t.ApplyWarnFromNetwork(targetPos, warnDuration, startY, speed, markerScale);
     }
 
     void ApplyWarnFromNetwork(Vector3 targetPos, float warnDuration, float startY, float speed, Vector3 markerScale)
     {
+        // Client는 Phase 활성화가 Host보다 늦어 비활성 상태에서 RPC가 도착할 수 있다.
+        if (!isActiveAndEnabled) return;
         StartCoroutine(WarnMarkerRoutine(targetPos, warnDuration, startY, speed, markerScale));
     }
 
@@ -146,8 +141,8 @@ public class DropTrap : TrapBase
     /// </summary>
     public static void PlayFireSfxById(int id)
     {
-        if (_registry.TryGetValue(id, out DropTrap t))
-            t?.PlayFireSfxLocal();
+        DropTrap t = _registry.Get(id);
+        if (t != null) t.PlayFireSfxLocal();
     }
 
     void PlayFireSfxLocal()

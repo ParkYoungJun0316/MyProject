@@ -87,6 +87,7 @@ public class ArrowWarnSign : MonoBehaviour
 
         _trap.OnPreFireCharge += PlayWarnFromNetwork;
         _trap.OnFiring        += PlayHideFromNetwork;
+        _trap.OnChargeCancelled += PlayCancelFromNetwork;
     }
 
     void OnDisable()
@@ -95,6 +96,7 @@ public class ArrowWarnSign : MonoBehaviour
         {
             _trap.OnPreFireCharge -= PlayWarnFromNetwork;
             _trap.OnFiring        -= PlayHideFromNetwork;
+            _trap.OnChargeCancelled -= PlayCancelFromNetwork;
         }
 
         StopWarnRoutine();
@@ -123,7 +125,8 @@ public class ArrowWarnSign : MonoBehaviour
     public void PlayWarnFromNetwork()
     {
         StopWarnRoutine();
-        if (!_warnEnabled) return;
+        // Client는 Phase 활성화가 Host보다 늦어 비활성 상태에서 RPC가 도착할 수 있다(StartCoroutine 에러 방지).
+        if (!_warnEnabled || !isActiveAndEnabled) return;
         if (warnLeadTime <= 0f && holdAfterFire <= 0f) return;
 
         _warnCoroutine = StartCoroutine(WarnRoutine());
@@ -136,13 +139,21 @@ public class ArrowWarnSign : MonoBehaviour
     {
         StopWarnRoutine();
 
-        if (holdAfterFire <= 0f)
+        if (holdAfterFire <= 0f || !isActiveAndEnabled)
         {
             SetVisible(false);
             return;
         }
 
         _warnCoroutine = StartCoroutine(HoldAfterFireRoutine());
+    }
+
+    /// <summary>충전이 발사 없이 끝남(Deactivate/Freeze). Host는 OnChargeCancelled 직접 구독,
+    /// Client는 SyncArrowCancelClientRpc 수신으로 호출됨. holdAfterFire와 무관하게 즉시 숨긴다.</summary>
+    public void PlayCancelFromNetwork()
+    {
+        StopWarnRoutine();
+        SetVisible(false);
     }
 
     /// <summary>

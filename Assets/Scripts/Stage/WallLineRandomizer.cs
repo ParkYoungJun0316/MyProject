@@ -84,57 +84,18 @@ public class WallLineRandomizer : MonoBehaviour
 
     // ── 인스턴스 구분용 안정적 index (씬 편집 없이 자동 배정) ─────────────
     // 같은 seed 재료(NetworkSessionData.Seed 등)를 쓰는 WallLineRandomizer가 씬에 여럿 있어도
-    // 서로 다른 랜덤 시퀀스를 갖도록, WindTrap._registry/GetHierarchyPath와 동일한 방식으로
-    // 계층 경로 정렬 index를 자동 배정한다(Host/Client가 같은 씬 계층을 가지므로 항상 같은 순서 —
-    // Awake 호출 순서 대신 경로 정렬을 쓰는 이유도 WindTrap과 동일: 늦은 활성화로 Awake 순서가
-    // 갈릴 수 있어서).
-    static bool _registryBuilt = false;
-    static int  _aliveCount = 0;
+    // 서로 다른 랜덤 시퀀스를 갖도록 SceneStableRegistry로 계층 경로 정렬 index를 배정한다.
+    static readonly SceneStableRegistry<WallLineRandomizer> _registry = new SceneStableRegistry<WallLineRandomizer>();
     int _netIndex = -1;
-
-    static void EnsureRegistryBuilt()
-    {
-        if (_registryBuilt) return;
-        _registryBuilt = true;
-
-        WallLineRandomizer[] all = FindObjectsByType<WallLineRandomizer>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            .OrderBy(a => GetHierarchyPath(a.transform), StringComparer.Ordinal)
-            .ToArray();
-
-        for (int i = 0; i < all.Length; i++)
-            all[i]._netIndex = i;
-    }
-
-    static string GetHierarchyPath(Transform t)
-    {
-        string path = t.name + "#" + t.GetSiblingIndex().ToString("D4");
-        while (t.parent != null)
-        {
-            t = t.parent;
-            path = t.name + "#" + t.GetSiblingIndex().ToString("D4") + "/" + path;
-        }
-        return path;
-    }
 
     void Awake()
     {
         _wall       = GetComponent<AdvancingWall>();
         _colorWalls = GetComponentsInChildren<ColorWall>(true);
-
-        _aliveCount++;
-        EnsureRegistryBuilt();
+        _netIndex   = _registry.Register(this);
     }
 
-    void OnDestroy()
-    {
-        _aliveCount--;
-        // 씬의 마지막 인스턴스가 사라지면 다음 씬 로드 시 재구성되게 플래그 리셋
-        if (_aliveCount <= 0)
-        {
-            _aliveCount = 0;
-            _registryBuilt = false;
-        }
-    }
+    void OnDestroy() => _registry.Unregister(this, _netIndex);
 
     void Start()
     {

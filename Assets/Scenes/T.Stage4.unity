@@ -832,7 +832,7 @@ GameObject:
   m_Component:
   - component: {fileID: 93983757}
   - component: {fileID: 93983756}
-  m_Layer: 18
+  m_Layer: 27
   m_Name: MovingCorridor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -874,7 +874,7 @@ MonoBehaviour:
     - 2.5
   useFixedRandomSeed: 0
   randomSeed: 0
-  minWallDistance: 20
+  minWallDistance: 25
   maxWallDistance: 35
   startActive: 0
   activateOnPlayerTrigger: 0
@@ -1032,7 +1032,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &132505135
 Transform:
   m_ObjectHideFlags: 0
@@ -1509,7 +1509,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &170623895
 Transform:
   m_ObjectHideFlags: 0
@@ -3969,7 +3969,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -3987,6 +3987,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -4037,7 +4041,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4413,7 +4417,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &582638942
 Transform:
   m_ObjectHideFlags: 0
@@ -4525,7 +4529,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &588658772
 Transform:
   m_ObjectHideFlags: 0
@@ -5283,6 +5287,11 @@ MonoBehaviour:
   positionDamping: 0
   rotationDamping: 0
   lockCursor: 1
+  cameraObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 973078529
+  cameraCollisionRadius: 0.3
+  cameraCollisionBuffer: 0.15
   previewDistance: 40
   previewPitch: 85
   previewYaw: 0
@@ -5350,7 +5359,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &793982145
 Transform:
   m_ObjectHideFlags: 0
@@ -6409,7 +6418,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1013091184
 Transform:
   m_ObjectHideFlags: 0
@@ -8734,7 +8743,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -9357,7 +9366,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1601428167
 Transform:
   m_ObjectHideFlags: 0
@@ -10935,7 +10944,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1910619913
 Transform:
   m_ObjectHideFlags: 0
@@ -11543,6 +11552,30 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -29
       objectReference: {fileID: 0}
+    - target: {fileID: 207745640634409996, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 207745640634409996, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 207745640634409996, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 207745640634409996, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 207745640634409996, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 207745640634409996, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 465586311390553092, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -12127,6 +12160,30 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5350791206956316149, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5350791206956316149, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5350791206956316149, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5350791206956316149, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5350791206956316149, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5350791206956316149, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5681381260902060633, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -12207,9 +12264,13 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6295589500336241555, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6305786061873140881, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0003505486
+      value: 0.00021035149
       objectReference: {fileID: 0}
     - target: {fileID: 6366122804983461842, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.x
@@ -12915,7 +12976,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -12933,6 +12994,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -12983,7 +13048,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13628,7 +13693,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13677,7 +13742,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13726,7 +13791,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13775,7 +13840,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13824,7 +13889,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13873,7 +13938,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13922,7 +13987,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13971,7 +14036,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14020,7 +14085,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14069,7 +14134,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14118,7 +14183,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14167,7 +14232,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14216,7 +14281,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14265,7 +14330,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14314,7 +14379,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14363,7 +14428,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14412,7 +14477,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14461,7 +14526,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14510,7 +14575,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14559,7 +14624,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14608,7 +14673,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14657,7 +14722,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14706,7 +14771,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14755,7 +14820,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14804,7 +14869,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -15235,7 +15300,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 1
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 2
 --- !u!33 &1470546760523734137
@@ -15847,7 +15912,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -15881,7 +15946,7 @@ GameObject:
   m_Component:
   - component: {fileID: 195740171911796143}
   - component: {fileID: 7266820684635842037}
-  m_Layer: 18
+  m_Layer: 27
   m_Name: CrashCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -16041,9 +16106,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 1
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!1 &4123379364471128097
 GameObject:
   m_ObjectHideFlags: 0
@@ -16078,7 +16143,7 @@ GameObject:
   - component: {fileID: 4184123936275160726}
   - component: {fileID: 4184123936275160725}
   - component: {fileID: 4184123936275160728}
-  m_Layer: 18
+  m_Layer: 27
   m_Name: Ring.B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -16104,7 +16169,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1.1, z: 1.0000002}
+  m_Size: {x: 1, y: 0.5, z: 1.0000002}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &4184123936275160726
 MeshRenderer:
@@ -16131,7 +16196,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c14451a8b7a6bed4abf06ede8f2a5dc6, type: 2}
+  - {fileID: 2100000, guid: 09bf6ef6d86138f428bd15f1449e3d6d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16162,7 +16227,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4184123936275160724}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!114 &4184123936275160728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16259,7 +16324,7 @@ GameObject:
   - component: {fileID: 5364062812070313627}
   - component: {fileID: 5364062812070313626}
   - component: {fileID: 5364062812070313629}
-  m_Layer: 18
+  m_Layer: 27
   m_Name: Ring.F
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -16285,7 +16350,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1.1, z: 1.0000002}
+  m_Size: {x: 1, y: 0.5, z: 1.0000002}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &5364062812070313627
 MeshRenderer:
@@ -16312,7 +16377,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c14451a8b7a6bed4abf06ede8f2a5dc6, type: 2}
+  - {fileID: 2100000, guid: 09bf6ef6d86138f428bd15f1449e3d6d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16343,7 +16408,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5364062812070313625}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!114 &5364062812070313629
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16386,7 +16451,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16433,7 +16498,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16451,6 +16516,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16499,7 +16568,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16517,6 +16586,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16565,7 +16638,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16583,6 +16656,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16631,7 +16708,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16649,6 +16726,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16697,7 +16778,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16715,6 +16796,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16763,7 +16848,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16781,6 +16866,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16829,7 +16918,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16847,6 +16936,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16895,7 +16988,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16913,6 +17006,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -16961,7 +17058,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -16979,6 +17076,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17027,7 +17128,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17045,6 +17146,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17093,7 +17198,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17111,6 +17216,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17159,7 +17268,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17177,6 +17286,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17225,7 +17338,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17243,6 +17356,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17291,7 +17408,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17309,6 +17426,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17357,7 +17478,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17375,6 +17496,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17423,7 +17548,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17441,6 +17566,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17489,7 +17618,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17507,6 +17636,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17555,7 +17688,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17573,6 +17706,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17621,7 +17758,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17639,6 +17776,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17687,7 +17828,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17705,6 +17846,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17753,7 +17898,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17771,6 +17916,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17819,7 +17968,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17837,6 +17986,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17885,7 +18038,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17903,6 +18056,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -17951,7 +18108,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -17969,6 +18126,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -18017,7 +18178,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -18035,6 +18196,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -18110,7 +18275,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -18128,6 +18293,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -18232,7 +18401,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -18250,6 +18419,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -18300,7 +18473,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06af397783cc8fd4d875d0a512484c43, type: 2}
+  - {fileID: 2100000, guid: 5d2ddd65d0247c54dabd8b580cb7de7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -18339,7 +18512,7 @@ MonoBehaviour:
   breakTriggerLayers:
     serializedVersion: 2
     m_Bits: 384
-  breakDelay: 0
+  breakDelay: 0.5
   destroyMinDistance: 5
   destroyMaxDistance: 50
   destroyRolloffMode: 0
@@ -18357,6 +18530,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 384
   syncBreakOverNetwork: 1
+  warnColorEnabled: 1
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   OnBreak:
     m_PersistentCalls:
       m_Calls: []

@@ -73,45 +73,8 @@ public class ArrowTrap : TrapBase
     // 씬 로드 시 이미 메모리에 존재하므로(Awake만 지연) FindObjectsByType(Include inactive)로
     // 활성화 여부와 무관하게 전부 찾을 수 있고, Host/Client가 같은 씬 파일을 로드하므로
     // 경로 문자열 정렬 결과가 항상 일치한다.
-    static readonly Dictionary<int, ArrowTrap> _registry = new Dictionary<int, ArrowTrap>();
-    static bool _registryBuilt = false;
+    static readonly SceneStableRegistry<ArrowTrap> _registry = new SceneStableRegistry<ArrowTrap>();
     int _netIndex = -1;
-
-    static void EnsureRegistryBuilt()
-    {
-        if (_registryBuilt) return;
-        _registryBuilt = true;
-
-        ArrowTrap[] all = FindObjectsByType<ArrowTrap>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            .OrderBy(a => GetHierarchyPath(a.transform), StringComparer.Ordinal)
-            .ToArray();
-
-        for (int i = 0; i < all.Length; i++)
-        {
-            all[i]._netIndex = i;
-            _registry[i] = all[i];
-        }
-    }
-
-    // [버그 수정 2026-07-27] 이름이 완전히 같은 형제(예: 같은 프리팹을 같은 부모 아래 여러 번
-    // 배치하고 이름을 안 바꾼 M.Stage2의 MouthTrap2 x5)가 있으면 문자열 정렬이 동률이 되고,
-    // OrderBy(stable sort)는 동률일 때 FindObjectsByType이 반환한 원래 순서를 그대로 쓴다 —
-    // 이 원래 순서(엔진 내부 열거 순서)가 Host/Client 프로세스 간에 항상 같다는 보장이 없어
-    // 서로 다른 물리적 오브젝트에 같은 _netIndex가 배정될 수 있었다(Client에서만 "엉뚱한
-    // 입"이 "엉뚱한 시점"에 열리는 증상으로 나타남 — Host는 레지스트리를 거치지 않고 자기
-    // 자신의 로컬 이벤트로 재생하므로 항상 정확했다). 각 계층 세그먼트에 GetSiblingIndex()를
-    // 붙여 키를 완전히 결정적으로 만든다 — sibling 순서는 씬 파일에 저장된 그대로 로드되므로
-    // Host/Client가 항상 동일하다.
-    static string GetHierarchyPath(Transform t)
-    {
-        string path = t.name + "#" + t.GetSiblingIndex().ToString("D4");
-        while (t.parent != null)
-        {
-            t = t.parent;
-            path = t.name + "#" + t.GetSiblingIndex().ToString("D4") + "/" + path;
-        }
-        return path;
-    }
 
     /// <summary>
     /// PhaseManager가 Phase 전환 시 호출.
@@ -123,14 +86,12 @@ public class ArrowTrap : TrapBase
     protected override void Awake()
     {
         base.Awake();
-        EnsureRegistryBuilt();
+        _netIndex = _registry.Register(this);
     }
 
     void OnDestroy()
     {
-        _registry.Remove(_netIndex);
-        // 씬의 마지막 ArrowTrap이 사라지면 레지스트리를 비워 다음 씬 로드 시 재구성되게 한다.
-        if (_registry.Count == 0) _registryBuilt = false;
+        _registry.Unregister(this, _netIndex);
     }
 
     protected override void OnEnable()
@@ -138,12 +99,14 @@ public class ArrowTrap : TrapBase
         base.OnEnable();
         OnPreFireCharge += RelayChargeToClients;
         OnFiring        += RelayFireToClients;
+        OnChargeCancelled += RelayCancelToClients;
     }
 
     protected override void OnDisable()
     {
         OnPreFireCharge -= RelayChargeToClients;
         OnFiring        -= RelayFireToClients;
+        OnChargeCancelled -= RelayCancelToClients;
         base.OnDisable();
     }
 
@@ -164,12 +127,19 @@ public class ArrowTrap : TrapBase
         StageNetworkState.Instance?.SyncArrowFireClientRpc(_netIndex);
     }
 
+    void RelayCancelToClients()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+        StageNetworkState.Instance?.SyncArrowCancelClientRpc(_netIndex);
+    }
+
     /// <summary>
     /// StageNetworkState.SyncArrowChargeClientRpc 수신 시 Client에서 호출. Mouth Open 연출만 재생.
     /// </summary>
     public static void PlayChargeById(int id)
     {
-        _registry.TryGetValue(id, out ArrowTrap t);
+        ArrowTrap t = _registry.Get(id);
         if (t == null) return;
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayOpenFromNetwork();
         t.GetComponent<ArrowWarnSign>()?.PlayWarnFromNetwork();
@@ -182,11 +152,23 @@ public class ArrowTrap : TrapBase
     /// </summary>
     public static void PlayFireById(int id)
     {
-        _registry.TryGetValue(id, out ArrowTrap t);
+        ArrowTrap t = _registry.Get(id);
         if (t == null) return;
         t.GetComponent<MouthTrapAnimatorAnim>()?.PlayHoldFromNetwork();
         t.GetComponent<ArrowWarnSign>()?.PlayHideFromNetwork();
         t.PlayFireSfxLocal();
+    }
+
+    /// <summary>
+    /// StageNetworkState.SyncArrowCancelClientRpc 수신 시 Client에서 호출. 충전 중 Deactivate/Freeze로
+    /// 발사 없이 끝난 경우 경고 사인·Mouth 연출을 정리한다.
+    /// </summary>
+    public static void PlayCancelById(int id)
+    {
+        ArrowTrap t = _registry.Get(id);
+        if (t == null) return;
+        t.GetComponent<MouthTrapAnimatorAnim>()?.PlayCancelFromNetwork();
+        t.GetComponent<ArrowWarnSign>()?.PlayCancelFromNetwork();
     }
 
     /// <summary>

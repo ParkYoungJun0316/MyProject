@@ -14,6 +14,7 @@ using UnityEngine.Serialization;
 ///
 /// [네트워크 동기화]
 /// syncBreakOverNetwork = true (기본): Host만 충돌 판정 → SyncBreakClientRpc로 Client에 동기화.
+///   warnColorEnabled면 지연 시작 순간 SyncBreakPendingClientRpc로 Client도 경고색 보간을 같이 시작.
 /// syncBreakOverNetwork = false      : 각 머신 독립 처리 (런타임 스폰 Boulder 등).
 ///
 /// [권장 사용]
@@ -46,6 +47,15 @@ public class Breakable : MonoBehaviour
         EnsureRegistryBuilt();
         if (_registry.TryGetValue(id, out Breakable b))
             b?.ApplyBreakFromNetwork();
+    }
+
+    /// <summary>stable ID로 Breakable을 찾아 Client 측 경고색(노랑→빨강) 예고만 재생.
+    /// StageNetworkState.SyncBreakPendingClientRpc에서 호출.</summary>
+    public static void BreakPendingById(int id)
+    {
+        EnsureRegistryBuilt();
+        if (_registry.TryGetValue(id, out Breakable b))
+            b?.ApplyPendingWarnFromNetwork();
     }
 
     /// <summary>
@@ -149,6 +159,18 @@ public class Breakable : MonoBehaviour
              "false: 각 머신에서 독립 처리 (런타임 스폰 오브젝트에 부착된 Breakable 등).")]
     [SerializeField] bool syncBreakOverNetwork = true;
 
+    [Header("경고 색상 (breakDelay 동안 노랑→빨강)")]
+    [Tooltip("true면 breakDelay 동안 이 오브젝트 자신의 머티리얼 색을 warnStartColor→warnEndColor로 " +
+             "보간해 파괴를 예고한다. breakDelay가 0이면 예고할 시간이 없으므로 무시된다.\n" +
+             "Host/Client 모두 SyncBreakPendingClientRpc로 같은 순간 시작하므로 두 머신에서 동일하게 보인다.")]
+    [SerializeField] bool warnColorEnabled = false;
+
+    [Tooltip("색을 입힐 셰이더 프로퍼티. URP Lit 기준 _BaseColor.")]
+    [SerializeField] string warnColorProperty = "_BaseColor";
+
+    [SerializeField] Color warnStartColor = Color.yellow;
+    [SerializeField] Color warnEndColor = Color.red;
+
     [Header("이벤트")]
     [Tooltip("최종 파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
     public UnityEvent OnBreak;
@@ -159,6 +181,13 @@ public class Breakable : MonoBehaviour
     bool _breakPending;
     Coroutine _breakRoutine;
     int _netIndex = -1;
+
+    // warnColorEnabled 전용 — 렌더러당 하나씩, Awake에서 1회 구성. Client가 SyncBreakPendingClientRpc로
+    // 받는 예고 전용 코루틴은 _breakRoutine(파괴 확정까지 담당)과 분리해 따로 추적한다 —
+    // Host는 예고+파괴가 한 흐름(BreakSequenceRoutine)이지만 Client는 예고만 로컬로 돌고 실제
+    // 파괴는 별도 RPC(SyncBreakClientRpc)로 오기 때문.
+    WarnMarkerColorFx[] _warnFx;
+    Coroutine _warnRoutine;
 
     // 스폰해 둔 파편. 리셋(OnEnable)·페이즈 종료(OnDisable)에서 즉시 치워야 "멀쩡하게 복구된
     // 오브젝트 옆에 지난 회차 파편이 뒹구는" 그림이 안 나온다 — TongueController.ClearDebris /
@@ -174,6 +203,14 @@ public class Breakable : MonoBehaviour
     {
         _renderers = GetComponentsInChildren<Renderer>(true);
         _colliders = GetComponentsInChildren<Collider>(true);
+
+        if (warnColorEnabled)
+        {
+            _warnFx = new WarnMarkerColorFx[_renderers.Length];
+            for (int i = 0; i < _renderers.Length; i++)
+                if (_renderers[i] != null)
+                    _warnFx[i] = new WarnMarkerColorFx(_renderers[i], warnColorProperty, warnStartColor, warnEndColor);
+        }
 
         // 이번 씬 세대의 레지스트리가 아직 없으면 전체를 한 번에 구성(월드 좌표 정렬).
         // 이미 다른 Breakable의 Awake()나 BreakById()가 먼저 구성해뒀다면 즉시 반환.
@@ -194,6 +231,11 @@ public class Breakable : MonoBehaviour
         {
             StopCoroutine(_breakRoutine);
             _breakRoutine = null;
+        }
+        if (_warnRoutine != null)
+        {
+            StopCoroutine(_warnRoutine);
+            _warnRoutine = null;
         }
         _breakPending = false;
         // 복구는 항상 부모 SetActive false→true 사이클을 지나므로(클래스 주석의 리셋 규약)
@@ -254,6 +296,16 @@ public class Breakable : MonoBehaviour
         }
 
         _breakPending = true;
+
+        // Client도 같은 순간부터 경고색 예고를 시작하게 방송 — breakDelay는 씬에 저장된 동일
+        // 직렬화 값이라 지속시간을 실어보낼 필요 없이 "지금 시작" 트리거만 보낸다.
+        if (syncBreakOverNetwork && warnColorEnabled && breakDelay > 0f && _netIndex >= 0)
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && nm.IsServer)
+                StageNetworkState.Instance?.SyncBreakPendingClientRpc(_netIndex);
+        }
+
         if (_breakRoutine != null)
             StopCoroutine(_breakRoutine);
         _breakRoutine = StartCoroutine(BreakSequenceRoutine());
@@ -263,12 +315,53 @@ public class Breakable : MonoBehaviour
     {
         if (breakDelay > 0f)
         {
-            yield return new WaitForSeconds(breakDelay);
+            if (warnColorEnabled)
+                yield return WarnColorRoutine(breakDelay);
+            else
+                yield return new WaitForSeconds(breakDelay);
         }
 
         _breakRoutine = null;
         _breakPending = false;
         ApplyFinalBreak();
+    }
+
+    /// <summary>
+    /// Client 전용 진입점: Host의 SyncBreakPendingClientRpc 수신 시 호출. 실제 파괴 판정·확정 없이
+    /// 로컬에서 동일한 breakDelay 동안 경고색 보간만 재생한다 — 파괴 확정은 이후 별도로 도착하는
+    /// SyncBreakClientRpc(ApplyBreakFromNetwork)가 담당한다.
+    /// </summary>
+    public void ApplyPendingWarnFromNetwork()
+    {
+        // Client는 Phase 컨테이너가 Host보다 늦게 켜질 수 있다 — 비활성에서 StartCoroutine은 에러.
+        if (_broken || !warnColorEnabled || breakDelay <= 0f || !isActiveAndEnabled) return;
+        if (_warnRoutine != null) StopCoroutine(_warnRoutine);
+        _warnRoutine = StartCoroutine(WarnColorRoutine(breakDelay));
+    }
+
+    /// <summary>duration에 걸쳐 warnStartColor→warnEndColor로 보간. BreakSequenceRoutine(Host, 파괴까지
+    /// 이어짐)과 ApplyPendingWarnFromNetwork(Client, 예고만)이 공유 — 별도 StartCoroutine으로 감싸지
+    /// 않고 직접 yield return해야 호출부의 코루틴 핸들 하나로 정지(OnDisable 등)가 가능하다.</summary>
+    IEnumerator WarnColorRoutine(float duration)
+    {
+        ApplyWarnProgress(0f);
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            ApplyWarnProgress(elapsed / duration);
+            yield return null;
+        }
+
+        ApplyWarnProgress(1f);
+    }
+
+    void ApplyWarnProgress(float t)
+    {
+        if (_warnFx == null) return;
+        for (int i = 0; i < _warnFx.Length; i++)
+            _warnFx[i]?.SetProgress(t);
     }
 
     void ApplyFinalBreak()
@@ -322,6 +415,15 @@ public class Breakable : MonoBehaviour
     {
         if (_broken) return;
         _broken = true;
+
+        // 네트워크 지연으로 예고 코루틴이 아직 안 끝났는데 파괴 확정이 먼저 도착할 수 있다 —
+        // 그대로 두면 SetVisible(false) 이후에도 계속 색을 갱신하려 든다.
+        if (_warnRoutine != null)
+        {
+            StopCoroutine(_warnRoutine);
+            _warnRoutine = null;
+        }
+
         DoBreakVisuals();
         SetVisible(false);
         // damagePlayerOnBreak: Host 전용. Client에서는 실행하지 않음.
@@ -375,9 +477,26 @@ public class Breakable : MonoBehaviour
             StopCoroutine(_breakRoutine);
             _breakRoutine = null;
         }
+        if (_warnRoutine != null)
+        {
+            StopCoroutine(_warnRoutine);
+            _warnRoutine = null;
+        }
         _breakPending = false;
         _broken = false;
         SetVisible(true);
+        ResetWarnColor();
+    }
+
+    /// <summary>경고색 보간이 남긴 MaterialPropertyBlock 오버라이드를 지워 원래 머티리얼 색으로
+    /// 되돌린다. 리셋 사이클(부모 SetActive false→true)마다 호출 — 다음 파괴 때 다시 노랑부터
+    /// 시작해야지 지난 회차의 빨강이 남아있으면 안 된다.</summary>
+    void ResetWarnColor()
+    {
+        if (!warnColorEnabled || _renderers == null) return;
+        for (int i = 0; i < _renderers.Length; i++)
+            if (_renderers[i] != null)
+                _renderers[i].SetPropertyBlock(null);
     }
 
     void SetVisible(bool active)

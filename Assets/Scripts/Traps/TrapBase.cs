@@ -40,6 +40,11 @@ public abstract class TrapBase : MonoBehaviour
     /// <summary>발사 직전(프로젝타일 생성 직전)에 호출됨.</summary>
     public event System.Action OnFiring;
 
+    /// <summary>OnPreFireCharge 후 OnFiring 없이 충전이 끝났을 때(Deactivate/Freeze) 호출. 경고·입 연출 정리용.</summary>
+    public event System.Action OnChargeCancelled;
+
+    bool _chargePending;
+
     /// <summary>MouthTrapAnimatorAnim / ArrowWarnSign 등이 Awake에서 설정. 이 시간만큼 앞당겨 OnPreFireCharge를 발행하고 발사를 지연.
     /// 여러 컴포넌트가 호출하면 가장 긴 값을 유지한다(짧은 쪽이 긴 경고/입 벌림을 덮어쓰지 않게).</summary>
     protected float preFireChargeTime = 0f;
@@ -74,6 +79,8 @@ public abstract class TrapBase : MonoBehaviour
 
     protected virtual void OnDisable()
     {
+        // 비활성화 시에는 같은 GameObject의 연출 컴포넌트가 자기 OnDisable에서 정리하므로 이벤트 없이 리셋만.
+        _chargePending = false;
         isRunning = false;
         StopAllCoroutines();
         trapCoroutine = null;
@@ -108,6 +115,7 @@ public abstract class TrapBase : MonoBehaviour
         StopAllCoroutines();
         trapCoroutine = null;
         fireCoroutine = null;
+        CancelPendingCharge();
         OnDeactivated();
     }
 
@@ -140,12 +148,25 @@ public abstract class TrapBase : MonoBehaviour
     {
         if (preFireChargeTime > 0f)
         {
+            _chargePending = true;
             OnPreFireCharge?.Invoke();
             yield return new WaitForSeconds(preFireChargeTime);
         }
-        if (!isRunning) yield break;
+        if (!isRunning)
+        {
+            CancelPendingCharge();
+            yield break;
+        }
+        _chargePending = false;
         OnFiring?.Invoke();
         OnTrapTrigger();
+    }
+
+    void CancelPendingCharge()
+    {
+        if (!_chargePending) return;
+        _chargePending = false;
+        OnChargeCancelled?.Invoke();
     }
 
     /// <summary>함정이 발동될 때 호출. 하위 클래스에서 구현.</summary>

@@ -126,41 +126,13 @@ public class WindTrap : TrapBase
     // ID는 씬 계층 경로(+sibling index tie-break)로 정렬한 결정적 순서로 배정한다 — Awake
     // 호출 순서로 매기면 PhaseManager.objectsToEnable로 늦게 활성화되는 그룹의 Host/Client
     // 활성화 순서가 달라져 ID가 뒤바뀔 수 있다 (ArrowTrap에서 실제로 겪은 버그, 동일 예방).
-    static readonly Dictionary<int, WindTrap> _registry = new Dictionary<int, WindTrap>();
-    static bool _registryBuilt = false;
+    static readonly SceneStableRegistry<WindTrap> _registry = new SceneStableRegistry<WindTrap>();
     int _netIndex = -1;
-
-    static void EnsureRegistryBuilt()
-    {
-        if (_registryBuilt) return;
-        _registryBuilt = true;
-
-        WindTrap[] all = FindObjectsByType<WindTrap>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            .OrderBy(a => GetHierarchyPath(a.transform), StringComparer.Ordinal)
-            .ToArray();
-
-        for (int i = 0; i < all.Length; i++)
-        {
-            all[i]._netIndex = i;
-            _registry[i] = all[i];
-        }
-    }
-
-    static string GetHierarchyPath(Transform t)
-    {
-        string path = t.name + "#" + t.GetSiblingIndex().ToString("D4");
-        while (t.parent != null)
-        {
-            t = t.parent;
-            path = t.name + "#" + t.GetSiblingIndex().ToString("D4") + "/" + path;
-        }
-        return path;
-    }
 
     /// <summary>StageNetworkState.SyncWindChargeClientRpc 수신 시 Client에서 호출. Mouth 오므림 + 경고 사인 재생.</summary>
     public static void PlayChargeById(int id)
     {
-        _registry.TryGetValue(id, out WindTrap t);
+        WindTrap t = _registry.Get(id);
         if (t == null) return;
         t.GetComponent<MouthWindAnimator>()?.PlayChargeFromNetwork();
         t.GetComponent<WindWarnSign>()?.PlayWarnFromNetwork();
@@ -169,7 +141,7 @@ public class WindTrap : TrapBase
     /// <summary>StageNetworkState.SyncWindEndClientRpc 수신 시 Client에서 호출. Mouth 복귀 + 경고 사인 숨김.</summary>
     public static void PlayEndById(int id)
     {
-        _registry.TryGetValue(id, out WindTrap t);
+        WindTrap t = _registry.Get(id);
         if (t == null) return;
         t.GetComponent<MouthWindAnimator>()?.PlayEndFromNetwork();
         t.GetComponent<WindWarnSign>()?.PlayHideFromNetwork();
@@ -199,14 +171,12 @@ public class WindTrap : TrapBase
     protected override void Awake()
     {
         base.Awake();
-        EnsureRegistryBuilt();
+        _netIndex = _registry.Register(this);
     }
 
     void OnDestroy()
     {
-        _registry.Remove(_netIndex);
-        // 씬의 마지막 WindTrap이 사라지면 레지스트리를 비워 다음 씬 로드 시 재구성되게 한다.
-        if (_registry.Count == 0) _registryBuilt = false;
+        _registry.Unregister(this, _netIndex);
     }
 
     protected override void OnEnable()

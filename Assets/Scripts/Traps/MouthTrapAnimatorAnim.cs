@@ -131,6 +131,7 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
 
         _trap.OnPreFireCharge += PlayOpenFromNetwork;
         _trap.OnFiring        += PlayHoldFromNetwork;
+        _trap.OnChargeCancelled += PlayCancelFromNetwork;
     }
 
     void OnDisable()
@@ -144,6 +145,7 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
         {
             _trap.OnPreFireCharge -= PlayOpenFromNetwork;
             _trap.OnFiring        -= PlayHoldFromNetwork;
+            _trap.OnChargeCancelled -= PlayCancelFromNetwork;
         }
 
         TriggerSafe(idleTrigger, openTrigger, holdTrigger, closeTrigger);
@@ -155,16 +157,9 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
     /// <summary>입 벌리기 시작. Host는 OnPreFireCharge 직접 구독, Client는 SyncArrowChargeClientRpc 수신으로 호출됨.</summary>
     public void PlayOpenFromNetwork()
     {
-        if (_idleReturnCoroutine != null)
-        {
-            StopCoroutine(_idleReturnCoroutine);
-            _idleReturnCoroutine = null;
-        }
-        if (_openWaitCoroutine != null)
-        {
-            StopCoroutine(_openWaitCoroutine);
-            _openWaitCoroutine = null;
-        }
+        // Client는 Phase 활성화가 Host보다 늦어 비활성 상태에서 RPC가 도착할 수 있다(StartCoroutine 에러 방지).
+        if (!isActiveAndEnabled) return;
+        StopPendingRoutines();
 
         TriggerOpen();
 
@@ -178,6 +173,24 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
     /// <summary>발사(Hold) 확정. Host는 OnFiring 직접 구독, Client는 SyncArrowFireClientRpc 수신으로 호출됨.</summary>
     public void PlayHoldFromNetwork()
     {
+        if (!isActiveAndEnabled) return;
+        StopPendingRoutines();
+
+        TriggerHold();
+        _idleReturnCoroutine = StartCoroutine(HoldThenCloseRoutine());
+    }
+
+    /// <summary>충전이 발사 없이 끝남(Deactivate/Freeze). Host는 OnChargeCancelled 직접 구독,
+    /// Client는 SyncArrowCancelClientRpc 수신으로 호출됨. Hold 대기 없이 바로 닫는다.</summary>
+    public void PlayCancelFromNetwork()
+    {
+        if (!isActiveAndEnabled) return;
+        StopPendingRoutines();
+        _idleReturnCoroutine = StartCoroutine(CloseThenIdleRoutine());
+    }
+
+    void StopPendingRoutines()
+    {
         if (_idleReturnCoroutine != null)
         {
             StopCoroutine(_idleReturnCoroutine);
@@ -188,9 +201,6 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
             StopCoroutine(_openWaitCoroutine);
             _openWaitCoroutine = null;
         }
-
-        TriggerHold();
-        _idleReturnCoroutine = StartCoroutine(HoldThenCloseRoutine());
     }
 
     // ── 코루틴 ─────────────────────────────────────────────────────────────
@@ -215,8 +225,12 @@ public class MouthTrapAnimatorAnim : MonoBehaviour
     IEnumerator HoldThenCloseRoutine()
     {
         yield return new WaitForSeconds(Mathf.Max(0f, holdDuration));
-        TriggerClose();
+        yield return CloseThenIdleRoutine();
+    }
 
+    IEnumerator CloseThenIdleRoutine()
+    {
+        TriggerClose();
         yield return new WaitForSeconds(Mathf.Max(0f, closeClipLength));
         TriggerIdle();
         _idleReturnCoroutine = null;
