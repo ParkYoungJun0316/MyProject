@@ -112,7 +112,7 @@ public class CheerService : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         // 씨딩을 OnValueChanged 구독보다 먼저 — 그래야 씨딩 write가 로컬 콜백을 띄우지 않아
-        // 아래 RebuildOwnerLocalGrammar 호출과 중복되지 않는다 (PlayerCheerNameSync와 동일 패턴).
+        // 아래 RebuildOwnerLocalGrammar 호출과 중복되지 않는다.
         if (IsServer && GameSession.Instance != null && GameSession.Instance.HasSessionTeamCheerWord)
         {
             string sessionWord = GameSession.Instance.GetSessionTeamCheerWord();
@@ -122,7 +122,11 @@ public class CheerService : NetworkBehaviour
 
         _teamCheerWord.OnValueChanged += HandleTeamCheerWordNv;
 
-        PlayerCheerNameSync.RebuildOwnerLocalGrammar();
+        // 씨딩 write는 OnValueChanged를 안 태우므로 grammar 재빌드뿐 아니라 UI 이벤트도
+        // 여기서 직접 쏴줘야 한다 — 안 그러면 TeamCheerWordUI(HUD)가 OnEnable 시점에 이미
+        // 기본값("fighting")을 읽어버린 뒤 다시는 갱신 신호를 못 받는다.
+        CheerKeywordEngine.RebuildOwnerLocalGrammar();
+        OnTeamCheerWordChanged?.Invoke();
     }
 
     public override void OnNetworkDespawn()
@@ -140,7 +144,7 @@ public class CheerService : NetworkBehaviour
 
     void HandleTeamCheerWordNv(FixedString32Bytes previous, FixedString32Bytes current)
     {
-        PlayerCheerNameSync.RebuildOwnerLocalGrammar();
+        CheerKeywordEngine.RebuildOwnerLocalGrammar();
         OnTeamCheerWordChanged?.Invoke();
     }
 
@@ -174,13 +178,6 @@ public class CheerService : NetworkBehaviour
         if (CheerNameValidator.ContainsBlockedWord(lower))
         {
             reason = "blocked";
-            return false;
-        }
-
-        foreach (var (_, name) in PlayerCheerNameSync.GetAllEffectiveNames())
-        {
-            if (name != lower) continue;
-            reason = "taken";
             return false;
         }
 
@@ -431,57 +428,19 @@ public class CheerService : NetworkBehaviour
         => OnTeamVoteChanged?.Invoke(current, required, voterColorIndices ?? System.Array.Empty<int>());
 
     // ── 공개 유틸 (이름 ↔ colorIndex) ─────────────────────────────
+    // [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 이름은 이제 PlayerColorUtil.DefaultCheerNames
+    // (berry/guma/sook/dan) 고정값 하나뿐이라 NV·세션 스냅샷 우선순위 역전 로직이 전부 불필요해졌다.
 
-    /// <summary>
-    /// 이름 → colorIndex. 우선순위 역전(CheerAndTutorialDesign.md §3.4.2, 2026-09):
-    /// ①실시간 커스텀 NV → ②GameSession 확정 세션 이름 → ③색 기본값. 미매칭 시 -1.
-    ///
-    /// [왜 역전했나] Interlude에서 세션 스냅샷이 항상 이겨버리면, 방금 입력한 새 이름을
-    /// "말해보기"로 테스트해도 그래머·판정이 옛 세션값을 계속 본다. 실시간 값을 우선하면
-    /// Tutorial/Interlude 둘 다 즉시 테스트 가능해지고, 나머지 M/T 스테이지는
-    /// PlayerCheerNameSync.OnNetworkSpawn의 세션값 NV 씨딩(§3.4 코드 변경 #2) 덕분에
-    /// NV == 세션값이라 결과가 완전히 동일하다(동작 변화 없음).
-    ///
-    /// [GetAllEffectiveNames를 쓰지 않는 이유] 그쪽은 NV가 비면 색 기본값을 채워주기 때문에,
-    /// 씨딩이 실패한 플레이어의 빈 NV가 "기본값"이라는 유효한 답으로 위장해 세션 확정값을
-    /// 가려버린다 — 커스텀 값이 실제로 있는 NV만 1순위로 본다(2026-09-06 리뷰).
-    /// </summary>
+    /// <summary>이름 → colorIndex(색 기본값 매칭). 미매칭 시 -1.</summary>
     public static int GetColorIndex(string cheerName)
     {
         string lower = cheerName.Trim().ToLower();
-
-        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllCustomCheerNames())
-        {
-            if (name != lower) continue;
-            if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color))
-                return PlayerColorUtil.ColorTypeToIndex(color);
-        }
-
-        if (GameSession.Instance != null)
-        {
-            int idx = GameSession.Instance.GetSessionColorIndex(lower);
-            if (idx >= 0) return idx;
-        }
-
         return System.Array.IndexOf(PlayerColorUtil.DefaultCheerNames, lower);
     }
 
-    /// <summary>
-    /// colorIndex → CheerName. 우선순위 역전(§3.4.2): ①실시간 커스텀 NV
-    /// → ②세션 확정값 → ③색 기본값. 커스텀 NV만 1순위로 보는 이유는 GetColorIndex 주석 참고.
-    /// </summary>
+    /// <summary>colorIndex → CheerName(색 기본값).</summary>
     public static string GetCheerName(int colorIndex)
     {
-        foreach (var (clientId, name) in PlayerCheerNameSync.GetAllCustomCheerNames())
-        {
-            if (PlayerSpawnCoordinator.TryGetColor(clientId, out var color) &&
-                PlayerColorUtil.ColorTypeToIndex(color) == colorIndex)
-                return name;
-        }
-
-        if (GameSession.Instance != null && GameSession.Instance.HasSessionCheerNames)
-            return GameSession.Instance.GetSessionCheerName(colorIndex);
-
         var defaults = PlayerColorUtil.DefaultCheerNames;
         if (colorIndex < 0 || colorIndex >= defaults.Length) return string.Empty;
         return defaults[colorIndex];

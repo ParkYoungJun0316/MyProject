@@ -5,7 +5,8 @@ using UnityEngine.Events;
 
 /// <summary>
 /// Interlude 씬(M.Boss ↔ T.Stage1 사이 인터미션) 네트워크 매니저. NetworkBehaviour.
-/// CheerAndTutorialDesign.md §1.1 / §3.4 SSOT — CheerName/TeamCheerWord **2차 변경** 게이트만 담당.
+/// CheerAndTutorialDesign.md §1.1 / §3.4 SSOT — TeamCheerWord **2차 변경** 게이트만 담당.
+/// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 2차 변경 대상은 이제 TeamCheerWord뿐이다.
 ///
 /// [TutorialNetworkManager와의 차이 — §3.4.1]
 /// 스폰·색배정·시드·세션시각·DisplayName·VoiceId 세션 확정은 전부 제외한다 — 이미 Tutorial 게이트
@@ -17,9 +18,8 @@ using UnityEngine.Events;
 /// [역할]
 /// - Host 전용 헤드카운트 게이트(TutorialGatherZone 재사용, 색 무관 단일 존, Tutorial과 동일 원칙)
 ///   → 카운트다운 완료 시:
-///   ① PlayerCheerNameSync.BuildSessionCheerNames() → GameSession.SetSessionCheerNames + ClientRpc
-///   ② CheerService.Instance.TeamCheerWord → GameSession.SetSessionTeamCheerWord + ClientRpc
-///   ③ SceneFlowManager.Instance.LoadNextScene() → T.Stage1
+///   ① CheerService.Instance.TeamCheerWord → GameSession.SetSessionTeamCheerWord + ClientRpc
+///   ② SceneFlowManager.Instance.LoadNextScene() → T.Stage1
 ///
 /// [이탈 정책 — §3.4.3]
 /// Interlude는 인게임으로 취급한다. 이 클래스는 이탈을 다루지 않음 — 씬에 DisconnectManager를
@@ -96,8 +96,8 @@ public class InterludeNetworkManager : NetworkBehaviour
 
     void Update()
     {
-        // IsSpawned 가드 — 미스폰 상태로 CompleteGate에 들어가면 세션 재확정 ClientRpc 2개가
-        // 유실되어 Client만 옛 CheerName/TeamCheerWord를 들고 T.Stage1에 들어가는 조용한 desync가
+        // IsSpawned 가드 — 미스폰 상태로 CompleteGate에 들어가면 세션 재확정 ClientRpc가
+        // 유실되어 Client만 옛 TeamCheerWord를 들고 T.Stage1에 들어가는 조용한 desync가
         // 된다(CheerService.ApplyTeamBuff와 동일한 방어 패턴).
         if (!IsSpawned || _gateCompleted) return;
 
@@ -174,7 +174,7 @@ public class InterludeNetworkManager : NetworkBehaviour
     }
 
     /// <summary>
-    /// 게이트 통과 확정. CheerName/TeamCheerWord 2차 변경분만 세션에 재확정하고 T.Stage1로
+    /// 게이트 통과 확정. TeamCheerWord 2차 변경분만 세션에 재확정하고 T.Stage1로
     /// 전환한다(§3.4.1 — 스폰/색배정/시드/세션시각/DisplayName/VoiceId는 Tutorial에서 이미
     /// 확정되어 그대로 재사용되므로 여기서 다시 계산하지 않는다).
     /// </summary>
@@ -206,15 +206,6 @@ public class InterludeNetworkManager : NetworkBehaviour
         BroadcastGateCountdownCompleteClientRpc();
         Debug.Log("[InterludeNetworkManager] 게이트 통과 — T.Stage1 진입 처리 시작");
 
-        // CheerName 2차 확정 — Tutorial CompleteGate와 완전히 동일한 헬퍼 재사용(§3.4 코드 변경 #3).
-        // 안 바꾼 플레이어는 기존 세션값(=실시간 NV, §3.4 코드 변경 #2로 이미 씨딩됨)이 그대로
-        // 다시 확정되고, 바꾼 플레이어만 새 값으로 갈아치워진다.
-        var sessionNames = PlayerCheerNameSync.BuildSessionCheerNames();
-        GameSession.Instance?.SetSessionCheerNames(sessionNames);
-        BroadcastSessionCheerNamesClientRpc(
-            new FixedString32Bytes(sessionNames[0]), new FixedString32Bytes(sessionNames[1]),
-            new FixedString32Bytes(sessionNames[2]), new FixedString32Bytes(sessionNames[3]));
-
         // TeamCheerWord 2차 확정 — CheerService NV는 이미 이 씬 OnNetworkSpawn에서 세션값으로
         // seed돼 있으므로(CheerService 기존 패턴), 여기서 그 값을 다시 GameSession에 되돌려
         // Host가 안 바꿨으면 그대로, 바꿨으면 새 값이 반영된다. Tutorial CompleteGate와 동일 패턴.
@@ -242,16 +233,6 @@ public class InterludeNetworkManager : NetworkBehaviour
         if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
         _gateCompleted = true;
         OnGateCountdownComplete?.Invoke();
-    }
-
-    /// <summary>세션 확정 CheerName을 모든 클라이언트의 GameSession에 배포(TutorialNetworkManager와 동일 패턴).</summary>
-    [ClientRpc]
-    void BroadcastSessionCheerNamesClientRpc(FixedString32Bytes n0, FixedString32Bytes n1,
-                                              FixedString32Bytes n2, FixedString32Bytes n3)
-    {
-        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
-        GameSession.Instance?.SetSessionCheerNames(
-            new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() });
     }
 
     /// <summary>세션 확정 TeamCheerWord를 모든 클라이언트의 GameSession에 배포(TutorialNetworkManager와 동일 패턴).</summary>

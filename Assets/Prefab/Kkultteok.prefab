@@ -5349,9 +5349,6 @@ PrefabInstance:
       addedObject: {fileID: -8053356126589878070}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: -5567261443160759466}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1474430009313771538}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
       insertIndex: -1
@@ -5359,6 +5356,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1998381686174464479}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9101834184775602145}
   m_SourcePrefab: {fileID: 100100000, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
 --- !u!137 &153381192624555510 stripped
 SkinnedMeshRenderer:
@@ -5979,19 +5979,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCheerHeartsUI
   offset: {x: 0, y: 2.4, z: 0}
   exclamationPrefab: {fileID: 8880342525500331190, guid: 3a56145448bd0b84a9d503c9fc16df2a, type: 3}
---- !u!114 &-5567261443160759466
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6535059913203114227}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: abc313d6dd436e7418492484c8540670, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerCheerNameSync
-  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1474430009313771538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6038,6 +6025,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerReviveInteract
   ShowTopMostFoldoutHeaderGroup: 1
   detectRange: 2.5
+--- !u!114 &9101834184775602145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6535059913203114227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0a5b18fba7e4747840ba9010f58116, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerNameTagUI
+  offset: {x: 0, y: 2.4, z: 0}
+  fontSize: 3
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineColor: {r: 0, g: 0, b: 0, a: 1}
+  outlineWidth: 0.2
+  hideForLocalOwner: 1
 --- !u!137 &6705163789354107372 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 828061435129191502, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}

@@ -1,10 +1,9 @@
 /// <summary>
-/// CheerName 형식·예약어·금칙어 검증 — CheerAndTutorialDesign.md §3.5 "형식(#1~4)"/"세션·시스템(#8)"/
+/// TeamCheerWord 형식·예약어·금칙어 검증 — CheerAndTutorialDesign.md §3.5 "형식(#1~4)"/"세션·시스템(#8)"/
 /// "금칙어(#9~12)" 규칙의 단일 소스.
-/// 구 LobbyNetworkManager.IsValidCheerNameFormat/ReservedNames를 여기로 추출한 것 — 로직 변경 없음
-/// (LobbyNetworkManager 자체는 NetworkDesign.md §6B.7 P8에서 삭제 완료, 2026-08-20).
 ///
-/// 신규 PlayerCheerNameSync(Tutorial, §6B.7 P6)가 이 클래스 하나만 참조한다.
+/// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 이 검증기는 이제 TeamCheerWord 하나만 검사한다
+/// (CheerService.TrySetTeamCheerWord가 유일한 호출자). 클래스 이름은 하위 호환을 위해 유지.
 ///
 /// [금칙어 스코프 — 2026-08-19 확정, "완벽 필터 아님"]
 /// 100% 차단이 목표가 아니다(음성 인식 자체도 정확한 발음이 아니면 매칭 안 됨). "대놓고 심한 단어

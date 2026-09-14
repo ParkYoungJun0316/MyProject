@@ -27,9 +27,15 @@ using TMPro;
 ///
 /// [레이아웃]
 /// 이름(위, "게임 닉네임 (Steam 닉네임)" 형식 — 예: "BERRY (영준)") / HP 하트(아래). 그 외 아이콘 없음.
-/// 게임 닉네임(CheerName)을 캐릭터 머리 위(PlayerNameTagUI)에 따로 띄우던 것은 2026-09-13 삭제 —
-/// 개인 버프가 자기 자신에게만 적용돼 남의 CheerName을 외칠 일이 없다(사용자 결정). 이 코너 패널
-/// 한 곳에서만 게임 닉네임+Steam 닉네임을 같이 보여준다.
+/// 게임 닉네임(CheerName)은 캐릭터 머리 위(PlayerNameTagUI)에도 같이 뜬다 — 2026-09-13 한때 삭제됐으나
+/// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제(흑/백 팔레트로 색 바꾸면 구분 불가 문제)로 재도입됨.
+/// 이름은 이제 PlayerColorUtil.DefaultCheerNames 고정값이라 런타임에 안 바뀐다.
+///
+/// [다운 표시(2026-09-14) — DownedReviveSystemDesign.md §6]
+/// 화면 중앙 배너(DeathOverlayUI)는 완전사망 전용으로 남기고, 다운은 이 패널의 체력 칸 쪽
+/// downIndicator(HELP 이미지 + downTimerText)로 표시한다. 체력이 낮다고 별도 경고 연출(점멸 등)은
+/// 없음 — 다운 여부만이 유일한 강조 트리거. 카운트다운은 PlayerDownState.RemainingDownTime(부활
+/// 시전 중엔 정지된 값)을 Update()에서 매 프레임 정수 초로 갱신한다.
 ///
 /// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 빨간 느낌표(PlayerCheerHeartsUI, 미통과만
 /// 표시 — 통과하면 소거, 2026-09-14 3차 변경)로 표시한다
@@ -67,14 +73,23 @@ public class TeamStatusUI : MonoBehaviour
         [Tooltip("아직 합류하지 않은 자리 표시 그룹(플레이스홀더). showEmptySlots가 true일 때만 사용.")]
         public GameObject emptyGroup;
 
+        [Tooltip("다운 시 표시할 그룹(HELP 이미지 + 타이머). 평소엔 비활성 상태로 배치.")]
+        public GameObject downIndicator;
+        [Tooltip("다운 생존 카운트다운 텍스트 (10 → 9 → 8 ... → 0).")]
+        public TextMeshProUGUI downTimerText;
+
         // ── 런타임 상태 (인스펙터 비노출) ──────────────────────────
         [System.NonSerialized] public int colorIndex = -1;
         [System.NonSerialized] public Player player;
         [System.NonSerialized] public PlayerEvents events;
+        [System.NonSerialized] public PlayerDownState downState;
         [System.NonSerialized] public System.Action onDamaged;
         [System.NonSerialized] public System.Action onHealed;
         [System.NonSerialized] public System.Action onDied;
         [System.NonSerialized] public System.Action onRespawned;
+        [System.NonSerialized] public System.Action onDowned;
+        [System.NonSerialized] public System.Action onRevived;
+        [System.NonSerialized] public int shownDownSeconds = -1;
     }
 
     [Header("연결")]
@@ -153,6 +168,8 @@ public class TeamStatusUI : MonoBehaviour
                 Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 heartImages가 비어 있습니다 — HP가 표시되지 않습니다. ({name})", this);
             if (showEmptySlots && slot.emptyGroup == null)
                 Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 emptyGroup이 비어 있습니다 — showEmptySlots가 켜져 있는데 빈 자리 표시가 없습니다. ({name})", this);
+            if (slot.downIndicator == null || slot.downTimerText == null)
+                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 downIndicator/downTimerText가 비어 있습니다 — 다운 표시가 나타나지 않습니다. ({name})", this);
 
             usable++;
         }
@@ -166,7 +183,6 @@ public class TeamStatusUI : MonoBehaviour
         PlayerSpawnCoordinator.OnPlayersReady += RequestRebuild;
         PlayerSpawnCoordinator.OnRosterChanged += RequestRebuild;
         PlayerDisplayNameSync.OnAnyDisplayNameChanged += RefreshAllSlotNames;
-        PlayerCheerNameSync.OnAnyCheerNameChanged += RefreshAllSlotNames;
         if (PlayerSpawnCoordinator.IsReady) RequestRebuild();
     }
 
@@ -184,7 +200,6 @@ public class TeamStatusUI : MonoBehaviour
         PlayerSpawnCoordinator.OnPlayersReady -= RequestRebuild;
         PlayerSpawnCoordinator.OnRosterChanged -= RequestRebuild;
         PlayerDisplayNameSync.OnAnyDisplayNameChanged -= RefreshAllSlotNames;
-        PlayerCheerNameSync.OnAnyCheerNameChanged -= RefreshAllSlotNames;
         UnsubscribeAllSlots();
         ClearColorWatchers();
     }
@@ -343,12 +358,15 @@ public class TeamStatusUI : MonoBehaviour
         if (slot.heartImages != null)
             foreach (var h in slot.heartImages)
                 if (h != null) h.gameObject.SetActive(visible);
+        if (!visible && slot.downIndicator != null) slot.downIndicator.SetActive(false);
     }
 
     /// <summary>슬롯이 담당할 Player를 바꾼다. 실제로 바뀔 때만 PlayerEvents 구독을 갈아탄다.</summary>
     void SetSlotPlayer(ColorSlot slot, Player player)
     {
-        if (slot.player == player) return;
+        // ReferenceEquals: Destroy된 Player는 Unity == 오버로드상 null과 같아서, 그대로 비교하면
+        // 나간 플레이어 슬롯에 null을 넣을 때 early return돼 DOWN 표시 등 정리가 누락된다.
+        if (ReferenceEquals(slot.player, player)) return;
 
         if (slot.events != null)
         {
@@ -356,10 +374,13 @@ public class TeamStatusUI : MonoBehaviour
             if (slot.onHealed != null) slot.events.OnHealed -= slot.onHealed;
             if (slot.onDied != null) slot.events.OnDied -= slot.onDied;
             if (slot.onRespawned != null) slot.events.OnRespawned -= slot.onRespawned;
+            if (slot.onDowned != null) slot.events.OnDowned -= slot.onDowned;
+            if (slot.onRevived != null) slot.events.OnRevived -= slot.onRevived;
         }
 
         slot.player = player;
         slot.events = player != null ? player.GetComponent<PlayerEvents>() : null;
+        slot.downState = player != null ? player.GetComponent<PlayerDownState>() : null;
 
         if (slot.events != null)
         {
@@ -368,14 +389,22 @@ public class TeamStatusUI : MonoBehaviour
             slot.onHealed = () => RefreshSlotVisual(s);
             slot.onDied = () => SetDead(s, true);
             slot.onRespawned = () => SetDead(s, false);
+            slot.onDowned = () => SetDowned(s, true);
+            slot.onRevived = () => SetDowned(s, false);
             slot.events.OnDamaged += slot.onDamaged;
             slot.events.OnHealed += slot.onHealed;
             slot.events.OnDied += slot.onDied;
             slot.events.OnRespawned += slot.onRespawned;
+            slot.events.OnDowned += slot.onDowned;
+            slot.events.OnRevived += slot.onRevived;
+
+            // 이미 다운 중인 플레이어를 새로 슬롯에 배정하는 경우(리빌드 타이밍) 초기 상태를 맞춘다.
+            SetDowned(slot, IsShowingDown(slot));
         }
         else
         {
-            slot.onDamaged = slot.onHealed = slot.onDied = slot.onRespawned = null;
+            slot.onDamaged = slot.onHealed = slot.onDied = slot.onRespawned = slot.onDowned = slot.onRevived = null;
+            SetDowned(slot, false);
         }
     }
 
@@ -436,8 +465,8 @@ public class TeamStatusUI : MonoBehaviour
 
     /// <summary>
     /// colorIndex → Steam 표시 이름(닉네임). 매핑 실패 시 "???".
-    /// 우선순위는 CheerService.GetCheerName과 동일 규칙(세션 확정값 우선 → 실시간 NV 폴백) —
-    /// 게이트 후엔 스냅샷을 쓰고, 게이트 전(Tutorial)이거나 그 색 슬롯이 미확정이면
+    /// 우선순위: 세션 확정값 우선 → 실시간 NV 폴백 — 게이트 후엔 스냅샷을 쓰고,
+    /// 게이트 전(Tutorial)이거나 그 색 슬롯이 미확정이면
     /// PlayerDisplayNameSync 실시간 NV를 스캔한다. DisplayName은 재제출 UI가 없어 스테이지
     /// 재스폰 때마다 같은 값이 그대로 재보고되므로 두 값은 항상 수렴한다.
     /// GetSessionDisplayName은 미확정 슬롯에 빈 문자열을 돌려주므로(2026-09-05, 예전 "Player"
@@ -465,10 +494,8 @@ public class TeamStatusUI : MonoBehaviour
 
     /// <summary>
     /// 슬롯 이름 텍스트 = "게임 닉네임 (Steam 닉네임)", 예: "BERRY (영준)".
-    /// 게임 닉네임(CheerName)은 예전엔 캐릭터 머리 위(PlayerNameTagUI, 2026-09-13 삭제)에
-    /// 따로 떠 있었다 — 개인 버프가 자기 자신에게만 적용되는 구조라 남의 CheerName을 외칠 일이
-    /// 없어(사용자 결정 2026-09-13) 이 코너 패널 한 곳으로 합쳤다. Steam 닉네임(GetPlayerDisplayName)은
-    /// "실제로 누구인지" 확인용으로 그대로 유지.
+    /// 게임 닉네임(CheerName)은 캐릭터 머리 위(PlayerNameTagUI)에도 같이 뜬다(§10.3). Steam
+    /// 닉네임(GetPlayerDisplayName)은 "실제로 누구인지" 확인용으로 이 코너 패널에만 표시.
     /// </summary>
     static string GetSlotNameLabel(int colorIndex)
     {
@@ -519,6 +546,39 @@ public class TeamStatusUI : MonoBehaviour
             foreach (var h in slot.heartImages)
                 if (h != null) h.sprite = emptyHeartSprite;
 
-        if (!isDead) RefreshSlotVisual(slot);
+        // 완전사망 후에도 PlayerDownState.IsDowned는 true로 남으므로(§9) 사망 시점에 직접 내린다.
+        if (isDead) SetDowned(slot, false);
+        else RefreshSlotVisual(slot);
+    }
+
+    // ── 다운 표시 (DownedReviveSystemDesign.md §6) ─────────────────
+
+    /// <summary>다운 중이면서 아직 완전사망 전인지. 사망 후 IsDowned가 true로 남는 설계(§9) 때문에 IsDead를 함께 본다.</summary>
+    static bool IsShowingDown(ColorSlot slot) =>
+        slot.downState != null && slot.downState.IsDowned && slot.player != null && !slot.player.IsDead;
+
+    /// <summary>다운 진입/해제 시 HELP 인디케이터 on/off. 하트 표시는 기존 OnDamaged/OnHealed 경로가 이미 갱신한다.</summary>
+    void SetDowned(ColorSlot slot, bool isDowned)
+    {
+        if (slot == null) return;
+        if (slot.downIndicator != null) slot.downIndicator.SetActive(isDowned);
+        slot.shownDownSeconds = -1;
+        if (isDowned) RefreshDownTimer(slot);
+    }
+
+    /// <summary>PlayerDownState.RemainingDownTime(부활 시전 중엔 정지된 값)을 정수 초로 표시. 값이 바뀔 때만 텍스트 갱신.</summary>
+    static void RefreshDownTimer(ColorSlot slot)
+    {
+        if (slot.downTimerText == null || slot.downState == null) return;
+        int seconds = Mathf.CeilToInt(slot.downState.RemainingDownTime);
+        if (seconds == slot.shownDownSeconds) return;
+        slot.shownDownSeconds = seconds;
+        slot.downTimerText.text = seconds.ToString();
+    }
+
+    void Update()
+    {
+        foreach (var slot in slots)
+            if (slot != null && IsShowingDown(slot)) RefreshDownTimer(slot);
     }
 }

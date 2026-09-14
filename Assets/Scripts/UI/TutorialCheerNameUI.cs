@@ -1,6 +1,5 @@
 using System.Collections;
 using TMPro;
-using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,19 +8,21 @@ using UnityEngine.Localization;
 using UnityEngine.UI;
 
 /// <summary>
-/// Tutorial CheerName 입력·확정 UI — NetworkDesign.md §6B.7 P6 / CheerAndTutorialDesign.md §3.4·§8.3.
-/// 네트워크 코어(PlayerCheerNameSync)는 이미 있음 — 이 스크립트는 그걸 붙잡는 로컬 입력 UI만 담당.
+/// Tutorial TeamCheerWord 입력·확정 UI — NetworkDesign.md §6B.7 P6 / CheerAndTutorialDesign.md §3.4·§8.3.
+///
+/// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 이름은 이제 PlayerColorUtil.DefaultCheerNames
+/// (berry/guma/sook/dan) 고정값이다. 이 패널이 다루는 건 TeamCheerWord 하나뿐: Host는 입력해서
+/// 정하고, 비-Host는 현재 값만 읽기 전용으로 본다. 클래스 이름(TutorialCheerNameUI)은 하위 호환을
+/// 위해 유지 — 실질 역할은 "TeamCheerWord 패널"이다.
 ///
 /// [배치] Tutorial 상시 HUD의 Canvas 자식(씬에 1개, TutorialRoomCodeDisplay와 형제)에 부착.
 /// Player 프리팹에 붙이지 않는다 — 각 클라이언트는 자기 화면의 UI 하나만 보면 되므로 인원수만큼
 /// 중복 생성할 필요가 없다(§6B.2 동적 합류와도 무관하게 항상 씬에 1개만 존재).
 ///
 /// [TeamCheerWord, CheerSystemDesign.md D1]
-/// 같은 패널에 Host 전용 입력 섹션을 둔다. Host는 TrySetTeamCheerWord를 직접 호출(RPC 없음).
-/// 비-Host는 현재 값만 읽기 전용. 팀워드 확정은 패널을 닫지 않는다(CheerName 확정만 닫음).
-/// 미연결이면 팀워드 UI만 없음 — CheerName 입력은 그대로 동작.
-/// teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식으로 배치 — 부모
-/// SetActive 1번으로 같이 꺼짐/켜짐(개별 SetActive 중복 방지).
+/// Host는 TrySetTeamCheerWord를 직접 호출(RPC 없음, 동기 처리라 "제출 중" 대기 상태 없음).
+/// 비-Host는 현재 값만 읽기 전용. teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의
+/// 자식으로 배치 — 부모 SetActive 1번으로 같이 꺼짐/켜짐(개별 SetActive 중복 방지).
 ///
 /// [상시 표시 → 상호작용 표지판 개폐로 변경, 2026-08-19]
 /// 이전엔 항상 화면에 떠 있었으나, 화면을 계속 가리고 "그 순간 지나면 다시 못 여는" DialogueUI식
@@ -33,25 +34,18 @@ using UnityEngine.UI;
 /// 열려있는 동안 키보드 입력의 최우선권을 가진다 — Enter는 확정 제출(InGameChatUI는 무시/자동 닫힘),
 /// Esc는 이 패널을 닫음(EscMenuController는 무시). 같은 프레임에 Esc가 눌렸을 때 "패널이 닫히자마자
 /// Esc 메뉴가 같이 뜨는" 이중 소비를 막기 위해, 실행 순서에 의존하지 않고 <see cref="ConsumedEscThisFrame"/>
-/// 명시적 플래그로 "이번 프레임에 Esc를 이미 이 패널이 소비했음"을 알린다(스크립트 실행 순서 가정 대신
-/// 명시적 상태로 — Bug Hunter 리뷰 3항목 중 3번 수정).
+/// 명시적 플래그로 "이번 프레임에 Esc를 이미 이 패널이 소비했음"을 알린다.
 ///
 /// [커서 공유, 2026-08-22]
 /// 커서 lock/visible을 직접 건드리지 않고 <see cref="CursorUnlockRequestUtil"/>에 요청만 한다 —
 /// EscMenu·이모트 메뉴가 동시에 열려 있을 때 "마지막에 닫은 UI가 무조건 잠금"으로 서로 덮어쓰지
-/// 않도록(Bug Hunter 리뷰 3항목 중 2번 수정). 요청/해제는 Open()/Close()가 아니라 OnEnable/OnDisable에
-/// 걸어, 씬 리로드로 패널이 열린 채 파괴돼도(Close() 호출 없이) Unity가 파괴 직전 자동 호출하는
-/// OnDisable에서 요청이 반드시 정리된다. 다만 그 파괴가 씬 통째 언로드(TitleReturnFlow 등)로 인한
-/// 것이면 실제 Cursor는 건드리지 않고 목록에서만 빠진다(<see cref="CursorUnlockRequestUtil.Forget"/>) —
-/// 그렇지 않으면 타이틀 복귀 시 이미 풀어둔 커서를 도로 잠가버리는 회귀가 생긴다(2026-08-22 재수정).
+/// 않도록. 요청/해제는 Open()/Close()가 아니라 OnEnable/OnDisable에 걸어, 씬 리로드로 패널이 열린
+/// 채 파괴돼도(Close() 호출 없이) Unity가 파괴 직전 자동 호출하는 OnDisable에서 요청이 반드시
+/// 정리된다. 다만 그 파괴가 씬 통째 언로드(TitleReturnFlow 등)로 인한 것이면 실제 Cursor는 건드리지
+/// 않고 목록에서만 빠진다(<see cref="CursorUnlockRequestUtil.Forget"/>).
 /// </summary>
 public class TutorialCheerNameUI : MonoBehaviour
 {
-    [Header("입력")]
-    [SerializeField] TMP_InputField nameInputField;
-    [SerializeField] Button confirmButton;
-    [SerializeField] int maxLength = 12;
-
     [Header("닫기")]
     [Tooltip("비워도 됨 — 상호작용 표지판에서 다시 상호작용해도 닫힘(토글).")]
     [SerializeField] Button closeButton;
@@ -61,6 +55,8 @@ public class TutorialCheerNameUI : MonoBehaviour
     [SerializeField] float feedbackDisplaySeconds = 2.5f;
 
     [Header("TeamCheerWord")]
+    [Tooltip("입력 문자 제한(2~12자 형식 검증과는 별개, TMP_InputField.characterLimit).")]
+    [SerializeField] int maxLength = 12;
     [Tooltip("Host 전용 입력 섹션 루트 — teamWordInputField/teamWordConfirmButton을 이 GameObject의 " +
              "자식으로 배치할 것(SetActive 1회로 같이 꺼짐/켜짐). 비-Host에선 숨김. " +
              "currentTeamWordText는 이 섹션 밖(패널 직계)에 있어 Host/Client 공통으로 항상 보인다.")]
@@ -80,20 +76,10 @@ public class TutorialCheerNameUI : MonoBehaviour
     // 비어 있거나(IsEmpty) 테이블 로드가 아직 안 끝났으면 한국어 폴백 — OptionsMenuController/
     // DeathOverlayUI와 동일 패턴(LocalizedOrFallback 참고).
 
-    [Header("Localization — 피드백(CheerName)")]
-    [Tooltip("Tutorial/CheerNamePanel.Feedback_Format — TeamWord 쪽과 문구 공용.")]
+    [Header("Localization — 피드백")]
     [SerializeField] LocalizedString feedbackFormat;
-    [SerializeField] LocalizedString feedbackReservedName;
-    [Tooltip("Tutorial/CheerNamePanel.Feedback_Blocked — TeamWord 쪽과 문구 공용.")]
     [SerializeField] LocalizedString feedbackBlocked;
-    [SerializeField] LocalizedString feedbackTakenName;
-    [SerializeField] LocalizedString feedbackGenericName;
-    [SerializeField] LocalizedString feedbackSubmitting;
-    [SerializeField] LocalizedString feedbackTimeout;
-
-    [Header("Localization — 피드백(TeamWord)")]
     [SerializeField] LocalizedString feedbackReservedTeam;
-    [SerializeField] LocalizedString feedbackTakenTeam;
     [SerializeField] LocalizedString feedbackGenericTeam;
     [SerializeField] LocalizedString feedbackNotServer;
 
@@ -110,34 +96,17 @@ public class TutorialCheerNameUI : MonoBehaviour
     public static bool ConsumedEscThisFrame => s_escClosedFrame == Time.frameCount;
     static int s_escClosedFrame = -1;
 
-    /// <summary>이번 프레임에 Enter로 CheerName 또는 TeamCheerWord 확정을 시도했는지 — InGameChatUI가 같은 프레임에
-    /// 채팅을 열지 않도록 확인하는 명시적 플래그. Host 자체 테스트 등에서 ServerRpc 왕복이
-    /// 같은 프레임 안에 끝나 확정 성공과 동시에 IsOpen이 false로 바뀌어버리면, InGameChatUI가
-    /// "입력창 닫힌 상태에서 Enter"로 오인해 같은 물리 Enter로 채팅을 열어버리는 문제를 막는다
-    /// (ConsumedEscThisFrame과 동일 패턴, 2026-08-22 수정).</summary>
+    /// <summary>이번 프레임에 Enter로 TeamCheerWord 확정을 시도했는지 — InGameChatUI가 같은 프레임에
+    /// 채팅을 열지 않도록 확인하는 명시적 플래그.</summary>
     public static bool ConsumedEnterThisFrame => s_enterConfirmFrame == Time.frameCount;
     static int s_enterConfirmFrame = -1;
 
-    /// <summary>제출 응답이 이 시간 안에 안 오면 입력칸을 다시 열어준다 (아래 SubmitTimeoutRoutine).</summary>
-    const float SubmitTimeoutSec = 3f;
-
-    PlayerCheerNameSync _mySync;
     string _lastShownTeamWord;
     bool? _teamWordHostVisible;
     float _feedbackHideAt = -1f;
-    bool _awaitingSubmitResult;
-    Coroutine _submitTimeoutRoutine;
 
     void Awake()
     {
-        if (nameInputField != null)
-        {
-            nameInputField.characterLimit = maxLength;
-            nameInputField.onValidateInput = ValidateCharacter;
-            nameInputField.onSubmit.AddListener(_ => OnConfirmClicked());
-        }
-        if (confirmButton != null)
-            confirmButton.onClick.AddListener(OnConfirmClicked);
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
 
@@ -150,7 +119,6 @@ public class TutorialCheerNameUI : MonoBehaviour
         if (teamWordConfirmButton != null)
             teamWordConfirmButton.onClick.AddListener(OnTeamWordConfirmClicked);
 
-        SetInteractable(false); // 내 캐릭터를 찾기 전까지 비활성
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
 
@@ -164,27 +132,19 @@ public class TutorialCheerNameUI : MonoBehaviour
         _teamWordHostVisible = null;
         _lastShownTeamWord = null;
 
-        // 닫혀 있는 동안 제출 응답을 놓쳤을 수 있다(닫히면 코루틴·타임아웃이 같이 멈춘다).
-        // 열릴 때마다 입력 상태를 다시 확정해 "회색 입력칸" 고착이 어떤 경로로도 남지 않게 한다.
-        _awaitingSubmitResult = false;
-        _submitTimeoutRoutine = null;
         HideFeedback();
-        SetInteractable(_mySync != null);
-
         ApplyTeamWordRole();
     }
 
     void OnDisable()
     {
         IsOpen = false;
-        _awaitingSubmitResult = false;
-        _submitTimeoutRoutine = null;
 
         // 씬이 통째로 언로드되는 중(예: TitleReturnFlow의 SceneManager.LoadScene)이면 자동으로
         // OnDisable이 불려도 목록 제거만 하고 실제 Cursor는 건드리지 않는다 — 그 시점엔 이미
         // TitleReturnFlow 등이 최종 커서 상태를 정해뒀으므로 여기서 다시 잠그면 그걸 덮어써버려
-        // "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다(2026-08-22 수정). 사용자가 직접 닫은
-        // 경우(씬은 그대로 로드된 채 SetActive(false)만 됨)만 실제로 Release해서 잠근다.
+        // "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다. 사용자가 직접 닫은 경우(씬은 그대로
+        // 로드된 채 SetActive(false)만 됨)만 실제로 Release해서 잠근다.
         if (!gameObject.scene.isLoaded)
         {
             CursorUnlockRequestUtil.Forget(this);
@@ -200,28 +160,21 @@ public class TutorialCheerNameUI : MonoBehaviour
     {
         if (gameObject.activeSelf) return;
         gameObject.SetActive(true);
-        StartCoroutine(FocusInputNextFrame());
+        StartCoroutine(FocusTeamWordNextFrame());
     }
 
     /// <summary>InGameChatUI.ActivateInputNextFrame과 동일 패턴 — SetActive 직후 바로 활성화하면
-    /// interactable=false 상태(첫 오픈 시 _mySync 미발견)일 수 있어 1프레임 대기 후 포커스한다.</summary>
-    IEnumerator FocusInputNextFrame()
-    {
-        yield return null;
-        if (nameInputField == null || !gameObject.activeSelf) yield break;
-        nameInputField.ActivateInputField();
-        EventSystem.current?.SetSelectedGameObject(nameInputField.gameObject);
-    }
-
+    /// hostTeamWordSection이 아직 안 켜진 상태(비-Host)일 수 있어 1프레임 대기 후 포커스한다.
+    /// 비-Host는 애초에 포커스할 입력창이 없으므로 건너뛴다.</summary>
     IEnumerator FocusTeamWordNextFrame()
     {
         yield return null;
-        if (teamWordInputField == null || !gameObject.activeSelf) yield break;
+        if (teamWordInputField == null || !gameObject.activeSelf || !IsLocalServer()) yield break;
         teamWordInputField.ActivateInputField();
         EventSystem.current?.SetSelectedGameObject(teamWordInputField.gameObject);
     }
 
-    /// <summary>패널 닫기 — 확정 여부와 무관, 타이핑 중이던 미확정 글자는 버려짐(§3.4상 문제 없음, 확정 전엔 로컬일 뿐).</summary>
+    /// <summary>패널 닫기 — 확정 여부와 무관, 타이핑 중이던 미확정 글자는 버려짐.</summary>
     public void Close()
     {
         if (!gameObject.activeSelf) return;
@@ -235,14 +188,9 @@ public class TutorialCheerNameUI : MonoBehaviour
         else Open();
     }
 
-    void OnDestroy()
-    {
-        if (_mySync != null) _mySync.OnSubmitResult -= HandleSubmitResult;
-    }
-
     void Update()
     {
-        // Esc는 닫기 버튼 대신 이 패널을 최우선으로 닫는다(§요청 3) — EscMenuController는
+        // Esc는 닫기 버튼 대신 이 패널을 최우선으로 닫는다 — EscMenuController는
         // ConsumedEscThisFrame 플래그를 확인해 같은 프레임엔 자기 메뉴를 열지 않는다(실행 순서 비의존).
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
@@ -250,9 +198,6 @@ public class TutorialCheerNameUI : MonoBehaviour
             Close();
             return;
         }
-
-        if (_mySync == null)
-            TryFindLocalSync();
 
         ApplyTeamWordRole();
         RefreshCurrentTeamWordDisplay();
@@ -264,100 +209,15 @@ public class TutorialCheerNameUI : MonoBehaviour
         }
     }
 
-    // ── 내 캐릭터 탐색 (1회, 찾으면 폴링 중단) ──────────────────────
-
-    void TryFindLocalSync()
-    {
-        var all = FindObjectsByType<PlayerCheerNameSync>(FindObjectsSortMode.None);
-        foreach (var sync in all)
-        {
-            var netObj = sync.GetComponent<NetworkObject>();
-            if (netObj == null || !netObj.IsOwner) continue;
-
-            _mySync = sync;
-            _mySync.OnSubmitResult += HandleSubmitResult;
-            SetInteractable(true);
-            break;
-        }
-    }
-
     // ── 입력 확정 ────────────────────────────────────────────────
 
     /// <summary>서버 규칙(CheerNameValidator)과 동일한 문자만 입력창에 타이핑 가능(편의용, 최종 검증은 Host).
-    /// 숫자/밑줄(_) 제외 — 2026-09-07, Vosk 음성 인식이 발음 불가능한 문자라 실제 응원 매칭이 안 됨.</summary>
+    /// 숫자/밑줄(_) 제외 — Vosk 음성 인식이 발음 불가능한 문자라 실제 응원 매칭이 안 됨.</summary>
     static char ValidateCharacter(string text, int charIndex, char addedChar)
     {
         char c = char.ToLowerInvariant(addedChar);
         bool allowed = c >= 'a' && c <= 'z';
         return allowed ? c : '\0';
-    }
-
-    void OnConfirmClicked()
-    {
-        if (_mySync == null || nameInputField == null) return;
-
-        s_enterConfirmFrame = Time.frameCount;
-
-        // 비활성화는 RPC 호출 "전에" — Host가 자기 자신에게 보내는 ServerRpc는 네트워크를 안 타고
-        // 이 호출 안에서 즉시(동기) 처리되어 HandleSubmitResult까지 여기서 다 끝나버린다. 순서가
-        // 바뀌면(호출 뒤에 비활성화) 방금 HandleSubmitResult가 켜둔 interactable=true를 이 줄이
-        // 덮어써 false로 고정시켜버린다 — Host에서 최초 1회 확정 후 입력칸이 영구 비활성화되는
-        // 버그였다(2026-09-01, Steam 4인 테스트에서 발견). Client는 실제 네트워크 왕복이라 이
-        // 호출이 즉시 리턴되므로 순서와 무관하게 항상 정상 동작했다.
-        SetInteractable(false); // 응답 오기 전까지 중복 제출 방지
-        ShowFeedback(LocalizedOrFallback(feedbackSubmitting, "확인 중..."), persistent: true);
-        _awaitingSubmitResult = true;
-        _mySync.SubmitCheerNameServerRpc(new FixedString32Bytes(nameInputField.text));
-
-        // Host는 위 호출 안에서 결과 처리까지 끝나 이미 false가 됐을 수 있다 — 그때는 타이머 불필요.
-        if (_awaitingSubmitResult)
-            _submitTimeoutRoutine = StartCoroutine(SubmitTimeoutRoutine());
-    }
-
-    /// <summary>
-    /// 제출 응답이 영원히 안 오는 경우의 복구. SubmitCheerNameServerRpc는 sender 검증
-    /// (본인 캐릭터만 제출 가능)에 걸리거나 그 사이 Player가 Despawn되면 아무 응답도 보내지 않는데,
-    /// 그러면 입력칸이 interactable=false로 영구 고착된다 — Host 순서 버그(위 주석)와 증상이
-    /// 똑같아서 원인을 헷갈리게 만든다. 응답 없음도 실패로 취급해 입력칸을 되돌린다.
-    /// </summary>
-    IEnumerator SubmitTimeoutRoutine()
-    {
-        yield return new WaitForSeconds(SubmitTimeoutSec);
-        _submitTimeoutRoutine = null;
-        if (!_awaitingSubmitResult) yield break;
-
-        _awaitingSubmitResult = false;
-        SetInteractable(true);
-        ShowFeedback(LocalizedOrFallback(feedbackTimeout, "응답이 없어요. 다시 시도해 주세요."));
-        StartCoroutine(FocusInputNextFrame());
-    }
-
-    void HandleSubmitResult(bool success, string errorKey)
-    {
-        _awaitingSubmitResult = false;
-        if (_submitTimeoutRoutine != null)
-        {
-            StopCoroutine(_submitTimeoutRoutine);
-            _submitTimeoutRoutine = null;
-        }
-
-        SetInteractable(true);
-
-        if (success)
-        {
-            // 확정되면 닫기 버튼 대신 바로 닫는다(§요청 3) — 확정 결과는 패널 밖 닉네임 표시(예:
-            // PlayerHPUI selfNameLabel)로 바로 반영되므로 패널 안에서 문구를 보여줄 필요가 없다.
-            // "확인 중..."은 persistent라 여기서 지우지 않으면 자동 숨김도 안 되고, 다음에 패널을
-            // 열 때 그대로 남아 있다(2026-09-05 수정).
-            HideFeedback();
-            if (nameInputField != null) nameInputField.text = "";
-            Close();
-        }
-        else
-        {
-            ShowFeedback(ResolveErrorMessage(errorKey));
-            StartCoroutine(FocusInputNextFrame()); // 실패 시 바로 다시 고쳐 쓸 수 있게 재포커스
-        }
     }
 
     void OnTeamWordConfirmClicked()
@@ -391,21 +251,11 @@ public class TutorialCheerNameUI : MonoBehaviour
         RefreshCurrentTeamWordDisplay();
     }
 
-    string ResolveErrorMessage(string key) => key switch
-    {
-        "format"   => LocalizedOrFallback(feedbackFormat, "2~12자, 영문 소문자만 사용할 수 있어요."),
-        "reserved" => LocalizedOrFallback(feedbackReservedName, "시스템 예약어라 사용할 수 없는 이름이에요."),
-        "blocked"  => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
-        "taken"    => LocalizedOrFallback(feedbackTakenName, "이미 다른 팀원이 사용 중인 이름이에요."),
-        _          => LocalizedOrFallback(feedbackGenericName, "이름을 확정할 수 없어요."),
-    };
-
     string ResolveTeamWordError(string key) => key switch
     {
         "format"     => LocalizedOrFallback(feedbackFormat, "2~12자, 영문 소문자만 사용할 수 있어요."),
         "reserved"   => LocalizedOrFallback(feedbackReservedTeam, "시스템 예약어라 사용할 수 없는 단어예요."),
         "blocked"    => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
-        "taken"      => LocalizedOrFallback(feedbackTakenTeam, "이미 팀원이 응원 이름으로 쓰고 있어요."),
         "not_server" => LocalizedOrFallback(feedbackNotServer, "호스트만 팀 키워드를 정할 수 있어요."),
         _            => LocalizedOrFallback(feedbackGenericTeam, "팀 키워드를 확정할 수 없어요."),
     };
@@ -432,7 +282,7 @@ public class TutorialCheerNameUI : MonoBehaviour
             // teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식이라
             // 부모 SetActive 1번으로 같이 꺼짐/켜짐 — 개별 SetActive 중복 호출 없음.
             // 비-Host는 이 섹션이 통째로 꺼지고, currentTeamWordText(패널 직계, 항상 표시)로만
-            // 현재 팀 키워드를 읽기 전용으로 본다 — 별도 clientTeamWordSection 불필요(2026-09-07 정리).
+            // 현재 팀 키워드를 읽기 전용으로 본다.
             if (hostTeamWordSection != null)
                 hostTeamWordSection.SetActive(isServer);
         }
@@ -443,9 +293,7 @@ public class TutorialCheerNameUI : MonoBehaviour
             teamWordConfirmButton.interactable = canEdit;
     }
 
-    /// <summary>표시 전용 — 저장/매칭용 값은 그대로 소문자 유지, 화면에 보일 때만 대문자로
-    /// 바꾼다(2026-09-07 결정: 개인 이름·팀 키워드 둘 다 표시는 대문자). PlayerHPUI.selfNameLabel의
-    /// name.ToUpper() 패턴과 동일.</summary>
+    /// <summary>표시 전용 — 저장/매칭용 값은 그대로 소문자 유지, 화면에 보일 때만 대문자로 바꾼다.</summary>
     void RefreshCurrentTeamWordDisplay()
     {
         if (currentTeamWordText == null) return;
@@ -492,23 +340,17 @@ public class TutorialCheerNameUI : MonoBehaviour
         return svc != null && svc.IsSpawned;
     }
 
-    void ShowFeedback(string message, bool persistent = false)
+    void ShowFeedback(string message)
     {
         if (feedbackText == null) return;
         feedbackText.gameObject.SetActive(true);
         feedbackText.text = message;
-        _feedbackHideAt = persistent ? -1f : Time.time + feedbackDisplaySeconds;
+        _feedbackHideAt = Time.time + feedbackDisplaySeconds;
     }
 
     void HideFeedback()
     {
         _feedbackHideAt = -1f;
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
-    }
-
-    void SetInteractable(bool value)
-    {
-        if (nameInputField != null) nameInputField.interactable = value;
-        if (confirmButton != null)  confirmButton.interactable = value;
     }
 }

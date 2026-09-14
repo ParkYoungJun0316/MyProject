@@ -8,7 +8,7 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// 사망/다운 시 화면에 뜨는 오버레이.
+/// 사망 시 화면에 뜨는 오버레이.
 /// 다른 UI 스크립트(PlayerHPUI/BossHealthBarUI 등)와 동일한 패턴 — 배치·폰트·크기는
 /// Prefab/씬에서 직접 만든 UI 요소를 Inspector에서 연결해서 쓴다. 이 스크립트는 위치를
 /// 강제로 세팅하지 않고, 연결된 요소의 텍스트/색만 갱신한다.
@@ -16,7 +16,7 @@ using TMPro;
 /// [필수 연결 (Inspector)]
 ///  - canvasGroup : 이 오버레이의 표시/숨김을 담당할 CanvasGroup (비워두면 자기 GameObject에서 탐색)
 ///  - background  : 배경 Image — 대상 고유색으로 tint됨
-///  - mainText    : "OO 사망" / "OO 다운" 텍스트
+///  - mainText    : "OO 사망" 텍스트
 ///
 /// [배경 — 플레이테스트 피드백]
 /// "죽은지 잘 모르겠다". 사망 즉시(1프레임 후) 씬이 리로드돼(현재는
@@ -25,15 +25,13 @@ using TMPro;
 /// 그 이유를 알려주기 위해 대상 CheerName("BERRY Died")과 그 사람의 고유색(배경/텍스트)을 표시한다.
 /// 본인/팀원 구분 없이 동일 로직 — 배경색이 곧 "누가 죽었는지"를 알려준다.
 ///
-/// [다운(2026-09-14 추가) — DownedReviveSystemDesign.md §6 "BERRY DOWN"]
-/// 사망과 동일한 연출(페이드인+팝인, 고유색 배경)을 재사용하되, 사망은 곧 씬 리로드가 컷해주는
-/// 반면 다운은 리로드 없이 게임이 계속되므로 <see cref="downHoldDuration"/> 후 자동 페이드아웃한다.
-/// 여러 명이 순차로 다운되면(§6 "각각 순서대로 표시 가능") 뒤 이벤트가 앞 연출을 그대로 이어받아
-/// 재생한다 — 별도 큐 없이 Show 계열 재호출 시 진행 중 코루틴을 멈추고 새로 시작하는 기존 방식 그대로.
+/// [다운은 이 오버레이가 담당하지 않음(2026-09-14)]
+/// 다운 표시는 화면 중앙 배너가 아니라 TeamStatusUI 쪽 팀 체력 칸에 HELP 아이콘 + 생존
+/// 카운트다운으로 옮겼다(DownedReviveSystemDesign.md §6). 이 오버레이는 완전사망(OnDied)만 다룬다.
 ///
 /// [트리거]
-/// 각 Player의 PlayerEvents.OnDied/OnDowned — Owner/비Owner 모두 이미 전 클라이언트에 복제되어
-/// 호출되므로(§11, PlayerDownState의 IsDowned NV 콜백) 여기서 추가 네트워크 브릿지가 필요 없다.
+/// 각 Player의 PlayerEvents.OnDied — Owner/비Owner 모두 이미 전 클라이언트에 복제되어
+/// 호출되므로 여기서 추가 네트워크 브릿지가 필요 없다.
 /// </summary>
 public class DeathOverlayUI : MonoBehaviour
 {
@@ -42,24 +40,17 @@ public class DeathOverlayUI : MonoBehaviour
     [SerializeField] CanvasGroup      canvasGroup;
     [Tooltip("배경 Image. 대상 고유색으로 tint됨. 비워두면 배경 색 반영을 건너뜀.")]
     [SerializeField] Image            background;
-    [Tooltip("\"{CheerName} 사망/다운\" 텍스트.")]
+    [Tooltip("\"{CheerName} 사망\" 텍스트.")]
     [SerializeField] TextMeshProUGUI  mainText;
 
     [Header("문구")]
     [Tooltip("DeathUI 테이블 Death.Format — \"{0} 사망\". 비어 있으면 한국어 폴백.")]
     [SerializeField] LocalizedString deathMessage;
-    [Tooltip("DeathUI 테이블 Down.Format — \"{0} 다운\". 비어 있으면 한국어 폴백.")]
-    [SerializeField] LocalizedString downMessage;
 
     [Header("타이밍(초)")]
     [SerializeField] float fadeInDuration  = 0.25f;
     [SerializeField] float popInDuration   = 0.25f;
     [SerializeField] float popInStartScale = 1.6f;
-
-    [Header("다운 전용 — 자동 숨김(초)")]
-    [Tooltip("사망과 달리 다운은 리로드가 없어 이 시간 뒤 자동으로 사라진다.")]
-    [SerializeField] float downHoldDuration     = 2f;
-    [SerializeField] float downFadeOutDuration  = 0.3f;
 
     [Header("배경")]
     [Tooltip("대상 고유색을 배경에 입힐 때 쓸 알파(투명도).")]
@@ -67,7 +58,6 @@ public class DeathOverlayUI : MonoBehaviour
 
     Coroutine _fadeRoutine;
     Coroutine _popRoutine;
-    Coroutine _autoHideRoutine;
 
     readonly List<Action> _unsubscribers = new();
 
@@ -146,14 +136,8 @@ public class DeathOverlayUI : MonoBehaviour
 
             Player captured = p;
             Action diedHandler = () => HandlePlayerDied(captured);
-            Action downedHandler = () => HandlePlayerDowned(captured);
             events.OnDied += diedHandler;
-            events.OnDowned += downedHandler;
-            _unsubscribers.Add(() =>
-            {
-                events.OnDied -= diedHandler;
-                events.OnDowned -= downedHandler;
-            });
+            _unsubscribers.Add(() => events.OnDied -= diedHandler);
         }
     }
 
@@ -163,28 +147,13 @@ public class DeathOverlayUI : MonoBehaviour
         _unsubscribers.Clear();
     }
 
-    // ── 사망 / 다운 처리 ──────────────────────────────────────────
+    // ── 사망 처리 ────────────────────────────────────────────────
 
     void HandlePlayerDied(Player deadPlayer)
     {
         if (deadPlayer == null) return;
         ApplyMessage(deadPlayer, FormatDeathMessage);
-
-        // 사망은 곧 리로드가 컷해준다 — 직전에 다운 배너의 자동 숨김이 예약돼 있었다면 취소해서
-        // 사망 배너가 중간에 꺼지지 않게 한다.
-        if (_autoHideRoutine != null)
-        {
-            StopCoroutine(_autoHideRoutine);
-            _autoHideRoutine = null;
-        }
         Show();
-    }
-
-    void HandlePlayerDowned(Player downedPlayer)
-    {
-        if (downedPlayer == null) return;
-        ApplyMessage(downedPlayer, FormatDownMessage);
-        ShowDowned();
     }
 
     /// <summary>대상 고유색으로 배경/텍스트를 갱신 — 본인/팀원 구분 없이 동일 로직.</summary>
@@ -200,7 +169,7 @@ public class DeathOverlayUI : MonoBehaviour
                 ? PlayerColorUtil.ColorOrder[colorIndex]
                 : PlayerColorType.Blue);
 
-        // 배경은 대상의 고유색 그대로(누가 죽었는지/다운됐는지 배경만 봐도 알 수 있게).
+        // 배경은 대상의 고유색 그대로(누가 죽었는지 배경만 봐도 알 수 있게).
         if (background != null)
             background.color = new Color(accent.r, accent.g, accent.b, backgroundAlpha);
         if (mainText != null)
@@ -208,7 +177,6 @@ public class DeathOverlayUI : MonoBehaviour
     }
 
     const string FallbackDeathFormat = "{0} 사망";
-    const string FallbackDownFormat  = "{0} 다운";
 
     /// <summary>DeathUI/Death.Format. 테이블 미연결·미로드면 한국어 폴백 (OptionsMenuController와 동일).</summary>
     string FormatDeathMessage(string displayName)
@@ -219,17 +187,6 @@ public class DeathOverlayUI : MonoBehaviour
             if (!string.IsNullOrEmpty(localized)) return localized;
         }
         return string.Format(FallbackDeathFormat, displayName);
-    }
-
-    /// <summary>DeathUI/Down.Format. 테이블 미연결·미로드면 한국어 폴백.</summary>
-    string FormatDownMessage(string displayName)
-    {
-        if (downMessage != null && !downMessage.IsEmpty)
-        {
-            string localized = downMessage.GetLocalizedString(displayName);
-            if (!string.IsNullOrEmpty(localized)) return localized;
-        }
-        return string.Format(FallbackDownFormat, displayName);
     }
 
     /// <summary>배경 고유색의 밝기에 따라 검/흰 쪽으로 살짝 기울여 대비를 확보(노랑 배경엔 어둡게, 어두운 배경엔 밝게).</summary>
@@ -267,32 +224,6 @@ public class DeathOverlayUI : MonoBehaviour
         }
         canvasGroup.alpha = 1f;
         // 이후 페이드아웃 없음 — 곧 씬 리로드로 자연스럽게 사라짐(StageNetworkState.deathReloadDelay).
-    }
-
-    /// <summary>Show()와 동일한 등장 연출 + downHoldDuration 후 자동 페이드아웃(사망과 달리 리로드가 없다).</summary>
-    void ShowDowned()
-    {
-        Show();
-
-        if (canvasGroup == null) return;
-        if (_autoHideRoutine != null) StopCoroutine(_autoHideRoutine);
-        _autoHideRoutine = StartCoroutine(AutoHideAfterDown());
-    }
-
-    IEnumerator AutoHideAfterDown()
-    {
-        yield return new WaitForSeconds(fadeInDuration + downHoldDuration);
-
-        float from    = canvasGroup.alpha;
-        float elapsed = 0f;
-        while (elapsed < downFadeOutDuration)
-        {
-            elapsed += Time.deltaTime;
-            canvasGroup.alpha = Mathf.Lerp(from, 0f, elapsed / downFadeOutDuration);
-            yield return null;
-        }
-        canvasGroup.alpha = 0f;
-        _autoHideRoutine = null;
     }
 
     /// <summary>메인 텍스트가 크게 튀어나왔다가 원래 크기로 톡 떨어지는 펀치 스케일 연출.</summary>

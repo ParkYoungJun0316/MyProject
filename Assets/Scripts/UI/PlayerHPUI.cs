@@ -58,8 +58,6 @@ public class PlayerHPUI : MonoBehaviour
 
         if (!Application.isPlaying) return;
 
-        PlayerCheerNameSync.OnAnyCheerNameChanged += HandleAnyCheerNameChanged;
-
         if (player != null)
         {
             SubscribeAndRefresh();
@@ -89,7 +87,6 @@ public class PlayerHPUI : MonoBehaviour
     void OnDestroy()
     {
         PlayerSpawnCoordinator.OnPlayersReady -= FindAndSubscribe;
-        PlayerCheerNameSync.OnAnyCheerNameChanged -= HandleAnyCheerNameChanged;
         UnsubscribeEvents();
     }
 
@@ -128,15 +125,8 @@ public class PlayerHPUI : MonoBehaviour
             _events.OnColorTypeChanged += _onColorTypeChanged;
         }
 
-        // Tutorial CheerName NV가 바뀌면(자기/타인 무관) "YOU · 이름"을 실시간 값으로 다시 읽는다.
-        // OnSubmitResult는 NV보다 먼저 올 수 있어 기본값(berry 등)을 다시 찍으므로 쓰지 않는다.
         RefreshHearts();
         RefreshSelfName();
-    }
-
-    void HandleAnyCheerNameChanged()
-    {
-        if (player != null) RefreshSelfName();
     }
 
     void UnsubscribeEvents()

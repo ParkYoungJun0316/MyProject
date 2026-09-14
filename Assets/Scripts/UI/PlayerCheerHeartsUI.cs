@@ -39,6 +39,9 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     GameObject _markGo;
     Coroutine  _waitSubscribe;
 
+    /// <summary>지금 이 캐릭터 머리 위에 느낌표가 떠 있는지. <see cref="PlayerNameTagUI"/>가 자리 다툼을 피하려고 폴링한다.</summary>
+    public bool IsMarkVisible => _markGo != null && _markGo.activeSelf;
+
     void Awake()
     {
         _player = GetComponent<Player>();

@@ -64,11 +64,12 @@
 
 | 이벤트 | 연출 |
 |--------|------|
-| 다운 진입 | `DeathOverlayUI`(기존 "OO 사망" 오버레이 재사용, 2026-09-14) — `PlayerEvents.OnDowned` 구독, "{CheerName} 다운" 표시. 사망과 달리 리로드가 없으므로 `downHoldDuration`(기본 2초) 후 자동 페이드아웃. 여러 명이 순차로 다운되면 뒤 이벤트가 앞 연출을 이어받아 재생(순서대로 표시) |
+| 다운 진입 (팀원) | 화면 중앙 배너 **없음**(2026-09-14 변경 — 한때 `DeathOverlayUI`가 `OnDowned`를 구독해 "{CheerName} 다운" 배너를 띄웠으나 제거. `DeathOverlayUI`는 완전사망 `OnDied` 전용). 팀원 다운은 아래 "팀 상태" 행의 `TeamStatusUI`로만 표시 |
+| 다운 진입 (본인) | `LocalDownOverlayUI`(2026-09-14) — 로컬 Owner의 `OnDowned`/`OnRevived`/`OnDied` 구독, 네트워크 쓰기 없음. ① **회색 막**: 전용 `ScreenFader` 인스턴스(MouthController용과 공유 금지)를 `SetProgress(1 − RemainingDownTime / DownTimeoutDuration)`로 매 프레임 구동 — 고정 코루틴이 아니어야 부활 시전 중 정지·캔슬 복원과 어긋나지 않음. 완전한 흑백(포스트프로세싱)이 아니라 회색 반투명 막이며, 사망 연출(고유색)과 구분하려고 색을 쓰지 않음. ② **정수 초 타이머** ③ **안내 문구**(흰색): `DeathUI/Down.Guide` "쓰러졌습니다! 팀원이 곁에서 [E]를 누르면 부활합니다." — `[E]`는 키보드 표기라 전 언어 영문 고정. 부활 시전 중엔 `DeathUI/Down.Reviving` "부활 중..."으로 교체. 부활 시 막·문구 페이드아웃, 완전사망 시 문구만 즉시 숨기고 막은 리로드까지 유지. `TeamStatusUI`는 자기 슬롯을 숨기므로 본인 표시를 대신하지 않는다. **문구 추가·수정 후 `Tools/Font/Noto Static 베이킹 - 실행` 필수**(Static 폰트는 테이블에 없던 글자를 렌더링 못 함) |
 | 완전사망(스테이지 실패) | `StageFailedBannerUI`(2026-09-14, `StageClearBannerUI`와 동일 골격) — `StageNetworkState.OnAnyStageFailedPulse` 구독, 단발 배너 2초. `NotifyPlayerDeathServerRpc`(사망→리로드 유일 진입점) 안에서 `NotifyStageFailed()`를 호출하므로 즉사·다운 방치 만료 등 원인과 무관하게 항상 뜬다. "OO 사망" `DeathOverlayUI`와 동시에 뜬다(제거 여부는 미정) |
 | 부활 진행 중 | 게이지 대신 **파티클 효과**로 표시 (시전 2초로 짧아 숫자 게이지 불필요 판단). 캔슬 시 파티클이 즉시 끊기는 등 실패를 구분할 수 있는 피드백 필요(세부 미정, 8절). 별도 RPC 없이 `IsBeingRevived` true→false 중 `IsDowned`가 여전히 true면 캔슬, `IsDowned`까지 false면 완료로 구분 가능 |
 | HP UI | 다운 진입(HP→0)은 `OnDamaged`, 부활(0→3)은 `OnHealed`로 `PlayerHPUI`/`TeamStatusUI`가 갱신된다(`NetworkPlayerSetup.OnHpChanged`) |
-| 팀 상태 | `TeamStatusUI` 확장 — 누가 다운 중인지 + 남은 방치 시간 표시 |
+| 팀 상태 | `TeamStatusUI` 확장(2026-09-14 구현) — 슬롯별 `downIndicator`(체력 칸 옆 HELP 이미지) + `downTimerText`(정수 초 카운트다운). `PlayerEvents.OnDowned`/`OnRevived`로 on/off, 숫자는 `PlayerDownState.RemainingDownTime`(부활 시전 중엔 정지값)을 `Update`에서 값이 바뀔 때만 갱신. 완전사망(`OnDied`) 시 즉시 숨김 — 사망 후에도 `IsDowned`가 true로 남는 §9 설계 때문. **체력이 낮을 때의 경고 연출(점멸 등)은 없음** — 강조 연출은 다운 상태 하나뿐 |
 
 ## 7. Objective 타입별 영향
 

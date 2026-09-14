@@ -75,15 +75,23 @@ public class MemoryPathIntroController : MonoBehaviour
     }
 
     /// <summary>
-    /// 스테이지 실패·리셋 시 초기화.
-    /// StageResetOnPlayerDeath 등에서 호출하거나 Inspector 이벤트에 연결.
+    /// 씬 리로드 없이 인트로를 되돌릴 때 수동 호출(Inspector 이벤트/ContextMenu). 멱등.
+    /// 사망/ESC Reset 리로드 시 카메라 복귀는 LocalPlayerCamera.SetTarget → ThirdPersonCamera.
+    /// ForceGameplayViewImmediate가 담당하므로 여기서 따로 처리할 필요 없다.
     /// </summary>
     public void ResetIntro()
     {
+        bool wasRunning = _isRunning;
+
         StopAllCoroutines();
         UnsubscribeAllPaths();
         _challengeReadyCount = 0;
         _isRunning = false;
+
+        // 탑다운 프리뷰가 진행 중이었을 때만 되돌린다 — 인트로 시작 전(게임플레이 시점)에는
+        // 건드릴 필요가 없고, ExitPreviewView()를 불필요하게 다시 트리거하지 않는다.
+        if (wasRunning)
+            ActiveCamera?.ExitPreviewView();
     }
 
     // ── 내부 ──────────────────────────────────────────────────────

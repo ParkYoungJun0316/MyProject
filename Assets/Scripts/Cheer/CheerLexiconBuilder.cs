@@ -22,32 +22,9 @@ using UnityEngine;
 /// </summary>
 public static class CheerLexiconBuilder
 {
-    /// <summary>
-    /// §5.2 B — 고정 기본 CheerName 중 모델 사전에 없는 이름에 대한 대체(비슷한 소리) 단어 매핑.
-    /// key=원래 CheerName(소문자), value=사전에 실제 등재된 대체 단어 목록(소문자).
-    /// grammar에는 원래 이름 + 대체 단어를 모두 넣고, 대체 단어가 인식되면
-    /// <see cref="ResolveVariant"/>로 원래 CheerName으로 되돌린다.
-    /// 고정 4종(berry/guma/sook/dan) 전부 사전 등재 확인됨 → 현재 빈 테이블.
-    /// </summary>
-    static readonly Dictionary<string, string[]> VariantMap = new();
-
-    /// <summary>
-    /// 인식된 단어가 §5.2 B 대체 단어 목록에 있으면 원래 CheerName으로 되돌린다.
-    /// 해당 없으면 입력을 그대로 반환.
-    /// </summary>
-    public static string ResolveVariant(string recognizedWord)
-    {
-        if (string.IsNullOrEmpty(recognizedWord)) return recognizedWord;
-
-        foreach (var kv in VariantMap)
-        {
-            foreach (var variant in kv.Value)
-            {
-                if (variant == recognizedWord) return kv.Key;
-            }
-        }
-        return recognizedWord;
-    }
+    // [2026-09-14] §5.2 B 대체 단어 매핑(VariantMap/ResolveVariant) 삭제 — 개인 CheerName이 음성 인식
+    // 대상에서 빠져 grammar는 TeamCheerWord 1단어뿐이다. 인식 단어를 이름으로 되돌리는 변환이 남아 있으면
+    // 변형 단어가 팀워드와 겹칠 때 매칭이 절대 성립하지 않는다.
 
     /// <summary>
     /// 데모 기본 4종 grammar JSON (커스텀 미설정 시 폴백용).
@@ -62,7 +39,6 @@ public static class CheerLexiconBuilder
 
     /// <summary>
     /// 전달받은 이름 배열로 grammar JSON 생성.
-    /// 고정 기본 CheerName(§5.2 B VariantMap 등록분)은 대체 단어도 함께 포함된다.
     /// [unk] 는 자동으로 끝에 추가됨.
     /// </summary>
     public static string BuildGrammarJson(string[] cheerNames)
@@ -76,16 +52,7 @@ public static class CheerLexiconBuilder
         var sb = new StringBuilder();
         sb.Append("[");
         foreach (var name in cheerNames)
-        {
-            string lower = name.ToLower().Trim();
-            sb.Append("\"").Append(lower).Append("\",");
-
-            if (VariantMap.TryGetValue(lower, out var variants))
-            {
-                foreach (var variant in variants)
-                    sb.Append("\"").Append(variant).Append("\",");
-            }
-        }
+            sb.Append("\"").Append(name.ToLower().Trim()).Append("\",");
         sb.Append("\"[unk]\"]");
 
         string result = sb.ToString();

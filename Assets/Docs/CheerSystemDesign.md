@@ -24,6 +24,8 @@
 >
 > **2026-09-14 (같은 날 3차 변경) — 팀 응원 1회 통과, 10초 표 리셋 폐기 [설계 확정, 코드 완료].** 구: 첫 인식 후 `teamCheerTimeoutSeconds`(10초) 안에 전원 미달이면 표 전부 초기화 → 이미 외친 사람도 다시 외침. 신: 창이 열린 동안 **1회 인식 = 그 사람 통과**, 재외침 없음, 느낌표 소거. 성공 조건은 그대로 **전원 각자 1회**. 창은 전원이 통과할 때까지 유지(실패로 닫히지 않음) — **예외 2종: 혀 휩쓸기(`RiseHold` 외 패턴)·보스 턱(`MouthBossJawSmash`)은 함정 발동 후 창(=팀 응원 배너)이 닫혀 뒤늦게 외쳐도 원상복구 안 됨**(사용자 결정 2026-09-14, `CheerAndTutorialDesign.md` §2.1). 플레이어 규칙 잠금은 [`CheerAndTutorialDesign.md`](CheerAndTutorialDesign.md) §2.1. 아래 본문 중 "첫 인식 후 N초 타임아웃으로 표 리셋", "회색=대기 / 초록=인식"은 이 항목이 우선한다.
 >
+> **2026-09-14 (같은 날 4차 변경, 최종) — 개인 CheerName 커스텀화 완전 삭제 [코드 완료].** 이름은 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) **고정값**이다. 입력 UI·`PlayerCheerNameSync`·세션 CheerName 스냅샷(`GameSession.SetSessionCheerNames` 등)·우선순위 역전·CheerName↔TeamCheerWord 충돌 검사·`CheerLexiconBuilder.VariantMap`/`ResolveVariant`는 **전부 삭제**. `CheerService.GetCheerName`/`GetColorIndex`는 고정 배열을 직접 읽는다. grammar 재빌드 헬퍼는 `CheerKeywordEngine.RebuildOwnerLocalGrammar()`로 이전. 머리 위 이름표 `PlayerNameTagUI`는 흑/백 팔레트 구분 문제로 **재도입**(팀 응원 느낌표가 떠 있는 동안은 숨김, §10.3). Tutorial/Interlude 패널은 TeamCheerWord 전용. **아래 본문(§3·§5.2·§10.1~§10.4 인수인계·§11 체크리스트)에서 `PlayerCheerNameSync`·커스텀 CheerName·세션 이름 스냅샷을 다루는 서술은 전부 이 항목이 우선한다(이력으로만 보존).**
+>
 
 ---
 
@@ -134,9 +136,8 @@
 | Green | sook |
 | Yellow | dan |
 
-- Tutorial 씬에서 각자 자유 입력·확정·재변경 (`PlayerCheerNameSync`, 잠금 없음, 세션 중 반복 가능) — **이 입력 UI 자체는 유지**(닉네임 커스터마이징 기능으로).
-- 형식/금칙어 검증: `CheerNameValidator` (길이 2~12, `a-z`/`0-9`/`_`, 예약어·블록리스트) — 표시용 문자열이라도 그대로 유지.
-- 중복 검사 풀에 **TeamCheerWord도 포함** — 개인 이름이 현재 TeamCheerWord와 겹치면 거절 (§3.3). TeamCheerWord는 여전히 음성 인식 대상이라 이 충돌 검사는 계속 의미 있음.
+- **[2026-09-14 최종] 커스텀 입력 없음 — 위 표의 고정값이 곧 이름이다.** 표시처: `TeamStatusUI` 코너 패널, `PlayerHPUI`("YOU · BERRY"), 머리 위 `PlayerNameTagUI`(자기 것은 숨김, 팀 응원 느낌표가 떠 있으면 숨김), `DeathOverlayUI`. 전부 `CheerService.GetCheerName(colorIndex)` 하나로 읽는다.
+- ~~Tutorial 씬 자유 입력(`PlayerCheerNameSync`)·형식 검증·TeamCheerWord 충돌 검사~~ — 삭제(이력).
 - **[2026-09-14 삭제]** Vosk grammar 등록 대상에서 제외(§3.4), "말해보기"로 자기 CheerName을 발화해 개인 버프를 테스트하는 흐름 삭제.
 
 ### 3.2 TeamCheerWord (팀 공용 키워드) **[신규]**
@@ -147,29 +148,19 @@
 | 기본값 | `"fighting"` (Host가 안 건드리면 이 값 그대로 사용, 기존 4개 CheerName과 발음상 안 겹침) |
 | 설정 위치 | Tutorial CheerName 설정 구역(§9.2 zone 2, `CheerAndTutorialDesign.md`)에 Host 전용 입력 필드 추가. 비-Host 클라이언트는 현재 값을 **읽기 전용**으로 표시(뭘 외쳐야 하는지 알아야 하므로) |
 | 검증 | `CheerNameValidator`(형식/금칙어) 그대로 재사용 |
-| 충돌 검사 (양방향) | 설정 시 현재 확정된 CheerName들과 겹치면 거절 / CheerName을 나중에 그 값으로 바꾸면 마찬가지로 거절 (§3.3) |
+| 충돌 검사 | **[2026-09-14 삭제]** 개인 CheerName이 고정값·비인식 대상이 되어 겹칠 대상이 없음(§3.3) |
 | 구현 | `CheerService`에 `NetworkVariable<FixedString32Bytes> _teamCheerWord`(Server write, Everyone read) + Host-only setter. Host 프로세스는 곧 서버이므로 **RPC 불필요** — Host 클라이언트 UI가 `IsServer` 가드 걸린 public 메서드를 직접 호출. **단, 인스턴스 메서드라 그 씬에 `CheerService`가 실제로 배치돼 있어야 호출 가능** — Tutorial에서 Host가 설정하려면 Tutorial 씬에도 `CheerService`가 필요(§10 Phase D0) |
 | 세션 지속 | `GameSession.SetSessionTeamCheerWord`/`GetSessionTeamCheerWord` (기존 `SetSessionCheerNames`와 동일 패턴) — `TutorialNetworkManager`의 게이트 완료 지점(기존 `SetSessionCheerNames` 호출부 2곳)에서 나란히 호출 |
 
 ### 3.3 양방향 충돌 검증
 
-```
-Host가 TeamCheerWord 설정 시도
-  → PlayerCheerNameSync.GetAllEffectiveNames()로 현재 확정된 CheerName들과 비교
-  → 겹치면 거절
-
-플레이어가 CheerName (재)확정 시도
-  → CheerService.Instance의 TeamCheerWord 값과 비교 (기존 IsTakenByOther 검사 풀에 추가)
-  → 겹치면 거절
-```
-
-두 검증 다 Host 프로세스 내부에서 인스턴스 참조만으로 처리 — 새로운 RPC 경로 불필요.
+> **[2026-09-14 삭제]** 개인 CheerName이 고정값이 되고 음성 인식 대상에서도 빠져, 양방향 충돌 검사는 **코드에서 제거**됐다. `CheerService.TrySetTeamCheerWord`의 실패 사유는 `format`/`reserved`/`blocked`/`not_server`뿐(`taken` 없음). 아래는 이력.
 
 ### 3.4 Vosk 그래머 슬림화 **[2026-09-14 재축소 — 1단어]**
 
 - **[2026-09-14 변경]** 각 클라이언트 로컬 grammar = **[TeamCheerWord, `[unk]`]** — 딱 1단어. 개인 버프가 키 입력으로 바뀌면서 내 CheerName은 grammar에서 완전히 빠진다.
 - 재빌드 트리거: **TeamCheerWord 변경** 시에만 (내 CheerName 변경은 더 이상 재빌드 트리거가 아님 — 음성 인식과 무관해졌으므로).
-- `CheerService._teamCheerWord.OnValueChanged` → "현재 팀워드로 로컬 grammar 재적용"이 유일한 재빌드 경로. `PlayerCheerNameSync.RebuildOwnerLocalGrammar()`는 더 이상 grammar에 관여하지 않음(§10.5 Phase F에서 정리).
+- `CheerService._teamCheerWord.OnValueChanged` → "현재 팀워드로 로컬 grammar 재적용"이 유일한 재빌드 경로. 호출 헬퍼는 `CheerKeywordEngine.RebuildOwnerLocalGrammar()`(2026-09-14, 구 `PlayerCheerNameSync`에서 이전).
 - Tutorial/Interlude "말해보기"는 **TeamCheerWord 테스트만** 남는다 — 개인 CheerName 말해보기는 삭제(§10.5).
 
 > (기존 이력, 참고용) 구 방식(cross-targeting): 4명 전부 이름 → 2026-09-01: [내 이름, TeamCheerWord] 2단어 → 2026-09-14: [TeamCheerWord] 1단어. 인식 후보가 줄어들수록 오인식 확률도 계속 낮아졌다.
@@ -240,11 +231,11 @@ Dissonance와 Vosk가 동일 마이크를 쓰되, OS `Microphone.Start` **이중
 ```
 CheerName/TeamCheerWord 후보
   → Model.vosk_model_find_word(word) → -1이면 모델 사전에 없음 → Tutorial UI 경고(강제 아님)
-  → 고정 4종(berry/guma/sook/dan)은 이미 전부 사전 등재 확인됨 (VariantMap 현재 빈 테이블)
+  → [2026-09-14] 이름은 인식 대상이 아니므로 대체 단어(B) 경로 자체를 삭제
   → 커스텀 이름/TeamCheerWord가 사전에 없으면 경고만, 대체 발음은 미지원(§5.3 C 참고)
 ```
 
-`CheerLexiconBuilder.BuildGrammarJson(names)`가 원래 이름 + 등록된 대체 단어를 함께 grammar에 넣고, 인식 시 `ResolveVariant()`로 원래 이름으로 되돌린다.
+**[2026-09-14]** `VariantMap`/`ResolveVariant` 삭제 — grammar는 TeamCheerWord 1단어라 인식 단어를 이름으로 되돌리는 변환이 남아 있으면 변형 단어가 팀워드와 겹칠 때 매칭이 영원히 실패한다. `BuildGrammarJson`은 전달받은 단어 + `[unk]`만 넣는다.
 
 ### 5.3 C. 커스텀 이름 자동 대체 발음 — 설계만 확정, 미착수
 
@@ -607,6 +598,8 @@ Phase F 코드 반영 후 씬/프리팹/Inspector에서 사용자가 정리해�
 
 ### 파일별 구현 (Phase A가 남긴 실제 API)
 
+> **[2026-09-14]** 이 표의 `PlayerCheerNameSync.cs` 행과 CheerName 우선순위 서술은 이력 — 파일 삭제됨(상단 4차 변경 항목).
+
 | 파일 | 무엇을 넣었나 | 다음 에이전트가 알 것 |
 |---|---|---|
 | `NetworkDamageUtil.cs` | `ApplyHeal(Player, int)` — Host 전용, 클라이언트 즉시 return. `ApplyDamage`와 동일 가드 | Heal 우회 금지. 이 진입점만 쓸 것 |
@@ -686,7 +679,7 @@ Phase B에서 하지 말 것은 유지: CheerService RPC 재작성, Heal 파이�
 
 ### 한 줄
 
-로컬 Vosk grammar = **[내 유효 CheerName, TeamCheerWord]**. 재빌드 = 내 이름 변경 또는 TeamCheerWord NV 변경만.
+로컬 Vosk grammar = **[내 유효 CheerName, TeamCheerWord]**. 재빌드 = 내 이름 변경 또는 TeamCheerWord NV 변경만. *(2026-09-01 시점 기록 — 현재는 [TeamCheerWord] 1단어, `PlayerCheerNameSync` 삭제됨, §3.4)*
 
 ### 파일별
 
@@ -741,7 +734,9 @@ Phase C에서 하지 말 것은 유지됐다: CheerService RPC 재작성, gramma
 >
 > **2026-09-14 재정의:** 위 회색/초록 구·타임아웃 시 다시 회색은 **폐기**. 메시는 3D 느낌표(`CheerExclamation`). 미통과=빨강, 1회 통과=그 사람 표시 소거. 10초 표 리셋 없음. `CheerAndTutorialDesign.md` §2.1.
 >
-> **같은 날 추가 수정:** `PlayerNameTagUI.cs` 삭제(사용자 결정) — 개인 버프가 자기 자신에게만 적용되는 구조라 캐릭터 머리 위에 남의 CheerName을 띄울 이유가 없다(과거 "서로 응원" 구조의 잔재). 그 정보(게임 닉네임)는 `TeamStatusUI`로 옮겨, 기존 Steam 닉네임 옆에 `"BERRY (영준)"` 형식으로 같이 표시한다(`TeamStatusUI.GetSlotNameLabel`). `PlayerCheerNameSync.OnAnyCheerNameChanged` 구독을 추가해 CheerName이 바뀌면 코너 패널도 즉시 갱신한다. 머리 위에는 이제 `PlayerCheerHeartsUI` 구만 남는다.
+> **같은 날 추가 수정 (2026-09-14, 이후 재번복됨):** `PlayerNameTagUI.cs` 삭제(사용자 결정) — 개인 버프가 자기 자신에게만 적용되는 구조라 캐릭터 머리 위에 남의 CheerName을 띄울 이유가 없다(과거 "서로 응원" 구조의 잔재). 그 정보(게임 닉네임)는 `TeamStatusUI`로 옮겨, 기존 Steam 닉네임 옆에 `"BERRY (영준)"` 형식으로 같이 표시한다(`TeamStatusUI.GetSlotNameLabel`). `PlayerCheerNameSync.OnAnyCheerNameChanged` 구독을 추가해 CheerName이 바뀌면 코너 패널도 즉시 갱신한다. 머리 위에는 이제 `PlayerCheerHeartsUI` 구만 남는다.
+>
+> **2026-09-14 재도입 [최종]:** 개인 CheerName 커스텀화를 완전히 삭제(§3 재작성 예정 — 이름은 이제 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) 고정값)하면서, 흑/백 팔레트로 색을 바꾸면 팀원을 구분할 수 없다는 문제가 다시 불거져 `PlayerNameTagUI.cs`를 **부활**시켰다. 커스텀 이름이 없으니 CheerName 변경 이벤트 구독은 불필요 — `PlayerSpawnCoordinator.OnPlayersReady`만 구독해 색 매핑 준비 시 1회 갱신한다. `PlayerCheerHeartsUI`의 느낌표와 같은 머리 위 자리를 다투므로, `PlayerCheerHeartsUI.IsMarkVisible`을 매 프레임 폴링해 느낌표가 떠 있으면 이름표를 숨기고(대신 느낌표만 보임), 느낌표가 꺼지면(통과했거나 창이 닫히면) 이름표를 다시 보여준다. `hideForLocalOwner=true`는 그대로 유지 — 자기 이름표는 안 보임(`PlayerHPUI`가 "YOU · BERRY" 표시).
 
 ### Phase D 착수점 — **D1·D2 완료.** 상세는 §10.4.
 
@@ -780,6 +775,8 @@ Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheer
 ---
 
 ## 11. 구현 체크리스트
+
+> **[2026-09-14]** 아래 `PlayerCheerNameSync` 관련 항목(완료·미완료 모두)은 파일 삭제로 종결 — 미완료 `grammar 관련 CheerName 관여 제거`도 삭제로 해소됨.
 
 ### **[Ship Must]**
 
@@ -847,7 +844,7 @@ Tutorial CheerName 패널에서 Host가 TeamCheerWord를 정함(`TrySetTeamCheer
 | 키워드 인식 | `Assets/Scripts/Cheer/CheerKeywordEngine.cs` |
 | Grammar 빌더 | `Assets/Scripts/Cheer/CheerLexiconBuilder.cs` |
 | 이름 검증 | `Assets/Scripts/Cheer/CheerNameValidator.cs` |
-| 개인 이름 동기화 | `Assets/Scripts/Cheer/PlayerCheerNameSync.cs` |
+| 머리 위 이름표 (고정 이름) | `Assets/Scripts/UI/PlayerNameTagUI.cs` |
 | 숫자키 입력 | `Assets/Scripts/Cheer/CheerDigitInput.cs` |
 | 데미지/Heal 유틸 | `Assets/Scripts/Network/NetworkDamageUtil.cs` |
 | 네트워크 플레이어 | `Assets/Scripts/Network/NetworkPlayerSetup.cs` |

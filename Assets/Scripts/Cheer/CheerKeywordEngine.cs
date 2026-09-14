@@ -595,9 +595,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         {
             if (string.IsNullOrEmpty(rawWord) || rawWord == "[unk]") continue;
 
-            // §5.2 B — 고정 4종(berry/guma/sook/dan) 발음 변형 대체 단어가 등록되면 원래 CheerName으로 되돌림.
-            // (CheerName 자체는 더 이상 grammar 후보가 아니지만 ResolveVariant는 공용 유틸이라 그대로 통과시킨다.)
-            string word = CheerLexiconBuilder.ResolveVariant(rawWord);
+            string word = rawWord;
 
             if (_lastDetected.TryGetValue(word, out float lastTime) &&
                 Time.time - lastTime < KeywordCooldown)
@@ -633,8 +631,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     /// <summary>
     /// 로컬 grammar를 [TeamCheerWord]로 재적용 (CheerSystemDesign.md §3.4, 2026-09-14 — 1단어로 축소).
     /// 모델 로드 전이면 무시 — InitCoroutine이 같은 헬퍼로 초기 grammar를 만든다.
-    /// PlayerCheerNameSync.RebuildOwnerLocalGrammar()(CheerService.TeamCheerWord NV 변경 경로)로
-    /// 여러 번 호출될 수 있으므로 결과가 이전과 같으면(_grammarJson 비교) 워커 리셋을 스킵한다 —
+    /// <see cref="RebuildOwnerLocalGrammar"/>(CheerService.TeamCheerWord NV 변경 경로)로 여러 번
+    /// 호출될 수 있으므로 결과가 이전과 같으면(_grammarJson 비교) 워커 리셋을 스킵한다 —
     /// _workerNextModel/_workerNextGrammar는 "Dissonance 오디오 수신 여부" 판단(InitCoroutine)에도
     /// 쓰여 여기서 그 값과 비교하면 안 된다.
     /// </summary>
@@ -646,6 +644,24 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         _grammarJson = newJson;
         SignalWorkerReset(_model, newJson);
         Debug.Log($"[CheerKeywordEngine] owner grammar 갱신: {newJson}");
+    }
+
+    /// <summary>
+    /// 로컬 오너의 CheerKeywordEngine을 찾아 grammar를 재적용. [2026-09-14] 개인 CheerName
+    /// 커스텀화 완전 삭제로 구 PlayerCheerNameSync가 삭제되면서 여기로 옮겨옴 — CheerService의
+    /// TeamCheerWord NV 변경 경로(OnNetworkSpawn/HandleTeamCheerWordNv)에서 호출된다.
+    /// </summary>
+    public static void RebuildOwnerLocalGrammar()
+    {
+        var all = FindObjectsByType<CheerKeywordEngine>(FindObjectsSortMode.None);
+        foreach (var engine in all)
+        {
+            var netObj = engine.GetComponent<NetworkObject>();
+            if (netObj == null || !netObj.IsOwner) continue;
+            if (!engine.enabled) return;
+            engine.ApplyOwnerLocalGrammar();
+            return;
+        }
     }
 
     /// <summary>TeamCheerWord 1개뿐 — 개인 CheerName은 더 이상 음성 인식 대상이 아니다(2026-09-14).</summary>

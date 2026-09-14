@@ -16,7 +16,7 @@ public static class PlayerColorUtil
     static readonly Color Purple = new(0x4B / 255f, 0x18 / 255f, 0x57 / 255f);
     static readonly Color Green  = new(0x4C / 255f, 0x6C / 255f, 0x48 / 255f);
 
-    /// <summary>colorIndex(0~3) → PlayerColorType 매핑. GetSessionCheerName 등 전 시스템의 단일 소스.</summary>
+    /// <summary>colorIndex(0~3) → PlayerColorType 매핑. CheerService.GetCheerName 등 전 시스템의 단일 소스.</summary>
     public static readonly PlayerColorType[] ColorOrder =
     {
         PlayerColorType.Blue,
@@ -25,7 +25,7 @@ public static class PlayerColorUtil
         PlayerColorType.Yellow,
     };
 
-    // ColorIndex 순 기본 CheerName — GameSession.GetSessionCheerName 등 전 시스템의 단일 소스.
+    // ColorIndex 순 CheerName(고정, 2026-09-14부로 커스텀화 불가) — CheerService.GetCheerName의 단일 소스.
     public static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "dan" };
 
     /// <summary>PlayerColorType → ColorOrder 인덱스 변환. 미매칭 시 -1 반환.</summary>

@@ -8,18 +8,17 @@ using UnityEngine;
 /// <summary>
 /// Player별 Steam 표시 이름(DisplayName) + Dissonance VoiceId 네트워크 동기화.
 /// NetworkDesign.md §6B.7 P3/P8 — 구 LobbyNetworkManager.SubmitDisplayNameServerRpc/SubmitVoiceIdServerRpc
-/// (둘 다 슬롯 귀속)가 2026-08-20 구 로비 삭제 때 함께 제거된 뒤, PlayerCheerNameSync와 동일하게
-/// "슬롯"이 아니라 "이 Player NetworkObject" 귀속 패턴으로 복원. 둘 다 "검증 없는 1회 자동
-/// self-report" 값이라는 동일한 뼈대라서 한 컴포넌트에 필드 2개로 합침 — CheerName(입력·검증·재제출
-/// 있는 별도 도메인, Cheer 서브시스템 소속)은 여기 섞지 않고 PlayerCheerNameSync에 그대로 남긴다.
-/// Player 프리팹에 부착 (PlayerCheerNameSync·NetworkPlayerSetup과 같은 GameObject).
+/// (둘 다 슬롯 귀속)가 2026-08-20 구 로비 삭제 때 함께 제거된 뒤, "슬롯"이 아니라 "이 Player
+/// NetworkObject" 귀속 패턴으로 복원. 둘 다 "검증 없는 1회 자동 self-report" 값이라는 동일한
+/// 뼈대라서 한 컴포넌트에 필드 2개로 합침.
+/// Player 프리팹에 부착 (NetworkPlayerSetup과 같은 GameObject).
 ///
 /// [역할]
 /// - DisplayName: NetworkVariable&lt;FixedString64Bytes&gt; (Server write, Everyone read).
 ///   OnNetworkSpawn 시점에 Owner가 자기 로컬 표시 이름을 1회 자동 보고(사용자 입력 UI 없음, §6B.7 P3).
 /// - VoiceId: 위와 동일한 자동 보고 값이지만, Dissonance가 OnNetworkSpawn 시점에 아직
 ///   LocalPlayerName을 확정 못 했을 수 있어(§6B.7 P8, §9.6) 코루틴으로 최대 5회(1초 간격) 재시도.
-/// - 세션 확정은 둘 다 CheerName과 동일하게 TutorialNetworkManager.CompleteGate()에서
+/// - 세션 확정은 둘 다 TutorialNetworkManager.CompleteGate()에서
 ///   GameSession.SetSessionDisplayNames()/SetSessionVoiceIds()로 처리(런타임 중 재갱신 없음).
 /// </summary>
 [RequireComponent(typeof(NetworkObject))]
@@ -147,7 +146,7 @@ public class PlayerDisplayNameSync : NetworkBehaviour
         _voiceId.Value = voiceId;
     }
 
-    // ── 세션 전체 값 조회 (게이트 완료 확정 전용, PlayerCheerNameSync와 동일 패턴) ──────
+    // ── 세션 전체 값 조회 (게이트 완료 확정 전용) ──────
 
     /// <summary>
     /// 현재 씬에 스폰된 모든 PlayerDisplayNameSync를 훑어 (clientId, 보고된 표시 이름) 목록을 반환.

@@ -43,6 +43,18 @@ public class ScreenFader : MonoBehaviour
         canvasGroup.alpha = Mathf.Clamp(alpha, 0f, maxAlpha);
     }
 
+    /// <summary>외부 진행도(0~1)로 직접 구동 — 0 → 투명, 1 → maxAlpha. 진행 중 페이드 코루틴은 멈춘다.</summary>
+    public void SetProgress(float t)
+    {
+        if (_fadeCoroutine != null)
+        {
+            StopCoroutine(_fadeCoroutine);
+            _fadeCoroutine = null;
+        }
+        if (canvasGroup == null) return;
+        canvasGroup.alpha = Mathf.Clamp01(t) * maxAlpha;
+    }
+
     /// <summary>화면을 어둡게 (alpha 0 → maxAlpha).</summary>
     public void FadeOut(float duration)
     {

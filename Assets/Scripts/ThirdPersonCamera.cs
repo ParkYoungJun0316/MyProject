@@ -248,6 +248,32 @@ public class ThirdPersonCamera : MonoBehaviour
         _blendCoroutine = StartCoroutine(BlendToGameplay());
     }
 
+    /// <summary>
+    /// 프리뷰(또는 블렌드) 중이면 블렌드 없이 즉시 게임플레이 시점으로 되돌린다. 프리뷰가 아니면 무동작.
+    /// 이 카메라는 DontDestroyOnLoad라 프리뷰 상태(씬 소속 pivot 포함)가 씬 리로드를 넘어 살아남는다 —
+    /// 인트로 도중 사망/ESC Reset 리로드 시 새 씬에서 탑다운으로 고착되던 버그(2026-09-14)를
+    /// 막기 위해 LocalPlayerCamera.SetTarget(씬마다 1회 re-bind)에서 호출한다.
+    /// </summary>
+    public void ForceGameplayViewImmediate()
+    {
+        if (!_isInPreview) return;
+
+        if (_blendCoroutine != null) { StopCoroutine(_blendCoroutine); _blendCoroutine = null; }
+
+        _isInPreview    = false;
+        _gameplayTarget = null;
+        _posVelocity    = Vector3.zero;
+
+        _pitch          = initialPitch;
+        _activeDist     = distance;
+        _activeOffset   = targetOffset;
+        _activeSensX    = sensitivityX;
+        _activeSensY    = sensitivityY;
+        _activePitchMin = minPitch;
+        _activePitchMax = maxPitch;
+        _currentRot     = Quaternion.Euler(_pitch, _yaw, 0f);
+    }
+
     // ── 내부 ──────────────────────────────────────────────────────
 
     IEnumerator BlendToPreview(Transform pivot)

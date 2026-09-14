@@ -22,7 +22,7 @@ using UnityEngine;
 ///
 /// [미구현 — 후속 작업]
 /// - 완전사망을 StageManager에 직접 통보 + STAGE FAILED 2초 배너(§6, §9.2) — 지금은 기존 즉시 리로드.
-/// - TeamStatusUI/PlayerHPUI 다운 표시 확장, 부활 파티클(§8).
+/// - 본인 다운 전용 UI(§6, 설계 논의 중), 부활 파티클(§8). 팀원 다운 표시는 TeamStatusUI에 구현됨.
 ///
 /// [입력]
 /// RequestStartRevive/RequestCancelRevive 호출부는 PlayerReviveInteract(Player 도메인, Interact/E 액션).
@@ -76,6 +76,9 @@ public class PlayerDownState : NetworkBehaviour
             return Mathf.Max(0f, (float)(_downDeadlineServerTime.Value - NetworkManager.ServerTime.Time));
         }
     }
+
+    /// <summary>다운 후 완전사망까지의 전체 시간(초). LocalDownOverlayUI 회색 막 진행도 계산용.</summary>
+    public float DownTimeoutDuration => downTimeoutDuration;
 
     /// <summary>스폰된 모든 PlayerDownState(자기 자신 포함). PlayerReviveInteract의 근접 대상 탐색용.</summary>
     public static IReadOnlyList<PlayerDownState> AllSpawned => _spawned;

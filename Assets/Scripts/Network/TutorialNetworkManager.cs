@@ -192,7 +192,7 @@ public class TutorialNetworkManager : NetworkBehaviour
     void Update()
     {
         // IsSpawned 가드 — 미스폰 상태로 CompleteGate에 들어가면 세션 확정 ClientRpc(시드·세션시각·
-        // CheerName·TeamCheerWord·DisplayName·VoiceId)가 전부 유실되어 Client만 옛 값을 들고
+        // TeamCheerWord·DisplayName·VoiceId)가 전부 유실되어 Client만 옛 값을 들고
         // M.Stage1에 들어가는 조용한 desync가 된다(InterludeNetworkManager와 동일 방어).
         // PlayerSpawnCoordinator는 DDoL이라 이전 세션 잔재가 남으면 EntryCount > 0으로 씬에
         // 들어올 수 있어, "스폰 전엔 헤드카운트가 0"이라는 암묵 전제에만 의존하지 않는다.
@@ -276,8 +276,8 @@ public class TutorialNetworkManager : NetworkBehaviour
     /// <summary>
     /// 게이트 통과 확정. 구 LobbyNetworkManager.StartGameServerRpc의 세션 확정 로직을 그대로 옮김 —
     /// PlayerSpawnCoordinator는 Tutorial 접속 시점에 이미 스폰돼 색 데이터를 들고 있으므로
-    /// 재스폰은 불필요(§6B.2). CheerName/TeamCheerWord/DisplayName/VoiceId 세션 확정은 이 메서드에서 처리
-    /// (§6B.7 P6·P3·P8, CheerSystemDesign.md Phase D2).
+    /// 재스폰은 불필요(§6B.2). TeamCheerWord/DisplayName/VoiceId 세션 확정은 이 메서드에서 처리
+    /// (§6B.7 P3·P8, CheerSystemDesign.md Phase D2).
     /// </summary>
     void CompleteGate()
     {
@@ -321,29 +321,20 @@ public class TutorialNetworkManager : NetworkBehaviour
         // Client는 OnPlayersReady 이후 PlayerSpawnCoordinator에서 확정값을 읽음.
         GameSession.Instance?.SetActiveColors(colorList.ToArray());
 
-        // §6B.7 P6 — 세션 CheerName 확정. 별도 "확정" 단계 없이 이 시점(게이트 통과)의 각자
-        // 최신값이 그대로 최종값(CheerAndTutorialDesign.md §3.4). PlayerCheerNameSync NV는 이미
-        // Everyone-read라 전 Client가 로컬로도 동일 배열을 만들 수 있지만, 씬 전환 직전이라는
-        // 정확히 같은 시점에 적용되도록 구 LobbyNetworkManager.StartGameInternal과 동일하게
-        // Host가 계산해 명시적으로 배포한다.
-        var sessionNames = PlayerCheerNameSync.BuildSessionCheerNames();
-        GameSession.Instance?.SetSessionCheerNames(sessionNames);
-        BroadcastSessionCheerNamesClientRpc(
-            new FixedString32Bytes(sessionNames[0]), new FixedString32Bytes(sessionNames[1]),
-            new FixedString32Bytes(sessionNames[2]), new FixedString32Bytes(sessionNames[3]));
-
         // CheerSystemDesign.md §3.2 / D2 — 게이트 통과 시점 TeamCheerWord를 GameSession에 고정.
         // Tutorial CheerService는 씬 언로드로 사라지므로, 다음 스테이지 OnNetworkSpawn이
-        // HasSessionTeamCheerWord로 NV를 복원한다. CheerName과 같이 Host 로컬 Set + ClientRpc.
+        // HasSessionTeamCheerWord로 NV를 복원한다. Host 로컬 Set + ClientRpc.
+        // [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 세션 CheerName 확정 단계(구 §6B.7 P6)는
+        // 더 이상 없다. 이름은 PlayerColorUtil.DefaultCheerNames 고정값이라 배포할 게 없다.
         string teamWord = CheerService.Instance != null
             ? CheerService.Instance.TeamCheerWord
             : GameSession.DefaultTeamCheerWord;
         GameSession.Instance?.SetSessionTeamCheerWord(teamWord);
         BroadcastSessionTeamCheerWordClientRpc(new FixedString32Bytes(teamWord));
 
-        // §6B.7 P3 두 번째 항목 — 세션 DisplayName 확정. CheerName과 동일 패턴(게이트 통과 시점의
-        // 각자 최신 보고값이 그대로 최종값). PlayerDisplayNameSync NV도 이미 Everyone-read지만,
-        // CheerName과 동일하게 정확히 같은 시점에 적용되도록 Host가 명시적으로 계산해 배포한다.
+        // §6B.7 P3 두 번째 항목 — 세션 DisplayName 확정. 게이트 통과 시점의 각자 최신 보고값이
+        // 그대로 최종값. PlayerDisplayNameSync NV도 이미 Everyone-read지만, 정확히 같은 시점에
+        // 적용되도록 Host가 명시적으로 계산해 배포한다.
         var sessionDisplayNames = BuildSessionDisplayNames(clientColorDict);
         GameSession.Instance?.SetSessionDisplayNames(sessionDisplayNames);
         BroadcastSessionDisplayNamesClientRpc(
@@ -399,16 +390,6 @@ public class TutorialNetworkManager : NetworkBehaviour
     void BroadcastSessionStartClientRpc(double serverTime)
     {
         NetworkSessionData.SessionStartServerTime = serverTime;
-    }
-
-    /// <summary>세션 확정 CheerName을 모든 클라이언트의 GameSession에 배포(§6B.7 P6).</summary>
-    [ClientRpc]
-    void BroadcastSessionCheerNamesClientRpc(FixedString32Bytes n0, FixedString32Bytes n1,
-                                              FixedString32Bytes n2, FixedString32Bytes n3)
-    {
-        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
-        GameSession.Instance?.SetSessionCheerNames(
-            new[] { n0.ToString(), n1.ToString(), n2.ToString(), n3.ToString() });
     }
 
     /// <summary>세션 확정 TeamCheerWord를 모든 클라이언트의 GameSession에 배포(CheerSystemDesign.md D2).</summary>

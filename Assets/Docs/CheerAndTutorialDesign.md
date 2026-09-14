@@ -70,18 +70,19 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 |---|------|------|------|--------|
 | (사전) | 접속/스폰 | 접속 즉시 스폰 + 색 자동배정(중복없음) + Invite HUD(구 로비 흡수, `NetworkDesign.md` §6B) | 필수 | 필수 (생략 불가) |
 | 1 | 스텔스 체험 | 은신 플레이 감 잡기 | 있음 | **생략 가능** |
-| 2 | CheerName/TeamCheerWord 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → 개인 CheerName 입력·확정(닉네임 표시용, 2026-09-14부터 음성 테스트 없음) + **Host 전용 TeamCheerWord 입력 필드**(신규, §3) | 표지판 상호작용으로 개폐 — `PlayerPrefs` 스킵 없음 | **생략 불가** (매 판 재입력) |
+| 2 | TeamCheerWord 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → **Host 전용 TeamCheerWord 입력 필드**, 비-Host는 읽기 전용 확인 | 표지판 상호작용으로 개폐 — `PlayerPrefs` 스킵 없음 | **생략 불가** (매 판 재입력) |
 | 3 | 응원 1회 체험 | **[2026-09-14 개편]** 개인 버프는 `Q`(전환)/`Space`(발동) 키 입력 감 잡기 + (인원 2+ 시) TeamCheerWord를 **각자 1회** 외쳐 팀 버프 체험(음성, §2.1) | 있음 — 구 cross-target 체험 → self(키)+team(음성) 체험으로 교체 | **생략 가능** |
 | 4 | `TutorialGatherZone` | 전원이 존에 모이면 카운트다운 → `M.Stage1` (§5) | **필수** | **필수** |
 
+> **[2026-09-14 확정, 최종] 개인 CheerName 커스텀화 완전 삭제.** 이름 입력 UI 자체가 없어짐 — 이름은 이제 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) 고정값. 구역 2는 TeamCheerWord 설정 전용으로 축소됐다. 상세 SSOT는 `CheerSystemDesign.md` §3.
+>
 > **색 패드 연습(후보로 검토했던 것):** 보류. 필요성이 재확인되면 별도 구역으로 추가 논의.
 
-**구역 2/3 안내 문구 갱신 필요:**
-- **[2026-09-14 변경]** 구역 2 패널의 "팀원에게 이름을 외쳐달라 해서 확인" 안내는 **삭제** — CheerName은 이제 표시용 닉네임이라 음성 테스트 대상이 아님. 대신 "팀 전체가 함께 외칠 단어는 아래 TeamCheerWord에서 확인하세요" 안내로 대체.
-- **[2026-09-14 변경]** "팀 응원 인식이 잘 안 되거나 마이크가 없으면 옵션(Options) → T키로 응원하기를 켜세요" 안내 추가 (`CheerSystemDesign.md` §6.3, 구 "숫자키로 응원하기"에서 재배정) — **개인 버프는 항상 `Space`라 이 안내 대상이 아님.**
-- **[신규]** Host에게만 보이는 TeamCheerWord 입력 섹션에 "팀 전체가 함께 외칠 단어를 정해주세요(기본값: fighting)" 안내.
-- **[2026-09-14 신규]** 구역 2 또는 3에 "개인 버프는 `Q`로 종류 전환, `Space`로 발동" 조작 안내 추가.
-- **[2026-09-14 신규]** 구역 3: 팀 응원은 **10초 안에 다 같이**가 아니라, 창이 열린 동안 **한 번 인식되면 그 사람은 끝·느낌표가 사라짐. 아직 안 외친 사람만 계속.** 전원이 통과해야 함정이 되돌아간다(§2.1).
+**구역 2/3 안내 문구 갱신 — 완료 (2026-09-14, `TutorialTranslations.md` 반영):**
+- [x] 구역 2 보드(`Board_CheerName`): "T키로 응원하기" 안내로 교체(구 숫자키 안내 삭제), TeamCheerWord 형식 힌트만 유지 — 개인 이름 관련 문구 전부 삭제.
+- [x] Host 전용 TeamCheerWord 입력 섹션 `HostHint`: "팀 전체가 함께 외칠 단어를 정해주세요(기본값: FIGHTING)" — 기존 문구 그대로 유지(변경 없음).
+- [x] `Board_Controls.Row_Buff`에 "개인 버프는 Q로 종류 전환, Space로 발동" 조작 안내 병합 — 구 `Row_Voice`(개인 이름 음성 안내, 이미 오류였음) 삭제하고 그 자리에 병합.
+- [x] 구역 3: **10초 룰/1회 통과 규칙을 텍스트로 설명하지 않기로 결정** — `Board_TeamCheer`(구 `Board_Test` 흡수)에서 [E]로 바로 연습해보면 직관적으로 보인다는 판단(사용자 결정, 2026-09-14). 규칙 자체는 §2.1 그대로 유효, 코드도 이미 반영됨 — 텍스트만 생략.
 
 ### 2.1 팀 응원 통과 규칙 **[2026-09-14 확정, 코드 완료]**
 
@@ -112,14 +113,16 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 
 ## 3. CheerName / TeamCheerWord 설정 UX (Tutorial 화면)
 
-> 검증 규칙(형식·금칙어·중복·충돌)은 `CheerSystemDesign.md` §3 SSOT. 이 절은 **Tutorial 화면에서 어떻게 입력·확정하는가**만 다룬다.
+> **[2026-09-14 정정, 최종] 개인 CheerName 커스텀화 완전 삭제.** 이 절에서 개인 CheerName 입력·확정·말해보기·소유(§3.1~§3.3의 개인 이름 서술)와 Interlude 이름 2차 변경(§3.4의 `PlayerCheerNameSync` NV 씨딩·세션 이름 스냅샷·우선순위 역전 §3.4.2·코드 변경표 #2/#3/#5·흐름도의 이름 경로)은 **코드에서 전부 삭제**됐다 — 이력으로만 보존. 현재 규칙: 이름은 berry/guma/sook/dan 고정, 패널(`TutorialCheerNameUI`)은 **TeamCheerWord 전용**(Host 입력, 비-Host 읽기 전용, 비-Host는 E로도 닫힘). Interlude 2차 변경 대상도 **TeamCheerWord뿐**. SSOT는 `CheerSystemDesign.md` 상단 4차 변경 항목.
+>
+> 검증 규칙(형식·금칙어)은 `CheerSystemDesign.md` §3 SSOT. 이 절은 **Tutorial 화면에서 어떻게 입력·확정하는가**만 다룬다.
 
 ### 3.1 어디서 설정하나
 
 - **씬:** `Tutorial` 하나. 별도 로비 씬 없음.
 - **개인 CheerName:** Tutorial 진입(=접속) 즉시 스폰돼 있는 **Player별로 독립된 이름** — "슬롯" 개념 없음. 각자 자기 화면에서 자기 캐릭터의 이름만 입력.
 - **TeamCheerWord [신규]:** 같은 패널에 **Host에게만 보이는** 별도 입력 섹션. 비-Host는 현재 값을 읽기 전용으로 확인만.
-- **UI:** `TutorialCheerNameUI`(로컬 입력창). 확정 시 팀원 화면의 `TeamStatusUI` 코너 패널(게임 닉네임+Steam 닉네임)에 즉시 반영. **[2026-09-13] 머리 위 이름표(`PlayerNameTagUI`)는 삭제됨 — CheerSystemDesign.md §10.3 참고.**
+- **UI:** `TutorialCheerNameUI`(로컬 입력창). 확정 시 팀원 화면의 `TeamStatusUI` 코너 패널(게임 닉네임+Steam 닉네임)에 즉시 반영. **[2026-09-13] 머리 위 이름표(`PlayerNameTagUI`)는 한때 삭제됐으나, [2026-09-14] 개인 CheerName 커스텀화 완전 삭제(흑/백 팔레트로 색 바꾸면 구분 불가 문제) 때문에 고정 이름(berry/guma/sook/dan) 표시용으로 재도입됨 — `CheerSystemDesign.md` §10.3 참고.**
 - 채팅 UI로 설정하지 않음. 타이틀에서 설정하지 않음. `PlayerPrefs` 기억 없음 — 매 판 새로 입력.
 
 ### 3.2 확정 → 말해보기 → 재변경 (자유 반복)
@@ -327,6 +330,8 @@ flowchart LR
 
 ### Interlude (§1.1, §3.4) — **[Ship Must, 코드 완료 · 씬 배치 남음]**
 
+> **[2026-09-14]** 아래 `PlayerCheerNameSync` 씨딩·`BuildSessionCheerNames` 헬퍼·`GetCheerName` 우선순위 역전 3항목은 개인 CheerName 커스텀화 삭제로 **코드에서 제거됨**(완료 표시는 이력). Interlude 게이트는 이제 TeamCheerWord만 재확정한다.
+
 - [x] `PlayerSpawnManager.IsStageScene`에 `Interlude` 인식 추가 (안 하면 플레이어 스폰 자체가 안 됨)
 - [x] `PlayerCheerNameSync.OnNetworkSpawn`에 세션값 NV 씨딩 추가
 - [x] `PlayerCheerNameSync.BuildSessionCheerNames()` 정적 헬퍼 추출 + `TutorialNetworkManager` 재사용 정리
@@ -382,8 +387,11 @@ A. **아니오.** 강제 아님. 이름 수정 안내만, 몇 번이든 다시 �
 **Q. Tutorial 매 판 5~8분?**
 A. **아니오.** `TutorialCompleted` 시 Stealth/응원 1회 구역은 스킵하고 CheerName/TeamCheerWord 입력 + `TutorialGatherZone` 직행.
 
-**Q. CheerName/TeamCheerWord를 게임 중에 또 바꿀 수 있나?**
-A. **딱 한 번 더, `Interlude` 씬에서만** (§1.1, §3.4). M.Boss 클리어 후 T.Stage1 진입 전에 자동으로 이 씬을 지나가며, Tutorial과 똑같은 패널로 재변경한다. 그 외 M1~M.Boss, T1~T.Boss 전 구간에는 변경 UI가 없어서 못 바꾼다 — 즉 한 판에 총 **2번**(Tutorial + Interlude)이 전부다.
+**Q. 개인 CheerName은 바꿀 수 있나? [2026-09-14]**
+A. **아니오.** 이름은 berry/guma/sook/dan 고정. 커스텀 입력 기능 자체가 삭제됐다.
 
-**Q. Interlude에서 아무도 이름을 안 바꾸면?**
-A. 그대로 이전 값(Tutorial에서 정한 값)이 유지된다 — 안 건드린 슬롯은 세션 스냅샷을 덮어쓰지 않는다(§3.4 코드 변경 #2·#3).
+**Q. TeamCheerWord를 게임 중에 또 바꿀 수 있나?**
+A. **딱 한 번 더, `Interlude` 씬에서만** (§1.1, §3.4). M.Boss 클리어 후 T.Stage1 진입 전에 자동으로 이 씬을 지나가며, Tutorial과 똑같은 패널로 Host가 재변경한다. 그 외 M1~M.Boss, T1~T.Boss 전 구간에는 변경 UI가 없어서 못 바꾼다 — 즉 한 판에 총 **2번**(Tutorial + Interlude)이 전부다.
+
+**Q. Interlude에서 Host가 TeamCheerWord를 안 바꾸면?**
+A. 그대로 이전 값(Tutorial에서 정한 값)이 유지된다 — `CheerService`가 씬 진입 시 세션값으로 NV를 씨딩하고, 게이트에서 그 값이 다시 확정된다.

@@ -67,7 +67,13 @@ public class TutorialCheerNameSignboard : MonoBehaviour
         // 타이핑할 때마다 이 표지판이 그 키 입력을 상호작용으로도 오인해 Toggle() → Close()가
         // 되어버린다(입력창이 포커스를 가져도 전역 Keyboard 폴링은 걸러지지 않음, 2026-08-22 수정).
         // 닫기는 Esc/확정 성공/닫기 버튼이 이미 담당하므로 여기서 막아도 닫을 방법이 없어지지 않는다.
-        if (isOpen) return;
+        if (isOpen)
+        {
+            // [2026-09-14] 비-Host 패널엔 입력칸이 없어 'e' 타이핑 오인이 없다 — E로 닫기 허용.
+            if (!IsLocalServer() && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+                cheerNameUI.Close();
+            return;
+        }
 
         // 채팅 입력창도 같은 이유로 양보한다 — 채팅에 'e'가 든 단어를 치면 이 표지판이 그 입력을
         // 상호작용으로 오인해 이름 패널을 열어버린다(CheerDigitInput·MicMuteHotkeyUI와 동일 게이팅).
@@ -75,6 +81,12 @@ public class TutorialCheerNameSignboard : MonoBehaviour
 
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             cheerNameUI.Toggle();
+    }
+
+    static bool IsLocalServer()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening && nm.IsServer;
     }
 
     void SetPromptVisible(bool visible)

@@ -51,10 +51,6 @@ public class GameSession : MonoBehaviour
     // 씬 인트로 대화를 이미 본 키 목록 (사망 리로드 후 재표시 방지)
     private readonly HashSet<string> _seenIntroKeys = new HashSet<string>();
 
-    // 이번 판 확정 CheerName. 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
-    // 미설정 시 PlayerColorUtil.DefaultCheerNames 기본값 반환.
-    private string[] _sessionCheerNames;
-
     /// <summary>Host가 안 건드리면 이 값. CheerService._teamCheerWord 기본값과 동일.</summary>
     public const string DefaultTeamCheerWord = "fighting";
 
@@ -160,51 +156,10 @@ public class GameSession : MonoBehaviour
     /// <summary>활성 색 여부 확인.</summary>
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
 
-    // ── 세션 CheerName ─────────────────────────────────────────────
-
-    /// <summary>
-    /// true = SetSessionCheerNames가 이미 호출됨(Tutorial 게이트 통과 후, §6B.7 P5).
-    /// CheerService.GetCheerName/GetColorIndex가 "확정 세션값 vs 게이트 전 실시간값" 중 어느 쪽을
-    /// 우선할지 판단하는 용도 — GetSessionCheerName 자체는 미확정 시에도 기본값으로 폴백해버려서
-    /// 값만으로는 확정 여부를 구분할 수 없기 때문에 별도 플래그가 필요하다.
-    /// </summary>
-    public bool HasSessionCheerNames => _sessionCheerNames != null;
-
-    /// <summary>
-    /// 이번 판 확정 CheerName 배열 저장.
-    /// 인덱스 = colorIndex (0=Blue 1=Purple 2=Green 3=Yellow).
-    /// StartGame 직전 Host 로컬·Client 양쪽에서 동일하게 호출.
-    /// </summary>
-    public void SetSessionCheerNames(string[] names)
-    {
-        _sessionCheerNames = names;
-        Debug.Log($"[GameSession] 세션 CheerName 적용: {string.Join(", ", names)}");
-    }
-
-    /// <summary>colorIndex → 이번 판 CheerName. 세션 미설정 시 PlayerColorUtil.DefaultCheerNames 기본값.</summary>
-    public string GetSessionCheerName(int colorIndex)
-    {
-        if (_sessionCheerNames != null && colorIndex >= 0 && colorIndex < _sessionCheerNames.Length)
-            return _sessionCheerNames[colorIndex];
-        var defaults = PlayerColorUtil.DefaultCheerNames;
-        if (colorIndex >= 0 && colorIndex < defaults.Length)
-            return defaults[colorIndex];
-        return string.Empty;
-    }
-
-    /// <summary>이름 → colorIndex. 세션 이름 우선, 없으면 PlayerColorUtil.DefaultCheerNames 기본값. 미매칭 시 -1.</summary>
-    public int GetSessionColorIndex(string cheerName)
-    {
-        string lower = cheerName.Trim().ToLower();
-        if (_sessionCheerNames != null)
-        {
-            for (int i = 0; i < _sessionCheerNames.Length; i++)
-                if (_sessionCheerNames[i] == lower) return i;
-        }
-        return System.Array.IndexOf(PlayerColorUtil.DefaultCheerNames, lower);
-    }
-
     // ── 세션 TeamCheerWord ─────────────────────────────────────────
+    // [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 세션 CheerName 스냅샷(SetSessionCheerNames 등)은
+    // 더 이상 필요 없다. 이름은 이제 PlayerColorUtil.DefaultCheerNames(berry/guma/sook/dan) 고정값이라
+    // CheerService.GetCheerName/GetColorIndex가 직접 참조한다(§3, CheerSystemDesign.md).
 
     /// <summary>
     /// true = SetSessionTeamCheerWord가 이미 호출됨(Tutorial 게이트 통과 후).
@@ -232,8 +187,7 @@ public class GameSession : MonoBehaviour
     // HasSessionDisplayNames는 삭제됨(2026-09-05). 배열이 있어도 개별 색 슬롯은 빈 값일 수 있어
     // (미보고 플레이어) "확정됨"의 의미가 슬롯 단위가 아니라 배열 단위였고, 그걸 게이트로 쓰면
     // 미보고 슬롯이 실시간 NV 폴백을 못 타고 플레이스홀더로 고착됐다. 이제 표시 이름은
-    // GetSessionDisplayName의 반환값이 비었는지로만 판단한다(CheerName 쪽 HasSessionCheerNames와
-    // 다른 이유: CheerName은 미확정 폴백이 항상 유효한 색 기본값이라 값만으로 구분이 안 된다).
+    // GetSessionDisplayName의 반환값이 비었는지로만 판단한다.
 
     /// <summary>
     /// 이번 판 확정 Steam 표시 이름 배열 저장.
@@ -302,7 +256,6 @@ public class GameSession : MonoBehaviour
         _activePlayers.Clear();
         _activeColors.Clear();
         _seenIntroKeys.Clear();
-        _sessionCheerNames = null;
         _sessionTeamCheerWord = null;
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
