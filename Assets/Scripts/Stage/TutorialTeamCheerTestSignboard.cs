@@ -38,6 +38,9 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     [Tooltip("근처에 있을 때만 보이는 \"[E] 팀 응원 연습\" 프롬프트. 비워도 동작(프롬프트 없이 상호작용만).")]
     [SerializeField] GameObject promptRoot;
 
+    [Tooltip("팀 응원 창이 열려 있는 동안만 켤 바닥 경고(원형 패드 등). 비워도 동작.")]
+    [SerializeField] GameObject warningVisual;
+
     // E를 누른 뒤 Host 왕복(RTT)이 끝나기 전까진 로컬 입이 아직 Idle이라 연타가 그대로 중복
     // 요청이 된다. Host도 창 상태로 거르지만(권한 판정) 불필요한 트래픽은 여기서 끊는다.
     // 요청이 거절·유실됐을 때 프롬프트가 영구히 잠기지 않도록 짧은 만료를 둔다.
@@ -50,6 +53,7 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     {
         GetComponent<Collider>().isTrigger = true;
         SetPromptVisible(false);
+        SetWarningVisible(false);
 
         if (mouthController == null)
             Debug.LogWarning("[TutorialTeamCheerTestSignboard] mouthController가 비어 있어 연습 창을 열 수 없습니다. " +
@@ -74,12 +78,13 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
 
     void Update()
     {
+        bool windowOpen = mouthController != null && mouthController.IsHazardWindowOpen;
+        if (windowOpen) _requestExpiresAt = -1f;
+        SetWarningVisible(windowOpen);
+
         if (!_localPlayerInRange || mouthController == null) return;
 
         // 창이 열려 있는 동안(Warning~Open)엔 프롬프트를 숨겨 중복 상호작용을 막는다.
-        bool windowOpen = mouthController.IsHazardWindowOpen;
-        if (windowOpen) _requestExpiresAt = -1f;
-
         bool waitingForHost = Time.time < _requestExpiresAt;
         SetPromptVisible(!windowOpen && !waitingForHost);
         if (windowOpen || waitingForHost) return;
@@ -116,5 +121,11 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     void SetPromptVisible(bool visible)
     {
         if (promptRoot != null) promptRoot.SetActive(visible);
+    }
+
+    void SetWarningVisible(bool visible)
+    {
+        if (warningVisual != null && warningVisual.activeSelf != visible)
+            warningVisual.SetActive(visible);
     }
 }

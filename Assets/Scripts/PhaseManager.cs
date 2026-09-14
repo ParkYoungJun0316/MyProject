@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
@@ -64,6 +65,23 @@ public class PhaseManager : MonoBehaviour
     public int   CurrentPhaseIndex => _currentPhaseIndex;
     public float PhaseElapsed      => _phaseElapsed;
     public bool  AllPhasesComplete => _allPhasesComplete;
+
+    /// <summary>현재 PhaseData.phaseName. 인덱스 미진입이면 빈 문자열.</summary>
+    public string CurrentPhaseName
+    {
+        get
+        {
+            if (phases == null || _currentPhaseIndex < 0 || _currentPhaseIndex >= phases.Length)
+                return string.Empty;
+            return phases[_currentPhaseIndex].phaseName ?? string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Host EnterPhase / Client EnterPhaseOnClient / 전 Phase 완료 후.
+    /// 표시 전용 UI가 인스펙터 onPhaseEnter 없이 구독한다 (ObjectiveUI.Refresh 배선 누락과 같은 구멍 방지).
+    /// </summary>
+    public event Action OnPhaseDisplayChanged;
 
     /// <summary>현재 Phase의 남은 시간(초). surviveDuration이 0이면 0 반환.</summary>
     public float PhaseRemaining
@@ -163,6 +181,7 @@ public class PhaseManager : MonoBehaviour
         StageNetworkState.Instance?.MarkAndSyncPhase(index);
 
         phase.onPhaseEnter?.Invoke();
+        OnPhaseDisplayChanged?.Invoke();
 
         // Client는 여기서 종료 — 완료 판단은 Host만 수행
         var nm = NetworkManager.Singleton;
@@ -211,6 +230,7 @@ public class PhaseManager : MonoBehaviour
         }
 
         phases[index].onPhaseEnter?.Invoke();
+        OnPhaseDisplayChanged?.Invoke();
     }
 
     // ── Phase 완료 ────────────────────────────────────────────────────
@@ -236,6 +256,7 @@ public class PhaseManager : MonoBehaviour
             // onAllPhasesComplete는 재생하지 않아, 이 호출 없이는 인스펙터로 직결된 표시 전용 UI
             // (ObjectiveUI.ShowSceneClear 등)가 Client에서 절대 발동하지 않는다.
             StageNetworkState.Instance?.NotifyAllPhasesComplete();
+            OnPhaseDisplayChanged?.Invoke();
         }
     }
 
@@ -260,6 +281,7 @@ public class PhaseManager : MonoBehaviour
             _allPhasesComplete = true;
             onAllPhasesComplete?.Invoke();
             StageNetworkState.Instance?.NotifyAllPhasesComplete(); // Client 브릿지, PhaseComplete()와 동일 이유
+            OnPhaseDisplayChanged?.Invoke();
             return;
         }
 

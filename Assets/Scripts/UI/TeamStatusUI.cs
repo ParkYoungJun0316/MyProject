@@ -32,10 +32,11 @@ using TMPro;
 /// 이름은 이제 PlayerColorUtil.DefaultCheerNames 고정값이라 런타임에 안 바뀐다.
 ///
 /// [다운 표시(2026-09-14) — DownedReviveSystemDesign.md §6]
-/// 화면 중앙 배너(DeathOverlayUI)는 완전사망 전용으로 남기고, 다운은 이 패널의 체력 칸 쪽
-/// downIndicator(HELP 이미지 + downTimerText)로 표시한다. 체력이 낮다고 별도 경고 연출(점멸 등)은
-/// 없음 — 다운 여부만이 유일한 강조 트리거. 카운트다운은 PlayerDownState.RemainingDownTime(부활
-/// 시전 중엔 정지된 값)을 Update()에서 매 프레임 정수 초로 갱신한다.
+/// 화면 중앙 배너(DeathOverlayUI)는 완전사망 전용으로 남기고, 다운은 이 패널의 체력 칸(하트
+/// 자리)에 downIndicator(HELP 이미지 + downTimerText)를 겹쳐 표시한다. 하트는 그 동안 숨긴다.
+/// 체력이 낮다고 별도 경고 연출(점멸 등)은 없음 — 다운 여부만이 유일한 강조 트리거. 카운트다운은
+/// PlayerDownState.RemainingDownTime(부활 시전 중엔 정지된 값)을 Update()에서 매 프레임 정수 초로
+/// 갱신한다.
 ///
 /// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 빨간 느낌표(PlayerCheerHeartsUI, 미통과만
 /// 표시 — 통과하면 소거, 2026-09-14 3차 변경)로 표시한다
@@ -73,7 +74,7 @@ public class TeamStatusUI : MonoBehaviour
         [Tooltip("아직 합류하지 않은 자리 표시 그룹(플레이스홀더). showEmptySlots가 true일 때만 사용.")]
         public GameObject emptyGroup;
 
-        [Tooltip("다운 시 표시할 그룹(HELP 이미지 + 타이머). 평소엔 비활성 상태로 배치.")]
+        [Tooltip("다운 시 체력 칸(하트 자리)에 겹쳐 표시할 그룹(HELP 이미지 + 타이머). 평소엔 비활성.")]
         public GameObject downIndicator;
         [Tooltip("다운 생존 카운트다운 텍스트 (10 → 9 → 8 ... → 0).")]
         public TextMeshProUGUI downTimerText;
@@ -525,13 +526,15 @@ public class TeamStatusUI : MonoBehaviour
             slot.nameText.text = GetSlotNameLabel(slot.colorIndex);
 
         if (slot.heartImages == null) return;
+        // 다운 중엔 HELP가 하트 자리를 쓰므로 빈 하트를 다시 켜지 않는다.
+        bool hideHearts = IsShowingDown(slot);
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);
         int max = slot.player.maxHeart;
         for (int i = 0; i < slot.heartImages.Length; i++)
         {
             var img = slot.heartImages[i];
             if (img == null) continue;
-            bool inUse = i < max;
+            bool inUse = i < max && !hideHearts;
             if (img.gameObject.activeSelf != inUse) img.gameObject.SetActive(inUse);
             if (inUse) img.sprite = i < slot.player.heart ? resolvedFull : emptyHeartSprite;
         }
@@ -557,13 +560,53 @@ public class TeamStatusUI : MonoBehaviour
     static bool IsShowingDown(ColorSlot slot) =>
         slot.downState != null && slot.downState.IsDowned && slot.player != null && !slot.player.IsDead;
 
-    /// <summary>다운 진입/해제 시 HELP 인디케이터 on/off. 하트 표시는 기존 OnDamaged/OnHealed 경로가 이미 갱신한다.</summary>
+    /// <summary>다운 진입/해제 시 HELP를 체력 칸에 겹치고 하트를 숨긴다. 부활 시 하트는 RefreshSlotVisual이 복구한다.</summary>
     void SetDowned(ColorSlot slot, bool isDowned)
     {
         if (slot == null) return;
-        if (slot.downIndicator != null) slot.downIndicator.SetActive(isDowned);
+        if (slot.downIndicator != null)
+        {
+            slot.downIndicator.SetActive(isDowned);
+            if (isDowned) AlignDownIndicatorToHearts(slot);
+        }
+        if (isDowned) HideHearts(slot);
         slot.shownDownSeconds = -1;
         if (isDowned) RefreshDownTimer(slot);
+        else if (slot.player != null) RefreshSlotVisual(slot);
+    }
+
+    /// <summary>
+    /// HELP를 HeartRow와 같은 자리에 맞춘다. 프리팹이 하트 옆에 두어도 런타임엔 체력 칸을 덮는다.
+    /// </summary>
+    static void AlignDownIndicatorToHearts(ColorSlot slot)
+    {
+        if (slot.downIndicator == null || slot.heartImages == null) return;
+
+        RectTransform heartRow = null;
+        foreach (var img in slot.heartImages)
+        {
+            if (img == null) continue;
+            heartRow = img.transform.parent as RectTransform;
+            break;
+        }
+
+        var indicator = slot.downIndicator.transform as RectTransform;
+        if (heartRow == null || indicator == null) return;
+        if (indicator.parent != heartRow.parent) return;
+
+        indicator.anchorMin = heartRow.anchorMin;
+        indicator.anchorMax = heartRow.anchorMax;
+        indicator.pivot = heartRow.pivot;
+        indicator.anchoredPosition = heartRow.anchoredPosition;
+        indicator.sizeDelta = heartRow.sizeDelta;
+        indicator.SetAsLastSibling();
+    }
+
+    static void HideHearts(ColorSlot slot)
+    {
+        if (slot.heartImages == null) return;
+        foreach (var h in slot.heartImages)
+            if (h != null) h.gameObject.SetActive(false);
     }
 
     /// <summary>PlayerDownState.RemainingDownTime(부활 시전 중엔 정지된 값)을 정수 초로 표시. 값이 바뀔 때만 텍스트 갱신.</summary>

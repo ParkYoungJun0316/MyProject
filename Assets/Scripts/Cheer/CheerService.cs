@@ -83,7 +83,7 @@ public class CheerService : NetworkBehaviour
     /// <summary>(현재표수, 필요표수, 이미 외친 플레이어 colorIndex 배열). PlayerCheerHeartsUI(머리 위 구)만 구독 — TeamStatusUI 구독 금지.</summary>
     public event System.Action<int, int, int[]> OnTeamVoteChanged;
 
-    /// <summary>TeamCheerWord NV 변경. TeamCheerWordUI 구독. 문법 재빌드는 기존처럼 이 콜백에서 같이 돈다.</summary>
+    /// <summary>TeamCheerWord 확정/변경 — NV 변경 시 + 스폰 직후 1회(초기값/세션 복원 반영). TeamCheerWordUI 구독.</summary>
     public event System.Action OnTeamCheerWordChanged;
 
     // ── 공개 프로퍼티 ─────────────────────────────────────────────
@@ -99,6 +99,14 @@ public class CheerService : NetworkBehaviour
             string w = _teamCheerWord.Value.ToString();
             return string.IsNullOrEmpty(w) ? GameSession.DefaultTeamCheerWord : w;
         }
+    }
+
+    /// <summary>현재 TeamCheerWord 조회 SSOT — 스폰 전(Instance 없음)엔 세션값, 그것도 없으면 기본값. 항상 비어 있지 않음.</summary>
+    public static string ResolveTeamCheerWord()
+    {
+        if (Instance != null) return Instance.TeamCheerWord;
+        if (GameSession.Instance != null) return GameSession.Instance.GetSessionTeamCheerWord();
+        return GameSession.DefaultTeamCheerWord;
     }
 
     // ── 라이프사이클 ───────────────────────────────────────────────
@@ -187,12 +195,6 @@ public class CheerService : NetworkBehaviour
         ResetTeamVotes();
         _teamCheerWord.Value = new FixedString32Bytes(lower);
         return true;
-    }
-
-    public bool MatchesTeamCheerWord(string lower)
-    {
-        if (string.IsNullOrEmpty(lower)) return false;
-        return TeamCheerWord == lower;
     }
 
     // ── 되돌림 등록 (씬당 하나) ───────────────────────────────────

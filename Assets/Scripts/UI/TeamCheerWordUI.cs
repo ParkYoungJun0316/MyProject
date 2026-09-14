@@ -15,15 +15,16 @@ public class TeamCheerWordUI : MonoBehaviour
     [Header("표시")]
     [Tooltip("위 줄. 비우면 캡션은 프리팹에 적어 둔 텍스트를 유지.")]
     [SerializeField] TextMeshProUGUI captionLabel;
-    [Tooltip("아래 줄 — 실제 TeamCheerWord (대문자).")]
-    [SerializeField] TextMeshProUGUI wordLabel;
+    [Tooltip("아래 줄 — 실제 TeamCheerWord (대문자). TextMeshPro / TextMeshProUGUI 둘 다 가능.")]
+    [SerializeField] TMP_Text wordLabel;
 
     Coroutine _waitSubscribe;
 
     void Awake()
     {
         if (captionLabel != null) captionLabel.raycastTarget = false;
-        if (wordLabel != null) wordLabel.raycastTarget = false;
+        if (wordLabel is TextMeshProUGUI wordUgui)
+            wordUgui.raycastTarget = false;
     }
 
     void OnEnable()
@@ -77,18 +78,6 @@ public class TeamCheerWordUI : MonoBehaviour
     void RefreshWord()
     {
         if (wordLabel == null) return;
-        string word = ResolveWord();
-        wordLabel.text = string.IsNullOrEmpty(word)
-            ? GameSession.DefaultTeamCheerWord.ToUpperInvariant()
-            : word.ToUpperInvariant();
-    }
-
-    static string ResolveWord()
-    {
-        if (CheerService.Instance != null)
-            return CheerService.Instance.TeamCheerWord;
-        if (GameSession.Instance != null)
-            return GameSession.Instance.GetSessionTeamCheerWord();
-        return GameSession.DefaultTeamCheerWord;
+        wordLabel.text = CheerService.ResolveTeamCheerWord().ToUpperInvariant();
     }
 }

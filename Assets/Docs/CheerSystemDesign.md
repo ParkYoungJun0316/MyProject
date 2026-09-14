@@ -621,9 +621,9 @@ Phase F 코드 반영 후 씬/프리팹/Inspector에서 사용자가 정리해�
 - `RequestSelfBuffServerRpc()` (구 `SubmitSelfCheerServerRpc(bool isVoice)`, 2026-09-14) — sender 색 → `ValidateSelfCheer`(버프 중/쿨 중만, 연타 제한 없음) → `ApplyBuff`
 - `SubmitTeamCheerServerRpc(bool isVoice)` — `ValidateTeamCheer` → `_teamVotes` HashSet(1회 통과, 타임아웃 없음) → 충족 시 `ApplyTeamBuff`(되돌림 브로드캐스트 → 표 리셋 순서)
 - `TrySetTeamCheerWord(string, out reason)` — Host(`IsServer`)만. 실패: `"format"` / `"reserved"` / `"blocked"` / `"taken"` / `"not_server"`. RPC 없음
-- `MatchesTeamCheerWord(string lower)` / `TeamCheerWord` 프로퍼티
+- `TeamCheerWord` 프로퍼티 / `static ResolveTeamCheerWord()` — 팀워드 조회 SSOT(Instance → 세션값 → `"fighting"`, 항상 non-empty). UI·`CheerKeywordEngine`은 이것만 쓴다. ~~`MatchesTeamCheerWord`~~ **삭제 (2026-09-14, 호출자 없음 — 판정은 Owner-side)**
 - `_teamCheerWord` NV: Server write, Everyone read, 기본 `"fighting"`
-- `OnNetworkSpawn`: 전원 `_teamCheerWord.OnValueChanged` 구독 + `RebuildOwnerLocalGrammar`. Host만 `HasSessionTeamCheerWord`면 세션값을 NV에 복사
+- `OnNetworkSpawn`: Host만 `HasSessionTeamCheerWord`면 세션값을 NV에 복사(구독 **전** — 콜백 안 뜸) → 전원 `_teamCheerWord.OnValueChanged` 구독 → `RebuildOwnerLocalGrammar` + `OnTeamCheerWordChanged` 1회. 스폰 시 초기값은 NGO가 `OnValueChanged`를 띄우지 않으므로 이 수동 호출이 없으면 HUD가 기본값에 고착된다 (2026-09-14 수정)
 - `RegisterRevert` / `UnregisterRevert` / `NotifyHazardWindow(bool)` — 씬당 `ITeamCheerRevert` 하나. 중복 등록은 경고 로그
 - Inspector: `cheerCooldownSeconds`(15), `chatRateLimitSeconds`(0.5). ~~`teamCheerTimeoutSeconds`(10)~~ **폐기 (2026-09-14)**
 

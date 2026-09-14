@@ -2,7 +2,7 @@
 
 > 인게임 `Tip_Panel`(`UI.prefab`, Chat 아래 300×300)에 넣을 **규칙 안내** 원문.
 > DialogueUI 대사(`StageDialogueLines.md` / `StageDialogueTranslations.md`)와 **별개**다 — 대사 줄 재사용이 아니라, 플레이 중 상시 볼 짧은 규칙만 둔다.
-> 번역본(en/ja/…)은 원문이 M/T 확정된 뒤 `StageTipTranslations.md`로 분리한다. 이 문서는 한국어만.
+> 번역본: [`StageTipTranslations.md`](StageTipTranslations.md) (`en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl`).
 
 ## 표시 규칙
 
@@ -25,12 +25,20 @@ String Table은 나중에 별도 Collection (`StageTip` 가칭). 키는 페이�
 | `Tip.M.Stage4.2` | M.Stage4 4.2 |
 | `Tip.M.Stage4.3` | M.Stage4 4.3 |
 | `Tip.M.Stage5` | M.Stage5 |
+| `Tip.T.Stage1` | T.Stage1 |
+| `Tip.T.Stage2.1` | T.Stage2 2.1 |
+| `Tip.T.Stage2.2` | T.Stage2 2.2 |
+| `Tip.T.Stage2.3` | T.Stage2 2.3 |
+| `Tip.T.Stage3` | T.Stage3 |
+| `Tip.T.Stage4` | T.Stage4 |
+| `Tip.T.Stage5.1` | T.Stage5 5.1 |
+| `Tip.T.Stage5.2` | T.Stage5 5.2 (구 5.3) |
 | `Tip.T.Boss.1` | T.Boss P1 |
 | `Tip.T.Boss.2` | T.Boss P2 |
 | `Tip.T.Boss.3` | T.Boss P3 |
 | `Tip.T.Boss.4` | T.Boss P4 |
 
-T 일반 스테이지는 미정. M.Boss는 키 없음.
+M.Boss는 키 없음.
 
 ---
 
@@ -80,6 +88,39 @@ T 일반 스테이지는 미정. M.Boss는 키 없음.
 ## M.Boss
 
 Tip 없음.
+
+## T.Stage1
+
+1. 내 색이 뜬 양옆 벽에 부딪히면 벽이 뒤로 물러납니다.
+
+## T.Stage2 — 2.1
+
+1. 길을 외워 두세요.
+
+## T.Stage2 — 2.2
+
+1. 자기 색 칸만 밟으세요.
+2. 칸 색이 맞아도 캐릭터가 흑백이면 안 됩니다.
+
+## T.Stage2 — 2.3
+
+1. 담당 색이 먼저 지나가야 다른 팀원도 그 바닥을 밟을 수 있습니다.
+
+## T.Stage3
+
+1. 양옆 벽에 색을 맞춰 부딪히면 벽이 뒤로 물러납니다.
+
+## T.Stage4
+
+1. 앞뒤 벽과 부종에 닿으면 튕겨 나갑니다.
+
+## T.Stage5 — 5.1
+
+1. 버프를 써서 적혈구를 잡으세요.
+
+## T.Stage5 — 5.2
+
+1. 초록 부종에 부딪혀 튕기며 도망치세요.
 
 ## T.Boss
 

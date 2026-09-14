@@ -63,8 +63,9 @@ public static class NetworkDamageUtil
     /// <summary>
     /// 순수 넉백 전용. HP·쉴드는 건드리지 않는다 (Punch / Breakable 등 넉백 전용 이벤트).
     /// 서버에서만 판정. 클라이언트 호출 시 즉시 반환.
+    /// resetVerticalVelocity: 임펄스 전 Owner의 y속도를 0으로 리셋 (수직 발사 발판의 높이 일정화용).
     /// </summary>
-    public static void ApplyKnockback(Player p, Vector3 direction, float force)
+    public static void ApplyKnockback(Player p, Vector3 direction, float force, bool resetVerticalVelocity = false)
     {
         if (p == null) return;
 
@@ -72,6 +73,6 @@ public static class NetworkDamageUtil
         if (nm == null || !nm.IsListening || !nm.IsServer) return;
 
         var netSetup = p.GetComponent<NetworkPlayerSetup>();
-        netSetup?.ApplyKnockbackFromServer(direction, force);
+        netSetup?.ApplyKnockbackFromServer(direction, force, resetVerticalVelocity);
     }
 }

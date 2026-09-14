@@ -603,7 +603,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
             // [2026-09-14] 개인 버프 음성 인식 삭제 — grammar가 TeamCheerWord 1단어뿐이라
             // 매칭되는 다른 단어가 나올 일이 없다. 팀워드만 판정한다.
-            string teamWord = ResolveTeamCheerWord();
+            string teamWord = CheerService.ResolveTeamCheerWord();
             if (word != teamWord)
             {
                 Debug.Log($"[CheerKeywordEngine] 인식됐으나 TeamCheerWord 불일치: '{word}'");
@@ -615,15 +615,6 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
             CheerService.Instance?.SubmitTeamCheerServerRpc(isVoice: true);
         }
-    }
-
-    static string ResolveTeamCheerWord()
-    {
-        if (CheerService.Instance != null)
-            return CheerService.Instance.TeamCheerWord;
-        if (GameSession.Instance != null)
-            return GameSession.Instance.GetSessionTeamCheerWord();
-        return GameSession.DefaultTeamCheerWord;
     }
 
     // ── grammar ───────────────────────────────────────────────────
@@ -665,11 +656,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     }
 
     /// <summary>TeamCheerWord 1개뿐 — 개인 CheerName은 더 이상 음성 인식 대상이 아니다(2026-09-14).</summary>
-    static string[] OwnerGrammarWords()
-    {
-        string team = ResolveTeamCheerWord();
-        return !string.IsNullOrEmpty(team) ? new[] { team } : new[] { GameSession.DefaultTeamCheerWord };
-    }
+    static string[] OwnerGrammarWords() => new[] { CheerService.ResolveTeamCheerWord() };
 
     // ── 버퍼 용량 보장 ────────────────────────────────────────────
 

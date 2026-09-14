@@ -1,6 +1,6 @@
 # TutorialTranslations — Tutorial 씬 `TutorialInfoBoards` + `CheerNamePanel` 13개 언어 번역본
 
-> 대상: `Tutorial.unity` → ①`TutorialInfoBoards` 하위 안내판 4개(`Board_Controls`, `Board_TeamCheer`, `Board_CheerName`, `Board_GotoStartZone`)의 정적 TMP 텍스트, ②`CheerNamePanel`(TeamCheerWord 입력 패널) 정적 텍스트 + 동적 피드백 문구. 같은 String Table Collection **`Tutorial`** 하나로 통합 관리(2026-09-07, 사용자 결정 — 별도 테이블 안 만듦). `Interlude.unity` 전용 `Board_NameChange`와 Tutorial·Interlude 공용 `Prompt.*`(E-키 안내)도 같은 테이블에 추가됨(2026-09-08).
+> 대상: `Tutorial.unity` → ①`TutorialInfoBoards` 하위 안내판 3개(`Board_Controls`, `Board_TeamCheer`, `Board_CheerName`)의 정적 TMP 텍스트, ②`CheerNamePanel`(TeamCheerWord 입력 패널) 정적 텍스트 + 동적 피드백 문구. 같은 String Table Collection **`Tutorial`** 하나로 통합 관리(2026-09-07, 사용자 결정 — 별도 테이블 안 만듦). `Interlude.unity` 전용 `Board_NameChange`와 Tutorial·Interlude 공용 `Prompt.*`(E-키 안내)도 같은 테이블에 추가됨(2026-09-08). **[2026-09-14]** `Board_GotoStartZone` 삭제 — 노란 시작 존이 이미 보이고, 제목 "게임 시작하러 가세요"는 지시문이라 불필요. 게이트(`TutorialGatherZone`) 동작은 그대로.
 >
 > **[2026-09-14 확정, 최종] 개인 CheerName 커스텀화 완전 삭제.** 이름은 이제 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) 고정값 — 입력/검증/재제출 UI 없음. `Board_SelfCheer`(개인 응원 안내)와 `Board_Test`(팀 응원 연습)는 `Board_TeamCheer` 하나로 합쳐졌고, `Board_CheerName`/`CheerNamePanel`은 TeamCheerWord 전용으로 축소됐다. `Board_Controls`의 `Row_Voice`(개인 이름 음성 안내, 이미 오류였음)는 삭제하고 `Row_Buff`에 Space 발동 안내를 합쳤으며, 새로 `Row_Revive`(부활 조작 안내)를 추가했다.
 > 원문 소스: 각 TMP `TextMeshProUGUI.m_text` / `TutorialCheerNameUI.cs`의 하드코딩 한국어 폴백 문자열 (에디터에서 직접 확인, 이 문서 작성 시점 기준).
@@ -31,7 +31,6 @@
 | `Tutorial.Board_Controls.Row_Revive` | `.../Row_Revive/Label` (신규, 2026-09-14 — 구 `Row_Voice` 자리 재사용) |
 | `Tutorial.Board_TeamCheer.Title` / `.Body` | `TutorialInfoBoards/Board_TeamCheer/Face/Title`, `/Body` (2026-09-14 — 구 `Board_Test` 내용 흡수) |
 | `Tutorial.Board_CheerName.Title` / `.Body` | `TutorialInfoBoards/Board_CheerName/Face/Title`, `/Body` (2026-09-14 — TeamCheerWord 전용으로 축소) |
-| `Tutorial.Board_GotoStartZone.Title` / `.Body` | `TutorialInfoBoards/Board_GotoStartZone/Face/Title`, `/Body` |
 
 `CheerNamePanel` 키는 씬 경로 대신 UI 요소별 역할명 사용 (패널이 `TutorialInfoBoards`처럼 Face 구조가 아니라 평면 UI라서):
 
@@ -50,6 +49,8 @@
 | `Tutorial.CheerNamePanel.Feedback_NotServer` | `TutorialCheerNameUI.feedbackNotServer` | `LocalizedString` 필드 |
 
 **[2026-09-14 삭제]** 개인 CheerName 커스텀화 삭제로 아래 8개 키는 더 이상 쓰이지 않음(입력 UI 자체가 없어짐): `Examples`, `NameInputPlaceholder`, `Feedback_Reserved_Name`, `Feedback_Taken_Name`, `Feedback_Taken_Team`(팀워드가 겹칠 대상 자체가 없어져 도달 불가), `Feedback_Generic_Name`, `Feedback_Submitting`, `Feedback_Timeout`(팀워드 설정은 RPC 왕복 없는 동기 호출이라 대기 상태가 없음).
+
+**[2026-09-14 삭제]** `Tutorial.Board_GotoStartZone.Title` / `.Body` — 보드 GO 자체 삭제. 13로케일 String Table에서 키도 제거.
 
 언어 순서(13개, `Assets/Localization/Locales/` 전체와 동일): `ko, en, ja, zh-Hans, zh-Hant, es, es-419, fr, de, pt, pt-BR, ru, pl`
 
@@ -261,41 +262,9 @@
 
 ---
 
-## Board_GotoStartZone (시작 존 안내)
+## ~~Board_GotoStartZone (시작 존 안내)~~ **[2026-09-14 삭제]**
 
-### `Tutorial.Board_GotoStartZone.Title`
-
-- ko: 게임 시작하러 가세요
-- en: Time to Start the Game
-- ja: そろそろゲームを始めましょう
-- zh-Hans: 该去开始游戏啦
-- zh-Hant: 該去開始遊戲囉
-- es: Hora de empezar la partida
-- es-419: Hora de empezar la partida
-- fr: C'est parti pour la partie
-- de: Auf geht's ins Spiel
-- pt: Vamos começar o jogo
-- pt-BR: Hora de começar o jogo
-- ru: Пора начинать игру
-- pl: Czas zacząć grę
-
-### `Tutorial.Board_GotoStartZone.Body`
-
-> **[2026-09-14]** 개인 CheerName 확정 안내 → 게이트에서 잠기는 **팀 키워드**(host 설정) 안내로 교체.
-
-- ko: 노란색 바닥에 시작 존이 있습니다.\n팀 전원이 모이면 카운트다운 후 게임이 시작됩니다.\n카운트다운이 끝나면 그 순간의 팀 키워드로 확정되니,\nhost가 미리 정해 두었는지 확인하세요.
-- en: The start zone is on the yellow floor.\nOnce the whole team gathers there, a countdown begins and the game starts.\nYour team word locks in the moment the countdown ends,\nso make sure the host has set it.
-- ja: 黄色い床にスタートゾーンがあります。\nチーム全員が集まるとカウントダウン後にゲームが始まります。\nカウントダウンが終わった瞬間の合言葉で確定するので、\nhostが決めてあるか確認しておきましょう。
-- zh-Hans: 黄色地板上就是出发区。\n全队集合后会倒计时，倒计时结束游戏就会开始。\n倒计时一结束，团队关键词就会立刻定下来，\n记得确认host已经设置好。
-- zh-Hant: 黃色地板上就是起始區。\n全隊集合後會倒數計時，倒數結束遊戲就會開始。\n倒數一結束，團隊關鍵詞就會立刻定案，\n記得確認host已經設定好。
-- es: La zona de inicio está en el suelo amarillo.\nCuando todo el equipo se reúna allí, empezará una cuenta atrás y comenzará la partida.\nLa palabra de equipo queda fijada en el instante en que termine la cuenta atrás,\nasí que aseguraos de que el host la haya definido.
-- es-419: La zona de inicio está en el piso amarillo.\nCuando todo el equipo se reúna ahí, empieza una cuenta regresiva y arranca la partida.\nLa palabra de equipo queda definida apenas termine la cuenta regresiva,\nasí que asegúrense de que el host la haya definido.
-- fr: La zone de départ se trouve sur le sol jaune.\nDès que toute l'équipe s'y retrouve, un compte à rebours démarre puis la partie commence.\nLe mot d'équipe est figé au moment où le compte à rebours se termine,\nalors assurez-vous que l'hôte l'a bien défini.
-- de: Die Startzone liegt auf dem gelben Boden.\nSobald sich das ganze Team dort versammelt, läuft ein Countdown, und das Spiel beginnt.\nDas Team-Wort wird genau in dem Moment festgelegt, in dem der Countdown endet,\nalso stellt vorher sicher, dass der Host es gesetzt hat.
-- pt: A zona de início fica no chão amarelo.\nQuando toda a equipa se juntar ali, começa uma contagem decrescente e o jogo arranca.\nA palavra de equipa fica fixada no instante em que a contagem termina,\npor isso confirmem que o anfitrião já a definiu.
-- pt-BR: A zona de início fica no chão amarelo.\nQuando todo o time se reunir lá, começa uma contagem regressiva e o jogo começa.\nA palavra da equipe é definida no exato momento em que a contagem termina,\nentão confiram se o host já definiu.
-- ru: Стартовая зона находится на жёлтом полу.\nКак только вся команда соберётся там, начнётся отсчёт, и игра запустится.\nКомандное слово фиксируется в тот момент, когда закончится отсчёт,\nтак что убедитесь, что хост его уже задал.
-- pl: Strefa startowa znajduje się na żółtej podłodze.\nGdy zbierze się tam cała drużyna, ruszy odliczanie, a potem zacznie się gra.\nHasło drużyny zostaje ustalone dokładnie w momencie zakończenia odliczania,\nwięc upewnijcie się wcześniej, że host je ustawił.
+노란 시작 존이 이미 보이고, 제목 "게임 시작하러 가세요"는 지시문이라 불필요. 보드 GO + `Tutorial.Board_GotoStartZone.Title` / `.Body` 2키 전부 삭제. 게이트 동작(`TutorialGatherZone` 카운트다운 → `M.Stage1`)은 그대로.
 
 ---
 
@@ -492,7 +461,8 @@
 1. [x] String Table Collection `Tutorial` 생성 (13개 로케일, `Assets/Localization/StringTables/Tutorial*.asset`)
 2. [x] 키 + 번역 채움
 3. [x] `TutorialInfoBoards` 하위 TMP에 `LocalizeStringEvent` 부착 (`OnUpdateString` → `TMP_Text.text`)
-4. [ ] Play 모드에서 Locale 몇 개 바꿔가며 4개 보드(`Board_Controls`/`Board_TeamCheer`/`Board_CheerName`/`Board_GotoStartZone`)가 바뀌는지 스모크 테스트 (사용자)
+4. [ ] Play 모드에서 Locale 몇 개 바꿔가며 3개 보드(`Board_Controls`/`Board_TeamCheer`/`Board_CheerName`)가 바뀌는지 스모크 테스트 (사용자)
+5. [ ] `TutorialInfoBoards/Board_GotoStartZone` GameObject 삭제 (사용자, 씬) — String Table 키는 이미 제거됨
 
 ### Board_Controls 개편 (2026-09-11, MCP 적용 / 2026-09-14 재개편)
 

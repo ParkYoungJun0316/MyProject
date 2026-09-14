@@ -515,12 +515,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// 기존 피격 무적(_damageInvulnEndTime, isDamage)과도 완전히 분리되어 항상 적용된다.
     /// Punch / Breakable 등 넉백 전용 이벤트에서 사용 (NetworkDamageUtil.ApplyKnockback).
     /// </summary>
-    public void ApplyKnockbackFromServer(Vector3 direction, float force)
+    public void ApplyKnockbackFromServer(Vector3 direction, float force, bool resetVerticalVelocity = false)
     {
         if (!IsServer) return;
         if (_player == null || _player.IsDead || _player.IsDowned) return;
 
-        ApplyKnockbackClientRpc(direction, force);
+        ApplyKnockbackClientRpc(direction, force, resetVerticalVelocity);
     }
 
     /// <summary>
@@ -530,10 +530,17 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// 넉백이 힘 크기와 무관하게 한 프레임 만에 사라진다 (2026-09-02 진단).
     /// </summary>
     [ClientRpc]
-    void ApplyKnockbackClientRpc(Vector3 direction, float force)
+    void ApplyKnockbackClientRpc(Vector3 direction, float force, bool resetVerticalVelocity)
     {
         if (!IsOwner) return;
         _player?.SuppressMoveForKnockback();
+        // Impulse는 기존 속도에 더해지므로, 착지 순간 남은 y속도(±0.8 정도)를 끊어야 발사 높이가 매번 같다.
+        if (resetVerticalVelocity && _rb != null)
+        {
+            Vector3 v = _rb.linearVelocity;
+            v.y = 0f;
+            _rb.linearVelocity = v;
+        }
         _rb?.AddForce(direction * force, ForceMode.Impulse);
     }
 

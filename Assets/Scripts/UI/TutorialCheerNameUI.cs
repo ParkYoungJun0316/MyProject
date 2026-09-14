@@ -298,12 +298,11 @@ public class TutorialCheerNameUI : MonoBehaviour
     {
         if (currentTeamWordText == null) return;
 
-        string word = ResolveCurrentTeamWord();
+        string word = CheerService.ResolveTeamCheerWord();
         if (word == _lastShownTeamWord) return;
         _lastShownTeamWord = word;
 
-        string display = string.IsNullOrEmpty(word) ? GameSession.DefaultTeamCheerWord : word;
-        currentTeamWordText.text = FormatTeamKeywordPrefix(display.ToUpperInvariant());
+        currentTeamWordText.text = FormatTeamKeywordPrefix(word.ToUpperInvariant());
     }
 
     const string FallbackTeamKeywordPrefix = "팀 키워드: {0}";
@@ -317,15 +316,6 @@ public class TutorialCheerNameUI : MonoBehaviour
             if (!string.IsNullOrEmpty(localized)) return localized;
         }
         return string.Format(FallbackTeamKeywordPrefix, upperWord);
-    }
-
-    static string ResolveCurrentTeamWord()
-    {
-        if (CheerService.Instance != null)
-            return CheerService.Instance.TeamCheerWord;
-        if (GameSession.Instance != null)
-            return GameSession.Instance.GetSessionTeamCheerWord();
-        return GameSession.DefaultTeamCheerWord;
     }
 
     static bool IsLocalServer()

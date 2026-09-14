@@ -117,7 +117,7 @@ public class ContactKnockback : MonoBehaviour
         Vector3 dir = LaunchDirection(p.transform.position);
 
         float force = Random.Range(knockbackForceMin, knockbackForceMax);
-        NetworkDamageUtil.ApplyKnockback(p, dir, force);
+        NetworkDamageUtil.ApplyKnockback(p, dir, force, resetVerticalVelocity: launchMode == LaunchMode.VerticalUp);
         p.GetComponent<NetworkPlayerSetup>()?.NotifyPunchHitFromServer();
 
         _nextKnockbackTime[id] = Time.time + Mathf.Max(knockbackInterval, 0.05f);

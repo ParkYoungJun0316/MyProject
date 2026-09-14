@@ -10,32 +10,13 @@ using UnityEngine;
 /// (구 기본값 "hobak"은 사전 미등재라 대체 단어 "dan"을 썼었으나, 2026-08-25 기본 CheerName 자체를
 ///  "dan"으로 교체하면서 hobak/VariantMap 항목은 완전히 제거됨.)
 ///
-/// [테스트 키워드 세트 — 인식률 비교용]
-/// Set1 (현재): worcestershire / colonel / anemone / mischievous
-///   발음 주의: woos-ter-sher / ker-nel / ah-nem-oh-nee / mis-chih-vus
-/// Set2: rural / sixth / squirrel  (3종)
-/// Set3: Antidisestablishmentarianism / Floccinaucinihilipilification / Pneumonoultramicroscopicsilicovolcanoconiosis  (3종)
-///
-/// [확정 키워드 후 원상복구]
-/// BuildDemoGrammarJson() 의 배열을 berry/guma/sook/dan 으로 유지.
-/// CheerService.CheerNames 도 동일하게 맞출 것.
+/// [2026-09-14] grammar는 TeamCheerWord 1단어 + [unk]뿐 — 호출자는 CheerKeywordEngine.OwnerGrammarWords.
 /// </summary>
 public static class CheerLexiconBuilder
 {
     // [2026-09-14] §5.2 B 대체 단어 매핑(VariantMap/ResolveVariant) 삭제 — 개인 CheerName이 음성 인식
     // 대상에서 빠져 grammar는 TeamCheerWord 1단어뿐이다. 인식 단어를 이름으로 되돌리는 변환이 남아 있으면
     // 변형 단어가 팀워드와 겹칠 때 매칭이 절대 성립하지 않는다.
-
-    /// <summary>
-    /// 데모 기본 4종 grammar JSON (커스텀 미설정 시 폴백용).
-    /// 결과 예: ["berry","guma","sook","dan","[unk]"]
-    ///
-    /// 커스텀 이름이 있을 때는 BuildGrammarJson(세션이름[]) 을 사용할 것.
-    /// </summary>
-    public static string BuildDemoGrammarJson()
-    {
-        return BuildGrammarJson(new[] { "berry", "guma", "sook", "dan" });
-    }
 
     /// <summary>
     /// 전달받은 이름 배열로 grammar JSON 생성.

@@ -30,12 +30,16 @@ public class TutorialCheerNameSignboard : MonoBehaviour
     [Tooltip("근처에 있을 때만 보이는 \"[E] 이름 설정\" 프롬프트. 비워도 동작(프롬프트 없이 상호작용만).")]
     [SerializeField] GameObject promptRoot;
 
+    [Tooltip("Host만 보이는 표시(왕관/리본 등). 비-Host 머신에선 숨김. 비워도 동작.")]
+    [SerializeField] GameObject hostBadge;
+
     bool _localPlayerInRange;
 
     void Awake()
     {
         GetComponent<Collider>().isTrigger = true;
         SetPromptVisible(false);
+        RefreshHostBadge();
     }
 
     void OnTriggerEnter(Collider other) => TrySetRange(other, true);
@@ -56,6 +60,8 @@ public class TutorialCheerNameSignboard : MonoBehaviour
 
     void Update()
     {
+        RefreshHostBadge();
+
         if (!_localPlayerInRange || cheerNameUI == null) return;
 
         bool isOpen = TutorialCheerNameUI.IsOpen;
@@ -87,6 +93,14 @@ public class TutorialCheerNameSignboard : MonoBehaviour
     {
         var nm = NetworkManager.Singleton;
         return nm != null && nm.IsListening && nm.IsServer;
+    }
+
+    void RefreshHostBadge()
+    {
+        if (hostBadge == null) return;
+        bool host = IsLocalServer();
+        if (hostBadge.activeSelf != host)
+            hostBadge.SetActive(host);
     }
 
     void SetPromptVisible(bool visible)

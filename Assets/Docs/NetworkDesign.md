@@ -904,7 +904,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 |------|-----|
 | 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount)` |
 | 즉사 (함정 타일·스테이지 Fail 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
-| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force)` — Breakable 범위 넉백, `PlayerPunch` PvP, 문 닫힘, `ContactKnockback` 등 (§7.4) |
+| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force, resetVerticalVelocity = false)` — Breakable 범위 넉백, `PlayerPunch` PvP, 문 닫힘, `ContactKnockback` 등 (§7.4). `resetVerticalVelocity`는 `ContactKnockback` VerticalUp 발판만 `true` — Impulse가 착지 순간 남은 y속도에 더해져 발사 높이가 흔들리는 것을 막음 |
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 | 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
