@@ -26,6 +26,8 @@
 >
 > **2026-09-14 (같은 날 4차 변경, 최종) — 개인 CheerName 커스텀화 완전 삭제 [코드 완료].** 이름은 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) **고정값**이다. 입력 UI·`PlayerCheerNameSync`·세션 CheerName 스냅샷(`GameSession.SetSessionCheerNames` 등)·우선순위 역전·CheerName↔TeamCheerWord 충돌 검사·`CheerLexiconBuilder.VariantMap`/`ResolveVariant`는 **전부 삭제**. `CheerService.GetCheerName`/`GetColorIndex`는 고정 배열을 직접 읽는다. grammar 재빌드 헬퍼는 `CheerKeywordEngine.RebuildOwnerLocalGrammar()`로 이전. 머리 위 이름표 `PlayerNameTagUI`는 흑/백 팔레트 구분 문제로 **재도입**(팀 응원 느낌표가 떠 있는 동안은 숨김, §10.3). Tutorial/Interlude 패널은 TeamCheerWord 전용. **아래 본문(§3·§5.2·§10.1~§10.4 인수인계·§11 체크리스트)에서 `PlayerCheerNameSync`·커스텀 CheerName·세션 이름 스냅샷을 다루는 서술은 전부 이 항목이 우선한다(이력으로만 보존).**
 >
+> **2026-09-15 — 음성 인식 반응속도·인식률 개편 [코드 완료].** ①**창 게이팅:** `CheerKeywordEngine`은 팀 응원 창(`CheerService.IsHazardWindowActive`)이 열려 있고 이번 창에서 내가 아직 통과하지 않았을 때만 Vosk에 음성을 넣는다. ②**partial 부활(2연속 확인):** 2026-09-10 "partial 금지"를 **해제** — 매 100ms partial에서 TeamCheerWord가 **연속 2번** 들리면 즉시 제출, final은 보험으로 유지(사용자 결정). ③**리샘플러 교체:** 필터 없는 선형 보간 → 저역통과 FIR + 청크 간 위상 유지. ④**모델 선로드:** 호출부가 사라졌던 `LoadSync`를 부팅 시 백그라운드 로드(`BeginLoad`)로 교체. ⑤**사전 미등재 팀워드 거절:** `TrySetTeamCheerWord` 실패 사유에 `"unknown"` 추가(구 "경고만, 강제 아님" 대체). 상세 §4.7·§5.2. 아래 본문의 "final만 사용", "partial 부활 금지", "사전 미등재는 경고만"은 이 항목이 우선한다.
+>
 
 ---
 
@@ -57,7 +59,8 @@
 ┌─ [② Vosk + CheerKeywordEngine] ────────────────────┐
 │  각 Client: 자기 마이크만 분석                        │
 │  → 로컬 grammar = [TeamCheerWord] 1개 [2026-09-14]  │
-│  → 감지 시 SubmitTeamCheerServerRpc                  │
+│  → 팀 응원 창 + 내 미통과일 때만 청취 [2026-09-15]   │
+│  → partial 2연속/final 감지 시 SubmitTeamCheerServerRpc │
 └──────────────────────────────────────────────────────┘
 
 ┌─ [③ Space 키 입력] [2026-09-14 신규] ─────────────────┐
@@ -105,7 +108,7 @@
 | 효과 | 씬에 등록된 `ITeamCheerRevert` 되돌림 — 입 Open / 침 수면 페이드아웃 / 혀 복구. **Heal 아님**(§0 오버라이드) |
 | 유효 구간 | 함정이 창을 연 동안(Warning~되돌림)만. Idle 중 외침은 무시되고 표도 안 쌓임 |
 | 창 종료 | 전원이 통과해 되돌림이 성공한 뒤에만 닫힘. **실패로 창이 닫히지 않음.** 다음 사이클 창이 열리면 전원 미통과로 다시 시작. **예외(2026-09-14):** 혀 휩쓸기(`RiseHold` 외 패턴)는 공격이 끝나면, 보스 턱(`MouthBossJawSmash`)은 응원 창 제한 시각이 지나면 창(=팀 응원 배너)이 닫힌다 — 그 뒤 외침은 무시, 원상복구 없음, 표는 창과 함께 리셋 (`CheerAndTutorialDesign.md` §2.1) |
-| 인식 조건 | 팀 응원 배너(`TeamCheerWarningUI`, `OnHazardWindowChanged` 구독)가 떠 있는 동안만. Host 판정은 등록된 revert의 `IsAvailable`(창 열림) + 이번 창 미성공(`_teamWindowConsumed == false`) — `ValidateTeamCheer` |
+| 인식 조건 | 팀 응원 배너(`TeamCheerWarningUI`, `OnHazardWindowChanged` 구독)가 떠 있는 동안만. Host 판정은 등록된 revert의 `IsAvailable`(창 열림) + 이번 창 미성공(`_teamWindowConsumed == false`) — `ValidateTeamCheer`. **[2026-09-15] 클라이언트도 같은 조건으로 게이팅** — 창 밖이거나 이미 통과했으면 Vosk에 음성을 넣지 않는다(§4.7). Host 검증은 그대로 최종 권한 |
 | 쿨다운 | **없음.** 팀 쿨 state·NV·세션 저장 전부 삭제(2026-09-05). 성공으로 창이 닫히면 표도 리셋(다음 창과 섞이지 않게) |
 | 발동 피드백 | 전원 화면에 짧게 배너 표시 (`TeamCheerCleared`, §8.2) |
 | 솔로(1인) | `ActivePlayerCount==1`이면 자기 혼자 TeamCheerWord 1회로 발동 — 자연스럽게 축소, 별도 예외 코드 불필요 |
@@ -147,14 +150,14 @@
 | 설정 주체 | **Host만.** 팀원 개별 설정 아님 — 팀 전체가 공유하는 단 하나의 값 |
 | 기본값 | `"fighting"` (Host가 안 건드리면 이 값 그대로 사용, 기존 4개 CheerName과 발음상 안 겹침) |
 | 설정 위치 | Tutorial CheerName 설정 구역(§9.2 zone 2, `CheerAndTutorialDesign.md`)에 Host 전용 입력 필드 추가. 비-Host 클라이언트는 현재 값을 **읽기 전용**으로 표시(뭘 외쳐야 하는지 알아야 하므로) |
-| 검증 | `CheerNameValidator`(형식/금칙어) 그대로 재사용 |
+| 검증 | `CheerNameValidator`(형식/금칙어) 그대로 재사용 + **[2026-09-15] Vosk 모델 사전 미등재 단어 거절**(`CheerLexiconBuilder.IsKnownWord`, 사유 `"unknown"`, §5.2) |
 | 충돌 검사 | **[2026-09-14 삭제]** 개인 CheerName이 고정값·비인식 대상이 되어 겹칠 대상이 없음(§3.3) |
 | 구현 | `CheerService`에 `NetworkVariable<FixedString32Bytes> _teamCheerWord`(Server write, Everyone read) + Host-only setter. Host 프로세스는 곧 서버이므로 **RPC 불필요** — Host 클라이언트 UI가 `IsServer` 가드 걸린 public 메서드를 직접 호출. **단, 인스턴스 메서드라 그 씬에 `CheerService`가 실제로 배치돼 있어야 호출 가능** — Tutorial에서 Host가 설정하려면 Tutorial 씬에도 `CheerService`가 필요(§10 Phase D0) |
 | 세션 지속 | `GameSession.SetSessionTeamCheerWord`/`GetSessionTeamCheerWord` (기존 `SetSessionCheerNames`와 동일 패턴) — `TutorialNetworkManager`의 게이트 완료 지점(기존 `SetSessionCheerNames` 호출부 2곳)에서 나란히 호출 |
 
 ### 3.3 양방향 충돌 검증
 
-> **[2026-09-14 삭제]** 개인 CheerName이 고정값이 되고 음성 인식 대상에서도 빠져, 양방향 충돌 검사는 **코드에서 제거**됐다. `CheerService.TrySetTeamCheerWord`의 실패 사유는 `format`/`reserved`/`blocked`/`not_server`뿐(`taken` 없음). 아래는 이력.
+> **[2026-09-14 삭제]** 개인 CheerName이 고정값이 되고 음성 인식 대상에서도 빠져, 양방향 충돌 검사는 **코드에서 제거**됐다. `CheerService.TrySetTeamCheerWord`의 실패 사유는 `format`/`reserved`/`blocked`/`unknown`(2026-09-15)/`not_server`뿐(`taken` 없음). 아래는 이력.
 
 ### 3.4 Vosk 그래머 슬림화 **[2026-09-14 재축소 — 1단어]**
 
@@ -202,9 +205,9 @@ Dissonance와 Vosk가 동일 마이크를 쓰되, OS `Microphone.Start` **이중
 ### 4.4 스레드 구조 **[Ship Must · 코드 확정]**
 
 ```
-[메인]  Dissonance(또는 솔로 마이크) PCM 캡처 → float→short → _pcmQueue
-[워커]  VoskWorker: AcceptWaveform → JSON → _resultQueue
-[메인]  결과 drain(final만) → TeamCheerWord 매칭 → SubmitTeamCheerServerRpc(isVoice: true)
+[메인]  Dissonance(또는 솔로 마이크) PCM 캡처 → (창 밖이면 버림) → 저역통과+16kHz 리샘플 → float→short → _pcmQueue
+[워커]  VoskWorker: AcceptWaveform → Result(final) 또는 PartialResult → (세대 태그) → _resultQueue
+[메인]  결과 drain(partial 2연속 또는 final) → TeamCheerWord 매칭 → SubmitTeamCheerServerRpc(isVoice: true)
         (개인 버프는 음성 경로 없음 — Space → RequestSelfBuffServerRpc, §6.1)
 ```
 
@@ -214,9 +217,29 @@ Dissonance와 Vosk가 동일 마이크를 쓰되, OS `Microphone.Start` **이중
 
 모델은 zip이 아니라 **압축 해제된 폴더**로 `StreamingAssets`에 포함(`persistentDataPath`로 풀면 Windows 한글 사용자명 경로에서 100% 크래시, libvosk/Kaldi가 `std::ifstream`으로 비ASCII 경로를 못 읽음 — [vosk-api#1072](https://github.com/alphacep/vosk-api/issues/1072)). `VoskModelLoader.GetSharedModel()`의 null 반환은 반드시 존중. 모델 로드 실패는 **음성 인식만 비활성화하고 게임 진행은 막지 않음**.
 
+**로드 시점 [2026-09-15]:** 게임 부팅 직후 `VoskModelLoader.BeginLoad()`(`RuntimeInitializeOnLoadMethod`)가 **백그라운드 스레드**에서 1회 로드한다. `CheerKeywordEngine`은 `IsLoading`이 끝날 때까지 기다린 뒤 `GetSharedModel()`을 읽는다. 구 `LoadSync`(로비 Start에서 호출)는 로비 삭제로 호출부가 사라져, Tutorial 첫 스폰 때 메인 스레드 동기 로드로 멈추던 문제가 있었다 — 메인 스레드 동기 로드로 되돌리지 말 것.
+
 ### 4.6 Dissonance 버퍼 경고
 
 `Insufficient buffer space` 류 경고는 **Warn**, 크래시 아님. 1순위 원인은 메인 히치, 2순위는 청크 크기. 재발 시 프로파일 우선.
+
+### 4.7 청취 구간·판정 규칙 **[2026-09-15 · 코드 완료]**
+
+**목표:** 외치는 순간 반응 + 창 밖 잡음으로 인한 오인식 제거.
+
+| 항목 | 규칙 |
+|---|---|
+| 청취 조건 | `CheerService.IsHazardWindowActive` **그리고** 마지막 `OnTeamVoteChanged` 명단에 내 colorIndex 없음. 둘 중 하나라도 아니면 Vosk에 음성을 넣지 않는다 |
+| 창 밖 오디오 | 버린다. 단 Dissonance `base.Update`는 매 프레임 계속 돌려 전달 버퍼를 비운다. **Dissonance 구독은 창마다 끊지 않는다**(§4.3 이중 오픈 사고와 같은 계열 — 구독/해제 반복 금지) |
+| 창 열림 순간 | PCM/결과 큐·누적 버퍼·리샘플러·게인 스무딩을 비우고 `_listenGeneration`을 올린다 → 워커가 `VoskRecognizer.Reset()`으로 발화 상태를 비움. 세대가 다른 결과는 메인이 버린다 |
+| partial 판정 | 청크 100ms마다 `PartialResult`. TeamCheerWord가 **연속 `PartialConfirmHits`(2)번** 들리면 제출. 한 번 튀었다 정정되는 추측은 여기서 걸러진다 |
+| final 판정 | 침묵으로 확정된 결과에 TeamCheerWord가 있으면 즉시 제출(partial을 놓친 경우의 보험) |
+| 제출 후 | `_listenGeneration`을 올려 같은 발화로 재제출 방지. Host가 통과 명단을 보내면 청취 중지. 명단이 안 오면(창 열림 시점 경합으로 Host 거절) `SubmitRetrySec`(1.5초) 뒤 다시 제출 가능 |
+| 리샘플 | 입력(보통 48kHz) → 63탭 윈도우드 싱크 저역통과(7kHz) → 선형 보간 16kHz. 필터 이력·보간 위상은 청크 사이에 이어간다(경로별 인스턴스) |
+
+> **2026-09-10 "partial 금지"와의 관계:** 당시 오탐은 grammar가 여러 단어이고 게임 내내 청취하던 구조에서 "잠깐 튄 추측"을 그대로 제출해서 났다. 1단어 grammar + 창 게이팅 + 연속 확인으로 원인을 막고 partial을 되살렸다(사용자 결정 2026-09-15). **연속 확인 없이 partial 1회로 제출하는 형태로 되돌리지 말 것.**
+>
+> **튜닝 포인트:** 오탐이 보이면 `PartialConfirmHits`를 3으로, 반응이 느리면 final 쪽 침묵 대기(`StreamingAssets/vosk-model-*/conf/model.conf`의 `endpoint.rule2/3.min-trailing-silence`)를 실측 후 조정. 둘 다 현재 기본값 유지.
 
 ---
 
@@ -229,11 +252,14 @@ Dissonance와 Vosk가 동일 마이크를 쓰되, OS `Microphone.Start` **이중
 ### 5.2 A. 사전 검증 + B. 발음 변형 대체 단어
 
 ```
-CheerName/TeamCheerWord 후보
-  → Model.vosk_model_find_word(word) → -1이면 모델 사전에 없음 → Tutorial UI 경고(강제 아님)
+TeamCheerWord 후보
+  → Model.vosk_model_find_word(word) → -1이면 모델 사전에 없음
+  → [2026-09-15] TrySetTeamCheerWord가 "unknown"으로 거절 → TutorialCheerNameUI 피드백 표시
+     (모델 로드 전/실패면 검사 불가 → 통과)
   → [2026-09-14] 이름은 인식 대상이 아니므로 대체 단어(B) 경로 자체를 삭제
-  → 커스텀 이름/TeamCheerWord가 사전에 없으면 경고만, 대체 발음은 미지원(§5.3 C 참고)
 ```
+
+**[2026-09-15] 경고 → 거절로 변경:** 사전에 없는 단어는 grammar에 넣어도 Vosk가 무시해 **절대 인식되지 않는다.** 구 설계(Tutorial UI 경고만)는 코드에 연결된 적이 없어, Host가 모르는 단어를 정하면 팀 응원 음성이 조용히 전부 실패했다.
 
 **[2026-09-14]** `VariantMap`/`ResolveVariant` 삭제 — grammar는 TeamCheerWord 1단어라 인식 단어를 이름으로 되돌리는 변환이 남아 있으면 변형 단어가 팀워드와 겹칠 때 매칭이 영원히 실패한다. `BuildGrammarJson`은 전달받은 단어 + `[unk]`만 넣는다.
 
@@ -620,7 +646,7 @@ Phase F 코드 반영 후 씬/프리팹/Inspector에서 사용자가 정리해�
 
 - `RequestSelfBuffServerRpc()` (구 `SubmitSelfCheerServerRpc(bool isVoice)`, 2026-09-14) — sender 색 → `ValidateSelfCheer`(버프 중/쿨 중만, 연타 제한 없음) → `ApplyBuff`
 - `SubmitTeamCheerServerRpc(bool isVoice)` — `ValidateTeamCheer` → `_teamVotes` HashSet(1회 통과, 타임아웃 없음) → 충족 시 `ApplyTeamBuff`(되돌림 브로드캐스트 → 표 리셋 순서)
-- `TrySetTeamCheerWord(string, out reason)` — Host(`IsServer`)만. 실패: `"format"` / `"reserved"` / `"blocked"` / `"taken"` / `"not_server"`. RPC 없음
+- `TrySetTeamCheerWord(string, out reason)` — Host(`IsServer`)만. 실패: `"format"` / `"reserved"` / `"blocked"` / `"unknown"`(모델 사전 미등재, 2026-09-15) / `"not_server"`. ~~`"taken"`~~ 삭제(2026-09-14). RPC 없음
 - `TeamCheerWord` 프로퍼티 / `static ResolveTeamCheerWord()` — 팀워드 조회 SSOT(Instance → 세션값 → `"fighting"`, 항상 non-empty). UI·`CheerKeywordEngine`은 이것만 쓴다. ~~`MatchesTeamCheerWord`~~ **삭제 (2026-09-14, 호출자 없음 — 판정은 Owner-side)**
 - `_teamCheerWord` NV: Server write, Everyone read, 기본 `"fighting"`
 - `OnNetworkSpawn`: Host만 `HasSessionTeamCheerWord`면 세션값을 NV에 복사(구독 **전** — 콜백 안 뜸) → 전원 `_teamCheerWord.OnValueChanged` 구독 → `RebuildOwnerLocalGrammar` + `OnTeamCheerWordChanged` 1회. 스폰 시 초기값은 NGO가 `OnValueChanged`를 띄우지 않으므로 이 수동 호출이 없으면 HUD가 기본값에 고착된다 (2026-09-14 수정)
@@ -653,7 +679,8 @@ UI 이벤트:
 ### 알려진 한계 (버그로 착각하지 말 것)
 
 - Tutorial에 `CheerService` 없음 → Host가 팀워드를 못 바꿈, CheerName 충돌은 `"fighting"`만 검사. **D0 전 정상.** *(D0 완료 — Tutorial 씬에 배치됨)*
-- `CheerKeywordEngine.ParseAndSubmit`에 `_lastDetected[word] = Time.time`이 두 분기에 있음 (실행은 상호배타). 스타일만, 동작 버그 아님.
+- ~~`CheerKeywordEngine.ParseAndSubmit`의 `_lastDetected` 중복~~ — 2026-09-15 판정 로직 교체(`DrainResultQueue`/`TrySubmit`, §4.7)로 해당 코드 없음.
+- `CheerKeywordEngine`은 창이 닫혀 있으면 마이크 레벨 로그(`LogMicLevel`, 솔로 경로)도 찍지 않는다. "로그가 안 나온다" = 창 밖이라 청취 중이 아닌 것. `[CheerKeywordEngine] 청취 시작/중지` 로그로 확인.
 - `ApplyBuff`/`ApplyTeamBuff`의 `FindObjectsByType<NetworkPlayerSetup>`는 구 패턴 유지. 인원 최대 4. 새로 바꾸지 말 것.
 - Options `digitCheerToggle` 미연결이면 숫자키 설정 UI가 안 보임. API·가드는 동작(기본 OFF). **사용자 에디터.**
 - `TeamCheerCleared` GO 미배치면 배너만 없음 (되돌림은 적용). `UI.prefab`에는 배치돼 있음.

@@ -1,15 +1,19 @@
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using Vosk;
 
 /// <summary>
 /// StreamingAssets에 배포된 Vosk 모델 폴더를 열어 네이티브 Model 인스턴스를 1회 생성해 공유한다.
 ///
-/// [흐름]
-/// 1. LoadSync() — 로비 Start에서 메인 스레드 동기 로드 (1회, 실패해도 재시도하지 않음)
-/// 2. CheerKeywordEngine.InitCoroutine이 GetSharedModel() 호출 → 캐시 즉시 반환
+/// [흐름 — 2026-09-15]
+/// 1. 게임 부팅 직후(RuntimeInitializeOnLoadMethod) BeginLoad()가 백그라운드 스레드에서 로드 시작 (1회, 실패해도 재시도하지 않음)
+/// 2. CheerKeywordEngine.InitCoroutine이 IsLoading이 끝날 때까지 기다린 뒤 GetSharedModel()
 /// 3. 이후 스폰·리스폰·씬 전환은 캐시된 인스턴스 즉시 반환
+/// (이전엔 로비 Start의 LoadSync가 선로드했는데, 로비 삭제로 호출부가 사라져 Tutorial 첫 플레이어 스폰 때
+///  메인 스레드에서 수백 MB 모델을 동기 로드하며 멈췄다.)
 ///
 /// 모델 로드에 실패하면 음성 인식만 비활성화되고 게임 진행은 영향받지 않는다.
 /// </summary>
@@ -35,20 +39,59 @@ public static class VoskModelLoader
         ("ivector/final.dubm",    100_000),
     };
 
-    static Model  _sharedModel;
-    static bool   _loadAttempted;
-    static string _resolvedPath;
+    const int StateIdle    = 0;
+    const int StateLoading = 1;
+    const int StateDone    = 2;
+
+    static int            _loadState;
+    static volatile Model _sharedModel;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void PreloadOnBoot() => BeginLoad();
 
     /// <summary>
-    /// 메인 스레드에서 Model을 동기 로드한다. 로비 Start에서 1회 호출.
-    /// 이미 시도했으면 즉시 반환 (성공/실패 무관 — 실패 재시도는 하지 않는다).
+    /// 백그라운드 로드를 시작한다. 이미 시작/완료됐으면 아무것도 안 함(성공/실패 무관 — 재시도 없음).
     /// </summary>
-    public static void LoadSync()
+    public static void BeginLoad()
     {
-        if (_loadAttempted) return;
-        _loadAttempted = true;
+        if (Interlocked.CompareExchange(ref _loadState, StateLoading, StateIdle) != StateIdle) return;
 
-        string modelPath = ResolveModelPath();
+        // Unity API는 메인 스레드에서만 — 경로만 여기서 읽어 넘긴다.
+        string streamingAssetsPath = Application.streamingAssetsPath;
+
+        Task.Run(() =>
+        {
+            try
+            {
+                LoadCore(streamingAssetsPath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[VoskModelLoader] 로드 중 예외 — 음성 인식 비활성화. {e.Message}");
+            }
+            finally
+            {
+                Volatile.Write(ref _loadState, StateDone);
+            }
+        });
+    }
+
+    /// <summary>로드가 진행 중이면 true. 호출자는 false가 될 때까지 기다린 뒤 GetSharedModel()을 읽는다.</summary>
+    public static bool IsLoading => Volatile.Read(ref _loadState) == StateLoading;
+
+    /// <summary>
+    /// 캐시된 Model 반환. 로드 전·로드 중·실패 시 null — 호출자는 음성 인식 없이 동작해야 한다.
+    /// 아직 시작 전이면 로드를 시작만 한다(메인 스레드를 막지 않음).
+    /// </summary>
+    public static Model GetSharedModel()
+    {
+        BeginLoad();
+        return _sharedModel;
+    }
+
+    static void LoadCore(string streamingAssetsPath)
+    {
+        string modelPath = ResolveModelPath(streamingAssetsPath);
         if (modelPath == null)
         {
             Debug.LogError("[VoskModelLoader] 모델 경로 확인 실패 — 음성 인식 비활성화");
@@ -81,23 +124,11 @@ public static class VoskModelLoader
     }
 
     /// <summary>
-    /// 캐시된 Model 반환. 아직 로드 시도 전이면 동기 로드 (에디터 직접 Play 등).
-    /// 로드에 실패한 경우 null — 호출자는 음성 인식 없이 동작해야 한다.
-    /// </summary>
-    public static Model GetSharedModel()
-    {
-        if (_sharedModel == null && !_loadAttempted) LoadSync();
-        return _sharedModel;
-    }
-
-    /// <summary>
     /// 사용할 모델 폴더 경로를 확정한다. 검증 실패 시 null.
     /// </summary>
-    static string ResolveModelPath()
+    static string ResolveModelPath(string streamingAssetsPath)
     {
-        if (_resolvedPath != null) return _resolvedPath;
-
-        string shipped = Path.Combine(Application.streamingAssetsPath, ModelFolderName);
+        string shipped = Path.Combine(streamingAssetsPath, ModelFolderName);
         if (!ValidateModel(shipped, out string reason))
         {
             Debug.LogError($"[VoskModelLoader] 배포 모델 검증 실패 — {reason} / path={shipped}");
@@ -108,14 +139,10 @@ public static class VoskModelLoader
         // 열지 못하고, 실패를 알리지 않은 채 이후 네이티브 호출에서 프로세스를 죽인다.
         // (alphacep/vosk-api#1072 — 업스트림 미해결) 설치 경로에 비ASCII가 섞이면 ASCII 경로로 복사한다.
         if (IsAscii(shipped))
-        {
-            _resolvedPath = shipped;
-            return _resolvedPath;
-        }
+            return shipped;
 
         Debug.LogWarning($"[VoskModelLoader] 설치 경로에 비ASCII 문자 포함 — ASCII 경로로 복사 시도. path={shipped}");
-        _resolvedPath = CopyToAsciiPath(shipped);
-        return _resolvedPath;
+        return CopyToAsciiPath(shipped);
     }
 
     /// <summary>

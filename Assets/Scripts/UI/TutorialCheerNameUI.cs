@@ -82,6 +82,8 @@ public class TutorialCheerNameUI : MonoBehaviour
     [SerializeField] LocalizedString feedbackReservedTeam;
     [SerializeField] LocalizedString feedbackGenericTeam;
     [SerializeField] LocalizedString feedbackNotServer;
+    [Tooltip("Vosk 모델 사전에 없는 단어(CheerService reason \"unknown\"). 비워 두면 한국어 폴백.")]
+    [SerializeField] LocalizedString feedbackUnknownWord;
 
     [Header("Localization — 표시")]
     [Tooltip("{0} 포맷 — GetLocalizedString(팀 키워드 대문자)로 호출.")]
@@ -256,6 +258,7 @@ public class TutorialCheerNameUI : MonoBehaviour
         "format"     => LocalizedOrFallback(feedbackFormat, "2~12자, 영문 소문자만 사용할 수 있어요."),
         "reserved"   => LocalizedOrFallback(feedbackReservedTeam, "시스템 예약어라 사용할 수 없는 단어예요."),
         "blocked"    => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
+        "unknown"    => LocalizedOrFallback(feedbackUnknownWord, "음성 인식이 모르는 단어예요. 다른 영어 단어를 써주세요."),
         "not_server" => LocalizedOrFallback(feedbackNotServer, "호스트만 팀 키워드를 정할 수 있어요."),
         _            => LocalizedOrFallback(feedbackGenericTeam, "팀 키워드를 확정할 수 없어요."),
     };

@@ -1,39 +1,31 @@
-using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
 /// <summary>
-/// Vosk grammar JSON 문자열 생성.
-///
-/// [실측 — 2026-08, 모델 words.txt 직접 확인 (CheerAndTutorialDesign.md §5.2)]
-/// berry / guma / sook / dan : 모델 사전에 이미 등재됨 → 변형 불필요 (과거 "사전 미포함" 주석은 오기, 실측으로 정정).
-/// (구 기본값 "hobak"은 사전 미등재라 대체 단어 "dan"을 썼었으나, 2026-08-25 기본 CheerName 자체를
-///  "dan"으로 교체하면서 hobak/VariantMap 항목은 완전히 제거됨.)
+/// Vosk grammar JSON 문자열 생성 + 모델 사전 등재 확인.
 ///
 /// [2026-09-14] grammar는 TeamCheerWord 1단어 + [unk]뿐 — 호출자는 CheerKeywordEngine.OwnerGrammarWords.
+/// 개인 CheerName용 대체 단어 매핑(VariantMap/ResolveVariant)은 삭제됨 — 인식 단어를 이름으로 되돌리는
+/// 변환이 남아 있으면 변형 단어가 팀워드와 겹칠 때 매칭이 절대 성립하지 않는다.
 /// </summary>
 public static class CheerLexiconBuilder
 {
-    // [2026-09-14] §5.2 B 대체 단어 매핑(VariantMap/ResolveVariant) 삭제 — 개인 CheerName이 음성 인식
-    // 대상에서 빠져 grammar는 TeamCheerWord 1단어뿐이다. 인식 단어를 이름으로 되돌리는 변환이 남아 있으면
-    // 변형 단어가 팀워드와 겹칠 때 매칭이 절대 성립하지 않는다.
-
     /// <summary>
-    /// 전달받은 이름 배열로 grammar JSON 생성.
-    /// [unk] 는 자동으로 끝에 추가됨.
+    /// 전달받은 단어 배열로 grammar JSON 생성.
+    /// [unk] 는 자동으로 끝에 추가됨 — 후보 단어가 아닌 소리를 억지로 후보에 맞추지 않게 하는 흡수용.
     /// </summary>
-    public static string BuildGrammarJson(string[] cheerNames)
+    public static string BuildGrammarJson(string[] words)
     {
-        if (cheerNames == null || cheerNames.Length == 0)
+        if (words == null || words.Length == 0)
         {
-            Debug.LogWarning("[CheerLexiconBuilder] cheerNames 비어 있음 — [unk]만 포함");
+            Debug.LogWarning("[CheerLexiconBuilder] words 비어 있음 — [unk]만 포함");
             return "[\"[unk]\"]";
         }
 
         var sb = new StringBuilder();
         sb.Append("[");
-        foreach (var name in cheerNames)
-            sb.Append("\"").Append(name.ToLower().Trim()).Append("\",");
+        foreach (var word in words)
+            sb.Append("\"").Append(word.ToLower().Trim()).Append("\",");
         sb.Append("\"[unk]\"]");
 
         string result = sb.ToString();
@@ -42,11 +34,10 @@ public static class CheerLexiconBuilder
     }
 
     /// <summary>
-    /// CheerAndTutorialDesign.md §5.2 A — word가 현재 로드된 Vosk 모델 사전(words.txt)에
-    /// 있는지 확인. 모델 사전에 없는 단어는 grammar에 넣어도 인식이 잘 안 될 수 있음(경고용).
-    /// 강제 차단이 아니라 로비 UI 경고 표시 용도.
+    /// word가 로드된 Vosk 모델 사전(words.txt)에 있는지 확인. 사전에 없는 단어는 grammar에 넣어도
+    /// 인식되지 않는다 — CheerService.TrySetTeamCheerWord가 "unknown"으로 거절하는 데 쓴다(2026-09-15).
     ///
-    /// 모델이 아직 로드되지 않았으면 오탐(false-positive 경고) 방지를 위해 true를 반환한다.
+    /// 모델이 아직 로드되지 않았거나 로드에 실패했으면 검사할 수 없으므로 true를 반환한다.
     /// </summary>
     public static bool IsKnownWord(string word)
     {

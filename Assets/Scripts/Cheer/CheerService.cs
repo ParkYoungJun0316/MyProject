@@ -169,7 +169,9 @@ public class CheerService : NetworkBehaviour
 
     /// <summary>
     /// Host 클라이언트 UI가 IsServer 가드로 직접 호출. RPC 없음.
-    /// 실패 사유: "format" / "reserved" / "blocked" / "taken" / "not_server".
+    /// 실패 사유: "format" / "reserved" / "blocked" / "unknown" / "not_server".
+    /// "unknown" = Vosk 모델 사전에 없는 단어 — grammar에 넣어도 절대 인식되지 않으므로 거절한다
+    /// (2026-09-15, CheerSystemDesign.md §5.2). 모델이 아직 로드 전/실패면 검사할 수 없어 통과시킨다.
     /// </summary>
     public bool TrySetTeamCheerWord(string candidate, out string reason)
     {
@@ -186,6 +188,11 @@ public class CheerService : NetworkBehaviour
         if (CheerNameValidator.ContainsBlockedWord(lower))
         {
             reason = "blocked";
+            return false;
+        }
+        if (!CheerLexiconBuilder.IsKnownWord(lower))
+        {
+            reason = "unknown";
             return false;
         }
 

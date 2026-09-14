@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using Dissonance;
 using NAudio.Wave;
@@ -10,35 +9,41 @@ using UnityEngine;
 using Vosk;
 
 /// <summary>
-/// Dissonance 마이크 스트림을 Vosk에 연결해 CheerName 키워드를 감지한다.
+/// Dissonance 마이크 스트림을 Vosk에 연결해 TeamCheerWord를 감지한다.
 ///
 /// [마이크 이중 오픈 금지]
 /// 멀티: DissonanceComms.SubscribeToRecordedAudio 로 Dissonance 스트림 탭.
 /// 솔로(ActivePlayerCount==1): Dissonance 가 오디오를 주지 않을 때만 직접 Microphone.Start fallback.
 /// 멀티에서는 Dissonance가 늦어도 직접 마이크를 열지 않는다 — 동시 오픈 시 메인 스톨로
-/// NGO 스폰 Deferred/유실이 발생한 전례가 있음(CheerAndTutorialDesign.md §4.3, 재발 금지).
+/// NGO 스폰 Deferred/유실이 발생한 전례가 있음(CheerSystemDesign.md §4.3, 재발 금지).
 ///
 /// [Owner-only]
 /// NetworkPlayerSetup.SetupOwner → enabled = true
 /// NetworkPlayerSetup.SetupNonOwner → enabled = false
 ///
 /// [초기화 순서]
-/// 1. VoskModelLoader.GetSharedModel() → 공유 Model (null이면 초기화 중단)
-/// 2. OwnerGrammarWords() → [TeamCheerWord] 1단어 grammar 빌드 (2026-09-14, 개인 버프는 음성 삭제)
+/// 1. VoskModelLoader 백그라운드 로드 완료 대기 → GetSharedModel() (null이면 초기화 중단)
+/// 2. OwnerGrammarWords() → [TeamCheerWord] 1단어 grammar 빌드
 /// 3. DissonanceComms 준비 대기
 /// 4. SubscribeToRecordedAudio → 5초 대기 → ResetAudioStream 으로 워커 리셋 신호
 ///    5초 내 오디오 없으면 직접 마이크 fallback
 ///
-/// [키워드 감지 방식]
-/// FinalResult  : 침묵 후 발화 확정 → "text" 파싱 — 응원 제출은 이것만 사용.
-/// PartialResult: 워커는 여전히 10 AcceptWaveform마다 계산해 큐에 넣지만, DrainResultQueue가
-///   버린다(미확정 중간 추측이라 다른 말이 잠깐 CheerName/TeamCheerWord로 잘못 들렸다가 스스로
-///   정정되는 경우까지 제출해버려 오탐이 났음 — 2026-09-10 수정, 부활 금지).
+/// [듣는 구간 — 2026-09-15, CheerSystemDesign.md §4.7]
+/// 팀 응원 창(CheerService.IsHazardWindowActive)이 열려 있고, 이번 창에서 내가 아직 통과
+/// (OnTeamVoteChanged 명단)하지 않았을 때만 Vosk에 음성을 넣는다. 창 밖에서도 캡처 버퍼는 매 프레임
+/// 비우되 버린다. Dissonance 구독은 창마다 끊지 않는다(구독/해제 반복 금지 — 마이크 이중 오픈 사고와 같은 계열).
+/// 창이 열리는 순간 큐·리샘플러·Recognizer 발화 상태를 비워 창 밖 잡담이 첫 외침에 섞이지 않게 한다.
+///
+/// [키워드 감지 방식 — 2026-09-15 변경]
+/// PartialResult: 매 청크(100ms)마다 계산. TeamCheerWord가 연속 PartialConfirmHits번 들리면 즉시 제출.
+///   한 번 튀었다가 정정되는 추측은 연속 조건에서 걸러진다. (2026-09-10 "partial 금지"는 grammar가 여러
+///   단어이고 게임 내내 듣던 시절의 오탐 대응이었다 — 1단어 + 창 게이팅 + 연속 확인으로 대체.)
+/// FinalResult  : 침묵으로 확정된 결과에 TeamCheerWord가 있으면 즉시 제출(partial을 놓친 경우의 보험).
 ///
 /// [스레드 구조]
-/// 메인 스레드 : 오디오 캡처 → float→short 변환 → _pcmQueue 에 넣기
-///              _resultQueue 에서 키워드 꺼내 Cheer 제출 (Unity API 여기서만)
-/// 워커 스레드 : _pcmQueue 에서 꺼내 AcceptWaveform → 결과를 _resultQueue 에 넣기
+/// 메인 스레드 : 오디오 캡처 → 저역통과+리샘플(16kHz) → float→short → _pcmQueue
+///              _resultQueue 에서 결과 꺼내 판정·제출 (Unity API 여기서만)
+/// 워커 스레드 : _pcmQueue 에서 꺼내 AcceptWaveform → Result/PartialResult → _resultQueue
 /// </summary>
 [DisallowMultipleComponent]
 public class CheerKeywordEngine : BaseMicrophoneSubscriber
@@ -63,11 +68,16 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     const int   SoloMicCaptureHz       = 48000;
     const int   SoloMicBufSec          = 30;
     const int   MinFeedSamples         = 1600;   // 16kHz × 100ms
-    const int   PartialInterval        = 10;
     const float DissonanceWaitSec      = 5f;
     const float SoloMicWarmupSec       = 0.5f;
     const float SoloMicPositionWaitSec = 1f;
-    const float KeywordCooldown        = 0.5f;
+
+    // partial에서 TeamCheerWord가 연속 이만큼 들려야 제출. 청크 100ms라 2 = 약 0.1~0.2초 동안 추측이 유지된 것.
+    const int   PartialConfirmHits     = 2;
+
+    // 제출 후 Host 통과 명단(OnTeamVoteChanged)이 오기 전까지 같은 외침으로 RPC를 연타하지 않는 간격.
+    // Host가 거절한 경우(창 열림 시점이 머신마다 살짝 달라 생기는 경합)에는 이 시간이 지나면 다시 제출할 수 있다.
+    const float SubmitRetrySec         = 1.5f;
 
     // 0.0001은 거의 완전한 무음만 걸러내는 수준이라, 배경 잡음(peak 0.001~0.005대)까지
     // NormMaxGain(20배) 가까이 증폭되어 Vosk 입력이 잡음으로 뭉개지는 문제가 있었다.
@@ -80,7 +90,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     // 뭉개진다. 이전 스무딩값과 목표값을 섞어 완만하게 따라간다. 1에 가까울수록 즉각 반응.
     const float GainSmoothingFactor    = 0.3f;
 
-    const int   PcmQueueMax            = 60;     // 큐 최대 청크 수 (~2초분)
+    const int   PcmQueueMax            = 60;     // 큐 최대 청크 수 (~6초분)
 
     // ── 메인 스레드 전용 상태 ─────────────────────────────────────
 
@@ -88,6 +98,9 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     string _grammarJson;
     bool   _subscribed;
     int    _dissonanceSampleRate;
+
+    NetworkObject _netObj;
+    Player        _player;
 
     // InitCoroutine의 "Dissonance 오디오 수신했는가" 판단 전용 신호. ResetAudioStream에서만 true.
     // 과거엔 _workerNextModel(grammar 재적용 시에도 채워짐)로 겸용해서, 5초 창 안에
@@ -111,29 +124,63 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     float[] _accumBuf;
     int     _accumCount;
 
+    // 경로별 리샘플러 — 청크 경계를 넘어 필터·위상 상태를 이어가야 해서 경로마다 따로 둔다.
+    readonly StreamResampler _dissonanceResampler = new();
+    readonly StreamResampler _soloResampler       = new();
+
     // NormalizeBuffer 청크 간 게인 스무딩 상태 (메인 스레드 전용). 1f = 무증폭.
     float _smoothedGain = 1f;
 
-    // 중복 제출 방지 (keyword → 마지막 감지 Time.time)
-    readonly Dictionary<string, float> _lastDetected = new();
+    // 듣는 구간 게이팅
+    bool         _listening;
+    CheerService _boundService;
+    int[]        _lastVoters = Array.Empty<int>();
+
+    // 판정
+    int   _partialHits;
+    float _lastSubmitTime = float.NegativeInfinity;
 
     // 진단 로그용 프레임 카운터 (30프레임마다 peak 출력)
     int _debugFrameTimer;
 
     // ── 스레드 간 통신 ────────────────────────────────────────────
 
-    readonly ConcurrentQueue<short[]> _pcmQueue    = new();
-    readonly ConcurrentQueue<string>  _resultQueue = new();
+    readonly struct VoskResult
+    {
+        public readonly int    Generation;
+        public readonly bool   IsFinal;
+        public readonly string Json;
+
+        public VoskResult(int generation, bool isFinal, string json)
+        {
+            Generation = generation;
+            IsFinal    = isFinal;
+            Json       = json;
+        }
+    }
+
+    readonly ConcurrentQueue<short[]>    _pcmQueue    = new();
+    readonly ConcurrentQueue<VoskResult> _resultQueue = new();
 
     Thread        _workerThread;
     volatile bool _workerRunning;
-    int           _resetSignal;        // Interlocked: 1 = 워커에게 Recognizer 리셋 요청
+    int           _resetSignal;        // Interlocked: 1 = 워커에게 Recognizer 재생성 요청 (모델/grammar/스트림 변경)
+
+    // Interlocked: 창이 열릴 때·제출 직후 증가. 워커는 값이 바뀌면 Recognizer.Reset()으로 발화 상태를 비우고,
+    // 메인은 세대가 다른 결과를 버린다(리셋 전에 계산된 낡은 결과가 새 창에서 제출되지 않게).
+    int           _listenGeneration;
 
     // 워커가 Recognizer 생성 시 읽을 설정 (메인이 signal 전에 씀)
     volatile Model  _workerNextModel;
     volatile string _workerNextGrammar;
 
     // ── 생명주기 ──────────────────────────────────────────────────
+
+    void Awake()
+    {
+        _netObj = GetComponent<NetworkObject>();
+        _player = GetComponent<Player>();
+    }
 
     void OnEnable()
     {
@@ -151,6 +198,10 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
     IEnumerator InitCoroutine()
     {
+        VoskModelLoader.BeginLoad();
+        while (VoskModelLoader.IsLoading)
+            yield return null;
+
         _model = VoskModelLoader.GetSharedModel();
         if (_model == null)
         {
@@ -174,7 +225,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
         if (!_dissonanceAudioSeen)
         {
-            // 마이크 이중 오픈 금지(과거 사고: CheerAndTutorialDesign.md §4.3) — 솔로(1인)일 때만
+            // 마이크 이중 오픈 금지(과거 사고: CheerSystemDesign.md §4.3) — 솔로(1인)일 때만
             // 직접 마이크 fallback 허용. 멀티(2인 이상)는 Dissonance가 늦어도 직접 마이크를 열지
             // 않고 구독만 유지한다 — Dissonance + Microphone.Start 동시 오픈 → 메인 스톨 → NGO
             // 스폰 Deferred/유실 재발 방지.
@@ -227,6 +278,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         _usingSoloMic    = true;
         _debugFrameTimer = 0;
         _smoothedGain    = 1f;
+        _soloResampler.Reset();
 
         SignalWorkerReset(_model, _grammarJson);
         Debug.Log($"[CheerKeywordEngine] 직접 마이크 시작 — 캡처:{_soloMicSourceHz}Hz → Vosk:{VoskFeedHz}Hz, gain={soloMicGain:F1}, normalize={autoNormalizeMic}");
@@ -251,10 +303,18 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             _soloMicDevice   = null;
             _captureBuf      = null;
             _resampleBuf     = null;
-            _accumBuf        = null;
-            _accumCount      = 0;
-            _smoothedGain    = 1f;
         }
+
+        BindCheerService(null);
+        _listening      = false;
+        _partialHits    = 0;
+        _lastSubmitTime = float.NegativeInfinity;
+
+        _accumBuf     = null;
+        _accumCount   = 0;
+        _smoothedGain = 1f;
+        _dissonanceResampler.Reset();
+        _soloResampler.Reset();
 
         _model               = null;
         _grammarJson         = null;
@@ -278,6 +338,8 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
         // 스테일 오디오 버리기
         while (_pcmQueue.TryDequeue(out _)) { }
+        _accumCount = 0;
+        _dissonanceResampler.Reset();
 
         SignalWorkerReset(_model, _grammarJson);
         Debug.Log($"[CheerKeywordEngine] Recognizer 리셋 신호 — input={_dissonanceSampleRate}Hz vosk={VoskFeedHz}Hz");
@@ -285,41 +347,93 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
     protected override void ProcessAudio(ArraySegment<float> data)
     {
-        if (_usingSoloMic) return;
+        // 창 밖이면 버린다 — base.Update는 계속 돌아 Dissonance 전달 버퍼는 넘치지 않는다.
+        if (_usingSoloMic || !_listening || _dissonanceSampleRate <= 0) return;
 
-        float[] src    = data.Array;
-        int     offset = data.Offset;
-        int     count  = data.Count;
-
-        if (_dissonanceSampleRate != VoskFeedHz && _dissonanceSampleRate != 0)
-        {
-            count  = ResampleLinear(src, offset, count, _dissonanceSampleRate, VoskFeedHz, ref _dissonanceResample);
-            src    = _dissonanceResample;
-            offset = 0;
-        }
-
-        // 솔로 경로와 동일하게 누적 후 MinFeedSamples 단위로 분할 Enqueue
-        EnsureAccumCapacity(_accumCount + count);
-        Array.Copy(src, offset, _accumBuf, _accumCount, count);
-        _accumCount += count;
-
-        while (_accumCount >= MinFeedSamples)
-        {
-            EnqueuePcmChunk(_accumBuf, 0, MinFeedSamples);
-            _accumCount -= MinFeedSamples;
-            if (_accumCount > 0)
-                Array.Copy(_accumBuf, MinFeedSamples, _accumBuf, 0, _accumCount);
-        }
+        int count = _dissonanceResampler.Process(data.Array, data.Offset, data.Count,
+                                                 _dissonanceSampleRate, ref _dissonanceResample);
+        AppendAndEnqueue(_dissonanceResample, count);
     }
 
     // ── Update ────────────────────────────────────────────────────
 
     public override void Update()
     {
+        UpdateListening();
+
         if (_usingSoloMic) PollSoloMic();
         else               base.Update(); // TransferBuffer → ProcessAudio
 
         DrainResultQueue();
+    }
+
+    // ── 듣는 구간 게이팅 ─────────────────────────────────────────
+
+    void UpdateListening()
+    {
+        var svc = CheerService.Instance;
+        if (!ReferenceEquals(svc, _boundService))
+            BindCheerService(svc);
+
+        bool shouldListen = _model != null
+                         && svc != null
+                         && svc.IsHazardWindowActive
+                         && !HasLocalPassed();
+
+        if (shouldListen == _listening) return;
+
+        _listening = shouldListen;
+        if (shouldListen) BeginListening();
+        Debug.Log($"[CheerKeywordEngine] 청취 {(shouldListen ? "시작" : "중지")}");
+    }
+
+    void BindCheerService(CheerService svc)
+    {
+        // 파괴된 CheerService도 C# 객체로는 남아 있으므로 Unity null 비교가 아니라 참조로 해제한다.
+        if (!ReferenceEquals(_boundService, null))
+            _boundService.OnTeamVoteChanged -= HandleTeamVoteChanged;
+
+        _boundService = svc;
+        _lastVoters   = Array.Empty<int>();
+
+        if (svc != null)
+            svc.OnTeamVoteChanged += HandleTeamVoteChanged;
+    }
+
+    void HandleTeamVoteChanged(int current, int required, int[] voterColorIndices)
+        => _lastVoters = voterColorIndices ?? Array.Empty<int>();
+
+    /// <summary>이번 창에서 Host가 내 통과를 확정했는지. 창 열림과 명단 도착 순서는 머신마다 다를 수 있어
+    /// PlayerCheerHeartsUI처럼 마지막 명단을 기억해 판정한다(명단은 창이 닫힐 때 Host가 비워서 보낸다).</summary>
+    bool HasLocalPassed()
+    {
+        if (_lastVoters.Length == 0) return false;
+        int myColorIndex = ResolveColorIndex();
+        return myColorIndex >= 0 && Array.IndexOf(_lastVoters, myColorIndex) >= 0;
+    }
+
+    /// <summary>ColorOrder 인덱스. PlayerCheerHeartsUI.ResolveColorIndex와 동일 — 색 확정 레이스 때문에 캐시하지 않는다.</summary>
+    int ResolveColorIndex()
+    {
+        if (_netObj != null && PlayerSpawnCoordinator.TryGetColor(_netObj.OwnerClientId, out var sessionColor))
+            return Array.IndexOf(PlayerColorUtil.ColorOrder, sessionColor);
+        return _player != null ? Array.IndexOf(PlayerColorUtil.ColorOrder, _player.playerColorType) : -1;
+    }
+
+    /// <summary>창이 열리는 순간 — 창 밖 소리가 섞이지 않게 입력 파이프라인과 Recognizer 발화 상태를 비운다.</summary>
+    void BeginListening()
+    {
+        while (_pcmQueue.TryDequeue(out _)) { }
+        while (_resultQueue.TryDequeue(out _)) { }
+
+        _accumCount      = 0;
+        _smoothedGain    = 1f;
+        _partialHits     = 0;
+        _debugFrameTimer = 0;
+        _dissonanceResampler.Reset();
+        _soloResampler.Reset();
+
+        Interlocked.Increment(ref _listenGeneration);
     }
 
     // ── 솔로 마이크 폴링 ─────────────────────────────────────────
@@ -332,10 +446,10 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         int pos = Microphone.GetPosition(_soloMicDevice);
         if (pos < 0) return;
 
-        if (pos <= _soloMicLastPos) { _soloMicLastPos = pos; return; }
+        // 창 밖이면 읽기 위치만 따라가고 버린다(창이 열렸을 때 쌓인 옛 소리를 한꺼번에 먹지 않게).
+        if (!_listening || pos <= _soloMicLastPos) { _soloMicLastPos = pos; return; }
 
         int samples = pos - _soloMicLastPos;
-        if (samples <= 0) return;
 
         EnsureCaptureCapacity(samples);
         try
@@ -357,7 +471,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
         LogMicLevel(_captureBuf, samples);
 
-        int resampled = ResampleTo16k(_captureBuf, samples);
+        int resampled = _soloResampler.Process(_captureBuf, 0, samples, _soloMicSourceHz, ref _resampleBuf);
         AppendAndEnqueue(_resampleBuf, resampled);
     }
 
@@ -409,55 +523,143 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         Debug.Log($"[CheerKeywordEngine] 마이크 레벨 peak={peak:F4} {level} (gain={appliedGain:F1}, normalize={autoNormalizeMic})");
     }
 
-    // ── 리샘플 ────────────────────────────────────────────────────
-
-    int ResampleTo16k(float[] input, int count)
-        => ResampleLinear(input, 0, count, _soloMicSourceHz, VoskFeedHz, ref _resampleBuf);
-
-    static int ResampleLinear(float[] input, int offset, int count, int sourceHz, int targetHz, ref float[] buf)
-    {
-        if (sourceHz == targetHz)
-        {
-            EnsureCapacity(ref buf, count);
-            Array.Copy(input, offset, buf, 0, count);
-            return count;
-        }
-
-        int   outCount = Math.Max(1, (int)((long)count * targetHz / sourceHz));
-        float ratio    = (float)sourceHz / targetHz;
-        EnsureCapacity(ref buf, outCount);
-
-        for (int i = 0; i < outCount; i++)
-        {
-            float srcIdx = i * ratio;
-            int   idx    = (int)srcIdx;
-            if (idx >= count - 1) { buf[i] = input[offset + count - 1]; continue; }
-            float frac = srcIdx - idx;
-            buf[i] = input[offset + idx] * (1f - frac) + input[offset + idx + 1] * frac;
-        }
-        return outCount;
-    }
-
     static void EnsureCapacity(ref float[] arr, int needed)
     {
         if (arr == null || arr.Length < needed)
             arr = new float[needed];
     }
 
-    // ── 솔로 청크 누적 → 큐 ──────────────────────────────────────
+    // ── 리샘플 ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 임의 입력 레이트 → 16kHz 스트리밍 리샘플러. 저역통과 FIR(윈도우드 싱크) 후 선형 보간.
+    /// [2026-09-15] 이전 ResampleLinear는 필터 없이 48k→16k 보간만 해서 8kHz 이상 성분이 음성 대역으로
+    /// 접혀 들어왔고(에일리어싱), 청크마다 보간 위상을 0으로 리셋해 경계마다 샘플이 튀었다. 둘 다 인식률을 깎는다.
+    /// 필터 이력과 보간 위상을 청크 사이에 이어가므로 경로(Dissonance/솔로)마다 인스턴스를 따로 쓴다.
+    /// </summary>
+    sealed class StreamResampler
+    {
+        const int   TapCount = 63;
+        const float CutoffHz = 7000f;   // 16kHz 나이퀴스트(8k) 아래로 여유 — 전이 대역이 8k를 넘기 전에 충분히 감쇠
+
+        int     _sourceHz;
+        float[] _taps;
+        readonly float[] _delay = new float[TapCount * 2];
+        int     _delayPos;
+        double  _phase;          // 다음 출력 샘플의 입력 위치(현재 청크 시작 기준). [-1,0)이면 직전 청크 마지막 샘플과 첫 샘플 사이
+        float   _lastFiltered;
+        float[] _filtered;
+
+        public void Reset()
+        {
+            Array.Clear(_delay, 0, _delay.Length);
+            _delayPos     = 0;
+            _phase        = 0d;
+            _lastFiltered = 0f;
+        }
+
+        public int Process(float[] input, int offset, int count, int sourceHz, ref float[] output)
+        {
+            if (count <= 0) return 0;
+
+            if (sourceHz != _sourceHz)
+            {
+                _sourceHz = sourceHz;
+                _taps     = sourceHz > VoskFeedHz ? BuildLowPass(sourceHz) : null;
+                Reset();
+            }
+
+            if (sourceHz == VoskFeedHz)
+            {
+                EnsureCapacity(ref output, count);
+                Array.Copy(input, offset, output, 0, count);
+                return count;
+            }
+
+            EnsureCapacity(ref _filtered, count);
+            if (_taps != null) Filter(input, offset, count);
+            else               Array.Copy(input, offset, _filtered, 0, count);
+
+            double step = (double)sourceHz / VoskFeedHz;
+            EnsureCapacity(ref output, (int)(count / step) + 2);
+
+            int written = 0;
+            while (_phase < count - 1)
+            {
+                int   idx  = (int)Math.Floor(_phase);
+                float frac = (float)(_phase - idx);
+                float a    = idx < 0 ? _lastFiltered : _filtered[idx];
+                float b    = _filtered[idx + 1];
+                output[written++] = a + (b - a) * frac;
+                _phase += step;
+            }
+
+            _phase       -= count;
+            _lastFiltered = _filtered[count - 1];
+            return written;
+        }
+
+        void Filter(float[] input, int offset, int count)
+        {
+            // 같은 샘플을 _delay[p]와 _delay[p+TapCount] 두 곳에 써서 [p, p+TapCount) 구간을 항상 모듈로 없이 읽는다.
+            for (int i = 0; i < count; i++)
+            {
+                _delayPos = (_delayPos == 0 ? TapCount : _delayPos) - 1;
+                float x = input[offset + i];
+                _delay[_delayPos] = x;
+                _delay[_delayPos + TapCount] = x;
+
+                float y = 0f;
+                for (int k = 0; k < TapCount; k++)
+                    y += _taps[k] * _delay[_delayPos + k];
+                _filtered[i] = y;
+            }
+        }
+
+        static float[] BuildLowPass(int sourceHz)
+        {
+            var    taps = new float[TapCount];
+            double fc   = CutoffHz / sourceHz;   // 정규화 차단 주파수 (cycles/sample)
+            int    mid  = TapCount / 2;
+            double sum  = 0d;
+
+            for (int i = 0; i < TapCount; i++)
+            {
+                int    n      = i - mid;
+                double sinc   = n == 0 ? 2d * fc : Math.Sin(2d * Math.PI * fc * n) / (Math.PI * n);
+                double window = 0.54d - 0.46d * Math.Cos(2d * Math.PI * i / (TapCount - 1));
+                taps[i] = (float)(sinc * window);
+                sum    += taps[i];
+            }
+
+            for (int i = 0; i < TapCount; i++)
+                taps[i] = (float)(taps[i] / sum);   // DC 게인 1
+            return taps;
+        }
+    }
+
+    // ── 청크 누적 → 큐 ───────────────────────────────────────────
 
     void AppendAndEnqueue(float[] buf, int count)
     {
+        if (count <= 0) return;
+
         EnsureAccumCapacity(_accumCount + count);
         Array.Copy(buf, 0, _accumBuf, _accumCount, count);
         _accumCount += count;
 
-        while (_accumCount >= MinFeedSamples)
+        int consumed = 0;
+        while (_accumCount - consumed >= MinFeedSamples)
         {
-            EnqueuePcmChunk(_accumBuf, 0, MinFeedSamples);
-            _accumCount -= MinFeedSamples;
+            EnqueuePcmChunk(_accumBuf, consumed, MinFeedSamples);
+            consumed += MinFeedSamples;
+        }
+
+        if (consumed > 0)
+        {
+            _accumCount -= consumed;
             if (_accumCount > 0)
-                Array.Copy(_accumBuf, MinFeedSamples, _accumBuf, 0, _accumCount);
+                Array.Copy(_accumBuf, consumed, _accumBuf, 0, _accumCount);
         }
     }
 
@@ -506,17 +708,16 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
 
     void WorkerLoop()
     {
-        VoskRecognizer rec       = null;
-        int            feedCount = 0;
+        VoskRecognizer rec        = null;
+        int            generation = Volatile.Read(ref _listenGeneration);
 
         while (_workerRunning)
         {
-            // 리셋 신호 처리 (메인 스레드가 Recognizer 재생성 요청 시)
+            // 재생성 신호 처리 (모델/grammar/스트림 변경)
             if (Interlocked.Exchange(ref _resetSignal, 0) == 1)
             {
                 rec?.Dispose();
-                rec       = null;
-                feedCount = 0;
+                rec = null;
 
                 Model  m = _workerNextModel;
                 string g = _workerNextGrammar;
@@ -525,6 +726,15 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
                     rec = new VoskRecognizer(m, VoskFeedHz, g);
                     rec.SetWords(false);
                 }
+                generation = Volatile.Read(ref _listenGeneration);
+            }
+
+            // 창 열림·제출 직후 — 이전 발화 상태를 비운다(재생성보다 가볍다).
+            int currentGeneration = Volatile.Read(ref _listenGeneration);
+            if (currentGeneration != generation)
+            {
+                rec?.Reset();
+                generation = currentGeneration;
             }
 
             if (rec == null || !_pcmQueue.TryDequeue(out short[] chunk))
@@ -533,94 +743,86 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
                 continue;
             }
 
-            // 청크는 항상 MinFeedSamples(800) 단위 — EnqueuePcmChunk에서 고정 크기 보장
-            bool isFinal = rec.AcceptWaveform(chunk, chunk.Length);
-
-            if (isFinal)
-            {
-                string json = rec.Result();
-                if (!string.IsNullOrEmpty(json))
-                    _resultQueue.Enqueue("final|" + json);
-            }
-            else
-            {
-                feedCount++;
-                if (feedCount >= PartialInterval)
-                {
-                    feedCount = 0;
-                    string json = rec.PartialResult();
-                    if (!string.IsNullOrEmpty(json))
-                        _resultQueue.Enqueue("partial|" + json);
-                }
-            }
+            // 청크는 항상 MinFeedSamples(1600) 단위 — AppendAndEnqueue에서 고정 크기 보장
+            bool   isFinal = rec.AcceptWaveform(chunk, chunk.Length);
+            string json    = isFinal ? rec.Result() : rec.PartialResult();
+            if (!string.IsNullOrEmpty(json))
+                _resultQueue.Enqueue(new VoskResult(generation, isFinal, json));
         }
 
         rec?.Dispose();
     }
 
-    // ── 결과 큐 처리 (메인 스레드) ───────────────────────────────
+    // ── 결과 판정 (메인 스레드) ──────────────────────────────────
 
     void DrainResultQueue()
     {
-        while (_resultQueue.TryDequeue(out string entry))
+        while (_resultQueue.TryDequeue(out VoskResult result))
         {
-            int sep = entry.IndexOf('|');
-            if (sep < 0) continue;
+            // 창 밖이거나 리셋 이전 세대의 결과는 버린다.
+            if (!_listening || result.Generation != Volatile.Read(ref _listenGeneration)) continue;
 
-            string kind = entry.Substring(0, sep);
-
-            // partial(미확정 중간 추측)은 응원 제출에 쓰지 않는다 — 오탐 방지(2026-09-10).
-            // 문장 중간에 잠깐 다른 단어로 잘못 들렸다가 스스로 정정되는 경우가 있었는데,
-            // 그 튄 순간을 그대로 제출해버려 "다른 말을 했는데 버프가 켜짐" 오탐이 났다.
-            // Vosk가 발화 후 짧은 침묵을 감지해 확정한 "final"만 신뢰한다. 부활 금지.
-            if (kind != "final") continue;
-
-            string json = entry.Substring(sep + 1);
-            var node = JSONNode.Parse(json);
+            var node = JSONNode.Parse(result.Json);
             if (node == null) continue;
 
-            if (!string.IsNullOrEmpty(node["text"]?.Value))
-                ParseAndSubmit(node, "text");
-        }
-    }
+            string text = node[result.IsFinal ? "text" : "partial"]?.Value;
+            bool   hit  = ContainsTeamWord(text);
 
-    // ── 결과 파싱 + 응원 제출 ────────────────────────────────────
-
-    void ParseAndSubmit(JSONNode node, string key)
-    {
-        string raw = node?[key]?.Value;
-        if (string.IsNullOrEmpty(raw)) return;
-
-        foreach (string rawWord in raw.Trim().ToLower().Split(' '))
-        {
-            if (string.IsNullOrEmpty(rawWord) || rawWord == "[unk]") continue;
-
-            string word = rawWord;
-
-            if (_lastDetected.TryGetValue(word, out float lastTime) &&
-                Time.time - lastTime < KeywordCooldown)
-                continue;
-
-            // [2026-09-14] 개인 버프 음성 인식 삭제 — grammar가 TeamCheerWord 1단어뿐이라
-            // 매칭되는 다른 단어가 나올 일이 없다. 팀워드만 판정한다.
-            string teamWord = CheerService.ResolveTeamCheerWord();
-            if (word != teamWord)
+            if (result.IsFinal)
             {
-                Debug.Log($"[CheerKeywordEngine] 인식됐으나 TeamCheerWord 불일치: '{word}'");
+                _partialHits = 0;
+                if (hit) TrySubmit("final", text);
+                else if (HasRecognizedWord(text))
+                    Debug.Log($"[CheerKeywordEngine] 확정 결과에 TeamCheerWord 없음: '{text}'");
                 continue;
             }
 
-            _lastDetected[word] = Time.time;
-            Debug.Log($"[CheerKeywordEngine] 키워드 감지: '{word}' (team)");
-
-            CheerService.Instance?.SubmitTeamCheerServerRpc(isVoice: true);
+            // 같은 추측이 연속으로 유지될 때만 믿는다 — 한 번 튀었다 정정되는 오탐 차단.
+            _partialHits = hit ? _partialHits + 1 : 0;
+            if (_partialHits >= PartialConfirmHits)
+                TrySubmit("partial", text);
         }
+    }
+
+    void TrySubmit(string source, string text)
+    {
+        if (Time.time - _lastSubmitTime < SubmitRetrySec) return;
+
+        var svc = CheerService.Instance;
+        if (svc == null) return;
+
+        _lastSubmitTime = Time.time;
+        _partialHits    = 0;
+
+        // 같은 발화의 남은 partial/final로 다시 제출하지 않도록 발화 상태를 비운다.
+        Interlocked.Increment(ref _listenGeneration);
+
+        Debug.Log($"[CheerKeywordEngine] 키워드 감지 ({source}): '{text}'");
+        svc.SubmitTeamCheerServerRpc(isVoice: true);
+    }
+
+    static bool ContainsTeamWord(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+
+        string teamWord = CheerService.ResolveTeamCheerWord();
+        foreach (string word in text.Split(' '))
+            if (word == teamWord) return true;
+        return false;
+    }
+
+    static bool HasRecognizedWord(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+        foreach (string word in text.Split(' '))
+            if (word.Length > 0 && word != "[unk]") return true;
+        return false;
     }
 
     // ── grammar ───────────────────────────────────────────────────
 
     /// <summary>
-    /// 로컬 grammar를 [TeamCheerWord]로 재적용 (CheerSystemDesign.md §3.4, 2026-09-14 — 1단어로 축소).
+    /// 로컬 grammar를 [TeamCheerWord]로 재적용 (CheerSystemDesign.md §3.4).
     /// 모델 로드 전이면 무시 — InitCoroutine이 같은 헬퍼로 초기 grammar를 만든다.
     /// <see cref="RebuildOwnerLocalGrammar"/>(CheerService.TeamCheerWord NV 변경 경로)로 여러 번
     /// 호출될 수 있으므로 결과가 이전과 같으면(_grammarJson 비교) 워커 리셋을 스킵한다 —
@@ -638,8 +840,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     }
 
     /// <summary>
-    /// 로컬 오너의 CheerKeywordEngine을 찾아 grammar를 재적용. [2026-09-14] 개인 CheerName
-    /// 커스텀화 완전 삭제로 구 PlayerCheerNameSync가 삭제되면서 여기로 옮겨옴 — CheerService의
+    /// 로컬 오너의 CheerKeywordEngine을 찾아 grammar를 재적용 — CheerService의
     /// TeamCheerWord NV 변경 경로(OnNetworkSpawn/HandleTeamCheerWordNv)에서 호출된다.
     /// </summary>
     public static void RebuildOwnerLocalGrammar()
@@ -655,7 +856,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         }
     }
 
-    /// <summary>TeamCheerWord 1개뿐 — 개인 CheerName은 더 이상 음성 인식 대상이 아니다(2026-09-14).</summary>
+    /// <summary>TeamCheerWord 1개뿐 — 개인 CheerName은 음성 인식 대상이 아니다(2026-09-14).</summary>
     static string[] OwnerGrammarWords() => new[] { CheerService.ResolveTeamCheerWord() };
 
     // ── 버퍼 용량 보장 ────────────────────────────────────────────
