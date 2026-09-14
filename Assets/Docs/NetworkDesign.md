@@ -606,7 +606,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 |----------|------|------|
 | 플레이어 이동 | **Owner + CNT** | 입력 레이턴시 없음. **이 모델 유지 (Host 이동화 안 함)** |
 | 플레이어 HP / 데미지 | **Host** | 치트 방지·판정 신뢰 |
-| 다운 / 부활 (상태·방치 만료·시전 완료·위치 기반 캔슬) | **Host** (`PlayerDownState` NV) — 입력 캔슬만 Owner가 ServerRpc로 신고 | HP와 같은 게임 규칙. 상세 `DownedReviveSystemDesign.md` §9 |
+| 다운 / 부활 (상태·방치 만료·시전 완료·위치 기반 캔슬) | **Host** (`PlayerDownState` NV) — 입력 캔슬만 Owner가 ServerRpc로 신고 | HP와 같은 게임 규칙. 팀 공유 목숨은 `StageNetworkState` NV(Host, 씬 단위). 상세 `DownedReviveSystemDesign.md` §4B·§9 |
 | 함정 (ArrowTrap 등 발사자) | **Host** | 스폰 시점·스케줄을 전원 동일하게 |
 | 발사체 **비행** | **Client (로컬 시뮬)** | Host 물리 복제 끊김 방지·시각 부드러움 |
 | 발사체 **피격 판정** | **Host** (B안: Client 보고 → Host 확정) | §9.0.1 |
@@ -838,7 +838,7 @@ Phase 전환(P1→P2) 이후에도 끝까지 남아 있었음. 리뷰 중 같은
 | **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse`, `SafeZoneWarnSign` (`M.Boss` only — PhaseStartServerTime 로컬 스케줄, RPC 없음) 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
 | **UI** | shared | `DeathOverlayUI` — `UI.prefab`, M/T 전 스테이지. 사망 문구 `{0}` = CheerName(`CheerService.GetCheerName`). Steam/OS DisplayName 아님 (2026-08-29: 로컬 경로에서 `u died`로 보이던 원인). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 | **UI** | shared | `OptionsTeamVoicePanel` / `OptionsMenuController` / `GameSettingsManager` — `Setting_Panel.prefab` (`Title` + `UI.prefab`, 전 M/T). 마이크 송신 볼륨·팀 보이스 수신 볼륨. 사후기록: §6B.7 P3 VoiceId 항목. | 동일 — T 대표 씬(`T.Stage1`) ESC 설정 |
-| **UI** | shared | `PlayerEmoteMenuUI` / `EmoteHintUI` — `UI.prefab`, Tutorial + 전 M/T. T 홀드 도넛 휠 8종(Yes/No/Thanks/Hide/Point/Shame/Fly/Surprise). **루프 4종 = Bool** → NetworkAnimator(Owner 권한) 파라미터 폴링이 그대로 전송, **원샷 4종 = Trigger** → 폴링이 Int/Bool/Float만 비교하므로 `Animator.SetTrigger` 금지, **`NetworkAnimator.SetTrigger`** 사용(2026-09-05). 각도는 링 이미지 분할선(0°/45°/…) 기준 조각 `[k*45°, (k+1)*45°)`, 아이콘은 조각 한가운데 — 반 칸 오프셋 금지. 배치·라벨·링 이미지·패널 크기는 **에디터 소유**(코드가 RectTransform/스프라이트를 덮어쓰지 않음). 열기 게이트 = `CursorUnlockRequestUtil.IsRequested`(ESC 메뉴·채팅·치어네임 중엔 T 무시). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
+| **UI** | shared | `PlayerEmoteMenuUI` — `UI.prefab`, Tutorial + 전 M/T. T 홀드 도넛 휠 8종(Yes/No/Thanks/Hide/Point/Shame/Fly/Surprise). **루프 4종 = Bool** → NetworkAnimator(Owner 권한) 파라미터 폴링이 그대로 전송, **원샷 4종 = Trigger** → 폴링이 Int/Bool/Float만 비교하므로 `Animator.SetTrigger` 금지, **`NetworkAnimator.SetTrigger`** 사용(2026-09-05). 각도는 링 이미지 분할선(0°/45°/…) 기준 조각 `[k*45°, (k+1)*45°)`, 아이콘은 조각 한가운데 — 반 칸 오프셋 금지. 배치·라벨·링 이미지·패널 크기는 **에디터 소유**(코드가 RectTransform/스프라이트를 덮어쓰지 않음). 열기 게이트 = `CursorUnlockRequestUtil.IsRequested`(ESC 메뉴·채팅·치어네임 중엔 T 무시). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 | **SFX** | shared | `PlayerAudio` / `PlayerPunch` — `Kkultteok.prefab`, 전 M/T. 개인 SFX(ColorChange/Buff/Hit/Death/Run)는 Owner 2D. Punch/PunchHit는 전 클라 3D. 사후기록: 아래 포스트모템. | 동일 — T 대표 씬(`T.Stage1`) |
 
 **그룹 1(B)은 M 트랩 인스턴스로 별도 에이전트가 진행 중.** 그룹 2(E)는 `AdvancingWall` 1개만 M이고 나머지 8개는 전부 T 전용이므로, **`AdvancingWall`은 그룹 1(B) 세션에 같이 묶고, 그룹 2(E) 세션은 T 전용 나머지만** 다루는 것을 권장 — 그러면 "패턴 E 세션 = 순수 T" 경계가 정확히 맞아떨어진다.

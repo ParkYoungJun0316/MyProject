@@ -17,7 +17,14 @@ using UnityEngine;
 ///
 /// [네트워크 불필요 · 전원에게 보임]
 /// 창 열림은 각 피어 함정이 로컬로 알리고, 표 명단은 Host ClientRpc로 온다. 둘의 도착 순서가
-/// 피어마다 다를 수 있으므로 마지막 표 상태(_voted)를 기억해 창이 열릴 때 그 값으로 켠다.
+/// 피어마다 다를 수 있으므로 마지막 표 명단(_lastVoters)을 기억해 창이 열릴 때 그 값으로 켠다.
+///
+/// [자기 colorIndex는 캐시하지 않는다 — 2026-09-15 버그 수정]
+/// Tutorial 순차 합류에서 Client 자기 플레이어의 Start는 색 NetworkList 델타·_colorIndex NV보다 먼저
+/// 돌 수 있고(Host가 AddColorEntry → Spawn → SetColorIndex 순), 그때 ResolveColorIndex는 프리팹 기본색
+/// (Blue=0, 보통 Host 색)으로 폴백한다. 캐치업 OnPlayersReady는 Start 구독 전에 이미 지나가서 재계산
+/// 기회가 없었고, 결과적으로 Host가 외치면 Client 화면에서만 자기 느낌표가 꺼졌다.
+/// 그래서 표 판정 때마다 colorIndex를 새로 풀고, 색 확정(OnColorTypeChanged) 시에도 다시 판정한다.
 ///
 /// [씬 설정]
 /// 1. Player 프리팹 루트에 PlayerCheerHeartsUI.
@@ -33,11 +40,13 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     [Tooltip("Assets/Prefab/CheerExclamation. 스케일·색은 프리팹 그대로.")]
     [SerializeField] GameObject exclamationPrefab;
 
-    Player     _player;
-    int        _myColorIndex = -1;
-    bool       _voted;
-    GameObject _markGo;
-    Coroutine  _waitSubscribe;
+    Player       _player;
+    PlayerEvents _events;
+    int[]        _lastVoters = System.Array.Empty<int>();
+    GameObject   _markGo;
+    Coroutine    _waitSubscribe;
+
+    System.Action<PlayerColorType> _onColorTypeChanged;
 
     /// <summary>지금 이 캐릭터 머리 위에 느낌표가 떠 있는지. <see cref="PlayerNameTagUI"/>가 자리 다툼을 피하려고 폴링한다.</summary>
     public bool IsMarkVisible => _markGo != null && _markGo.activeSelf;
@@ -51,12 +60,21 @@ public class PlayerCheerHeartsUI : MonoBehaviour
     {
         BuildMark();
 
+        // Player.Awake가 PlayerEvents를 AddComponent할 수 있어 Awake 순서와 무관하게 Start에서 조회.
+        _events = GetComponent<PlayerEvents>();
+
+        _onColorTypeChanged = _ => RefreshVisibility();
+        if (_events != null)
+            _events.OnColorTypeChanged += _onColorTypeChanged;
+
         PlayerSpawnCoordinator.OnPlayersReady += HandlePlayersReady;
         HandlePlayersReady();
     }
 
     void OnDestroy()
     {
+        if (_events != null && _onColorTypeChanged != null)
+            _events.OnColorTypeChanged -= _onColorTypeChanged;
         PlayerSpawnCoordinator.OnPlayersReady -= HandlePlayersReady;
         UnsubscribeCheerService();
     }
@@ -65,8 +83,8 @@ public class PlayerCheerHeartsUI : MonoBehaviour
 
     void HandlePlayersReady()
     {
-        _myColorIndex = ResolveColorIndex();
         TrySubscribeCheerService();
+        RefreshVisibility();
     }
 
     /// <summary>ColorOrder 인덱스(0=berry …). TeamStatusUI.ResolveColorIndex와 동일 로직.</summary>
@@ -127,22 +145,29 @@ public class PlayerCheerHeartsUI : MonoBehaviour
 
     void HandleTeamVoteChanged(int current, int required, int[] voterColorIndices)
     {
-        if (_myColorIndex < 0) _myColorIndex = ResolveColorIndex();
-        _voted = _myColorIndex >= 0
-            && voterColorIndices != null
-            && System.Array.IndexOf(voterColorIndices, _myColorIndex) >= 0;
-
-        var svc = CheerService.Instance;
-        ApplyVisibility(svc != null && svc.IsHazardWindowActive);
+        _lastVoters = voterColorIndices ?? System.Array.Empty<int>();
+        RefreshVisibility();
     }
 
     // ── 표시 갱신 ────────────────────────────────────────────────
+
+    void RefreshVisibility()
+    {
+        var svc = CheerService.Instance;
+        ApplyVisibility(svc != null && svc.IsHazardWindowActive);
+    }
 
     /// <summary>창이 열려 있고 아직 통과 못 했을 때만 보인다 — 통과하면(1회) 그 창이 끝날 때까지 소거.</summary>
     void ApplyVisibility(bool windowActive)
     {
         if (_markGo == null) return;
-        _markGo.SetActive(windowActive && !_voted);
+        _markGo.SetActive(windowActive && !HasVoted());
+    }
+
+    bool HasVoted()
+    {
+        int myColorIndex = ResolveColorIndex();
+        return myColorIndex >= 0 && System.Array.IndexOf(_lastVoters, myColorIndex) >= 0;
     }
 
     // ── 표시 생성 ────────────────────────────────────────────────

@@ -260,6 +260,15 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── 팀 공유 목숨 (다운/부활, DownedReviveSystemDesign.md §4B) ──
+    // 스테이지 시작 시 (인원수 − 1)로 초기화, 부활 성공마다 -1, 회복 없음. -1은 "아직 미초기화" 센티널
+    // — PlayerSpawnCoordinator.OnPlayersReady에서 실제 인원수로 확정한다(파티 크기가 그 전엔 불안정).
+    private readonly NetworkVariable<int> _teamLivesRemaining = new(
+        -1,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     // ── 문(Door) 개폐 동기화 (Door 전용 슬롯 — DoorNetworkSync 폐기, 2026-08) ──
     // [설계: TStageNetworkBoard.md §3.1] 문마다 개별 NetworkObject+NetworkBehaviour를 붙이던
     // DoorNetworkSync를 폐기하고, Floor(§11B.8)와 동일한 "슬롯 재사용" 원칙으로 여기에 통합한다.
@@ -425,7 +434,6 @@ public class StageNetworkState : NetworkBehaviour
     /// ClientRpc를 계속 쏘아 RpcException(NetworkBehaviour must be spawned...)이 난다.
     /// </summary>
     public event Action OnDeathReloadStarted;
-
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -468,6 +476,12 @@ public class StageNetworkState : NetworkBehaviour
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
         // 비활성 포함 검색으로 Phase 활성화 여부와 무관하게 항상 찾도록 수정.
         _surviveObjective = FindFirstObjectByType<SurviveTimeObjective>(FindObjectsInactive.Include);
+
+        if (IsServer)
+        {
+            PlayerSpawnCoordinator.OnPlayersReady += InitTeamLives;
+            if (PlayerSpawnCoordinator.IsReady) InitTeamLives(); // 늦은 스폰 대비(OnPlayersReady 재발행 안 함, §11.4와 동일 이유)
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -480,7 +494,37 @@ public class StageNetworkState : NetworkBehaviour
         _pioneerTileUnlocked.OnListChanged -= OnPioneerTileUnlockedChanged;
         _trackerTargets.OnListChanged    -= OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged -= OnMemorySectionsClearedNv;
+        PlayerSpawnCoordinator.OnPlayersReady -= InitTeamLives;
         if (Instance == this) Instance = null;
+    }
+
+    // ── 팀 공유 목숨 ──────────────────────────────────────────────
+
+    /// <summary>Host 전용: 파티 인원−1로 1회 확정(DownedReviveSystemDesign.md §4B). 명단이 아직 비어 있으면 보류.</summary>
+    void InitTeamLives()
+    {
+        if (!IsServer || IsDespawned || _teamLivesRemaining.Value >= 0) return;
+        int entries = PlayerSpawnCoordinator.EntryCount;
+        if (entries <= 0) return;
+        _teamLivesRemaining.Value = Mathf.Max(0, Mathf.Min(entries, 4) - 1);
+    }
+
+    /// <summary>남은 팀 목숨. -1 = 미초기화. 씬 단위로만 초기화된다(한 씬 안의 서브 스테이지끼리는 이어짐).</summary>
+    public int TeamLivesRemaining => _teamLivesRemaining.Value;
+
+    /// <summary>Host 전용: 목숨이 확정됐고 0이면 true — 이 상태의 HP 0은 다운 없이 즉시 완전사망(§4B).</summary>
+    public bool AreTeamLivesExhausted()
+    {
+        if (!IsServer) return false;
+        InitTeamLives();
+        return _teamLivesRemaining.Value == 0;
+    }
+
+    /// <summary>Host 전용: 부활 완료 시 목숨 1개 소모(§4B).</summary>
+    public void ConsumeTeamLife()
+    {
+        if (!IsServer || IsDespawned || _teamLivesRemaining.Value <= 0) return;
+        _teamLivesRemaining.Value--;
     }
 
     // ── 사망 처리 ─────────────────────────────────────────────────

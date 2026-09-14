@@ -8,11 +8,11 @@ using UnityEngine;
 ///
 /// [흐름]
 /// NetworkPlayerSetup.ApplyDamageFromServer가 HP 0(즉사 아님)에서 EnterDown() 호출
-///   → 부활 가능자(다운·사망 아닌 다른 플레이어)가 없으면 즉시 완전사망(솔로 포함, §2)
+///   → 부활 가능자(다운·사망 아닌 다른 플레이어)가 없거나 팀 목숨 0이면 즉시 완전사망(솔로 포함, §2·§4B)
 ///   → 있으면 10초 카운트다운. 근처 플레이어가 RequestStartRevive()로 시전(요청자 본인의 인스턴스에서 호출)
 ///   → 시전 중 캔슬: Host가 시전자의 위치 밀림·사거리 이탈을 매 프레임 판정, HP 감소는 CancelIfReviving(),
 ///     E 해제·다른 입력은 Owner가 RequestCancelRevive()로 신고(§4)
-///   → 캔슬 없이 2초 경과 시 부활, 방치 만료 시 NetworkPlayerSetup.FinalizeDownDeath()로 기존 사망 파이프라인 재사용.
+///   → 캔슬 없이 2초 경과 시 부활(팀 목숨 1 소모, 0이 되면 다운 중인 나머지 즉시 완전사망), 방치 만료 시 NetworkPlayerSetup.FinalizeDownDeath()로 기존 사망 파이프라인 재사용.
 ///
 /// [연출 = NV 구동]
 /// 다운 여부는 지속 상태라 _isDowned.OnValueChanged에서 Player.EnterDownState/ExitDownState를 호출한다
@@ -22,7 +22,7 @@ using UnityEngine;
 ///
 /// [미구현 — 후속 작업]
 /// - 완전사망을 StageManager에 직접 통보 + STAGE FAILED 2초 배너(§6, §9.2) — 지금은 기존 즉시 리로드.
-/// - 본인 다운 전용 UI(§6, 설계 논의 중), 부활 파티클(§8). 팀원 다운 표시는 TeamStatusUI에 구현됨.
+/// 부활 꿀물 파티클은 ReviveHoneyVfx(IsBeingRevived NV 구독, RPC 없음).
 ///
 /// [입력]
 /// RequestStartRevive/RequestCancelRevive 호출부는 PlayerReviveInteract(Player 도메인, Interact/E 액션).
@@ -43,9 +43,13 @@ public class PlayerDownState : NetworkBehaviour
     [Tooltip("시전 시작 위치에서 시전자가 이 거리(m) 이상 벗어나면 캔슬(걷기·넉백·바람·미끄러짐 등 모든 밀림). " +
         "Host가 보는 원격 시전자 위치는 ClientNetworkTransform 보간값이라 떨림을 흡수할 여유가 필요하다.")]
     [SerializeField] float reviveMoveTolerance = 0.3f;
+    [Tooltip("시전 시작 직후 이 시간(초) 동안은 밀림 판정을 하지 않고 시작 위치를 계속 갱신한다. " +
+        "원격 시전자가 멈춘 직후 E를 누르면 Host의 CNT 보간 위치가 아직 따라오는 중이라 즉시 캔슬되던 문제 방지. " +
+        "사거리 이탈 판정은 이 구간에도 적용된다.")]
+    [SerializeField] float reviveMoveGraceDuration = 0.2f;
 
     [Header("부활 결과")]
-    [SerializeField] int reviveHeartAmount = 3;
+    [SerializeField] int reviveHeartAmount = 2;
     [SerializeField] float reviveGraceInvulnDuration = 1f;
 
     const ulong NoReviver = ulong.MaxValue;
@@ -80,6 +84,9 @@ public class PlayerDownState : NetworkBehaviour
     /// <summary>다운 후 완전사망까지의 전체 시간(초). LocalDownOverlayUI 회색 막 진행도 계산용.</summary>
     public float DownTimeoutDuration => downTimeoutDuration;
 
+    /// <summary>Host가 검증하는 부활 사거리(m). PlayerReviveInteract가 이보다 좁게 후보를 잡는 기준.</summary>
+    public float ReviveRange => reviveRange;
+
     /// <summary>스폰된 모든 PlayerDownState(자기 자신 포함). PlayerReviveInteract의 근접 대상 탐색용.</summary>
     public static IReadOnlyList<PlayerDownState> AllSpawned => _spawned;
 
@@ -89,6 +96,7 @@ public class PlayerDownState : NetworkBehaviour
     // 서버 전용 — 진행 중인 부활 시전(this = 다운된 대상).
     PlayerDownState _reviver;
     Vector3 _reviverStartPos;
+    float _reviverStartPosLockTime;
     float _reviveCompleteTime;
 
     // 부활 시전 시작 시점의 "완전사망까지 남은 시간". Host는 BeginRevive에서 정확히 기록(캔슬 복원용, §9.2),
@@ -167,7 +175,10 @@ public class PlayerDownState : NetworkBehaviour
         if (r == null || r._player == null || r._player.IsDead || r._isDowned.Value) return true;
 
         Vector3 pos = r.transform.position;
-        if ((pos - _reviverStartPos).sqrMagnitude > reviveMoveTolerance * reviveMoveTolerance) return true;
+        if (Time.time < _reviverStartPosLockTime)
+            _reviverStartPos = pos; // 유예 구간: 보간 위치가 멈출 때까지 시작 위치를 따라간다.
+        else if ((pos - _reviverStartPos).sqrMagnitude > reviveMoveTolerance * reviveMoveTolerance)
+            return true;
         return (pos - transform.position).sqrMagnitude > reviveRange * reviveRange;
     }
 
@@ -178,8 +189,10 @@ public class PlayerDownState : NetworkBehaviour
         if (!IsServer) return;
         if (_isDowned.Value || _deathFinalized || (_player != null && _player.IsDead)) return;
 
-        // 나를 살릴 사람이 없으면 카운트다운 없이 즉시 완전사망(솔로·마지막 생존자 다운, §2).
-        if (!HasPotentialReviver())
+        // 나를 살릴 사람이 없거나(솔로·마지막 생존자, §2) 팀 목숨이 0이면(§4B) 카운트다운 없이 즉시 완전사망.
+        // StageNetworkState가 없는 씬(튜토리얼)은 목숨 제한 없음.
+        var stage = StageNetworkState.Instance;
+        if (!HasPotentialReviver() || (stage != null && stage.AreTeamLivesExhausted()))
         {
             _deathFinalized = true;
             _netSetup.FinalizeDownDeath();
@@ -270,6 +283,7 @@ public class PlayerDownState : NetworkBehaviour
         _remainingOnReviveStart = _downDeadlineServerTime.Value - NetworkManager.ServerTime.Time;
         _reviver = reviver;
         _reviverStartPos = reviver.transform.position;
+        _reviverStartPosLockTime = Time.time + reviveMoveGraceDuration;
         _reviveCompleteTime = Time.time + reviveCastDuration;
         _activeReviveByReviver[reviver.OwnerClientId] = this;
 
@@ -298,9 +312,29 @@ public class PlayerDownState : NetworkBehaviour
         _reviverClientId.Value = NoReviver;
         _isBeingRevived.Value = false;
 
+        // 팀 공유 목숨 1개 소모(§4B). StageNetworkState가 없는 씬(튜토리얼)은 목숨 제한 없음.
+        var stage = StageNetworkState.Instance;
+        if (stage != null) stage.ConsumeTeamLife();
+
         // HP를 먼저 복구해야 Host에서 _isDowned 콜백(ExitDownState)이 동기 발동할 때 heart가 이미 새 값이다.
         _netSetup.ReviveFromServer(reviveHeartAmount, reviveGraceInvulnDuration);
         _isDowned.Value = false;
+
+        // 방금 소모로 목숨이 0이면 다운 중인 나머지는 더 살릴 수 없다 — 10초를 기다리지 않고 즉시 완전사망.
+        if (stage != null && stage.TeamLivesRemaining == 0)
+            FailAllOtherDowned(this);
+    }
+
+    /// <summary>Host 전용: 팀 목숨 소진 확정 시, 이 인스턴스를 제외하고 현재 다운 중인 나머지 전원을 즉시 완전사망 처리.</summary>
+    static void FailAllOtherDowned(PlayerDownState exclude)
+    {
+        foreach (var s in _spawned)
+        {
+            if (s == exclude || s._player == null) continue;
+            if (!s._isDowned.Value || s._deathFinalized) continue;
+            s.ClearForDeath();
+            s._netSetup.FinalizeDownDeath();
+        }
     }
 
     void ReleaseReviveBookkeeping()

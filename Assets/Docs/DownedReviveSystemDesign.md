@@ -19,7 +19,8 @@
 | └ 부활 가능자 없음 (솔로, 또는 마지막 생존자의 다운) | 다운 **스킵** → 즉시 완전사망 → 씬 리로드 |
 | 즉사 판정 (보울더, 낙사, 스테이지 실패 등 인스턴트킬 소스) | 다운 **스킵** → 즉시 스테이지 실패 → 씬 리로드. **이미 다운 중인 인원에게도 적용**(진행 중 부활은 정리) |
 | 개인 완전사망 (10초 방치 만료, §3) | 즉시 스테이지 실패 |
-| 스테이지 내 개인 다운 횟수 | **무제한** |
+| 팀 목숨 0인 상태에서 HP 0 도달 (§4B) | 다운 **스킵** → 즉시 완전사망 → 씬 리로드 |
+| 스테이지 내 개인 다운 횟수 | 제한 없음 — 대신 부활 완료마다 팀 공유 목숨 소모(§4B) |
 
 즉사 소스가 이미 많아 다운 시스템으로 완화되는 체감 난이도가 과하지 않을 것으로 판단(2026-09 논의).
 
@@ -38,7 +39,9 @@
 | 항목 | 규칙 |
 |------|------|
 | 상호작용 | 다운된 대상 근접 + **E만** 누른 채 **2초** 유지 |
-| 구현(2026-09-14) | `PlayerReviveInteract`(Player 도메인) — 기존 `Interact`(E) 액션 press 시점에 근접한 다운 팀원을 찾아 `RequestStartRevive` 1회 전송. 2초 완료 판정은 Host(§9.2)가 유일 — 클라이언트는 누른 순간의 근접 여부만 로컬로 거르는 얇은 어댑터이고, Host가 거리·다운 여부를 다시 검증한다. `InputSystem_Actions` Interact의 Hold 인터랙션은 제거됨(2026-09-14) — E 누름 즉시 시전 요청. |
+| 구현(2026-09-14) | `PlayerReviveInteract`(Player 도메인) — 근접한 다운 팀원을 찾아 `RequestStartRevive` 1회 전송. 2초 완료 판정은 Host(§9.2)가 유일 — 클라이언트는 근접 여부만 로컬로 거르는 얇은 어댑터이고, Host가 거리·다운 여부를 다시 검증한다. `InputSystem_Actions` Interact의 Hold 인터랙션은 제거됨(2026-09-14). |
+| 시작 판정(2026-09-15) | press 순간 1회 판정 → **매 프레임 폴링**으로 변경. "E 누르는 중 + E 외 버튼 없음 + 후보 있음 + 이번 홀드에서 아직 요청 안 함"이 되는 첫 프레임에 요청. 이전 방식은 W를 누른 채 E를 누르면 조용히 버려지고 W를 떼도 E를 새로 누르기 전까지 시작되지 않았다(테스트에서 "붙어서 E 눌러도 안 됨"으로 보고). 한 홀드에서 요청은 1회뿐 — 캔슬·거절 후 재시도는 E를 다시 눌러야 한다 |
+| 후보 사거리(2026-09-15) | 클라이언트 후보 사거리 = Host `reviveRange` − `clientRangeMargin`(기본 0.3m). 예전엔 클라이언트 2.5m > Host 2m라 그 사이에서 요청이 조용히 거절됐다. **클라이언트는 항상 Host보다 좁게** — 안내 UI가 떠 있으면 요청이 통과해야 한다 |
 | 동시 시전 | **1:1만.** 여러 명이 한 대상을 동시에 시전해도 단축 없음. 한 시전자가 두 대상을 동시에 시전하는 것도 불가 |
 | 셀프 리바이브 | **없음** |
 | 시전 중 이동·외부 영향 | **잠그지 않는다.** 시전자는 평소처럼 움직이고 넉백·바람 등 외부 힘도 그대로 받는다 — 대신 아래 캔슬 조건에 걸린다(2026-09-14, 구 "이동 불가" 규칙 대체) |
@@ -46,8 +49,22 @@
 | └ 위치 밀림 (Host 판정) | 시전 시작 위치에서 **허용 거리(기본 0.3m) 이상** 벗어남 — 걷기·넉백·바람·침 미끄러짐·움직이는 발판 등 원인 불문. 사거리 이탈도 포함 |
 | └ HP 감소 (Host 판정) | 시전자가 **실제 HP 감소**를 겪음. 쉴드 등으로 HP 불변이면 캔슬 아님 — "피격"이 아니라 "HP 감소 발생"에 건다. "환경 티끌이라도 부딪히면 캔슬"은 충돌 자체가 아니라 **위치 밀림 또는 HP 감소**로 정의(바닥·다운된 대상·옆 팀원과의 상시 접촉 때문에 충돌 자체는 판정 불가) |
 | └ 입력 (Owner 신고) | **E 해제**, 또는 E 외의 **키보드 키·마우스 클릭·패드 버튼** 입력(채팅·ESC·마이크 단축키 포함). **마우스 이동(카메라 회전)은 허용.** Host는 키 입력을 볼 수 없으므로 Owner가 `RequestCancelReviveServerRpc`로 신고 |
-| 부활 직후 HP | **고정 3칸** (`maxHeart`는 `Player.cs` 단일 값으로 전 스테이지 공통 — 최대 5칸 기준 -2칸 상태) |
+| 부활 직후 HP | **고정 2칸** (`maxHeart`는 `Player.cs` 단일 값으로 전 스테이지 공통. 2026-09-15: 3→2 — §4B 팀 목숨 캡과 함께 난이도 재조정) |
 | 그레이스 피리어드 | 부활 직후 **1초 무적** |
+
+## 4B. 팀 공유 목숨 (2026-09-15)
+
+- **문제:** 다운 진입/부활 자체는 무제한이라, 1명만 안 죽으면 나머지를 계속 살려가며 스테이지를 끝까지 캐리할 수 있어 팀 생존의 긴장감이 사실상 사라짐(§1 문제의식과 반대 방향으로 과하게 완화됨).
+- **기각한 대안:** "누적 다운 수 N회 도달 시 즉시 실패"(예: 3회째 다운되는 순간 실패) — 이러면 §1에서 지키려던 "3명 다운 + 1명 캐리로 클리어" 성공 케이스 자체가 정의상 불가능해져 설계 의도와 정면으로 부딪힘.
+- **채택안:** **팀 전체가 공유하는 목숨 풀.** 목숨이 남아 있는 동안 다운 진입은 무료(§2 규칙 그대로). **부활을 완료시킬 때마다** 목숨 1개를 소모한다. 방치 만료 완전사망은 그 자체로 스테이지 실패라 목숨과 무관.
+- **목숨 개수 = 파티 인원 − 1** (4인=3, 3인=2, 2인=1, 1인=0). 솔로는 §2 "부활 가능자 없음"으로 어차피 다운이 스킵된다.
+- **범위 = 씬 단위.** `PlayerSpawnCoordinator.OnPlayersReady`에서 1회 확정, 회복 없음, 씬 리로드로만 초기화. 한 씬 안의 서브 스테이지(예: T.Stage5의 5.1→5.2)끼리는 이어진다 — 리셋 단위가 씬이라 목숨도 씬에 맞춘다.
+- **목숨 0에서 HP 0:** 다운 없이 **즉시 완전사망**(§2 표). 목숨이 0이 되는 것 자체로는 아무도 죽지 않는다.
+- **연쇄 실패:** 부활 완료로 목숨이 0이 되는 순간 다운 중인 다른 플레이어가 있으면, 남은 10초를 기다리지 않고 **즉시** 완전사망 처리한다 — 더 이상 살릴 수 없다는 게 그 순간 확정되므로(§2 "부활 가능자 판정"과 같은 이유). 목숨 1개에 두 명이 같은 프레임에 부활 완료돼도 Host 단일 레인이라 먼저 처리된 쪽이 소모하고, 나머지는 이 규칙으로 정리된다.
+- **부활 HP 하향(3→2):** 부활 직후 약한 피격에도 재다운 위험을 올려 "부활 = 안전"이 아니게 한다.
+- **적용 범위:** `StageNetworkState`가 있는 M/T 스테이지 씬만. 튜토리얼은 `StageNetworkState`가 없고 순차 합류라 인원도 확정되지 않으므로 목숨 제한 없음(기존 무제한 부활).
+- **구현:** `StageNetworkState`가 목숨 NV(`TeamLivesRemaining`, Host 쓰기) 소유 — 팀 전체 상태라 개별 `PlayerDownState`가 아니라 스테이지 싱글턴 슬롯. `PlayerDownState.EnterDown()`은 `AreTeamLivesExhausted()`면 즉시 완전사망, `CompleteRevive()`는 `ConsumeTeamLife()` 후 0이면 `FailAllOtherDowned()`.
+- **UI:** 상시 `TeamLivesUI`(아이콘 + 숫자) + `LocalDownOverlayUI`의 목숨 묶음(`livesGroup`) 재표시. 둘 다 `TeamLivesUI.ReadVisibleLives()`로 매 프레임 읽기만 하고, 튜토리얼·솔로·미초기화면 숨긴다. 이벤트 대신 폴링인 이유: Client는 NV 초기값이 스폰 데이터로 오면 `OnValueChanged`가 불리지 않는다.
 
 ## 5. 다운 중 상태
 
@@ -67,9 +84,11 @@
 | 다운 진입 (팀원) | 화면 중앙 배너 **없음**(2026-09-14 변경 — 한때 `DeathOverlayUI`가 `OnDowned`를 구독해 "{CheerName} 다운" 배너를 띄웠으나 제거. `DeathOverlayUI`는 완전사망 `OnDied` 전용). 팀원 다운은 아래 "팀 상태" 행의 `TeamStatusUI`로만 표시 |
 | 다운 진입 (본인) | `LocalDownOverlayUI`(2026-09-14) — 로컬 Owner의 `OnDowned`/`OnRevived`/`OnDied` 구독, 네트워크 쓰기 없음. ① **회색 막**: 전용 `ScreenFader` 인스턴스(MouthController용과 공유 금지)를 `SetProgress(1 − RemainingDownTime / DownTimeoutDuration)`로 매 프레임 구동 — 고정 코루틴이 아니어야 부활 시전 중 정지·캔슬 복원과 어긋나지 않음. 완전한 흑백(포스트프로세싱)이 아니라 회색 반투명 막이며, 사망 연출(고유색)과 구분하려고 색을 쓰지 않음. ② **정수 초 타이머** ③ **안내 문구**(흰색): `DeathUI/Down.Guide` "쓰러졌습니다! 팀원이 곁에서 [E]를 누르면 부활합니다." — `[E]`는 키보드 표기라 전 언어 영문 고정. 부활 시전 중엔 `DeathUI/Down.Reviving` "부활 중..."으로 교체. 부활 시 막·문구 페이드아웃, 완전사망 시 문구만 즉시 숨기고 막은 리로드까지 유지. `TeamStatusUI`는 자기 슬롯을 숨기므로 본인 표시를 대신하지 않는다. **문구 추가·수정 후 `Tools/Font/Noto Static 베이킹 - 실행` 필수**(Static 폰트는 테이블에 없던 글자를 렌더링 못 함) |
 | 완전사망(스테이지 실패) | `StageFailedBannerUI`(2026-09-14, `StageClearBannerUI`와 동일 골격) — `StageNetworkState.OnAnyStageFailedPulse` 구독, 단발 배너 2초. `NotifyPlayerDeathServerRpc`(사망→리로드 유일 진입점) 안에서 `NotifyStageFailed()`를 호출하므로 즉사·다운 방치 만료 등 원인과 무관하게 항상 뜬다. "OO 사망" `DeathOverlayUI`와 동시에 뜬다(제거 여부는 미정) |
-| 부활 진행 중 | 게이지 대신 **파티클 효과**로 표시 (시전 2초로 짧아 숫자 게이지 불필요 판단). 캔슬 시 파티클이 즉시 끊기는 등 실패를 구분할 수 있는 피드백 필요(세부 미정, 8절). 별도 RPC 없이 `IsBeingRevived` true→false 중 `IsDowned`가 여전히 true면 캔슬, `IsDowned`까지 false면 완료로 구분 가능 |
-| HP UI | 다운 진입(HP→0)은 `OnDamaged`, 부활(0→3)은 `OnHealed`로 `PlayerHPUI`/`TeamStatusUI`가 갱신된다(`NetworkPlayerSetup.OnHpChanged`) |
-| 팀 상태 | `TeamStatusUI` 확장(2026-09-14 구현) — 슬롯별 `downIndicator`(체력 칸/하트 자리에 겹치는 HELP 이미지) + `downTimerText`(정수 초 카운트다운). 다운 중엔 하트를 숨기고 HELP가 그 자리를 쓴다. `PlayerEvents.OnDowned`/`OnRevived`로 on/off, 숫자는 `PlayerDownState.RemainingDownTime`(부활 시전 중엔 정지값)을 `Update`에서 값이 바뀔 때만 갱신. 완전사망(`OnDied`) 시 즉시 숨김 — 사망 후에도 `IsDowned`가 true로 남는 §9 설계 때문. **체력이 낮을 때의 경고 연출(점멸 등)은 없음** — 강조 연출은 다운 상태 하나뿐 |
+| 부활 안내 (시전자) | `ReviveInteractPromptUI`(2026-09-15) — 로컬 Owner의 `PlayerReviveInteract.CurrentTarget`/`CastTarget`을 매 프레임 읽기만 하는 HUD 문구. ① 후보 있음: `DeathUI/Revive.Prompt` "[E] 부활" ② Host 수락 확인(대상 `IsBeingRevived && ReviverClientId == 나`): `DeathUI/Revive.Casting` "부활 중..." ③ 수락됐던 시전이 끝났는데 대상이 여전히 부활 가능: `DeathUI/Revive.Cancelled` "부활 취소"를 1초 붉은색으로 표시(완료·완전사망이면 문구 없이 숨김). 후보 판정은 입력과 같은 함수라 안내가 뜨면 요청이 Host 검증을 통과한다. `[E]`는 전 언어 영문 고정. **문구 추가 후 Noto Static 베이킹 필수** |
+| 부활 진행 중 | 게이지 대신 **꿀물 폭포**(`ReviveHoneyVfx`, 2026-09-15). EffectExamples `WaterfallSmallEffect`를 시전자 가슴 → 다운된 대상 몸통에 맞춰 스케일·회전하고 노란색으로 틴트. 원본 에셋은 수정하지 않고 인스턴스만 런타임 틴트. 캔슬(`IsBeingRevived` false + 다운 유지)은 `StopEmittingAndClear`로 즉시 끊김. 완료(다운 해제)는 방출만 멈추고 잔여 입자는 잠깐 남김. 별도 RPC 없음 — `IsBeingRevived` NV + `ReviverClientId`로 시전자를 찾음 |
+| HP UI | 다운 진입(HP→0)은 `OnDamaged`, 부활(0→2)은 `OnHealed`로 `PlayerHPUI`/`TeamStatusUI`가 갱신된다(`NetworkPlayerSetup.OnHpChanged`) |
+| 팀 상태 | `TeamStatusUI` 확장(2026-09-14 구현) — 슬롯별 `downIndicator`(체력 칸 옆 HELP 이미지) + `downTimerText`(정수 초 카운트다운). `PlayerEvents.OnDowned`/`OnRevived`로 on/off, 숫자는 `PlayerDownState.RemainingDownTime`(부활 시전 중엔 정지값)을 `Update`에서 값이 바뀔 때만 갱신. 완전사망(`OnDied`) 시 즉시 숨김 — 사망 후에도 `IsDowned`가 true로 남는 §9 설계 때문. **체력이 낮을 때의 경고 연출(점멸 등)은 없음** — 강조 연출은 다운 상태 하나뿐 |
+| 팀 목숨 | `TeamLivesUI`(상시 HUD, 아이콘 + 숫자) + `LocalDownOverlayUI`의 `livesGroup`(본인 다운 시 재표시). 튜토리얼·솔로·미초기화면 숨김. 규칙은 §4B |
 
 ## 7. Objective 타입별 영향
 
@@ -81,7 +100,7 @@
 
 - ~~Cheer 개인 버프 삭제 여부~~ → **확정(2026-09-14): 개인 버프 삭제, TeamCheer만 유지.** Cheer/Voice 도메인 문서 반영은 `CheerAndTutorialDesign.md` 쪽에서.
 - ~~다운 상태 물리 레이어~~ → **확정(2026-09-14): 기존 `PlayerDead` 레이어 재사용.** 적 타겟팅 제외는 구현 완료(§10 Enemy).
-- 부활 파티클/캔슬 SFX 등 세부 피드백 디자인.
+- 부활 캔슬 SFX 등 세부 피드백. 시전자 텍스트는 `ReviveInteractPromptUI`, 시전 중 파티클은 `ReviveHoneyVfx`(WaterfallSmallEffect 노란 꿀물)로 1차 구현. SFX는 미정
 
 ## 9. 네트워크 동기화
 
@@ -98,14 +117,20 @@
 | `IsBeingRevived` | `NetworkVariable<bool>` | Host | 부활 시전 중 여부 (방치 타이머 일시정지 판단) |
 | `ReviverClientId` | `NetworkVariable<ulong>` | Host | 현재 시전자 (1:1 강제, 중복 시전 방지) |
 
+`StageNetworkState`(스테이지 전역 싱글턴, §4B) 소유 — 개별 플레이어가 아니라 팀 전체 슬롯이라 별도:
+
+| 필드 | 타입 | 쓰기 권한 | 용도 |
+|------|------|-----------|------|
+| `TeamLivesRemaining`(내부 NV) | `NetworkVariable<int>` | Host | 팀 공유 목숨. -1=미초기화, 이후 (파티 인원−1)로 확정, 부활 성공마다 -1. 씬 단위 |
+
 ### 9.2 흐름
 
 | 단계 | 트리거 | Host 처리 | 전파 |
 |------|--------|-----------|------|
-| 다운 진입 | `NetworkDamageUtil` → `NetworkPlayerSetup.ApplyDamageFromServer`에서 HP 0 판정(즉사 아님) | 부활 가능자 판정(§2). 없으면 즉시 완전사망. 있으면 `IsDowned=true`, `DownDeadlineServerTime = now+10` | NV 전파 → `OnValueChanged`에서 다운 연출 |
+| 다운 진입 | `NetworkDamageUtil` → `NetworkPlayerSetup.ApplyDamageFromServer`에서 HP 0 판정(즉사 아님) | 부활 가능자 판정(§2)·팀 목숨 판정(§4B). 부활 가능자가 없거나 목숨 0이면 즉시 완전사망. 아니면 `IsDowned=true`, `DownDeadlineServerTime = now+10` | NV 전파 → `OnValueChanged`에서 다운 연출 |
 | 부활 요청 | 시전자 Owner → `RequestStartReviveServerRpc(downedPlayerId)` | 검증(§9.4) 통과 시 `IsBeingRevived=true`, `ReviverClientId=요청자`, 남은 시간·시전자 시작 위치 내부 보관, 완료 시각 기록 | NV 전파 |
 | 캔슬 | Host `Update()`: 시전자 위치 밀림·사거리 이탈·사망/다운 / 시전자 실제 HP 감소 / Owner `RequestCancelReviveServerRpc`(E 해제·다른 입력) | `IsBeingRevived=false`, 보관해둔 남은 시간으로 `DownDeadlineServerTime` 복원 | NV 전파 (클라이언트는 `IsBeingRevived` 변화로 캔슬 인지, §6) |
-| 완료 | Host `Update()`: 캔슬 없이 2초 경과 | HP 3칸 적용·1초 무적 부여 **후** `IsDowned=false` (Host에서 콜백이 동기 발동하므로 HP 먼저) | NV 전파 → `OnValueChanged`에서 다운 해제 연출 |
+| 완료 | Host `Update()`: 캔슬 없이 2초 경과 | 팀 목숨 1 소모 → HP 2칸 적용·1초 무적 부여 **후** `IsDowned=false` (Host에서 콜백이 동기 발동하므로 HP 먼저). 소모로 목숨 0이면 다운 중인 나머지 전원 즉시 완전사망(§4B) | NV 전파 → `OnValueChanged`에서 다운 해제 연출 |
 | 완전사망 | Host `Update()`에서 매 프레임 `ServerTime >= DownDeadlineServerTime && IsDowned && !IsBeingRevived` 체크 (게이트 `UpdateGate()`와 동일한 Host 단일 레인 방식) | `StageManager`에 실패 직접 통보(같은 Host 프로세스, RPC 불필요) | `StageFailedClientRpc` (배너 2초 → 씬 리로드) |
 
 ### 9.3 이동 잠금 / 시전 캔슬 원칙
@@ -116,7 +141,7 @@
 
 | 경로 | 판정 | 이유 |
 |------|------|------|
-| Host (`PlayerDownState.Update`) | 시전자 위치가 시작 위치에서 `reviveMoveTolerance`(기본 0.3m) 초과 / 대상과의 거리가 `reviveRange` 초과 / 시전자 사망·다운 / 시전자 HP 감소(`NetworkPlayerSetup.ApplyDamageFromServer` → `CancelIfReviving`) | 서버 권한으로 볼 수 있는 것은 위치(CNT 복제)와 HP뿐. 원인(걷기·넉백·바람 등)과 무관하게 한 규칙으로 처리되고 새 RPC가 필요 없다. 허용 거리는 Host가 보는 원격 시전자 위치가 CNT 보간값이라 떨림 흡수용 |
+| Host (`PlayerDownState.Update`) | 시전자 위치가 시작 위치에서 `reviveMoveTolerance`(기본 0.3m) 초과 / 대상과의 거리가 `reviveRange` 초과 / 시전자 사망·다운 / 시전자 HP 감소(`NetworkPlayerSetup.ApplyDamageFromServer` → `CancelIfReviving`) | 서버 권한으로 볼 수 있는 것은 위치(CNT 복제)와 HP뿐. 원인(걷기·넉백·바람 등)과 무관하게 한 규칙으로 처리되고 새 RPC가 필요 없다. 허용 거리는 Host가 보는 원격 시전자 위치가 CNT 보간값이라 떨림 흡수용. **시작 유예(2026-09-15):** 시전 시작 후 `reviveMoveGraceDuration`(기본 0.2초) 동안은 밀림 판정 없이 시작 위치를 현재 위치로 계속 갱신한다 — 원격 시전자가 멈춘 직후 E를 누르면 보간 위치가 아직 따라오는 중이라 즉시 캔슬되던 문제 방지. 사거리 이탈은 유예 중에도 판정 |
 | Owner (`PlayerReviveInteract`) | E 해제, E 외 물리 버튼(키보드 키·마우스 클릭·패드 버튼, `synthetic`/`noisy` 제외) 입력 → `RequestCancelReviveServerRpc` 1회 | Host는 키 입력을 볼 수 없다. 자기 의사 표시일 뿐이라 클라이언트를 신뢰해도 악용 여지가 없다. 마우스 이동·스틱의 합성 방향 버튼은 `synthetic`이라 입력 캔슬에서 제외(스틱 이동은 Host 위치 판정이 잡는다) |
 
 Owner는 요청 직후부터(서버 수락을 기다리지 않고) 입력을 감시한다. 시작·캔슬 RPC는 같은 신뢰 채널로 순서가 보장되므로 수락 전에 캔슬해도 "시작 → 캔슬" 순으로 처리되고, 거절됐거나 이미 끝난 시전에 대한 캔슬은 Host에서 no-op이다. 다른 입력을 누른 채로는 요청 자체를 보내지 않는다(시작 즉시 캔슬 방지).
@@ -142,4 +167,5 @@ Owner는 요청 직후부터(서버 수락을 기다리지 않고) 입력을 감
   - 도망 AI·포획: `Stage5TargetRunner`의 추적 대상 선택·포획 트리거에서 `IsDowned` 제외.
   - 제외하지 않음: `BossSpherePhaseDriver.HandlePhaseTimeout`(페이즈 실패 전원 즉사 — 다운 중에도 즉사 적용이 §2 규칙), `ContactDamage`/`SpikeTrap`(Traps 도메인, 피격 반응 콜백 없음 — HP 0 가드로 충분), `BoulderSpawnManager.AnyPlayerInTrigger`(용도 미확인, 보류).
 - **Stage:** `StageObjective`/`StageManager`가 개인 완전사망 이벤트를 구독해 실패 처리.
-- **UI:** `TeamStatusUI`, `PlayerHPUI` 확장.
+- **UI:** `TeamStatusUI`, `PlayerHPUI` 확장. `TeamLivesUI`(신규, 상시 HUD) + `LocalDownOverlayUI`(본인 다운 화면에 목숨 재표시) — 팀 목숨(§4B).
+- **Network:** `StageNetworkState`가 팀 공유 목숨 NV(`TeamLivesRemaining`) 소유 — 개별 `PlayerDownState`가 아니라 스테이지 전역 싱글턴 슬롯(§9.1).

@@ -5359,6 +5359,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9101834184775602145}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1529744833824766880}
   m_SourcePrefab: {fileID: 100100000, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}
 --- !u!137 &153381192624555510 stripped
 SkinnedMeshRenderer:
@@ -6009,7 +6012,8 @@ MonoBehaviour:
   reviveCastDuration: 2
   reviveRange: 2
   reviveMoveTolerance: 0
-  reviveHeartAmount: 3
+  reviveMoveGraceDuration: 0.2
+  reviveHeartAmount: 2
   reviveGraceInvulnDuration: 1
 --- !u!114 &1998381686174464479
 MonoBehaviour:
@@ -6024,7 +6028,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerReviveInteract
   ShowTopMostFoldoutHeaderGroup: 1
-  detectRange: 2.5
+  clientRangeMargin: 0.3
 --- !u!114 &9101834184775602145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6043,6 +6047,25 @@ MonoBehaviour:
   outlineColor: {r: 0, g: 0, b: 0, a: 1}
   outlineWidth: 0.2
   hideForLocalOwner: 1
+--- !u!114 &1529744833824766880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6535059913203114227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27cb07620ef20a47aa4450646451309, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReviveHoneyVfx
+  waterfallPrefab: {fileID: 1000014033464604, guid: e0ea35e989dfcd043b42d7053b546abc, type: 3}
+  honeyColor: {r: 1, g: 0.72, b: 0.12, a: 0.9}
+  casterOffset: {x: 0, y: 1.15, z: 0.2}
+  targetOffset: {x: 0, y: 0.4, z: 0}
+  minScale: 0.08
+  maxScale: 0.28
+  completeLinger: 0.35
 --- !u!137 &6705163789354107372 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 828061435129191502, guid: 2e94f443b20133d43a635d82deb30b3c, type: 3}

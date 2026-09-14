@@ -8,7 +8,7 @@ using UnityEngine;
 /// 되고, 실제 Cursor 반영은 여기 한 곳에서만 "아직 다른 요청이 남아있는지"로 계산한다
 /// (요청 목록 → 실제 Cursor 상태로만 흐르는 단방향 — 2026-08-22, Bug Hunter 리뷰 3항목 중 2번 수정).
 ///
-/// [사용처] TutorialCheerNameUI, EscMenuController. (IsRequested만 읽는 쪽: Player Space 버프·PlayerEmoteMenuUI 숫자키·EmoteHintUI·ThirdPersonCamera)
+/// [사용처] TutorialCheerNameUI, EscMenuController. (IsRequested만 읽는 쪽: Player Space 버프·PlayerEmoteMenuUI 숫자키·ThirdPersonCamera)
 /// TitleReturnFlow/EndDemoController처럼 인게임을 완전히 벗어나는 전역 전환은 이 유틸을 거치지
 /// 않고 Cursor를 직접 강제 설정한다 — 그 시점엔 다른 UI 상태가 의미 없어지므로 정상.
 ///

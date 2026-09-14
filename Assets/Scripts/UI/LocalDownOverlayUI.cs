@@ -28,6 +28,10 @@ public class LocalDownOverlayUI : MonoBehaviour
     [SerializeField] CanvasGroup contentGroup;
     [SerializeField] TextMeshProUGUI timerText;
     [SerializeField] TextMeshProUGUI guideText;
+    [Tooltip("남은 팀 목숨 강조 표시(DownedReviveSystemDesign.md §4B) — TeamLivesUI와 같은 값을 가까이서 다시 보여준다.")]
+    [SerializeField] TextMeshProUGUI livesText;
+    [Tooltip("목숨 아이콘+숫자 묶음. 목숨을 표시하지 않는 경우(튜토리얼·솔로) 통째로 숨긴다.")]
+    [SerializeField] GameObject livesGroup;
     [SerializeField] Color textColor = Color.white;
     [SerializeField] float contentFadeDuration = 0.25f;
 
@@ -47,6 +51,7 @@ public class LocalDownOverlayUI : MonoBehaviour
     bool _showing;
     int _shownSeconds = -1;
     int _shownReviving = -1; // -1 미표시, 0 안내 문구, 1 부활 중
+    int _shownLives = int.MinValue;
     Coroutine _contentFade;
 
     void Awake()
@@ -59,6 +64,7 @@ public class LocalDownOverlayUI : MonoBehaviour
         }
         if (timerText != null) timerText.color = textColor;
         if (guideText != null) guideText.color = textColor;
+        if (livesText != null) livesText.color = textColor;
     }
 
     void Start()
@@ -182,6 +188,15 @@ public class LocalDownOverlayUI : MonoBehaviour
             guideText.text = reviving == 1
                 ? Localize(revivingMessage, FallbackReviving)
                 : Localize(guideMessage, FallbackGuide);
+        }
+
+        // 팀 공유 목숨(§4B) — TeamLivesUI와 같은 값을 본인 다운 화면에서 다시 강조 표시.
+        int lives = TeamLivesUI.ReadVisibleLives();
+        if (lives != _shownLives)
+        {
+            _shownLives = lives;
+            if (livesGroup != null) livesGroup.SetActive(lives >= 0);
+            if (livesText != null && lives >= 0) livesText.text = lives.ToString();
         }
     }
 
