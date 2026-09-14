@@ -79,7 +79,15 @@ public class PlayerReviveInteract : NetworkBehaviour
 
         if (_casting)
         {
-            if (interactHeld && canAct && !IsAnyOtherButtonHeld()) return;
+            var otherButton = FindOtherHeldButton();
+            if (interactHeld && canAct && otherButton == null) return;
+
+            string reason = !interactHeld ? "E 해제"
+                : otherButton != null ? $"다른 버튼 입력: {otherButton.path}"
+                : _player == null || _player.IsDead ? "본인 사망"
+                : _player.IsDowned ? "본인 다운"
+                : $"UI 차단(chat={InGameChatUI.IsChatOpen} cheerName={TutorialCheerNameUI.IsOpen} cursor={CursorUnlockRequestUtil.IsRequested})";
+            Debug.Log($"[PlayerReviveInteract] 부활 캔슬 신고 — reason={reason}");
 
             _casting = false;
             CastTarget = null;
@@ -110,7 +118,9 @@ public class PlayerReviveInteract : NetworkBehaviour
     /// Interact에 바인딩된 컨트롤을 뺀 모든 물리 버튼(키보드 키·마우스 클릭·패드 버튼) 중 눌린 게 있는지.
     /// synthetic(anyKey, 스틱/마우스 델타의 방향 버튼 등)과 noisy는 제외 — 마우스 이동은 여기서 걸리지 않는다.
     /// </summary>
-    bool IsAnyOtherButtonHeld()
+    bool IsAnyOtherButtonHeld() => FindOtherHeldButton() != null;
+
+    ButtonControl FindOtherHeldButton()
     {
         var devices = InputSystem.devices;
         for (int d = 0; d < devices.Count; d++)
@@ -121,10 +131,10 @@ public class PlayerReviveInteract : NetworkBehaviour
                 if (controls[i] is not ButtonControl button) continue;
                 if (button.synthetic || button.noisy || !button.isPressed) continue;
                 if (IsInteractControl(button)) continue;
-                return true;
+                return button;
             }
         }
-        return false;
+        return null;
     }
 
     bool IsInteractControl(InputControl control)

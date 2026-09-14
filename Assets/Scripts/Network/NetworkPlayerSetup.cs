@@ -408,7 +408,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         // 이 플레이어가 지금 누군가를 부활 시전 중이었다면, 실제 HP 감소가 확정된 이 시점에 캔슬
         // (DownedReviveSystemDesign.md §4 — 캔슬 판정은 "피격"이 아니라 "HP 감소 발생"에 건다).
-        PlayerDownState.CancelIfReviving(OwnerClientId);
+        PlayerDownState.CancelIfReviving(OwnerClientId, $"시전자 HP 감소 {amount}");
 
         int newHp = Mathf.Max(0, _hp.Value - amount);
         _hp.Value = newHp;

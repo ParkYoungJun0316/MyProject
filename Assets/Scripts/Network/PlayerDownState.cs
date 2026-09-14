@@ -42,7 +42,10 @@ public class PlayerDownState : NetworkBehaviour
     [Header("부활 캔슬")]
     [Tooltip("시전 시작 위치에서 시전자가 이 거리(m) 이상 벗어나면 캔슬(걷기·넉백·바람·미끄러짐 등 모든 밀림). " +
         "Host가 보는 원격 시전자 위치는 ClientNetworkTransform 보간값이라 떨림을 흡수할 여유가 필요하다.")]
-    [SerializeField] float reviveMoveTolerance = 0.3f;
+    [SerializeField] [Min(MinReviveMoveTolerance)] float reviveMoveTolerance = 0.3f;
+
+    // 0이면 정지 상태의 부동소수 떨림(0.00m)만으로 매번 캔슬된다 — 프리팹 값이 0이어도 이 아래로는 내려가지 않게 한다.
+    const float MinReviveMoveTolerance = 0.05f;
     [Tooltip("시전 시작 직후 이 시간(초) 동안은 밀림 판정을 하지 않고 시작 위치를 계속 갱신한다. " +
         "원격 시전자가 멈춘 직후 E를 누르면 Host의 CNT 보간 위치가 아직 따라오는 중이라 즉시 캔슬되던 문제 방지. " +
         "사거리 이탈 판정은 이 구간에도 적용된다.")]
@@ -157,7 +160,12 @@ public class PlayerDownState : NetworkBehaviour
 
         if (_isBeingRevived.Value)
         {
-            if (IsReviveInterrupted()) CancelRevive();
+            if (IsReviveInterrupted(out string reason))
+            {
+                Debug.Log($"[PlayerDownState] 부활 캔슬(Host 판정) — target={OwnerClientId} reviver={_reviverClientId.Value} " +
+                    $"elapsed={reviveCastDuration - (_reviveCompleteTime - Time.time):F2}s reason={reason}");
+                CancelRevive();
+            }
             else if (Time.time >= _reviveCompleteTime) CompleteRevive();
             return;
         }
@@ -169,17 +177,35 @@ public class PlayerDownState : NetworkBehaviour
     }
 
     /// <summary>시전자가 사라졌거나, 시작 위치에서 밀렸거나, 사거리를 벗어났으면 true(§4).</summary>
-    bool IsReviveInterrupted()
+    bool IsReviveInterrupted(out string reason)
     {
+        reason = null;
         var r = _reviver;
-        if (r == null || r._player == null || r._player.IsDead || r._isDowned.Value) return true;
+        if (r == null || r._player == null) { reason = "시전자 없음"; return true; }
+        if (r._player.IsDead) { reason = "시전자 사망"; return true; }
+        if (r._isDowned.Value) { reason = "시전자 다운"; return true; }
 
         Vector3 pos = r.transform.position;
         if (Time.time < _reviverStartPosLockTime)
             _reviverStartPos = pos; // 유예 구간: 보간 위치가 멈출 때까지 시작 위치를 따라간다.
-        else if ((pos - _reviverStartPos).sqrMagnitude > reviveMoveTolerance * reviveMoveTolerance)
+        else
+        {
+            float moved = Vector3.Distance(pos, _reviverStartPos);
+            float tolerance = Mathf.Max(reviveMoveTolerance, MinReviveMoveTolerance);
+            if (moved > tolerance)
+            {
+                reason = $"시전자 위치 밀림 {moved:F3}m > {tolerance}m (start={_reviverStartPos} now={pos})";
+                return true;
+            }
+        }
+
+        float dist = Vector3.Distance(pos, transform.position);
+        if (dist > reviveRange)
+        {
+            reason = $"사거리 이탈 {dist:F2}m > {reviveRange}m";
             return true;
-        return (pos - transform.position).sqrMagnitude > reviveRange * reviveRange;
+        }
+        return false;
     }
 
     // ── 다운 진입 (Host 전용, NetworkPlayerSetup.ApplyDamageFromServer에서 호출) ──────
@@ -224,7 +250,7 @@ public class PlayerDownState : NetworkBehaviour
         if (!IsServer) return;
 
         _deathFinalized = true;
-        CancelIfReviving(OwnerClientId);
+        CancelIfReviving(OwnerClientId, "시전자 완전사망");
         if (_isBeingRevived.Value) CancelRevive();
     }
 
@@ -274,7 +300,7 @@ public class PlayerDownState : NetworkBehaviour
     void RequestCancelReviveServerRpc(uint submitSeq, RpcParams rpcParams = default)
     {
         if (_reviveRequestDedup.IsDuplicate(rpcParams.Receive.SenderClientId, submitSeq)) return;
-        CancelIfReviving(OwnerClientId);
+        CancelIfReviving(OwnerClientId, "Owner 입력 캔슬 신고(원인은 시전자 콘솔의 [PlayerReviveInteract] 로그)");
     }
 
     /// <summary>Host 전용: 검증 통과 후 실제 부활 시전 시작. this = 다운된 대상.</summary>
@@ -347,9 +373,13 @@ public class PlayerDownState : NetworkBehaviour
     }
 
     /// <summary>Host 전용: 이 clientId가 현재 누군가를 부활 시전 중이면 캔슬. HP 감소·Owner 캔슬 신고에서 호출.</summary>
-    public static void CancelIfReviving(ulong reviverClientId)
+    public static void CancelIfReviving(ulong reviverClientId, string reason = null)
     {
         if (_activeReviveByReviver.TryGetValue(reviverClientId, out var target) && target != null)
+        {
+            Debug.Log($"[PlayerDownState] 부활 캔슬 — target={target.OwnerClientId} reviver={reviverClientId} " +
+                $"elapsed={target.reviveCastDuration - (target._reviveCompleteTime - Time.time):F2}s reason={reason ?? "(미지정)"}");
             target.CancelRevive();
+        }
     }
 }
