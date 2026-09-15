@@ -117,7 +117,7 @@ public static class SetupStageTipLocalization
             if (!entry.Success) continue;
 
             string locale = entry.Groups[1].Value;
-            string value = entry.Groups[2].Value.Replace(@"\n", "\n");
+            string value = TipUI.WithLineBullets(entry.Groups[2].Value.Replace(@"\n", "\n"));
             result[currentKey][locale] = value;
         }
 

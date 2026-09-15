@@ -22,7 +22,7 @@ using UnityEngine;
 ///
 /// [미구현 — 후속 작업]
 /// - 완전사망을 StageManager에 직접 통보 + STAGE FAILED 2초 배너(§6, §9.2) — 지금은 기존 즉시 리로드.
-/// 부활 꿀물 파티클은 ReviveHoneyVfx(IsBeingRevived NV 구독, RPC 없음).
+/// 부활 꿀물 파티클은 ReviveHoneyVfx(IsBeingRevived NV를 매 프레임 읽음, RPC 없음).
 ///
 /// [입력]
 /// RequestStartRevive/RequestCancelRevive 호출부는 PlayerReviveInteract(Player 도메인, Interact/E 액션).

@@ -85,7 +85,7 @@
 | 다운 진입 (본인) | `LocalDownOverlayUI`(2026-09-14) — 로컬 Owner의 `OnDowned`/`OnRevived`/`OnDied` 구독, 네트워크 쓰기 없음. ① **회색 막**: 전용 `ScreenFader` 인스턴스(MouthController용과 공유 금지)를 `SetProgress(1 − RemainingDownTime / DownTimeoutDuration)`로 매 프레임 구동 — 고정 코루틴이 아니어야 부활 시전 중 정지·캔슬 복원과 어긋나지 않음. 완전한 흑백(포스트프로세싱)이 아니라 회색 반투명 막이며, 사망 연출(고유색)과 구분하려고 색을 쓰지 않음. ② **정수 초 타이머** ③ **안내 문구**(흰색): `DeathUI/Down.Guide` "쓰러졌습니다! 팀원이 곁에서 [E]를 누르면 부활합니다." — `[E]`는 키보드 표기라 전 언어 영문 고정. 부활 시전 중엔 `DeathUI/Down.Reviving` "부활 중..."으로 교체. 부활 시 막·문구 페이드아웃, 완전사망 시 문구만 즉시 숨기고 막은 리로드까지 유지. `TeamStatusUI`는 자기 슬롯을 숨기므로 본인 표시를 대신하지 않는다. **문구 추가·수정 후 `Tools/Font/Noto Static 베이킹 - 실행` 필수**(Static 폰트는 테이블에 없던 글자를 렌더링 못 함) |
 | 완전사망(스테이지 실패) | `StageFailedBannerUI`(2026-09-14, `StageClearBannerUI`와 동일 골격) — `StageNetworkState.OnAnyStageFailedPulse` 구독, 단발 배너 2초. `NotifyPlayerDeathServerRpc`(사망→리로드 유일 진입점) 안에서 `NotifyStageFailed()`를 호출하므로 즉사·다운 방치 만료 등 원인과 무관하게 항상 뜬다. "OO 사망" `DeathOverlayUI`와 동시에 뜬다(제거 여부는 미정) |
 | 부활 안내 (시전자) | `ReviveInteractPromptUI`(2026-09-15) — 로컬 Owner의 `PlayerReviveInteract.CurrentTarget`/`CastTarget`을 매 프레임 읽기만 하는 HUD 문구. ① 후보 있음: `DeathUI/Revive.Prompt` "[E] 부활" ② Host 수락 확인(대상 `IsBeingRevived && ReviverClientId == 나`): `DeathUI/Revive.Casting` "부활 중..." ③ 수락됐던 시전이 끝났는데 대상이 여전히 부활 가능: `DeathUI/Revive.Cancelled` "부활 취소"를 1초 붉은색으로 표시(완료·완전사망이면 문구 없이 숨김). 후보 판정은 입력과 같은 함수라 안내가 뜨면 요청이 Host 검증을 통과한다. `[E]`는 전 언어 영문 고정. **문구 추가 후 Noto Static 베이킹 필수** |
-| 부활 진행 중 | 게이지 대신 **꿀물 폭포**(`ReviveHoneyVfx`, 2026-09-15). EffectExamples `WaterfallSmallEffect`를 시전자 가슴 → 다운된 대상 몸통에 맞춰 스케일·회전하고 노란색으로 틴트. 원본 에셋은 수정하지 않고 인스턴스만 런타임 틴트. 캔슬(`IsBeingRevived` false + 다운 유지)은 `StopEmittingAndClear`로 즉시 끊김. 완료(다운 해제)는 방출만 멈추고 잔여 입자는 잠깐 남김. 별도 RPC 없음 — `IsBeingRevived` NV + `ReviverClientId`로 시전자를 찾음 |
+| 부활 진행 중 | 게이지 대신 **꿀물 폭포**(`ReviveHoneyVfx`, 2026-09-15 개편). 다운된 대상 자신의 Player 프리팹 루트 자식 `ReviveHoneyMist`(평소 비활성, Play On Awake Off)를 `IsBeingRevived`가 true인 동안만 켠다 — Shield/SpeedUp(`PlayerBuffVisual`)과 같은 ON/OFF 패턴. 별도 타이머·RPC 없음: 1초 만에 캔슬되면 1초만, 시전 시간이 바뀌면 그대로 따라간다. 캔슬·완료 모두 NV가 false가 되는 즉시 `StopEmittingAndClear`(잔여 입자 없음). **위치 규칙(확정):** ① 기준 = 다운된 대상 루트(루트는 Y축 회전만, 루트 모션 없음) ② 시작점 = 서 있을 때(Idle) 눈 높이, 수평 위치는 die 포즈 입 바로 위 ③ 끝점 = die 애니메이션의 입 ④ 수직 90° 낙하. 끝점은 중력 0 + `startSpeed × startLifetime` = 낙하 거리로 맞춘다 — 속도를 바꾸면 수명도 같이 조정. 색은 `HoneyMist.mat`(_TintColor)에 고정, 방출량 등 미세 조정은 에셋에서 |
 | HP UI | 다운 진입(HP→0)은 `OnDamaged`, 부활(0→2)은 `OnHealed`로 `PlayerHPUI`/`TeamStatusUI`가 갱신된다(`NetworkPlayerSetup.OnHpChanged`) |
 | 팀 상태 | `TeamStatusUI` 확장(2026-09-14 구현) — 슬롯별 `downIndicator`(체력 칸 옆 HELP 이미지) + `downTimerText`(정수 초 카운트다운). `PlayerEvents.OnDowned`/`OnRevived`로 on/off, 숫자는 `PlayerDownState.RemainingDownTime`(부활 시전 중엔 정지값)을 `Update`에서 값이 바뀔 때만 갱신. 완전사망(`OnDied`) 시 즉시 숨김 — 사망 후에도 `IsDowned`가 true로 남는 §9 설계 때문. **체력이 낮을 때의 경고 연출(점멸 등)은 없음** — 강조 연출은 다운 상태 하나뿐 |
 | 팀 목숨 | `TeamLivesUI`(상시 HUD, 아이콘 + 숫자) + `LocalDownOverlayUI`의 `livesGroup`(본인 다운 시 재표시). 튜토리얼·솔로·미초기화면 숨김. 규칙은 §4B |
@@ -100,7 +100,7 @@
 
 - ~~Cheer 개인 버프 삭제 여부~~ → **확정(2026-09-14): 개인 버프 삭제, TeamCheer만 유지.** Cheer/Voice 도메인 문서 반영은 `CheerAndTutorialDesign.md` 쪽에서.
 - ~~다운 상태 물리 레이어~~ → **확정(2026-09-14): 기존 `PlayerDead` 레이어 재사용.** 적 타겟팅 제외는 구현 완료(§10 Enemy).
-- 부활 캔슬 SFX 등 세부 피드백. 시전자 텍스트는 `ReviveInteractPromptUI`, 시전 중 파티클은 `ReviveHoneyVfx`(WaterfallSmallEffect 노란 꿀물)로 1차 구현. SFX는 미정
+- 부활 캔슬 SFX 등 세부 피드백. 시전자 텍스트는 `ReviveInteractPromptUI`, 시전 중 파티클은 `ReviveHoneyVfx`(다운 대상 입 위로 떨어지는 꿀물 폭포, §6)로 구현. SFX는 미정
 
 ## 9. 네트워크 동기화
 

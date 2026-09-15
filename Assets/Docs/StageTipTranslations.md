@@ -5,6 +5,7 @@
 >
 > String Table / 씬은 에이전트가 쓰지 않는다. 사람이 Localization Tables에 넣는다.
 > 한 키 = Tip TMP 한 칸. `\n` = 줄바꿈, `\n\n` = T.Boss 사탕 줄 앞 빈 줄.
+> 표시 시 비어 있지 않은 줄 앞에 `•` 불릿. 빈 줄에는 점 없음. `Tools/Setup StageTip Localization`이 테이블에 같이 넣는다.
 
 ## 번역 규칙
 

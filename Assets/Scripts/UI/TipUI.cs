@@ -13,7 +13,8 @@ using TMPro;
 /// [표시]
 /// - String Table <c>StageTip</c> 키는 <c>Assets/Docs/StageTipLines.md</c> / StageTipTranslations.md SSOT.
 /// - 페이즈 구독은 코드 (<see cref="PhaseManager.OnPhaseDisplayChanged"/>). 인스펙터 onPhaseEnter 불필요.
-/// - 로케일 변경 시 같은 키를 다시 읽는다.
+/// - 로케일 변경 시 같은 키를 다시 읽고, Asset Table <c>UIFont</c> / <c>TMP.Font</c>로
+///   본문·제목 폰트를 바꾼다 (라틴·키릴 = Fredoka-Bold, ko/ja/zh = Noto Static).
 /// - M.Boss 전체·T.Boss Bossdown(전 Phase 완료)·Delay 페이즈는 숨기거나 직전 문구 유지.
 ///
 /// NGO 쓰기 없음. 표시만.
@@ -21,10 +22,14 @@ using TMPro;
 public class TipUI : MonoBehaviour
 {
     public const string TableName = "StageTip";
+    public const string FontTableName = "UIFont";
+    public const string FontEntryKey = "TMP.Font";
 
     [Header("연결")]
     [Tooltip("Tip_Panel/Txt.Tip")]
     [SerializeField] TextMeshProUGUI bodyText;
+    [Tooltip("Txt.Tip/Txt.TipTitle — 비우면 자식에서 찾는다.")]
+    [SerializeField] TextMeshProUGUI titleText;
 
     readonly LocalizedString _query = new LocalizedString { TableReference = TableName };
 
@@ -44,6 +49,13 @@ public class TipUI : MonoBehaviour
             Transform child = transform.Find("Txt.Tip");
             if (child != null)
                 bodyText = child.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (titleText == null && bodyText != null)
+        {
+            Transform title = bodyText.transform.Find("Txt.TipTitle");
+            if (title != null)
+                titleText = title.GetComponent<TextMeshProUGUI>();
         }
 
         TryGetComponent(out _bgImage);
@@ -84,12 +96,17 @@ public class TipUI : MonoBehaviour
     {
         yield return LocalizationSettings.InitializationOperation;
         _locReady = true;
-        if (isActiveAndEnabled) Refresh();
+        if (isActiveAndEnabled)
+        {
+            ApplyLocaleFont();
+            Refresh();
+        }
     }
 
     void OnSelectedLocaleChanged(Locale _)
     {
         if (!_locReady) return;
+        ApplyLocaleFont();
         if (!string.IsNullOrEmpty(_currentKey))
             ApplyKey(_currentKey);
     }
@@ -202,6 +219,7 @@ public class TipUI : MonoBehaviour
             return;
 
         SetVisible(true);
+        ApplyLocaleFont();
         ApplyKey(key);
     }
 
@@ -210,6 +228,24 @@ public class TipUI : MonoBehaviour
         _currentKey = key;
         if (bodyText == null) return;
         bodyText.text = ResolveText(key);
+    }
+
+    void ApplyLocaleFont()
+    {
+        TMP_FontAsset font = null;
+        try
+        {
+            font = LocalizationSettings.AssetDatabase.GetLocalizedAsset<TMP_FontAsset>(
+                FontTableName, FontEntryKey);
+        }
+        catch (System.Exception)
+        {
+            return;
+        }
+
+        if (font == null) return;
+        if (bodyText != null) bodyText.font = font;
+        if (titleText != null) titleText.font = font;
     }
 
     string ResolveText(string key)
@@ -222,7 +258,7 @@ public class TipUI : MonoBehaviour
             {
                 string value = _query.GetLocalizedString();
                 if (!string.IsNullOrEmpty(value) && value != key)
-                    return value;
+                    return WithLineBullets(value);
             }
         }
         catch (System.Exception)
@@ -230,7 +266,37 @@ public class TipUI : MonoBehaviour
             // 테이블 미생성·미로드 시 한국어 폴백
         }
 
-        return KoreanFallback.TryGetValue(key, out string fallback) ? fallback : key;
+        return KoreanFallback.TryGetValue(key, out string fallback)
+            ? WithLineBullets(fallback)
+            : key;
+    }
+
+    /// <summary>
+    /// 비어 있지 않은 줄 앞에 <c>•</c> 을 붙인다. 이미 있으면 그대로.
+    /// T.Boss 사탕 줄 앞 빈 줄에는 점을 넣지 않는다.
+    /// </summary>
+    public static string WithLineBullets(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+
+        string[] lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i].TrimEnd('\r');
+            if (line.Length == 0)
+            {
+                lines[i] = line;
+                continue;
+            }
+
+            if (line.StartsWith("• ", System.StringComparison.Ordinal) ||
+                line.StartsWith("•", System.StringComparison.Ordinal))
+                lines[i] = line;
+            else
+                lines[i] = "• " + line;
+        }
+
+        return string.Join("\n", lines);
     }
 
     void SetVisible(bool visible)
