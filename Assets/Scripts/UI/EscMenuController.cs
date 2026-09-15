@@ -1,4 +1,4 @@
-using Unity.Netcode;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -26,8 +26,12 @@ using UnityEngine.UI;
 ///           커서를 요청 중이면 실제로는 잠기지 않는다(공유 카운트, 2026-08-22).
 ///
 /// [Reset 동작]
-/// Host만 씬 리로드 가능 (NGO 정책).
-/// Client는 Reset 버튼이 회색(interactable = false)으로 표시됨.
+/// Host/Client 전원 누를 수 있다. 실제 리로드는 Host가 사망 문(NotifyPlayerDeathServerRpc)으로
+/// 수행하며, 씬당 첫 요청만 반영된다(Host `_resetPending` — 리로드로 StageNetworkState가
+/// 새로 생기면 자동 해제). 여기서의 버튼 잠금은 연타 방지·표시용일 뿐 판정 권한은 Host에 있다.
+/// 잠금 조건: StageNetworkState 없음(Tutorial/Interlude) / 이번 씬에서 내가 이미 누름 /
+/// 이번 씬 리로드 확정(OnAnyStageFailedPulse — 누가 먼저 Reset했거나 사망).
+/// UI.prefab은 씬 소속이라 리로드 시 새 인스턴스로 잠금이 풀린다.
 /// </summary>
 public class EscMenuController : MonoBehaviour
 {
@@ -36,7 +40,7 @@ public class EscMenuController : MonoBehaviour
     [SerializeField] private GameObject escPanel;
 
     [Header("버튼")]
-    [Tooltip("Reset 버튼. Host일 때만 interactable = true.")]
+    [Tooltip("Reset 버튼. StageNetworkState가 있고 이번 씬 리로드가 아직 확정되지 않았을 때만 interactable = true.")]
     [SerializeField] private Button resetButton;
 
     [Header("설정 패널")]
@@ -49,6 +53,13 @@ public class EscMenuController : MonoBehaviour
 
     bool _isOpen;
 
+    // 이번 씬에서 Reset을 이미 보냈거나 리로드가 확정됨 — 씬 리로드 시 인스턴스째 새로 생겨 해제.
+    bool _resetLocked;
+
+    // 구독한 StageNetworkState 참조 — 언구독 시점엔 Instance가 이미 null일 수 있어 캐시.
+    StageNetworkState _subscribedState;
+    Coroutine _waitSubscribe;
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
@@ -60,6 +71,9 @@ public class EscMenuController : MonoBehaviour
             settingsPanel.SetActive(false);
     }
 
+    void OnEnable()  => TrySubscribe();
+    void OnDisable() => Unsubscribe();
+
     /// <summary>씬 파괴(TitleReturnFlow의 SceneManager.LoadScene 등) 시 패널이 열려 있던 채로
     /// 파괴돼도(OnClickResume 없이) 요청 목록에 잔여 참조가 새지 않도록 하는 안전장치.
     /// Release가 아니라 Forget을 쓴다 — OnClickLeaveRoom()은 Esc 메뉴를 먼저 닫지 않고 바로
@@ -69,6 +83,59 @@ public class EscMenuController : MonoBehaviour
     void OnDestroy()
     {
         if (_isOpen) CursorUnlockRequestUtil.Forget(this);
+    }
+
+    // ── 리로드 확정 신호 구독 (StageFailedBannerUI와 동일 패턴) ────
+
+    void TrySubscribe()
+    {
+        if (StageNetworkState.Instance != null)
+        {
+            Subscribe();
+            return;
+        }
+        if (_waitSubscribe != null) return;
+        _waitSubscribe = StartCoroutine(WaitAndSubscribe());
+    }
+
+    IEnumerator WaitAndSubscribe()
+    {
+        while (StageNetworkState.Instance == null)
+            yield return null;
+        _waitSubscribe = null;
+        if (isActiveAndEnabled)
+            Subscribe();
+    }
+
+    void Subscribe()
+    {
+        var state = StageNetworkState.Instance;
+        if (state == null || state == _subscribedState) return;
+        Unsubscribe();
+        state.OnAnyStageFailedPulse += HandleReloadConfirmed;
+        _subscribedState = state;
+        RefreshResetButton();
+    }
+
+    void Unsubscribe()
+    {
+        if (_waitSubscribe != null)
+        {
+            StopCoroutine(_waitSubscribe);
+            _waitSubscribe = null;
+        }
+        if (_subscribedState != null)
+        {
+            _subscribedState.OnAnyStageFailedPulse -= HandleReloadConfirmed;
+            _subscribedState = null;
+        }
+    }
+
+    /// <summary>이번 씬 리로드 확정(누군가의 Reset 또는 사망) — 전원 Reset 버튼 잠금.</summary>
+    void HandleReloadConfirmed()
+    {
+        _resetLocked = true;
+        RefreshResetButton();
     }
 
     // ── 입력 ──────────────────────────────────────────────────────
@@ -113,12 +180,16 @@ public class EscMenuController : MonoBehaviour
 
     // ── Reset 버튼 활성 여부 ──────────────────────────────────────
 
+    bool CanRequestReset()
+    {
+        var state = StageNetworkState.Instance;
+        return !_resetLocked && state != null && state.IsSpawned;
+    }
+
     void RefreshResetButton()
     {
         if (resetButton == null) return;
-
-        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
-        resetButton.interactable = isHost;
+        resetButton.interactable = CanRequestReset();
     }
 
     // ── 버튼 콜백 ─────────────────────────────────────────────────
@@ -135,15 +206,23 @@ public class EscMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// Reset 버튼 OnClick에 연결 (Host 전용 버튼).
+    /// Reset 버튼 OnClick에 연결 (Host/Client 전원).
     /// 사망과 동일 문으로 리로드 — 새 시드 배포 + 전원 씬 리로드 (NetworkDesign §11.1).
+    /// 동시에 여러 명이 눌러도 Host `_resetPending`이 첫 요청만 반영한다.
     /// </summary>
     public void OnClickReset()
     {
-        if (StageNetworkState.Instance != null)
-            StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
-        else
-            Debug.LogWarning("[EscMenuController] StageNetworkState가 없어 Reset을 수행할 수 없습니다.");
+        if (!CanRequestReset())
+        {
+            if (StageNetworkState.Instance == null)
+                Debug.LogWarning("[EscMenuController] StageNetworkState가 없어 Reset을 수행할 수 없습니다.");
+            RefreshResetButton();
+            return;
+        }
+
+        _resetLocked = true;
+        RefreshResetButton();
+        StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
     }
 
     /// <summary>Setting 버튼 OnClick에 연결.</summary>

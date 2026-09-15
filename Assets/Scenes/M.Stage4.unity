@@ -1391,6 +1391,7 @@ MonoBehaviour:
   warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   warnLeadTime: 1.5
   holdAfterFire: 0
+  fadePhases: []
 --- !u!114 &309475485
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1451,7 +1452,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 7126508654143999262, guid: 78d3f9acbb6fc274995abde208fe4b60, type: 3}
+  arrowPrefab: {fileID: 7215732913413258758, guid: d73965c59125a704b868a2e345c75a17, type: 3}
   firePoint: {fileID: 309475483}
   fireAtSeconds:
   - 1
@@ -2606,8 +2607,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 38
+  m_fontSizeBase: 38
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4238,8 +4239,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 38
+  m_fontSizeBase: 38
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -6344,6 +6345,7 @@ MonoBehaviour:
   warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   warnLeadTime: 1.5
   holdAfterFire: 0
+  fadePhases: []
 --- !u!114 &1560088690
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6404,7 +6406,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
+  arrowPrefab: {fileID: 8987468443594760639, guid: 0eed265613ace3b4f9a4edbb8d8bc3f2, type: 3}
   firePoint: {fileID: 1560088688}
   fireAtSeconds:
   - 3
@@ -7141,6 +7143,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SequenceRingTile
   ringIndex: 3
+--- !u!114 &1829218718 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8556655273764962194, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1852519956}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 336734da06a16624aa8223f0679becc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TipUI
 --- !u!4 &1847853960 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1813836740861937215, guid: c2b14827a98efbc408c282efcfd520cf, type: 3}
@@ -7202,6 +7215,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 783981419014516323, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSize
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 783981419014516323, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 38
+      objectReference: {fileID: 0}
     - target: {fileID: 821334198171587256, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -7225,6 +7246,14 @@ PrefabInstance:
     - target: {fileID: 892092522305068323, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_text
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 892092522305068323, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSize
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 892092522305068323, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 38
       objectReference: {fileID: 0}
     - target: {fileID: 1263442888400414705, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
@@ -7470,6 +7499,30 @@ PrefabInstance:
       propertyPath: 'dialogueLines.Array.data[2]'
       value: 
       objectReference: {fileID: 631535930}
+    - target: {fileID: 2885044605439263924, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2885044605439263924, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2885044605439263924, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2885044605439263924, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089622035649661146, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSize
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089622035649661146, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 38
+      objectReference: {fileID: 0}
     - target: {fileID: 3233680148842078596, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -7602,12 +7655,36 @@ PrefabInstance:
       propertyPath: m_text
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSize
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 38
+      objectReference: {fileID: 0}
     - target: {fileID: 3930285587549951015, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3930285587549951015, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4045078421036577124, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4045078421036577124, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4045078421036577124, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4045078421036577124, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4224837555326145860, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
@@ -7746,6 +7823,22 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6386692187902450232, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6386692187902450232, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6386692187902450232, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6386692187902450232, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6417479575125417010, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3469042859
@@ -7782,12 +7875,36 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6674993741853269705, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSize
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 6674993741853269705, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 38
+      objectReference: {fileID: 0}
     - target: {fileID: 6681835216160922864, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_SizeDelta.y
       value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 6864354226617457997, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7092988892795343112, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7092988892795343112, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7092988892795343112, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7092988892795343112, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7604708059740714457, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
@@ -8335,6 +8452,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+        - m_Target: {fileID: 1829218718}
+          m_TargetAssemblyTypeName: TipUI, Assembly-CSharp
+          m_MethodName: ShowTip
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Tip.M.Stage4.1
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -8395,6 +8524,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+        - m_Target: {fileID: 1829218718}
+          m_TargetAssemblyTypeName: TipUI, Assembly-CSharp
+          m_MethodName: ShowTip
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Tip.M.Stage4.2
+            m_BoolArgument: 0
+          m_CallState: 2
     onPhaseComplete:
       m_PersistentCalls:
         m_Calls: []
@@ -8441,6 +8582,18 @@ MonoBehaviour:
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 1829218718}
+          m_TargetAssemblyTypeName: TipUI, Assembly-CSharp
+          m_MethodName: ShowTip
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Tip.M.Stage4.3
             m_BoolArgument: 0
           m_CallState: 2
     onPhaseComplete:
@@ -8912,6 +9065,7 @@ MonoBehaviour:
   warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   warnLeadTime: 1.5
   holdAfterFire: 0
+  fadePhases: []
 --- !u!114 &1995373037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8972,7 +9126,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 7126508654143999262, guid: 5b4980831e4be5245b77dd5fb29abb7b, type: 3}
+  arrowPrefab: {fileID: 164767308881607014, guid: 10fbf09b03288ad45ad1ed1971829603, type: 3}
   firePoint: {fileID: 1995373035}
   fireAtSeconds:
   - 3
@@ -9727,6 +9881,7 @@ MonoBehaviour:
   warnEndColor: {r: 1, g: 0, b: 0, a: 1}
   warnLeadTime: 1.5
   holdAfterFire: 0
+  fadePhases: []
 --- !u!114 &2095735317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9787,7 +9942,7 @@ MonoBehaviour:
   activateInterval: 0
   initialDelay: 0
   startActive: 0
-  arrowPrefab: {fileID: 7126508654143999262, guid: 78d3f9acbb6fc274995abde208fe4b60, type: 3}
+  arrowPrefab: {fileID: 8998088003645996880, guid: 89ef307b7f85ffa4c8c3ea3d613d0601, type: 3}
   firePoint: {fileID: 2095735315}
   fireAtSeconds:
   - 1

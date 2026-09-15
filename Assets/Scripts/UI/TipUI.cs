@@ -3,19 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Tip_Panel에 붙는 로컬 HUD. 현재 씬·페이즈의 규칙만 보여 준다 (스토리 대사 아님).
+/// Tip_Panel에 붙는 로컬 HUD. 넘겨받은 텍스트 키만 그대로 보여 준다 (스토리 대사 아님).
 ///
 /// [표시]
 /// - String Table <c>StageTip</c> 키는 <c>Assets/Docs/StageTipLines.md</c> / StageTipTranslations.md SSOT.
-/// - 페이즈 구독은 코드 (<see cref="PhaseManager.OnPhaseDisplayChanged"/>). 인스펙터 onPhaseEnter 불필요.
+/// - 어떤 씬·페이즈에 어떤 키를 보여줄지는 이 스크립트가 모른다 — 각 씬 PhaseManager의
+///   PhaseData.onPhaseEnter(인스펙터)가 <see cref="ShowTip"/>을 직접 호출한다
+///   (DialogueUI가 각 씬에서 인스펙터로 대사를 물려 쓰는 것과 동일한 패턴).
+/// - Delay 페이즈처럼 팁을 바꾸지 않아야 하는 페이즈는 onPhaseEnter에 아무것도 연결하지
+///   않으면 직전 문구가 그대로 유지된다.
 /// - 로케일 변경 시 같은 키를 다시 읽고, Asset Table <c>UIFont</c> / <c>TMP.Font</c>로
 ///   본문·제목 폰트를 바꾼다 (라틴·키릴 = Fredoka-Bold, ko/ja/zh = Noto Static).
-/// - M.Boss 전체·T.Boss Bossdown(전 Phase 완료)·Delay 페이즈는 숨기거나 직전 문구 유지.
+/// - <see cref="hideOnAllPhasesComplete"/>를 켠 인스턴스(T.Boss)는 전 Phase 완료 시 숨는다.
+///   Host = PhaseManager.OnPhaseDisplayChanged + AllPhasesComplete,
+///   Client = StageNetworkState.OnAllPhasesCompleteClientPulse (펄스는 Host에서 발동하지 않음).
+///   그 외 씬은 보통 스테이지 전환으로 사라지므로 꺼둔다.
 ///
 /// NGO 쓰기 없음. 표시만.
 /// </summary>
@@ -31,16 +37,20 @@ public class TipUI : MonoBehaviour
     [Tooltip("Txt.Tip/Txt.TipTitle — 비우면 자식에서 찾는다.")]
     [SerializeField] TextMeshProUGUI titleText;
 
+    [Header("전 Phase 완료 시")]
+    [Tooltip("전 Phase 완료 시 팁을 숨길지 (Host·Client 모두).\n" +
+             "완료 후에도 씬이 남아 연출이 이어지는 경우만 체크 (예: T.Boss Bossdown).")]
+    [SerializeField] bool hideOnAllPhasesComplete = false;
+
     readonly LocalizedString _query = new LocalizedString { TableReference = TableName };
 
     Image _bgImage;
     bool _locReady;
-    bool _allComplete;
-    bool _subscribedPhase;
     bool _subscribedCompletePulse;
+    bool _subscribedPhase;
     string _currentKey;
-    Coroutine _waitPhase;
     Coroutine _waitSns;
+    Coroutine _waitPhase;
 
     void Awake()
     {
@@ -65,42 +75,43 @@ public class TipUI : MonoBehaviour
     void OnEnable()
     {
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
-        TrySubscribePhase();
-        TrySubscribeCompletePulse();
-        if (_locReady) Refresh();
+        if (hideOnAllPhasesComplete)
+        {
+            TrySubscribeCompletePulse();
+            TrySubscribePhase();
+        }
     }
 
     void Start()
     {
-        StartCoroutine(WaitLocalizationThenRefresh());
+        StartCoroutine(WaitLocalizationThenApply());
     }
 
     void OnDisable()
     {
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
-        UnsubscribePhase();
         UnsubscribeCompletePulse();
-        if (_waitPhase != null)
-        {
-            StopCoroutine(_waitPhase);
-            _waitPhase = null;
-        }
+        UnsubscribePhase();
         if (_waitSns != null)
         {
             StopCoroutine(_waitSns);
             _waitSns = null;
         }
+        if (_waitPhase != null)
+        {
+            StopCoroutine(_waitPhase);
+            _waitPhase = null;
+        }
     }
 
-    IEnumerator WaitLocalizationThenRefresh()
+    IEnumerator WaitLocalizationThenApply()
     {
         yield return LocalizationSettings.InitializationOperation;
         _locReady = true;
-        if (isActiveAndEnabled)
-        {
-            ApplyLocaleFont();
-            Refresh();
-        }
+        if (!isActiveAndEnabled) yield break;
+        ApplyLocaleFont();
+        if (!string.IsNullOrEmpty(_currentKey))
+            ApplyKey(_currentKey);
     }
 
     void OnSelectedLocaleChanged(Locale _)
@@ -111,44 +122,25 @@ public class TipUI : MonoBehaviour
             ApplyKey(_currentKey);
     }
 
+    // ── 외부 호출 (PhaseData.onPhaseEnter 등에서 인스펙터로 연결) ────────
+
+    /// <summary>이 키로 팁을 표시. 씬의 PhaseData.onPhaseEnter에 인스펙터로 연결해서 쓴다.</summary>
+    public void ShowTip(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return;
+        SetVisible(true);
+        if (_locReady) ApplyLocaleFont();
+        ApplyKey(key);
+    }
+
+    /// <summary>팁을 숨긴다. 완료 후에도 씬이 남는 연출 등에서 인스펙터로 연결.</summary>
+    public void HideTip()
+    {
+        _currentKey = null;
+        SetVisible(false);
+    }
+
     // ── 구독 ──────────────────────────────────────────────────────
-
-    void TrySubscribePhase()
-    {
-        if (PhaseManager.Instance != null)
-        {
-            SubscribePhase();
-            return;
-        }
-        if (_waitPhase != null) return;
-        _waitPhase = StartCoroutine(WaitAndSubscribePhase());
-    }
-
-    IEnumerator WaitAndSubscribePhase()
-    {
-        while (PhaseManager.Instance == null)
-            yield return null;
-        _waitPhase = null;
-        if (!isActiveAndEnabled) yield break;
-        SubscribePhase();
-        if (_locReady) Refresh();
-    }
-
-    void SubscribePhase()
-    {
-        var pm = PhaseManager.Instance;
-        if (pm == null || _subscribedPhase) return;
-        pm.OnPhaseDisplayChanged += Refresh;
-        _subscribedPhase = true;
-    }
-
-    void UnsubscribePhase()
-    {
-        if (!_subscribedPhase) return;
-        if (PhaseManager.Instance != null)
-            PhaseManager.Instance.OnPhaseDisplayChanged -= Refresh;
-        _subscribedPhase = false;
-    }
 
     void TrySubscribeCompletePulse()
     {
@@ -188,40 +180,53 @@ public class TipUI : MonoBehaviour
 
     void OnAllPhasesCompleteClient()
     {
-        _allComplete = true;
-        Refresh();
+        HideTip();
+    }
+
+    void TrySubscribePhase()
+    {
+        if (PhaseManager.Instance != null)
+        {
+            SubscribePhase();
+            return;
+        }
+        if (_waitPhase != null) return;
+        _waitPhase = StartCoroutine(WaitAndSubscribePhase());
+    }
+
+    IEnumerator WaitAndSubscribePhase()
+    {
+        while (PhaseManager.Instance == null)
+            yield return null;
+        _waitPhase = null;
+        if (isActiveAndEnabled) SubscribePhase();
+    }
+
+    void SubscribePhase()
+    {
+        var pm = PhaseManager.Instance;
+        if (pm == null || _subscribedPhase) return;
+        pm.OnPhaseDisplayChanged += OnPhaseDisplayChanged;
+        _subscribedPhase = true;
+        OnPhaseDisplayChanged();
+    }
+
+    void UnsubscribePhase()
+    {
+        if (!_subscribedPhase) return;
+        if (PhaseManager.Instance != null)
+            PhaseManager.Instance.OnPhaseDisplayChanged -= OnPhaseDisplayChanged;
+        _subscribedPhase = false;
+    }
+
+    // Host 레인: onAllPhasesComplete 직후 PhaseComplete()가 이 이벤트를 발동한다.
+    void OnPhaseDisplayChanged()
+    {
+        var pm = PhaseManager.Instance;
+        if (pm != null && pm.AllPhasesComplete) HideTip();
     }
 
     // ── 표시 ──────────────────────────────────────────────────────
-
-    void Refresh()
-    {
-        string scene = SceneManager.GetActiveScene().name;
-        var pm = PhaseManager.Instance;
-        if (pm != null && pm.AllPhasesComplete)
-            _allComplete = true;
-
-        if (ShouldHideEntirely(scene, _allComplete))
-        {
-            _currentKey = null;
-            SetVisible(false);
-            return;
-        }
-
-        if (pm == null || pm.CurrentPhaseIndex < 0)
-        {
-            if (string.IsNullOrEmpty(_currentKey))
-                SetVisible(false);
-            return;
-        }
-
-        if (!TryResolveKey(scene, pm.CurrentPhaseName, out string key))
-            return;
-
-        SetVisible(true);
-        ApplyLocaleFont();
-        ApplyKey(key);
-    }
 
     void ApplyKey(string key)
     {
@@ -307,66 +312,6 @@ public class TipUI : MonoBehaviour
             _bgImage.enabled = visible;
         if (bodyText != null)
             bodyText.gameObject.SetActive(visible);
-    }
-
-    static bool ShouldHideEntirely(string scene, bool allComplete)
-    {
-        if (scene == "M.Boss") return true;
-        if (scene == "T.Boss" && allComplete) return true;
-        if (scene.StartsWith("M.") || scene.StartsWith("T.")) return false;
-        return true;
-    }
-
-    /// <summary>
-    /// Delay 페이즈는 false — 호출측이 직전 문구를 유지한다.
-    /// T.Stage5 씬의 Stage5.2/5.3 은 키 Tip.T.Stage5.2 (구 5.3).
-    /// </summary>
-    static bool TryResolveKey(string scene, string phaseName, out string key)
-    {
-        key = null;
-        if (!string.IsNullOrEmpty(phaseName) &&
-            phaseName.StartsWith("Delay", System.StringComparison.Ordinal))
-            return false;
-
-        switch (scene)
-        {
-            case "M.Stage1": key = "Tip.M.Stage1"; return true;
-            case "M.Stage2":
-                if (phaseName == "Stage2.1") { key = "Tip.M.Stage2.1"; return true; }
-                if (phaseName == "Stage2.2") { key = "Tip.M.Stage2.2"; return true; }
-                return false;
-            case "M.Stage3": key = "Tip.M.Stage3"; return true;
-            case "M.Stage4":
-                if (phaseName == "Stage4.1") { key = "Tip.M.Stage4.1"; return true; }
-                if (phaseName == "Stage4.2") { key = "Tip.M.Stage4.2"; return true; }
-                if (phaseName == "Stage4.3") { key = "Tip.M.Stage4.3"; return true; }
-                return false;
-            case "M.Stage5": key = "Tip.M.Stage5"; return true;
-            case "T.Stage1": key = "Tip.T.Stage1"; return true;
-            case "T.Stage2":
-                if (phaseName == "Stage2.1") { key = "Tip.T.Stage2.1"; return true; }
-                if (phaseName == "Stage2.2") { key = "Tip.T.Stage2.2"; return true; }
-                if (phaseName == "Stage2.3") { key = "Tip.T.Stage2.3"; return true; }
-                return false;
-            case "T.Stage3": key = "Tip.T.Stage3"; return true;
-            case "T.Stage4": key = "Tip.T.Stage4"; return true;
-            case "T.Stage5":
-                if (phaseName == "Stage5.1") { key = "Tip.T.Stage5.1"; return true; }
-                if (phaseName == "Stage5.2" || phaseName == "Stage5.3")
-                {
-                    key = "Tip.T.Stage5.2";
-                    return true;
-                }
-                return false;
-            case "T.Boss":
-                if (phaseName == "P1") { key = "Tip.T.Boss.1"; return true; }
-                if (phaseName == "P2") { key = "Tip.T.Boss.2"; return true; }
-                if (phaseName == "P3") { key = "Tip.T.Boss.3"; return true; }
-                if (phaseName == "P4") { key = "Tip.T.Boss.4"; return true; }
-                return false;
-            default:
-                return false;
-        }
     }
 
     static readonly Dictionary<string, string> KoreanFallback = new Dictionary<string, string>

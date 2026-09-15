@@ -140,7 +140,11 @@ public class InGameChatUI : NetworkBehaviour
         // void OnDestroy()로 가려버려서(CS0114) 그 정리가 아예 실행되지 않았다.
         base.OnDestroy();
 
-        if (_inputOpen) CursorUnlockRequestUtil.Forget(this);
+        if (!_inputOpen) return;
+        CursorUnlockRequestUtil.Forget(this);
+        // IsChatOpen은 static이라 씬 전환·사망 리로드를 넘어 살아남는다 — 열린 채 파괴되면 여기서
+        // 안 내려주면 다음 씬에서 이동·대화 스킵 등 IsChatOpen 가드 입력이 전부 막힌다.
+        IsChatOpen = false;
     }
 
     /// <summary>

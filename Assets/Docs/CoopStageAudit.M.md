@@ -216,9 +216,12 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 **규칙:**
 1. 동시 발사 없음. 한 번에 **1레인만.**
 2. 직전에 쐈던 레인은 다음 추첨에서 제외(나머지 3개 중 랜덤). 가방 셔플 아님 — 매번 재추첨.
-3. 텀(발사 간격) = **유일한 난이도 축.** 계단식. 예: 0~25초 7초 텀 → 25~45초 5초 텀 → 45초~ 3초 텀(문 `duration`=3초가 바닥). 숫자는 플레이로 조정.
+3. 난이도 축은 **두 개**(2026-09-15 확정):
+   - **축 1 — 텀(발사 간격).** 계단식. 예: 0~25초 7초 텀 → 25~45초 5초 텀 → 45초~ 3초 텀(문 `duration`=3초가 바닥). 숫자는 플레이로 조정.
+   - **축 2 — 경고 사인 페이드.** `ArrowWarnSign.fadePhases`(`WarnFadePhase[]`). Phase 경과 시간(`PhaseStartServerTime` 기준)에 따라 경고 사인 알파가 **부드럽게(선형 보간)** 줄어든다. 예(목표 시간 100초): 0~25초 선명 → 25~50초 서서히 흐려짐 → 50~100초 경고 없음(날아오는 방향을 직접 보고 막아야 함). 입력 예: `[{0,1}, {25,1}, {50,0}]`.
+   - 페이드는 **경고 사인만** 끈다. 입 벌림(`MouthTrapAnimatorAnim`)·발사음·발사 타이밍(`preFireChargeTime`)은 그대로.
 4. 리빌·입 닫힘 창 등 Barrier/입 상태로 감독을 멈추지 않음 — **연동 안 함** (H.3 참고, 재검토 불필요).
-5. 속도 단계(`speedPhases`)는 안 씀 — 난이도는 텀 하나로만.
+5. 속도 단계(`speedPhases`)는 안 씀 — 난이도는 위 두 축(텀·경고 페이드)으로만.
 
 **구현 (코드 됨, 2026-09-05):**
 - `ArrowIncomingDirector`(신규 MonoBehaviour, `Assets/Scripts/Traps/ArrowIncomingDirector.cs`) — Host 전용 루프(`nm.IsServer` 가드, `OnEnable`에서 시작). `ArrowTrap[] lanes`(4개 연결 예정), `float[] termSteps` + `float[] stepAtSeconds`(`StageNetworkState.PhaseStartServerTime` 기준 경과 — `Time.time` 아님, 없는 씬은 로컬 폴백). 매 텀마다 직전 레인 제외하고 나머지 중 재추첨 → `lane.FireOnce()`.
@@ -230,6 +233,7 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 - Mouth1~4: `startActive=false`로 변경(공존 방식 확정). 기존 `fireAtSeconds`/`loopSchedule`/`schedulePeriod` 값은 **지우지 않음**(안 쓰이지만 참고용 보존). `speedPhases=[]`만 비움. `baseSpeed`는 유지.
 - `ArrowIncomingDirector` GameObject 배치, `lanes`에 Mouth1~4 연결, `termSteps`/`stepAtSeconds` 값 입력.
 - `arrowPrefab`에 `Breakable` 추가, `breakTriggerLayers`에 Barrier 문 레이어 지정.
+- Mouth1~4의 `ArrowWarnSign.fadePhases` 입력(예: `[{0,1}, {25,1}, {50,0}]`). `warnSignObject` 하위에 마커 렌더러 외 다른 비주얼이 없는지 확인 — 알파는 `targetRenderer`에만 적용된다.
 
 ---
 

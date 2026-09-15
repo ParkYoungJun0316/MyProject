@@ -34,12 +34,15 @@ public sealed class WarnMarkerColorFx
     }
 
     /// <summary>t=0(시작색·빈 외곽) ~ t=1(끝색·가득 채움). Clamp01 적용.</summary>
-    public void SetProgress(float t)
+    /// <param name="alphaMultiplier">색 보간 결과 알파에 추가로 곱하는 배율(기본 1=변화 없음).</param>
+    public void SetProgress(float t, float alphaMultiplier = 1f)
     {
         if (_renderer == null) return;
         t = Mathf.Clamp01(t);
+        Color c = Color.Lerp(_start, _end, t);
+        c.a *= Mathf.Clamp01(alphaMultiplier);
         _renderer.GetPropertyBlock(_block);
-        _block.SetColor(_colorId, Color.Lerp(_start, _end, t));
+        _block.SetColor(_colorId, c);
         if (_fillId != 0)
             _block.SetFloat(_fillId, t);
         _renderer.SetPropertyBlock(_block);

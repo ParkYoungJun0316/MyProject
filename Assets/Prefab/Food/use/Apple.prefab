@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &8596465708859258169
+--- !u!1 &4002346738056785852
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,52 +8,52 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3776691353163062051}
-  - component: {fileID: 3607149917730822392}
-  - component: {fileID: 7024213214217212028}
-  - component: {fileID: 2463623951512976911}
-  - component: {fileID: 7455591495499694922}
-  - component: {fileID: -5262651375067977668}
-  - component: {fileID: -8607440267912356825}
-  - component: {fileID: 2041242621102075484}
-  - component: {fileID: 2340043652098190899}
+  - component: {fileID: 261049192590796672}
+  - component: {fileID: 7470061687298118208}
+  - component: {fileID: 3583057811757403976}
+  - component: {fileID: 5573804617377673320}
+  - component: {fileID: 5295446145711228180}
+  - component: {fileID: 1593150137438083584}
+  - component: {fileID: 1266227209087295064}
+  - component: {fileID: -3561735957784747465}
+  - component: {fileID: 4007639253603548517}
   m_Layer: 16
   m_Name: Apple
-  m_TagString: Untagged
+  m_TagString: EnemyBullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3776691353163062051
+--- !u!4 &261049192590796672
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 31, y: 31, z: 31}
+  m_LocalScale: {x: 70, y: 70, z: 70}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &3607149917730822392
+--- !u!33 &7470061687298118208
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   m_Mesh: {fileID: 1650999862491994477, guid: 9ff38ddb0b45d8f4197e89d41086b85f, type: 3}
---- !u!23 &7024213214217212028
+--- !u!23 &3583057811757403976
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -96,31 +96,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &2463623951512976911
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ce19bef8fe84964da72ad887643f61d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
-  spinSpeed: 0.2
-  rollSfxId: 40
-  rollSpatialBlend: 1
-  rollMinDistance: 1
-  rollMaxDistance: 0
-  rollRolloffMode: 0
---- !u!54 &7455591495499694922
+--- !u!54 &5573804617377673320
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   serializedVersion: 5
   m_Mass: 1
   m_LinearDamping: 0
@@ -141,38 +123,38 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &-5262651375067977668
+--- !u!114 &5295446145711228180
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3080654768
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 3344060182
+  InScenePlacedSourceGlobalObjectIdHash: 3080654768
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &-8607440267912356825
+--- !u!114 &1593150137438083584
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cfcbda248953c6429767825456e245e, type: 3}
@@ -180,29 +162,76 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
   ShowTopMostFoldoutHeaderGroup: 1
   damage: 1
-  lifetime: 10
+  lifetime: 15
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
-  hitEffectPrefab: {fileID: 0}
---- !u!114 &2041242621102075484
+  hitEffectPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  hitEffectLifetime: 4
+--- !u!114 &1266227209087295064
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
+  m_Script: {fileID: 11500000, guid: 69b615c85fdb94842ad058a102a32fab, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
---- !u!135 &2340043652098190899
-SphereCollider:
+  m_EditorClassIdentifier: Assembly-CSharp::Breakable
+  breakTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 268435456
+  breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
+  debrisPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  debrisLifetime: 4
+  debrisImpulseMin: 6
+  debrisImpulseMax: 12
+  debrisScale: 10
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  syncBreakOverNetwork: 0
+  warnColorEnabled: 0
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
+  OnBreak:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &-3561735957784747465
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8596465708859258169}
+  m_GameObject: {fileID: 4002346738056785852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ce19bef8fe84964da72ad887643f61d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
+  spinSpeed: 0.8
+  rollSfxId: 0
+  rollSpatialBlend: 1
+  rollMinDistance: 40
+  rollMaxDistance: 200
+  rollRolloffMode: 0
+--- !u!65 &4007639253603548517
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4002346738056785852}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -215,5 +244,5 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.07
+  m_Size: {x: 0.22727273, y: 0.1, z: 0.1}
   m_Center: {x: 0, y: 0.05, z: 0}

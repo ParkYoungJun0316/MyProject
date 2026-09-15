@@ -28,6 +28,12 @@ using UnityEngine;
 /// onPhaseComplete UnityEvent에 SetWarnEnabled(true/false)를 연결한다.
 /// 꺼진 상태에서도 preFireChargeTime 자체는 그대로 유지되므로(연출만 스킵) 발사 스케줄
 /// 시각은 Phase와 무관하게 절대 변하지 않는다.
+///
+/// [난이도: 시간 경과에 따른 페이드아웃]
+/// fadePhases(WarnFadePhase[])를 채우면 Phase 시작 후 경과 시각에 따라 경고 사인 알파가
+/// 단계 사이를 선형 보간하며 점점 흐려진다(예: 30초까지 100%→60초에 0%). ArrowTrap의
+/// speedPhases(발사 속도 난이도 축)와 별개 축이며, 발사 타이밍/preFireChargeTime에는
+/// 영향을 주지 않고 시각 효과(알파)만 바꾼다. 비워두면(기본) 항상 알파 100%로 기존과 동일.
 /// </summary>
 [RequireComponent(typeof(TrapBase))]
 public class ArrowWarnSign : MonoBehaviour
@@ -53,6 +59,12 @@ public class ArrowWarnSign : MonoBehaviour
              "1초 전에 숨김 → 1초간만 노출). warnLeadTime + holdAfterFire가 음수가 되지 않게만 입력할 것 " +
              "(표시 시작 시각보다 먼저 숨기는 건 불가능 — 자동으로 0에서 클램프됨).")]
     [SerializeField] private float holdAfterFire = 0f;
+
+    [Header("난이도: 시간 경과에 따라 경고 사인이 점점 흐려짐")]
+    [Tooltip("Phase 시작(PhaseStartServerTime) 후 경과 시각별 알파 배율. afterSeconds 오름차순 입력, " +
+             "단계 사이는 선형 보간. 예: [ {0,1}, {30,1}, {60,0} ] → 30초까지 완전히 보이고 " +
+             "30~60초 사이 서서히 흐려지다가 60초부터 안 보임. 비워두면(0개) 항상 알파 1(변화 없음).")]
+    [SerializeField] private WarnFadePhase[] fadePhases = new WarnFadePhase[0];
 
     TrapBase _trap;
     bool     _warnEnabled = true;
@@ -177,6 +189,13 @@ public class ArrowWarnSign : MonoBehaviour
         if (showDelay > 0f)
             yield return new WaitForSeconds(showDelay);
 
+        // 완전히 페이드된 구간: 투명 메시를 그리지 않고, warnSignObject의 다른 자식 비주얼도 켜지 않는다.
+        if (GetFadeAlphaMultiplier() <= 0f)
+        {
+            _warnCoroutine = null;
+            yield break;
+        }
+
         SetVisible(true);
         SetProgress(0f);
 
@@ -212,7 +231,9 @@ public class ArrowWarnSign : MonoBehaviour
         _warnCoroutine = null;
     }
 
-    void SetProgress(float t) => _fx.SetProgress(t);
+    void SetProgress(float t) => _fx.SetProgress(t, GetFadeAlphaMultiplier());
+
+    float GetFadeAlphaMultiplier() => WarnFadePhase.Evaluate(fadePhases);
 
     void SetVisible(bool visible)
     {

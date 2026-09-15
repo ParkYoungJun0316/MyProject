@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &5749963256693442302
+--- !u!1001 &8826733978140267917
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -14,15 +14,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalScale.x
-      value: 40
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalScale.y
-      value: 40
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalScale.z
-      value: 25
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -46,11 +46,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -68,66 +68,78 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sasuage_003
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
+      propertyPath: m_Layer
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
+      propertyPath: m_TagString
+      value: EnemyBullet
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3139313055397167062}
+      addedObject: {fileID: 1228686936993512673}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2522637115084416118}
+      addedObject: {fileID: 766976866506322062}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1640502099707394550}
+      addedObject: {fileID: 9204687784105761976}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8705254834751585629}
+      addedObject: {fileID: 1981881242945642105}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8048546311216788211}
+      addedObject: {fileID: 2878204828184267256}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3383435039336006657}
+      addedObject: {fileID: -4524462891191444504}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -822984767596205227}
   m_SourcePrefab: {fileID: 100100000, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
---- !u!1 &4830832773047516079 stripped
+--- !u!1 &8556753635758237916 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
-  m_PrefabInstance: {fileID: 5749963256693442302}
+  m_PrefabInstance: {fileID: 8826733978140267917}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &3139313055397167062
-MonoBehaviour:
+--- !u!64 &1228686936993512673
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830832773047516079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2715996715
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!54 &2522637115084416118
+  m_GameObject: {fileID: 8556753635758237916}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8124614784304568348, guid: cdabcc754b6725a4091a5724aee1c40b, type: 3}
+--- !u!54 &766976866506322062
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830832773047516079}
+  m_GameObject: {fileID: 8556753635758237916}
   serializedVersion: 5
   m_Mass: 1
   m_LinearDamping: 0
@@ -148,13 +160,38 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &1640502099707394550
+--- !u!114 &9204687784105761976
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830832773047516079}
+  m_GameObject: {fileID: 8556753635758237916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 840691026
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &1981881242945642105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8556753635758237916}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6cfcbda248953c6429767825456e245e, type: 3}
@@ -162,47 +199,58 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
   ShowTopMostFoldoutHeaderGroup: 1
   damage: 1
-  lifetime: 10
+  lifetime: 15
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
-  hitEffectPrefab: {fileID: 0}
---- !u!114 &8705254834751585629
+  hitEffectPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  hitEffectLifetime: 4
+--- !u!114 &2878204828184267256
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830832773047516079}
+  m_GameObject: {fileID: 8556753635758237916}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ce19bef8fe84964da72ad887643f61d, type: 3}
+  m_Script: {fileID: 11500000, guid: 69b615c85fdb94842ad058a102a32fab, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
-  spinSpeed: 0.2
-  rollSfxId: 40
-  rollSpatialBlend: 1
-  rollMinDistance: 1
-  rollMaxDistance: 0
-  rollRolloffMode: 0
---- !u!114 &8048546311216788211
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830832773047516079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b491b32fee4eb894fb7a85eb76a339af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkProjectile
---- !u!65 &3383435039336006657
+  m_EditorClassIdentifier: Assembly-CSharp::Breakable
+  breakTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 268435456
+  breakDelay: 0
+  destroyMinDistance: 5
+  destroyMaxDistance: 50
+  destroyRolloffMode: 0
+  debrisPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  debrisLifetime: 4
+  debrisImpulseMin: 6
+  debrisImpulseMax: 12
+  debrisScale: 10
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  syncBreakOverNetwork: 1
+  warnColorEnabled: 0
+  warnColorProperty: _BaseColor
+  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
+  OnBreak:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!65 &-4524462891191444504
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830832773047516079}
+  m_GameObject: {fileID: 8556753635758237916}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -212,8 +260,26 @@ BoxCollider:
     m_Bits: 0
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
-  m_ProvidesContacts: 0
+  m_ProvidesContacts: 1
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.05, y: 0.05, z: 0.18}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.15, y: 0.05, z: 0.14}
+  m_Center: {x: -0.000015064142, y: 0.0004555918, z: -0.000010550021}
+--- !u!114 &-822984767596205227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8556753635758237916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ce19bef8fe84964da72ad887643f61d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpinRoller
+  spinSpeed: 0.8
+  rollSfxId: 0
+  rollSpatialBlend: 1
+  rollMinDistance: 40
+  rollMaxDistance: 200
+  rollRolloffMode: 0

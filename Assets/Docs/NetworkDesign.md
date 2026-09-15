@@ -1190,7 +1190,7 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 | 문 | 경로 | 비고 |
 |----|------|------|
 | Tutorial 게이트 통과 | `TutorialNetworkManager`(가칭) → `LoadScene("M.Stage1")` | Coordinator 스폰(DDOL) 포함. 구 `LobbyNetworkManager.StartGameServerRpc` 역할 이전 |
-| **사망 · ESC Reset** | Owner `RaiseDied` → `StageResetOnPlayerDeath` → `StageNetworkState.NotifyPlayerDeathServerRpc` → Host `LoadScene(현재씬)` | **1명 사망 = 전원 리로드** + **새 시드** 배포. ESC Reset(`EscMenuController.OnClickReset`, Host 버튼)도 **같은 문** 사용 (2026-07-17 통일). `DeathOverlayUI` 문구는 CheerName (`CheerService.GetCheerName`) — Steam/OS DisplayName이 아님. |
+| **사망 · ESC Reset** | Owner `RaiseDied` → `StageResetOnPlayerDeath` → `StageNetworkState.NotifyPlayerDeathServerRpc` → Host `LoadScene(현재씬)` | **1명 사망 = 전원 리로드** + **새 시드** 배포. ESC Reset(`EscMenuController.OnClickReset`, **Host/Client 전원 버튼**, 2026-09-15)도 **같은 문** 사용 (2026-07-17 통일). 동시 요청은 Host `_resetPending`이 **씬당 첫 요청만** 반영 — 리로드 후 새 인스턴스에서 다시 1회 수락. Client 버튼 잠금(누른 뒤 / `OnAnyStageFailedPulse` 수신 / `StageNetworkState` 없는 Tutorial·Interlude)은 표시용. `DeathOverlayUI` 문구는 CheerName (`CheerService.GetCheerName`) — Steam/OS DisplayName이 아님. |
 | 클리어 | `StageManager.OnStageClear` / `PhaseManager.onAllPhasesComplete` → **`SceneFlowRelay.LoadNextScene`** → `SceneFlowManager` | **확정 배선: Relay 경유** (씬에서 SceneFlowManager 직결 금지 — DDOL이라 Inspector 연결 불가) |
 
 이 3곳 **외의** 스테이지 `LoadScene` 호출 금지. Client가 씬 로드 금지.

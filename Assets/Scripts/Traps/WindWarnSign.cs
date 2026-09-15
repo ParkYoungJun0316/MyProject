@@ -23,6 +23,11 @@ using UnityEngine;
 /// [Phase 한정 표시]
 /// 기본은 항상 켜짐(warnEnabled=true). 특정 Phase에서만 쓰려면 PhaseData UnityEvent에
 /// SetWarnEnabled(true/false)를 연결. false여도 충전 시간(바람 스케줄)은 그대로 유지 — 연출만 스킵.
+///
+/// [난이도: 시간 경과에 따른 페이드아웃 — ArrowWarnSign과 동일]
+/// fadePhases(WarnFadePhase[])를 채우면 Phase 경과 시간에 따라 존 색 알파와 화살표 스프라이트
+/// 알파가 같이 부드럽게 줄어든다. 알파 0 구간에서는 존·화살표를 아예 켜지 않는다.
+/// 입 연출(MouthWindAnimator)·바람 타이밍은 건드리지 않는다. 비워두면 기존과 동일.
 /// </summary>
 [RequireComponent(typeof(WindTrap))]
 public class WindWarnSign : MonoBehaviour
@@ -55,8 +60,16 @@ public class WindWarnSign : MonoBehaviour
              "(SafeZoneWarnSign.holdAfterFire와 동일 클램프).")]
     [SerializeField] private float hideOffset = 0f;
 
+    [Header("난이도: 시간 경과에 따라 경고 사인이 점점 흐려짐")]
+    [Tooltip("Phase 시작(PhaseStartServerTime) 후 경과 시각별 알파 배율. afterSeconds 오름차순 입력, " +
+             "단계 사이는 선형 보간. 예: [ {0,1}, {25,1}, {50,0} ] → 25초까지 선명, 25~50초 서서히 흐려짐, " +
+             "50초부터 안 보임. 존과 화살표에 같이 적용. 비워두면(0개) 항상 알파 1(변화 없음).")]
+    [SerializeField] private WarnFadePhase[] fadePhases = new WarnFadePhase[0];
+
     WindTrap _wind;
     WarnMarkerColorFx _fx;
+    SpriteRenderer[] _arrowSprites;
+    Color[] _arrowBaseColors;
     Quaternion _arrowRestLocalRotation;
     bool _arrowRestCached;
     bool _warnEnabled = true;
@@ -73,6 +86,7 @@ public class WindWarnSign : MonoBehaviour
 
         _fx = new WarnMarkerColorFx(zoneRenderer, colorProperty, warnStartColor, warnEndColor);
 
+        CacheArrowSprites();
         CacheArrowRest();
         SetVisible(false);
         SetProgress(0f);
@@ -144,6 +158,12 @@ public class WindWarnSign : MonoBehaviour
         if (showDelay > 0f)
             yield return new WaitForSeconds(showDelay);
 
+        if (WarnFadePhase.Evaluate(fadePhases) <= 0f)
+        {
+            _routine = null;
+            yield break;
+        }
+
         OrientArrow();
         SetProgress(0f);
         SetVisible(true);
@@ -175,7 +195,32 @@ public class WindWarnSign : MonoBehaviour
         if (arrowObject != null) arrowObject.SetActive(visible);
     }
 
-    void SetProgress(float t) => _fx.SetProgress(t);
+    void SetProgress(float t)
+    {
+        float fade = WarnFadePhase.Evaluate(fadePhases);
+        _fx.SetProgress(t, fade);
+        SetArrowAlpha(fade);
+    }
+
+    void CacheArrowSprites()
+    {
+        if (arrowObject == null) return;
+        _arrowSprites = arrowObject.GetComponentsInChildren<SpriteRenderer>(true);
+        _arrowBaseColors = new Color[_arrowSprites.Length];
+        for (int i = 0; i < _arrowSprites.Length; i++)
+            _arrowBaseColors[i] = _arrowSprites[i].color;
+    }
+
+    void SetArrowAlpha(float fade)
+    {
+        if (_arrowSprites == null) return;
+        for (int i = 0; i < _arrowSprites.Length; i++)
+        {
+            Color c = _arrowBaseColors[i];
+            c.a *= Mathf.Clamp01(fade);
+            _arrowSprites[i].color = c;
+        }
+    }
 
     void CacheArrowRest()
     {

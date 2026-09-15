@@ -1946,7 +1946,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   stageBuffType: 0
   cheerCooldownSeconds: 10
-  teamCheerTimeoutSeconds: 10
   chatRateLimitSeconds: 0.5
 --- !u!114 &260818493
 MonoBehaviour:
@@ -12076,6 +12075,14 @@ PrefabInstance:
       propertyPath: m_text
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSize
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 3922562921930667904, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 38
+      objectReference: {fileID: 0}
     - target: {fileID: 3930285587549951015, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -12615,6 +12622,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d08555c6247b416469d2179667b3e5a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DialogueUI
+--- !u!114 &1965931426 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8556655273764962194, guid: a007cd176ff5d384e95a71323f7750ae, type: 3}
+  m_PrefabInstance: {fileID: 1965931422}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 336734da06a16624aa8223f0679becc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TipUI
 --- !u!1 &1969132761
 GameObject:
   m_ObjectHideFlags: 0
@@ -12665,6 +12683,18 @@ MonoBehaviour:
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 1965931426}
+          m_TargetAssemblyTypeName: TipUI, Assembly-CSharp
+          m_MethodName: ShowTip
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Tip.T.Stage4
             m_BoolArgument: 0
           m_CallState: 2
     onPhaseComplete:

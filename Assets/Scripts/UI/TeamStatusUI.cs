@@ -557,11 +557,28 @@ public class TeamStatusUI : MonoBehaviour
     static bool IsShowingDown(ColorSlot slot) =>
         slot.downState != null && slot.downState.IsDowned && slot.player != null && !slot.player.IsDead;
 
-    /// <summary>다운 진입/해제 시 HELP 인디케이터 on/off. 하트 표시는 기존 OnDamaged/OnHealed 경로가 이미 갱신한다.</summary>
+    /// <summary>
+    /// 다운 진입/해제 시 하트 5칸 ↔ HELP 인디케이터를 서로 배타적으로 전환한다.
+    /// 다운 중엔 하트를 완전히 숨겨 그 자리를 HELP+타이머가 대신 차지하게 하고(가독성 저하 방지,
+    /// 2026-09-15 사용자 피드백 — 예전엔 빈 하트 5칸이 그대로 남아있는 채로 HELP가 옆에 곁다리로
+    /// 붙어 나왔다), 해제 시엔 RefreshSlotVisual로 하트를 원상 복구한다.
+    /// </summary>
     void SetDowned(ColorSlot slot, bool isDowned)
     {
         if (slot == null) return;
         if (slot.downIndicator != null) slot.downIndicator.SetActive(isDowned);
+
+        if (isDowned)
+        {
+            if (slot.heartImages != null)
+                foreach (var h in slot.heartImages)
+                    if (h != null) h.gameObject.SetActive(false);
+        }
+        else
+        {
+            RefreshSlotVisual(slot);
+        }
+
         slot.shownDownSeconds = -1;
         if (isDowned) RefreshDownTimer(slot);
     }

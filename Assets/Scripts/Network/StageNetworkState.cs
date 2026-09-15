@@ -530,8 +530,10 @@ public class StageNetworkState : NetworkBehaviour
     // ── 사망 처리 ─────────────────────────────────────────────────
 
     /// <summary>
-    /// 플레이어 사망 시 어느 클라이언트에서든 호출.
-    /// Host가 1명이라도 사망 신호를 받으면 전원 씬 리로드.
+    /// 플레이어 사망 시 어느 클라이언트에서든 호출. ESC Reset(EscMenuController.OnClickReset)도
+    /// Host/Client 누구나 이 문으로 호출한다.
+    /// Host가 1명이라도 사망/Reset 신호를 받으면 전원 씬 리로드. 씬당 첫 요청만 반영(_resetPending) —
+    /// 리로드로 이 인스턴스가 새로 생기면 다시 받는다.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void NotifyPlayerDeathServerRpc()
