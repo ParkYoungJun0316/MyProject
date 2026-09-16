@@ -59,10 +59,10 @@ public class PioneerPathManager : MonoBehaviour
     [SerializeField] Color trapColor     = new Color(1f,    0.2f,  0.2f);
 
     [Header("미리보기 색상 (Inspector에서 조정)")]
-    [SerializeField] Color yellowPreviewColor = Color.yellow;
-    [SerializeField] Color bluePreviewColor   = Color.blue;
-    [SerializeField] Color purplePreviewColor = new Color(0.55f, 0.2f, 0.95f);
-    [SerializeField] Color greenPreviewColor  = Color.green;
+    [SerializeField] Color yellowPreviewColor = new Color(0xDC / 255f, 0xA5 / 255f, 0x24 / 255f);
+    [SerializeField] Color bluePreviewColor   = new Color(0x23 / 255f, 0x84 / 255f, 0xC4 / 255f);
+    [SerializeField] Color purplePreviewColor = new Color(0x59 / 255f, 0x00 / 255f, 0xBC / 255f);
+    [SerializeField] Color greenPreviewColor  = new Color(0x4C / 255f, 0x6C / 255f, 0x48 / 255f);
 
     [Header("이벤트")]
     [Tooltip("Challenge 단계 시작 시 (미리보기 끝난 직후). MemoryPathIntroController가 구독.")]

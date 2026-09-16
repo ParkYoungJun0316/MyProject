@@ -13,6 +13,7 @@ using UnityEngine.UI;
 /// 수신 볼륨 슬라이더는 GameSession 세션 VoiceId(Dissonance LocalPlayerName self-report,
 /// SoundAndSettingsDesign.md §6-8)로 DissonanceComms.FindPlayer(voiceId)를 조회해 반영한다.
 ///
+/// [범위 0~3(300%) — 2026-09-16, 200%로도 안 들린다는 사용자 피드백으로 상한 재확장]
 /// [범위 0~2(200%) — 2026-09-10]
 /// Dissonance의 공개 API `VoicePlayerState.Volume`은 0~1만 허용하고 벗어나면 throw한다
 /// (내부적으로 `PlaybackInternal`을 거치는데, 이건 `internal`이고 `InternalsVisibleTo`가
@@ -55,7 +56,7 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     [SerializeField] GameObject emptyState;
 
     const float MinReceiveVolume = 0f;
-    const float MaxReceiveVolume = 2f;
+    const float MaxReceiveVolume = 3f;
 
     DissonanceComms _subscribedComms;
     readonly Dictionary<Slider, UnityAction<float>> _volumeCallbacks = new();

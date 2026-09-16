@@ -10,10 +10,10 @@ using UnityEngine;
 /// </summary>
 public static class PlayerColorUtil
 {
-    // 파랑 #2384C4, 노랑 #DCA524, 보라 #4B1857, 초록 #4C6C48
+    // 파랑 #2384C4, 노랑 #DCA524, 보라 #5900BC, 초록 #4C6C48
     static readonly Color Blue   = new(0x23 / 255f, 0x84 / 255f, 0xC4 / 255f);
     static readonly Color Yellow = new(0xDC / 255f, 0xA5 / 255f, 0x24 / 255f);
-    static readonly Color Purple = new(0x4B / 255f, 0x18 / 255f, 0x57 / 255f);
+    static readonly Color Purple = new(0x59 / 255f, 0x00 / 255f, 0xBC / 255f);
     static readonly Color Green  = new(0x4C / 255f, 0x6C / 255f, 0x48 / 255f);
 
     /// <summary>colorIndex(0~3) → PlayerColorType 매핑. CheerService.GetCheerName 등 전 시스템의 단일 소스.</summary>
@@ -63,7 +63,7 @@ public static class PlayerColorUtil
     // 몸통 고유색은 HUD 글자에 쓰면 보라·초록이 묻힌다. 채팅 이름색(InGameChatUI)과 같은
     // 밝은 톤 — 색 가짓수는 유지하고 밝기만 올린다.
     static readonly Color HudBlue   = new(0.35f, 0.64f, 0.82f);
-    static readonly Color HudPurple = new(0.61f, 0.35f, 0.71f);
+    static readonly Color HudPurple = new(0x59 / 255f, 0x00 / 255f, 0xBC / 255f);
     static readonly Color HudGreen  = new(0.18f, 0.80f, 0.44f);
     static readonly Color HudYellow = new(0.95f, 0.61f, 0.07f);
 

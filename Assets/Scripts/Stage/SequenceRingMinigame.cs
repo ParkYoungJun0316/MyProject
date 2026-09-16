@@ -945,7 +945,7 @@ public class SequenceRingMinigame : MonoBehaviour
             new ColorDisplayEntry { colorType = PlayerColorType.Blue,   displayColor = Color.blue },
             new ColorDisplayEntry { colorType = PlayerColorType.Green,  displayColor = Color.green },
             new ColorDisplayEntry { colorType = PlayerColorType.Yellow, displayColor = Color.yellow },
-            new ColorDisplayEntry { colorType = PlayerColorType.Purple, displayColor = new Color(0.55f, 0.2f, 0.95f) },
+            new ColorDisplayEntry { colorType = PlayerColorType.Purple, displayColor = PlayerColorUtil.GetUniqueColor(PlayerColorType.Purple) },
         };
     }
 

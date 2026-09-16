@@ -78,7 +78,7 @@ public class InGameChatUI : NetworkBehaviour
 
     [Header("플레이어 이름 색상")]
     [SerializeField] Color colorBerry = new Color(0.35f, 0.64f, 0.82f);  // Blue
-    [SerializeField] Color colorGuma  = new Color(0.61f, 0.35f, 0.71f);  // Purple
+    [SerializeField] Color colorGuma  = new Color(0x59 / 255f, 0x00 / 255f, 0xBC / 255f);  // Purple #5900BC
     [SerializeField] Color colorSsuk  = new Color(0.18f, 0.80f, 0.44f);  // Green
     [SerializeField] Color colorDanho = new Color(0.95f, 0.61f, 0.07f);  // Yellow
 

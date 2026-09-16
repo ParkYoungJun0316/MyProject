@@ -351,7 +351,7 @@ public class ColorWall : MonoBehaviour
             WallColorType.Black  => Color.black,
             WallColorType.White  => Color.white,
             WallColorType.Blue   => Color.blue,
-            WallColorType.Purple => new Color(0.55f, 0.2f, 0.95f),
+            WallColorType.Purple => PlayerColorUtil.GetUniqueColor(PlayerColorType.Purple),
             WallColorType.Green  => Color.green,
             WallColorType.Yellow => Color.yellow,
             _                    => Color.gray

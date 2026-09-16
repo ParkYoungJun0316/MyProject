@@ -10,17 +10,19 @@ using UnityEngine;
 ///  2. Collider 추가
 ///     - Is Trigger = false : 물리적으로 막으면서 데미지 (벽 등)
 ///     - Is Trigger = true  : 통과하면서 데미지만 (구역 등)
-///  3. damage, damageInterval Inspector에서 설정
+///  3. damage, damageInterval Inspector에서 설정 (플레이어 피격 무적 1초와 맞춤)
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class ContactDamage : MonoBehaviour
 {
+    const float MinDamageInterval = 1f;
+
     [Header("데미지")]
     [Tooltip("플레이어에게 입히는 데미지")]
     [SerializeField] int damage = 0;
 
-    [Tooltip("연속 데미지 간격(초). 닿아있는 동안 이 간격마다 데미지 적용\n0이면 매 프레임마다 적용 (권장: 0.5 이상)")]
-    [SerializeField] float damageInterval = 0f;
+    [Tooltip("연속 데미지 간격(초). 닿아있는 동안 이 간격마다 데미지 적용.\n플레이어 피격 무적(1초)과 맞춤. 1 미만이면 1초로 적용.")]
+    [SerializeField] float damageInterval = 1f;
 
     [Header("설정")]
     [Tooltip("true: 이 컴포넌트가 활성화된 동안만 데미지 적용\nDeactivate()로 비활성화 가능")]
@@ -74,6 +76,6 @@ public class ContactDamage : MonoBehaviour
         if (p == null) return;
 
         NetworkDamageUtil.ApplyDamage(p, damage);
-        _nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.05f);
+        _nextDamageTime = Time.time + Mathf.Max(damageInterval, MinDamageInterval);
     }
 }

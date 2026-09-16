@@ -63,11 +63,11 @@ public class ColoredMemoryPath : MonoBehaviour
     [SerializeField] Color normalColor = new Color(0.45f, 0.45f, 0.45f);
 
     [Header("미리보기 색상 (Inspector에서 조정)")]
-    public Color yellowPreviewColor = Color.yellow;
-    public Color bluePreviewColor   = Color.blue;
+    public Color yellowPreviewColor = new Color(0xDC / 255f, 0xA5 / 255f, 0x24 / 255f);
+    public Color bluePreviewColor   = new Color(0x23 / 255f, 0x84 / 255f, 0xC4 / 255f);
     [FormerlySerializedAs("redPreviewColor")]
-    public Color purplePreviewColor = new Color(0.55f, 0.2f, 0.95f);
-    public Color greenPreviewColor  = Color.green;
+    public Color purplePreviewColor = new Color(0x59 / 255f, 0x00 / 255f, 0xBC / 255f);
+    public Color greenPreviewColor  = new Color(0x4C / 255f, 0x6C / 255f, 0x48 / 255f);
 
     [Header("이벤트")]
     [Tooltip("Challenge 단계 시작 시 (마지막 색 미리보기가 끝난 직후)")]
@@ -252,15 +252,14 @@ public class ColoredMemoryPath : MonoBehaviour
         }
     }
 
-    /// <summary>에디터 Gizmo용 기본 색상 매핑 (static)</summary>
+    /// <summary>에디터 Gizmo·시퀀서 폴백. 플레이어 고유색은 PlayerColorUtil SSOT.</summary>
     public static Color GetDefaultColorFor(PlayerColorType colorType)
     {
+        if (PlayerColorUtil.IsUniquePlayerColor(colorType))
+            return PlayerColorUtil.GetUniqueColor(colorType);
+
         switch (colorType)
         {
-            case PlayerColorType.Yellow: return Color.yellow;
-            case PlayerColorType.Blue:   return Color.blue;
-            case PlayerColorType.Purple: return new Color(0.55f, 0.2f, 0.95f);
-            case PlayerColorType.Green:  return Color.green;
             case PlayerColorType.Common: return Color.white;
             case PlayerColorType.Danger: return Color.black;
             default: return Color.white;
