@@ -48,7 +48,7 @@ public class TutorialCheerNameSignboard : MonoBehaviour
 
     void TrySetRange(Collider other, bool inRange)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
 
         NetworkObject netObj = p.GetComponent<NetworkObject>();

@@ -56,9 +56,8 @@ public class ContactKnockback : MonoBehaviour
 
     [Tooltip("닿아있는 동안 이 간격마다 다시 튕김(초).\n" +
              "너무 작으면 PunchHit SFX가 연타로 나감 (권장: 0.2 이상).\n" +
-             "AddForce는 물리 스텝에 걸쳐 분리되므로 겹쳐있는 동안의 반복 적용(힘 누적)과,\n" +
-             "Player 태그 콜라이더가 여러 개(루트 캡슐 + PunchHitBox)인 데서 오는\n" +
-             "같은 프레임 중복 감지도 이 값으로 걸러진다.")]
+             "AddForce는 물리 스텝에 걸쳐 분리되므로 겹쳐있는 동안의 반복 적용(힘 누적)을\n" +
+             "이 값으로 걸러낸다.")]
     [SerializeField] float knockbackInterval = 0.25f;
 
     [Header("설정")]
@@ -106,8 +105,9 @@ public class ContactKnockback : MonoBehaviour
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
-        Player p = other.GetComponent<Player>()
-                   ?? other.GetComponentInParent<Player>();
+        // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox(캐릭터 앞 트리거)가 먼저 닿아
+        // 몸이 아직 안 올라왔는데 발사되는 것을 막는다 (PressurePad와 동일 관례).
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
 
         int id = p.GetInstanceID();

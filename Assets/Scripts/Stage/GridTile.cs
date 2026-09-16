@@ -80,21 +80,21 @@ public class GridTile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
         _occupants.Add(p);
     }
 
     void OnTriggerStay(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
         _occupants.Add(p);
     }
 
     void OnTriggerExit(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
         _occupants.Remove(p);
     }

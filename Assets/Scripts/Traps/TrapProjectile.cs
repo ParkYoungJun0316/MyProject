@@ -176,7 +176,8 @@ public class TrapProjectile : NetworkBehaviour
         if (other.CompareTag("Player"))
         {
             // 온라인(B안): ServerRpc 경로만. Host·Client 모두 동일.
-            Player p = other.GetComponent<Player>() ?? other.GetComponentInParent<Player>();
+            // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox(트리거)에 맞은 건 피격이 아니다.
+            Player p = other.GetComponent<Player>();
             if (p == null) return;
 
             // 로컬에서 즉시 숨김: Despawn RTT 동안 화살이 플레이어를 통과하며

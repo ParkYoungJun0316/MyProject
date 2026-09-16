@@ -71,8 +71,8 @@ public class ContactDamage : MonoBehaviour
 
         if (Time.time < _nextDamageTime) return;
 
-        Player p = other.GetComponent<Player>()
-                   ?? other.GetComponentInParent<Player>();
+        // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox는 무시 (ContactKnockback과 동일).
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
 
         NetworkDamageUtil.ApplyDamage(p, damage);

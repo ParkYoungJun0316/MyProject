@@ -195,9 +195,8 @@ public class SpikeTrap : TrapBase
 
         if (Time.time < nextDamageTime) return;
 
-        // CompareTag는 자식 콜라이더에선 실패하므로 컴포넌트 검색으로 판별
-        Player p = other.GetComponent<Player>()
-                   ?? other.GetComponentInParent<Player>();
+        // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox는 무시.
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
 
         NetworkDamageUtil.ApplyDamage(p, damage);

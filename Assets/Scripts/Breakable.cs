@@ -388,8 +388,8 @@ public class Breakable : MonoBehaviour
                 Collider[] hits = Physics.OverlapSphere(transform.position, damageRadius, playerLayer);
                 for (int i = 0; i < hits.Length; i++)
                 {
-                    Player p = hits[i].GetComponent<Player>()
-                               ?? hits[i].GetComponentInParent<Player>();
+                    // 루트 캡슐만 인정 — PunchHitBox까지 잡으면 같은 플레이어가 두 번 맞는다.
+                    Player p = hits[i].GetComponent<Player>();
                     if (p == null) continue;
 
                     NetworkDamageUtil.ApplyDamage(p, breakDamage);

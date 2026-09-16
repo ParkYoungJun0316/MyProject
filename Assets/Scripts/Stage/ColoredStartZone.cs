@@ -102,7 +102,7 @@ public class ColoredStartZone : MonoBehaviour
     {
         if (_isOccupied) return;
 
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
         if (p.playerColorType != colorType) return;
 
@@ -117,7 +117,7 @@ public class ColoredStartZone : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p != _currentPlayer) return;
 
         _currentPlayer = null;

@@ -51,7 +51,7 @@ public class MagicCircleWaypoint : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Player player = other.GetComponentInParent<Player>();
+        Player player = other.GetComponent<Player>();
         if (player == null || player.IsDead) return;
 
         circle?.TryAdvance(stepIndex);

@@ -126,7 +126,7 @@ public class WallWaveController : MonoBehaviour
     {
         if (!activateOnPlayerTrigger) return;
 
-        Player player = other.GetComponentInParent<Player>();
+        Player player = other.GetComponent<Player>();
         if (player == null || player.IsDead) return;
 
         Play();

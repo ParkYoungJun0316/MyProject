@@ -99,7 +99,7 @@ public class ReachZoneObjective : StageObjective
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
 
         _reachedPlayers.Add(p);

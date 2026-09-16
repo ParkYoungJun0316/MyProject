@@ -47,7 +47,7 @@ public class TutorialGatherZone : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
 
         NetworkObject netObj = p.GetComponent<NetworkObject>();
@@ -58,7 +58,7 @@ public class TutorialGatherZone : MonoBehaviour
 
     void TryAdd(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
 
         NetworkObject netObj = p.GetComponent<NetworkObject>();

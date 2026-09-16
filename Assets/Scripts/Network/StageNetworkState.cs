@@ -310,6 +310,15 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── 흑/백 토글 문 동기화 (T.Stage5 미로 전용 슬롯) ──
+    // true = 흑 문 열림 / 백 문 닫힘. 패드 판정·쿨다운은 Host의 BlackWhiteDoorToggle이 담당하고,
+    // 전 머신은 이 값만 보고 DoorController.Open()/Close()를 재생한다. 사망 리로드 시 씬과 함께 초기값으로 돌아간다.
+    private readonly NetworkVariable<bool> _blackDoorOpen = new(
+        true,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     private bool _resetPending;
 
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
@@ -370,6 +379,9 @@ public class StageNetworkState : NetworkBehaviour
         index >= 0 && index < _trackerTargets.Count ? _trackerTargets[index] : -1;
 
     public int  MemorySectionsCleared => _memorySectionsCleared.Value;
+
+    /// <summary>흑/백 토글 문 상태. true = 흑 열림(백 닫힘).</summary>
+    public bool IsBlackDoorOpen => _blackDoorOpen.Value;
 
     /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnChallengeStepChanged;
@@ -1019,6 +1031,13 @@ public class StageNetworkState : NetworkBehaviour
     }
 
     void OnMemorySectionsClearedNv(int prev, int next) => OnMemorySectionsClearedChanged?.Invoke(next);
+
+    /// <summary>Host: 흑/백 토글 문 상태 확정. BlackWhiteDoorToggle에서만 호출.</summary>
+    public void SetBlackDoorOpen(bool blackOpen)
+    {
+        if (!IsServer || IsDespawned) return;
+        _blackDoorOpen.Value = blackOpen;
+    }
 
     // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
 

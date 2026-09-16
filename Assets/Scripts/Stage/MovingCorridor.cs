@@ -116,7 +116,7 @@ public class MovingCorridor : MonoBehaviour
         if (!activateOnPlayerTrigger) return;
         if (activateOnce && _hasTriggered) return;
 
-        Player player = other.GetComponentInParent<Player>();
+        Player player = other.GetComponent<Player>();
         if (player == null || player.IsDead) return;
 
         _hasTriggered = true;

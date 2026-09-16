@@ -125,7 +125,7 @@ public class SalivaVolume : MonoBehaviour
     static Player Resolve(Collider other)
     {
         if (other == null) return null;
-        return other.GetComponent<Player>() ?? other.GetComponentInParent<Player>();
+        return other.GetComponent<Player>();
     }
 
     void OnDrawGizmos()

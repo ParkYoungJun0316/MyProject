@@ -126,7 +126,7 @@ public class WallMoverSequencer : NetworkBehaviour
         // Host만 처리. Client 트리거 무시.
         if (nm == null || !nm.IsServer) return;
 
-        Player player = other.GetComponentInParent<Player>();
+        Player player = other.GetComponent<Player>();
         if (player == null || player.IsDead) return;
 
         Activate();

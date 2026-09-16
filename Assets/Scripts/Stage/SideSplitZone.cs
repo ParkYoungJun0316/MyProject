@@ -76,7 +76,7 @@ public class SideSplitZone : MonoBehaviour
         var seen = new HashSet<Player>();
         for (int i = 0; i < hits.Length; i++)
         {
-            Player p = hits[i].GetComponentInParent<Player>();
+            Player p = hits[i].GetComponent<Player>();
             if (p == null || p.IsDead) continue;
             if (seen.Add(p))
                 list.Add(p);
@@ -99,14 +99,14 @@ public class SideSplitZone : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
         if (!_occupants.Contains(p)) _occupants.Add(p);
     }
 
     void OnTriggerExit(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null) return;
         _occupants.Remove(p);
     }

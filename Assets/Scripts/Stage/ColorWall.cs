@@ -192,7 +192,7 @@ public class ColorWall : MonoBehaviour
 
     void HandleContact(Collider other)
     {
-        Player p = other.GetComponentInParent<Player>();
+        Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
 
         if (IsColorMatch(p))
