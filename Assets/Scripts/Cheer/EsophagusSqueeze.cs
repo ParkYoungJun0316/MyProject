@@ -57,10 +57,10 @@ public class EsophagusSqueeze : MonoBehaviour, ITeamCheerRevert
 
     [Header("클립 길이 (초) — 수치는 스테이지 때")]
     [Tooltip("Warning 종료 후 원래 반경 → squeezeTargetRadius까지 걸리는 시간. 도중에 외치면 그 지점에서 즉시 Recover로 전환된다.")]
-    [SerializeField] float attackDuration = 1.5f;
+    [SerializeField] float attackDuration = 5f;
 
     [Tooltip("외침 성공 후 squeezeTargetRadius → 원래 반경까지 걸리는 시간.")]
-    [SerializeField] float recoverDuration = 1.0f;
+    [SerializeField] float recoverDuration = 5f;
 
     [Header("랜덤 스케줄")]
     [SerializeField] float randomIntervalMin = 50f;
@@ -70,8 +70,8 @@ public class EsophagusSqueeze : MonoBehaviour, ITeamCheerRevert
     [SerializeField] bool startOnAwake = true;
 
     [Header("팀 응원 함정")]
-    [Tooltip("Squeeze 전 Warning 유지 시간(초). T 팀 응원 = 4.")]
-    [SerializeField] float warnDuration = 4f;
+    [Tooltip("Squeeze 전 Warning 유지 시간(초). 팀 응원 함정 = 3.")]
+    [SerializeField] float warnDuration = 3f;
 
     [Header("네트워크 시드 (Host/Client 동기화)")]
     [Tooltip("다른 트랩 seedSalt와 겹치지 않게 유지 " +

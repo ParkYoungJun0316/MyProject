@@ -127,8 +127,8 @@ public class TongueController : MonoBehaviour, ITeamCheerRevert
     [SerializeField] bool startOnAwake = true;
 
     [Header("팀 응원 함정")]
-    [Tooltip("Attack 전 Warning (초). M1–4 팀 응원 = 4.")]
-    [SerializeField] float warnDuration = 4f;
+    [Tooltip("Attack 전 Warning (초). 팀 응원 함정 = 3.")]
+    [SerializeField] float warnDuration = 3f;
 
     [Header("네트워크 시드")]
     [Tooltip("Mouth 0x4D4F5554 / Saliva 0x53504954 와 겹치지 않게.")]

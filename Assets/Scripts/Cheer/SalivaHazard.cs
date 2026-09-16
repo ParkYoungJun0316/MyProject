@@ -58,8 +58,8 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
     [SerializeField] bool startOnAwake = true;
 
     [Header("팀 응원 함정")]
-    [Tooltip("Cover 전 Warning 유지 시간(초). M1–4 팀 응원 = 4.")]
-    [SerializeField] float warnDuration = 4f;
+    [Tooltip("Cover 전 Warning 유지 시간(초). 팀 응원 함정 = 3.")]
+    [SerializeField] float warnDuration = 3f;
 
     [Header("네트워크 시드 (Host/Client 동기화)")]
     [Tooltip("입 MouthController seedSalt와 겹치지 않게 유지.")]

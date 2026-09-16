@@ -64,19 +64,6 @@ public class ThirdPersonCamera : MonoBehaviour
     [Tooltip("게임 시작 시 커서를 화면 중앙에 고정. 마우스 델타 입력에 필수")]
     [SerializeField] bool lockCursor = true;
 
-    [Header("벽 충돌 회피 (SphereCast pull-in)")]
-    [Tooltip("카메라가 이 레이어들에 막히면 피벗 쪽으로 당겨진다.\n" +
-             "벽·바닥 등 정적 지형만 넣을 것 — 플레이어·적·발사체·함정(Ring 등)을 넣으면 카메라가 그런 " +
-             "것들 때문에 밀려서 안 된다. 기본값은 Default/Ground/Wall/BoulderStop/BackGround.")]
-    [SerializeField] LayerMask cameraObstructionLayers =
-        (1 << 0) | (1 << 25) | (1 << 27) | (1 << 28) | (1 << 29); // Default, Ground, Wall, BoulderStop, BackGround
-
-    [Tooltip("SphereCast 반지름(m). 근평면 폭 정도로 — 너무 작으면 벽 모서리를 못 걸러 살짝 뚫려 보인다.")]
-    [SerializeField] float cameraCollisionRadius = 0.3f;
-
-    [Tooltip("장애물 표면에서 추가로 띄워 두는 여유 거리(m). 0이면 표면에 딱 붙어 z-fighting/근평면 클리핑 위험.")]
-    [SerializeField] float cameraCollisionBuffer = 0.15f;
-
     // ── Preview Preset ──────────────────────────────────────────────
     [Header("Preview Preset (Inspector에서 직접 지정)")]
     [Tooltip("탑다운 프리뷰 시 카메라 거리. 경로 발판 전체가 화면에 들어오도록 조정.")]
@@ -115,6 +102,9 @@ public class ThirdPersonCamera : MonoBehaviour
     // ── Public 프로퍼티 ─────────────────────────────────────────────
     public float Yaw => _yaw;
     public float PreviewBlendTime => previewBlendTime;
+
+    /// <summary>프리뷰 중이어도 원래 따라가던 대상(로컬 플레이어)을 돌려준다. 프리뷰 중 target은 pivot이다.</summary>
+    public Transform GameplayTarget => _isInPreview && _gameplayTarget != null ? _gameplayTarget : target;
 
     // ── Unity 라이프사이클 ──────────────────────────────────────────
 
@@ -187,41 +177,10 @@ public class ThirdPersonCamera : MonoBehaviour
         Vector3 pivot    = target.position + _activeOffset;
         Vector3 desiredPos = pivot + _currentRot * (Vector3.back * currentDistance);
 
-        Vector3 toDesired = desiredPos - pivot;
-        float desiredDist = toDesired.magnitude;
-        Vector3 dir = desiredDist > 0.0001f ? toDesired / desiredDist : Vector3.back;
-
-        // 탑다운 프리뷰는 pivot 위 수십 m에서 내려다보는 연출이라 천장·배경에 막혀 당겨지면 구도가 깨진다.
-        RaycastHit hit = default;
-        bool blocked = !_isInPreview &&
-            Physics.SphereCast(pivot, cameraCollisionRadius, dir, out hit, desiredDist,
-                               cameraObstructionLayers, QueryTriggerInteraction.Ignore);
-
-        if (blocked)
-        {
-            // 벽에 막혔을 때만 개입. 벽 쪽으로 붙어야 하면 즉시 스냅(한 프레임도 벽 뒤가 보이면 안 됨),
-            // 이미 그보다 가까우면 평소 댐핑으로 벌어진다.
-            float safeDist = Mathf.Max(hit.distance - cameraCollisionBuffer, 0.05f);
-            Vector3 safePos = pivot + dir * safeDist;
-
-            if (positionDamping <= 0f || Vector3.Distance(transform.position, pivot) > safeDist)
-            {
-                transform.position = safePos;
-                _posVelocity = Vector3.zero;
-            }
-            else
-            {
-                transform.position = Vector3.SmoothDamp(transform.position, safePos, ref _posVelocity, positionDamping);
-            }
-        }
-        else if (positionDamping > 0f)
-        {
+        if (positionDamping > 0f)
             transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref _posVelocity, positionDamping);
-        }
         else
-        {
             transform.position = desiredPos;
-        }
 
         transform.rotation = _currentRot;
     }
@@ -232,13 +191,22 @@ public class ThirdPersonCamera : MonoBehaviour
     public void SetYaw(float yaw) => _yaw = yaw;
 
     /// <summary>
-    /// 탑다운 프리뷰 시점으로 부드럽게 전환.
-    /// pivot: 경로 중앙 Transform — 카메라가 이 지점을 고정으로 바라봄.
+    /// 탑다운 프리뷰 시점으로 부드럽게 전환. Inspector에 지정된 Preview Preset 값을 사용.
+    /// pivot: 카메라가 따라볼 Transform — 매 프레임 위치를 다시 읽으므로 고정 지점(Pioneer/Memory)뿐 아니라
+    /// 계속 움직이는 Transform(예: 진행축만 추적하는 pivot)을 넘겨도 그대로 따라간다.
     /// </summary>
     public void EnterPreviewView(Transform pivot)
+        => EnterPreviewView(pivot, previewDistance, previewPitch, previewYaw, previewTargetOffset);
+
+    /// <summary>
+    /// 탑다운 프리뷰 시점으로 부드럽게 전환 — 스테이지별 커스텀 프레이밍 지정.
+    /// Inspector의 공용 Preview Preset을 덮어쓰지 않고 이 호출에서만 쓸 distance/pitch/yaw/offset을 넘긴다
+    /// (한 씬에 여러 프리뷰 스테이지가 있고 서로 다른 프레이밍이 필요할 때 사용, 예: T.Stage4 MovingCorridor).
+    /// </summary>
+    public void EnterPreviewView(Transform pivot, float dist, float pitch, float yaw, Vector3 offset)
     {
         if (_blendCoroutine != null) StopCoroutine(_blendCoroutine);
-        _blendCoroutine = StartCoroutine(BlendToPreview(pivot));
+        _blendCoroutine = StartCoroutine(BlendToPreview(pivot, dist, pitch, yaw, offset));
     }
 
     /// <summary>게임플레이 시점으로 부드럽게 복귀.</summary>
@@ -276,15 +244,16 @@ public class ThirdPersonCamera : MonoBehaviour
 
     // ── 내부 ──────────────────────────────────────────────────────
 
-    IEnumerator BlendToPreview(Transform pivot)
+    IEnumerator BlendToPreview(Transform pivot, float toDist, float toPitch, float toYaw0, Vector3 toOffset)
     {
+        // 이미 프리뷰(또는 복귀 블렌드) 중이면 target이 pivot일 수 있으므로 복귀 대상을 덮어쓰지 않는다.
+        if (!_isInPreview) _gameplayTarget = target;
         _isInPreview    = true;
-        _gameplayTarget = target;
         target          = pivot;
         _posVelocity    = Vector3.zero;
 
         // pitch/yaw 범위를 preview 값까지 임시 확장 (clamp 방지)
-        _activePitchMax = Mathf.Max(maxPitch, previewPitch);
+        _activePitchMax = Mathf.Max(maxPitch, toPitch);
 
         float fromDist  = _activeDist;
         float fromPitch = _pitch;
@@ -294,7 +263,7 @@ public class ThirdPersonCamera : MonoBehaviour
         float fromSensY = _activeSensY;
 
         // yaw 최단 경로 계산 (예: 350° → 10° 를 +20° 방향으로)
-        float yawDelta = Mathf.DeltaAngle(fromYaw, previewYaw);
+        float yawDelta = Mathf.DeltaAngle(fromYaw, toYaw0);
         float toYaw    = fromYaw + yawDelta;
 
         float t = 0f;
@@ -303,20 +272,20 @@ public class ThirdPersonCamera : MonoBehaviour
             t += Time.deltaTime / Mathf.Max(previewBlendTime, 0.01f);
             float ease = Mathf.SmoothStep(0f, 1f, t);
 
-            _activeDist   = Mathf.Lerp(fromDist,  previewDistance,     ease);
-            _pitch        = Mathf.Lerp(fromPitch, previewPitch,        ease);
-            _yaw          = Mathf.Lerp(fromYaw,   toYaw,              ease);
-            _activeOffset = Vector3.Lerp(fromOff, previewTargetOffset, ease);
+            _activeDist   = Mathf.Lerp(fromDist,  toDist,   ease);
+            _pitch        = Mathf.Lerp(fromPitch, toPitch,  ease);
+            _yaw          = Mathf.Lerp(fromYaw,   toYaw,    ease);
+            _activeOffset = Vector3.Lerp(fromOff, toOffset, ease);
             _activeSensX  = Mathf.Lerp(fromSensX, 0f, ease);
             _activeSensY  = Mathf.Lerp(fromSensY, 0f, ease);
 
             yield return null;
         }
 
-        _activeDist   = previewDistance;
-        _pitch        = previewPitch;
-        _yaw          = previewYaw;
-        _activeOffset = previewTargetOffset;
+        _activeDist   = toDist;
+        _pitch        = toPitch;
+        _yaw          = toYaw0;
+        _activeOffset = toOffset;
         _activeSensX  = 0f;
         _activeSensY  = 0f;
         _blendCoroutine = null;

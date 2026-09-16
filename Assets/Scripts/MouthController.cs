@@ -35,14 +35,14 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
     [SerializeField] private string idleTrigger  = "doIdle";
 
     [Header("클립 길이 (초) — Animator 클립 Length와 정확히 맞출 것")]
-    [Tooltip("Close 클립 길이(초). 입이 완전히 닫히는 데 걸리는 시간.\n예) 24fps 8프레임 = 0.333s")]
-    [SerializeField] private float closeClipLength = 0f;
+    [Tooltip("Close 클립 길이(초). 입이 완전히 닫히는 데 걸리는 시간.")]
+    [SerializeField] private float closeClipLength = 2f;
 
     [Tooltip("Hold 유지 시간(초). teamCheerHazard이면 무시하고 외침까지 Hold.")]
     [SerializeField] private float holdDuration    = 0f;
 
-    [Tooltip("Open 클립 길이(초). 입이 완전히 열리는 데 걸리는 시간.\n예) 24fps 8프레임 = 0.333s")]
-    [SerializeField] private float openClipLength  = 0f;
+    [Tooltip("Open 클립 길이(초). 입이 완전히 열리는 데 걸리는 시간.")]
+    [SerializeField] private float openClipLength  = 2f;
 
     [Header("랜덤 스케줄")]
     [Tooltip("Idle 최소(초). 팀 응원 함정은 스테이지 인스펙터 값.")]
@@ -61,8 +61,8 @@ public class MouthController : MonoBehaviour, ITeamCheerRevert
     [Tooltip("켜면 Close/Hold가 팀 응원 되돌림 대상이 된다. M1·M3·M.Boss만 켠다. M2는 SalivaHazard가 revert. M4·M5는 끈다.")]
     [SerializeField] private bool teamCheerHazard = false;
 
-    [Tooltip("Close 전 Warning 유지 시간(초). M1–4 팀 응원 = 4.")]
-    [SerializeField] private float warnDuration = 4f;
+    [Tooltip("Close 전 Warning 유지 시간(초). 팀 응원 함정 = 3.")]
+    [SerializeField] private float warnDuration = 3f;
 
     [Header("암전 연동 (선택)")]
     [Tooltip("입 닫힐 때 FadeOut, 열릴 때 FadeIn 을 자동 호출.\n비워두면 암전 없음.")]

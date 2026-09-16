@@ -107,12 +107,12 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [SerializeField] string idleTrigger = "doIdle";
 
     [Header("클립 길이 (초) — Animator 클립 Length와 맞출 것")]
-    [SerializeField] float closeClipLength = 0f;
-    [SerializeField] float openClipLength = 0f;
+    [SerializeField] float closeClipLength = 2f;
+    [SerializeField] float openClipLength = 2f;
 
     [Header("타이밍 (초 — 나중에 튜닝)")]
     [Tooltip("Close 전 경고 시간. 응원 없이 예고만 — 놓쳐도 Close는 그대로 진행됨.")]
-    [SerializeField] float warnDuration = 2f;
+    [SerializeField] float warnDuration = 3f;
 
     [Tooltip("암전(Closing 종료) 후 타일 파괴음이 나가고 Opening으로 넘어가기 전까지의 대기 시간.\n" +
              "이 구간은 화면이 이미 최대 암전이라 시각 연출 없음 — 사운드로만 임팩트 전달.")]
