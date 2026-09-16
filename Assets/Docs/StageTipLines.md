@@ -32,8 +32,7 @@ String Table은 나중에 별도 Collection (`StageTip` 가칭). 키는 페이�
 | `Tip.T.Stage2.3` | T.Stage2 2.3 |
 | `Tip.T.Stage3` | T.Stage3 |
 | `Tip.T.Stage4` | T.Stage4 |
-| `Tip.T.Stage5.1` | T.Stage5 5.1 |
-| `Tip.T.Stage5.2` | T.Stage5 5.2 (구 5.3) |
+| `Tip.T.Stage5.1` | T.Stage5 (미로) |
 | `Tip.T.Boss.1` | T.Boss P1 |
 | `Tip.T.Boss.2` | T.Boss P2 |
 | `Tip.T.Boss.3` | T.Boss P3 |
@@ -115,13 +114,11 @@ Tip 없음.
 
 1. 앞뒤 벽과 부종에 닿으면 튕겨 나갑니다.
 
-## T.Stage5 — 5.1
+## T.Stage5
 
-1. 버프를 써서 적혈구를 잡으세요.
-
-## T.Stage5 — 5.2
-
-1. 초록 부종에 부딪혀 튕기며 도망치세요.
+1. 어디서 패드를 밟든, 문을 열고 닫을 수 있습니다.
+2. 흑색 문이 열리면 백색 문이 닫히고, 백색 문이 열리면 흑색 문이 닫힙니다.
+3. 2층으로 가는 길을 먼저 찾으세요.
 
 ## T.Boss
 

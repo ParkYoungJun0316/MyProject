@@ -916,19 +916,13 @@ Czyżbyśmy wreszcie mogli uciec...?
 
 *("부종" = `ContactKnockback`(순수 넉백, HP 무관) + 구멍 바닥(각자 생존, 2인 게이트 아님), T3에 잠깐 나온 걸 T4에서 메인으로. 패드→`DoorController` 길, 안개 복습(`EsophagusFog`)은 T1·T2에서 이미 가르쳐서 대사 없이 감.)*
 
-## T.Stage5 (Stage5TargetRunner / Stage5ChaserAI)
+## T.Stage5 (흑/백 토글 미로 — ReachZone)
 
-**Stage1 — Runner 최초 등장** (Stage2도 재사용, 재설명 없음)
-1. 돌아다니는 적혈구를 잡아. 이 몸한테 타격을 주자.  
-당하기만 할 순 없어!
+1. 갑자기 식도가 요동치더니 통로가 완전히 뒤엉켜버렸어. 이대로는 출구를 못 찾겠는데...
+2. 이 흑백 막들, 뭘 건드릴 때마다 열리고 닫히나 봐.
+3. 위쪽에도 길이 있는 것 같아. 저기부터 가봐야겠어.
 
-**Stage3 — Chaser 최초 등장** (Stage4도 재사용, 재설명 없음)
-1. 적혈구들을 잡았더니 백혈구들이 우리를 적으로 인식했어!  
-도망쳐서 살아남아!
-2. 벽에 부딪히면 튕겨져 나갈 거야.  
-이걸 잘 이용하면 도망칠 수 있겠는데?
-
-*(Stage1 = `Stage5TargetRunner`, 색·고유색 조건 없이 접촉하면 포획. Stage3 1번 = `Stage5ChaserAI` 초출(비은신 최근접 1명 추격, 은신 전환 시 타겟 교체 — Ctrl 은신이 실제 회피 수단). 2번 = `T.Stage5.unity`에 배치된 `ContactKnockback` 벽 다수 확인됨, 튕김을 이용한 회피 팁.)*
+*(1번 = 미로 진입. 2번 "흑백 막" = `BlackWhiteDoorToggle`/`BlackWhiteTogglePad` — 패드를 밟을 때마다 흑/백 문이 전역으로 뒤바뀜. 3번 = 2층 점프대 안내(3곳 중 하나). 키는 `T.Stage5.Line1`~`Line3`(기존 `T.Stage5.Stage1.Line1`/`Stage3.Line1`/`Stage3.Line2` id 재사용, 이름만 정리). 패널 1개, `showOnceKey=Stage5`. 클리어 = `ReachZoneObjective` 전원 골.)*
 
 ## T.Boss (BossFightObjective — 시간 구간 기반 연속 생존)
 
@@ -991,15 +985,10 @@ Match the color and slam into the wall to push back the pressure!
 1. Must be an allergic reaction — swelling's popped up all through the esophagus.  
 Bump into one of these and you'll get knocked flying.
 
-**T.Stage5 — Stage1**
-1. Go catch those red blood cells running around — let's land some damage on this body.  
-We can't just keep taking hits!
-
-**T.Stage5 — Stage3**
-1. Catching those red blood cells made the white blood cells mark us as enemies!  
-Run and survive!
-2. Bump into a wall and you'll get knocked back.  
-Might be able to use that to get away, huh?
+**T.Stage5**
+1. The esophagus suddenly convulsed and the path got completely tangled up. At this rate we won't find the way out...
+2. These black-and-white membranes seem to open and close whenever something triggers them.
+3. There's a path up above too. Let's start looking from there.
 
 **T.Boss — Intro**
 1. This is the last stretch of the esophagus...  
@@ -1050,13 +1039,10 @@ If we don't, we'll get swept down with it.
 1. アレルギー反応が出たみたい。食道にむくみができてる。  
 ぶつかると弾き飛ばされるよ。
 
-**T.Stage5 — Stage1**
-1. 動き回る赤血球を捕まえて。この体にダメージを与えよう。  
-やられっぱなしじゃいられない!
-
-**T.Stage5 — Stage3**
-1. 赤血球を捕まえたら、白血球たちに敵として認識された!  
-逃げて生き延びろ!
+**T.Stage5**
+1. 急に食道が痙攣して、通路が完全に絡まっちゃった。このままじゃ出口が見つからないよ…
+2. この白黒の膜、何かに触れるたびに開いたり閉じたりしてるみたい。
+3. 上のほうにも道があるみたい。まずはあそこから探してみよう。
 2. 壁にぶつかると弾き飛ばされるよ。  
 これを上手く使えば逃げられそうだね?
 
@@ -1109,13 +1095,10 @@ If we don't, we'll get swept down with it.
 1. 好像是过敏反应,食道里长出了一堆浮肿。  
 撞到这些东西会被弹飞出去。
 
-**T.Stage5 — Stage1**
-1. 去抓住到处跑的红细胞,咱们也给这身体来点伤害。  
-不能一直只挨打!
-
-**T.Stage5 — Stage3**
-1. 抓了红细胞之后,白细胞把我们当成敌人了!  
-快跑,活下来!
+**T.Stage5**
+1. 食道突然痉挛，通道彻底缠在了一起。这样下去找不到出口……
+2. 这些黑白膜好像一碰到什么就会开合。
+3. 上面好像也有路。先从那边找找看吧。
 2. 撞到墙会被弹开。  
 好好利用这个说不定能逃掉?
 
@@ -1168,13 +1151,10 @@ If we don't, we'll get swept down with it.
 1. 好像是過敏反應,食道裡長出了一堆浮腫。  
 撞到這些東西會被彈飛出去。
 
-**T.Stage5 — Stage1**
-1. 去抓住到處亂跑的紅血球,大家一起給這身體來點傷害。  
-不能一直只挨打!
-
-**T.Stage5 — Stage3**
-1. 抓了紅血球之後,白血球把我們當成敵人了!  
-快逃,活下來!
+**T.Stage5**
+1. 食道突然痙攣，通道徹底纏在了一起。這樣下去找不到出口……
+2. 這些黑白膜好像一碰到什麼就會開合。
+3. 上面好像也有路。先從那邊找找看吧。
 2. 撞到牆會被彈開。  
 好好利用這個,說不定能逃掉?
 
@@ -1227,13 +1207,10 @@ Aunque el color sea el correcto, si está en blanco y negro, morís igual.
 1. Debe ser una reacción alérgica — le han salido bultos por todo el esófago.  
 Si chocáis con uno, saldréis despedidos.
 
-**T.Stage5 — Stage1**
-1. Id a atrapar a los glóbulos rojos que andan sueltos, a ver si le hacemos daño a este cuerpo.  
-¡No podemos quedarnos solo aguantando golpes!
-
-**T.Stage5 — Stage3**
-1. ¡Al atrapar a los glóbulos rojos, los glóbulos blancos nos marcaron como enemigos!  
-¡Corred y sobrevivid!
+**T.Stage5**
+1. El esófago se convulsionó de repente y el paso quedó completamente enredado. Así no vamos a encontrar la salida...
+2. Estas membranas en blanco y negro parecen abrirse y cerrarse cada vez que algo las activa.
+3. Parece que también hay un camino arriba. Habrá que buscar por ahí primero.
 2. Si chocáis contra una pared, saldréis despedidos.  
 Podríamos usar eso para escapar, ¿no?
 
@@ -1286,13 +1263,10 @@ Aunque el color sea el correcto, si está en blanco y negro, mueren igual.
 1. Debe ser una reacción alérgica — le salieron bultos por todo el esófago.  
 Si chocan con uno, van a salir volando.
 
-**T.Stage5 — Stage1**
-1. Vayan a atrapar a los glóbulos rojos que andan sueltos, a ver si le hacemos daño a este cuerpo.  
-¡No podemos quedarnos solo aguantando golpes!
-
-**T.Stage5 — Stage3**
-1. ¡Al atrapar a los glóbulos rojos, los glóbulos blancos nos marcaron como enemigos!  
-¡Corran y sobrevivan!
+**T.Stage5**
+1. El esófago se convulsionó de repente y el paso quedó todo enredado. Así no vamos a encontrar la salida...
+2. Estas membranas en blanco y negro parecen abrirse y cerrarse cada vez que algo las activa.
+3. Parece que también hay un camino arriba. Hay que empezar a buscar por ahí.
 2. Si chocan contra una pared, van a salir despedidos.  
 Podríamos usar eso para escapar, ¿no?
 
@@ -1345,13 +1319,10 @@ Fais correspondre la couleur et jette-toi sur le mur pour repousser la pression 
 1. On dirait une réaction allergique — des gonflements sont apparus dans tout l'œsophage.  
 Si vous en touchez un, vous serez projetés en arrière.
 
-**T.Stage5 — Stage1**
-1. Allez attraper les globules rouges qui traînent, et infligeons des dégâts à ce corps.  
-On ne peut pas se contenter d'encaisser !
-
-**T.Stage5 — Stage3**
-1. En attrapant les globules rouges, les globules blancs nous ont pris pour des ennemis !  
-Courez et survivez !
+**T.Stage5**
+1. L'œsophage s'est soudain contracté et le passage s'est complètement emmêlé. À ce rythme, on ne trouvera pas la sortie...
+2. Ces membranes noires et blanches ont l'air de s'ouvrir et de se fermer dès que quelque chose les déclenche.
+3. On dirait qu'il y a aussi un chemin en haut. Commençons par chercher par là.
 2. Si vous touchez un mur, vous serez repoussés.  
 On pourrait s'en servir pour s'échapper, non ?
 
@@ -1404,13 +1375,10 @@ Pass die Farbe an und ramm gegen die Wand, um den Druck zurückzudrängen!
 1. Sieht nach einer allergischen Reaktion aus — überall in der Speiseröhre sind Schwellungen entstanden.  
 Berührt ihr eine davon, werdet ihr zurückgeschleudert.
 
-**T.Stage5 — Stage1**
-1. Fangt die roten Blutkörperchen, die hier herumlaufen — lasst uns diesem Körper Schaden zufügen.  
-Wir können nicht einfach nur einstecken!
-
-**T.Stage5 — Stage3**
-1. Weil wir die roten Blutkörperchen gefangen haben, halten uns die weißen Blutkörperchen jetzt für Feinde!  
-Rennt und überlebt!
+**T.Stage5**
+1. Die Speiseröhre hat sich plötzlich verkrampft und der Weg ist jetzt völlig verknotet. So finden wir den Ausgang nie...
+2. Diese schwarz-weißen Membranen scheinen sich zu öffnen und zu schließen, sobald irgendwas sie auslöst.
+3. Sieht so aus, als gäbe es auch oben einen Weg. Fangen wir da an zu suchen.
 2. Berührt ihr eine Wand, werdet ihr zurückgeschleudert.  
 Vielleicht können wir das nutzen, um zu entkommen, was?
 
@@ -1463,13 +1431,10 @@ Acerte a cor e bata na parede pra empurrar a pressão de volta!
 1. Deve ser uma reação alérgica — surgiram inchaços por todo o esôfago.  
 Se baterem em um desses, vão ser lançados pra trás.
 
-**T.Stage5 — Stage1**
-1. Vão atrás dos glóbulos vermelhos que estão correndo por aí, vamos dar um dano nesse corpo.  
-A gente não pode só ficar levando pancada!
-
-**T.Stage5 — Stage3**
-1. Depois que capturamos os glóbulos vermelhos, os glóbulos brancos passaram a nos marcar como inimigos!  
-Corram e sobrevivam!
+**T.Stage5**
+1. O esôfago se contraiu de repente e o caminho ficou todo emaranhado. Desse jeito não vamos achar a saída...
+2. Essas membranas preto e branco parecem abrir e fechar toda vez que algo as aciona.
+3. Parece que tem um caminho lá em cima também. Vamos começar a procurar por ali.
 2. Se baterem numa parede, vão ser lançados pra trás.  
 Dá pra usar isso pra fugir, né?
 
@@ -1522,13 +1487,10 @@ Senão vamos ser arrastados junto.
 1. Похоже на аллергическую реакцию — по всему пищеводу появились отёки.  
 Столкнёшься с одним из них — тебя отбросит.
 
-**T.Stage5 — Stage1**
-1. Ловите эритроциты, которые бегают повсюду — давайте нанесём урон этому телу.  
-Мы не можем всё время только получать!
-
-**T.Stage5 — Stage3**
-1. После того как мы поймали эритроциты, лейкоциты приняли нас за врагов!  
-Бегите и выживайте!
+**T.Stage5**
+1. Пищевод вдруг свело судорогой, и проход весь перепутался. Так мы выход не найдём...
+2. Эти чёрно-белые перепонки, похоже, открываются и закрываются каждый раз, когда что-то их задевает.
+3. Кажется, наверху тоже есть проход. Начнём искать оттуда.
 2. Врежешься в стену — тебя отбросит назад.  
 Можно этим воспользоваться, чтобы сбежать, да?
 
@@ -1581,13 +1543,10 @@ Dopasuj kolor i uderz w ścianę, żeby odeprzeć napór!
 1. To pewnie reakcja alergiczna — w całym przełyku powstały obrzęki.  
 Uderzycie w jeden z nich, i zostaniecie odrzuceni.
 
-**T.Stage5 — Stage1**
-1. Łapcie krwinki czerwone, które biegają wokół — zadajmy temu ciału jakieś obrażenia.  
-Nie możemy tylko ciągle oberwać!
-
-**T.Stage5 — Stage3**
-1. Skoro złapaliśmy krwinki czerwone, krwinki białe uznały nas za wrogów!  
-Biegnijcie i przetrwajcie!
+**T.Stage5**
+1. Przełyk nagle się skurczył i korytarz zrobił się kompletnie poplątany. W tym tempie nie znajdziemy wyjścia...
+2. Te czarno-białe błony chyba otwierają się i zamykają za każdym razem, gdy coś je uruchomi.
+3. Wygląda na to, że na górze też jest droga. Zacznijmy szukać stamtąd.
 2. Uderzysz w ścianę i zostaniesz odrzucony.  
 Może da się to wykorzystać, żeby uciec, co?
 
@@ -1640,7 +1599,7 @@ M.Stage4: 4.2/4.3 대화 완료 후 각각 `StageManger4.2`/`4.3`.StartStage(). 
 | T.Stage2 | `Stage2.1` / `Stage2.2` / `Stage2.3` | `Dialogue_Panel` / `(1)` / `(2)` | `Stage1.Line1`~`2` / `Stage2.Line1` / `Stage3.Line1` |
 | T.Stage3 | `Stage3.1` (신규 게이트) | `Dialogue_Panel` | `T.Stage3.Line1`~`Line3` |
 | T.Stage4 | `Stage4.1` (신규 게이트) | `Dialogue_Panel` | `T.Stage4.Line1` |
-| T.Stage5 | `Stage5.1` / `Stage5.3` | `Dialogue_Panel` / `(1)` | `Stage1.Line1` / `Stage3.Line1`~`2` |
+| T.Stage5 | `Stage5` | `Dialogue_Panel` | `T.Stage5.Line1`~`Line3` |
 | T.Boss | `Boss.Intro` / `Bossdown` | `Dialogue_Panel` / `(1)` | `Intro.Line1`~`3` / `Bossdown.Line1`~`4` |
 
 T.Stage3·T.Stage4: 대화 끝날 때까지 시작 게이트가 안 켜지도록 `armOnStart=false`, 대화 완료 후 `Arm()`. Phase enter는 `StartStage`/`Arm` 대신 `PhaseDialogueGate.Begin`.

@@ -244,33 +244,18 @@
 
 ## Tip.T.Stage5.1
 
-- ko: 버프를 써서 적혈구를 잡으세요.
-- en: Use your buff to catch the red blood cells.
-- ja: バフを使って赤血球を捕まえてください。
-- zh-Hans: 用增益去抓红细胞。
-- zh-Hant: 用增益去抓紅血球。
-- es: Usa el buff para atrapar los glóbulos rojos.
-- es-419: Usa el buff para atrapar los glóbulos rojos.
-- fr: Utilise le buff pour attraper les globules rouges.
-- de: Benutz den Buff, um die roten Blutkörperchen zu fangen.
-- pt-BR: Use o buff pra pegar os glóbulos vermelhos.
-- ru: Используй бафф, чтобы ловить эритроциты.
-- pl: Użyj buffa, żeby łapać czerwone krwinki.
-
-## Tip.T.Stage5.2
-
-- ko: 초록 부종에 부딪혀 튕기며 도망치세요.
-- en: Bounce off the green swellings to get away.
-- ja: 緑の腫れにぶつかって、弾かれながら逃げてください。
-- zh-Hans: 撞上绿色肿块，借弹力逃跑。
-- zh-Hant: 撞上綠色腫塊，借彈力逃跑。
-- es: Choca contra los bultos verdes y usa el rebote para huir.
-- es-419: Choca contra los bultos verdes y usa el rebote para huir.
-- fr: Percute les gonflements verts et sers-toi du rebond pour fuir.
-- de: Knall gegen die grünen Schwellungen und nutz den Bounce zum Abhauen.
-- pt-BR: Bata nos inchaços verdes e use o ricochete pra fugir.
-- ru: Отталкивайся от зелёных отёков и удирай.
-- pl: Walnij w zielone obrzęki i odbijając się uciekaj.
+- ko: 어디서 패드를 밟든, 문을 열고 닫을 수 있습니다.\n흑색 문이 열리면 백색 문이 닫히고, 백색 문이 열리면 흑색 문이 닫힙니다.\n2층으로 가는 길을 먼저 찾으세요.
+- en: Stepping on a pad anywhere opens and closes the doors.\nWhen the black doors open, the white doors close, and vice versa.\nFind the way up to the second floor first.
+- ja: どこでパッドを踏んでも、扉が開閉します。\n黒い扉が開くと白い扉が閉じ、白い扉が開くと黒い扉が閉じます。\nまず2階へ上がる道を探してください。
+- zh-Hans: 无论在哪里踩踏板，都能开关门。\n黑门打开时白门关闭，白门打开时黑门关闭。\n请先找到通往二楼的路。
+- zh-Hant: 無論在哪裡踩踏板，都能開關門。\n黑門打開時白門關閉，白門打開時黑門關閉。\n請先找到通往二樓的路。
+- es: Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBuscad primero el camino hacia la segunda planta.
+- es-419: Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBusquen primero el camino hacia el segundo piso.
+- fr: Marcher sur un pad, où qu'il soit, ouvre et ferme les portes.\nQuand les portes noires s'ouvrent, les blanches se ferment, et inversement.\nCherchez d'abord le chemin vers le deuxième étage.
+- de: Ein Pad zu betreten öffnet und schließt die Türen, egal wo.\nÖffnen sich die schwarzen Türen, schließen sich die weißen — und umgekehrt.\nSucht zuerst den Weg zum zweiten Stock.
+- pt-BR: Pisar em um pad em qualquer lugar abre e fecha as portas.\nQuando as portas pretas abrem, as brancas fecham, e vice-versa.\nProcurem primeiro o caminho para o segundo andar.
+- ru: Наступив на площадку в любом месте, вы откроете и закроете двери.\nКогда открываются чёрные двери, белые закрываются — и наоборот.\nСначала найдите путь на второй этаж.
+- pl: Nadepnięcie na płytkę w dowolnym miejscu otwiera i zamyka drzwi.\nGdy otwierają się czarne drzwi, białe się zamykają, i na odwrót.\nNajpierw znajdźcie drogę na drugie piętro.
 
 ---
 

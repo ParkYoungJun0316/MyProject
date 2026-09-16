@@ -28,7 +28,7 @@
 - `M.Boss.Intro.Line1`, `M.Boss.Bossdown.Line1~3`
 - `T.Stage1.Line1~4`
 - `T.Stage2.Stage1.Line1~2`, `T.Stage2.Stage2.Line1`, `T.Stage2.Stage3.Line1`
-- `T.Stage5.Stage1.Line1`, `T.Stage5.Stage3.Line1~2`
+- `T.Stage5.Line1~3`
 - `T.Boss.Intro.Line1~3`, `T.Boss.Bossdown.Line1~4`
 
 번역 대상에서 제외 (원문 미정 — `StageDialogueLines.md` "열려 있는 항목" 참고):
@@ -355,35 +355,50 @@
 
 ## T.Stage5
 
-### T.Stage5.Stage1.Line1
+### T.Stage5.Line1
 
-- ko: 도망치는 적혈구들을 잡아!
-- en: Catch the fleeing red blood cells!
-- ja: 逃げる赤血球を捕まえろ!
-- zh-Hans: 抓住逃跑的红细胞!
-- zh-Hant: 抓住逃跑的紅血球!
-- es: ¡Atrapa a los glóbulos rojos que huyen!
-- es-419: ¡Atrapa a los glóbulos rojos que escapan!
-- fr: Attrape les globules rouges qui fuient!
-- de: Fang die fliehenden roten Blutkörperchen!
-- pt-BR: Pegue as hemácias que estão fugindo!
-- ru: Лови убегающие эритроциты!
-- pl: Złap uciekające czerwone krwinki!
+- ko: 갑자기 식도가 요동치더니 통로가 완전히 뒤엉켜버렸어. 이대로는 출구를 못 찾겠는데...
+- en: The esophagus suddenly convulsed and the path got completely tangled up. At this rate we won't find the way out...
+- ja: 急に食道が痙攣して、通路が完全に絡まっちゃった。このままじゃ出口が見つからないよ…
+- zh-Hans: 食道突然痉挛，通道彻底缠在了一起。这样下去找不到出口……
+- zh-Hant: 食道突然痙攣，通道徹底纏在了一起。這樣下去找不到出口……
+- es: El esófago se convulsionó de repente y el paso quedó completamente enredado. Así no vamos a encontrar la salida...
+- es-419: El esófago se convulsionó de repente y el paso quedó todo enredado. Así no vamos a encontrar la salida...
+- fr: L'œsophage s'est soudain contracté et le passage s'est complètement emmêlé. À ce rythme, on ne trouvera pas la sortie...
+- de: Die Speiseröhre hat sich plötzlich verkrampft und der Weg ist jetzt völlig verknotet. So finden wir den Ausgang nie...
+- pt-BR: O esôfago se contraiu de repente e o caminho ficou todo emaranhado. Desse jeito não vamos achar a saída...
+- ru: Пищевод вдруг свело судорогой, и проход весь перепутался. Так мы выход не найдём...
+- pl: Przełyk nagle się skurczył i korytarz zrobił się kompletnie poplątany. W tym tempie nie znajdziemy wyjścia...
 
-### T.Stage5.Stage3.Line1
+### T.Stage5.Line2
 
-- ko: 항체로부터 도망쳐서 살아남아!
-- en: Run from the antibodies and survive!
-- ja: 抗体から逃げて生き残れ!
-- zh-Hans: 躲开抗体活下去!
-- zh-Hant: 躲開抗體活下去!
-- es: ¡Huye de los anticuerpos y sobrevive!
-- es-419: ¡Escapa de los anticuerpos y sobrevive!
-- fr: Fuis les anticorps et survis!
-- de: Flieh vor den Antikörpern und überlebe!
-- pt-BR: Fuja dos anticorpos e sobreviva!
-- ru: Беги от антител и выживи!
-- pl: Uciekaj przed przeciwciałami i przetrwaj!
+- ko: 이 흑백 막들, 뭘 건드릴 때마다 열리고 닫히나 봐.
+- en: These black-and-white membranes seem to open and close whenever something triggers them.
+- ja: この白黒の膜、何かに触れるたびに開いたり閉じたりしてるみたい。
+- zh-Hans: 这些黑白膜好像一碰到什么就会开合。
+- zh-Hant: 這些黑白膜好像一碰到什麼就會開合。
+- es: Estas membranas en blanco y negro parecen abrirse y cerrarse cada vez que algo las activa.
+- es-419: Estas membranas en blanco y negro parecen abrirse y cerrarse cada vez que algo las activa.
+- fr: Ces membranes noires et blanches ont l'air de s'ouvrir et de se fermer dès que quelque chose les déclenche.
+- de: Diese schwarz-weißen Membranen scheinen sich zu öffnen und zu schließen, sobald irgendwas sie auslöst.
+- pt-BR: Essas membranas preto e branco parecem abrir e fechar toda vez que algo as aciona.
+- ru: Эти чёрно-белые перепонки, похоже, открываются и закрываются каждый раз, когда что-то их задевает.
+- pl: Te czarno-białe błony chyba otwierają się i zamykają za każdym razem, gdy coś je uruchomi.
+
+### T.Stage5.Line3
+
+- ko: 위쪽에도 길이 있는 것 같아. 저기부터 가봐야겠어.
+- en: There's a path up above too. Let's start looking from there.
+- ja: 上のほうにも道があるみたい。まずはあそこから探してみよう。
+- zh-Hans: 上面好像也有路。先从那边找找看吧。
+- zh-Hant: 上面好像也有路。先從那邊找找看吧。
+- es: Parece que también hay un camino arriba. Habrá que buscar por ahí primero.
+- es-419: Parece que también hay un camino arriba. Hay que empezar a buscar por ahí.
+- fr: On dirait qu'il y a aussi un chemin en haut. Commençons par chercher par là.
+- de: Sieht so aus, als gäbe es auch oben einen Weg. Fangen wir da an zu suchen.
+- pt-BR: Parece que tem um caminho lá em cima também. Vamos começar a procurar por ali.
+- ru: Кажется, наверху тоже есть проход. Начнём искать оттуда.
+- pl: Wygląda na to, że na górze też jest droga. Zacznijmy szukać stamtąd.
 
 ---
 
