@@ -3,23 +3,25 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Tutorial 구역 2(CheerName 설정) — 상호작용 표지판. NetworkDesign.md §6B.7 P6 UI 파트,
-/// CheerAndTutorialDesign.md §9.2 구역 2.
+/// 팀 키워드(TeamCheerWord) 설정 패널을 여닫는 상호작용 표지판 — Tutorial 구역 2 + Interlude(2차 변경).
+/// NetworkDesign.md §6B.7 P6 UI 파트, CheerAndTutorialDesign.md §9.2 구역 2.
+/// 클래스 이름의 "CheerName"은 씬 연결 호환용으로 남긴 옛 이름 — 개인 CheerName 커스텀화는 2026-09-14 삭제됐다.
 ///
 /// [왜 상시 패널 대신 상호작용인가 — 2026-08-19 사용자 결정]
 /// 항상 화면에 떠 있는 패널은 계속 화면을 가리고, DialogueUI식 "그 순간 지나면 다시 못 봄" 노출은
-/// 나중에 이름을 바꾸고 싶어도 타이밍을 놓칠 수 있다. 표지판 상호작용은 게이트 통과 전까지
+/// 나중에 팀 키워드를 바꾸고 싶어도 타이밍을 놓칠 수 있다. 표지판 상호작용은 게이트 통과 전까지
 /// 언제든 원하는 시점에 다시 열 수 있다(§3.4 "재확정 언제든 가능"과 자연스럽게 맞음).
 ///
 /// [순수 로컬 — 네트워크 판정 없음]
 /// 이 스크립트는 "내(로컬) 캐릭터가 표지판 근처에 있는가"만 본다 — TutorialGatherZone처럼 여러
-/// 클라이언트의 점유를 서버가 판정할 필요가 없다(각자 자기 화면의 이름 입력 UI를 자기가 여닫을
+/// 클라이언트의 점유를 서버가 판정할 필요가 없다(각자 자기 화면의 팀 키워드 패널을 자기가 여닫을
 /// 뿐이므로 충돌 자체가 없음). 그래서 NetworkBehaviour가 아니라 순수 MonoBehaviour.
 ///
 /// [설정 방법]
-/// 1. 빈 GameObject에 이 스크립트 + Collider(Is Trigger) 부착, Tutorial 구역 2에 배치
+/// 1. 빈 GameObject에 이 스크립트 + Collider(Is Trigger) 부착, Tutorial 구역 2 / Interlude에 배치
+///    (같은 씬의 TutorialTeamCheerTestSignboard 트리거와 겹치지 않게 — 겹치면 [E] 한 번에 둘 다 반응)
 /// 2. cheerNameUI에 씬의 TutorialCheerNameUI(CheerNamePanel) 연결
-/// 3. promptRoot에 "[E] 이름 설정" 안내 UI(World Space 또는 화면 고정) 연결 — 기본 비활성 권장
+/// 3. promptRoot에 "[E] 팀 키워드 설정"(Tutorial.Prompt.CheerName) 안내 UI(World Space 또는 화면 고정) 연결 — 기본 비활성 권장
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class TutorialCheerNameSignboard : MonoBehaviour
@@ -27,7 +29,7 @@ public class TutorialCheerNameSignboard : MonoBehaviour
     [Tooltip("씬의 CheerNamePanel(TutorialCheerNameUI) — 상호작용 시 이걸 열고 닫는다.")]
     [SerializeField] TutorialCheerNameUI cheerNameUI;
 
-    [Tooltip("근처에 있을 때만 보이는 \"[E] 이름 설정\" 프롬프트. 비워도 동작(프롬프트 없이 상호작용만).")]
+    [Tooltip("근처에 있을 때만 보이는 \"[E] 팀 키워드 설정\" 프롬프트. 비워도 동작(프롬프트 없이 상호작용만).")]
     [SerializeField] GameObject promptRoot;
 
     [Tooltip("Host만 보이는 표시(왕관/리본 등). 비-Host 머신에선 숨김. 비워도 동작.")]

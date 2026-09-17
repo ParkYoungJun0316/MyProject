@@ -175,6 +175,10 @@ public class ObjectiveUI : MonoBehaviour
         {
             BuildTextContent(root, slot, FormatCountClock(colorTile.PlayedRounds, colorTile.TotalRounds, colorTile.Remaining));
         }
+        else if (obj is T5RunnerRoundDirector t5)
+        {
+            BuildTextContent(root, slot, FormatCountClock(t5.PlayedRounds, t5.TotalRounds, t5.Remaining));
+        }
         else if (obj is RoundProgressObjective round)
         {
             BuildTextContent(root, slot, FormatCount(round.PlayedRounds, round.TotalRounds));
@@ -297,6 +301,16 @@ public class ObjectiveUI : MonoBehaviour
                 round.OnProgressChanged.RemoveListener(slot.roundListener);
                 slot.roundListener = null;
             }
+            if (slot.objective is ColorTileRoundObjective colorTile && slot.roundListener != null)
+            {
+                colorTile.OnProgressChanged.RemoveListener(slot.roundListener);
+                slot.roundListener = null;
+            }
+            if (slot.objective is T5RunnerRoundDirector t5 && slot.roundListener != null)
+            {
+                t5.OnProgressChanged.RemoveListener(slot.roundListener);
+                slot.roundListener = null;
+            }
         }
         slots = null;
     }
@@ -366,6 +380,17 @@ public class ObjectiveUI : MonoBehaviour
                             colorTile.PlayedRounds, colorTile.TotalRounds, colorTile.Remaining);
                 };
                 colorTile.OnProgressChanged.AddListener(captured.roundListener);
+            }
+            else if (slot.objective is T5RunnerRoundDirector t5)
+            {
+                var captured = slot;
+                captured.roundListener = () =>
+                {
+                    if (captured.titleText != null)
+                        captured.titleText.text = FormatCountClock(
+                            t5.PlayedRounds, t5.TotalRounds, t5.Remaining);
+                };
+                t5.OnProgressChanged.AddListener(captured.roundListener);
             }
             else if (slot.objective is RoundProgressObjective round)
             {

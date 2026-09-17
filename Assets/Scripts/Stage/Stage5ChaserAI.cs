@@ -6,10 +6,13 @@ using System.Collections;
 /// <summary>
 /// Stage5 추격 AI.
 ///
-/// [동작]
-/// - Player 레이어(비은신) 생존자 중 가장 가까운 1명 추격 (맵 전역, 거리 상한 없음)
-/// - 타겟이 은신(PlayerStealth 레이어)으로 전환 → 다른 비은신 후보로 교체. 후보 없으면 정지.
+/// [동작 — 러너 재설계 2026-09-18, TStage5RunnerRedesign.md §1.3]
+/// - 추격 대상은 **이번 라운드의 러너 1명뿐**. 2층 안내자는 아무리 가까워도 무시한다.
+///   (구 동작 "가장 가까운 생존자 추격"은 폐기 — 2층 인원이 체이서를 끌어당기면 미로가 성립하지 않음)
+/// - 러너가 은신(PlayerStealth 레이어)이거나 사망 상태면 대체 타겟 없이 정지한다.
 /// - 일정 속도로 추격. 데미지는 자식 Stage5ChaserHitbox에서 항상 판정.
+/// - **피격을 주면 데미지 1 후 스스로 소멸**(Host Despawn). 살아있는 수 유지·리스폰은
+///   Stage5ChaserSpawner가 담당한다.
 ///
 /// [네트워크 — Host 전권 시뮬 + NetworkTransform 복제 (TStageNetworkBoard.md §3.2 확정)]
 /// - Update()의 NavMeshAgent 추적 판단은 Host 전용. Client는 프리팹의 서버 권한
@@ -22,7 +25,7 @@ using System.Collections;
 /// - NavMeshAgent 부착 필수
 /// - 자식에 ChaserHitBox + Collider isTrigger + Stage5ChaserHitbox
 /// - moveSpeed, retargetInterval, navSampleRadius 설정
-/// - postHitStopDuration: 피격 후 정지 시간
+/// - postHitStopDuration: 피격 후 정지하다 소멸하기까지의 시간
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class Stage5ChaserAI : NetworkBehaviour
@@ -34,8 +37,9 @@ public class Stage5ChaserAI : NetworkBehaviour
     [Tooltip("NavMesh 위치 샘플링 검색 반경(m)")]
     [SerializeField] float navSampleRadius  = 0f;
 
-    [Header("피격 후 정지")]
-    [Tooltip("히트박스로 피격 판정 후 제자리 정지 시간(초)")]
+    [Header("피격 후 소멸")]
+    [Tooltip("히트박스로 피격 판정 후 제자리 정지하는 시간(초). 이 시간이 지나면 Host가 Despawn한다.\n" +
+             "예전에는 이 시간 뒤 추격을 재개했지만, 러너 재설계 이후에는 소멸까지의 연출 길이다.")]
     [SerializeField] float postHitStopDuration = 1f;
 
     [Header("애니메이션")]
@@ -167,29 +171,33 @@ public class Stage5ChaserAI : NetworkBehaviour
     // ── 타겟 갱신 ─────────────────────────────────────────────────
 
     /// <summary>
-    /// Player 레이어(비은신) 생존자 중 가장 가까운 1명 선택.
-    /// 은신 전환 시 다른 후보로 자동 교체. 후보 없으면 null.
+    /// 이번 라운드의 러너 1명만 타겟으로 잡는다 (§1.3). 거리 비교 없음 — 후보가 하나뿐이다.
+    ///
+    /// NV에서 매번 다시 읽는 이유: 러너는 라운드마다 바뀌는데 스폰 시점에 한 번만 받아두면
+    /// 라운드가 넘어간 뒤에도 옛 러너를 쫓는다. 라운드 전환 때 스포너가 전부 치우긴 하지만,
+    /// "타겟의 진실은 NV 하나"로 두는 편이 그 순서에 기대지 않아 안전하다.
+    /// 러너가 죽었거나 은신 중이면 대체 타겟 없이 정지한다.
     /// </summary>
     void UpdateTarget()
     {
         _currentTarget = null;
 
-        if (_allPlayers == null || _allPlayers.Length == 0) return;
+        var net = StageNetworkState.Instance;
+        if (net == null || _allPlayers == null || _allPlayers.Length == 0) return;
 
-        float bestDistSq = float.MaxValue;
+        ulong runnerId = net.T5CurrentRunnerClientId;
 
         for (int i = 0; i < _allPlayers.Length; i++)
         {
             Player p = _allPlayers[i];
-            if (p == null || p.IsDead)                   continue;
-            if (p.gameObject.layer != _playerLayer)       continue;
+            if (p == null || p.IsDead)              continue;
+            if (p.gameObject.layer != _playerLayer) continue; // 은신 중이면 레이어가 다르다
 
-            float dSq = (p.transform.position - transform.position).sqrMagnitude;
-            if (dSq < bestDistSq)
-            {
-                bestDistSq     = dSq;
-                _currentTarget = p;
-            }
+            NetworkObject netObj = p.GetComponent<NetworkObject>();
+            if (netObj == null || netObj.OwnerClientId != runnerId) continue;
+
+            _currentTarget = p;
+            return;
         }
     }
 
@@ -224,15 +232,15 @@ public class Stage5ChaserAI : NetworkBehaviour
     public bool CanApplyDamage() => _isActive && !_isPostHitStop;
 
     /// <summary>
-    /// 히트박스에서 TakeDamage 직후 호출 — 정지 코루틴 시작.
-    /// OnTriggerStay로 매 프레임 재호출될 수 있어, 사운드는 아직 postHitStop 중이 아닐 때(=새
-    /// 히트 에피소드 시작 시점)만 1회 재생 — 붙어있는 동안 계속 겹쳐 불려도 스팸되지 않는다.
+    /// 히트박스에서 TakeDamage 직후 호출 — 정지 후 **소멸**(§1.3).
+    /// OnTriggerStay로 매 프레임 재호출될 수 있으므로 `_isPostHitStop`으로 1회만 받는다
+    /// (두 번째 호출부터는 이미 소멸 진행 중이라 무시 — 사운드 스팸·중복 Despawn 방지).
     /// </summary>
     public void NotifyHitFromHitbox()
     {
-        if (!_isActive) return;
-        if (!_isPostHitStop) PlayAttackSfxClientRpc(transform.position);
-        if (_postHitStopRoutine != null) StopCoroutine(_postHitStopRoutine);
+        if (!_isActive || _isPostHitStop) return;
+
+        PlayAttackSfxClientRpc(transform.position);
         _postHitStopRoutine = StartCoroutine(PostHitStopRoutine());
     }
 
@@ -247,6 +255,11 @@ public class Stage5ChaserAI : NetworkBehaviour
         SFXManager.Instance?.PlayAtPoint(SFXId.Stage5_Chaser_Attack, position, attackMinDistance, attackMaxDistance, attackRolloffMode);
     }
 
+    /// <summary>
+    /// 피격 연출(정지 + doHit) 후 Host가 Despawn한다. 예전처럼 추격을 재개하지 않는다 — §1.3의
+    /// "데미지 1 후 소멸". 정지하는 동안 `_isPostHitStop`이 CanApplyDamage를 막으므로 사라지기 전에
+    /// 러너를 한 번 더 때리지 않는다.
+    /// </summary>
     IEnumerator PostHitStopRoutine()
     {
         _isPostHitStop = true;
@@ -262,13 +275,11 @@ public class Stage5ChaserAI : NetworkBehaviour
 
         yield return new WaitForSeconds(postHitStopDuration);
 
-        _isPostHitStop      = false;
         _postHitStopRoutine = null;
+        _isActive           = false;
 
-        _retargetTimer = 0f;
-
-        if (_agent.isOnNavMesh)
-            _agent.isStopped = false;
+        // 스포너가 매 프레임 살아있는 수를 세어 리스폰 타이머를 건다 — 여기서는 사라지기만 하면 된다.
+        if (IsServer && IsSpawned) NetworkObject.Despawn(true);
     }
 
     // ── 애니메이션 ────────────────────────────────────────────────

@@ -45,16 +45,38 @@ using UnityEngine;
 ///  일치한다(이전엔 25%만 내려온 채로 "시간 초과=전멸"이 떠서 연출과 판정이 어긋났었다).
 ///
 /// [P3 색 히트 → 정지 → 재개]
-///  ColorWall이 색 일치를 감지하면 AdvancingWall.PauseTemporarily()가 진행 중인 하강 엔트리를
+///  히트가 확정되면 AdvancingWall.PauseTemporarily()가 진행 중인 하강 엔트리를
 ///  죽이고 이번 페이즈 시작 지점(=이전 체크포인트)까지 밀어 올린 뒤 멈춘다. 재개해 줄 주체가
 ///  없으면(Sphere는 scheduleOnStart=false라 ScheduleRoutine이 안 돈다) 그 페이즈 시계가 영구히
-///  멈춘다 — 그래서 Update()가 정지 종료를 감지해 같은 하강을 다시 발행한다.
+///  멈춘다 — 그래서 Update()가 정지가 끝난 뒤 Host가 정한 재개 시각으로 같은 하강을 다시 발행한다.
 ///  결과: 색을 맞출 때마다 그 페이즈 하강이(2026-09-11부터는 "바닥까지 전체"가) 처음부터 다시
 ///  = 시간을 버는 행위(§6 "반복해 버틴다"). P3의 실제 종료는 누적 히트 횟수
-///  (requiredHitCounts[2], RegisterColorHit() 참고)가 담당하므로 무한정 늘어지지 않는다.
+///  (requiredHitCounts[2])가 담당하므로 무한정 늘어지지 않는다.
+///
+/// [히트 네트워크 모델 — 2026-09-17 Steam 2~4인 실기 버그 수정]
+///  예전엔 ColorWall.HandleContact가 머신마다 로컬 물리로 정지·색 전환을 독자 실행하고, Sphere 색은
+///  같은 오브젝트의 WallLineRandomizer가 씬 로드 시점 기준 로컬 타이머로 칠했다. 그 결과
+///   ① 색이 P1 초반에 한 번 정해진 뒤 바뀌지 않았고(하강이 끊김 없이 이어져 Randomizer가 복귀 시점을 못 봄),
+///      그 색도 머신마다 달랐다.
+///   ② Client는 원격 플레이어가 kinematic이라 남의 히트를 못 봤고, 히트 카운트는 Host 물리가 본 충돌만 셌다.
+///  지금은:
+///   · 색 = requiredHitCounts[칸] > 0인 칸에서만, (시드, 칸, 히트 번호)로 전 머신이 같은 값을 계산.
+///     그 외 칸은 Default(일치 불가).
+///   · 맞힌 본인(Owner)의 ColorWall만 OnLocalOwnerColorMatch()로 보고 → StageNetworkState.ReportBossSphereHit
+///     → Host TryAcceptHitFromHost()가 칸·번호·색을 검증해 번호 +1 → NV로 전원이 같은 정지·색을 재생.
+///   · 정지 중엔 Default 색(맞힐 수 없음), 정지가 끝나 하강을 재발행할 때 다음 색을 칠한다.
+///
+/// [하강 시계 동기화 — 2026-09-18, MovingCorridor와 같은 버그 클래스]
+///  예전 하강은 AdvancingWall.RunOnce(로컬 경과 시간 누적)였고 시작도 각 머신이 이벤트를 받은 시각이라,
+///  Client는 늦게 출발하고 프레임 히치로 버려진 시간이 100~200초 하강 내내 남았다. 히트 후 재개도
+///  각자 로컬 정지가 끝난 시각이었다. 지금은 Host가 하강 시작 서버 시각(칸 진입 = 그 순간, 히트 후 =
+///  지금 + 복귀 시간 + 정지 시간)을 BossSphereHitState.descentStartServerTime에 실어 보내고,
+///  전 머신이 AdvancingWall.RunOnceSynced(진행도 = 서버 시각 경과 / 시간제한)로 하강한다.
+///  시간 초과(바닥 도달) 판정 시각도 Host/Client가 같다.
 ///
 /// [Inspector 연결]
-///  sphereWall            : Sphere에 붙은 AdvancingWall
+///  sphereWall            : Sphere에 붙은 AdvancingWall (같은 오브젝트의 ColorWall을 자동 탐색해 네트워크 히트 모드로 전환.
+///                          Sphere에 WallLineRandomizer를 두지 말 것 — 색을 이 컴포넌트가 전담한다)
 ///                          (moveDirection=로컬 하강 방향, scheduleOnStart=false,
 ///                           activateOnStart=false, maxTotalAdvance=0 — 0이 아니면 RunEntry가
 ///                           OnMaxReached로 빠져 하강 자체가 무효가 된다)
@@ -70,13 +92,23 @@ using UnityEngine;
 ///  PhaseManager.onAllPhasesComplete   → StopClock()
 ///  sphereWall.OnAdvanceCompleted      → HandlePhaseTimeout()
 ///  ※ onPhaseComplete에는 아무것도 걸지 않는다 (Host 전용 레인 — 위 리뷰 참고)
+///  ※ Sphere ColorWall.OnColorMatch에도 아무것도 걸지 않는다 (네트워크 히트 모드에선 발동 안 함)
 /// </summary>
 public class BossSpherePhaseDriver : MonoBehaviour
 {
+    public static BossSpherePhaseDriver Instance { get; private set; }
+
+    // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52, 0x434F4C57(ColorWall), 0x574C525A(WallLineRandomizer)
+    const int HitColorSalt = unchecked((int)0x53504852);
+
+    /// <summary>같은 히트 번호로 재보고하기까지의 최소 간격(초). OnCollisionStay 매 프레임 스팸 방지 +
+    /// Host가 색 변경 직후 한두 틱 늦게 본 경우의 재시도.</summary>
+    const float ReportRetryInterval = 0.3f;
+
     [Header("연결")]
     [Tooltip("식도 끝 Sphere에 붙은 AdvancingWall. moveDirection=로컬 하강 방향,\n" +
              "scheduleOnStart=false, activateOnStart=false, maxTotalAdvance=0으로 설정할 것 —\n" +
-             "이 컴포넌트가 RunOnce로만 구동한다.")]
+             "이 컴포넌트가 RunOnceSynced로만 구동한다.")]
     [SerializeField] AdvancingWall sphereWall;
 
     [Header("체크포인트 (전체 하강거리를 4등분, 확정)")]
@@ -98,16 +130,37 @@ public class BossSpherePhaseDriver : MonoBehaviour
              "지금은 인원수 무관 고정값 하나로 임시 배선. 1~4인 난이도 분리는 나중에.")]
     [SerializeField] int[] requiredHitCounts = new int[4];
 
-    [Tooltip("히트 카운트 목표 도달 시 호출할 보스 오브젝티브. Sphere의 ColorWall.OnColorMatch →\n" +
-             "이 컴포넌트의 RegisterColorHit()에 연결해두면, 목표 도달 시 여기로 NotifyPhaseCleared()를 보낸다.")]
+    [Tooltip("히트 카운트 목표 도달 시 NotifyPhaseCleared()를 보낼 보스 오브젝티브.")]
     [SerializeField] BossFightObjective bossFightObjective;
+
+    [Tooltip("히트 칸(requiredHitCounts > 0)에서 Sphere에 칠할 색 후보. 비활성 플레이어 색은 자동 제외.\n" +
+             "직전 색과 같은 색은 연속으로 나오지 않는다.")]
+    [SerializeField] ColorWall.WallColorType[] hitColorPool =
+    {
+        ColorWall.WallColorType.Black,  ColorWall.WallColorType.White,
+        ColorWall.WallColorType.Blue,   ColorWall.WallColorType.Purple,
+        ColorWall.WallColorType.Green,  ColorWall.WallColorType.Yellow,
+    };
 
     /// <summary>지금 시계가 돌고 있는 칸. -1이면 시계 정지 상태.</summary>
     int  _activeIndex = -1;
-    bool _wasPausedByColor;
 
-    /// <summary>현재 활성 칸에서 누적된 색 히트 수. AdvanceToCheckpoint()가 칸이 바뀔 때마다 0으로 리셋.</summary>
+    /// <summary>[전 머신] 현재 번호의 하강 시작 서버 시각(Host 확정값). -1 = 아직 수신 전.</summary>
+    double _descentStart = -1d;
+    /// <summary>현재 번호의 하강을 이미 발행했는지 — 자연 완료(시간 초과) 뒤 재발행 방지.</summary>
+    bool   _descentIssued;
+
+    /// <summary>[Host] 현재 활성 칸에서 확정된 색 히트 수. AdvanceToCheckpoint()가 칸이 바뀔 때마다 0으로 리셋.</summary>
     int _hitCount;
+
+    /// <summary>[전 머신] 이 머신이 재생까지 끝낸 히트 번호. 색 계산과 보고 번호의 기준.</summary>
+    int _appliedSerial;
+
+    int   _reportedSerial = -1;
+    float _nextReportTime;
+
+    ColorWall         _sphereColor;
+    StageNetworkState _netState;
 
     /// <summary>전체 하강거리 = 체크포인트 거리의 합. UI 진행도 분모의 SSOT.</summary>
     public float TotalDistance
@@ -136,6 +189,20 @@ public class BossSpherePhaseDriver : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
+
+        if (sphereWall != null)
+        {
+            _sphereColor = sphereWall.GetComponent<ColorWall>();
+            _sphereColor?.SetNetworkHitHandler(OnLocalOwnerColorMatch);
+
+            var randomizer = sphereWall.GetComponent<WallLineRandomizer>();
+            if (randomizer != null && randomizer.enabled)
+                Debug.LogError(
+                    $"[BossSpherePhaseDriver] '{sphereWall.name}'에 WallLineRandomizer가 켜져 있음 — " +
+                    "Sphere 색·하강을 로컬 타이머로 덮어써 Host/Client가 갈라진다. 컴포넌트를 제거할 것.", this);
+        }
+
         if (checkpointDistances != null && phaseTimeLimits != null
             && checkpointDistances.Length != phaseTimeLimits.Length)
             Debug.LogError(
@@ -144,24 +211,31 @@ public class BossSpherePhaseDriver : MonoBehaviour
                 "두 배열을 페이즈 수만큼 같은 길이로 채울 것.", this);
     }
 
+    void OnDestroy()
+    {
+        if (_netState != null) _netState.OnBossSphereHitChanged -= HandleBossSphereHitChanged;
+        _sphereColor?.SetNetworkHitHandler(null);
+        if (Instance == this) Instance = null;
+    }
+
     void Update()
     {
-        // 색 일치 정지가 끝난 순간을 잡아 같은 하강을 재발행한다.
-        // "IsMoving == false"만 보고 재발행하면 자연 완료(=시간 초과)나 maxTotalAdvance 오설정에서
-        // 무한 재발행이 되므로, 정지 상태의 true→false 전이만 트리거로 쓴다.
-        if (_activeIndex < 0 || sphereWall == null) return;
+        EnsureNetSubscribed();
 
-        if (sphereWall.IsPausedByColor)
-        {
-            _wasPausedByColor = true;
-            return;
-        }
+        // 시작 시각을 받았고 정지가 끝났으면 이번 번호의 하강을 한 번만 발행한다.
+        // 번호당 1회(_descentIssued)라 자연 완료(=시간 초과) 뒤 무한 재발행되지 않는다.
+        TryIssueDescent();
+    }
 
-        if (!_wasPausedByColor) return;
-
-        _wasPausedByColor = false;
-        if (!sphereWall.IsMoving)
-            RunActiveCheckpoint();
+    /// <summary>StageNetworkState는 씬 NetworkObject라 Awake 순서가 보장되지 않아 늦게 구독한다.
+    /// 사망 리로드로 인스턴스가 바뀌면 새 인스턴스로 다시 붙는다.</summary>
+    void EnsureNetSubscribed()
+    {
+        var sns = StageNetworkState.Instance;
+        if (sns == _netState) return;
+        if (_netState != null) _netState.OnBossSphereHitChanged -= HandleBossSphereHitChanged;
+        _netState = sns;
+        if (_netState != null) _netState.OnBossSphereHitChanged += HandleBossSphereHitChanged;
     }
 
     // ── 씬 배선용 (Inspector) ────────────────────────────────────
@@ -195,39 +269,116 @@ public class BossSpherePhaseDriver : MonoBehaviour
         float anchorDistance = CumulativeBefore(checkpointIndex);
         sphereWall.SnapToDistance(anchorDistance);
 
-        _activeIndex      = checkpointIndex;
-        _wasPausedByColor = false;
-        _hitCount         = 0; // 새 칸 = 히트 카운트 승리조건도 처음부터
-        RunActiveCheckpoint();
+        _activeIndex    = checkpointIndex;
+        _hitCount       = 0; // 새 칸 = 히트 카운트 승리조건도 처음부터
+        _appliedSerial  = 0;
+        _reportedSerial = -1;
+        _descentStart   = -1d;
+        _descentIssued  = false;
+
+        ApplyActiveColor();
+
+        EnsureNetSubscribed();
+        if (!IsClientOnly())
+        {
+            // Host: 이 칸의 하강 시작 시각 = 지금. 로컬 콜백(HandleBossSphereHitChanged)으로 Host도 같은 경로.
+            _netState?.SetBossSphereHit(checkpointIndex, 0, NetTime());
+        }
+        else if (_netState != null)
+        {
+            // Client: 이 칸 상태가 onPhaseEnter보다 먼저 도착해 있었을 수 있다(NV 간 도착 순서 무보장).
+            ApplyNetState(_netState.BossSphereHit);
+        }
+
+        TryIssueDescent();
     }
 
     /// <summary>
-    /// ColorWall 색 일치 시 호출 (Sphere의 ColorWall.OnColorMatch에 연결).
-    /// 현재 활성 칸의 requiredHitCounts를 채우면 BossFightObjective.NotifyPhaseCleared()를 호출한다.
-    ///
-    /// [Host 전용] ColorWall.HandleContact()는 각 머신이 로컬 충돌 감지로 독립 실행하므로
-    /// Client에서도 이 메서드가 호출될 수 있다. NotifyPhaseCleared() 자체도 Host 가드가 있지만,
-    /// 이 컴포넌트의 _hitCount도 Client에서 앞서가지 않도록 PhaseSurviveChallenge와 동일하게 여기서 막는다.
-    ///
-    /// 이미 목표를 채운 뒤(같은 프레임 안에서 다음 onPhaseEnter가 아직 안 왔을 때) 추가로 불려도
-    /// _hitCount가 이미 목표 이상이면 무시 — NotifyPhaseCleared() 중복 호출(=페이즈 스킵) 방지.
+    /// [전 머신] 이 머신의 Owner 캐릭터가 Sphere에 색을 맞춰 닿았을 때 ColorWall이 호출.
+    /// 로컬에선 아무것도 재생하지 않고 Host에 보고만 한다 — 정지·색 전환은 Host 확정 후
+    /// HandleBossSphereHitChanged()에서 전 머신이 같이 재생한다.
     /// </summary>
-    public void RegisterColorHit()
+    void OnLocalOwnerColorMatch(Player p)
+    {
+        if (_activeIndex < 0 || !IsHitCheckpoint(_activeIndex)) return;
+        if (sphereWall == null || sphereWall.IsPausedByColor) return;
+        if (_reportedSerial == _appliedSerial && Time.time < _nextReportTime) return;
+
+        EnsureNetSubscribed();
+        var netObj = p.GetComponent<NetworkObject>();
+        if (_netState == null || netObj == null || !netObj.IsSpawned) return;
+
+        _reportedSerial = _appliedSerial;
+        _nextReportTime = Time.time + ReportRetryInterval;
+        _netState.ReportBossSphereHit(netObj.NetworkObjectId, _activeIndex, _appliedSerial);
+    }
+
+    /// <summary>
+    /// [Host 전용] Owner 보고 검증 후 히트 확정. StageNetworkState.ReportBossSphereHitServerRpc에서 호출.
+    /// 칸·번호가 현재와 다르면(이미 다른 사람 히트가 확정됨 / 이전 칸의 늦은 보고) 버리고,
+    /// 정지 중이거나 Host가 보는 Sphere 색과 그 플레이어 색이 다르면 버린다.
+    /// 목표를 채우면 BossFightObjective.NotifyPhaseCleared() — 이미 채운 뒤의 보고는 무시(페이즈 스킵 방지).
+    /// </summary>
+    public void TryAcceptHitFromHost(Player p, int checkpointIndex, int hitSerial)
     {
         if (IsClientOnly()) return;
-        if (_activeIndex < 0) return;
+        if (p == null || p.IsDead) return;
+        if (_activeIndex < 0 || checkpointIndex != _activeIndex || hitSerial != _hitCount) return;
 
-        int required = (requiredHitCounts != null && _activeIndex < requiredHitCounts.Length)
-            ? requiredHitCounts[_activeIndex]
-            : 0;
-        if (required <= 0) return; // 이 페이즈는 히트 카운트 승리조건 없음
-
-        if (_hitCount >= required) return; // 이미 클리어 통지함 — 중복 방지
+        int required = RequiredHits(_activeIndex);
+        if (required <= 0 || _hitCount >= required) return;
+        if (sphereWall == null || sphereWall.IsPausedByColor) return;
+        if (_sphereColor == null || !_sphereColor.Matches(p)) return;
 
         _hitCount++;
+        // 재개 시각 = 지금 + 원점 복귀 + 정지. 전 머신이 이 시각부터 하강을 다시 센다.
+        double resumeAt = NetTime() + sphereWall.PauseReturnDuration + PauseDuration;
+        EnsureNetSubscribed();
+        _netState?.SetBossSphereHit(_activeIndex, _hitCount, resumeAt); // Host 로컬 콜백으로 정지도 즉시 재생
+
         if (_hitCount >= required)
             bossFightObjective?.NotifyPhaseCleared();
     }
+
+    void HandleBossSphereHitChanged(BossSphereHitState state) => ApplyNetState(state);
+
+    /// <summary>
+    /// [전 머신] Host 확정 상태 반영.
+    ///  · 번호가 올라감 → 정지 재생 + 색 끔(정지 중 Default) + 새 재개 시각 기억.
+    ///  · 같은 번호인데 아직 시작 시각이 없음 → 칸 진입 시작 시각 기억.
+    /// 실제 하강 발행은 TryIssueDescent()가 정지가 끝난 뒤 한다.
+    /// </summary>
+    void ApplyNetState(BossSphereHitState state)
+    {
+        if (_activeIndex < 0 || state.checkpointIndex != _activeIndex) return;
+
+        if (state.hitSerial > _appliedSerial)
+        {
+            _appliedSerial = state.hitSerial;
+            _descentStart  = state.descentStartServerTime;
+            _descentIssued = false;
+            _sphereColor?.ResetToDefault();
+            if (sphereWall != null) sphereWall.PauseTemporarily(PauseDuration);
+            return;
+        }
+
+        if (state.hitSerial == _appliedSerial && _descentStart < 0d)
+            _descentStart = state.descentStartServerTime;
+    }
+
+    /// <summary>시작 시각 수신 + 정지 종료 + 미발행이면 이번 번호의 하강을 발행하고 그 번호의 색을 칠한다.</summary>
+    void TryIssueDescent()
+    {
+        if (_activeIndex < 0 || sphereWall == null) return;
+        if (_descentIssued || _descentStart < 0d) return;
+        if (sphereWall.IsPausedByColor || sphereWall.IsMoving) return;
+
+        _descentIssued = true;
+        ApplyActiveColor(); // 정지 중 Default였던 색을 이번 번호 색으로
+        RunActiveCheckpoint();
+    }
+
+    float PauseDuration => _sphereColor != null ? _sphereColor.PauseDuration : 2f;
 
     /// <summary>
     /// 시계 정지 (제자리). PhaseManager.onAllPhasesComplete에 연결 —
@@ -237,8 +388,8 @@ public class BossSpherePhaseDriver : MonoBehaviour
     /// </summary>
     public void StopClock()
     {
-        _activeIndex      = -1;
-        _wasPausedByColor = false;
+        _activeIndex = -1;
+        _sphereColor?.ResetToDefault();
         sphereWall?.Deactivate();
     }
 
@@ -254,8 +405,7 @@ public class BossSpherePhaseDriver : MonoBehaviour
         if (_activeIndex < 0) return;
         if (PhaseManager.Instance != null && PhaseManager.Instance.AllPhasesComplete) return;
 
-        _activeIndex      = -1;
-        _wasPausedByColor = false;
+        _activeIndex = -1;
 
         Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         foreach (Player p in players)
@@ -273,6 +423,57 @@ public class BossSpherePhaseDriver : MonoBehaviour
         return nm != null && nm.IsListening && !nm.IsServer;
     }
 
+    static double NetTime()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null ? nm.ServerTime.Time : Time.timeAsDouble;
+    }
+
+    int RequiredHits(int checkpointIndex) =>
+        (requiredHitCounts != null && checkpointIndex >= 0 && checkpointIndex < requiredHitCounts.Length)
+            ? requiredHitCounts[checkpointIndex]
+            : 0;
+
+    bool IsHitCheckpoint(int checkpointIndex) => RequiredHits(checkpointIndex) > 0;
+
+    /// <summary>활성 칸이 히트 칸이면 현재 번호의 색, 아니면 Default(일치 불가)를 칠한다.</summary>
+    void ApplyActiveColor()
+    {
+        if (_sphereColor == null) return;
+        if (_activeIndex >= 0 && IsHitCheckpoint(_activeIndex))
+            _sphereColor.SetColor(HitColorFor(_activeIndex, _appliedSerial));
+        else
+            _sphereColor.ResetToDefault();
+    }
+
+    /// <summary>
+    /// (시드, 칸, 히트 번호) → 색. 전 머신이 같은 입력으로 같은 값을 얻으므로 색 자체는 전송하지 않는다.
+    /// 번호 0부터 차례로 뽑으며 직전 색은 후보에서 뺀다(같은 색 연속 방지).
+    /// </summary>
+    ColorWall.WallColorType HitColorFor(int checkpointIndex, int hitSerial)
+    {
+        ColorWall.WallColorType[] pool = GameSessionWallColorRemap.FilterPool(hitColorPool);
+        if (pool == null || pool.Length == 0) return ColorWall.WallColorType.Black;
+
+        int prev = -1;
+        for (int s = 0; s <= hitSerial; s++)
+        {
+            var rng = new System.Random(NetworkSessionData.Seed ^ HitColorSalt
+                                        ^ (checkpointIndex * 0x2545F491)
+                                        ^ (s * unchecked((int)0x9E3779B9)));
+            if (prev < 0 || pool.Length == 1)
+            {
+                prev = rng.Next(0, pool.Length);
+            }
+            else
+            {
+                int pick = rng.Next(0, pool.Length - 1);
+                prev = pick >= prev ? pick + 1 : pick;
+            }
+        }
+        return pool[prev];
+    }
+
     /// <summary>checkpointIndex 칸이 시작하는 절대 거리(= 그 앞 칸들의 checkpointDistances 합).
     /// AdvanceToCheckpoint()의 스냅 앵커, RunActiveCheckpoint()의 "바닥까지 남은 거리" 계산 공용.</summary>
     float CumulativeBefore(int checkpointIndex)
@@ -288,6 +489,7 @@ public class BossSpherePhaseDriver : MonoBehaviour
     /// 지금 활성 칸(_activeIndex)의 앵커에서 바닥까지 남은 거리를 하강시킨다(2026-09-11 재설계).
     /// P3 색 히트로 정지가 풀려 Update()가 이걸 재호출할 때도 매번 이 "바닥까지 전체" 거리로 다시
     /// 낙하한다 — 맞출 때마다 위협이 처음부터 다시 다가오는 게 의도(§6 "반복해 버틴다").
+    /// 진행도는 Host가 정한 _descentStart 기준 서버 시각으로 계산(RunOnceSynced) — 전 머신 동일.
     /// </summary>
     void RunActiveCheckpoint()
     {
@@ -297,7 +499,10 @@ public class BossSpherePhaseDriver : MonoBehaviour
             ? phaseTimeLimits[_activeIndex]
             : 0f;
 
-        sphereWall.RunOnce(remaining, 0f, timeLimit, 0f);
+        if (timeLimit <= 0f)
+            Debug.LogError($"[BossSpherePhaseDriver] '{name}' phaseTimeLimits[{_activeIndex}]가 0 — 하강이 즉시 끝나 전멸한다.", this);
+
+        sphereWall.RunOnceSynced(remaining, timeLimit, _descentStart);
     }
 
     // ── 에디터 ───────────────────────────────────────────────────

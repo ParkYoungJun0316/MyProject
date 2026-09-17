@@ -178,6 +178,7 @@ public static class NotoFontStaticBaker
         // Static으로 굳히면 TMP가 더는 이 에셋에 되쓰지 않는다(원본 폰트 참조도 해제됨).
         // 재베이크는 여전히 가능하다 — m_SourceFontFileGUID가 남아 LoadFontFace가 지연 복구한다.
         font.atlasPopulationMode = AtlasPopulationMode.Static;
+        SetAtlasTexturesNonReadable(font);
 
         UpdateMainMaterial(font, entry);
         EditorUtility.SetDirty(font);
@@ -188,6 +189,27 @@ public static class NotoFontStaticBaker
         Debug.Log($"[FontBaker] {entry.MainLabel} — 요청 {unicodes.Length}자, 아틀라스 페이지 " +
                   $"{font.atlasTextures?.Length ?? 0}장{missingNote}.", font);
         return true;
+    }
+
+    /// <summary>
+    /// Static 아틀라스는 런타임에 되쓰지 않으니 Read/Write가 필요 없다. 켜 두면 빌드에서 텍스처가
+    /// CPU·GPU에 두 벌 올라간다(4096² Alpha8 기준 장당 +16MB). TMP 인스펙터는 Static 전환 시
+    /// 이걸 자동으로 끄지만, 코드로 atlasPopulationMode를 바꾸면 그 처리를 타지 않아 직접 끈다.
+    /// 재베이크 때는 ClearFontAssetData(→ClearAtlasTextures)가 page 0을 다시 readable로 돌려놓는다.
+    /// </summary>
+    static void SetAtlasTexturesNonReadable(TMP_FontAsset font)
+    {
+        if (font.atlasTextures == null) return;
+
+        foreach (Texture2D tex in font.atlasTextures)
+        {
+            if (tex == null || !tex.isReadable) continue;
+
+            var texSo = new SerializedObject(tex);
+            texSo.FindProperty("m_IsReadable").boolValue = false;
+            texSo.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(tex);
+        }
     }
 
     /// <summary>

@@ -17,7 +17,20 @@ using UnityEngine.Events;
 /// [트리거 활성화]
 ///  activateOnPlayerTrigger = true 시:
 ///  이 GameObject에 BoxCollider(Is Trigger = true)를 추가하면
-///  플레이어 진입 시 자동으로 복도가 시작됨.
+///  플레이어 진입 시 자동으로 복도가 시작됨. 트리거 판정은 Host만 한다(Client는 시작 시각 수신으로 따라감).
+///
+/// [네트워크 — 틱 결정론 시뮬, 2026-09-18 Steam 실기 버그 수정]
+///  예전엔 머신마다 Activate() 이후 "현재 위치 + 속도×dt"를 로컬로 누적했고, 속도 변경 시각도
+///  "변경을 감지한 시각 + 간격"으로 잡았다. 그래서 ① Client의 늦은 시작, ② 프레임 단위로 늦게 감지된
+///  속도 변경이 다음 스케줄에 누적, ③ Maximum Allowed Timestep을 넘는 히치로 버려진 스텝이 전부
+///  영구 오차가 돼 막바지에 Host/Client 벽 위치가 수 m 갈라졌다.
+///  지금은:
+///   · Host가 Activate 순간의 ServerTime을 StageNetworkState.CorridorStartServerTime에 확정.
+///   · 전 머신이 그 시각부터 "몇 번째 고정 틱인가"로 같은 시뮬(속도 변경도 틱 번호로 예약)을 돌린다.
+///   · 평소엔 FixedUpdate 1회 = 1틱, 서버 시각이 가리키는 틱과 DriftToleranceTicks 넘게 벌어지면
+///     따라잡거나(최대 MaxExtraTicksPerStep) 한 스텝 쉰다 → 오차가 쌓이지 않는다.
+///   · 위치는 Rigidbody에서 다시 읽지 않고 내부 시뮬 값만 쓴다.
+///  남는 오차는 Client ServerTime 추정 오차 + 허용 틱 수만큼(속도 × 수십 ms)이며 시간이 지나도 늘지 않는다.
 ///
 /// [필수 컴포넌트 — 각 벽 오브젝트에]
 ///  Rigidbody: Is Kinematic = true, Interpolate = Interpolate
@@ -94,13 +107,33 @@ public class MovingCorridor : MonoBehaviour
     [Tooltip("복도 비활성화 시 호출")]
     public UnityEvent OnDeactivated;
 
-    bool _isActive;
+    // 서버 시각이 가리키는 틱과 이만큼 넘게 벌어져야 보정한다. 프레임 단위로만 갱신되는 ServerTime 때문에
+    // 한 프레임 안의 여러 FixedUpdate가 ±1~2틱 흔들리는 것을 보정으로 오인하지 않기 위한 여유.
+    const int DriftToleranceTicks = 2;
+    // 한 FixedUpdate에서 추가로 따라잡을 최대 틱 수 — 늦은 시작·히치를 몇 스텝에 나눠 따라잡아 순간이동을 줄인다.
+    const int MaxExtraTicksPerStep = 4;
+    // Client가 이보다 오래된 시작 시각은 받아들이지 않는다(재활성화 시 낡은 값 재사용 방지).
+    const double AnchorMaxAgeSec = 10.0;
+
+    // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52, 0x434F4C57(ColorWall), 0x574C525A(WallLineRandomizer), 0x53504852(BossSpherePhaseDriver)
+    const int SeedSalt = 0x4D43_0001;
+
+    bool _running;
     bool _hasTriggered;
+
+    // ── 결정론 시뮬 상태 (전 머신 동일) ──
+    double _anchorServerTime;
+    double _consumedAnchor = -1.0;
+    float  _tickDt;
+    long   _simTick;
+    bool   _simInitialized;
+    Vector3 _simBack;
+    Vector3 _simFront;
 
     float _backRandomSpeed;
     float _frontRandomSpeed;
-    float _nextBackRandomChangeTime;
-    float _nextFrontRandomChangeTime;
+    long  _nextBackChangeTick;
+    long  _nextFrontChangeTick;
     System.Random _rng;
 
     void Start()
@@ -114,6 +147,7 @@ public class MovingCorridor : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (!activateOnPlayerTrigger) return;
+        if (IsClientOnly()) return; // Client는 Host가 확정한 시작 시각으로 따라간다
         if (activateOnce && _hasTriggered) return;
 
         Player player = other.GetComponent<Player>();
@@ -125,89 +159,152 @@ public class MovingCorridor : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!_isActive) return;
+        if (!_running)
+        {
+            if (IsClientOnly()) TryStartFromHostAnchor();
+            if (!_running) return;
+        }
 
-        float now = GetNetworkTime();
+        long targetTick = (long)Math.Floor((NetTime() - _anchorServerTime) / _tickDt);
+        long diff = targetTick - _simTick;
 
-        UpdateRandomSpeed(ref _backRandomSpeed, ref _nextBackRandomChangeTime, backRandomSpeed, now);
-        UpdateRandomSpeed(ref _frontRandomSpeed, ref _nextFrontRandomChangeTime, frontRandomSpeed, now);
+        int steps;
+        if (diff > DriftToleranceTicks)       steps = 1 + (int)Math.Min(diff - 1, MaxExtraTicksPerStep);
+        else if (diff < -DriftToleranceTicks) steps = 0; // 앞서 있음 — 서버 시각이 따라올 때까지 한 스텝 쉼
+        else                                  steps = 1;
 
-        Vector3 direction = moveDirection.normalized;
-        float dt = Time.fixedDeltaTime;
-        float backSpeed  = HasDiscreteSpeeds(backRandomSpeed)  ? _backRandomSpeed  : baseSpeed;
-        float frontSpeed = HasDiscreteSpeeds(frontRandomSpeed) ? _frontRandomSpeed : baseSpeed;
+        for (int i = 0; i < steps; i++)
+            StepSimulation();
 
-        Vector3 backNextPos = backWall != null ? backWall.position + direction * (backSpeed * dt) : Vector3.zero;
-        Vector3 frontNextPos = frontWall != null ? frontWall.position + direction * (frontSpeed * dt) : Vector3.zero;
-
-        EnforceWallDistanceLimits(direction, ref backNextPos, ref frontNextPos);
-
-        if (backWall != null) backWall.MovePosition(backNextPos);
-        if (frontWall != null) frontWall.MovePosition(frontNextPos);
+        if (backWall != null)  backWall.MovePosition(_simBack);
+        if (frontWall != null) frontWall.MovePosition(_simFront);
     }
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>복도 이동 시작.</summary>
+    /// <summary>
+    /// 복도 이동 시작. Host는 지금 서버 시각을 시작 시각으로 확정해 배포하고,
+    /// Client는 호출돼도 직접 시작하지 않는다 — Host 시작 시각을 받으면 FixedUpdate에서 시작(늦으면 따라잡음).
+    /// </summary>
     public void Activate()
     {
-        if (_isActive) return;
+        if (_running) return;
+        if (IsClientOnly()) return;
 
-        _isActive = true;
-        InitializeRandomRuntime();
-        OnActivated?.Invoke();
+        double anchor = NetTime();
+        StageNetworkState.Instance?.MarkCorridorStart(anchor);
+        StartSimulation(anchor);
     }
 
-    /// <summary>복도 이동 중단.</summary>
+    /// <summary>복도 이동 중단 (현 위치 정지). 전 머신 로컬 호출 — 클리어 시 SceneFlowManager가 부른다.</summary>
     public void Deactivate()
     {
-        if (!_isActive) return;
-        _isActive = false;
+        if (!_running) return;
+        _running = false;
         OnDeactivated?.Invoke();
     }
 
     // ── 내부 ────────────────────────────────────────────────────
 
-    /// <summary>Host/Client 결정론적 시간 소스. NetworkManager가 없으면(에디터 단독 테스트) Time.time 폴백.
-    /// WallMover.ScheduleRoutine / WallWaveController.FixedUpdate와 동일 패턴.</summary>
-    static float GetNetworkTime()
+    static bool IsClientOnly()
     {
         var nm = NetworkManager.Singleton;
-        return nm != null ? (float)nm.ServerTime.Time : Time.time;
+        return nm != null && nm.IsListening && !nm.IsServer;
+    }
+
+    /// <summary>WallMover / WallWaveController와 같은 시간 소스(ServerTime).</summary>
+    static double NetTime()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null ? nm.ServerTime.Time : Time.timeAsDouble;
+    }
+
+    void TryStartFromHostAnchor()
+    {
+        var sns = StageNetworkState.Instance;
+        if (sns == null) return;
+
+        double anchor = sns.CorridorStartServerTime;
+        if (anchor <= 0d || anchor.Equals(_consumedAnchor)) return;
+        if (NetTime() - anchor > AnchorMaxAgeSec) return;
+
+        StartSimulation(anchor);
+    }
+
+    void StartSimulation(double anchor)
+    {
+        _anchorServerTime = anchor;
+        _consumedAnchor   = anchor;
+        _tickDt           = Time.fixedDeltaTime;
+        _simTick          = 0;
+
+        // 최초 시작만 씬 배치 위치에서 출발. 재활성화는 멈춘 자리에서 이어간다(전 머신 동일).
+        // 뒷벽은 시작 직전까지 비활성이라 Rigidbody 대신 Transform 위치를 읽는다.
+        if (!_simInitialized)
+        {
+            _simBack  = backWall  != null ? backWall.transform.position  : Vector3.zero;
+            _simFront = frontWall != null ? frontWall.transform.position : Vector3.zero;
+            _simInitialized = true;
+        }
+
+        InitializeRandomRuntime();
+        _running = true;
+        OnActivated?.Invoke();
     }
 
     void InitializeRandomRuntime()
     {
         // Environment.TickCount는 머신마다 값이 달라 Host/Client가 다른 랜덤 시퀀스를 뽑는 원인이었음.
         // StagePressurePadSetup.ApplySeedAndColors()와 동일한 "Seed ^ salt" 관례로 결정론적 시드 사용.
-        // 다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52, 0x434F4C57(ColorWall), 0x574C525A(WallLineRandomizer)
-        const int seedSalt = 0x4D43_0001;
-        int seed = useFixedRandomSeed ? randomSeed : (NetworkSessionData.Seed ^ seedSalt);
+        int seed = useFixedRandomSeed ? randomSeed : (NetworkSessionData.Seed ^ SeedSalt);
         _rng = new System.Random(seed);
 
-        _backRandomSpeed = 0f;
-        _frontRandomSpeed = 0f;
-        _nextBackRandomChangeTime = 0f;
-        _nextFrontRandomChangeTime = 0f;
+        _backRandomSpeed     = 0f;
+        _frontRandomSpeed    = 0f;
+        _nextBackChangeTick  = 0;
+        _nextFrontChangeTick = 0;
+    }
+
+    /// <summary>고정 틱 1회 진행. 입력은 틱 번호뿐이라 전 머신이 같은 순서로 같은 값을 얻는다.</summary>
+    void StepSimulation()
+    {
+        UpdateRandomSpeed(ref _backRandomSpeed,  ref _nextBackChangeTick,  backRandomSpeed);
+        UpdateRandomSpeed(ref _frontRandomSpeed, ref _nextFrontChangeTick, frontRandomSpeed);
+
+        Vector3 direction = moveDirection.normalized;
+        float backSpeed  = HasDiscreteSpeeds(backRandomSpeed)  ? _backRandomSpeed  : baseSpeed;
+        float frontSpeed = HasDiscreteSpeeds(frontRandomSpeed) ? _frontRandomSpeed : baseSpeed;
+
+        Vector3 backNext  = backWall  != null ? _simBack  + direction * (backSpeed  * _tickDt) : _simBack;
+        Vector3 frontNext = frontWall != null ? _simFront + direction * (frontSpeed * _tickDt) : _simFront;
+
+        EnforceWallDistanceLimits(direction, ref backNext, ref frontNext);
+
+        _simBack  = backNext;
+        _simFront = frontNext;
+        _simTick++;
     }
 
     static bool HasDiscreteSpeeds(RandomWallSpeedSettings settings) =>
         settings.enabled && settings.discreteSpeeds != null && settings.discreteSpeeds.Length > 0;
 
-    void UpdateRandomSpeed(ref float currentSpeed, ref float nextChangeTime, RandomWallSpeedSettings settings, float now)
+    /// <summary>
+    /// 속도 변경을 틱 번호로 예약한다. 다음 변경 틱 = "이번 변경이 예약됐던 틱" + 간격 —
+    /// 감지 시각 기준으로 잡으면 감지 지연이 매번 스케줄에 누적된다(수정 전 버그).
+    /// </summary>
+    void UpdateRandomSpeed(ref float currentSpeed, ref long nextChangeTick, RandomWallSpeedSettings settings)
     {
         if (!HasDiscreteSpeeds(settings)) return;
-        if (_rng == null) InitializeRandomRuntime();
 
         float minInterval = Mathf.Max(settings.minInterval, 0f);
         float maxInterval = Mathf.Max(settings.maxInterval, minInterval);
         if (Mathf.Approximately(maxInterval, 0f)) return;
 
-        if (now >= nextChangeTime)
-        {
-            currentSpeed = settings.discreteSpeeds[_rng.Next(settings.discreteSpeeds.Length)];
-            nextChangeTime = now + RandomRange(minInterval, maxInterval);
-        }
+        if (_simTick < nextChangeTick) return;
+
+        currentSpeed = settings.discreteSpeeds[_rng.Next(settings.discreteSpeeds.Length)];
+        long intervalTicks = Math.Max(1L, (long)Math.Round(RandomRange(minInterval, maxInterval) / _tickDt));
+        nextChangeTick += intervalTicks;
     }
 
     float RandomRange(float min, float max)

@@ -6,12 +6,14 @@ using UnityEngine;
 ///
 /// Runner 스폰 수 / 포획 조건은 Stage5TargetObjective의 captureTable에서 페이즈별로 직접 설정.
 ///
-/// [기본값]
+/// [기본값 — TStage5RunnerRedesign.md §1.3]
 ///  인원   Chaser 스폰
-///   1        1
-///   2        3
-///   3        5
+///   1        6   (솔로: 러너가 본인이므로 수를 조금 줄인다)
+///   2        8
+///   3        8
 ///   4        8
+///  러너 재설계 이후 Chaser는 "러너 1명만" 쫓고 피격 시 소멸→리스폰하므로, 이 값은
+///  동시 스폰 수가 아니라 **살아있는 수의 유지 목표치**다(C7에서 스포너가 그렇게 쓴다).
 ///
 /// [Inspector]
 ///  chaserTable에서 인원별로 직접 수정 가능.
@@ -33,9 +35,9 @@ public class Stage5DifficultyConfig : MonoBehaviour
     [Header("Chaser 난이도 테이블")]
     [SerializeField] ChaserDifficultyRow[] chaserTable = new ChaserDifficultyRow[]
     {
-        new ChaserDifficultyRow { playerCount = 1, spawnCount = 1 },
-        new ChaserDifficultyRow { playerCount = 2, spawnCount = 3 },
-        new ChaserDifficultyRow { playerCount = 3, spawnCount = 5 },
+        new ChaserDifficultyRow { playerCount = 1, spawnCount = 6 },
+        new ChaserDifficultyRow { playerCount = 2, spawnCount = 8 },
+        new ChaserDifficultyRow { playerCount = 3, spawnCount = 8 },
         new ChaserDifficultyRow { playerCount = 4, spawnCount = 8 },
     };
 

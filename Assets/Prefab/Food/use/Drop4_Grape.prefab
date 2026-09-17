@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 484454046317869549}
   - component: {fileID: 1713363258623888251}
   - component: {fileID: -6929843658398371355}
-  - component: {fileID: -6649875835356170163}
+  - component: {fileID: 1354952631625932435}
   m_Layer: 16
   m_Name: Drop4_Grape
   m_TagString: EnemyBullet
@@ -225,8 +225,8 @@ MonoBehaviour:
   rollMinDistance: 40
   rollMaxDistance: 200
   rollRolloffMode: 0
---- !u!65 &-6649875835356170163
-BoxCollider:
+--- !u!64 &1354952631625932435
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -243,6 +243,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.3, y: 0.15, z: 0.15}
-  m_Center: {x: 0, y: 0.1, z: 0}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5892561577408024800, guid: 587147661d8aba648888207ddf28bf7c, type: 3}

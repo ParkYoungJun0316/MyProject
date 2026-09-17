@@ -314,18 +314,23 @@
 
 ## Tip.T.Stage5.1
 
-- ko: 어디서 패드를 밟든, 문을 열고 닫을 수 있습니다.\n흑색 문이 열리면 백색 문이 닫히고, 백색 문이 열리면 흑색 문이 닫힙니다.\n2층으로 가는 길을 먼저 찾으세요.
-- en: Stepping on a pad anywhere opens and closes the doors.\nWhen the black doors open, the white doors close, and vice versa.\nFind the way up to the second floor first.
-- ja: どこでパッドを踏んでも、扉が開閉します。\n黒い扉が開くと白い扉が閉じ、白い扉が開くと黒い扉が閉じます。\nまず2階へ上がる道を探してください。
-- zh-Hans: 无论在哪里踩踏板，都能开关门。\n黑门打开时白门关闭，白门打开时黑门关闭。\n请先找到通往二楼的路。
-- zh-Hant: 無論在哪裡踩踏板，都能開關門。\n黑門打開時白門關閉，白門打開時黑門關閉。\n請先找到通往二樓的路。
-- es: Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBuscad primero el camino hacia la segunda planta.
-- es-419: Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBusquen primero el camino hacia el segundo piso.
-- fr: Marcher sur un pad, où qu'il soit, ouvre et ferme les portes.\nQuand les portes noires s'ouvrent, les blanches se ferment, et inversement.\nCherchez d'abord le chemin vers le deuxième étage.
-- de: Ein Pad zu betreten öffnet und schließt die Türen, egal wo.\nÖffnen sich die schwarzen Türen, schließen sich die weißen — und umgekehrt.\nSucht zuerst den Weg zum zweiten Stock.
-- pt-BR: Pisar em um pad em qualquer lugar abre e fecha as portas.\nQuando as portas pretas abrem, as brancas fecham, e vice-versa.\nProcurem primeiro o caminho para o segundo andar.
-- ru: Наступив на площадку в любом месте, вы откроете и закроете двери.\nКогда открываются чёрные двери, белые закрываются — и наоборот.\nСначала найдите путь на второй этаж.
-- pl: Nadepnięcie na płytkę w dowolnym miejscu otwiera i zamyka drzwi.\nGdy otwierają się czarne drzwi, białe się zamykają, i na odwrót.\nNajpierw znajdźcie drogę na drugie piętro.
+> **⚠️ 2026-09-18 러너 재설계 — ko/en만 갱신됨.**
+> 아래 ja 이하 10개 언어는 **아직 옛 흑백 토글 문구**다(내용이 이제 사실과 다름).
+> 로컬라이제이션은 Steam AI 표기에서 실제 위험 구간이라(`project_steam_ai_disclosure`) 기계번역을
+> 임의로 채우지 않았다. 번역 방침을 정한 뒤 나머지 10개를 채울 것.
+
+- ko: 러너 한 명이 미로를 달리고, 나머지는 2층에서 길을 안내합니다.\n패드를 밟으면 그 색 문만 열리고 나머지는 전부 닫힙니다.\n고유색 패드는 그 색 플레이어만, 흑·백 패드는 누구나 밟을 수 있습니다.
+- en: One runner races through the maze while the others guide from the second floor.\nStepping on a pad opens only that color's doors and closes all the rest.\nColored pads work only for that color's player; black and white pads work for anyone.
+- ja: **[미갱신 — 옛 문구]** どこでパッドを踏んでも、扉が開閉します。\n黒い扉が開くと白い扉が閉じ、白い扉が開くと黒い扉が閉じます。\nまず2階へ上がる道を探してください。
+- zh-Hans: **[미갱신 — 옛 문구]** 无论在哪里踩踏板，都能开关门。\n黑门打开时白门关闭，白门打开时黑门关闭。\n请先找到通往二楼的路。
+- zh-Hant: **[미갱신 — 옛 문구]** 無論在哪裡踩踏板，都能開關門。\n黑門打開時白門關閉，白門打開時黑門關閉。\n請先找到通往二樓的路。
+- es: **[미갱신 — 옛 문구]** Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBuscad primero el camino hacia la segunda planta.
+- es-419: **[미갱신 — 옛 문구]** Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBusquen primero el camino hacia el segundo piso.
+- fr: **[미갱신 — 옛 문구]** Marcher sur un pad, où qu'il soit, ouvre et ferme les portes.\nQuand les portes noires s'ouvrent, les blanches se ferment, et inversement.\nCherchez d'abord le chemin vers le deuxième étage.
+- de: **[미갱신 — 옛 문구]** Ein Pad zu betreten öffnet und schließt die Türen, egal wo.\nÖffnen sich die schwarzen Türen, schließen sich die weißen — und umgekehrt.\nSucht zuerst den Weg zum zweiten Stock.
+- pt-BR: **[미갱신 — 옛 문구]** Pisar em um pad em qualquer lugar abre e fecha as portas.\nQuando as portas pretas abrem, as brancas fecham, e vice-versa.\nProcurem primeiro o caminho para o segundo andar.
+- ru: **[미갱신 — 옛 문구]** Наступив на площадку в любом месте, вы откроете и закроете двери.\nКогда открываются чёрные двери, белые закрываются — и наоборот.\nСначала найдите путь на второй этаж.
+- pl: **[미갱신 — 옛 문구]** Nadepnięcie na płytkę w dowolnym miejscu otwiera i zamyka drzwi.\nGdy otwierają się czarne drzwi, białe się zamykają, i na odwrót.\nNajpierw znajdźcie drogę na drugie piętro.
 
 ---
 

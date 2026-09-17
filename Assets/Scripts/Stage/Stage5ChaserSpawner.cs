@@ -4,24 +4,27 @@ using UnityEngine.AI;
 using System.Collections.Generic;
 
 /// <summary>
-/// Stage5 Chaser 스포너.
+/// Stage5 Chaser 스포너. 맵(Map_XX)마다 1개.
+/// `TStage5RunnerRedesign.md` §1.3이 SSOT.
 ///
-/// [동작]
-///  StartSpawning() — Stage5DifficultyConfig에서 인원별 수를 읽어 스폰.
-///                    StageStartGate.OnCountdownComplete Unity 이벤트에 연결.
-///  StartSpawning(count) — 직접 마릿수를 지정해 스폰 (외부 호출용).
-///  StopAndClear() — 활성 Chaser 전부 제거 (리셋 시).
+/// [동작 — 러너 재설계 2026-09-18]
+///  StartSpawning()  — Stage5DifficultyConfig에서 인원별 **유지 목표치**를 읽어 그만큼 스폰.
+///                     라운드 시작 3초 유예 후 T5RunnerRoundDirector가 호출한다.
+///  StopAndClear()   — 활성 Chaser 전부 제거 (라운드 종료·리셋 시).
 ///
-///  spawnPoints[]를 셔플 후 앞에서 count개 선택 → 각 위치에 Chaser 1마리 스폰.
+///  스폰 후에는 **살아있는 수를 유지**한다. 체이서는 러너를 때리면 스스로 소멸하므로(§1.3),
+///  Host가 매 프레임 살아있는 수를 세어 부족하면 respawnDelay(6초) 뒤에 1마리씩 다시 채운다.
+///  리스폰 지점은 **러너에서 minRunnerDistance(30m) 이상** 떨어진 후보 중에서 고른다 —
+///  바로 옆에서 튀어나오면 피할 수가 없다.
 ///
 /// [네트워크 — Host 전권 시뮬 (TStageNetworkBoard.md §3.2 확정)]
-///  OnCountdownComplete는 전 머신에서 로컬로 발동하므로 StartSpawning() 자체가 Host 가드.
 ///  Host만 Instantiate + NetworkObject.Spawn(). Client는 NGO 수신으로 로컬 복제본 자동 생성.
-///  셔플은 NetworkSessionData.Seed 기반 — Host만 쓰는 값이라 재현성·로그 목적.
+///  유지·리스폰 판정도 전부 Host 레인 — Client는 이 클래스의 Update를 타지 않는다.
+///  최초 셔플은 NetworkSessionData.Seed 기반(재현성·로그 목적, Host만 쓰는 값).
 ///
 /// [Inspector 설정]
 ///  chaserPrefab   : Chaser 프리팹 1개 (NetworkObject + 서버 권한 NetworkTransform 필요)
-///  spawnPoints    : 스폰 후보 Transform (10개 권장). 1개 이상 필요.
+///  spawnPoints    : 스폰 후보 Transform (맵당 16개). 1개 이상 필요.
 ///  spawnSampleRadius : NavMesh 위치 보정 반경(m)
 /// </summary>
 public class Stage5ChaserSpawner : MonoBehaviour
@@ -31,22 +34,36 @@ public class Stage5ChaserSpawner : MonoBehaviour
     public Stage5ChaserAI chaserPrefab;
 
     [Header("스폰 위치")]
-    [Tooltip("스폰 후보 Transform. 매 스폰마다 셔플 후 앞에서 count개 선택 (중복 없음).\n" +
-             "최소 1개. 10개 이상 배치 권장.")]
+    [Tooltip("스폰 후보 Transform. 최초 스폰은 셔플 후 앞에서 count개(중복 없음),\n" +
+             "리스폰은 러너에서 충분히 떨어진 후보 중 랜덤.")]
     public Transform[] spawnPoints;
 
     [Header("NavMesh 샘플링")]
     [Tooltip("스폰 위치를 NavMesh 위 점으로 보정하는 검색 반경(m)")]
     [SerializeField] float spawnSampleRadius = 3f;
 
+    [Header("리스폰 (§1.3)")]
+    [Tooltip("체이서가 소멸한 뒤 다시 채우기까지의 시간(초)")]
+    [SerializeField] float respawnDelay = 6f;
+
+    [Tooltip("리스폰 지점이 러너에게서 떨어져 있어야 하는 최소 거리(m)")]
+    [SerializeField] float minRunnerDistance = 30f;
+
     readonly List<Stage5ChaserAI> _activeChasers = new List<Stage5ChaserAI>();
+
+    // Host 레인 전용 유지 상태
+    bool _maintaining;
+    int  _targetCount;
+
+    // 소멸한 체이서 1마리당 "다시 채울 시각" 하나. 큐로 두는 이유는 같은 프레임에 2마리가
+    // 사라졌을 때 타이머 하나를 돌려쓰면 두 번째가 respawnDelay의 2배만큼 늦게 나오기 때문.
+    readonly List<float> _respawnDueAt = new List<float>();
 
     // ── 외부 API ────────────────────────────────────────────────
 
     /// <summary>
-    /// StageStartGate.OnCountdownComplete Unity 이벤트에 연결.
-    /// Stage5DifficultyConfig에서 인원별 Chaser 수를 읽어 스폰.
-    /// Config가 없으면 4인 기본값 사용.
+    /// 라운드 시작 유예 후 T5RunnerRoundDirector가 호출.
+    /// Stage5DifficultyConfig에서 인원별 유지 목표치를 읽어 스폰한다. Config가 없으면 8.
     /// </summary>
     public void StartSpawning()
     {
@@ -77,40 +94,132 @@ public class Stage5ChaserSpawner : MonoBehaviour
             return;
         }
 
-        Player[] players    = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        int      actualCount = Mathf.Min(count, spawnPoints.Length);
+        int actualCount = Mathf.Min(count, spawnPoints.Length);
 
         const int salt = 0x43484153; // 셔플 결정성용 salt("CHAS") — 값 자체는 Host만 사용
         UnityEngine.Random.InitState(NetworkSessionData.Seed ^ salt);
         int[] indices = ShuffledIndices(spawnPoints.Length);
 
         for (int i = 0; i < actualCount; i++)
-        {
-            Transform point = spawnPoints[indices[i]];
-            if (point == null) continue;
+            SpawnAt(spawnPoints[indices[i]]);
 
-            Vector3        pos    = SampleNavMeshPos(point.position);
-            Stage5ChaserAI chaser = Instantiate(chaserPrefab, pos, Quaternion.identity);
-            chaser.Activate(players);
-            _activeChasers.Add(chaser);
-
-            NetworkObject netObj = chaser.GetComponent<NetworkObject>();
-            if (netObj != null)
-                netObj.Spawn(destroyWithScene: true);
-            else
-                Debug.LogWarning("[Stage5ChaserSpawner] chaserPrefab에 NetworkObject가 없습니다.");
-        }
+        // 이후부터는 살아있는 수를 유지한다.
+        _targetCount = actualCount;
+        _maintaining = true;
+        _respawnDueAt.Clear();
 
         NetLog.Transition("Stage5ChaserSpawner", "SpawnComplete", $"count={actualCount} seed={NetworkSessionData.Seed}");
     }
 
-    /// <summary>리셋 시 호출.</summary>
+    /// <summary>라운드 종료·리셋 시 호출. 유지도 함께 멈춘다.</summary>
     public void StopAndClear()
     {
+        _maintaining = false;
+        _respawnDueAt.Clear();
         CleanupChasers();
     }
 
+    // ── 살아있는 수 유지 (Host 레인) ────────────────────────────
+
+    void Update()
+    {
+        if (!_maintaining || IsClientOnly()) return;
+
+        // 소멸한(Despawn된) 체이서를 걷어내고, 사라진 수만큼 리스폰 예약을 건다.
+        int before = _activeChasers.Count;
+        for (int i = _activeChasers.Count - 1; i >= 0; i--)
+            if (_activeChasers[i] == null) _activeChasers.RemoveAt(i);
+
+        for (int i = _activeChasers.Count; i < before; i++)
+            _respawnDueAt.Add(Time.time + respawnDelay);
+
+        if (_respawnDueAt.Count == 0) return;
+
+        for (int i = _respawnDueAt.Count - 1; i >= 0; i--)
+        {
+            if (Time.time < _respawnDueAt[i]) continue;
+
+            // 목표치를 이미 채웠다면(수동 스폰 등) 예약만 버린다.
+            if (_activeChasers.Count >= _targetCount) { _respawnDueAt.RemoveAt(i); continue; }
+
+            Transform point = PickRespawnPoint();
+            if (point == null) continue; // 조건에 맞는 자리가 없으면 예약을 남겨 다음 프레임에 재시도
+
+            SpawnAt(point);
+            _respawnDueAt.RemoveAt(i);
+        }
+    }
+
+    /// <summary>
+    /// 러너에서 minRunnerDistance 이상 떨어진 후보 중 랜덤. 러너를 못 찾으면 거리 조건을 버리고
+    /// 아무 후보나 쓴다(라운드 밖·명단 미확보 같은 예외 상황에서 리스폰이 영영 멈추지 않도록).
+    /// </summary>
+    Transform PickRespawnPoint()
+    {
+        if (spawnPoints == null || spawnPoints.Length == 0) return null;
+
+        Vector3? runnerPos = RunnerPosition();
+        var candidates = new List<Transform>();
+
+        foreach (Transform t in spawnPoints)
+        {
+            if (t == null) continue;
+            if (runnerPos != null &&
+                (t.position - runnerPos.Value).sqrMagnitude < minRunnerDistance * minRunnerDistance)
+                continue;
+            candidates.Add(t);
+        }
+
+        if (candidates.Count == 0)
+        {
+            if (runnerPos == null) return null;
+            // 러너가 맵 한가운데라 30m 밖 후보가 하나도 없는 경우 — 가장 먼 자리로 타협한다.
+            Transform farthest  = null;
+            float     bestDistSq = -1f;
+            foreach (Transform t in spawnPoints)
+            {
+                if (t == null) continue;
+                float d = (t.position - runnerPos.Value).sqrMagnitude;
+                if (d > bestDistSq) { bestDistSq = d; farthest = t; }
+            }
+            return farthest;
+        }
+
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+    }
+
+    Vector3? RunnerPosition()
+    {
+        var net = StageNetworkState.Instance;
+        var nm  = NetworkManager.Singleton;
+        if (net == null || nm == null || net.T5CurrentRound < 0) return null;
+
+        ulong runnerId = net.T5CurrentRunnerClientId;
+        if (!nm.ConnectedClients.TryGetValue(runnerId, out NetworkClient client)) return null;
+        if (client.PlayerObject == null) return null;
+
+        return client.PlayerObject.transform.position;
+    }
+
     // ── 내부 ────────────────────────────────────────────────────
+
+    void SpawnAt(Transform point)
+    {
+        if (point == null || chaserPrefab == null) return;
+
+        Vector3        pos    = SampleNavMeshPos(point.position);
+        Stage5ChaserAI chaser = Instantiate(chaserPrefab, pos, Quaternion.identity);
+
+        // 타겟은 체이서가 NV(러너 clientId)로 직접 고른다 — 여기서는 후보 풀만 넘긴다.
+        chaser.Activate(FindObjectsByType<Player>(FindObjectsSortMode.None));
+        _activeChasers.Add(chaser);
+
+        NetworkObject netObj = chaser.GetComponent<NetworkObject>();
+        if (netObj != null)
+            netObj.Spawn(destroyWithScene: true);
+        else
+            Debug.LogWarning("[Stage5ChaserSpawner] chaserPrefab에 NetworkObject가 없습니다.");
+    }
 
     Vector3 SampleNavMeshPos(Vector3 origin)
     {
@@ -163,6 +272,8 @@ public class Stage5ChaserSpawner : MonoBehaviour
 
     void OnDisable()
     {
+        _maintaining = false;
+        _respawnDueAt.Clear();
         CleanupChasers();
     }
 }

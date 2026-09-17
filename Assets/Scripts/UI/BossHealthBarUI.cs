@@ -19,15 +19,19 @@ using TMPro;
 ///          ├─ Seg4  (Image)
 ///          └─ Seg5  (Image)  ← segments[4]
 ///     └─ SphereTrack       (Image, T.Boss 전용/선택) — Sphere 하강 진행도 트랙
-///          └─ SphereMarker (Image)  ← sphereMarkerRect (트랙의 자식으로 둘 것)
+///          ├─ SphereTrackBg  (Image)  ← sphereTrackBg — 남은 구간(트랙 배경), 스프라이트 자유 교체
+///          ├─ SpherePinkFill (Image, Type=Filled/Horizontal)  ← spherePinkFill — 지나온 구간
+///          └─ SphereMarker  (Image, 사탕 스프라이트)  ← sphereMarkerRect (트랙의 자식으로 둘 것)
 ///
 /// [Inspector 연결]
 ///  objective        : 씬의 BossFightObjective
-///  segments[]       : 체력 칸 Image 배열, 왼→오 순서로 5개 등록
-///  segmentsBg       : (선택) 세그먼트 뒤에 까는 고정 배경 — color tint 대상 아님
+///  segments[]       : 체력 칸 Image 배열, 왼→오 순서로 5개 등록 (M.Boss 전용, T.Boss는 비워둘 것)
+///  segmentsBg       : (선택) 세그먼트 뒤에 까는 고정 배경 — color tint 대상 아님 (M.Boss 전용)
 ///  bossNameText     : (선택) 보스 이름 표시 텍스트
 ///  sphereDriver     : (T.Boss 전용) 씬의 BossSpherePhaseDriver — 진행도·전체거리 SSOT
-///  sphereMarkerRect : (T.Boss 전용) 트랙 위를 움직이는 마커
+///  sphereMarkerRect : (T.Boss 전용) 트랙 위를 움직이는 사탕 마커
+///  sphereTrackBg    : (T.Boss 전용) 트랙 배경(남은 구간) — 존재만 확인, 값 갱신 없음
+///  spherePinkFill   : (T.Boss 전용) 지나온 구간 Fill — fillAmount를 진행도로 매 프레임 갱신
 ///
 /// [BossFightObjective 쪽 설정]
 ///  OnPhaseCleared → BossHealthBarUI.OnPhaseCleared 연결
@@ -64,6 +68,13 @@ public class BossHealthBarUI : MonoBehaviour
              "이 컴포넌트가 anchorMin/Max.x를 진행도(0~1)로 갱신한다\n" +
              "(ObjectiveUI의 Ratio 슬롯 Track/Marker 구조와 동일).")]
     [SerializeField] RectTransform sphereMarkerRect;
+    [Tooltip("트랙 배경(남은 구간) Image. 스프라이트/색은 에디터에서 자유롭게 교체 —\n" +
+             "이 컴포넌트는 존재 여부만 보고 아무 값도 갱신하지 않는다(색 tint 대상 아님).\n" +
+             "비우면 배경 없이 진행 — M.Boss 등 Sphere가 없는 씬은 비워둘 것.")]
+    [SerializeField] Image sphereTrackBg;
+    [Tooltip("지나온 구간을 나타내는 가로 Fill 이미지 (Image Type=Filled, Fill Method=Horizontal).\n" +
+             "fillAmount을 진행도(0~1)로 매 프레임 갱신한다. 비우면 갱신하지 않음.")]
+    [SerializeField] Image spherePinkFill;
 
     RectTransform _rt;
     float         _lastMarkerProgress = -1f;
@@ -91,7 +102,7 @@ public class BossHealthBarUI : MonoBehaviour
         int total = objective != null ? objective.TotalPhases : segments != null ? segments.Length : 0;
         RefreshSegments(0, total);
 
-        if (sphereMarkerRect != null)
+        if (sphereMarkerRect != null || spherePinkFill != null)
             SetSphereMarkerProgress(0f);
     }
 
@@ -99,8 +110,8 @@ public class BossHealthBarUI : MonoBehaviour
     {
         // sphereDriver가 비어있으면(M.Boss 등 Sphere 없는 씬) 갱신하지 않음.
         // 이벤트 구독 없이 매 프레임 값을 직접 읽는다(§H.4) — 단 값이 실제로 바뀐 프레임만
-        // anchor를 다시 써서 UI를 매 프레임 dirty로 만들지 않는다.
-        if (sphereDriver == null || sphereMarkerRect == null) return;
+        // anchor/fillAmount를 다시 써서 UI를 매 프레임 dirty로 만들지 않는다.
+        if (sphereDriver == null || (sphereMarkerRect == null && spherePinkFill == null)) return;
 
         SetSphereMarkerProgress(sphereDriver.Progress01);
     }
@@ -132,15 +143,23 @@ public class BossHealthBarUI : MonoBehaviour
         }
     }
 
-    /// <summary>ObjectiveUI.SetMarkerProgress와 동일한 코드 형태 — 트랙 위 마커를 진행도(0~1)로 이동.</summary>
+    /// <summary>ObjectiveUI.SetMarkerProgress와 동일한 코드 형태 — 트랙 위 마커를 진행도(0~1)로 이동하고
+    /// 지나온 구간 핑크 Fill을 같은 값으로 채운다.</summary>
     void SetSphereMarkerProgress(float progress01)
     {
         float p = Mathf.Clamp01(progress01);
         if (Mathf.Approximately(p, _lastMarkerProgress)) return;
 
-        _lastMarkerProgress        = p;
-        sphereMarkerRect.anchorMin = new Vector2(p, 0.5f);
-        sphereMarkerRect.anchorMax = new Vector2(p, 0.5f);
+        _lastMarkerProgress = p;
+
+        if (sphereMarkerRect != null)
+        {
+            sphereMarkerRect.anchorMin = new Vector2(p, 0.5f);
+            sphereMarkerRect.anchorMax = new Vector2(p, 0.5f);
+        }
+
+        if (spherePinkFill != null)
+            spherePinkFill.fillAmount = p;
     }
 
     IEnumerator ShakeRoutine()

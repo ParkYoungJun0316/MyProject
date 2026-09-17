@@ -17,7 +17,8 @@ using UnityEngine.Events;
 ///  2. CloseAndSpawnTiles(): 열려 있던 베리어를 전부 Close(하강) + 타일 스폰 — 진짜 라운드 시작.
 ///     Reveal()을 건너뛰고 곧장 호출해도 그 자리에서 스폰부터 자동 수행한다(프리뷰 없이 즉시 시작,
 ///     M.Boss 같은 무프리뷰 씬용).
-///  3. 타일 밟으면 해당 색 베리어만 Open, 나머지 Close (HandleTileActivated)
+///  3. 타일 밟으면 해당 색 베리어만 Open, 나머지 Close — Host 타일 판정만 인정하고
+///     ChallengeStepBegin(ColorStepBase + 색)으로 배포, 전 머신이 그 스텝에서 개폐 (HandleTileActivated)
 ///
 /// [베리어 규칙]
 ///  - 한 번에 하나만 Open (토글 없음)
@@ -44,6 +45,9 @@ public class DirectionalBarrierRound : MonoBehaviour
     // (Close+타일 스폰)를 서로 다른 네트워크 신호로 분리해 Host/Client가 각각 언제 재생할지 구분한다.
     const int RevealStep = 0;
     const int CloseStep  = 1;
+    // 타일 활성화 = ColorStepBase + (int)PlayerColorType. Host만 판정해 이 값으로 배포하고, 전 머신이
+    // 같은 스텝에서 문을 여닫는다(HandleTileActivated 주석 참고).
+    const int ColorStepBase = 2;
 
     public enum SpawnDirection
     {
@@ -249,6 +253,8 @@ public class DirectionalBarrierRound : MonoBehaviour
             RevealBarriers();
         else if (stepIndex == CloseStep)
             CloseBarriersAndSpawnTiles();
+        else if (stepIndex >= ColorStepBase)
+            ApplyActiveColor((PlayerColorType)(stepIndex - ColorStepBase));
     }
 
     void RevealBarriers()
@@ -413,8 +419,29 @@ public class DirectionalBarrierRound : MonoBehaviour
 
     // ── 타일 활성화 처리 ─────────────────────────────────────────
 
+    /// <summary>
+    /// ColorTile.OnActivatedCallback. 타일 트리거는 머신마다 로컬 물리로 발동하므로 Host 판정만
+    /// 인정하고 스텝으로 배포한다 — 실제 개폐는 전 머신 공통 ApplyActiveColor가 한다.
+    /// [버그 수정 2026-09-18] 예전엔 각 머신이 자기 트리거 시점에 바로 문을 여닫아서(상대 플레이어는
+    /// 보간 지연만큼 늦게 보임) 베리어 높이가 머신마다 어긋났고, 발사체가 한 머신에서만 깨지는
+    /// 원인이 됐다(NetworkDesign.md §9.0.1-d).
+    /// </summary>
     void HandleTileActivated(PlayerColorType color)
     {
+        if (IsClientOnly()) return;
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.DirectionalBarrier) return;
+        if (!_colorToDoors.ContainsKey(color)) return;
+
+        _netState.ChallengeStepBegin(ColorStepBase + (int)color);
+    }
+
+    /// <summary>전 머신 공통: color 베리어만 Open, 나머지 Close.</summary>
+    void ApplyActiveColor(PlayerColorType color)
+    {
+        // late-subscribe catch-up — CloseStep을 못 보고 곧장 색 스텝을 받은 경우 스폰부터 복구.
+        if (_activeTiles.Count == 0)
+            CloseBarriersAndSpawnTiles();
+
         if (!_colorToDoors.ContainsKey(color)) return;
 
         foreach (KeyValuePair<PlayerColorType, List<DoorController>> pair in _colorToDoors)

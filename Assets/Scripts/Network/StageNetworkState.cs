@@ -164,6 +164,100 @@ public struct PhaseStartSignal : INetworkSerializable, IEquatable<PhaseStartSign
 }
 
 /// <summary>
+/// T.Boss Sphere 색 히트 상태(BossSpherePhaseDriver 전용 슬롯).
+/// checkpointIndex = 히트가 속한 체크포인트 칸, hitSerial = 그 칸에서 Host가 확정한 누적 히트 수,
+/// descentStartServerTime = 이번 하강(칸 진입 또는 히트 후 재개)이 시작되는 서버 시각.
+/// 전 머신은 (checkpointIndex, hitSerial)로 정지 재생 여부와 다음 색을, descentStartServerTime으로
+/// 하강 진행도를 결정론적으로 계산한다(로컬 경과 시간 누적 금지 — MovingCorridor와 같은 이유).
+/// 칸과 번호를 한 NV로 묶는 이유는 PhaseStartSignal과 동일 — 별도 NV면 도착 순서가 보장되지 않아
+/// Client가 이전 칸의 번호를 새 칸의 것으로 오인할 수 있다.
+/// </summary>
+public struct BossSphereHitState : INetworkSerializable, IEquatable<BossSphereHitState>
+{
+    public int    checkpointIndex;
+    public int    hitSerial;
+    public double descentStartServerTime;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref checkpointIndex);
+        serializer.SerializeValue(ref hitSerial);
+        serializer.SerializeValue(ref descentStartServerTime);
+    }
+
+    public bool Equals(BossSphereHitState other) =>
+        checkpointIndex == other.checkpointIndex && hitSerial == other.hitSerial
+        && descentStartServerTime.Equals(other.descentStartServerTime);
+
+    public override bool Equals(object obj) => obj is BossSphereHitState other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(checkpointIndex, hitSerial, descentStartServerTime);
+}
+
+/// <summary>
+/// T.Stage5 러너 라운드 상태(맵 추첨 결과 + 러너 + 현재 라운드 구간) — T5 전용 슬롯.
+/// `TStage5RunnerRedesign.md` §1.1: 맵 7개 중 2개를 뽑아 2라운드, 라운드마다 러너가 바뀐다.
+///
+/// [왜 한 NV인가] 맵 인덱스·러너 clientId·현재 라운드·구간 시각을 별도 NV로 나누면 Client 도착
+/// 순서가 보장되지 않아(PhaseStartSignal §과 동일 원인) "라운드는 1로 바뀌었는데 러너는 아직
+/// 0라운드 값"인 한 프레임이 생긴다. 그 프레임에 체이서 타겟·러너 마커·텔레포트 목적지가 전부
+/// 엉뚱한 사람을 가리키므로, 하나로 묶어 원자적으로 전달한다.
+///
+/// [값 규약]
+///  roundIndex           -1 = 아직 라운드 진입 전(추첨만 끝난 상태), 0/1 = 진행 중인 라운드
+///  mapIndex0/1          라운드별 맵 인덱스(0~6). -1 = 미추첨
+///  runnerClientId0/1    라운드별 러너 clientId. 솔로는 두 라운드 모두 같은 값
+///  roundStartServerTime 라운드 카운트다운이 시작된 서버 시각 — 3초 카운트다운·체이서 3초 유예의 앵커
+///  roundEndServerTime   제한시간(120초) 만료 서버 시각 — 타임아웃 판정과 타이머 UI의 앵커
+/// </summary>
+public struct T5RoundState : INetworkSerializable, IEquatable<T5RoundState>
+{
+    public int    roundIndex;
+    public int    mapIndex0;
+    public int    mapIndex1;
+    public ulong  runnerClientId0;
+    public ulong  runnerClientId1;
+    public double roundStartServerTime;
+    public double roundEndServerTime;
+
+    /// <summary>아직 아무것도 추첨되지 않은 초기값.</summary>
+    public static T5RoundState Empty => new T5RoundState
+    {
+        roundIndex = -1, mapIndex0 = -1, mapIndex1 = -1,
+        runnerClientId0 = 0, runnerClientId1 = 0,
+        roundStartServerTime = -1.0, roundEndServerTime = -1.0,
+    };
+
+    /// <summary>roundIndex 라운드의 맵 인덱스. 범위 밖이면 -1.</summary>
+    public int MapIndexOf(int round) => round == 0 ? mapIndex0 : round == 1 ? mapIndex1 : -1;
+
+    /// <summary>roundIndex 라운드의 러너 clientId. 범위 밖이면 ulong.MaxValue(= 러너 없음).</summary>
+    public ulong RunnerOf(int round) => round == 0 ? runnerClientId0 : round == 1 ? runnerClientId1 : ulong.MaxValue;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref roundIndex);
+        serializer.SerializeValue(ref mapIndex0);
+        serializer.SerializeValue(ref mapIndex1);
+        serializer.SerializeValue(ref runnerClientId0);
+        serializer.SerializeValue(ref runnerClientId1);
+        serializer.SerializeValue(ref roundStartServerTime);
+        serializer.SerializeValue(ref roundEndServerTime);
+    }
+
+    public bool Equals(T5RoundState other) =>
+        roundIndex == other.roundIndex
+        && mapIndex0 == other.mapIndex0 && mapIndex1 == other.mapIndex1
+        && runnerClientId0 == other.runnerClientId0 && runnerClientId1 == other.runnerClientId1
+        && roundStartServerTime.Equals(other.roundStartServerTime)
+        && roundEndServerTime.Equals(other.roundEndServerTime);
+
+    public override bool Equals(object obj) => obj is T5RoundState other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(
+        roundIndex, mapIndex0, mapIndex1, runnerClientId0, runnerClientId1,
+        roundStartServerTime, roundEndServerTime);
+}
+
+/// <summary>
 /// 스테이지 네트워크 상태 중앙 허브. NetworkBehaviour.
 /// M.Stage1 / T.Stage1 씬 내 NetworkObject GameObject에 부착.
 ///
@@ -260,6 +354,27 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── T.Boss Sphere 색 히트 동기화 (BossSpherePhaseDriver 전용 슬롯, 2026-09-17 버그 수정) ──
+    // [버그] ColorWall.HandleContact가 각 머신의 로컬 물리 충돌로 정지·색 전환을 독자 실행했다.
+    // Client에선 원격 플레이어가 kinematic이라 남의 히트를 구조적으로 못 보고(PioneerPathTile과 동일
+    // 클래스), 히트 카운트는 Host 물리가 본 충돌만 셌다 → Host/Client Sphere 위치·색이 갈라지고
+    // Client 히트는 거의 인식되지 않았다. 맞힌 본인(Owner)이 보고 → Host 확정 → 이 슬롯으로 전원 재생.
+    private readonly NetworkVariable<BossSphereHitState> _bossSphereHit = new(
+        new BossSphereHitState { checkpointIndex = -1, hitSerial = 0, descentStartServerTime = -1.0 },
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    // ── MovingCorridor 시작 서버 시각 (T.Stage4 전용 슬롯, 2026-09-18 버그 수정) ──
+    // [버그] 벽 위치를 머신마다 "로컬 Activate 이후 속도×dt 누적"으로 계산해, 시작 지연·속도 변경
+    // 감지 지연·프레임 히치가 영구 오차로 쌓였다(Steam 실기에서 막바지 수 m 차이). Host가 시작 시각을
+    // 확정하고, 전 머신이 이 시각 기준 틱 번호로 같은 결정론 시뮬을 돌린다. 씬당 복도 1개 전제.
+    private readonly NetworkVariable<double> _corridorStartServerTime = new(
+        -1.0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     // ── 팀 공유 목숨 (다운/부활, DownedReviveSystemDesign.md §4B) ──
     // 스테이지 시작 시 (인원수 − 1)로 초기화, 부활 성공마다 -1, 회복 없음. -1은 "아직 미초기화" 센티널
     // — PlayerSpawnCoordinator.OnPlayersReady에서 실제 인원수로 확정한다(파티 크기가 그 전엔 불안정).
@@ -310,11 +425,23 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // ── 흑/백 토글 문 동기화 (T.Stage5 미로 전용 슬롯) ──
-    // true = 흑 문 열림 / 백 문 닫힘. 패드 판정·쿨다운은 Host의 BlackWhiteDoorToggle이 담당하고,
-    // 전 머신은 이 값만 보고 DoorController.Open()/Close()를 재생한다. 사망 리로드 시 씬과 함께 초기값으로 돌아간다.
-    private readonly NetworkVariable<bool> _blackDoorOpen = new(
-        true,
+    // ── 색 게이트 문 동기화 (T.Stage5 미로 전용 슬롯) ──
+    // [2026-09-18 확장] 흑/백 2상태(_blackDoorOpen, bool) → "열린 색 1개 또는 없음"(int).
+    // `TStage5RunnerRedesign.md` §1.2: 패드 1개를 밟으면 그 색 문만 Open, 나머지 전부 Close.
+    // 흑·백도 같은 규칙의 한 색일 뿐이라 bool 2상태로는 표현할 수 없어 색 인덱스로 넓혔다.
+    // 값 = PlayerColorType의 int 캐스팅(Blue/Purple/Green/Yellow/Black/White), -1 = 전부 닫힘.
+    // 패드 판정은 Host의 게이트 컨트롤러가 담당하고, 전 머신은 이 값만 보고
+    // DoorController.Open()/Close()를 재생한다. 사망 리로드 시 씬과 함께 초기값(-1)으로 돌아간다.
+    private readonly NetworkVariable<int> _openGateColor = new(
+        -1,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    // ── T.Stage5 러너 라운드 슬롯 (T5 전용) ──
+    // 맵 2개·러너 2명 추첨 결과와 현재 라운드 구간. 묶는 이유는 T5RoundState 주석 참고.
+    private readonly NetworkVariable<T5RoundState> _t5Round = new(
+        T5RoundState.Empty,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
@@ -380,8 +507,40 @@ public class StageNetworkState : NetworkBehaviour
 
     public int  MemorySectionsCleared => _memorySectionsCleared.Value;
 
-    /// <summary>흑/백 토글 문 상태. true = 흑 열림(백 닫힘).</summary>
-    public bool IsBlackDoorOpen => _blackDoorOpen.Value;
+    /// <summary>
+    /// 현재 열려 있는 문 색. 값 = PlayerColorType의 int 캐스팅, -1 = 전부 닫힘.
+    /// 한 번에 한 색만 열린다(TStage5RunnerRedesign.md §1.2 배타 색 게이트).
+    /// </summary>
+    public int OpenGateColor => _openGateColor.Value;
+
+    /// <summary>color 문이 지금 열려 있는지. 게이트 컨트롤러·문 연출의 공통 판정점.</summary>
+    public bool IsGateColorOpen(PlayerColorType color) => _openGateColor.Value == (int)color;
+
+    /// <summary>T.Stage5 러너 라운드 상태 전체. 개별 값은 아래 헬퍼 참고.</summary>
+    public T5RoundState T5Round => _t5Round.Value;
+
+    /// <summary>진행 중인 라운드 인덱스. -1 = 아직 라운드 진입 전.</summary>
+    public int T5CurrentRound => _t5Round.Value.roundIndex;
+
+    /// <summary>진행 중인 라운드의 맵 인덱스. 라운드 진입 전이면 -1.</summary>
+    public int T5CurrentMapIndex => _t5Round.Value.MapIndexOf(_t5Round.Value.roundIndex);
+
+    /// <summary>진행 중인 라운드의 러너 clientId. 라운드 진입 전이면 ulong.MaxValue.</summary>
+    public ulong T5CurrentRunnerClientId => _t5Round.Value.RunnerOf(_t5Round.Value.roundIndex);
+
+    /// <summary>clientId가 이번 라운드의 러너인지. 라운드 진입 전에는 항상 false.</summary>
+    public bool IsT5Runner(ulong clientId) =>
+        _t5Round.Value.roundIndex >= 0 && T5CurrentRunnerClientId == clientId;
+
+    /// <summary>이 머신의 로컬 플레이어가 이번 라운드의 러너인지 — 러너 마커·카메라·UI 분기용.</summary>
+    public bool IsLocalPlayerT5Runner
+    {
+        get
+        {
+            var nm = NetworkManager.Singleton;
+            return nm != null && nm.IsListening && IsT5Runner(nm.LocalClientId);
+        }
+    }
 
     /// <summary>챌린지 스텝(문제/라운드) 인덱스가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnChallengeStepChanged;
@@ -409,6 +568,21 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>보스 페이즈 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점 — BossFightObjective가 구독해 OnPhaseCleared를 발동.</summary>
     public event Action<int> OnBossPhasesClearedChanged;
 
+    /// <summary>T.Boss Sphere 색 히트 상태가 바뀔 때 발동. 전 머신(Host 포함) 공통 구독점 — BossSpherePhaseDriver 전용.</summary>
+    public event Action<BossSphereHitState> OnBossSphereHitChanged;
+
+    public BossSphereHitState BossSphereHit => _bossSphereHit.Value;
+
+    /// <summary>MovingCorridor 시작 서버 시각. -1 = 아직 시작 안 함.</summary>
+    public double CorridorStartServerTime => _corridorStartServerTime.Value;
+
+    /// <summary>Host: MovingCorridor 시작 시각 확정. MovingCorridor.Activate()에서만 호출.</summary>
+    public void MarkCorridorStart(double serverTime)
+    {
+        if (!IsServer || IsDespawned) return;
+        _corridorStartServerTime.Value = serverTime;
+    }
+
     /// <summary>문 개폐 상태가 바뀔 때 발동(index, isOpen). Client가 구독해 DoorController.Open()/Close() 호출용.</summary>
     public event Action<int, bool> OnDoorStateChanged;
 
@@ -420,6 +594,18 @@ public class StageNetworkState : NetworkBehaviour
 
     /// <summary>MemoryRoundObjective 구역 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점.</summary>
     public event Action<int> OnMemorySectionsClearedChanged;
+
+    /// <summary>
+    /// 열린 문 색이 바뀔 때 발동(PlayerColorType의 int, -1 = 전부 닫힘). 전 머신 공통 구독점.
+    /// 게이트 컨트롤러가 구독해 색별 문 묶음의 Open()/Close()를 재생한다.
+    /// </summary>
+    public event Action<int> OnOpenGateColorChanged;
+
+    /// <summary>
+    /// T.Stage5 라운드 상태가 바뀔 때 발동. 전 머신 공통 구독점 — 라운드 디렉터(Host 외 연출),
+    /// 러너 마커, ObjectiveUI 타이머가 구독한다.
+    /// </summary>
+    public event Action<T5RoundState> OnT5RoundChanged;
 
     /// <summary>
     /// Stage5 타겟 포획 진행 상황(captured, required)이 바뀔 때 발동 — Client 전용 구독점.
@@ -479,10 +665,13 @@ public class StageNetworkState : NetworkBehaviour
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
+        _bossSphereHit.OnValueChanged    += OnBossSphereHitNv;
         _doorOpenStates.OnListChanged    += OnDoorOpenStatesChanged;
         _pioneerTileUnlocked.OnListChanged += OnPioneerTileUnlockedChanged;
         _trackerTargets.OnListChanged    += OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged += OnMemorySectionsClearedNv;
+        _openGateColor.OnValueChanged    += OnOpenGateColorNv;
+        _t5Round.OnValueChanged          += OnT5RoundNv;
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
@@ -502,10 +691,13 @@ public class StageNetworkState : NetworkBehaviour
         _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
+        _bossSphereHit.OnValueChanged    -= OnBossSphereHitNv;
         _doorOpenStates.OnListChanged    -= OnDoorOpenStatesChanged;
         _pioneerTileUnlocked.OnListChanged -= OnPioneerTileUnlockedChanged;
         _trackerTargets.OnListChanged    -= OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged -= OnMemorySectionsClearedNv;
+        _openGateColor.OnValueChanged    -= OnOpenGateColorNv;
+        _t5Round.OnValueChanged          -= OnT5RoundNv;
         PlayerSpawnCoordinator.OnPlayersReady -= InitTeamLives;
         if (Instance == this) Instance = null;
     }
@@ -949,6 +1141,45 @@ public class StageNetworkState : NetworkBehaviour
 
     void OnBossPhasesClearedNv(int prev, int next) => OnBossPhasesClearedChanged?.Invoke(next);
 
+    // ── T.Boss Sphere 색 히트 (BossSpherePhaseDriver 전용) ─────────
+
+    /// <summary>Host: Sphere 히트·하강 상태 확정. BossSpherePhaseDriver만 호출(칸 진입 시 0 리셋 / 히트 승인 시 +1).</summary>
+    public void SetBossSphereHit(int checkpointIndex, int hitSerial, double descentStartServerTime)
+    {
+        if (!IsServer || IsDespawned) return;
+        _bossSphereHit.Value = new BossSphereHitState
+        {
+            checkpointIndex        = checkpointIndex,
+            hitSerial              = hitSerial,
+            descentStartServerTime = descentStartServerTime,
+        };
+    }
+
+    void OnBossSphereHitNv(BossSphereHitState prev, BossSphereHitState next) => OnBossSphereHitChanged?.Invoke(next);
+
+    /// <summary>
+    /// Owner(Host 포함): 내 캐릭터가 Sphere에 색을 맞춰 부딪혔다고 보고. hitSerial은 보고 시점에
+    /// 이 머신이 보고 있던 번호 — Host가 현재 번호와 다르면(그 사이 다른 히트가 확정됨) 버린다.
+    /// 투사체 피격 보고(ReportTrapHitServerRpc)와 같은 "Client 감지 → Host 확정" 모델.
+    /// </summary>
+    public void ReportBossSphereHit(ulong playerNetId, int checkpointIndex, int hitSerial)
+    {
+        if (!IsSpawned) return;
+        ReportBossSphereHitServerRpc(playerNetId, checkpointIndex, hitSerial);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void ReportBossSphereHitServerRpc(ulong playerNetId, int checkpointIndex, int hitSerial, RpcParams rpcParams = default)
+    {
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerNetId, out var playerNetObj))
+            return;
+        // 자기 캐릭터의 히트만 보고할 수 있다
+        if (playerNetObj.OwnerClientId != rpcParams.Receive.SenderClientId) return;
+
+        BossSpherePhaseDriver.Instance?.TryAcceptHitFromHost(
+            playerNetObj.GetComponent<Player>(), checkpointIndex, hitSerial);
+    }
+
     // ── 문(Door) 개폐 동기화 (Door 전용 슬롯) ──────────────────────
 
     /// <summary>
@@ -1032,11 +1263,138 @@ public class StageNetworkState : NetworkBehaviour
 
     void OnMemorySectionsClearedNv(int prev, int next) => OnMemorySectionsClearedChanged?.Invoke(next);
 
-    /// <summary>Host: 흑/백 토글 문 상태 확정. BlackWhiteDoorToggle에서만 호출.</summary>
-    public void SetBlackDoorOpen(bool blackOpen)
+    // ── T.Stage5 색 게이트 / 러너 라운드 (T5 전용 슬롯) ───────────
+
+    /// <summary>
+    /// Host: 열린 문 색 확정. 색 게이트 컨트롤러에서만 호출.
+    /// color = PlayerColorType의 int 캐스팅, -1 = 전부 닫힘(라운드 시작 상태).
+    /// </summary>
+    public void SetOpenGateColor(int color)
     {
         if (!IsServer || IsDespawned) return;
-        _blackDoorOpen.Value = blackOpen;
+        _openGateColor.Value = color;
+    }
+
+    /// <summary>Host: 열린 문 색 확정(타입 오버로드).</summary>
+    public void SetOpenGateColor(PlayerColorType color) => SetOpenGateColor((int)color);
+
+    /// <summary>Host: 모든 문을 닫힌 상태로 — 라운드 시작·리셋 시 호출.</summary>
+    public void CloseAllGates() => SetOpenGateColor(-1);
+
+    /// <summary>
+    /// Host: 맵 2개·러너 2명 추첨 결과 확정. 라운드 디렉터가 스테이지 시작 시 1회 호출.
+    /// roundIndex는 -1(진입 전)로 초기화되고, 실제 진입은 BeginT5Round가 담당한다.
+    /// </summary>
+    public void SetT5Draw(int mapIndex0, int mapIndex1, ulong runner0, ulong runner1)
+    {
+        if (!IsServer || IsDespawned) return;
+        _t5Round.Value = new T5RoundState
+        {
+            roundIndex = -1,
+            mapIndex0 = mapIndex0, mapIndex1 = mapIndex1,
+            runnerClientId0 = runner0, runnerClientId1 = runner1,
+            roundStartServerTime = -1.0, roundEndServerTime = -1.0,
+        };
+    }
+
+    /// <summary>
+    /// Host: 라운드 진입 확정. 추첨 결과(맵·러너)는 유지하고 라운드 인덱스와 구간 시각만 갱신한다.
+    /// startServerTime = 카운트다운 시작 시각, endServerTime = 제한시간 만료 시각.
+    /// </summary>
+    public void BeginT5Round(int roundIndex, double startServerTime, double endServerTime)
+    {
+        if (!IsServer || IsDespawned) return;
+        T5RoundState cur = _t5Round.Value;
+        cur.roundIndex           = roundIndex;
+        cur.roundStartServerTime = startServerTime;
+        cur.roundEndServerTime   = endServerTime;
+        _t5Round.Value = cur;
+    }
+
+    void OnOpenGateColorNv(int prev, int next) => OnOpenGateColorChanged?.Invoke(next);
+    void OnT5RoundNv(T5RoundState prev, T5RoundState next) => OnT5RoundChanged?.Invoke(next);
+
+    // ── T.Stage5 라운드 전환 텔레포트 (§11.9) ─────────────────────
+
+    /// <summary>
+    /// Host: 라운드 전환 — 전 머신에서 암전 → 텔레포트 → 페이드인을 동시에 재생한다.
+    /// `TStage5RunnerRedesign.md` §1.1 · `NetworkDesign.md` §11.9.
+    ///
+    /// clientIds[i]가 positions[i]로 간다. 좌표는 Host가 전부 계산해 넘기고(러너 = Start1F,
+    /// 안내자 = Stand2F + 색 오프셋), 각 머신은 **자기가 Owner인 플레이어만** 옮긴다 —
+    /// CNT는 Owner 권한이라 다른 머신이 남의 플레이어 위치를 쓸 수 없다(§7.3).
+    ///
+    /// [왜 ClientRpc 1개로 묶나] 인원별 RPC를 따로 쏘면 도착 순서가 갈려 누구는 이미 옮겨졌는데
+    /// 누구는 암전도 안 시작한 상태가 된다. 한 번에 보내 전 머신이 같은 시각에 같은 연출을 돈다.
+    /// </summary>
+    public void BeginT5Transition(ulong[] clientIds, Vector3[] positions, float coverFade, float coveredHold)
+    {
+        if (!IsServer || IsDespawned) return;
+        if (clientIds == null || positions == null || clientIds.Length != positions.Length) return;
+
+        BeginT5TransitionClientRpc(clientIds, positions, coverFade, coveredHold);
+    }
+
+    /// <summary>Host 자신도 클라이언트로서 이 Rpc를 받는다 — 연출·텔레포트 경로를 하나로 유지.</summary>
+    [ClientRpc]
+    void BeginT5TransitionClientRpc(ulong[] clientIds, Vector3[] positions, float coverFade, float coveredHold)
+    {
+        StartCoroutine(T5TransitionRoutine(clientIds, positions, coverFade, coveredHold));
+    }
+
+    IEnumerator T5TransitionRoutine(ulong[] clientIds, Vector3[] positions, float coverFade, float coveredHold)
+    {
+        LoadingCurtain.Instance?.BeginCover(coverFade);
+
+        // 화면이 완전히 덮인 뒤에 옮겨야 순간이동이 안 보인다.
+        yield return new WaitForSecondsRealtime(coverFade);
+
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening)
+        {
+            for (int i = 0; i < clientIds.Length; i++)
+            {
+                if (clientIds[i] != nm.LocalClientId) continue;
+                TeleportLocalPlayer(positions[i]);
+                break;
+            }
+        }
+
+        yield return new WaitForSecondsRealtime(coveredHold);
+
+        LoadingCurtain.Instance?.EndCover(minHoldSeconds: 0f, fadeDuration: coverFade);
+    }
+
+    /// <summary>
+    /// 이 머신이 Owner인 플레이어를 pos로 옮긴다.
+    /// `NetworkTransform.Teleport()`를 쓰는 이유: 그냥 transform.position을 대입하면 CNT의
+    /// 보간(Interpolate ✅)이 켜져 있어 원격 화면에서 맵 사이 수백 m를 미끄러지며 지나가고,
+    /// Host 비오너 레인의 `rb.MovePosition()`(ClientNetworkTransform.OnTransformUpdated)이
+    /// 그 거리를 물리 이동으로 쓸어 벽에 끼거나 터널링한다. Teleport()는 보간을 리셋한다.
+    /// Teleport()는 권한(Owner) 인스턴스에서만 허용 — 아니면 예외를 던진다.
+    /// </summary>
+    static void TeleportLocalPlayer(Vector3 pos)
+    {
+        var nm = NetworkManager.Singleton;
+        NetworkObject netObj = nm?.LocalClient?.PlayerObject;
+        if (netObj == null || !netObj.IsOwner) return;
+
+        Transform  tr = netObj.transform;
+        Rigidbody  rb = netObj.GetComponent<Rigidbody>();
+        var        nt = netObj.GetComponent<ClientNetworkTransform>();
+
+        if (rb != null && !rb.isKinematic)
+        {
+            rb.linearVelocity  = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        tr.position = pos;
+        if (rb != null) rb.position = pos; // 물리 위치도 같이 — 안 맞추면 다음 FixedUpdate가 되돌린다
+
+        if (nt != null) nt.Teleport(pos, tr.rotation, tr.localScale);
+
+        NetLog.Transition("StageNetworkState", "T5Teleport", $"clientId={nm.LocalClientId} pos={pos}");
     }
 
     // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
@@ -1282,12 +1640,19 @@ public class StageNetworkState : NetworkBehaviour
     // 전부 TrapProjectile 공유라 셋 다 동일 증상). 이 오브젝트는 스테이지 내내 살아있으므로
     // 라우팅 실패가 구조적으로 없다 — "이미 처리됨"은 아래 TryGetValue 가드 하나로 끝낸다.
 
-    /// <summary>Client(전원): 발사체 피격 보고. Host가 발사체를 찾아 데미지+Despawn을 위임.</summary>
+    /// <summary>Client(전원): 발사체 피격 보고. Host가 발사체를 찾아 데미지+Despawn을 위임.
+    /// 보고자는 피격 플레이어의 Owner여야 한다(§9.0.1-d) — ReportBossSphereHitServerRpc와 같은 가드.</summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void ReportTrapHitServerRpc(ulong projectileNetId, ulong playerNetId)
+    public void ReportTrapHitServerRpc(ulong projectileNetId, ulong playerNetId, RpcParams rpcParams = default)
     {
         if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(projectileNetId, out var projNetObj))
             return; // 이미 처리(다른 보고로 Despawn)됨 — 조용히 무시
+
+        // 남의 캐릭터 피격은 받지 않는다 — 발사체 깨짐(Breakable)이 머신별 로컬 판정이라, 다른 머신
+        // 화면에서만 살아 있던 발사체로 데미지가 들어가던 버그의 Host 쪽 가드.
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerNetId, out var playerNetObj))
+            return;
+        if (playerNetObj.OwnerClientId != rpcParams.Receive.SenderClientId) return;
 
         projNetObj.GetComponent<TrapProjectile>()?.ApplyHitFromHost(playerNetId);
     }

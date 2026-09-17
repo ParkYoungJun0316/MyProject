@@ -166,7 +166,7 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
     volatile bool _workerRunning;
     int           _resetSignal;        // Interlocked: 1 = 워커에게 Recognizer 재생성 요청 (모델/grammar/스트림 변경)
 
-    // Interlocked: 창이 열릴 때·제출 직후 증가. 워커는 값이 바뀌면 Recognizer.Reset()으로 발화 상태를 비우고,
+    // Interlocked: 창이 열릴 때·제출 직후 증가. 워커는 값이 바뀌면 Recognizer.FinalResult()로 발화 상태를 비우고,
     // 메인은 세대가 다른 결과를 버린다(리셋 전에 계산된 낡은 결과가 새 창에서 제출되지 않게).
     int           _listenGeneration;
 
@@ -730,10 +730,14 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
             }
 
             // 창 열림·제출 직후 — 이전 발화 상태를 비운다(재생성보다 가볍다).
+            // Reset()은 쓰지 않는다: Vosk Reset은 디코더만 마감하고 특징 파이프라인에 남은(아직 디코딩 안 된)
+            // 외침 꼬리를 버리지 않아, 다음 창 첫 청크에서 그 꼬리가 디코딩되어 말 안 해도 제출됐다(2026-09-18).
+            // FinalResult()는 남은 프레임을 전부 소진하고 FINALIZED로 만들어 다음 AcceptWaveform에서
+            // 파이프라인까지 새로 만든다. 반환값은 이전 발화라 버린다.
             int currentGeneration = Volatile.Read(ref _listenGeneration);
             if (currentGeneration != generation)
             {
-                rec?.Reset();
+                rec?.FinalResult();
                 generation = currentGeneration;
             }
 

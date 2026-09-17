@@ -533,6 +533,36 @@ public class NetworkPlayerSetup : NetworkBehaviour
     void ApplyKnockbackClientRpc(Vector3 direction, float force, bool resetVerticalVelocity)
     {
         if (!IsOwner) return;
+        ApplyKnockbackLocal(direction, force, resetVerticalVelocity);
+    }
+
+    /// <summary>
+    /// Owner 전용: 이 머신에서 감지한 접촉 넉백을 왕복 없이 즉시 적용하고, PunchHit 연출만 다른 머신에 알린다.
+    /// ContactKnockback(벽·발판) 전용 — 이동은 Owner 권한이고 HP를 건드리지 않으므로 Host 확정이 필요 없다
+    /// (2026-09-18, Host 판정 + ClientRpc 왕복으로 Client 넉백이 RTT+보간만큼 늦던 문제 수정).
+    /// Punch·Door·Breakable은 계속 ApplyKnockbackFromServer(Host 판정)를 쓴다.
+    /// </summary>
+    public void ApplyKnockbackAsOwner(Vector3 direction, float force, bool resetVerticalVelocity)
+    {
+        if (!IsOwner || !IsSpawned) return;
+        if (_player == null || _player.IsDead || _player.IsDowned) return;
+
+        ApplyKnockbackLocal(direction, force, resetVerticalVelocity);
+
+        _audio?.PlayPunchHit3D();
+        _player.PlayPunchHitReaction();
+        NotifyPunchHitFromOwnerRpc();
+    }
+
+    /// <summary>Owner → 나머지 전원: 피격자 위치 3D PunchHit (Owner는 로컬에서 이미 재생).</summary>
+    [Rpc(SendTo.NotMe, InvokePermission = RpcInvokePermission.Owner)]
+    void NotifyPunchHitFromOwnerRpc()
+    {
+        _audio?.PlayPunchHit3D();
+    }
+
+    void ApplyKnockbackLocal(Vector3 direction, float force, bool resetVerticalVelocity)
+    {
         _player?.SuppressMoveForKnockback();
         // Impulse는 기존 속도에 더해지므로, 착지 순간 남은 y속도(±0.8 정도)를 끊어야 발사 높이가 매번 같다.
         if (resetVerticalVelocity && _rb != null)

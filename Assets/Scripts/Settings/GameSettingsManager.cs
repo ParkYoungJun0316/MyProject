@@ -69,7 +69,7 @@ public class GameSettingsManager : MonoBehaviour
     /// <summary>빈 문자열 = 시스템 기본 마이크(Dissonance/Microphone API의 null과 동일 취급).</summary>
     public string MicDeviceName { get; private set; } = "";
     public float  ChatFontSize  { get; private set; } = 14f;
-    /// <summary>숫자키(1=self / 2=team) 응원. 기본 OFF — 음성이 기본 수단. Options에서 켠다.</summary>
+    /// <summary>T키 팀 응원(CheerDigitInput). 기본 OFF — 음성이 기본 수단. Options에서 켠다.</summary>
     public bool   DigitCheerEnabled { get; private set; }
     /// <summary>인게임 Tip 패널 표시 여부. 기본 ON. 로컬 표시 설정 — 네트워크 무관.</summary>
     public bool   TipEnabled { get; private set; } = true;

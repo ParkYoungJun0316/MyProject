@@ -361,6 +361,59 @@ public class AdvancingWall : MonoBehaviour
         }));
     }
 
+    /// <summary>색 일치 정지 시 원점 복귀에 걸리는 시간(초). 외부 동기 스케줄러가 재개 시각 계산에 사용.</summary>
+    public float PauseReturnDuration => Mathf.Max(pauseReturnDuration, 0.05f);
+
+    /// <summary>
+    /// 서버 시각 기준 1회 전진(후퇴 없음). 진행도 = (ServerTime − startServerTime) / duration 이라
+    /// 각 머신의 시작 지연·프레임 히치와 무관하게 같은 시각에 같은 위치다(늦게 시작한 머신은 따라잡음).
+    /// 완료 시 OnAdvanceCompleted 발동. 이동 중이거나 색 일시정지 상태이면 무시.
+    /// T.Boss Sphere(BossSpherePhaseDriver)처럼 한 번의 이동이 긴 외부 스케줄러 전용 —
+    /// RunOnce의 LerpTo는 로컬 경과 시간 누적이라 긴 이동에서 머신 간 오차가 남는다.
+    /// </summary>
+    public void RunOnceSynced(float advanceDistance, float duration, double startServerTime)
+    {
+        if (_isActive || _isPausedByColor) return;
+        _advanceCoroutine = StartCoroutine(RunSyncedAdvance(advanceDistance, duration, startServerTime));
+    }
+
+    IEnumerator RunSyncedAdvance(float advanceDistance, float duration, double startServerTime)
+    {
+        _isActive = true;
+
+        Vector3 worldDir = transform.TransformDirection(moveDirection.normalized);
+        Vector3 from     = _currentOrigin;
+        _advanceTarget   = _currentOrigin + worldDir * advanceDistance;
+        Vector3 target   = _advanceTarget;
+
+        OnAdvanceStarted?.Invoke();
+        StartMoveLoop();
+
+        while (true)
+        {
+            double elapsed = NetTimeDouble() - startServerTime;
+            float  t       = duration > 0f ? Mathf.Clamp01((float)(elapsed / duration)) : 1f;
+            _rb.MovePosition(Vector3.Lerp(from, target, t));
+            if (t >= 1f) break;
+            yield return new WaitForFixedUpdate();
+        }
+
+        StopMoveLoop();
+        _rb.MovePosition(target);
+        _currentOrigin  = target;
+        _totalAdvanced += advanceDistance;
+        _isActive       = false;
+        _advanceCoroutine = null;
+
+        OnAdvanceCompleted?.Invoke();
+    }
+
+    static double NetTimeDouble()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null ? nm.ServerTime.Time : Time.timeAsDouble;
+    }
+
     /// <summary>
     /// ColorWall 색상 일치 시 호출.
     /// 현재 전진을 중단하고 누적 원점(_currentOrigin)으로 부드럽게 복귀 후

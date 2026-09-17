@@ -13,7 +13,7 @@ using UnityEngine;
 /// Host: Spawn "전" PrepareVelocity()로 예약 → OnNetworkSpawn에서 NetworkVariable에 기록
 ///       → 스폰 메시지에 실려 전파 (Deferred OnSpawn RPC 레이스 없음)
 /// 각 Client/Host: 받은 velocity로 로컬 비행 (NetworkTransform 위치 동기화 없음)
-/// 피격: 누구든 OnTrigger → StageNetworkState.ReportTrapHitServerRpc(상주 중계) → Host 검증·
+/// 피격: 피격자 본인(Owner) 머신의 OnTrigger만 → StageNetworkState.ReportTrapHitServerRpc(상주 중계) → Host 검증·
 ///       데미지·Despawn. Rpc 대상은 발사체 자신이 아니라 항상 살아있는 StageNetworkState —
 ///       발사체 자신을 대상으로 쓰면 Despawn 후 도착한 중복 보고가 "Deferred OnSpawn" 경고로
 ///       이어졌다(2026-07-28 수정, ApplyHitFromHost/ApplyDestroyFromHost 참고).
@@ -195,9 +195,18 @@ public class TrapProjectile : NetworkBehaviour
             // Rpc 대상으로 쓰면 늦게 도착한 중복 보고가 NGO 라우팅 단계에서 "Deferred OnSpawn"
             // 대기 → 10초 후 경고로 이어졌다. StageNetworkState는 항상 존재하므로 라우팅은
             // 항상 성공하고, "이미 처리됨"은 Host 쪽에서 TryGetValue 가드 하나로 걸러진다.
+            //
+            // [버그 수정 2026-09-18] 피격 보고는 피격자 본인(Owner) 머신만 보낸다. 예전엔 "누구든"
+            // 보고해서, 피격자 화면에선 발사체가 이미 베리어에 깨졌어도(Breakable은 머신별 로컬 판정)
+            // 다른 머신 화면에서 아직 살아 있던 발사체가 그 플레이어의 복제본에 닿으면 데미지가
+            // 들어갔다 — "깼는데 맞음 / 안 보이는데 맞음 / 1초 뒤에 맞음"(NetworkDesign.md §9.0.1-d).
+            // 남의 복제본에 닿은 머신은 위 로컬 숨김·이펙트만 하고 보고하지 않는다.
             var pNetObj = p.GetComponent<NetworkObject>();
             if (pNetObj != null)
-                StageNetworkState.Instance?.ReportTrapHitServerRpc(NetworkObjectId, pNetObj.NetworkObjectId);
+            {
+                if (pNetObj.IsOwner)
+                    StageNetworkState.Instance?.ReportTrapHitServerRpc(NetworkObjectId, pNetObj.NetworkObjectId);
+            }
             else if (destroyOnPlayer)
                 StageNetworkState.Instance?.RequestTrapDestroyServerRpc(NetworkObjectId);
         }

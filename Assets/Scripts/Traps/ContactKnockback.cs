@@ -7,9 +7,13 @@ using UnityEngine;
 /// 튕기는 벽·범퍼 등 "닿으면 밖으로 밀려남" 상황에 사용.
 /// 데미지 함정은 ContactDamage를 쓴다. 같은 오브젝트에 둘 다 붙이지 말 것.
 ///
-/// [흐름]
-///  Host가 충돌을 감지 → NetworkDamageUtil.ApplyKnockback (Owner AddForce)
-///  → NetworkPlayerSetup.NotifyPunchHitFromServer (doPunchHit + PunchHit 3D SFX)
+/// [흐름 — Owner 판정, 2026-09-18]
+///  부딪힌 본인(Owner) 머신이 충돌을 감지 → NetworkPlayerSetup.ApplyKnockbackAsOwner
+///  (즉시 AddForce + doPunchHit, PunchHit 3D SFX는 다른 머신에 Rpc로 공유).
+///  원격 캐릭터 복사본의 충돌은 무시한다(Host 포함) — 한 번만 적용되게.
+///  [이전] Host가 보간된 원격 캐릭터 위치로 판정 → ClientRpc 왕복이라 Client만 RTT+보간 지연만큼
+///  늦게 튕겼다(T.Stage4 Ring.F 1~2초 지연, 수직 발판 점프 지연). HP 없는 순수 이동 효과라
+///  Owner 권한(이동 권한과 동일)으로 옮겼다. Punch·Door·Breakable은 여전히 Host 판정.
 ///
 /// [방향 모드 — launchMode]
 ///  HorizontalFromCenter : 이 오브젝트 중심 → 플레이어 (수평 전용, y 제거). 기존 벽·범퍼용 기본값.
@@ -102,13 +106,16 @@ public class ContactKnockback : MonoBehaviour
         if (!isActive) return;
         if (!other.CompareTag("Player")) return;
 
-        var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening && !nm.IsServer) return;
-
         // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox(캐릭터 앞 트리거)가 먼저 닿아
         // 몸이 아직 안 올라왔는데 발사되는 것을 막는다 (PressurePad와 동일 관례).
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead) return;
+        if (p == null || p.IsDead || p.IsDowned) return;
+
+        // 내 캐릭터만 판정 — 원격 캐릭터는 그 캐릭터의 Owner 머신이 판정한다.
+        if (!p.isOwnerControlled) return;
+
+        var netSetup = p.GetComponent<NetworkPlayerSetup>();
+        if (netSetup == null) return;
 
         int id = p.GetInstanceID();
         if (_nextKnockbackTime.TryGetValue(id, out float next) && Time.time < next)
@@ -117,8 +124,7 @@ public class ContactKnockback : MonoBehaviour
         Vector3 dir = LaunchDirection(p.transform.position);
 
         float force = Random.Range(knockbackForceMin, knockbackForceMax);
-        NetworkDamageUtil.ApplyKnockback(p, dir, force, resetVerticalVelocity: launchMode == LaunchMode.VerticalUp);
-        p.GetComponent<NetworkPlayerSetup>()?.NotifyPunchHitFromServer();
+        netSetup.ApplyKnockbackAsOwner(dir, force, resetVerticalVelocity: launchMode == LaunchMode.VerticalUp);
 
         _nextKnockbackTime[id] = Time.time + Mathf.Max(knockbackInterval, 0.05f);
     }

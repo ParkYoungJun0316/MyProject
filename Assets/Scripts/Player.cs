@@ -108,9 +108,34 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     PlayerBuffSystem playerBuffSystem;
 
 
+    /// <summary>
+    /// 이동 잠금. 라운드 전환 카운트다운처럼 "살아 있지만 아직 움직이면 안 되는" 구간용
+    /// (T.Stage5 러너 라운드 — `TStage5RunnerRedesign.md` §1.1의 3초 카운트다운).
+    ///
+    /// [IsDead/IsDowned와 분리한 이유] 저 둘은 사망 축(§11)의 상태라 애니메이션·레이어·
+    /// 콜라이더까지 같이 바꾼다. 카운트다운은 그냥 서 있는 것이므로 이동만 막아야 한다.
+    /// [isOwnerControlled와 분리한 이유] 그건 "이 복사본이 오너인가"라는 별개 의미다.
+    /// </summary>
+    public bool IsMovementLocked { get; private set; }
+
+    /// <summary>이동 잠금 설정. 잠글 때 입력과 수평 속도를 즉시 비운다.</summary>
+    public void SetMovementLocked(bool locked)
+    {
+        IsMovementLocked = locked;
+        if (!locked) return;
+
+        moveInput = Vector2.zero;
+        if (rigid != null && !rigid.isKinematic)
+        {
+            rigid.linearVelocity  = new Vector3(0f, rigid.linearVelocity.y, 0f);
+            rigid.angularVelocity = Vector3.zero;
+        }
+    }
+
     public void OnMove(InputValue value)
     {
         if (IsDead || IsDowned || !isOwnerControlled) return;
+        if (IsMovementLocked) { moveInput = Vector2.zero; return; }
         if (fallAnimTriggered) { moveInput = Vector2.zero; return; }
         if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { moveInput = Vector2.zero; return; }
         moveInput = value.Get<Vector2>();
@@ -207,6 +232,16 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (IsDead || IsDowned)
         {
             rigid.linearVelocity  = Vector3.zero;
+            rigid.angularVelocity = Vector3.zero;
+            return;
+        }
+
+        // 잠금 중에는 수평 이동만 막고 중력(y)은 그대로 둔다 — 텔레포트 직후 살짝 떨어져
+        // 착지하는 동안에도 잠금이 걸려 있기 때문(§1.1 3초 카운트다운).
+        if (IsMovementLocked)
+        {
+            moveInput = Vector2.zero;
+            rigid.linearVelocity  = new Vector3(0f, rigid.linearVelocity.y, 0f);
             rigid.angularVelocity = Vector3.zero;
             return;
         }

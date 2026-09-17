@@ -1,12 +1,15 @@
 using Steamworks;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
 /// Tutorial 상시 HUD의 Steam Invite 버튼 (NetworkDesign.md §6B.5, SteamworksIntegrationDesign.md §3).
 ///
 /// [역할]
-/// - Steam 경로(정식 릴리스 빌드): 버튼 클릭 시 <see cref="SteamLobbyManager.OpenInviteOverlay"/> 호출.
+/// - Steam 경로(정식 릴리스 빌드): 버튼 클릭 또는 [I] 키로 <see cref="SteamLobbyManager.OpenInviteOverlay"/> 호출.
+///   (2026-09-18 [I] 추가 — 인게임은 커서가 잠겨 있어 버튼 클릭이 불편하다는 피드백. 이 GameObject가
+///   꺼지면 Update도 멈추므로, 로컬 경로 비활성·게이트 통과 후 숨김이 키 입력에도 그대로 적용된다.)
 /// - 로컬 경로(①ParrelSync/②Dev Build): 이 버튼 자체를 비활성화 — 룸코드 표시는
 ///   <see cref="TutorialRoomCodeDisplay"/>가 별도로 담당한다(§6B.5, 로컬/Steam 상호배타).
 /// - 게이트 통과 전 수신하는 초대 수락(§6B.5 "초대 수락 처리" 행)도 이 컴포넌트가 처리한다
@@ -50,6 +53,16 @@ public class TutorialSteamInviteUI : MonoBehaviour
     {
         if (SteamLobbyManager.Instance != null)
             SteamLobbyManager.Instance.OnInviteAccepted -= OnSteamInviteAccepted;
+    }
+
+    void Update()
+    {
+        // 채팅·치어네임 입력 중 'i' 타이핑, ESC 메뉴 등 커서 UI가 떠 있을 때는 무시한다
+        // (TutorialCheerNameSignboard의 E 키와 동일 게이팅).
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CursorUnlockRequestUtil.IsRequested) return;
+
+        if (Keyboard.current != null && Keyboard.current.iKey.wasPressedThisFrame)
+            OnClickInvite();
     }
 
     void OnClickInvite()

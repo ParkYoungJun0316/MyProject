@@ -630,7 +630,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 [각 Client] 위치 네트워크 따라가기(NetworkTransform 등) 없이
             받은 속도로 로컬 비행
     ↓
-[Client]    화면 기준 OnTrigger/Collision → ServerRpc 피격 보고
+[Client]    피격자 본인 화면 기준 OnTrigger/Collision → ServerRpc 피격 보고 (§9.0.1-d)
     ↓
 [Host]      최소 검증 후 NetworkDamageUtil → HP NV / 연출 Rpc / Despawn
 ```
@@ -760,6 +760,35 @@ Phase 전환(P1→P2) 이후에도 끝까지 남아 있었음. 리뷰 중 같은
 **AI 주의:** 새 Deferred OnSpawn/PurgeTrigger 경고가 보고되면 먼저 이 표로 Axis A/B(또는
 신규 축)인지 분류한다. Axis A 재발이면 위 3개 패턴 중 어긋난 지점만 찾는다. Axis B(또는
 신규 축)면 재현 로그로 원인을 확정하기 전에는 코드를 고치지 않는다.
+
+#### 9.0.1-d 피격 보고자 = 피격자 본인 + 베리어 개폐 Host 판정 (2026-09-18, 사용자 확정)
+
+**증상 (M.Stage1, Host·Client 공통):** 베리어가 올라와 음식 발사체를 깼는데도 데미지가 들어오고,
+일찍 깨도 맞고, 데미지가 1초쯤 늦게 들어오기도 하고, 안 보이는 발사체에 맞는다.
+
+**원인:** 2026-09-16(`34fd33a`)부터 M.Stage1 발사체(`Apple`/`Banana`/`Drop4_Grape`/`Watermelon`)에
+`Breakable`(`syncBreakOverNetwork = 0`, Wall 레이어에서 깨짐)이 붙어 **발사체 깨짐이 머신별 로컬 판정**이
+됐다. 그런데 피격 보고는 "**누구든** 자기 화면에서 아무 플레이어에 닿으면 보고"였고, Host도 보고자를
+검사하지 않았다. 게다가 `DirectionalBarrierRound`의 베리어 개폐가 각 머신의 `ColorTile` 로컬 트리거로
+따로 발동돼 머신마다 베리어 높이가 어긋났다. 그 결과 피해자 화면에선 이미 깨진 발사체가 다른 머신
+화면에선 살아 있다가 피해자의 복제본에 닿아 데미지가 들어갔다.
+
+**수정:**
+
+- `TrapProjectile.HandleContact`: 닿은 플레이어가 **자기 캐릭터(`IsOwner`)일 때만** `ReportTrapHitServerRpc`.
+  남의 복제본에 닿은 머신은 로컬 숨김·이펙트만 한다.
+- `StageNetworkState.ReportTrapHitServerRpc`: 보고자 ≠ 피격 플레이어 Owner면 무시
+  (`ReportBossSphereHitServerRpc`와 같은 가드).
+- `DirectionalBarrierRound.HandleTileActivated`: **Host 타일 판정만** 인정 →
+  `ChallengeStepBegin(2 + (int)PlayerColorType)` → 전 머신이 `ApplyActiveColor`에서 같은 스텝에 개폐
+  (§9.0 "문·패드 = Host"에 맞춤).
+
+**B안과의 관계:** 비행 = Client 로컬, 데미지 확정 = Host(`ApplyHitFromHost` → `NetworkDamageUtil`)는 그대로.
+위 다이어그램의 "화면 기준 보고"를 **피격자 본인 화면 기준**으로 좁힌 것이며, A안(Host 비행)이 아니다.
+발사체를 트리거로 하는 보고라 §7.3의 제거 대상인 플레이어 본체 `ReportHitServerRpc`와도 다르다.
+
+**의도적으로 두는 것:** 발사체 `Breakable`은 계속 머신별 로컬 연출이고, Host Despawn은 피격 보고 또는
+`lifetime`으로만 일어난다 — 다른 머신 화면에선 깨진 발사체가 잠시 더 보일 수 있다(판정과 무관).
 
 ### MVP 동기화 대상
 
@@ -904,7 +933,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 |------|-----|
 | 일반 데미지 | `NetworkDamageUtil.ApplyDamage(player, amount)` |
 | 즉사 (함정 타일·스테이지 Fail 등) | `NetworkDamageUtil.ApplyInstantKill(player)` |
-| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force, resetVerticalVelocity = false)` — Breakable 범위 넉백, `PlayerPunch` PvP, 문 닫힘, `ContactKnockback` 등 (§7.4). `resetVerticalVelocity`는 `ContactKnockback` VerticalUp 발판만 `true` — Impulse가 착지 순간 남은 y속도에 더해져 발사 높이가 흔들리는 것을 막음 |
+| 순수 넉백 (HP 미변경) | `NetworkDamageUtil.ApplyKnockback(player, direction, force, resetVerticalVelocity = false)` — Breakable 범위 넉백, `PlayerPunch` PvP, 문 닫힘 등 (§7.4). **`ContactKnockback`(벽·발판)은 2026-09-18부터 예외 — Owner 판정**: 부딪힌 본인 머신이 감지해 `NetworkPlayerSetup.ApplyKnockbackAsOwner`로 즉시 적용하고 PunchHit SFX만 `Rpc(SendTo.NotMe)`로 공유. 원격 캐릭터 복사본의 접촉은 무시(Host 포함). 사유: Host 판정은 보간된 원격 위치 + ClientRpc 왕복이라 Client만 RTT+보간만큼 늦게 튕겼음(T.Stage4 Ring.F, 수직 발판). HP 무관한 순수 이동 효과라 이동 권한(Owner)과 일치시킴 — 사용자 승인. `resetVerticalVelocity`는 `ContactKnockback` VerticalUp 발판만 `true` — Impulse가 착지 순간 남은 y속도에 더해져 발사 높이가 흔들리는 것을 막음 |
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 | 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
@@ -1277,6 +1306,29 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 
 **영향 범위:** Player 스폰/물리 계층 — M/T 공유. 다른 프리팹(예: 챌린지 소품)도 씬에서 Apply to Prefab 하면 같은 방식으로 재발 가능 — 프리팹 원본은 원점 기준으로만 저장할 것.
 - 상세: [`MStageNetworkBoard.md`](MStageNetworkBoard.md) "M.Stage 스폰 위치 버그" 절.
+
+### 11.9 ⑤ Play 중 텔레포트 (2026-09-18 신설 — T.Stage5 러너 라운드 전용)
+
+> **이것은 ②Spawn이나 리스폰이 아니다.** 플레이어는 그대로 살아 있고 축의 칸도 ⑤ Play에서 변하지 않는다.
+> 축에 칸을 하나 더 만드는 게 아니라, ⑤ 안에서 **좌표만** 바꾸는 유일한 허가 경로를 못 박는 절이다.
+
+| 항목 | 규칙 |
+|------|------|
+| 유일한 진입점 | `StageNetworkState.BeginT5Transition(clientIds, positions, coverFade, coveredHold)` — **Host만** 호출 |
+| 목적지 계산 | Host (`T5RunnerRoundDirector`). 러너 = 그 맵 `Start1F`, 안내자 = `Stand2F` + 시작 홀 색별 XZ 오프셋, 둘 다 바닥에서 `dropHeight`(기본 3m) 위 |
+| 실제 좌표 쓰기 | **각 플레이어의 Owner 머신**. ClientRpc를 전원이 받고 `clientId == LocalClientId`인 사람만 자기 것을 옮긴다 — CNT는 Owner 권한(§7.3)이라 남의 플레이어 좌표를 쓸 수 없다 |
+| 쓰는 API | `NetworkTransform.Teleport(pos, rot, scale)` + `rb.position` 동기화. **`transform.position` 단순 대입 금지** |
+| 연출 | `LoadingCurtain` 암전 → (덮인 상태에서) 텔레포트 → 페이드인. 라운드 시작 카운트다운(3초) 안에 들어가므로 **추가 대기 0초** |
+| 이동 잠금 | 카운트다운 동안 `Player.SetMovementLocked(true)`. 해제는 **NV(`roundStartServerTime` + intro)에서 로컬 계산** — 해제용 RPC 없음 |
+
+**왜 `Teleport()`를 써야 하나 (그냥 대입하면 나는 사고 2종):**
+1. CNT는 `Interpolate ✅`라 원격 화면에서 **맵 사이 수백 m를 미끄러지며** 지나간다.
+2. Host 비오너 레인이 `rb.MovePosition()`으로 적용하므로(`ClientNetworkTransform.OnTransformUpdated`), 그 거리를 물리 이동으로 쓸어 **벽에 끼거나 터널링**한다.
+   `Teleport()`는 보간을 리셋한다. 권한(Owner) 인스턴스가 아닌 곳에서 호출하면 예외를 던지므로, 반드시 Owner 머신에서만 호출할 것.
+
+**금지:** Host가 남의 플레이어 Transform 직접 쓰기 / `PlayerSpawnManager` 재호출로 "다시 스폰" / 텔레포트 전용 NetworkVariable 신설(1회성 사건이므로 §9 Sync 규칙상 RPC가 맞다).
+
+- 상세: [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) §1.1 · §3 C5
 
 ---
 

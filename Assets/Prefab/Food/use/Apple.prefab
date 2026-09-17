@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 1593150137438083584}
   - component: {fileID: 1266227209087295064}
   - component: {fileID: -3561735957784747465}
-  - component: {fileID: 4007639253603548517}
+  - component: {fileID: 1417628569054595512}
   m_Layer: 16
   m_Name: Apple
   m_TagString: EnemyBullet
@@ -225,8 +225,8 @@ MonoBehaviour:
   rollMinDistance: 40
   rollMaxDistance: 200
   rollRolloffMode: 0
---- !u!65 &4007639253603548517
-BoxCollider:
+--- !u!64 &1417628569054595512
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -243,6 +243,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.22727273, y: 0.1, z: 0.1}
-  m_Center: {x: 0, y: 0.05, z: 0}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1650999862491994477, guid: 9ff38ddb0b45d8f4197e89d41086b85f, type: 3}

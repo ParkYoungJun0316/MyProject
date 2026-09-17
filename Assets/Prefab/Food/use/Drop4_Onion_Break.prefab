@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6943864036498017265}
   - component: {fileID: 3878512882593432991}
   - component: {fileID: 6048290376457587970}
-  - component: {fileID: 8620818650506609013}
+  - component: {fileID: 6629994219582121496}
   m_Layer: 17
   m_Name: Drop4_Onion_Break
   m_TagString: Untagged
@@ -184,8 +184,8 @@ MonoBehaviour:
   destroyOnPlayer: 1
   hitEffectPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
   hitEffectLifetime: 4
---- !u!136 &8620818650506609013
-CapsuleCollider:
+--- !u!64 &6629994219582121496
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -202,8 +202,7 @@ CapsuleCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.04
-  m_Height: 0.14
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: 0}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4954551146327416492, guid: 624fec2dda62eaa488a920ce6de99eac, type: 3}
