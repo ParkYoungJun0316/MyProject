@@ -314,23 +314,24 @@
 
 ## Tip.T.Stage5.1
 
-> **⚠️ 2026-09-18 러너 재설계 — ko/en만 갱신됨.**
-> 아래 ja 이하 10개 언어는 **아직 옛 흑백 토글 문구**다(내용이 이제 사실과 다름).
-> 로컬라이제이션은 Steam AI 표기에서 실제 위험 구간이라(`project_steam_ai_disclosure`) 기계번역을
-> 임의로 채우지 않았다. 번역 방침을 정한 뒤 나머지 10개를 채울 것.
+> 2026-09-18 러너 재설계로 13개 로케일 전부 교체 (`TStage5RunnerRedesign.md`).
+> 옛 흑백 토글 문구는 폐기. String Table 에셋에도 반영 완료(`StageTip_*.asset`).
+> ko/en 외 11개는 **기계번역이므로 원어민 검수 전** — Steam AI 표기 검토 대상
+> (`project_steam_ai_disclosure`).
 
 - ko: 러너 한 명이 미로를 달리고, 나머지는 2층에서 길을 안내합니다.\n패드를 밟으면 그 색 문만 열리고 나머지는 전부 닫힙니다.\n고유색 패드는 그 색 플레이어만, 흑·백 패드는 누구나 밟을 수 있습니다.
 - en: One runner races through the maze while the others guide from the second floor.\nStepping on a pad opens only that color's doors and closes all the rest.\nColored pads work only for that color's player; black and white pads work for anyone.
-- ja: **[미갱신 — 옛 문구]** どこでパッドを踏んでも、扉が開閉します。\n黒い扉が開くと白い扉が閉じ、白い扉が開くと黒い扉が閉じます。\nまず2階へ上がる道を探してください。
-- zh-Hans: **[미갱신 — 옛 문구]** 无论在哪里踩踏板，都能开关门。\n黑门打开时白门关闭，白门打开时黑门关闭。\n请先找到通往二楼的路。
-- zh-Hant: **[미갱신 — 옛 문구]** 無論在哪裡踩踏板，都能開關門。\n黑門打開時白門關閉，白門打開時黑門關閉。\n請先找到通往二樓的路。
-- es: **[미갱신 — 옛 문구]** Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBuscad primero el camino hacia la segunda planta.
-- es-419: **[미갱신 — 옛 문구]** Pisar un pad en cualquier parte abre y cierra las puertas.\nCuando se abren las puertas negras, se cierran las blancas, y al revés.\nBusquen primero el camino hacia el segundo piso.
-- fr: **[미갱신 — 옛 문구]** Marcher sur un pad, où qu'il soit, ouvre et ferme les portes.\nQuand les portes noires s'ouvrent, les blanches se ferment, et inversement.\nCherchez d'abord le chemin vers le deuxième étage.
-- de: **[미갱신 — 옛 문구]** Ein Pad zu betreten öffnet und schließt die Türen, egal wo.\nÖffnen sich die schwarzen Türen, schließen sich die weißen — und umgekehrt.\nSucht zuerst den Weg zum zweiten Stock.
-- pt-BR: **[미갱신 — 옛 문구]** Pisar em um pad em qualquer lugar abre e fecha as portas.\nQuando as portas pretas abrem, as brancas fecham, e vice-versa.\nProcurem primeiro o caminho para o segundo andar.
-- ru: **[미갱신 — 옛 문구]** Наступив на площадку в любом месте, вы откроете и закроете двери.\nКогда открываются чёрные двери, белые закрываются — и наоборот.\nСначала найдите путь на второй этаж.
-- pl: **[미갱신 — 옛 문구]** Nadepnięcie na płytkę w dowolnym miejscu otwiera i zamyka drzwi.\nGdy otwierają się czarne drzwi, białe się zamykają, i na odwrót.\nNajpierw znajdźcie drogę na drugie piętro.
+- ja: ランナー1人が迷路を走り、残りは2階から道を案内します。\nパッドを踏むと、その色の扉だけが開き、ほかはすべて閉じます。\n固有色のパッドはその色のプレイヤーだけ、黒と白のパッドは誰でも踏めます。
+- zh-Hans: 一名奔跑者在迷宫中奔跑，其他人在二楼指路。\n踩下踏板后，只有该颜色的门会打开，其余全部关闭。\n专属颜色的踏板只有该颜色的玩家能踩，黑白踏板任何人都能踩。
+- zh-Hant: 一名奔跑者在迷宮中奔跑，其他人在二樓指路。\n踩下踏板後，只有該顏色的門會打開，其餘全部關閉。\n專屬顏色的踏板只有該顏色的玩家能踩，黑白踏板任何人都能踩。
+- es: Un corredor recorre el laberinto mientras los demás guían desde la segunda planta.\nPisar un pad abre solo las puertas de ese color y cierra todas las demás.\nLos pads de color solo valen para el jugador de ese color; los negros y blancos valen para cualquiera.
+- es-419: Un corredor recorre el laberinto mientras los demás guían desde el segundo piso.\nPisar un pad abre solo las puertas de ese color y cierra todas las demás.\nLos pads de color solo valen para el jugador de ese color; los negros y blancos valen para cualquiera.
+- fr: Un coureur traverse le labyrinthe pendant que les autres le guident depuis le deuxième étage.\nMarcher sur un pad ouvre uniquement les portes de cette couleur et ferme toutes les autres.\nLes pads de couleur ne marchent que pour le joueur de cette couleur ; les pads noirs et blancs marchent pour tout le monde.
+- de: Ein Läufer rennt durch das Labyrinth, während die anderen vom zweiten Stock aus lotsen.\nEin Pad zu betreten öffnet nur die Türen dieser Farbe und schließt alle anderen.\nFarbige Pads gelten nur für den Spieler dieser Farbe; schwarze und weiße Pads gelten für alle.
+- pt-BR: Um corredor atravessa o labirinto enquanto os outros guiam do segundo andar.\nPisar em um pad abre só as portas daquela cor e fecha todas as outras.\nPads coloridos valem só para o jogador daquela cor; pads pretos e brancos valem para qualquer um.
+- pt: (pt-BR과 동일 — 기존 이 키의 관례를 따름)
+- ru: Один бегун мчится по лабиринту, остальные направляют его со второго этажа.\nНаступив на площадку, вы откроете двери только этого цвета, а все остальные закроются.\nЦветные площадки работают только для игрока того же цвета, чёрные и белые — для всех.
+- pl: Jeden biegacz pędzi przez labirynt, a reszta naprowadza go z drugiego piętra.\nNadepnięcie na płytkę otwiera tylko drzwi w tym kolorze, a wszystkie pozostałe zamyka.\nKolorowe płytki działają tylko dla gracza w tym kolorze, czarne i białe — dla każdego.
 
 ---
 

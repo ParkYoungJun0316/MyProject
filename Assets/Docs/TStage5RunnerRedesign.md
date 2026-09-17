@@ -1,7 +1,8 @@
 # T.Stage5 러너/안내자 재설계 계획서
 
-**상태:** 설계 확정(2026-09-18, 사용자 확정) · **M단계 완료(2026-09-18)** · C단계 착수 전
-**작업 순서:** ~~M(맵 제작, MCP)~~ → **C(코드)** → V(ParrelSync 검증) → D(문서 갱신)
+**상태(2026-09-18):** 설계 확정 · **M단계 완료** · **C단계 코드 C1~C9 완료** · **맵/게이트/체이서 배선 완료** ·
+UI 배선(§3-W W7) 미완 → **V단계 검증이 다음**
+**작업 순서:** ~~M(맵 제작)~~ → ~~C(코드)~~ → **V(ParrelSync 검증)** → C10(정리) → D(문서 갱신)
 **이 문서가 T5 재설계 SSOT.** `CoopStageAudit.T.md`의 "T5 보류·Runner/Chaser 재설계 금지"는 이 결정으로 해제 예정(D단계에서 반영 — 사용자 확인 후).
 
 ---
@@ -269,10 +270,10 @@
 
 ## 3-W. 배선 체크리스트 (에디터 — 사용자 작업)
 
-> 맵 7개 × (문 15 + 패드 6)이라 **맵 하나를 완성한 뒤 그걸 복제**하는 게 아니라, 이미 배치된
-> 7개에 컴포넌트만 얹는 순서다. 반복 작업이므로 Map_01을 먼저 끝내고 나머지는 같은 모양으로.
+> **W1~W5는 2026-09-18 완료.** MCP 읽기로 실물 검증했다(결과는 §7). 아래 내용은 재작업·복구용 기록.
+> **남은 것은 W7(UI) 하나뿐이다.**
 
-### W1. 맵마다 `ColorGateController` (7회)
+### ~~W1~~ ✅ 맵마다 `ColorGateController` (7회)
 1. `StageManager5/T5_Mazes/Map_XX` **루트**에 `ColorGateController` 추가.
 2. `doorGroups` 크기 6, 각 원소의 `designColor` / `root`:
    | # | designColor | root |
@@ -285,19 +286,19 @@
    | 5 | White | `Map_XX/Doors/White` |
 3. `pads`는 **비워둘 것** — Awake에서 하위 `ColorGatePad`를 자동 수집한다.
 
-### W2. 맵마다 색 패드 6개 (7회)
+### ~~W2~~ ✅ 맵마다 색 패드 6개 (7회)
 `Map_XX/Pads2F`의 패드 6개 각각:
 1. `ColorGatePad` 추가 (`Collider`는 `isTrigger`가 Awake에서 강제되므로 체크 여부 무관, 단 **Collider는 있어야 함**).
 2. `designColor`를 그 패드의 색으로 (Blue/Purple/Green/Yellow/Black/White 각 1개).
 3. `controller`는 **비워둘 것** — 부모에서 자동 탐색한다.
 4. 고유색 4개에는 M단계에서 붙인 `ColoredPadVisual`이 그대로 있어야 한다(런타임 색 재매핑용).
 
-### W3. 문 설정 확인 (맵마다 15개)
+### ~~W3~~ ✅ 문 설정 확인 (맵마다 15개)
 - `DoorController.openMode = SlideUp`
 - **`latchOnOpen = false`** ← 래치가 켜져 있으면 한 번 열린 문이 다시 닫히지 않아 색 게이트가 깨진다. 가장 놓치기 쉬운 항목.
 - `requiredPads`는 **비어 있어야 한다** (이 문들은 압력 발판이 아니라 게이트가 직접 연다).
 
-### W4. 라운드 디렉터 (1회)
+### ~~W4~~ ✅ 라운드 디렉터 (1회)
 1. `StageManager5` 하위에 빈 GameObject `T5RoundDirector` 생성 → `T5RunnerRoundDirector` 추가.
 2. `mazesRoot` ← `StageManager5/T5_Mazes` **(배선은 이것 하나뿐)**.
 3. 타이밍 기본값 확인: `introSeconds=3` / `roundSeconds=120` / `chaserGraceSeconds=3` / `goalRadius=4`.
@@ -305,12 +306,12 @@
    (비워두면 `GetComponentsInChildren`로 자동 수집되지만, 기존 T5 Objective가 남아 있으면
    그것들도 같이 클리어 조건에 들어가므로 **옛 목표는 제거**할 것.)
 
-### W5. 체이서 (C7 전 잠정)
+### ~~W5~~ ✅ 체이서
 - 맵마다 `Map_XX` 하위에 `Stage5ChaserSpawner`를 두고 `spawnPoints`에 `ChaserSpawns` 16개를 넣으면
   디렉터가 자동으로 찾아 쓴다. 없으면 체이서 없이 라운드만 돈다(에러 아님).
 - `Stage5DifficultyConfig`는 씬 루트에 빈 GameObject로 1개 배치(기본 테이블이 이미 1인 6 / 2~4인 8).
 
-### W7. UI (C8·C9 — 2026-09-18 추가분, 아직 미배선)
+### W7. UI — **미완, 다음 작업**
 1. 빈 GameObject에 **`T5RunnerMarkerUI`** 1개. 배선 없음(텍스트는 코드가 만든다).
    `offset` 기본 3.4 — `PlayerNameTagUI`(2.2) 위로 뜬다.
 2. HUD에 **`T5RunnerAnnounceUI`** 1개. `messageText` / `countdownText`를 물리고,
@@ -319,51 +320,117 @@
    **비워두면 한국어 폴백**으로 동작하므로 지금 당장 Play 하는 데는 지장 없다.
 3. `ObjectiveUI`는 `StageManager.objectives`를 그대로 읽으므로 **추가 배선 없음**.
 
-### W8. 로컬라이제이션 (미완 — 사용자 결정 필요)
-- `Tip.T.Stage5.1`: **ko/en만 새 문구로 갱신**. 나머지 10개 언어는 아직 옛 흑백 문구라 내용이 틀리다.
-  `StageTipTranslations.md` 상단 경고 참고. 기계번역을 임의로 채우지 않았다
-  (`project_steam_ai_disclosure` — 로컬라이제이션이 Steam AI 표기의 실제 위험 구간).
-- Locale `.asset` 12개(`StageTip_ko` 등)의 실제 텍스트는 **아직 옛 문구 그대로** — 에이전트가
-  공유 에셋 수정 권한에 막혀 손대지 않았다. 코드 폴백만 새 문구다.
-- 러너 알림 2문구(`{0}님이 러너입니다` / `당신이 러너입니다`)는 **아직 테이블 키가 없다.**
+### W8. 로컬라이제이션
+- `Tip.T.Stage5.1`: **13개 로케일 전부 새 문구로 교체 완료**(2026-09-18).
+  `StageTip_*.asset` 실제 에셋 + `TipUI` 코드 폴백 + `StageTipTranslations.md` 전부 일치.
+  ko/en 외 11개는 **기계번역이라 원어민 검수 전** — Steam AI 표기 검토 대상.
+  > 주의: `TipUI.ResolveText()`는 **String Table을 먼저 읽고** 테이블이 없을 때만 코드 폴백을 쓴다.
+  > 즉 화면에 뜨는 건 `.asset` 쪽이다 — 코드 폴백만 고치면 아무것도 바뀌지 않는다.
+- **러너 알림 2문구는 아직 테이블 키가 없다** (`{0}님이 러너입니다` / `당신이 러너입니다`).
+  `T5RunnerAnnounceUI`의 LocalizedString 2개를 비워두면 한국어 폴백으로 동작하므로 급하지 않다.
 
-### W6. 아직 하지 말 것
-- 옛 `T5_Maze` 삭제 — V단계 통과 후.
-- `Chaser.prefab` 속도(27/25→8) — 에이전트가 권한에 막혀 못 함. 인스펙터에서 직접.
+### W9. 아직 하지 말 것 (구 W6)
+- 옛 `T5_Maze` 삭제 — **V단계 통과 후** 사용자 승인. 지금은 비활성 상태로 둔다.
+  (rename 여파로 거기 붙은 `ColorGateController`는 `doorGroups` root가 전부 NULL이다 — 정상, 어차피 폐기 대상)
 
 ## 4. V단계 — 검증 (ParrelSync / 로컬 빌드 2개)
-- 1인: 문 전부 열림, 체이서 6, 2라운드 모두 본인
-- 2인: 러너 교대, 고유 4슬롯 = 안내자 색, 패드 권한, 문 개폐가 Host/Client 동일
-- 체이서: 러너만 추격, 피격 후 소멸 → 6초 후 원거리 리스폰, 닫힌 문에 막힘, Client 위치 일치
-- 타임아웃 120초 → 리로드 → 맵·러너 재추첨
-- 러너 사망 → 리로드
-- 텔레포트: Client 러너가 튕김·워프 없이 이동
-- 러너 카메라가 벽 위로 넘어가지 않음
+
+**인원별**
+- 1인: 문 전부 열림, 2층 패드 숨김, 체이서 6, 2라운드 모두 본인, 러너 마커 안 보임
+- 2인: 러너 교대, 고유 4슬롯 = 안내자 색(패드 1개가 고유색 문 8개를 함께 엶 — **정상**), 패드 권한, 문 개폐가 Host/Client 동일
+
+**라운드 전환 (C4·C5 — 가장 새롭고 가장 위험한 구간)**
+- 시작 홀 → Map A 진입도 2라운드 전환과 **같은 경로**를 타는지
+- 암전이 텔레포트 순간을 실제로 가리는지 (커튼 전에 순간이동이 보이면 `coverFadeSeconds` 부족)
+- 러너 = Start1F, 안내자 = Stand2F에 **색별로 안 겹치게** 착지 (dropHeight 3m)
+- Client 러너가 튕김·워프·벽 끼임 없이 이동 (`NetworkTransform.Teleport` 동작 확인)
+- 카운트다운 3초 동안 이동 잠금 → 끝나는 순간 Host/Client **동시에** 풀림
+- **목적지 맵이 착지 전에 활성화돼 있는지** (바닥 통과 = `BeginRound`/`TeleportForRound` 순서 깨짐)
+
+**체이서 (C6·C7)**
+- 러너만 추격, 2층 안내자 완전 무시
+- 피격 후 소멸 → **6초 뒤** 러너에서 30m 밖 리스폰, 살아있는 수 유지
+- 같은 프레임에 2마리가 죽어도 **둘 다 6초 뒤** 나오는지(큐 동작)
+- 닫힌 문에 막힘 / **열린 문은 통과** ← §2-R 미확인 항목(carve 해제). 안 되면 `DoorController.OnOpened`에서 `NavMeshObstacle.carving`을 끄는 처리 추가
+- Client 위치 일치
+
+**실패·클리어**
+- 타임아웃 120초 → 리로드 → 맵·러너 **재추첨**(같은 조합이 반복되지 않는지)
+- 러너 사망 → 리로드 (`StageResetOnPlayerDeath` 경로)
+- 2라운드 Goal → StageManager 클리어 → 다음 씬
+
+**UI (C8·C9)**
+- `ObjectiveUI` "1/2 · 1:58" 갱신, 라운드 넘어갈 때 2/2
+- 러너 마커가 **안내자에게만** 보이고 러너 본인에겐 안 보임
+- 러너 알림이 3초간, 내가 러너일 땐 "당신이 러너"
+- Tip 문구가 새 러너 문구로 나오는지 (ko 외 1개 언어도 확인)
+
+**카메라**
+- 러너 카메라가 벽(높이 15) 위로 넘어가지 않음 (maxPitch/initialPitch 40)
 
 ## 5. D단계 — 문서 갱신 (사용자 확인 후)
-- `CoopStageAudit.T.md`: T5 "보류·재설계 금지" 해제 → 이 문서 링크
-- `TStageNetworkBoard.md` §3.2: 러너 한정 타겟·소멸·리스폰 반영
-- `NetworkDesign.md` §11: 라운드 중 텔레포트 칸(C5)
-- 에이전트 메모리 `project_t5_maze_rules`(구 흑7:백8·2층 동선 규칙) → 이 문서 기준으로 교체
+- `CoopStageAudit.T.md`: T5 "보류·재설계 금지" 해제 → 이 문서 링크 — **미완**
+- `TStageNetworkBoard.md` §3.2: 러너 한정 타겟·소멸·리스폰 반영 — **미완**
+- ~~`NetworkDesign.md` §11: 라운드 중 텔레포트 칸(C5)~~ → **§11.9로 신설 완료(2026-09-18)**
+- ~~`StageTipLines.md` / `StageTipTranslations.md`~~ → **갱신 완료(2026-09-18)**
+- 에이전트 메모리 `project_t5_maze_rules` → 이 문서를 SSOT로 가리키고 있어 그대로 유효
 
 ## 6. 보류 / 범위 밖
 - 다운 제거·부활 유지 리팩토링 (맵 완성 후)
 - T.Boss P1 Pioneer 교체, T.Stage4 함정 랜덤화 (T5 다음 — 순서: T5 → T.Boss P1 → T4)
 - T5 응원(Cheer) 연동
 
-## 7. 다음 세션 시작점 (M단계 완료 후 갱신)
+## 7. 다음 세션 시작점 (2026-09-18 C단계 완료 시점 기준)
 
-1. 이 문서(§2-R M단계 결과, §3 "C1~C4 구현 결과", §3-W 배선 체크리스트) 읽기.
-   맵은 이미 씬에 있고 **C1·C2·C3·C4는 끝났다**.
-2. **C1~C9 코드는 전부 끝났다.** 남은 것: UI 배선(§3-W W7) → **V단계 검증** → C10(정리) → D(문서).
-   로컬라이제이션(§3-W W8)은 V단계와 독립적으로 진행 가능.
-3. **배선(§3-W)은 2026-09-18 완료 확인됨** (MCP 읽기 검증):
-   맵 7개 각각 게이트 6묶음(문 2/2/2/2/4/3=15)·패드 6·스폰 16, 문 105개 전부
-   `latchOnOpen=false`·`requiredPads` 비어 있음·`SlideUp`, 디렉터 `mazesRoot=T5_Mazes`이며
-   `StageManager5.objectives`의 유일한 항목, `Stage5DifficultyConfig` 배치(1→6/2~4→8),
-   `Chaser.prefab` moveSpeed=8·NavMeshAgent speed=8, 옛 `T5_Maze` 비활성.
-4. **UI 없이도 한 번 돌려볼 수 있다** — C8·C9 전에 ParrelSync로 라운드 전환·문·체이서만 먼저 봐도 된다.
-3. **C5 착수 전 사용자 확인 필요** — 라운드 중 텔레포트는 `NetworkDesign.md` §11에 칸 추가가 필요하다.
-4. 인스펙터 선처리 2건: `Chaser.prefab` 속도(27/25→8), `Stage5DifficultyConfig` 씬 배치 + 행 설정. §3 표 아래 참조.
-5. 에디터 수정은 MCP로 직접 수행(사용자 요청), 수정 후 스크린샷·계층 수량·콘솔로 확인해 보고.
+### 지금까지 끝난 것
+
+- **M단계** — 맵 7개 생성·씬 배치 (§2-R)
+- **C단계 코드 C1~C9 전부** (§3 표 + "C1~C9 구현 결과")
+- **배선 W1~W5** — 맵/게이트/패드/문/디렉터/체이서. **MCP 읽기로 실물 검증했다:**
+  맵 7개 각각 게이트 6묶음(문 2/2/2/2/4/3=15)·패드 6(Collider·Visual 정상)·스폰 16,
+  문 105개 전부 `latchOnOpen=false`·`requiredPads` 비어 있음·`SlideUp`,
+  디렉터 `mazesRoot=T5_Mazes`이며 `StageManager5.objectives`의 **유일한** 항목,
+  `Stage5DifficultyConfig` 배치(1→6/2~4→8), `Chaser.prefab` moveSpeed=8·NavMeshAgent speed=8,
+  옛 `T5_Maze` 비활성.
+- **로컬라이제이션** — `Tip.T.Stage5.1` **13개 로케일 전부** 새 문구 (§3-W W8)
+
+### 다음에 할 것 (순서대로)
+
+1. **W7 — UI 배선 2개** (§3-W W7). 마커 1개(배선 없음) + 알림 1개(텍스트 2개 연결,
+   `introSeconds`를 디렉터와 같은 3으로). 로컬라이즈 필드는 비워도 한국어 폴백으로 동작한다.
+2. **V단계 검증** (§4). ParrelSync 2인 또는 로컬 빌드 2개.
+   → 라운드 전환(C4·C5)이 가장 새롭고 위험한 구간이니 거기부터 본다.
+3. **C10 정리** — 옛 `T5_Maze` 삭제(승인 후), 폐기된 흑백 전용 잔재 확인
+4. **D단계 문서** (§5)
+
+### 발 헛디디기 쉬운 곳 (전부 실제로 밟았거나 밟을 뻔한 것)
+
+- **`TipUI`는 String Table을 먼저 읽는다.** 코드 폴백(`TipUI.cs` `KoreanFallback`)만 고치면
+  화면은 하나도 안 바뀐다. 실제로 이 함정에 빠져 "ko 갱신했다"고 잘못 보고한 적 있다.
+- **`AdvanceRound`는 `BeginRound` → `TeleportForRound` 순서여야 한다.** 뒤집으면 아직 비활성인
+  맵으로 떨어져 바닥을 통과한다.
+- **`ColorGateController.SnapAllClosed()` → `ApplySlotMapping()` 순서.** 스냅이 "적용 완료" 표식을
+  세우므로 재매핑이 뒤에 와야 다음 프레임에 새 매핑으로 수렴한다.
+- **2인일 때 패드 1개가 고유색 문 8개를 동시에 엶 = 정상.** §1.2 "4슬롯 전부 안내자 색"이고
+  M단계 BFS도 "2인 = 실질 3색" 전제로 통과시켰다. 버그로 오해하지 말 것.
+- **`NetworkTransform.Teleport()`는 권한(Owner) 인스턴스에서만** — 아니면 예외를 던진다.
+  `transform.position` 단순 대입은 금지(§`NetworkDesign.md` 11.9에 이유 전부 기록).
+- **NavMesh 재베이크 시** `Doors`·`Pads2F`를 일시 비활성화해야 한다 (§2-R — `NavMeshModifier`가 안 먹힘).
+
+### 남은 미확인·미완
+
+- **열린 문이 NavMeshObstacle carve를 해제하는지** — M단계에서 판정 불가, V단계로 넘김.
+  해제가 안 되면 `DoorController.OnOpened`에서 `carving`을 끄는 처리가 필요하다.
+- **`Chaser.prefab` `postHitStopDuration`이 2초** — 예전엔 "맞고 멈췄다 재추격"이라 말이 됐지만
+  지금은 **소멸까지의 연출 길이**다. 0.4~0.6 권장(무해하지만 길게 느껴짐).
+- **러너 알림 2문구 테이블 키 없음** (§3-W W8). 폴백으로 동작하므로 급하지 않다.
+- ko/en 외 11개 Tip 번역은 **기계번역, 원어민 검수 전** — Steam AI 표기 검토 대상.
+- `Goal1F` 판이 기존 Goal 재질(노랑)이라 **노랑 문과 혼동 여지** (§2-R).
+
+### 작업 방식 메모
+
+- 에디터 상태는 사용자에게 넘기지 말고 **MCP 읽기로 직접 확인**해 보고한다
+  (`execute_code`로 `SerializedObject`를 덤프하는 방식이 이번에 잘 통했다).
+- 공유 에셋(프리팹·씬) **쓰기**는 auto mode 분류기에 막힐 수 있다. 막히면 우회하지 말고
+  정확한 수정 지점을 사용자에게 넘긴다.
 6. 맵을 다시 뽑아야 하면 `Tools/T5MazeGen/` 사용. NavMesh 재베이크 시 `Doors`·`Pads2F` 일시 비활성화 필요(§2-R).
