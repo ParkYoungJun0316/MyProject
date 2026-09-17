@@ -13,7 +13,8 @@
 > - 실패 피드백 문구는 카테고리별로 세분화하지 않고 지금처럼 4종(형식/예약어/금칙어/중복) + 팀워드용 `not_server`로 뭉뚱그림 유지 — 어뷰징 유저에게 어떤 금칙어 카테고리에 걸렸는지 정확히 알려주면 우회가 쉬워지므로 의도적으로 모호하게 둠.
 >
 > **번역 원칙:** ①각 언어 문법에 맞게. ②단순 직역이 아니라 그 언어 화자가 게임 튜토리얼에서 실제로 쓸 법한 자연스러운 말투로 다듬음 — 예를 들어 영어는 캐주얼한 명령형, 일본어는 です/ます체, 독일어/프랑스어/러시아어/폴란드어는 비격식 2인칭(du/tu/ты/ty), 스페인어는 스페인(pulsa)과 중남미(presiona) 어휘 차이, 포르투갈은 포르투갈(carrega em)과 브라질(aperte) 어휘 차이를 반영함.
-> **용어 통일:** "host"는 한국어 원문도 번역하지 않고 그대로 쓰므로, 각 언어에서 그 지역 게이머들이 실제로 쓰는 표현을 채택함 — en/de/ru/pl `host`(차용어 그대로), fr `l'hôte`, ja `ホスト`, zh `房主`, es `el host`, pt `anfitrião`, pt-BR `host`.
+> **[2026-09-17] 팀 응원 단어 한국어 용어 = `팀 키워드`로 통일.** 설정 UI(`CheerNamePanel`·`Board_CheerName`·`Prompt.CheerName`)가 이미 쓰던 말. `Board_TeamCheer.Body`의 `팀워드`, StageTip의 `팀 응원 이름`을 이 말로 교체(StageTip 쪽 다른 언어도 설정 UI 용어로 맞춤 — `StageTipTranslations.md` 용어표). 스토리 대사의 `팀 구호`는 캐릭터 말투라 유지.
+**용어 통일:** "host"는 한국어 원문도 번역하지 않고 그대로 쓰므로, 각 언어에서 그 지역 게이머들이 실제로 쓰는 표현을 채택함 — en/de/ru/pl `host`(차용어 그대로), fr `l'hôte`, ja `ホスト`, zh `房主`, es `el host`, pt `anfitrião`, pt-BR `host`.
 > **"팀 응원 단어"**는 모든 언어에서 `TeamCheer`/`Test` 섹션에 동일한 표현으로 통일(예: en `your team's cheer word`, ja `チームの合言葉`, de `das Team-Wort`).
 
 ## 키 네이밍
@@ -27,8 +28,10 @@
 | `Tutorial.Board_Controls.Row_Color` | `.../Row_Color/Label` |
 | `Tutorial.Board_Controls.Row_Color2` | `.../Row_Color2/Label` |
 | `Tutorial.Board_Controls.Row_Buff` | `.../Row_Buff/Label` |
-| `Tutorial.Board_Controls.Row_BuffNote` | `.../Row_Buff/Note` |
+| `Tutorial.Board_Controls.Row_BuffUse` | `.../Row_BuffUse/Label` |
 | `Tutorial.Board_Controls.Row_Revive` | `.../Row_Revive/Label` (신규, 2026-09-14 — 구 `Row_Voice` 자리 재사용) |
+| `Tutorial.Board_Controls.Row_Emot` | `.../Row_Emot/Label` |
+| `Tutorial.Board_Controls.Row_Speek` | `.../Row_Speek/Label` |
 | `Tutorial.Board_TeamCheer.Title` / `.Body` | `TutorialInfoBoards/Board_TeamCheer/Face/Title`, `/Body` (2026-09-14 — 구 `Board_Test` 내용 흡수) |
 | `Tutorial.Board_CheerName.Title` / `.Body` | `TutorialInfoBoards/Board_CheerName/Face/Title`, `/Body` (2026-09-14 — TeamCheerWord 전용으로 축소) |
 
@@ -50,6 +53,10 @@
 
 **[2026-09-14 삭제]** 개인 CheerName 커스텀화 삭제로 아래 8개 키는 더 이상 쓰이지 않음(입력 UI 자체가 없어짐): `Examples`, `NameInputPlaceholder`, `Feedback_Reserved_Name`, `Feedback_Taken_Name`, `Feedback_Taken_Team`(팀워드가 겹칠 대상 자체가 없어져 도달 불가), `Feedback_Generic_Name`, `Feedback_Submitting`, `Feedback_Timeout`(팀워드 설정은 RPC 왕복 없는 동기 호출이라 대기 상태가 없음).
 
+**[2026-09-17 삭제]** `Tutorial.Board_Controls.Row_BuffNote` — 씬 `Row_Buff/Note` GO와 함께 13로케일 String Table에서 제거. 내용은 해당 라운드 `StageTip`으로 이전 예정.
+  이전 시 재사용할 기존 번역(삭제 직전 테이블 값):
+  ko 방어는 라운드 데미지도 막습니다. / en Guard also blocks round damage. / ja 防御はラウンドダメージも防ぎます。 / zh-Hans 防御也能挡住回合伤害。 / zh-Hant 防禦也能擋下回合傷害。 / es·es-419 La defensa también bloquea el daño de ronda. / fr La défense bloque aussi les dégâts de round. / de Abwehr blockt auch Rundenschaden. / pt A defesa também bloqueia o dano da ronda. / pt-BR A defesa também bloqueia o dano da rodada. / ru Защита блокирует и урон за раунд. / pl Obrona blokuje też obrażenia rundy.
+
 **[2026-09-14 삭제]** `Tutorial.Board_GotoStartZone.Title` / `.Body` — 보드 GO 자체 삭제. 13로케일 String Table에서 키도 제거.
 
 언어 순서(13개, `Assets/Localization/Locales/` 전체와 동일): `ko, en, ja, zh-Hans, zh-Hant, es, es-419, fr, de, pt, pt-BR, ru, pl`
@@ -58,7 +65,10 @@
 
 ## Board_Controls (조작 안내)
 
-> **2026-09-11 개편 (카피 확정):** 라벨 5개 유지 + Q 행 아래 Note 1줄 + Speek 행 1개. 화살표는 TMP에서 `↔`. Q 아이콘은 버프 교체 행에 유지. 음성 행은 키보드 아이콘 쓰지 않고 `Assets/Figma/Tutorial/Speek.png`.
+> **[2026-09-17 정리 — String Table 실제 값 기준으로 재작성]** 2열 × 4행 + 하단 음성 안내(`Row_Speek`, 아이콘 `Assets/Figma/Tutorial/Speek.png`). 화살표는 TMP `↔`.
+> - `Row_BuffNote`("방어는 라운드 데미지도 막습니다.") **삭제** — 씬 `Row_Buff/Note` GO와 String Table 키 모두 제거. 해당 내용은 적용되는 라운드의 `StageTip`으로 옮길 예정(위치 미정).
+> - 레이아웃: `Face/BG` 가로 배율 1.5→1.75. 행 라벨 8개(Speek 제외) 높이 50 · TMP Auto Size 20~30 · 줄바꿈 끔 → 긴 언어는 줄바꿈 대신 그 줄만 축소. 오른쪽 열 라벨(`Row_Buff`/`BuffUse`/`Revive`/`Emot`) 폭 540 · x=210 (아이콘과 겹침 방지).
+> - 실측(13로케일 렌더): 30 미만으로 줄어드는 줄은 `Row_Buff`(es/es-419/fr/de 27, pt/ru 28, pl 25)와 `Row_Push`(ja 26, pl 25)뿐.
 
 ### `Tutorial.Board_Controls.Row_Move`
 
@@ -78,19 +88,19 @@
 
 ### `Tutorial.Board_Controls.Row_Push`
 
-- ko: 밀치기 (데미지 없음)
-- en: Push (no damage)
+- ko: 밀치기 (피해 없음)
+- en: Push (No Damage)
 - ja: 突き飛ばし（ダメージなし）
 - zh-Hans: 推开（无伤害）
 - zh-Hant: 推開（無傷害）
-- es: Empujón (sin daño)
-- es-419: Empujón (sin daño)
-- fr: Poussée (sans dégâts)
+- es: Empujar (sin daño)
+- es-419: Empujar (sin daño)
+- fr: Pousser (sans dégâts)
 - de: Stoßen (kein Schaden)
-- pt: Empurrão (sem dano)
-- pt-BR: Empurrão (sem dano)
+- pt: Empurrar (sem dano)
+- pt-BR: Empurrar (sem dano)
 - ru: Толчок (без урона)
-- pl: Pchnięcie (bez obrażeń)
+- pl: Odepchnięcie (bez obrażeń)
 
 ### `Tutorial.Board_Controls.Row_Color`
 
@@ -126,53 +136,85 @@
 
 ### `Tutorial.Board_Controls.Row_Buff`
 
-> **[2026-09-14 개편]** Space 발동 안내를 라벨에 합침 — 구 `Row_Voice`(개인 이름 음성 안내, 오류였음)가 삭제되면서 Space 정보가 갈 곳이 없어졌기 때문.
+- ko: 버프 교체 (방어 ↔ 이속)
+- en: Swap Buff (Defense ↔ Speed)
+- ja: バフ切り替え（防御↔速度）
+- zh-Hans: 切换增益（防御↔速度）
+- zh-Hant: 切換增益（防禦↔速度）
+- es: Cambiar mejora (Defensa ↔ Velocidad)
+- es-419: Cambiar mejora (Defensa ↔ Velocidad)
+- fr: Changer de bonus (Défense ↔ Vitesse)
+- de: Buff wechseln (Verteidigung ↔ Tempo)
+- pt: Trocar bónus (Defesa ↔ Velocidade)
+- pt-BR: Trocar buff (Defesa ↔ Velocidade)
+- ru: Смена баффа (Защита ↔ Скорость)
+- pl: Zmiana wzmocnienia (Obrona ↔ Prędkość)
 
-- ko: 개인 버프: Q 전환 · Space 발동 (방어↔이속)
-- en: Personal buff: Q to swap · Space to activate (Guard ↔ Speed)
-- ja: 個人バフ：Qで切替・Spaceで発動（防御↔速度）
-- zh-Hans: 个人增益：Q切换 · Space发动（防御↔加速）
-- zh-Hant: 個人增益：Q切換 · Space發動（防禦↔加速）
-- es: Mejora personal: Q para cambiar · Espacio para activar (defensa ↔ velocidad)
-- es-419: Mejora personal: Q para cambiar · Espacio para activar (defensa ↔ velocidad)
-- fr: Bonus perso : Q pour changer · Espace pour activer (défense ↔ vitesse)
-- de: Persönlicher Buff: Q zum Wechseln · Leertaste zum Aktivieren (Abwehr ↔ Tempo)
-- pt: Bónus pessoal: Q para trocar · Espaço para ativar (defesa ↔ velocidade)
-- pt-BR: Buff pessoal: Q para trocar · Espaço para ativar (defesa ↔ velocidade)
-- ru: Личный бафф: Q — смена · Пробел — активация (защита ↔ скорость)
-- pl: Osobisty buff: Q — zmiana · Spacja — aktywacja (obrona ↔ prędkość)
+### `Tutorial.Board_Controls.Row_BuffUse`
 
-### `Tutorial.Board_Controls.Row_BuffNote`
+- ko: 버프 사용
+- en: Use Buff
+- ja: バフ使用
+- zh-Hans: 使用增益
+- zh-Hant: 使用增益
+- es: Usar mejora
+- es-419: Usar mejora
+- fr: Utiliser le bonus
+- de: Buff nutzen
+- pt: Usar bónus
+- pt-BR: Usar buff
+- ru: Использовать бафф
+- pl: Użyj wzmocnienia
 
-- ko: 방어는 라운드 데미지도 막습니다.
-- en: Guard also blocks round damage.
-- ja: 防御はラウンドダメージも防ぎます。
-- zh-Hans: 防御也能挡住回合伤害。
-- zh-Hant: 防禦也能擋下回合傷害。
-- es: La defensa también bloquea el daño de ronda.
-- es-419: La defensa también bloquea el daño de ronda.
-- fr: La défense bloque aussi les dégâts de round.
-- de: Abwehr blockt auch Rundenschaden.
-- pt: A defesa também bloqueia o dano da ronda.
-- pt-BR: A defesa também bloqueia o dano da rodada.
-- ru: Защита блокирует и урон за раунд.
-- pl: Obrona blokuje też obrażenia rundy.
+### `Tutorial.Board_Controls.Row_Revive`
 
-### `Tutorial.Board_Controls.Row_Revive` **[2026-09-14 신규 — 구 `Row_Voice` 자리 재사용]**
+> **[2026-09-17]** 괄호 설명(다운된 팀원 옆에서 홀드) 삭제 → `팀 부활`로 축약. 긴 언어(de/ru/pt/es)가 칸을 3줄까지 넘쳤기 때문.
 
-- ko: 부활 (다운된 팀원 옆 [E] 홀드)
-- en: Revive (hold [E] next to a downed teammate)
-- ja: 蘇生（ダウンした仲間のそばで[E]長押し）
-- zh-Hans: 复活（在倒地队友旁按住[E]）
-- zh-Hant: 復活（在倒地隊友旁按住[E]）
-- es: Reanimar (mantén [E] junto a un compañero caído)
-- es-419: Reanimar (mantén presionado [E] junto a un compañero caído)
-- fr: Réanimer (maintiens [E] près d'un coéquipier à terre)
-- de: Wiederbeleben (halte [E] neben einem niedergestreckten Teammitglied)
-- pt: Reanimar (mantém [E] junto a um colega caído)
-- pt-BR: Reanimar (segure [E] perto de um colega caído)
-- ru: Оживление (держи [E] рядом с упавшим товарищем)
-- pl: Ożywianie (przytrzymaj [E] obok powalonego towarzysza)
+- ko: 팀 부활
+- en: Team Revive
+- ja: チーム蘇生
+- zh-Hans: 队友复活
+- zh-Hant: 隊友復活
+- es: Reanimar al equipo
+- es-419: Revivir al equipo
+- fr: Réanimer l'équipe
+- de: Team wiederbeleben
+- pt: Reanimar a equipa
+- pt-BR: Reviver a equipe
+- ru: Поднять союзника
+- pl: Ożywianie drużyny
+
+### `Tutorial.Board_Controls.Row_Emot`
+
+- ko: 이모티콘 사용 (1~8)
+- en: Use Emote (1-8)
+- ja: エモート使用（1～8）
+- zh-Hans: 使用表情（1～8）
+- zh-Hant: 使用表情（1～8）
+- es: Usar emote (1-8)
+- es-419: Usar emote (1-8)
+- fr: Utiliser une émote (1-8)
+- de: Emote verwenden (1-8)
+- pt: Usar emote (1-8)
+- pt-BR: Usar emote (1-8)
+- ru: Использовать эмоцию (1-8)
+- pl: Użyj emotki (1-8)
+
+### `Tutorial.Board_Controls.Row_Speek`
+
+- ko: 음성 인식 게임입니다. 뒤 안내를 따라주세요.
+- en: This is a voice-recognition game. Please follow the sign behind you.
+- ja: これは音声認識ゲームです。後ろの案内板の指示に従ってください。
+- zh-Hans: 这是一款语音识别游戏。请按照后方指示牌操作。
+- zh-Hant: 這是一款語音辨識遊戲。請依照後方指示牌操作。
+- es: Este es un juego de reconocimiento de voz. Sigue las indicaciones del cartel de detrás.
+- es-419: Este es un juego de reconocimiento de voz. Sigue las indicaciones del letrero de atrás.
+- fr: Ceci est un jeu de reconnaissance vocale. Suivez les indications du panneau derrière vous.
+- de: Dies ist ein Spracherkennungsspiel. Bitte folge den Hinweisen auf dem Schild hinter dir.
+- pt: Este é um jogo de reconhecimento de voz. Siga as instruções no painel atrás de si.
+- pt-BR: Este é um jogo de reconhecimento de voz. Siga as instruções na placa atrás de você.
+- ru: Это игра с распознаванием голоса. Следуйте указаниям на табличке позади вас.
+- pl: To gra z rozpoznawaniem głosu. Postępuj zgodnie ze wskazówkami na tablicy za tobą.
 
 ---
 
@@ -204,7 +246,7 @@
 
 > 경고 표시(빨간 느낌표, 1회 통과 규칙)는 텍스트로 설명하지 않는다 — [E]로 바로 연습해보면 직관적으로 보이므로 굳이 규칙을 나열하지 않기로 함(사용자 결정, 2026-09-14).
 
-- ko: 경고 아이콘이 뜨면 팀워드를 다같이 외쳐서 위협을 되돌리세요.\n여기서 [E]를 누르면 바로 연습할 수 있어요.
+- ko: 경고 아이콘이 뜨면 팀 키워드를 다같이 외쳐서 위협을 되돌리세요.\n여기서 [E]를 누르면 바로 연습할 수 있어요.
 - en: When the warning icon appears, shout your team's word together to undo the threat.\nPress [E] here to practice right now.
 - ja: 警告アイコンが出たら、チームの合言葉をみんなで叫んで脅威を元に戻しましょう。\nここで[E]を押せば、すぐに練習できます。
 - zh-Hans: 警告图标出现时，全队一起喊出团队关键词，把威胁解除。\n在这里按[E]即可马上练习。
@@ -357,7 +399,7 @@
 ### `Tutorial.CheerNamePanel.TeamKeywordPrefix` (`{0}` 포맷 — 팀 키워드 대문자가 채워짐)
 
 - ko: 팀 키워드: {0}
-- en: Team keyword: {0}
+- en: Team word: {0}
 - ja: チームの合言葉：{0}
 - zh-Hans: 团队关键词：{0}
 - zh-Hant: 團隊關鍵詞：{0}
@@ -471,6 +513,8 @@
 3. [x] 씬 `Board_Controls/Face`: Q 행 아래 `Note` TMP → `Row_BuffNote`. 새 `Row_Voice`(아이콘 `Speek.png`) → `Row_Voice`. Q 아이콘은 `Row_Buff`에 유지.
 4. **[2026-09-14 최종]** `Row_Voice` 삭제(개인 이름 음성 안내, 이미 오류였음), `Row_Buff`에 Space 발동 안내 병합, 신규 `Row_Revive`(부활 조작 안내) 추가 — 13로케일 `.asset` 반영 완료
 5. [ ] Play 모드에서 Controls 보드 6행+Note 스모크 (사용자, `Row_Voice` 아이콘 오브젝트도 씬에서 제거할 것)
+6. **[2026-09-17, MCP]** 다국어 넘침 정리 — `Row_Revive` → `팀 부활`(13로케일), `Row_BuffNote` 키·`Row_Buff/Note` GO 삭제, BG 가로 1.75, 라벨 Auto Size 20~30 + 줄바꿈 끔, 오른쪽 열 폭 540·x=210. 13로케일 프리뷰 렌더로 겹침 없음 확인.
+7. [ ] Tutorial 씬 저장 + Play 모드에서 Locale 바꿔 Controls 보드 스모크 (사용자)
 
 ### CheerNamePanel **[2026-09-14 개편 — TeamCheerWord 전용]**
 
@@ -504,25 +548,30 @@
 
 ### `Interlude.Board_NameChange.Body`
 
-- ko: 팀 키워드는 마지막으로 한 번 더 바꿀 수 있어요.\n여기서 놓치면 게임이 끝날 때까지 못 바꾸니,\n원하시는 분은 발판에서 지금 다시 정하세요.
-- en: You can change your team word one last time here.\nMiss this chance and it's locked for the rest of the game,\nso reset it at the panel now if you want to.
-- ja: チームの合言葉は、ここが最後の変更チャンスです。\n今を逃すとゲームが終わるまで変更できないので、\n変えたい方はパネルで今すぐ設定し直してください。
-- zh-Hans: 团队关键词在这里可以做最后一次更改。\n错过这次就要到游戏结束都无法再改，\n想改的人请现在到面板重新设置。
-- zh-Hant: 團隊關鍵詞在這裡可以做最後一次更改。\n錯過這次就要到遊戲結束都無法再改，\n想改的人請現在到面板重新設定。
-- es: Aquí podéis cambiar la palabra de equipo por última vez.\nSi dejáis pasar esta oportunidad, quedará fija hasta el final de la partida,\nasí que quien quiera cambiarla que lo haga ahora en el panel.
-- es-419: Aquí pueden cambiar la palabra de equipo por última vez.\nSi dejan pasar esta oportunidad, queda fija hasta el final de la partida,\nasí que quien quiera cambiarla que lo haga ahora en el panel.
-- fr: Vous pouvez changer le mot d'équipe une dernière fois ici.\nSi vous laissez passer cette chance, il restera figé jusqu'à la fin de la partie,\nalors si tu veux le changer, fais-le maintenant sur le panneau.
-- de: Hier könnt ihr das Team-Wort ein letztes Mal ändern.\nVerpasst ihr diese Chance, bleibt es für den Rest der Partie fest,\nalso legt es jetzt am Panel neu fest, wenn ihr wollt.
-- pt: Aqui podem mudar a palavra de equipa pela última vez.\nSe perderem esta oportunidade, fica fixa até ao fim do jogo,\npor isso quem quiser mudá-la, faça-o agora no painel.
-- pt-BR: Aqui vocês podem mudar a palavra da equipe pela última vez.\nSe perderem essa chance, ela fica travada até o fim do jogo,\nentão quem quiser mudar, faça isso agora no painel.
-- ru: Здесь можно изменить командное слово в последний раз.\nЕсли упустите этот момент, оно останется неизменным до конца игры,\nтак что, если хотите его поменять, сделайте это сейчас на панели.
-- pl: Tutaj możecie ostatni raz zmienić hasło drużyny.\nJeśli przegapicie tę okazję, zostanie ono zablokowane do końca gry,\nwięc jeśli ktoś chce je zmienić, niech zrobi to teraz na panelu.
+> **[2026-09-17]** 한 줄로 축약 (장소 안내·경고 문구 삭제). 바꾸는 방법은 같은 씬의 `CheerNameSignboard` 프롬프트(`[E] 팀 키워드 설정`)가 안내.
+
+- ko: 팀 키워드를 마지막으로 한 번 더 바꿀 수 있어요.
+- en: You can change your team word one last time.
+- ja: チームの合言葉は、最後にもう一度だけ変えられます。
+- zh-Hans: 团队关键词还能最后再改一次。
+- zh-Hant: 團隊關鍵詞還能最後再改一次。
+- es: Puedes cambiar la palabra de equipo una última vez.
+- es-419: Puedes cambiar la palabra de equipo una última vez.
+- fr: Tu peux changer le mot d'équipe une dernière fois.
+- de: Du kannst das Team-Wort ein letztes Mal ändern.
+- pt: Podes mudar a palavra de equipa uma última vez.
+- pt-BR: Você pode mudar a palavra da equipe uma última vez.
+- ru: Командное слово можно изменить в последний раз.
+- pl: Możesz zmienić hasło drużyny ostatni raz.
 
 **적용 상태 (2026-09-08, MCP):**
 
 - [x] `Tutorial` 테이블에 `Interlude.Board_NameChange.Title`/`.Body` 13로케일 입력
 - [x] `Interlude.unity`의 `Board_Test/Title`·`Board_Test/Body`에 `LocalizeStringEvent` 부착, 위 새 키로 연결(기존에 `Tutorial.Board_Test.*`를 잘못 물고 있던 것 수정)
 - [ ] Play 모드에서 Locale 바꿔가며 문구가 바뀌는지 스모크 테스트 (사용자)
+- [x] **[2026-09-17, MCP]** Body 13로케일 축약본으로 교체, 씬 `Board_Test` 에디터 표시 텍스트도 동기화.
+- [x] **[2026-09-17, MCP]** `Interlude.unity`에 `CheerNameSignboard` 재배치 — 편집 중 빠져 있었음. 위치 (0, 1, -0.8), 트리거 14×1×2.4 (z -2.0~0.4: 앞쪽 `TutorialCheerNameTest` 트리거 z 1~7, 뒤쪽 `GatherZone` z -7~-3과 겹치지 않음 — 겹치면 [E] 한 번에 두 표지판이 같이 반응). `cheerNameUI` = `UI/CheerNamePanel`, `PromptRoot`는 `TutorialCheerNameTest`의 것을 복제해 키만 `Tutorial.Prompt.CheerName`으로 교체.
+- [ ] Interlude 씬 저장 + Play 모드에서 [E]로 패널이 열리는지, 테스트 표지판과 동시에 반응하지 않는지 확인 (사용자)
 
 ## Prompt (E-키 상호작용 안내, Tutorial·Interlude 공용)
 

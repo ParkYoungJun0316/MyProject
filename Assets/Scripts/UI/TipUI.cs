@@ -18,10 +18,13 @@ using TMPro;
 ///   않으면 직전 문구가 그대로 유지된다.
 /// - 로케일 변경 시 같은 키를 다시 읽고, Asset Table <c>UIFont</c> / <c>TMP.Font</c>로
 ///   본문·제목 폰트를 바꾼다 (라틴·키릴 = Fredoka-Bold, ko/ja/zh = Noto Static).
-/// - <see cref="hideOnAllPhasesComplete"/>를 켠 인스턴스(T.Boss)는 전 Phase 완료 시 숨는다.
+/// - <see cref="hideOnAllPhasesComplete"/>를 켠 인스턴스(M.Boss·T.Boss)는 전 Phase 완료 시 숨는다.
 ///   Host = PhaseManager.OnPhaseDisplayChanged + AllPhasesComplete,
 ///   Client = StageNetworkState.OnAllPhasesCompleteClientPulse (펄스는 Host에서 발동하지 않음).
 ///   그 외 씬은 보통 스테이지 전환으로 사라지므로 꺼둔다.
+///
+/// - 옵션 "Tip 표시"(GameSettingsManager.TipEnabled)가 꺼져 있으면 키는 기억만 하고 숨긴다.
+///   스테이지 도중 다시 켜면 현재 페이즈 팁이 바로 보인다.
 ///
 /// NGO 쓰기 없음. 표시만.
 /// </summary>
@@ -39,7 +42,7 @@ public class TipUI : MonoBehaviour
 
     [Header("전 Phase 완료 시")]
     [Tooltip("전 Phase 완료 시 팁을 숨길지 (Host·Client 모두).\n" +
-             "완료 후에도 씬이 남아 연출이 이어지는 경우만 체크 (예: T.Boss Bossdown).")]
+             "완료 후에도 씬이 남아 연출이 이어지는 경우만 체크 (예: M.Boss·T.Boss Bossdown).")]
     [SerializeField] bool hideOnAllPhasesComplete = false;
 
     readonly LocalizedString _query = new LocalizedString { TableReference = TableName };
@@ -69,12 +72,15 @@ public class TipUI : MonoBehaviour
         }
 
         TryGetComponent(out _bgImage);
-        SetVisible(false);
+        RefreshVisible();
     }
 
     void OnEnable()
     {
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
+        if (GameSettingsManager.Instance != null)
+            GameSettingsManager.Instance.TipEnabledChanged += OnTipEnabledChanged;
+        RefreshVisible();
         if (hideOnAllPhasesComplete)
         {
             TrySubscribeCompletePulse();
@@ -90,6 +96,8 @@ public class TipUI : MonoBehaviour
     void OnDisable()
     {
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
+        if (GameSettingsManager.Instance != null)
+            GameSettingsManager.Instance.TipEnabledChanged -= OnTipEnabledChanged;
         UnsubscribeCompletePulse();
         UnsubscribePhase();
         if (_waitSns != null)
@@ -128,16 +136,16 @@ public class TipUI : MonoBehaviour
     public void ShowTip(string key)
     {
         if (string.IsNullOrEmpty(key)) return;
-        SetVisible(true);
         if (_locReady) ApplyLocaleFont();
         ApplyKey(key);
+        RefreshVisible();
     }
 
     /// <summary>팁을 숨긴다. 완료 후에도 씬이 남는 연출 등에서 인스펙터로 연결.</summary>
     public void HideTip()
     {
         _currentKey = null;
-        SetVisible(false);
+        RefreshVisible();
     }
 
     // ── 구독 ──────────────────────────────────────────────────────
@@ -304,6 +312,15 @@ public class TipUI : MonoBehaviour
         return string.Join("\n", lines);
     }
 
+    void OnTipEnabledChanged(bool _) => RefreshVisible();
+
+    /// <summary>보여줄 키가 있고 옵션이 켜져 있을 때만 표시.</summary>
+    void RefreshVisible()
+    {
+        bool enabledBySetting = GameSettingsManager.Instance == null || GameSettingsManager.Instance.TipEnabled;
+        SetVisible(enabledBySetting && !string.IsNullOrEmpty(_currentKey));
+    }
+
     void SetVisible(bool visible)
     {
         if (_bgImage == null)
@@ -316,14 +333,18 @@ public class TipUI : MonoBehaviour
 
     static readonly Dictionary<string, string> KoreanFallback = new Dictionary<string, string>
     {
-        { "Tip.M.Stage1", "한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.\n상단에 \"TEAMCHEER\" 경고가 뜨면 팀 응원 이름을 외치세요." },
-        { "Tip.M.Stage2.1", "지정된 색은 그 구역에 반드시 들어가야 합니다.\n상단에 \"TEAMCHEER\" 경고가 뜨면 팀 응원 이름을 외치세요." },
+        { "Tip.M.Stage1", "한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.\n상단에 \"TEAMCHEER\" 경고가 뜨면 팀 키워드를 외치세요." },
+        { "Tip.M.Stage2.1", "지정된 색은 그 구역에 반드시 들어가야 합니다.\n상단에 \"TEAMCHEER\" 경고가 뜨면 팀 키워드를 외치세요.\n방어 버프는 라운드 실패 데미지도 막아 줍니다." },
         { "Tip.M.Stage2.2", "Ctrl로 흑/백 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요." },
         { "Tip.M.Stage3", "타일을 2초 동안 밟아야 점수가 올라갑니다.\n고유색 타일은 그 색만, 흑백 타일은 누구든 밟을 수 있습니다." },
         { "Tip.M.Stage4.1", "자기 색이 뜨면 Space를 누르세요.\n흰색은 아무나 눌러도 되고, 검은색은 1초 뒤 자동으로 넘어갑니다.\n미니게임 중에는 Space 버프를 쓸 수 없습니다." },
         { "Tip.M.Stage4.2", "한 칸 앞의 바닥만 보여 줍니다.\n누를 칸을 미리 외워 두세요." },
-        { "Tip.M.Stage4.3", "Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.\n\"TEAMCHEER\" 경고가 뜰 때 팀 응원 이름을 외치면 바닥이 복구됩니다.\n이미 부서진 뒤에는 다음 경고까지 버티세요." },
-        { "Tip.M.Stage5", "고유색 칸이 나오면 그 칸 위에 서야 합니다.\n고유색이 없으면 흑백 칸 위에서 버티세요.\n바닥 색에 맞춰 캐릭터 색도 바꾸세요." },
+        { "Tip.M.Stage4.3", "Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.\n\"TEAMCHEER\" 경고가 뜰 때 팀 키워드를 외치면 바닥이 복구됩니다.\n이미 부서진 뒤에는 다음 경고까지 버티세요." },
+        { "Tip.M.Stage5", "고유색 칸이 나오면 그 칸 위에 서야 합니다.\n고유색이 없으면 흑백 칸 위에서 버티세요.\n바닥 색에 맞춰 캐릭터 색도 바꾸세요.\n방어 버프는 라운드 실패 데미지도 막아 줍니다." },
+        { "Tip.M.Boss.1", "한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다." },
+        { "Tip.M.Boss.2", "방어 버프는 라운드 실패 데미지도 막아 줍니다." },
+        { "Tip.M.Boss.3", "Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요." },
+        { "Tip.M.Boss.4", "입이 열리면 팀 키워드를 외쳐 부서진 바닥을 복구하세요." },
         { "Tip.T.Stage1", "내 색이 뜬 양옆 벽에 부딪히면 벽이 뒤로 물러납니다." },
         { "Tip.T.Stage2.1", "길을 외워 두세요." },
         { "Tip.T.Stage2.2", "자기 색 칸만 밟으세요.\n칸 색이 맞아도 캐릭터가 흑백이면 안 됩니다." },

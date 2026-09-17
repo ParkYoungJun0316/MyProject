@@ -40,6 +40,7 @@ public static class SetupSettingUILocalization
         { "Row_MouseSensitivity", "Settings.MouseSensitivity" },
         { "Row_ChatFontSize", "Settings.ChatFontSize" },
         { "Row_DigitCheer", "Settings.DigitCheer" },
+        { "Label_Tip", "Settings.Tip" }, // Row_DigitCheer 오른쪽 절반의 두 번째 라벨
         { "Row_Master", "Settings.MasterVolume" },
         { "Row_BGM", "Settings.BgmVolume" },
         { "Row_SFX", "Settings.SfxVolume" },
@@ -371,6 +372,9 @@ public static class SetupSettingUILocalization
         Add("Settings.DigitCheer",
             "Cheer with T Key", "T키로 응원하기", "Tキーで応援", "用T键加油", "用T鍵加油",
             "Поддержка клавишей T", "Cheer mit T-Taste", "Cheer (touche T)", "Cheer con tecla T", "Cheer con tecla T", "Cheer com tecla T", "Cheer klawiszem T");
+        Add("Settings.Tip",
+            "Show Tips", "팁 표시", "ヒント表示", "显示提示", "顯示提示",
+            "Подсказки", "Tipps anzeigen", "Afficher les astuces", "Mostrar consejos", "Mostrar consejos", "Mostrar dicas", "Pokaż wskazówki");
 
         Add("Settings.MasterVolume",
             "Master Volume", "마스터 볼륨", "マスター音量", "主音量", "主音量",

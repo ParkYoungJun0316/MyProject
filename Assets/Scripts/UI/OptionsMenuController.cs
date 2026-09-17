@@ -26,6 +26,7 @@ using UnityEngine.UI;
 /// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
 ///   (Inspector에서 Slider의 minValue/maxValue를 10~24로 설정).
 /// - digitCheerToggle   : Toggle — "T키로 응원하기". 미연결이면 설정 UI만 없음(기본 OFF 유지).
+/// - tipToggle          : Toggle — "Tip 표시". 미연결이면 설정 UI만 없음(기본 ON 유지).
 /// - mouseSensitivitySlider : Slider — 마우스(카메라 회전) 감도 배율. min/max는
 ///   GameSettingsManager.Min/MaxMouseSensitivity(0.1~2)와 일치시킬 것. ThirdPersonCamera가
 ///   pull 방식으로 매 프레임 반영(별도 push 이벤트 불필요).
@@ -59,6 +60,10 @@ public class OptionsMenuController : MonoBehaviour
     [Header("응원")]
     [Tooltip("T키 = 팀 응원 대체 입력. 기본 OFF. 체크박스 오브젝트는 씬에서 연결.")]
     [SerializeField] private Toggle digitCheerToggle;
+
+    [Header("Tip")]
+    [Tooltip("인게임 Tip 패널 표시. 기본 ON.")]
+    [SerializeField] private Toggle tipToggle;
 
     [Header("채팅")]
     [Tooltip("인게임 채팅 글자 크기. Slider의 minValue/maxValue를 " +
@@ -119,6 +124,7 @@ public class OptionsMenuController : MonoBehaviour
         if (ResolveMicVolumeSlider() != null) micVolumeSlider.onValueChanged.AddListener(OnMicVolumeChanged);
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.AddListener(OnMicDeviceChanged);
         if (digitCheerToggle    != null) digitCheerToggle.onValueChanged.AddListener(OnDigitCheerChanged);
+        if (tipToggle           != null) tipToggle.onValueChanged.AddListener(OnTipChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.AddListener(OnChatFontSizeChanged);
         if (mouseSensitivitySlider != null) mouseSensitivitySlider.onValueChanged.AddListener(OnMouseSensitivityChanged);
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
@@ -139,6 +145,7 @@ public class OptionsMenuController : MonoBehaviour
         if (micVolumeSlider     != null) micVolumeSlider.onValueChanged.RemoveListener(OnMicVolumeChanged);
         if (micDeviceDropdown   != null) micDeviceDropdown.onValueChanged.RemoveListener(OnMicDeviceChanged);
         if (digitCheerToggle    != null) digitCheerToggle.onValueChanged.RemoveListener(OnDigitCheerChanged);
+        if (tipToggle           != null) tipToggle.onValueChanged.RemoveListener(OnTipChanged);
         if (chatFontSizeSlider  != null) chatFontSizeSlider.onValueChanged.RemoveListener(OnChatFontSizeChanged);
         if (mouseSensitivitySlider != null) mouseSensitivitySlider.onValueChanged.RemoveListener(OnMouseSensitivityChanged);
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
@@ -171,6 +178,7 @@ public class OptionsMenuController : MonoBehaviour
         RefreshResolutionDropdown();
         RefreshMicRow();
         RefreshDigitCheerToggle();
+        RefreshTipToggle();
         RefreshChatFontSizeSlider();
         RefreshMouseSensitivitySlider();
     });
@@ -330,6 +338,13 @@ public class OptionsMenuController : MonoBehaviour
             digitCheerToggle.isOn = settings.DigitCheerEnabled;
     }
 
+    void RefreshTipToggle()
+    {
+        GameSettingsManager settings = GameSettingsManager.Instance;
+        if (settings != null && tipToggle != null)
+            tipToggle.isOn = settings.TipEnabled;
+    }
+
     void RefreshChatFontSizeSlider()
     {
         if (chatFontSizeSlider == null) return;
@@ -441,6 +456,12 @@ public class OptionsMenuController : MonoBehaviour
     {
         if (_refreshing) return;
         GameSettingsManager.Instance?.SetDigitCheerEnabled(value);
+    }
+
+    void OnTipChanged(bool value)
+    {
+        if (_refreshing) return;
+        GameSettingsManager.Instance?.SetTipEnabled(value);
     }
 
     void OnMicVolumeChanged(float value)

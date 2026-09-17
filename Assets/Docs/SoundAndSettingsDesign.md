@@ -818,5 +818,7 @@ SFX, 2026-09-01) 참고 — `StageNetworkState.NotifyChallengeStepResult`(RPC �
 **숫자키 응원 로컬라이즈:** `Row_DigitCheer` 라벨이 `Settings.MicMute`(마이크 음소거)에 잘못 묶여
 이상한 글자가 나왔음. `Settings.DigitCheer` 키(12개 로케일)로 교체 완료.
 
+**Tip 표시 토글 (2026-09-17):** `Row_DigitCheer` 오른쪽 절반에 `Label_Tip`/`Toggle_Tip` 추가 → `OptionsMenuController.tipToggle` → `GameSettingsManager.SetTipEnabled` (`Settings.TipEnabled`, 기본 ON, 기본값 리셋 시 ON). `TipUI`는 `TipEnabledChanged`를 구독해 떠 있는 팁을 즉시 숨기거나 다시 보여줌(끈 동안에도 현재 키는 기억). 라벨 키 `Settings.Tip`(12개 로케일).
+
 **NGO 영향 없음** — Owner 로컬 카메라(`LocalPlayerCamera`/`ThirdPersonCamera`) 전용 설정, 네트워크
 동기화 불필요.

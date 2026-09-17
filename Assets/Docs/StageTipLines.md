@@ -1,6 +1,6 @@
 # StageTipLines — Tip HUD 한국어 SSOT
 
-> 인게임 `Tip_Panel`(`UI.prefab`, Chat 아래 300×300)에 넣을 **규칙 안내** 원문.
+> 인게임 `Tip_Panel`(`UI.prefab`, Chat 위 360×320, 본문 자동 크기 16~20 · 줄 간격 +8 · 제목 아래 한 줄 띄움)에 넣을 **규칙 안내** 원문.
 > DialogueUI 대사(`StageDialogueLines.md` / `StageDialogueTranslations.md`)와 **별개**다 — 대사 줄 재사용이 아니라, 플레이 중 상시 볼 짧은 규칙만 둔다.
 > 번역본: [`StageTipTranslations.md`](StageTipTranslations.md) (`en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl`).
 
@@ -10,7 +10,7 @@
 - 비어 있지 않은 줄 앞에는 `•` 불릿을 붙인다 (문장 수 = 점 수). 빈 줄에는 점을 넣지 않는다.
 - 키보드 키는 영어 (`Ctrl`, `Space`). HUD 경고 표기는 `"TEAMCHEER"` 그대로.
 - 스토리·꿀떡 대사는 넣지 않는다.
-- **M.Boss:** Tip 없음 (끔). **T.Boss:** 켬. 둘 다 Bossdown은 끔.
+- **M.Boss / T.Boss:** 켬 (M.Boss는 2026-09-17부터). 둘 다 Bossdown은 끔 (`TipUI.hideOnAllPhasesComplete`).
 
 ## 키 (제안)
 
@@ -26,6 +26,10 @@ String Table은 나중에 별도 Collection (`StageTip` 가칭). 키는 페이�
 | `Tip.M.Stage4.2` | M.Stage4 4.2 |
 | `Tip.M.Stage4.3` | M.Stage4 4.3 |
 | `Tip.M.Stage5` | M.Stage5 |
+| `Tip.M.Boss.1` | M.Boss P1 |
+| `Tip.M.Boss.2` | M.Boss P2 |
+| `Tip.M.Boss.3` | M.Boss P3 |
+| `Tip.M.Boss.4` | M.Boss P4 |
 | `Tip.T.Stage1` | T.Stage1 |
 | `Tip.T.Stage2.1` | T.Stage2 2.1 |
 | `Tip.T.Stage2.2` | T.Stage2 2.2 |
@@ -38,7 +42,6 @@ String Table은 나중에 별도 Collection (`StageTip` 가칭). 키는 페이�
 | `Tip.T.Boss.3` | T.Boss P3 |
 | `Tip.T.Boss.4` | T.Boss P4 |
 
-M.Boss는 키 없음.
 
 ---
 
@@ -46,12 +49,13 @@ M.Boss는 키 없음.
 
 1. 한 번에 한 색의 입만 올라옵니다.
 2. 흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.
-3. 상단에 "TEAMCHEER" 경고가 뜨면 팀 응원 이름을 외치세요.
+3. 상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.
 
 ## M.Stage2 — 2.1
 
 1. 지정된 색은 그 구역에 반드시 들어가야 합니다.
-2. 상단에 "TEAMCHEER" 경고가 뜨면 팀 응원 이름을 외치세요.
+2. 상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.
+3. 방어 버프는 라운드 실패 데미지도 막아 줍니다.
 
 ## M.Stage2 — 2.2
 
@@ -76,7 +80,7 @@ M.Boss는 키 없음.
 ## M.Stage4 — 4.3
 
 1. Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
-2. "TEAMCHEER" 경고가 뜰 때 팀 응원 이름을 외치면 바닥이 복구됩니다.
+2. "TEAMCHEER" 경고가 뜰 때 팀 키워드를 외치면 바닥이 복구됩니다.
 3. 이미 부서진 뒤에는 다음 경고까지 버티세요.
 
 ## M.Stage5
@@ -84,10 +88,28 @@ M.Boss는 키 없음.
 1. 고유색 칸이 나오면 그 칸 위에 서야 합니다.
 2. 고유색이 없으면 흑백 칸 위에서 버티세요.
 3. 바닥 색에 맞춰 캐릭터 색도 바꾸세요.
+4. 방어 버프는 라운드 실패 데미지도 막아 줍니다.
 
 ## M.Boss
 
-Tip 없음.
+> **[2026-09-17]** Tip 켬. 방어 버프 줄은 Tutorial `Board_Controls`의 구 `Row_BuffNote`에서 옮겨 옴.
+
+### P1 (Barrier + 화살 + 침)
+
+1. 한 번에 한 색의 입만 올라옵니다.
+2. 흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.
+
+### P2 (SideSplit 판정 + 입 닫힘)
+
+1. 방어 버프는 라운드 실패 데미지도 막아 줍니다.
+
+### P3 (Drop + 화살 + 혀)
+
+1. Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
+
+### P4 (입 닫힘 → 바닥 파괴)
+
+1. 입이 열리면 팀 키워드를 외쳐 부서진 바닥을 복구하세요.
 
 ## T.Stage1
 
