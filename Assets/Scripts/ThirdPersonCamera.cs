@@ -64,6 +64,34 @@ public class ThirdPersonCamera : MonoBehaviour
     [Tooltip("게임 시작 시 커서를 화면 중앙에 고정. 마우스 델타 입력에 필수")]
     [SerializeField] bool lockCursor = true;
 
+    // ── 벽 충돌 회피 ────────────────────────────────────────────────
+    [Header("벽 충돌 회피 (SphereCast pull-in)")]
+    [Tooltip("카메라가 이 레이어들에 막히면 피벗 쪽으로 당겨진다.\n" +
+             "★ 정적 지형만 넣을 것. 특히 Default는 레이어를 지정 안 한 모든 오브젝트가 들어가는 " +
+             "쓰레기통이라 절대 넣으면 안 된다 — 파편(FloorTileShards/RubbleShards, Rigidbody 달린 " +
+             "비-트리거 MeshCollider)·식도 함정·MagicCircle이 전부 Default라, 이것들이 피벗→카메라 " +
+             "구간을 스쳐 지나갈 때마다 카메라가 튄다(2026-09-16 이 기능을 삭제했던 원인).\n" +
+             "BoulderStop도 제외 — 플레이어는 통과하는 배리어인데 SphereCast는 물리 매트릭스를 " +
+             "무시하고 그냥 맞는다. 기본값은 Ground/Wall/BackGround.")]
+    [SerializeField] LayerMask cameraObstructionLayers =
+        (1 << 25) | (1 << 27) | (1 << 29); // Ground, Wall, BackGround
+
+    [Tooltip("SphereCast 반지름(m). 근평면 폭 정도로 — 너무 작으면 벽 모서리를 못 걸러 살짝 뚫려 보인다.")]
+    [SerializeField] float cameraCollisionRadius = 0.3f;
+
+    [Tooltip("장애물 표면에서 추가로 띄워 두는 여유 거리(m). 0이면 표면에 딱 붙어 z-fighting/근평면 클리핑 위험.")]
+    [SerializeField] float cameraCollisionBuffer = 0.15f;
+
+    [Tooltip("벽에 막혀 당겨질 때의 보간 시간(초). 짧게 — 길면 당겨지는 동안 벽 뒤가 보인다.")]
+    [SerializeField] float pullInSmoothTime = 0.05f;
+
+    [Tooltip("장애물이 사라져 원래 거리로 돌아갈 때의 보간 시간(초). 당길 때보다 넉넉하게 — " +
+             "짧은 오탐이 한두 프레임 생겨도 눈에 안 띄게 만드는 장치다.")]
+    [SerializeField] float pullOutSmoothTime = 0.25f;
+
+    [Tooltip("디버그: 막힘이 시작/해제될 때 어떤 콜라이더였는지 콘솔에 찍는다. 원인 추적용, 평소엔 끌 것.")]
+    [SerializeField] bool logObstructionHits = false;
+
     // ── Preview Preset ──────────────────────────────────────────────
     [Header("Preview Preset (Inspector에서 직접 지정)")]
     [Tooltip("탑다운 프리뷰 시 카메라 거리. 경로 발판 전체가 화면에 들어오도록 조정.")]
@@ -99,6 +127,19 @@ public class ThirdPersonCamera : MonoBehaviour
     Coroutine _blendCoroutine;
     bool _isInPreview; // 프리뷰(또는 블렌드) 진행 중 여부
     bool _snapNextFrame; // SnapToTarget() 요청 — 다음 LateUpdate 1회만 보간 생략
+
+    float _obstructionCut;    // 벽 때문에 desired 거리에서 깎아낸 양(m). 0 = 안 막힘
+    float _obstructionCutVel; // 위 값의 SmoothDamp 속도
+    bool  _wasObstructed;     // 직전 프레임 막힘 여부 (로그 전이 판정용)
+
+    /// <summary>막혔을 때 피벗에서 유지할 최소 거리(m). 0이면 피벗과 완전히 겹쳐 근평면이 깨진다.</summary>
+    const float MinObstructedDistance = 0.05f;
+
+    /// <summary>
+    /// SphereCast 시작 구가 이미 콜라이더와 겹치면 Unity는 hit.distance = 0을 돌려준다.
+    /// 그걸 그대로 쓰면 카메라가 플레이어 머리 안으로 순간이동하므로 이 값 이하는 "막히지 않음"으로 본다.
+    /// </summary>
+    const float InitialOverlapEpsilon = 0.01f;
 
     // ── Public 프로퍼티 ─────────────────────────────────────────────
     public float Yaw => _yaw;
@@ -178,16 +219,20 @@ public class ThirdPersonCamera : MonoBehaviour
         Vector3 pivot    = target.position + _activeOffset;
         Vector3 desiredPos = pivot + _currentRot * (Vector3.back * currentDistance);
 
+        // 벽 충돌 회피는 여기서 끝난다 — 아래 분기는 이미 보정된 safePos만 쓴다.
+        // 특히 텔레포트 스냅도 safePos를 써야 부활 순간 한 프레임 벽 안에서 시작하지 않는다.
+        Vector3 safePos = ResolveObstruction(pivot, desiredPos, immediate: _snapNextFrame);
+
         if (_snapNextFrame)
         {
             // 텔레포트 직후 1프레임: SmoothDamp를 건너뛰어 맵을 가로지르는 비행을 막는다(SnapToTarget 참고).
             _snapNextFrame = false;
-            transform.position = desiredPos;
+            transform.position = safePos;
         }
         else if (positionDamping > 0f)
-            transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref _posVelocity, positionDamping);
+            transform.position = Vector3.SmoothDamp(transform.position, safePos, ref _posVelocity, positionDamping);
         else
-            transform.position = desiredPos;
+            transform.position = safePos;
 
         transform.rotation = _currentRot;
     }
@@ -273,6 +318,74 @@ public class ThirdPersonCamera : MonoBehaviour
     }
 
     // ── 내부 ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 피벗 → desiredPos 구간을 SphereCast로 검사해, 장애물에 막히면 그 앞까지 당긴 위치를 돌려준다.
+    /// 막히지 않으면 desiredPos 그대로.
+    ///
+    /// [왜 "거리"가 아니라 "깎아낸 양(_obstructionCut)"을 보간하는가]
+    /// 최종 거리를 직접 보간하면 minDistanceWhenLookingUp 같은 정상적인 거리 변화까지 느려진다.
+    /// 깎아낸 양만 보간하면 안 막혔을 때 cut = 0으로 수렴해 원래 거리와 정확히 일치한다.
+    ///
+    /// [왜 positionDamping에 기대지 않는가] 이 보정은 자체 보간(pullIn/pullOutSmoothTime)을 갖는다.
+    /// LocalPlayerCamera 프리팹의 positionDamping은 0이라, 예전 구현처럼 거기에 기대면 막힘/풀림이
+    /// 양쪽 다 즉시 스냅이 되어 한 프레임짜리 오탐도 그대로 튐으로 보였다(2026-09-16 삭제 원인).
+    ///
+    /// [프리뷰 제외] 탑다운 프리뷰는 pivot 위 수십 m에서 내려다보는 연출이라 천장·배경에 막혀
+    /// 당겨지면 구도가 깨진다.
+    /// </summary>
+    Vector3 ResolveObstruction(Vector3 pivot, Vector3 desiredPos, bool immediate)
+    {
+        Vector3 toDesired = desiredPos - pivot;
+        float desiredDist = toDesired.magnitude;
+
+        if (_isInPreview || desiredDist < 0.0001f)
+        {
+            _obstructionCut    = 0f;
+            _obstructionCutVel = 0f;
+            _wasObstructed     = false;
+            return desiredPos;
+        }
+
+        Vector3 dir = toDesired / desiredDist;
+
+        bool hitAny = Physics.SphereCast(pivot, cameraCollisionRadius, dir, out RaycastHit hit, desiredDist,
+                                         cameraObstructionLayers, QueryTriggerInteraction.Ignore);
+        bool blocked = hitAny && hit.distance > InitialOverlapEpsilon;
+
+        float rawCut = blocked ? Mathf.Max(desiredDist - (hit.distance - cameraCollisionBuffer), 0f) : 0f;
+
+        if (logObstructionHits && blocked != _wasObstructed)
+        {
+            if (blocked)
+                Debug.Log($"[ThirdPersonCamera] 막힘 ▶ {hit.collider.name} " +
+                          $"(layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}) " +
+                          $"hit={hit.distance:F2}m / desired={desiredDist:F2}m pitch={_pitch:F0}", hit.collider);
+            else
+                Debug.Log($"[ThirdPersonCamera] 막힘 해제 ◀ desired={desiredDist:F2}m pitch={_pitch:F0}");
+        }
+        _wasObstructed = blocked;
+
+        // 당길 때는 빠르게(한 프레임도 벽 뒤가 보이면 안 됨), 풀릴 때는 느긋하게.
+        float smoothTime = rawCut > _obstructionCut ? pullInSmoothTime : pullOutSmoothTime;
+        if (immediate || smoothTime <= 0f)
+        {
+            _obstructionCut    = rawCut;
+            _obstructionCutVel = 0f;
+        }
+        else
+        {
+            _obstructionCut = Mathf.SmoothDamp(_obstructionCut, rawCut, ref _obstructionCutVel, smoothTime);
+            if (Mathf.Abs(_obstructionCut - rawCut) < 0.01f) // 꼬리 제거 — 안 막혔으면 정확히 원래 거리로
+            {
+                _obstructionCut    = rawCut;
+                _obstructionCutVel = 0f;
+            }
+        }
+
+        float finalDist = Mathf.Max(desiredDist - _obstructionCut, MinObstructedDistance);
+        return pivot + dir * finalDist;
+    }
 
     IEnumerator BlendToPreview(Transform pivot, float toDist, float toPitch, float toYaw0, Vector3 toOffset)
     {
