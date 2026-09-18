@@ -14,10 +14,11 @@ using UnityEngine;
 ///    판정 방식은 PressurePad.IsAllowed와 동일(isUniqueColor + playerColorType 일치).
 ///  - 흑·백 패드 : **누구나**. 흑백은 플레이어가 수시로 갈아타는 상태라 소유권을 두지 않는다.
 ///
-/// [설계슬롯 재매핑]
-///  designColor는 맵 제작 시점의 설계 색이고, 실제 판정은 ColorGateController가 라운드마다
-///  다시 정해주는 EffectiveColor로 한다(러너 색·빈 슬롯이 안내자 색으로 채워지므로).
-///  Black/White는 재매핑 대상이 아니라 designColor 그대로다.
+/// [설계슬롯 → 실제 색 — SessionColorSlotMap이 SSOT]
+///  designColor는 맵 제작 시점의 설계 색이고, 실제 판정은 `SessionColorSlotMap.Resolve()`가 정하는
+///  EffectiveColor로 한다. 이번 판에 없는 색과 **그 라운드 러너의 색**은 Common(누구나)으로 떨어진다.
+///  Black/White는 치환 대상이 아니라 designColor 그대로다.
+///  값은 **당겨온다**(pull) — 매핑이 언제 확정되든 다음 프레임에 수렴하므로 푸시 순서 버그가 없다.
 ///
 /// [판정] Host 전용 (ContactKnockback·BlackWhiteTogglePad와 동일 — Host가 원격 플레이어 CNT
 ///        위치로 트리거를 받는다). 루트 캡슐(Player 컴포넌트가 붙은 콜라이더)만 인정.
@@ -49,14 +50,24 @@ public class ColorGatePad : MonoBehaviour
     public PlayerColorType EffectiveColor => _effectiveColor;
 
     PlayerColorType _effectiveColor;
+    int             _appliedMapVersion = -1;
 
     void Awake()
     {
         GetComponent<Collider>().isTrigger = true;
-        _effectiveColor = designColor;
 
         if (controller == null)
             controller = GetComponentInParent<ColorGateController>(true);
+
+        RefreshEffectiveColor();
+    }
+
+    void OnEnable() => _appliedMapVersion = -1; // 맵이 라운드마다 켜졌다 꺼지므로 다시 당겨온다
+
+    void Update()
+    {
+        if (_appliedMapVersion == SessionColorSlotMap.Version) return;
+        RefreshEffectiveColor();
     }
 
     // ── 외부 API ────────────────────────────────────────────────
@@ -68,15 +79,13 @@ public class ColorGatePad : MonoBehaviour
     }
 
     /// <summary>
-    /// 컨트롤러의 현재 슬롯 매핑에서 실제 색을 다시 읽어온다.
-    /// 매핑의 SSOT는 컨트롤러 하나뿐이라(푸시 순서 버그 방지) 여기서는 당겨오기만 하고,
-    /// 머티리얼 교체만 이 시점에 함께 처리한다.
+    /// `SessionColorSlotMap`에서 실제 색을 다시 당겨오고 머티리얼을 맞춘다.
+    /// 매핑 버전이 바뀔 때마다 자동으로 호출되므로 밖에서 부를 일은 거의 없다.
     /// </summary>
     public void RefreshEffectiveColor()
     {
-        _effectiveColor = controller != null
-            ? controller.GetEffectiveColor(designColor)
-            : designColor;
+        _appliedMapVersion = SessionColorSlotMap.Version;
+        _effectiveColor    = SessionColorSlotMap.Resolve(designColor);
 
         ColoredPadVisual visual = GetComponentInChildren<ColoredPadVisual>(true);
         if (visual != null) visual.Apply(_effectiveColor);
@@ -88,8 +97,10 @@ public class ColorGatePad : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
 
+        // 부활 직후 1초 제외 — 생존자 위에 겹쳐 나타난 것만으로 문이 열리지 않게 한다
+        // (ReviveSystemDesign.md §3.1).
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead || p.IsDowned) return;
+        if (p == null || !p.CountsForOccupancy) return;
         if (!IsAllowed(p)) return;
 
         if (pressSfxId != SFXId.None)

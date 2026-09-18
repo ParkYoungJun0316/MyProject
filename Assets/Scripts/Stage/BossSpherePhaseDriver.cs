@@ -407,12 +407,10 @@ public class BossSpherePhaseDriver : MonoBehaviour
 
         _activeIndex = -1;
 
-        Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (Player p in players)
-        {
-            if (p == null || p.IsDead) continue;
-            NetworkDamageUtil.ApplyInstantKill(p); // Host 전용 가드 내장 — 호출부 가드 불필요
-        }
+        // 전원 즉사 → 실패 통보로 교체(ReviveSystemDesign.md §6). 자동 부활이 들어오면서
+        // "전원 즉사"는 전원이 1초 뒤 살아나 실패가 조용히 무시될 수 있는 경로가 됐다.
+        // FailStageFromServer에 Host 가드가 내장돼 있어 호출부 가드는 불필요하다.
+        StageNetworkState.Instance?.FailStageFromServer("T.Boss 페이즈 시간 초과");
     }
 
     // ── 내부 ─────────────────────────────────────────────────────

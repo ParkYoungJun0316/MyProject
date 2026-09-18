@@ -26,7 +26,7 @@ using UnityEngine.UI;
 ///           커서를 요청 중이면 실제로는 잠기지 않는다(공유 카운트, 2026-08-22).
 ///
 /// [Reset 동작]
-/// Host/Client 전원 누를 수 있다. 실제 리로드는 Host가 사망 문(NotifyPlayerDeathServerRpc)으로
+/// Host/Client 전원 누를 수 있다. 실제 리로드는 Host가 실패·리셋 문(NotifyStageResetServerRpc)으로
 /// 수행하며, 씬당 첫 요청만 반영된다(Host `_resetPending` — 리로드로 StageNetworkState가
 /// 새로 생기면 자동 해제). 여기서의 버튼 잠금은 연타 방지·표시용일 뿐 판정 권한은 Host에 있다.
 /// 잠금 조건: StageNetworkState 없음(Tutorial/Interlude) / 이번 씬에서 내가 이미 누름 /
@@ -222,7 +222,7 @@ public class EscMenuController : MonoBehaviour
 
         _resetLocked = true;
         RefreshResetButton();
-        StageNetworkState.Instance.NotifyPlayerDeathServerRpc();
+        StageNetworkState.Instance.NotifyStageResetServerRpc();
     }
 
     /// <summary>Setting 버튼 OnClick에 연결.</summary>

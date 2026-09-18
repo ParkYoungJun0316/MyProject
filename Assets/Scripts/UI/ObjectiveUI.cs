@@ -16,7 +16,7 @@ using TMPro;
 /// [표시 모드 SSOT — 타입 분기 대신 모드로 통일. 새 Objective 추가 시 아래 4개 중 하나로 분류할 것]
 /// - Time        : "275s"       — SurviveTimeObjective
 /// - Count       : "3/5"        — RoundProgressObjective (Grid/Memory 등). 성공·실패 구분 없이 진행 라운드 수만 표시
-/// - Count+Timer : "2/5 · 18s"  — SequenceRingObjective, Stage5TargetObjective, ColorTileRoundObjective
+/// - Count+Timer : "2/5 · 18s"  — SequenceRingObjective, ColorTileRoundObjective
 /// - Ratio       : 가로 트랙 바 + 마커 (0~1) — ReachZoneObjective만
 /// 그 외(분류 안 된 StageObjective)는 지원하지 않음 — objectiveName 텍스트로 대체하지 않는다.
 /// Boss(BossFightObjective)는 StageObjective가 아니며 이 UI가 다루지 않음 — BossHealthBarUI 별도 유지.
@@ -79,13 +79,7 @@ public class ObjectiveUI : MonoBehaviour
         public UnityAction<float>   reachListener;
         public UnityAction          roundListener;          // RoundProgressObjective (Count)
         public UnityAction          seqListener;             // SequenceRingObjective (Count+Timer)
-        public UnityAction<int,int> stage5CaptureListener;   // Stage5TargetObjective (Count+Timer)
-        public UnityAction<float>   stage5TimerListener;
-
-        // Stage5는 캡처/타이머 이벤트가 서로 독립 발동 — 조합 표시를 위해 최신값 캐시
-        public int   stage5Captured;
-        public int   stage5Required;
-        public float stage5Remaining;
+        public UnityAction<float>   t5TimerListener;         // T5RunnerObjective (Time)
     }
 
     ObjSlot[] slots;
@@ -164,20 +158,14 @@ public class ObjectiveUI : MonoBehaviour
             int done = Mathf.Max(0, seq.TotalSteps - seq.RemainingSteps);
             BuildTextContent(root, slot, FormatCountTimer(done, seq.TotalSteps, seq.TimeRemaining));
         }
-        else if (obj is Stage5TargetObjective stage5)
+        else if (obj is T5RunnerObjective t5)
         {
-            slot.stage5Captured  = stage5.CapturedCount;
-            slot.stage5Required  = stage5.requiredCaptures;
-            slot.stage5Remaining = stage5.Remaining;
-            BuildTextContent(root, slot, FormatCountTimer(slot.stage5Captured, slot.stage5Required, slot.stage5Remaining));
+            // T5는 라운드가 없다 — 시간만 보여준다 (TStage5RunnerRedesign.md §1.6/§1.7).
+            BuildTextContent(root, slot, FormatSeconds(t5.Remaining));
         }
         else if (obj is ColorTileRoundObjective colorTile)
         {
             BuildTextContent(root, slot, FormatCountClock(colorTile.PlayedRounds, colorTile.TotalRounds, colorTile.Remaining));
-        }
-        else if (obj is T5RunnerRoundDirector t5)
-        {
-            BuildTextContent(root, slot, FormatCountClock(t5.PlayedRounds, t5.TotalRounds, t5.Remaining));
         }
         else if (obj is RoundProgressObjective round)
         {
@@ -283,18 +271,10 @@ public class ObjectiveUI : MonoBehaviour
                 seq.OnProgressChanged.RemoveListener(slot.seqListener);
                 slot.seqListener = null;
             }
-            if (slot.objective is Stage5TargetObjective stage5)
+            if (slot.objective is T5RunnerObjective t5 && slot.t5TimerListener != null)
             {
-                if (slot.stage5CaptureListener != null)
-                {
-                    stage5.OnCaptureCountChanged.RemoveListener(slot.stage5CaptureListener);
-                    slot.stage5CaptureListener = null;
-                }
-                if (slot.stage5TimerListener != null)
-                {
-                    stage5.OnTimerChanged.RemoveListener(slot.stage5TimerListener);
-                    slot.stage5TimerListener = null;
-                }
+                t5.OnTimeChanged.RemoveListener(slot.t5TimerListener);
+                slot.t5TimerListener = null;
             }
             if (slot.objective is RoundProgressObjective round && slot.roundListener != null)
             {
@@ -304,11 +284,6 @@ public class ObjectiveUI : MonoBehaviour
             if (slot.objective is ColorTileRoundObjective colorTile && slot.roundListener != null)
             {
                 colorTile.OnProgressChanged.RemoveListener(slot.roundListener);
-                slot.roundListener = null;
-            }
-            if (slot.objective is T5RunnerRoundDirector t5 && slot.roundListener != null)
-            {
-                t5.OnProgressChanged.RemoveListener(slot.roundListener);
                 slot.roundListener = null;
             }
         }
@@ -353,22 +328,15 @@ public class ObjectiveUI : MonoBehaviour
                 };
                 seq.OnProgressChanged.AddListener(captured.seqListener);
             }
-            else if (slot.objective is Stage5TargetObjective stage5)
+            else if (slot.objective is T5RunnerObjective t5)
             {
                 var captured = slot;
-                captured.stage5CaptureListener = (capturedCount, required) =>
+                captured.t5TimerListener = remaining =>
                 {
-                    captured.stage5Captured = capturedCount;
-                    captured.stage5Required = required;
-                    RefreshStage5Text(captured);
+                    if (captured.titleText != null)
+                        captured.titleText.text = FormatSeconds(remaining);
                 };
-                captured.stage5TimerListener = remaining =>
-                {
-                    captured.stage5Remaining = remaining;
-                    RefreshStage5Text(captured);
-                };
-                stage5.OnCaptureCountChanged.AddListener(captured.stage5CaptureListener);
-                stage5.OnTimerChanged.AddListener(captured.stage5TimerListener);
+                t5.OnTimeChanged.AddListener(captured.t5TimerListener);
             }
             else if (slot.objective is ColorTileRoundObjective colorTile)
             {
@@ -381,17 +349,6 @@ public class ObjectiveUI : MonoBehaviour
                 };
                 colorTile.OnProgressChanged.AddListener(captured.roundListener);
             }
-            else if (slot.objective is T5RunnerRoundDirector t5)
-            {
-                var captured = slot;
-                captured.roundListener = () =>
-                {
-                    if (captured.titleText != null)
-                        captured.titleText.text = FormatCountClock(
-                            t5.PlayedRounds, t5.TotalRounds, t5.Remaining);
-                };
-                t5.OnProgressChanged.AddListener(captured.roundListener);
-            }
             else if (slot.objective is RoundProgressObjective round)
             {
                 var captured = slot;
@@ -403,12 +360,6 @@ public class ObjectiveUI : MonoBehaviour
                 round.OnProgressChanged.AddListener(captured.roundListener);
             }
         }
-    }
-
-    static void RefreshStage5Text(ObjSlot slot)
-    {
-        if (slot.titleText != null)
-            slot.titleText.text = FormatCountTimer(slot.stage5Captured, slot.stage5Required, slot.stage5Remaining);
     }
 
     // ── 씬 전체 클리어 (Client 레인 보정은 StageClearBannerUI와 동일 골격) ──

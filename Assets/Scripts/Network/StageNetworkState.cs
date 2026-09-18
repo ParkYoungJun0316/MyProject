@@ -194,82 +194,20 @@ public struct BossSphereHitState : INetworkSerializable, IEquatable<BossSphereHi
 }
 
 /// <summary>
-/// T.Stage5 러너 라운드 상태(맵 추첨 결과 + 러너 + 현재 라운드 구간) — T5 전용 슬롯.
-/// `TStage5RunnerRedesign.md` §1.1: 맵 7개 중 2개를 뽑아 2라운드, 라운드마다 러너가 바뀐다.
-///
-/// [왜 한 NV인가] 맵 인덱스·러너 clientId·현재 라운드·구간 시각을 별도 NV로 나누면 Client 도착
-/// 순서가 보장되지 않아(PhaseStartSignal §과 동일 원인) "라운드는 1로 바뀌었는데 러너는 아직
-/// 0라운드 값"인 한 프레임이 생긴다. 그 프레임에 체이서 타겟·러너 마커·텔레포트 목적지가 전부
-/// 엉뚱한 사람을 가리키므로, 하나로 묶어 원자적으로 전달한다.
-///
-/// [값 규약]
-///  roundIndex           -1 = 아직 라운드 진입 전(추첨만 끝난 상태), 0/1 = 진행 중인 라운드
-///  mapIndex0/1          라운드별 맵 인덱스(0~6). -1 = 미추첨
-///  runnerClientId0/1    라운드별 러너 clientId. 솔로는 두 라운드 모두 같은 값
-///  roundStartServerTime 라운드 카운트다운이 시작된 서버 시각 — 3초 카운트다운·체이서 3초 유예의 앵커
-///  roundEndServerTime   제한시간(120초) 만료 서버 시각 — 타임아웃 판정과 타이머 UI의 앵커
-/// </summary>
-public struct T5RoundState : INetworkSerializable, IEquatable<T5RoundState>
-{
-    public int    roundIndex;
-    public int    mapIndex0;
-    public int    mapIndex1;
-    public ulong  runnerClientId0;
-    public ulong  runnerClientId1;
-    public double roundStartServerTime;
-    public double roundEndServerTime;
-
-    /// <summary>아직 아무것도 추첨되지 않은 초기값.</summary>
-    public static T5RoundState Empty => new T5RoundState
-    {
-        roundIndex = -1, mapIndex0 = -1, mapIndex1 = -1,
-        runnerClientId0 = 0, runnerClientId1 = 0,
-        roundStartServerTime = -1.0, roundEndServerTime = -1.0,
-    };
-
-    /// <summary>roundIndex 라운드의 맵 인덱스. 범위 밖이면 -1.</summary>
-    public int MapIndexOf(int round) => round == 0 ? mapIndex0 : round == 1 ? mapIndex1 : -1;
-
-    /// <summary>roundIndex 라운드의 러너 clientId. 범위 밖이면 ulong.MaxValue(= 러너 없음).</summary>
-    public ulong RunnerOf(int round) => round == 0 ? runnerClientId0 : round == 1 ? runnerClientId1 : ulong.MaxValue;
-
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        serializer.SerializeValue(ref roundIndex);
-        serializer.SerializeValue(ref mapIndex0);
-        serializer.SerializeValue(ref mapIndex1);
-        serializer.SerializeValue(ref runnerClientId0);
-        serializer.SerializeValue(ref runnerClientId1);
-        serializer.SerializeValue(ref roundStartServerTime);
-        serializer.SerializeValue(ref roundEndServerTime);
-    }
-
-    public bool Equals(T5RoundState other) =>
-        roundIndex == other.roundIndex
-        && mapIndex0 == other.mapIndex0 && mapIndex1 == other.mapIndex1
-        && runnerClientId0 == other.runnerClientId0 && runnerClientId1 == other.runnerClientId1
-        && roundStartServerTime.Equals(other.roundStartServerTime)
-        && roundEndServerTime.Equals(other.roundEndServerTime);
-
-    public override bool Equals(object obj) => obj is T5RoundState other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(
-        roundIndex, mapIndex0, mapIndex1, runnerClientId0, runnerClientId1,
-        roundStartServerTime, roundEndServerTime);
-}
-
-/// <summary>
 /// 스테이지 네트워크 상태 중앙 허브. NetworkBehaviour.
 /// M.Stage1 / T.Stage1 씬 내 NetworkObject GameObject에 부착.
 ///
 /// [역할]
-/// - 플레이어 사망 신고 수신 → Host가 씬 리로드 (NetworkSceneManager)
+/// - 스테이지 실패 확정 → Host가 씬 리로드 (NetworkSceneManager)
+/// - 팀 공유 목숨 보유 (ReviveSystemDesign.md §4)
 /// - Phase 진행 상태 동기화 (CurrentPhase NetworkVariable)
 ///
 /// [배치]
 /// 각 스테이지 씬에 빈 GameObject → NetworkObject + StageNetworkState 추가.
 ///
 /// [연결]
-/// - StageResetOnPlayerDeath.DoReset() → NotifyPlayerDeathServerRpc()
+/// - StageManager / PlayerReviveState → FailStageFromServer() (Host 직접, ReviveSystemDesign.md §6)
+/// - EscMenuController.OnClickReset() → NotifyStageResetServerRpc()
 /// - PhaseManager.EnterPhase() → MarkAndSyncPhase(index) (Host에서만 호출 — Phase 인덱스 +
 ///   시작 서버시간을 PhaseStartSignal로 원자적 전달, 2026-08 버그 수정. 옛 MarkPhaseStart()+
 ///   SyncPhase(index) 분리 방식은 폐기됨)
@@ -375,9 +313,11 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // ── 팀 공유 목숨 (다운/부활, DownedReviveSystemDesign.md §4B) ──
-    // 스테이지 시작 시 (인원수 − 1)로 초기화, 부활 성공마다 -1, 회복 없음. -1은 "아직 미초기화" 센티널
+    // ── 팀 공유 목숨 (ReviveSystemDesign.md §4) ──
+    // 스테이지 시작 시 (인원수 − 1)로 초기화, **사망마다** -1, 회복 없음. -1은 "아직 미초기화" 센티널
     // — PlayerSpawnCoordinator.OnPlayersReady에서 실제 인원수로 확정한다(파티 크기가 그 전엔 불안정).
+    // [2026-09-19] 소모 시점이 "부활 완료"에서 "사망 순간"으로 바뀌었다 — 자동 부활이라 완료 시점에
+    // 소모할 이유가 없고, 동시 부활 완료 경쟁(구 FailAllOtherDowned)이 통째로 사라진다(§4).
     private readonly NetworkVariable<int> _teamLivesRemaining = new(
         -1,
         NetworkVariableReadPermission.Everyone,
@@ -438,24 +378,48 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // ── T.Stage5 러너 라운드 슬롯 (T5 전용) ──
-    // 맵 2개·러너 2명 추첨 결과와 현재 라운드 구간. 묶는 이유는 T5RoundState 주석 참고.
-    private readonly NetworkVariable<T5RoundState> _t5Round = new(
-        T5RoundState.Empty,
+    // ── T.Stage5 러너 슬롯 (T5 전용) ──
+    // 이번 판의 러너 clientId 하나뿐이다. 맵 인덱스는 **여기 없다** — 시드에서 나오므로
+    // StageVariantPicker가 전 머신에서 같은 답을 낸다(StageVariantPickerBase 주석의 규약).
+    // 러너만 NV인 이유는 Host 전권인 체이서가 "타겟의 진실"을 한 곳에서 읽어야 하기 때문이다.
+    private readonly NetworkVariable<ulong> _t5Runner = new(
+        NoRunner,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    // ── 씬 준비 취합 슬롯 (커튼 게이트, 전 씬 공통) ──
+    // 비트 i = PlayerSpawnCoordinator 명단을 clientId 순으로 정렬했을 때 i번째 사람이 준비됐는가.
+    // 최대 4인이라 int 하나면 충분하고, NV라 도착 보장 + 늦게 봐도 최종값이다(재시도가 멱등해진다).
+    private readonly NetworkVariable<int> _sceneReadyMask = new(
+        0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
 
     private bool _resetPending;
 
+    // ── 부활 금지 스테이지 (ReviveSystemDesign.md §7.1) ──
+    [Header("부활 예외")]
+    [SerializeField, Tooltip("체크하면 이 씬에서는 자동 부활이 일어나지 않고 팀 목숨도 소모되지 않는다. " +
+        "누가 죽든 그 판이 끝나는 스테이지 전용(T.Stage5) — 실패 확정은 그 씬의 Objective가 사망을 보고 내린다. " +
+        "ReviveSystemDesign.md §7.1")]
+    bool disableRevive = false;
+
+    /// <summary>이 씬에서 자동 부활을 쓰지 않는가(§7.1). PlayerReviveState가 사망 처리 분기에서 읽는다.</summary>
+    public bool IsReviveDisabled => disableRevive;
+
+    /// <summary>실패·리셋이 이미 확정돼 씬 리로드 대기 중인가. 진행 중 부활 예약을 막는 데 쓴다(§9.4).</summary>
+    public bool IsStageFailing => _resetPending;
+
     // 사망을 유발한 콜스택(예: OXQuizManager 데미지 루프+ClientRpc, StageManager/
     // SequenceRing 전원 즉사 루프, Breakable 데미지+넉백)은 전부 yield 없는 동기 코드라
     // 같은 프레임 안에서 이미 끝난다 — 1프레임만 미뤄도 그 뒤에야 Despawn이 일어나
     // RpcException이 해소됨(이 최소 요구치는 아래 초 단위 딜레이가 그보다 훨씬 크므로
     // 항상 만족됨).
-    // [UX 개선 2026-08] 플레이테스트 피드백 — 리로드가 너무 빨라 "죽었다"는 사실 자체를
-    // 인지하지 못함. 사망 연출(DeathOverlayUI)을 볼 여유를 초 단위로 확보.
-    [SerializeField, Tooltip("사망 판정부터 씬 리로드까지 대기 시간(초). 사망 연출/문구를 인지할 여유.")]
+    // [UX 개선 2026-08] 플레이테스트 피드백 — 리로드가 너무 빨라 실패했다는 사실 자체를
+    // 인지하지 못함. STAGE FAILED 배너를 볼 여유를 초 단위로 확보.
+    [SerializeField, Tooltip("실패 확정부터 씬 리로드까지 대기 시간(초). STAGE FAILED 배너를 인지할 여유.")]
     float deathReloadDelay = 1.75f;
 
     // Client-side 캐시 — SyncSurvivalRemainingClientRpc 매 틱 Find 방지
@@ -516,23 +480,17 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>color 문이 지금 열려 있는지. 게이트 컨트롤러·문 연출의 공통 판정점.</summary>
     public bool IsGateColorOpen(PlayerColorType color) => _openGateColor.Value == (int)color;
 
-    /// <summary>T.Stage5 러너 라운드 상태 전체. 개별 값은 아래 헬퍼 참고.</summary>
-    public T5RoundState T5Round => _t5Round.Value;
+    /// <summary>러너 없음(미추첨)을 뜻하는 값.</summary>
+    public const ulong NoRunner = ulong.MaxValue;
 
-    /// <summary>진행 중인 라운드 인덱스. -1 = 아직 라운드 진입 전.</summary>
-    public int T5CurrentRound => _t5Round.Value.roundIndex;
+    /// <summary>이번 판의 러너 clientId. 미추첨이면 <see cref="NoRunner"/>.</summary>
+    public ulong T5RunnerClientId => _t5Runner.Value;
 
-    /// <summary>진행 중인 라운드의 맵 인덱스. 라운드 진입 전이면 -1.</summary>
-    public int T5CurrentMapIndex => _t5Round.Value.MapIndexOf(_t5Round.Value.roundIndex);
-
-    /// <summary>진행 중인 라운드의 러너 clientId. 라운드 진입 전이면 ulong.MaxValue.</summary>
-    public ulong T5CurrentRunnerClientId => _t5Round.Value.RunnerOf(_t5Round.Value.roundIndex);
-
-    /// <summary>clientId가 이번 라운드의 러너인지. 라운드 진입 전에는 항상 false.</summary>
+    /// <summary>clientId가 이번 판의 러너인지. 미추첨이면 항상 false.</summary>
     public bool IsT5Runner(ulong clientId) =>
-        _t5Round.Value.roundIndex >= 0 && T5CurrentRunnerClientId == clientId;
+        _t5Runner.Value != NoRunner && _t5Runner.Value == clientId;
 
-    /// <summary>이 머신의 로컬 플레이어가 이번 라운드의 러너인지 — 러너 마커·카메라·UI 분기용.</summary>
+    /// <summary>이 머신의 로컬 플레이어가 러너인지 — 러너 마커·UI 분기용.</summary>
     public bool IsLocalPlayerT5Runner
     {
         get
@@ -602,27 +560,19 @@ public class StageNetworkState : NetworkBehaviour
     public event Action<int> OnOpenGateColorChanged;
 
     /// <summary>
-    /// T.Stage5 라운드 상태가 바뀔 때 발동. 전 머신 공통 구독점 — 라운드 디렉터(Host 외 연출),
-    /// 러너 마커, ObjectiveUI 타이머가 구독한다.
+    /// T.Stage5 러너가 확정될 때 발동. 전 머신 공통 구독점 — 러너 마커·발판 제어가 구독한다.
     /// </summary>
-    public event Action<T5RoundState> OnT5RoundChanged;
+    public event Action<ulong> OnT5RunnerChanged;
 
     /// <summary>
-    /// Stage5 타겟 포획 진행 상황(captured, required)이 바뀔 때 발동 — Client 전용 구독점.
-    /// Stage5TargetRunner.OnTriggerEnter가 Host-only 판정(TStageNetworkBoard.md §3.2)이라
-    /// Client는 로컬 포획 이벤트가 없다 — 이 Rpc가 Client HUD(ObjectiveUI)의 유일한 갱신 경로다.
+    /// T.Stage5 남은 시간이 갱신될 때 Client에서 발동 — Host는 자기 Tick으로 직접 갱신한다.
+    /// T5RunnerObjective.Tick()이 Host 레인에서만 시간을 진행하므로(§11A "Progress는 Host 레인 하나")
+    /// Client는 이 신호로만 타이머 UI를 갱신한다.
     /// </summary>
-    public event Action<int, int> OnStage5CaptureSync;
+    public event Action<float> OnT5RemainingSync;
 
     /// <summary>
-    /// Stage5 타겟 잡기 남은 시간이 갱신될 때 발동 — Client 전용 구독점.
-    /// Stage5TargetObjective.Tick()이 Host 레인에서만 _elapsed를 진행하므로(§11A "Progress는
-    /// Host 레인 하나"), Client는 이 신호로만 타이머 UI를 갱신한다.
-    /// </summary>
-    public event Action<float> OnStage5RemainingSync;
-
-    /// <summary>
-    /// §11 사망 문으로 재진입이 확정된 순간(Host 레인, NotifyPlayerDeathServerRpc 진입 시) 1회 발동.
+    /// §11 실패 문으로 재진입이 확정된 순간(Host 레인, BeginStageResetOnServer 진입 시) 1회 발동.
     /// 각 챌린지 매니저(OXQuizManager/ColorTileChallenge/GridColorChallenge/GridBWTileChallenge/
     /// SequenceRingMinigame)의 Host 레인 Progress 루프(Update Tick 또는 판정 코루틴)가 이 신호를
     /// OnChallengeStepChanged 등과 동일한 방식으로 구독해 즉시 자기 상태를 Idle로 되돌린다.
@@ -671,7 +621,8 @@ public class StageNetworkState : NetworkBehaviour
         _trackerTargets.OnListChanged    += OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged += OnMemorySectionsClearedNv;
         _openGateColor.OnValueChanged    += OnOpenGateColorNv;
-        _t5Round.OnValueChanged          += OnT5RoundNv;
+        _t5Runner.OnValueChanged         += OnT5RunnerNv;
+        BeginSceneReadyGate();
         // [버그 수정 2026-07-20] Survive Phase 오브젝트가 이전 Phase에서는 비활성 상태로
         // 시작하는 씬(예: M.Stage2 "Stage2.1" 컨테이너)에서는 기본 검색(비활성 제외)이
         // OnNetworkSpawn 시점에 null을 캐시해버려 Client의 생존 타이머 UI가 갱신되지 않았음.
@@ -697,14 +648,15 @@ public class StageNetworkState : NetworkBehaviour
         _trackerTargets.OnListChanged    -= OnTrackerTargetsChanged;
         _memorySectionsCleared.OnValueChanged -= OnMemorySectionsClearedNv;
         _openGateColor.OnValueChanged    -= OnOpenGateColorNv;
-        _t5Round.OnValueChanged          -= OnT5RoundNv;
+        _t5Runner.OnValueChanged         -= OnT5RunnerNv;
         PlayerSpawnCoordinator.OnPlayersReady -= InitTeamLives;
+        EndSceneReadyGate();
         if (Instance == this) Instance = null;
     }
 
     // ── 팀 공유 목숨 ──────────────────────────────────────────────
 
-    /// <summary>Host 전용: 파티 인원−1로 1회 확정(DownedReviveSystemDesign.md §4B). 명단이 아직 비어 있으면 보류.</summary>
+    /// <summary>Host 전용: 파티 인원−1로 1회 확정(ReviveSystemDesign.md §4). 명단이 아직 비어 있으면 보류.</summary>
     void InitTeamLives()
     {
         if (!IsServer || IsDespawned || _teamLivesRemaining.Value >= 0) return;
@@ -716,33 +668,51 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>남은 팀 목숨. -1 = 미초기화. 씬 단위로만 초기화된다(한 씬 안의 서브 스테이지끼리는 이어짐).</summary>
     public int TeamLivesRemaining => _teamLivesRemaining.Value;
 
-    /// <summary>Host 전용: 목숨이 확정됐고 0이면 true — 이 상태의 HP 0은 다운 없이 즉시 완전사망(§4B).</summary>
-    public bool AreTeamLivesExhausted()
+    /// <summary>
+    /// Host 전용: **사망 순간** 목숨 1개 소모 시도(§4). 남아 있으면 1 깎고 true, 0이면 아무것도 하지
+    /// 않고 false — false가 곧 "이 죽음이 스테이지 실패"라는 뜻이다(§2).
+    /// 판정과 소모가 한 호출이라 "확인했는데 그 사이에 바뀌는" 창이 없다(구 AreTeamLivesExhausted +
+    /// ConsumeTeamLife 2단 구조를 대체).
+    /// </summary>
+    public bool TryConsumeTeamLife()
     {
-        if (!IsServer) return false;
+        if (!IsServer || IsDespawned) return false;
         InitTeamLives();
-        return _teamLivesRemaining.Value == 0;
-    }
-
-    /// <summary>Host 전용: 부활 완료 시 목숨 1개 소모(§4B).</summary>
-    public void ConsumeTeamLife()
-    {
-        if (!IsServer || IsDespawned || _teamLivesRemaining.Value <= 0) return;
+        if (_teamLivesRemaining.Value <= 0) return false;
         _teamLivesRemaining.Value--;
+        return true;
     }
 
-    // ── 사망 처리 ─────────────────────────────────────────────────
+    // ── 스테이지 실패 / 리셋 처리 ─────────────────────────────────
 
     /// <summary>
-    /// 플레이어 사망 시 어느 클라이언트에서든 호출. ESC Reset(EscMenuController.OnClickReset)도
-    /// Host/Client 누구나 이 문으로 호출한다.
-    /// Host가 1명이라도 사망/Reset 신호를 받으면 전원 씬 리로드. 씬당 첫 요청만 반영(_resetPending) —
-    /// 리로드로 이 인스턴스가 새로 생기면 다시 받는다.
+    /// ESC Reset(EscMenuController.OnClickReset) 전용 문 — Host/Client 누구나 여기로 요청한다.
+    ///
+    /// [개명 2026-09-19 — 구 NotifyPlayerDeathServerRpc] 자동 부활 도입으로 **사망은 더 이상
+    /// 리로드를 뜻하지 않는다**(ReviveSystemDesign.md §6). 이 문은 이제 "사망 문"이 아니라
+    /// "실패·리셋 문"이며, 실제 실패 판정(목숨 0 사망 / 생존자 0 / objective 실패)은 Host가
+    /// FailStageFromServer로 직접 들어온다.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void NotifyPlayerDeathServerRpc()
+    public void NotifyStageResetServerRpc() => BeginStageResetOnServer("리셋 요청");
+
+    /// <summary>
+    /// Host 전용 실패 진입점(§6·§9.2). objective 실패·팀 목숨 소진·생존자 0이 전부 여기로 모인다.
+    /// 구 구조는 "전원 즉사 → 사망 문"이었는데, 자동 부활이면 즉사시킨 전원이 곧바로 살아나고
+    /// 스테이지 실패가 조용히 무시된다 — 그래서 실패를 사망에 얹지 않고 직접 통보한다.
+    /// </summary>
+    public void FailStageFromServer(string reason)
     {
-        // 클리어 전환이 이미 시작됐으면 사망·ESC Reset 리로드를 무시한다(2026-09-08 리뷰).
+        if (!IsServer) return;
+        BeginStageResetOnServer(reason);
+    }
+
+    /// <summary>
+    /// Host 레인 공통 본문. 씬당 첫 요청만 반영(_resetPending) — 리로드로 이 인스턴스가 새로 생기면 다시 받는다.
+    /// </summary>
+    void BeginStageResetOnServer(string reason)
+    {
+        // 클리어 전환이 이미 시작됐으면 실패·ESC Reset 리로드를 무시한다(2026-09-08 리뷰).
         // 안 그러면 "현재 씬 리로드"(여기)와 "다음 씬 로드"(SceneFlowManager.TransitionTo)가 동시에
         // NGO SceneManager.LoadScene을 호출해, 로드 진행 중 에러 또는 방금 클리어한 스테이지로
         // 되돌아가는 사고가 난다. 클리어 후 배너 대기(clearToTransitionDelay) 동안 누가 낙사하거나
@@ -752,15 +722,19 @@ public class StageNetworkState : NetworkBehaviour
         if (_resetPending) return;
         _resetPending = true;
 
-        // §11 사망 문 진입 확정 — 챌린지 Progress 루프를 도는 모든 매니저에 즉시 통지해서
+        Debug.Log($"[StageNetworkState] 스테이지 실패·리셋 확정 — {reason}");
+
+        // §11 실패 문 진입 확정 — 챌린지 Progress 루프를 도는 모든 매니저에 즉시 통지해서
         // 리로드 코루틴(아래)이 실제로 씬을 갈아엎기 전에 각자 자기 루프를 멈추게 한다.
+        // 진행 중인 부활 예약도 여기서 막힌다 — PlayerReviveState가 IsStageFailing을 보고
+        // 예약을 발동시키지 않는다(§9.4, 배너 2초 안에 부활이 먼저 터지는 것 방지).
         OnDeathReloadStarted?.Invoke();
 
-        // 즉사·완전사망(다운 방치 만료) 공통 — 이 메서드가 사망→리로드의 유일한 진입점이므로
-        // 여기 한 곳에서만 STAGE FAILED를 울리면 원인과 무관하게 항상 뜬다(DownedReviveSystemDesign.md §6/§9.2).
+        // 이 메서드가 실패→리로드의 유일한 진입점이므로 여기 한 곳에서만 STAGE FAILED를 울리면
+        // 원인(objective 실패·팀 목숨 소진·생존자 0·ESC Reset)과 무관하게 항상 뜬다(§6/§9.2).
         NotifyStageFailed();
 
-        // 사망 리로드 시 새 시드 생성 + 전체 클라이언트에 배포
+        // 리로드 시 새 시드 생성 + 전체 클라이언트에 배포
         int newSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         NetworkSessionData.Seed = newSeed;
         BroadcastNewSeedClientRpc(newSeed);
@@ -776,7 +750,7 @@ public class StageNetworkState : NetworkBehaviour
         // 여기서 명시적으로 Client에도 암전 시작을 알려야 한다(안 그러면 Client는 컷처럼 보임).
         BroadcastBeginDeathCoverClientRpc();
 
-        // DeathOverlayUI 연출 이후 실제 리로드 순간의 컷을 완화 — 최소 유지시간 + 새 씬 동기화 확정
+        // STAGE FAILED 배너 이후 실제 리로드 순간의 컷을 완화 — 최소 유지시간 + 새 씬 동기화 확정
         // (OnPlayersReady) 이후 자동 페이드인.
         if (LoadingCurtain.Instance != null)
             yield return StartCoroutine(LoadingCurtain.Instance.BeginCoverRoutine(waitForPlayersReady: true));
@@ -827,9 +801,9 @@ public class StageNetworkState : NetworkBehaviour
     }
 
     /// <summary>
-    /// 스테이지 실패(즉사·완전사망) 시 배너 연출 전용 신호. STAGE CLEAR와 대칭
-    /// (DownedReviveSystemDesign.md §6). NotifyPlayerDeathServerRpc 내부에서만 호출 — 사망→리로드
-    /// 진입점이 하나이므로 별도 IsServer/IsSpawned 가드 없이 그 호출부의 가드에 편승한다.
+    /// 스테이지 실패 시 배너 연출 전용 신호. STAGE CLEAR와 대칭(ReviveSystemDesign.md §6).
+    /// BeginStageResetOnServer 내부에서만 호출 — 실패→리로드 진입점이 하나이므로 별도
+    /// IsServer/IsSpawned 가드 없이 그 호출부의 가드에 편승한다.
     /// </summary>
     public event Action OnAnyStageFailedPulse;
 
@@ -1263,11 +1237,11 @@ public class StageNetworkState : NetworkBehaviour
 
     void OnMemorySectionsClearedNv(int prev, int next) => OnMemorySectionsClearedChanged?.Invoke(next);
 
-    // ── T.Stage5 색 게이트 / 러너 라운드 (T5 전용 슬롯) ───────────
+    // ── T.Stage5 색 게이트 / 러너 (T5 전용 슬롯) ─────────────────
 
     /// <summary>
     /// Host: 열린 문 색 확정. 색 게이트 컨트롤러에서만 호출.
-    /// color = PlayerColorType의 int 캐스팅, -1 = 전부 닫힘(라운드 시작 상태).
+    /// color = PlayerColorType의 int 캐스팅, -1 = 전부 닫힘(스테이지 시작 상태).
     /// </summary>
     public void SetOpenGateColor(int color)
     {
@@ -1278,123 +1252,32 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>Host: 열린 문 색 확정(타입 오버로드).</summary>
     public void SetOpenGateColor(PlayerColorType color) => SetOpenGateColor((int)color);
 
-    /// <summary>Host: 모든 문을 닫힌 상태로 — 라운드 시작·리셋 시 호출.</summary>
+    /// <summary>Host: 모든 문을 닫힌 상태로 — 스테이지 시작·리셋 시 호출.</summary>
     public void CloseAllGates() => SetOpenGateColor(-1);
 
     /// <summary>
-    /// Host: 맵 2개·러너 2명 추첨 결과 확정. 라운드 디렉터가 스테이지 시작 시 1회 호출.
-    /// roundIndex는 -1(진입 전)로 초기화되고, 실제 진입은 BeginT5Round가 담당한다.
+    /// Host: 이번 판의 러너 확정. T5RunnerDirector가 OnPlayersReady 직후 1회 호출.
+    /// 맵 인덱스는 여기로 오지 않는다 — 시드 파생이라 NV가 필요 없다(_t5Runner 주석).
     /// </summary>
-    public void SetT5Draw(int mapIndex0, int mapIndex1, ulong runner0, ulong runner1)
+    public void SetT5Runner(ulong runnerClientId)
     {
         if (!IsServer || IsDespawned) return;
-        _t5Round.Value = new T5RoundState
-        {
-            roundIndex = -1,
-            mapIndex0 = mapIndex0, mapIndex1 = mapIndex1,
-            runnerClientId0 = runner0, runnerClientId1 = runner1,
-            roundStartServerTime = -1.0, roundEndServerTime = -1.0,
-        };
-    }
-
-    /// <summary>
-    /// Host: 라운드 진입 확정. 추첨 결과(맵·러너)는 유지하고 라운드 인덱스와 구간 시각만 갱신한다.
-    /// startServerTime = 카운트다운 시작 시각, endServerTime = 제한시간 만료 시각.
-    /// </summary>
-    public void BeginT5Round(int roundIndex, double startServerTime, double endServerTime)
-    {
-        if (!IsServer || IsDespawned) return;
-        T5RoundState cur = _t5Round.Value;
-        cur.roundIndex           = roundIndex;
-        cur.roundStartServerTime = startServerTime;
-        cur.roundEndServerTime   = endServerTime;
-        _t5Round.Value = cur;
+        _t5Runner.Value = runnerClientId;
     }
 
     void OnOpenGateColorNv(int prev, int next) => OnOpenGateColorChanged?.Invoke(next);
-    void OnT5RoundNv(T5RoundState prev, T5RoundState next) => OnT5RoundChanged?.Invoke(next);
-
-    // ── T.Stage5 라운드 전환 텔레포트 (§11.9) ─────────────────────
+    void OnT5RunnerNv(ulong prev, ulong next)  => OnT5RunnerChanged?.Invoke(next);
 
     /// <summary>
-    /// Host: 라운드 전환 — 전 머신에서 암전 → 텔레포트 → 페이드인을 동시에 재생한다.
-    /// `TStage5RunnerRedesign.md` §1.1 · `NetworkDesign.md` §11.9.
-    ///
-    /// clientIds[i]가 positions[i]로 간다. 좌표는 Host가 전부 계산해 넘기고(러너 = Start1F,
-    /// 안내자 = Stand2F + 색 오프셋), 각 머신은 **자기가 Owner인 플레이어만** 옮긴다 —
-    /// CNT는 Owner 권한이라 다른 머신이 남의 플레이어 위치를 쓸 수 없다(§7.3).
-    ///
-    /// [왜 ClientRpc 1개로 묶나] 인원별 RPC를 따로 쏘면 도착 순서가 갈려 누구는 이미 옮겨졌는데
-    /// 누구는 암전도 안 시작한 상태가 된다. 한 번에 보내 전 머신이 같은 시각에 같은 연출을 돈다.
+    /// Host: T.Stage5 남은 시간을 Client HUD에 브로드캐스트.
+    /// SyncSurvivalRemainingClientRpc와 동일한 "Host tick + 주기 Rpc" 패턴이고,
+    /// 챌린지 축(ChallengeStepState)과는 무관한 T5 전용 독립 채널이다.
     /// </summary>
-    public void BeginT5Transition(ulong[] clientIds, Vector3[] positions, float coverFade, float coveredHold)
-    {
-        if (!IsServer || IsDespawned) return;
-        if (clientIds == null || positions == null || clientIds.Length != positions.Length) return;
-
-        BeginT5TransitionClientRpc(clientIds, positions, coverFade, coveredHold);
-    }
-
-    /// <summary>Host 자신도 클라이언트로서 이 Rpc를 받는다 — 연출·텔레포트 경로를 하나로 유지.</summary>
     [ClientRpc]
-    void BeginT5TransitionClientRpc(ulong[] clientIds, Vector3[] positions, float coverFade, float coveredHold)
+    public void SyncT5RemainingClientRpc(float remaining)
     {
-        StartCoroutine(T5TransitionRoutine(clientIds, positions, coverFade, coveredHold));
-    }
-
-    IEnumerator T5TransitionRoutine(ulong[] clientIds, Vector3[] positions, float coverFade, float coveredHold)
-    {
-        LoadingCurtain.Instance?.BeginCover(coverFade);
-
-        // 화면이 완전히 덮인 뒤에 옮겨야 순간이동이 안 보인다.
-        yield return new WaitForSecondsRealtime(coverFade);
-
-        var nm = NetworkManager.Singleton;
-        if (nm != null && nm.IsListening)
-        {
-            for (int i = 0; i < clientIds.Length; i++)
-            {
-                if (clientIds[i] != nm.LocalClientId) continue;
-                TeleportLocalPlayer(positions[i]);
-                break;
-            }
-        }
-
-        yield return new WaitForSecondsRealtime(coveredHold);
-
-        LoadingCurtain.Instance?.EndCover(minHoldSeconds: 0f, fadeDuration: coverFade);
-    }
-
-    /// <summary>
-    /// 이 머신이 Owner인 플레이어를 pos로 옮긴다.
-    /// `NetworkTransform.Teleport()`를 쓰는 이유: 그냥 transform.position을 대입하면 CNT의
-    /// 보간(Interpolate ✅)이 켜져 있어 원격 화면에서 맵 사이 수백 m를 미끄러지며 지나가고,
-    /// Host 비오너 레인의 `rb.MovePosition()`(ClientNetworkTransform.OnTransformUpdated)이
-    /// 그 거리를 물리 이동으로 쓸어 벽에 끼거나 터널링한다. Teleport()는 보간을 리셋한다.
-    /// Teleport()는 권한(Owner) 인스턴스에서만 허용 — 아니면 예외를 던진다.
-    /// </summary>
-    static void TeleportLocalPlayer(Vector3 pos)
-    {
-        var nm = NetworkManager.Singleton;
-        NetworkObject netObj = nm?.LocalClient?.PlayerObject;
-        if (netObj == null || !netObj.IsOwner) return;
-
-        Transform  tr = netObj.transform;
-        Rigidbody  rb = netObj.GetComponent<Rigidbody>();
-        var        nt = netObj.GetComponent<ClientNetworkTransform>();
-
-        if (rb != null && !rb.isKinematic)
-        {
-            rb.linearVelocity  = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-
-        tr.position = pos;
-        if (rb != null) rb.position = pos; // 물리 위치도 같이 — 안 맞추면 다음 FixedUpdate가 되돌린다
-
-        if (nt != null) nt.Teleport(pos, tr.rotation, tr.localScale);
-
-        NetLog.Transition("StageNetworkState", "T5Teleport", $"clientId={nm.LocalClientId} pos={pos}");
+        if (IsServer) return;
+        OnT5RemainingSync?.Invoke(remaining);
     }
 
     // ── 챌린지 라운드 동기화 (축 #4 공통) ─────────────────────────
@@ -1543,29 +1426,6 @@ public class StageNetworkState : NetworkBehaviour
         OnChallengeTimeSync?.Invoke(remaining);
     }
 
-    /// <summary>
-    /// Host: Stage5 타겟 포획 카운트를 Client HUD에 브로드캐스트. SyncChallengeTimeClientRpc와
-    /// 동일한 "Host 값 확정 + 주기/이벤트성 Rpc" 패턴 — 챌린지 축(ChallengeStepState)과는 무관한
-    /// 독립 채널이다 (Stage5TargetObjective는 ChallengeOwnerType 대상이 아님).
-    /// </summary>
-    [ClientRpc]
-    public void SyncStage5CaptureClientRpc(int captured, int required)
-    {
-        if (IsServer) return;
-        OnStage5CaptureSync?.Invoke(captured, required);
-    }
-
-    /// <summary>
-    /// Host: Stage5 타겟 잡기 남은 시간을 Client HUD에 브로드캐스트. SyncSurvivalRemainingClientRpc와
-    /// 동일한 "Host tick + 주기 Rpc" 패턴 — SyncStage5CaptureClientRpc처럼 챌린지 축과는 무관한
-    /// Stage5 전용 독립 채널이다.
-    /// </summary>
-    [ClientRpc]
-    public void SyncStage5RemainingClientRpc(float remaining)
-    {
-        if (IsServer) return;
-        OnStage5RemainingSync?.Invoke(remaining);
-    }
 
     // ── Floor 타일 롤 동기화 (Floor 전용) ──────────────────────────
 
@@ -1667,11 +1527,195 @@ public class StageNetworkState : NetworkBehaviour
         projNetObj.GetComponent<TrapProjectile>()?.ApplyDestroyFromHost();
     }
 
+    // ── 씬 준비 취합 + 커튼 게이트 (전 씬 공통, 2026-09-18) ───────────────
+    //
+    // [무엇을 푸는가]
+    //  커튼은 "몇 초 지났으니" 걷는 게 아니라 "전원이 준비됐으니" 걷어야 한다. 로컬 준비 조건은
+    //  각 머신만 알기 때문에(맵 활성화·NavMesh·텔레포트 …), 각자 자기 로컬 게이트가 끝나면
+    //  Host에 보고하고 Host가 전원분을 모아야 한다.
+    //
+    // [왜 NV 비트마스크인가 — ClientRpc 왕복이 아니라]
+    //  "준비됐다"는 연속 상태이지 일회성 이벤트가 아니다(우리 규약: 연속 상태는 NV).
+    //  NV라서 ① 도착이 보장되고 ② 늦게 본 머신도 최종값을 읽으며 ③ 같은 보고가 여러 번 와도
+    //  비트 OR이라 결과가 같다(멱등) — 클라가 마음 놓고 재시도할 수 있다.
+    //  해제용 ClientRpc도 필요 없다: 전원 비트가 켜지면 각 머신이 로컬로 커튼을 걷는다.
+    //
+    // [막혔을 때 — 조용한 리로드 1회]
+    //  LoadingCurtain이 타임아웃을 알리면 Host가 씬을 **조용히** 다시 로드한다.
+    //  사망 문(NotifyStageFailed + 새 시드 배포)을 타면 아무도 안 죽었는데 "STAGE FAILED"가 뜨고
+    //  판·맵·러너가 재추첨되므로, 그 경로를 재사용하지 않고 전용 경로를 쓴다.
+    //  재시도 횟수는 씬과 함께 죽으면 안 되므로 NetworkSessionData(정적)에 둔다.
+    //  상한을 넘으면 포기하고 그냥 진행한다 — 무한 암전보다 낫고, 어긋난 상태라면 대개 낙사 →
+    //  §11 사망 문으로 전원 리로드가 걸려 스스로 복구된다.
+
+    /// <summary>준비 실패 시 조용한 리로드를 몇 번까지 시도할지.</summary>
+    const int SceneReadyMaxRetries = 1;
+
+    bool _sceneReadyGateActive;
+    bool _sceneReadyReported;
+    float _nextSceneReadyReportAt;
+
+    void BeginSceneReadyGate()
+    {
+        LoadingCurtain.OnGatesTimedOut += HandleCurtainGatesTimedOut;
+
+        var curtain = LoadingCurtain.Instance;
+        if (curtain == null || !curtain.IsCovered) return;
+
+        _sceneReadyGateActive = true;
+        _sceneReadyReported   = false;
+        curtain.RegisterGate(LoadingCurtain.AllPlayersReadyGate);
+    }
+
+    void EndSceneReadyGate()
+    {
+        LoadingCurtain.OnGatesTimedOut -= HandleCurtainGatesTimedOut;
+        _sceneReadyGateActive = false;
+    }
+
+    void Update()
+    {
+        if (!_sceneReadyGateActive) return;
+
+        var curtain = LoadingCurtain.Instance;
+        if (curtain == null) { _sceneReadyGateActive = false; return; }
+
+        // 내 로컬 게이트가 아직 남아 있으면 보고할 때가 아니다.
+        if (!_sceneReadyReported && !curtain.HasPendingGatesOtherThan(LoadingCurtain.AllPlayersReadyGate))
+        {
+            if (Time.unscaledTime >= _nextSceneReadyReportAt)
+            {
+                _nextSceneReadyReportAt = Time.unscaledTime + 0.5f; // 응답이 없으면 재시도
+                int bit = LocalReadyBitIndex();
+                if (bit >= 0) ReportSceneReadyServerRpc(bit);
+            }
+
+            if (IsLocalBitSet()) _sceneReadyReported = true;
+        }
+
+        if (!IsSceneReadyMaskComplete()) return;
+
+        _sceneReadyGateActive = false;
+        NetworkSessionData.SceneReadyRetryCount = 0; // 성공했으니 재시도 카운트 초기화
+        curtain.MarkGateReady(LoadingCurtain.AllPlayersReadyGate);
+    }
+
+    /// <summary>clientId 정렬 순서에서 내 자리. 명단이 아직 비었으면 -1.</summary>
+    static int LocalReadyBitIndex()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsListening) return -1;
+
+        var ids = new List<ulong>();
+        foreach ((ulong clientId, PlayerColorType _) in PlayerSpawnCoordinator.GetAllEntries())
+            ids.Add(clientId);
+        if (ids.Count == 0) return -1;
+
+        ids.Sort();
+        int index = ids.IndexOf(nm.LocalClientId);
+        return index >= 0 && index < 32 ? index : -1;
+    }
+
+    bool IsLocalBitSet()
+    {
+        int bit = LocalReadyBitIndex();
+        return bit >= 0 && (_sceneReadyMask.Value & (1 << bit)) != 0;
+    }
+
+    bool IsSceneReadyMaskComplete()
+    {
+        int count = PlayerSpawnCoordinator.EntryCount;
+        if (count <= 0) return false;        // 명단이 아직 없다 = 기다릴 대상도 확정 전
+
+        int full = (1 << count) - 1;
+        return (_sceneReadyMask.Value & full) == full;
+    }
+
+    /// <summary>Client(전원): 이 머신의 로컬 준비가 끝났다. 같은 보고가 여러 번 와도 결과가 같다(비트 OR).</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReportSceneReadyServerRpc(int bitIndex)
+    {
+        if (!IsServer || IsDespawned) return;
+        if (bitIndex < 0 || bitIndex >= 32) return;
+
+        _sceneReadyMask.Value |= 1 << bitIndex;
+    }
+
+    /// <summary>LoadingCurtain 타임아웃 → Host만 판단한다. 상한 안이면 조용한 리로드, 넘으면 포기(그냥 진행).</summary>
+    void HandleCurtainGatesTimedOut(string[] pending)
+    {
+        if (!IsServer || IsDespawned) return;
+
+        if (NetworkSessionData.SceneReadyRetryCount >= SceneReadyMaxRetries)
+        {
+            Debug.LogWarning($"[StageNetworkState] 준비 재시도 {NetworkSessionData.SceneReadyRetryCount}회를 " +
+                             "넘겨 그대로 진행합니다 — 미완: " + string.Join(", ", pending));
+            NetworkSessionData.SceneReadyRetryCount = 0;
+            return; // KeepCoveredForRetry를 부르지 않는다 → 커튼이 걷히고 게임이 진행된다
+        }
+
+        NetworkSessionData.SceneReadyRetryCount++;
+        LoadingCurtain.Instance?.KeepCoveredForRetry();
+
+        NetLog.Transition("StageNetworkState", "SilentReload",
+            $"try={NetworkSessionData.SceneReadyRetryCount} pending={string.Join(",", pending)}");
+        ReloadSceneSilently();
+    }
+
+    /// <summary>
+    /// Host: 실패 배너도 새 시드도 없이 현재 씬만 다시 로드한다.
+    /// 사망 리로드(NotifyPlayerDeath…)와 **의도적으로 다른 경로**다 — 아무도 죽지 않았고,
+    /// 시드를 바꾸면 판·맵·러너가 재추첨돼 "같은 판을 다시 시도"가 아니게 된다.
+    /// </summary>
+    void ReloadSceneSilently()
+    {
+        if (!IsServer || IsDespawned) return;
+
+        string sceneName = SceneManager.GetActiveScene().name;
+        Debug.LogWarning($"[StageNetworkState] 준비 미완 — '{sceneName}' 조용히 리로드(재시도).");
+        NetworkManager.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+    }
+
+    // ── T.Stage4 파괴 타일 보고 (Client → Host → 전 머신, 상주 릴레이) ────
+    // BreakTile은 판 하나에 수십~백 개라 NetworkObject로 만들 수 없다. 그래서 위 TrapProjectile과
+    // 같은 이유로 이 오브젝트를 릴레이로 쓴다 — 타일은 전 머신 공통 인덱스로 가리킨다
+    // (BreakTileDirector가 이름순 정렬로 배정). `TStage4TrapRandomization.md` §4.1.
+
+    /// <summary>Host 레인 전용: 타일이 밟혔다는 보고. BreakTileDirector가 구독해 붕괴 시각을 정한다.</summary>
+    public event Action<int> OnBreakTileStepReported;
+
+    /// <summary>전 머신: (타일 인덱스, 붕괴 서버 시각). 이 값 하나로 전 머신이 같은 순간에 무너진다.</summary>
+    public event Action<int, double> OnBreakTileArmed;
+
+    /// <summary>
+    /// Client(밟은 당사자의 Owner 머신): 파괴 타일을 밟았다고 보고한다.
+    /// 중복·유효성 판정은 Host 레인의 BreakTileDirector가 한다 — 여기서는 순수 릴레이다.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReportBreakTileSteppedServerRpc(int tileIndex)
+    {
+        OnBreakTileStepReported?.Invoke(tileIndex);
+    }
+
+    /// <summary>Host: 확정한 붕괴 서버 시각을 전 머신에 배포. BreakTileDirector에서만 호출.</summary>
+    public void BroadcastBreakTileArm(int tileIndex, double collapseServerTime)
+    {
+        if (!IsServer || IsDespawned) return;
+        ArmBreakTileClientRpc(tileIndex, collapseServerTime);
+    }
+
+    /// <summary>Host 자신도 클라로서 받는다 — 붕괴 경로를 전 머신 하나로 유지한다.</summary>
+    [ClientRpc]
+    void ArmBreakTileClientRpc(int tileIndex, double collapseServerTime)
+    {
+        OnBreakTileArmed?.Invoke(tileIndex, collapseServerTime);
+    }
+
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR
-    [ContextMenu("테스트: 사망 신고")]
-    void Debug_Death() => NotifyPlayerDeathServerRpc();
+    [ContextMenu("테스트: 스테이지 실패")]
+    void Debug_Fail() => NotifyStageResetServerRpc();
 
     [ContextMenu("테스트: Phase 0으로 초기화")]
     void Debug_Phase0() => MarkAndSyncPhase(0);

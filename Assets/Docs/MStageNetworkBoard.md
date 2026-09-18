@@ -315,7 +315,7 @@ Player Trigger (영역 진입, Host 로컬 감지만 유효)
   → Host: AllCleared → barrier Close(NV) + OXQuizObjective.Complete [Q6, Host만 호출]
 ```
 
-사망 시: 기존 D(`StageResetOnPlayerDeath`) + Manager `ResetQuiz`가 Host에서 재구독·상태 리셋되는지 구현 시 확인 후 Docs에 한 줄.
+사망 시: ⚠️ **2026-09-19 변경** — 사망이 씬 리로드를 뜻하지 않는다(자동 부활, `ReviveSystemDesign.md`). `StageResetOnPlayerDeath`는 삭제됨. 리로드는 목숨 0 사망·전원 사망·objective 실패에서만 일어나므로, Manager `ResetQuiz`가 Host에서 재구독·상태 리셋되는지는 **그 세 경우 기준**으로 확인 후 Docs에 한 줄.
 
 ---
 

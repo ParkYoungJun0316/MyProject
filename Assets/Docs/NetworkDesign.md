@@ -2,7 +2,7 @@
 
 네트워크 동기화 아키텍처 문서 — 권한(Authority)·룸/세션·플레이어·스테이지 진행·챌린지 축의 SSOT.  
 **출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고.**  
-**다운/부활 시스템 스펙(게임플레이 + 네트워크 동기화)은 [`DownedReviveSystemDesign.md`](DownedReviveSystemDesign.md) — §9.0 권위 매트릭스에는 아직 별도 행으로 미편입, 해당 문서가 1차 SSOT.**  
+**사망/부활 스펙은 [`ReviveSystemDesign.md`](ReviveSystemDesign.md)가 1차 SSOT** — 이 문서는 축 규칙(권위·리로드 문·텔레포트)만 다룬다. ⚠️ 2026-09-19 다운 구조 폐기 → 사망+자동부활.  
 **데모 / Playtest 없음.** 목표 = **2026-09-16 Steam 정식 출시**만.  
 스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**.  
 (`End.Demo` = 클리어 UI 씬명 레거시. 리네임은 별도 작업.)
@@ -606,7 +606,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 |----------|------|------|
 | 플레이어 이동 | **Owner + CNT** | 입력 레이턴시 없음. **이 모델 유지 (Host 이동화 안 함)** |
 | 플레이어 HP / 데미지 | **Host** | 치트 방지·판정 신뢰 |
-| 다운 / 부활 (상태·방치 만료·시전 완료·위치 기반 캔슬) | **Host** (`PlayerDownState` NV) — 입력 캔슬만 Owner가 ServerRpc로 신고 | HP와 같은 게임 규칙. 팀 공유 목숨은 `StageNetworkState` NV(Host, 씬 단위). 상세 `DownedReviveSystemDesign.md` §4B·§9 |
+| 사망 / 부활 (사망 판정·목숨 소모·부활 시각·부활 좌표) | **Host** (`PlayerReviveState` NV) — 클라이언트 입력 경로 없음(자동 부활) | HP와 같은 게임 규칙. 팀 공유 목숨은 `StageNetworkState` NV(Host, 씬 단위). 부활 좌표는 Host가 계산해 ClientRpc — **Owner 머신에서 `NetworkTransform.Teleport()`**(§11.9, No Host-move 유지). 상세 `ReviveSystemDesign.md` §3·§4·§9 |
 | 함정 (ArrowTrap 등 발사자) | **Host** | 스폰 시점·스케줄을 전원 동일하게 |
 | 발사체 **비행** | **Client (로컬 시뮬)** | Host 물리 복제 끊김 방지·시각 부드러움 |
 | 발사체 **피격 판정** | **Host** (B안: Client 보고 → Host 확정) | §9.0.1 |
@@ -823,8 +823,8 @@ Phase 전환(P1→P2) 이후에도 끝까지 남아 있었음. 리뷰 중 같은
 
 | 대상 | 우선순위 |
 |------|----------|
-| 플레이어 HP·색·사망·리로드 | Must |
-| `StageResetOnPlayerDeath` | Must |
+| 플레이어 HP·색·사망·부활·리로드 | Must |
+| ~~`StageResetOnPlayerDeath`~~ → **삭제됨(2026-09-19).** 실패 판정은 `StageNetworkState`가 직접 | Must |
 
 ### 9.1 스테이지 컨텐츠 패턴 (A–F) · M 우선
 
@@ -1219,21 +1219,23 @@ Host 시드 기준 `InitState(seed + salt)` 통일.
 | 문 | 경로 | 비고 |
 |----|------|------|
 | Tutorial 게이트 통과 | `TutorialNetworkManager`(가칭) → `LoadScene("M.Stage1")` | Coordinator 스폰(DDOL) 포함. 구 `LobbyNetworkManager.StartGameServerRpc` 역할 이전 |
-| **사망 · ESC Reset** | Owner `RaiseDied` → `StageResetOnPlayerDeath` → `StageNetworkState.NotifyPlayerDeathServerRpc` → Host `LoadScene(현재씬)` | **1명 사망 = 전원 리로드** + **새 시드** 배포. ESC Reset(`EscMenuController.OnClickReset`, **Host/Client 전원 버튼**, 2026-09-15)도 **같은 문** 사용 (2026-07-17 통일). 동시 요청은 Host `_resetPending`이 **씬당 첫 요청만** 반영 — 리로드 후 새 인스턴스에서 다시 1회 수락. Client 버튼 잠금(누른 뒤 / `OnAnyStageFailedPulse` 수신 / `StageNetworkState` 없는 Tutorial·Interlude)은 표시용. `DeathOverlayUI` 문구는 CheerName (`CheerService.GetCheerName`) — Steam/OS DisplayName이 아님. |
+| **스테이지 실패 · ESC Reset** | 실패 3원인(objective `Fail()` / 목숨 0 사망 / 전원 사망)과 ESC가 전부 `StageNetworkState` → Host `LoadScene(현재씬)` | ⚠️ **2026-09-19 — "1명 사망 = 전원 리로드"는 폐기.** 사망은 자동 부활로 이어진다 — 조건은 [`ReviveSystemDesign.md`](ReviveSystemDesign.md) §2. `StageResetOnPlayerDeath`·`KillAllPlayersOnFail` **둘 다 삭제**, `NotifyPlayerDeathServerRpc`는 **실패·리셋 문**이므로 개명 대상. 리로드 시 **새 시드** 배포는 그대로. ESC Reset(`EscMenuController.OnClickReset`, **Host/Client 전원 버튼**, 2026-09-15)도 **같은 문** 사용 (2026-07-17 통일). 동시 요청은 Host `_resetPending`이 **씬당 첫 요청만** 반영 — 리로드 후 새 인스턴스에서 다시 1회 수락. Client 버튼 잠금(누른 뒤 / `OnAnyStageFailedPulse` 수신 / `StageNetworkState` 없는 Tutorial·Interlude)은 표시용. `DeathOverlayUI` 문구는 CheerName (`CheerService.GetCheerName`) — Steam/OS DisplayName이 아님. |
 | 클리어 | `StageManager.OnStageClear` / `PhaseManager.onAllPhasesComplete` → **`SceneFlowRelay.LoadNextScene`** → `SceneFlowManager` | **확정 배선: Relay 경유** (씬에서 SceneFlowManager 직결 금지 — DDOL이라 Inspector 연결 불가) |
 
 이 3곳 **외의** 스테이지 `LoadScene` 호출 금지. Client가 씬 로드 금지.
 
 ### 11.2 사망 루프 상세 (잠금 유지 항목)
 
-- **1명 사망 = 전원 씬 리로드** (`StageResetOnPlayerDeath`). 리로드 후: 존 위 재스폰, `StageStartGate` 재진행, **새 시드** 퍼즐 재배치 (§10).
+- ⚠️ **구 규칙 "1명 사망 = 전원 씬 리로드"는 폐기됐다 (2026-09-19).** 사망은 자동 부활로 이어지고, 리로드는 **실패 3원인**에서만 일어난다 — 스펙은 [`ReviveSystemDesign.md`](ReviveSystemDesign.md). 리로드 후: 존 위 재스폰, `StageStartGate` 재진행, **새 시드** 퍼즐 재배치 (§10).
+- **부활은 리로드도 ②Spawn도 아니다** — 플레이어는 Despawn되지 않고 좌표만 바뀐다. 허가 경로는 **§11.9 하나**.
 - 낙사 확정: **Owner** Y 신고 (`ReportFallDeathServerRpc`) → **Host** HP 0 확정 (§9A.3). Host 단독 Y 판정은 Client void 낙사를 놓치므로 사용하지 않음.
 - 리스폰 = **씬 리로드가 전부**. `destroyWithScene:true`로 옛 플레이어 자동 Despawn → ②에서 클린 스폰 → HP/포즈/색이 초기 상태. 별도 리셋 코드 불필요.
 - `Player.IsDead`: 애니메이션·콜라이더·물리 정지는 `Die()`를 통해 **Owner 머신에서만** (Fix A, 의도된 설계). 단 Host는 원격 플레이어 Rigidbody도 직접 시뮬레이션(§9A)하므로, 비오너 머신에서도 `IsDead` 플래그만 별도 동기화(`Player.SyncDeadFlag()`, 2026-07-17) — 트랩·피격 판정이 사망 상태를 인지하도록. HP NetworkVariable이 실질 가드라 지금까지 증상은 없었음, 방어 차원.
 
 ### 11.3 ⑤ Play Consumers (Ready 구독만 — 나열은 목록, **실행 순서 아님**)
 
-`NetworkPlayerSetup`(카메라 bind) · `GameSession` · `StageResetOnPlayerDeath` · `ColoredStartZone` · `StagePressurePadSetup` · `TrapPlayerTracker` · `PlayerHPUI` · `TeamStatusUI` · `CheerProgressUI` · `ChangeColorCooldownUI`
+`NetworkPlayerSetup`(카메라 bind) · `GameSession` · `ColoredStartZone` · `StagePressurePadSetup` · `TrapPlayerTracker` · `PlayerHPUI` · `TeamStatusUI` · `TeamLivesUI` · `CheerProgressUI` · `ChangeColorCooldownUI`
+(`StageResetOnPlayerDeath` 삭제됨 — 2026-09-19)
 
 `TeamStatusUI` — **shared** (`UI.prefab`, Tutorial + 전 M.* / T.* 씬). Tutorial 순차 합류는 Ready만으로는 명단이 안 늘어나 `OnRosterChanged`(로컬 스폰/Despawn)로 재구성. Ready+Roster 구독은 다음 프레임 1회 디바운스(`RequestRebuild`) — 즉시 리빌드하면 Despawn 중인 오브젝트가 슬롯에 남고, M/T 배치 스폰은 N+1회 중복. DisplayName 우선순위: 세션 확정값 → 게이트 전 실시간 NV. CheerName은 2026-09-14부터 고정값이라 변경 이벤트 구독 없음(구 `PlayerCheerNameSync.OnAnyCheerNameChanged` 삭제). 사후기록: §6B.7 버그 3. 반대 라운드 스모크: `M.Stage1` Host+Client TeamStatus (§9B.4). **DisplayName 글자 (2026-09-02):** 8/28 잘림 대응 오토사이즈(8–13pt)가 닉네임을 과도 축소 → 오토사이즈 제거, NoWrap+Ellipsis, `nameFontSize` 인스펙터. **슬롯 간격 (2026-09-03):** 피벗 중앙+CSF가 인원 증가 시 `HP_Panel` 쪽으로 커져 닉네임/하트가 겹침 → 피벗 상단·`LayoutElement` 슬롯 높이·옛 자식 비활성 후 재구성. 반대 라운드: `T.Stage1` TeamStatus 3인 이상.
 
@@ -1252,9 +1254,9 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 
 | 항목 | 이유 |
 |------|------|
-| `Player.Respawn()` / `ForceRespawn()` | 리스폰 = 씬 리로드. **삭제 완료 (2026-07-17)** — 부활 금지 |
+| `Player.Respawn()` / `ForceRespawn()` | **삭제 유지 (2026-07-17).** ⚠️ 2026-09-19에 부활이 도입됐지만 **유일한 부활 경로는 `PlayerReviveState`(Host 판정 → Owner ClientRpc)** 하나다. 여기에 평행한 리스폰 API를 다시 만들지 말 것 |
 | `PlayerSpawnManager` 외 플레이어 Spawn / 응급 `Instantiate` | ② Writer 유일 |
-| `SceneFlowManager.ReloadCurrentScene` / `SceneFlowRelay.ReloadCurrentScene` | 리로드 Writer = `StageNetworkState` 유일. **둘 다 삭제 완료 (2026-07-17)** — 부활 금지 |
+| `SceneFlowManager.ReloadCurrentScene` / `SceneFlowRelay.ReloadCurrentScene` | 리로드 Writer = `StageNetworkState` 유일. **둘 다 삭제 완료 (2026-07-17)** — 재생성 금지 |
 | 다른 클래스에서 `OnPlayersReady` 수동 Invoke | ④ Writer 유일 |
 | “카메라 없으면 다시 찾기” 류 복구 if | 칸 불변식 위반을 우회 — 원인 칸을 고칠 것 |
 | DDOL 플레이어 가정 (구 §11 `destroyWithScene:false` + `ResetForNewStage`/`ResetStageClientRpc`) | **폐기.** 플레이어는 씬 스폰. DDOL은 Coordinator·매니저·`LocalPlayerCamera`만 |
@@ -1307,7 +1309,18 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 **영향 범위:** Player 스폰/물리 계층 — M/T 공유. 다른 프리팹(예: 챌린지 소품)도 씬에서 Apply to Prefab 하면 같은 방식으로 재발 가능 — 프리팹 원본은 원점 기준으로만 저장할 것.
 - 상세: [`MStageNetworkBoard.md`](MStageNetworkBoard.md) "M.Stage 스폰 위치 버그" 절.
 
-### 11.9 ⑤ Play 중 텔레포트 (2026-09-18 신설 — T.Stage5 러너 라운드 전용)
+### 11.9 ⑤ Play 중 텔레포트 (2026-09-18 신설 · **사용처 = 부활**, 2026-09-19)
+
+> **⚠️ 구현 코드는 2026-09-19에 한 번 삭제됐다.** T.Stage5가 라운드 구조를 버리면서
+> (`TStage5RunnerRedesign.md` §1.1) 당시 유일한 사용처였던 `BeginT5Transition`·`TeleportLocalPlayer`·
+> `Player.SetMovementLocked`이 함께 없어졌다. T5는 이제 텔레포트 대신 **발판(`ContactKnockback.VerticalUp`)**
+> 으로 안내자를 2층에 올린다.
+>
+> **같은 날 새 사용처가 생겼다 — 부활**([`ReviveSystemDesign.md`](ReviveSystemDesign.md) §9.3).
+> **부활은 이동 거리가 길 수 있어**(맵 반대편에서 죽을 수 있다) 아래 "사고 2종"이 특히 현실적이다.
+>
+> 아래 표의 `BeginT5Transition`·`T5RunnerRoundDirector`는 **삭제된 이름**이다. 부활 구현 시
+> 그 자리에 Host 전용 진입점 하나를 새로 두고 같은 규칙을 지킬 것.
 
 > **이것은 ②Spawn이나 리스폰이 아니다.** 플레이어는 그대로 살아 있고 축의 칸도 ⑤ Play에서 변하지 않는다.
 > 축에 칸을 하나 더 만드는 게 아니라, ⑤ 안에서 **좌표만** 바꾸는 유일한 허가 경로를 못 박는 절이다.
@@ -1328,7 +1341,7 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 
 **금지:** Host가 남의 플레이어 Transform 직접 쓰기 / `PlayerSpawnManager` 재호출로 "다시 스폰" / 텔레포트 전용 NetworkVariable 신설(1회성 사건이므로 §9 Sync 규칙상 RPC가 맞다).
 
-- 상세: [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) §1.1 · §3 C5
+- 상세: [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) §1.2 (텔레포트를 버린 새 시작 절차)
 
 ---
 
@@ -1385,11 +1398,14 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 ```
 [Host] objective.IsFailed 감지
   → StageManager: _isFailed = true
-  → OnStageFailed (Host 레인) → NetworkDamageUtil.ApplyInstantKill(전원)
-  → 각 플레이어 HP NV → 0 → PlayerEvents.OnDied
-  → §11 사망 문 (StageResetOnPlayerDeath → StageNetworkState.NotifyPlayerDeathServerRpc → 전원 씬 리로드)
+  → OnStageFailed (Host 레인) → StageNetworkState 실패 통보 (직접)
+  → StageFailedClientRpc (배너 2초) → 전원 씬 리로드
 ```
-**Fail은 사망과 다른 리로드 경로를 만들지 않는다.** `StageManager.ResetStage()`(부분 리셋)는 이 축에서 쓰지 않음 — §11A.4 금지 목록.
+⚠️ **2026-09-19 — Fail이 더 이상 "전원 즉사"(`KillAllPlayersOnFail`)를 거치지 않는다.** 자동 부활이
+첫 사망자를 즉시 살려 실패가 무시될 수 있다. 이유는 [`ReviveSystemDesign.md`](ReviveSystemDesign.md) §6.
+
+**리로드 문 자체는 여전히 하나다.** Fail·목숨 0 사망·전원 사망·ESC가 전부 `StageNetworkState`의
+같은 문으로 모인다. `StageManager.ResetStage()`(부분 리셋)는 이 축에서 쓰지 않음 — §11A.4 금지 목록.
 
 ### 11A.4 금지 (평행 축 — 발견 즉시 삭제 대상)
 
@@ -1400,7 +1416,8 @@ Client에도 씬 로드가 그대로 전파되므로(NGO SceneEvent) **별도 "C
 | `StageManager.OnStageFailed`를 사망 문 이외 경로(부분 리셋 등)에 연결 | §11A.3 Fail 규칙 위반 |
 | Client가 ③ Progress 판정(Tick/Complete/Fail) 결과를 독자적으로 신뢰 | Host 레인 단일 진실 위반 |
 | `BroadcastStartStageClientRpc` + `_stageStartServerTime` NV — ②Start 이중 시작 신호 | 트리거 전파는 **하나의 메커니즘**만 (현재 NV 감지가 실질 경로 — no-op RPC는 정리 대상) |
-| `StageStartGate`/`StageResetOnPlayerDeath`/`ReachZoneObjective`/`BoulderSpawner`의 "오프라인" 분기·주석 | 프로젝트 온라인 전용 확정(`architecture.mdc`) — 삭제 대상 |
+| `StageStartGate`/`ReachZoneObjective`/`BoulderSpawner`의 "오프라인" 분기·주석 | 프로젝트 온라인 전용 확정(`architecture.mdc`) — 삭제 대상 (`StageResetOnPlayerDeath`는 컴포넌트째 삭제됨, 2026-09-19) |
+| `KillAllPlayersOnFail()` 류 — 스테이지 실패를 "전원 즉사"로 표현하는 우회로 | 자동 부활이 첫 사망자를 즉시 살려 실패가 무시된다. 실패는 `StageNetworkState`에 직접 통보 (§11A.3) |
 
 ### 11A.5 증상 → 볼 칸 (진단 사다리)
 

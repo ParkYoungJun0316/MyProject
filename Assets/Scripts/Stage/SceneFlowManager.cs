@@ -27,7 +27,7 @@ using UnityEngine.SceneManagement;
 /// 오직 "다음 씬으로 넘어가는" 이 진입점에서만 씬 전체를 멈춘다.
 ///
 /// [사망·Reset 리로드]
-/// 사망·ESC Reset 모두 StageNetworkState.NotifyPlayerDeathServerRpc 담당 (§11.1).
+/// 스테이지 실패·ESC Reset 모두 StageNetworkState의 실패·리셋 문 담당 (§11.1).
 /// 이 클래스는 클리어 → 다음 씬 전환만 처리한다.
 /// </summary>
 public class SceneFlowManager : MonoBehaviour

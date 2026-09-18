@@ -39,10 +39,10 @@ public class Stage5ChaserHitbox : MonoBehaviour
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
         Player p = other.GetComponent<Player>();
-        // IsDowned 제외: 다운 중엔 HP가 0으로 고정돼 ApplyDamage 자체는 무해하지만, 이 체크가
-        // 없으면 Chaser가 다운된 플레이어를 실제로 "공격"한 것처럼 반응(NotifyHitFromHitbox →
-        // 정지·doHit 애니·SFX)해 버린다 — 적 AI는 다운된 플레이어를 공격하지 않는다(§5).
-        if (p == null || p.IsDead || p.IsDowned) return;
+        // 사망자 제외: 시체에 ApplyDamage 자체는 무해하지만, 이 체크가 없으면 Chaser가 시체를
+        // 실제로 "공격"한 것처럼 반응(NotifyHitFromHitbox → 정지·doHit 애니·SFX)해 버린다 —
+        // 적 AI는 죽은 플레이어를 공격하지 않는다(ReviveSystemDesign.md §5).
+        if (p == null || p.IsDead) return;
 
         // 넉백 없음. 데미지 적용 후 Chaser 정지 연동 (서버에서만).
         NetworkDamageUtil.ApplyDamage(p, damage);

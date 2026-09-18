@@ -78,7 +78,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         // ESC 메뉴 등 커서를 쓰는 UI가 떠 있으면 숫자키가 이모트로 새지 않게 양보(구 휠과 동일 기준).
         if (CursorUnlockRequestUtil.IsRequested) return;
 
-        if (_player.IsDead || _player.IsDowned)
+        if (_player.IsDead)
         {
             CancelActiveLoop();
             return;

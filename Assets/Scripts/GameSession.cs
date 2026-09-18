@@ -259,6 +259,7 @@ public class GameSession : MonoBehaviour
         _sessionTeamCheerWord = null;
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
+        SessionColorSlotMap.Clear();
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");
     }
@@ -289,6 +290,11 @@ public class GameSession : MonoBehaviour
             foreach (PlayerColorType c in activeColorSlots)
                 if (PlayerColorUtil.IsUniquePlayerColor(c))
                     _activeColors.Add(c);
+
+        // 설계슬롯 → 실제색 매핑(SessionColorSlotMap)의 유일한 입력이 활성 색이고, 활성 색이
+        // 확정되는 자리는 여기 하나뿐이다. Player 오브젝트를 기다리지 않으므로 씬 로드 즉시
+        // 매핑이 선다 — 패드·문 색이 시드나 OnPlayersReady를 기다릴 이유가 없다.
+        SessionColorSlotMap.Rebuild(GetActiveColors());
 
         if (players == null || players.Length == 0)
         {

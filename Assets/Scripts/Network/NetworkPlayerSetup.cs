@@ -73,7 +73,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     private VoiceBroadcastTrigger   _voiceBroadcast;
     private CheerKeywordEngine      _cheerKeyword;
     private PlayerAudio             _audio;
-    private PlayerDownState         _downState;
+    private PlayerReviveState       _reviveState;
 
     // 서버 측 피격 무적 타이머 (비오너 플레이어의 isDamage를 서버가 알 수 없으므로 별도 추적)
     private float _damageInvulnEndTime = -1f;
@@ -92,7 +92,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
         _cheerKeyword    = GetComponent<CheerKeywordEngine>();
         _audio           = GetComponent<PlayerAudio>();
-        _downState       = GetComponent<PlayerDownState>();
+        _reviveState     = GetComponent<PlayerReviveState>();
     }
 
     public override void OnNetworkSpawn()
@@ -406,24 +406,31 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // (예전엔 여기서도 무조건 NotifyHitClientRpc를 호출해 안 맞았는데 맞은 것처럼 보이는 버그가 있었음).
         if (amount <= 0) return;
 
-        // 이 플레이어가 지금 누군가를 부활 시전 중이었다면, 실제 HP 감소가 확정된 이 시점에 캔슬
-        // (DownedReviveSystemDesign.md §4 — 캔슬 판정은 "피격"이 아니라 "HP 감소 발생"에 건다).
-        PlayerDownState.CancelIfReviving(OwnerClientId, $"시전자 HP 감소 {amount}");
-
         int newHp = Mathf.Max(0, _hp.Value - amount);
         _hp.Value = newHp;
 
-        if (newHp > 0)
-            NotifyHitClientRpc();
-        else if (_downState != null)
-            _downState.EnterDown();
-        else
-            ForceKillClientRpc(); // PlayerDownState 미부착 시 기존 즉시 사망으로 폴백
+        if (newHp > 0) NotifyHitClientRpc();
+        else           ConfirmDeathFromServer();
     }
 
     /// <summary>
-    /// Host 전용: 부활 완료 시 PlayerDownState가 호출. HP를 지정 값으로 복구하고 그레이스 무적을 부여
-    /// (DownedReviveSystemDesign.md §4 — 부활 직후 HP·1초 무적).
+    /// Host 전용 사망 확정 — HP 0 도달·낙사·즉사가 전부 이 문으로 모인다
+    /// (ReviveSystemDesign.md §2 · §9.2). 전파 후 부활/실패 판정을 PlayerReviveState에 넘긴다.
+    /// killInstantly = true면 Owner에게 KillInstantly()(OnInstantKilled 이벤트 연동)로 전달한다 —
+    /// 애니메이션은 어느 쪽이든 동일한 doDie다.
+    /// </summary>
+    void ConfirmDeathFromServer(bool killInstantly = false)
+    {
+        if (killInstantly) ForceInstantKillClientRpc();
+        else               ForceKillClientRpc();
+
+        // 부활 상태 컴포넌트가 없는 구성(비네트워크 튜토리얼 등)은 사망만 하고 끝 — 목숨·부활 없음(§8.1).
+        _reviveState?.OnDeathFromServer();
+    }
+
+    /// <summary>
+    /// Host 전용: 부활 시 PlayerReviveState가 호출. HP를 지정 값으로 복구하고 그레이스 무적을 부여
+    /// (ReviveSystemDesign.md §3 — 부활 직후 HP 3칸 · 1초 무적).
     /// </summary>
     public void ReviveFromServer(int heartAmount, float invulnerabilityDuration)
     {
@@ -432,19 +439,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
         _hp.Value = Mathf.Clamp(heartAmount, 1, _player.maxHeart);
         _damageInvulnEndTime = Time.time + invulnerabilityDuration;
-    }
-
-    /// <summary>
-    /// Host 전용: 다운 중 방치 타임아웃(완전사망) 시 PlayerDownState가 호출. HP는 이미 0이므로
-    /// 기존 즉사 확정 파이프라인(ForceKillClientRpc)을 그대로 재사용한다.
-    /// TODO(Stage/UI 도메인): STAGE FAILED 2초 배너 후 리로드로 교체 필요(§6, §9.2) — 지금은
-    /// 기존 즉시 리로드(StageResetOnPlayerDeath 경로) 그대로.
-    /// </summary>
-    public void FinalizeDownDeath()
-    {
-        if (!IsServer) return;
-        if (_player == null || _player.IsDead) return;
-        ForceKillClientRpc();
     }
 
     /// <summary>
@@ -518,7 +512,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public void ApplyKnockbackFromServer(Vector3 direction, float force, bool resetVerticalVelocity = false)
     {
         if (!IsServer) return;
-        if (_player == null || _player.IsDead || _player.IsDowned) return;
+        if (_player == null || _player.IsDead) return;
 
         ApplyKnockbackClientRpc(direction, force, resetVerticalVelocity);
     }
@@ -545,7 +539,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public void ApplyKnockbackAsOwner(Vector3 direction, float force, bool resetVerticalVelocity)
     {
         if (!IsOwner || !IsSpawned) return;
-        if (_player == null || _player.IsDead || _player.IsDowned) return;
+        if (_player == null || _player.IsDead) return;
 
         ApplyKnockbackLocal(direction, force, resetVerticalVelocity);
 
@@ -581,7 +575,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     public void NotifyPunchHitFromServer()
     {
         if (!IsServer) return;
-        if (_player == null || _player.IsDead || _player.IsDowned) return;
+        if (_player == null || _player.IsDead) return;
 
         NotifyPunchHitClientRpc();
     }
@@ -607,9 +601,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         if (!IsServer) return;
         if (!CanApplyLethalFromServer()) return;
-        _downState?.ClearForDeath();
         _hp.Value = 0;
-        ForceInstantKillClientRpc();
+        ConfirmDeathFromServer(killInstantly: true);
     }
 
     /// <summary>오너 클라이언트에 즉사(Die 애니) 전달. 비오너 클라이언트에는 사망 플래그 동기화 + UI 이벤트만 전달.</summary>
@@ -739,29 +732,30 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         if (!IsServer) return;
         if (!CanApplyLethalFromServer()) return;
-        _downState?.ClearForDeath();
         _hp.Value = 0;
-        ForceKillClientRpc();
+        ConfirmDeathFromServer();
     }
 
-    /// <summary>
-    /// 즉사/낙사 적용 가능 여부. HP 0은 원래 중복 사망 방지 가드였지만, 다운 상태도 HP 0이므로
-    /// 다운 중에는 통과시킨다 — 다운 중 즉사도 즉시 완전사망(DownedReviveSystemDesign.md §2).
-    /// </summary>
+    /// <summary>즉사/낙사 적용 가능 여부. HP 0 가드는 중복 사망 방지용.</summary>
     bool CanApplyLethalFromServer()
     {
         if (_player == null || _player.IsDead) return false;
-        bool downed = _downState != null && _downState.IsDowned;
-        return _hp.Value > 0 || downed;
+        return _hp.Value > 0;
     }
 
     /// <summary>
-    /// Server: Host-as-Owner 등 Host 실좌표가 신뢰될 때의 폴백 Y 판정.
-    /// Client Owner void 낙사의 주경로는 ReportFallDeathServerRpc.
+    /// Server: Host 실좌표가 신뢰되는 자기 캐릭터(Host-as-Owner)에 한한 폴백 Y 판정.
+    /// Client Owner void 낙사의 주경로는 ReportFallDeathServerRpc다.
+    ///
+    /// [왜 IsOwner로 좁혔나 — 2026-09-19 자동 부활 도입] 원격 플레이어의 Host 프록시 Y는 CNT
+    /// 보간값이라 원래부터 신뢰 대상이 아니었다(void 낙사를 놓치기 때문에 Owner 신고 RPC가 있다).
+    /// 자동 부활이 들어오면서 이게 실제 사고가 된다 — 부활 텔레포트는 Owner 머신에서 일어나므로
+    /// Host의 프록시 좌표가 아직 구멍 바닥인 몇 프레임 동안 IsDead가 이미 false다. 그 창에서 이
+    /// 폴백이 돌면 **살아난 그 프레임에 다시 낙사 확정**되어 목숨이 한 번에 2개 나간다.
     /// </summary>
     void Update()
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsOwner) return;
         if (_player == null || _player.IsDead || !_player.enableFallDeath) return;
         if (transform.position.y < _player.fallDeathY)
             ApplyFallDeathFromServer();

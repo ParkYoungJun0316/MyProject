@@ -23,10 +23,18 @@ public static class NetworkSessionData
     /// </summary>
     public static double SessionStartServerTime { get; set; } = -1.0;
 
+    /// <summary>
+    /// 씬 준비 게이트(LoadingCurtain)가 막혀 조용히 리로드한 횟수.
+    /// 씬과 함께 죽으면 안 되는 값이라 여기 둔다 — StageNetworkState는 씬 리로드마다 새로 생긴다.
+    /// 준비가 성공하면 0으로 되돌린다.
+    /// </summary>
+    public static int SceneReadyRetryCount { get; set; } = 0;
+
     /// <summary>데이터를 비움. 타이틀 복귀·새 게임 시 호출.</summary>
     public static void Clear()
     {
         Seed = 0;
         SessionStartServerTime = -1.0;
+        SceneReadyRetryCount = 0;
     }
 }

@@ -10,7 +10,8 @@ using UnityEngine.Events;
 ///
 /// [축 SSOT: NetworkDesign.md §11A]
 /// Clear/Fail 확정(Resolve)은 Host 레인에서만 판정한다 (Update() 하단 IsServer 가드).
-/// Fail은 별도 소프트 리셋을 두지 않고 전원 즉사 → §11 사망 문(전원 씬 리로드)으로 재진입시킨다.
+/// Fail은 StageNetworkState에 직접 통보한다 — 별도 소프트 리셋도, 전원 즉사도 없다
+/// (ReviveSystemDesign.md §6).
 ///
 /// [설정]
 ///  1. 이 오브젝트 또는 자식에 원하는 Objective 스크립트를 붙임
@@ -88,7 +89,7 @@ public class StageManager : MonoBehaviour
             {
                 _isFailed = true;
                 OnStageFailed?.Invoke();
-                KillAllPlayersOnFail();
+                NotifyStageFailed($"objective 실패 ({objectives[i].GetType().Name})");
                 return;
             }
 
@@ -109,18 +110,23 @@ public class StageManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 스테이지 실패 → §11 사망 문으로 병합 (NetworkDesign.md §11A.3).
-    /// 별도 리셋 경로를 만들지 않고 전원 즉사시켜 기존 사망 리로드(전원 씬 리로드)로 재진입시킨다.
+    /// 스테이지 실패를 StageNetworkState에 직접 통보 (ReviveSystemDesign.md §6).
     /// Update()가 이미 Host 레인으로 가드한 뒤 호출하므로 여기서 다시 가드하지 않음.
+    ///
+    /// [왜 전원 즉사를 폐기했나 — 2026-09-19] 구 구조는 전원을 즉사시켜 "사망 → 씬 리로드" 결선에
+    /// 얹는 방식이었다. 자동 부활이 들어오면 **첫 번째로 죽은 사람이 1초 뒤 즉시 살아난다.** 지금은
+    /// 목숨이 정확히 (인원−1)이라 우연히 수렴하지만, 목숨을 늘리는 순간 전원 즉사시켰는데 전원이
+    /// 살아나고 스테이지 실패가 조용히 무시된다.
     /// </summary>
-    void KillAllPlayersOnFail()
+    void NotifyStageFailed(string reason)
     {
-        Player[] players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (Player p in players)
+        var netState = StageNetworkState.Instance;
+        if (netState == null)
         {
-            if (p == null || p.IsDead) continue;
-            NetworkDamageUtil.ApplyInstantKill(p);
+            Debug.LogWarning($"[StageManager] 실패했지만 StageNetworkState가 없어 리로드하지 못함 — {reason} ({name})", this);
+            return;
         }
+        netState.FailStageFromServer(reason);
     }
 
     // ── 외부 호출 ─────────────────────────────────────────────────
@@ -192,6 +198,6 @@ public class StageManager : MonoBehaviour
         _isStarted = true;
         _isFailed  = true;
         OnStageFailed?.Invoke();
-        KillAllPlayersOnFail();
+        NotifyStageFailed("에디터 테스트");
     }
 }

@@ -41,8 +41,8 @@ public class StageStartGate : MonoBehaviour
 
     [Header("카운트다운")]
     [Tooltip("전원 점유 후 게임 시작까지 유지해야 하는 시간(초).\n" +
-             "중간에 이탈하면 리셋됨.")]
-    [SerializeField] float countdownDuration = 5f;
+             "중간에 이탈하면 리셋됨. 저장소 표준은 3초다(T.Stage2만 의도적으로 1).")]
+    [SerializeField] float countdownDuration = 3f;
 
     [Header("초기 상태")]
     [Tooltip("씬 로드 즉시 게이트 활성화.\n" +

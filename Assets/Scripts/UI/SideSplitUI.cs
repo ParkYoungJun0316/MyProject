@@ -235,7 +235,7 @@ public class SideSplitUI : MonoBehaviour
             ColorizeName(info.requiredColor));
     }
 
-    /// <summary>DeathOverlayUI와 동일 — 인자를 GetLocalizedString에 직접 넘겨 {0} 치환을 보장.</summary>
+    /// <summary>인자를 GetLocalizedString에 직접 넘겨 {0} 치환을 보장(TutorialCheerNameUI와 동일 패턴).</summary>
     static string FormatPrompt(LocalizedString template, params object[] args)
     {
         if (template == null || template.IsEmpty) return string.Empty;

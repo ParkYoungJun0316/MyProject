@@ -235,15 +235,17 @@ public class CapacityTile : MonoBehaviour
         // SphereCollider(자식, 항상 켜짐)가 공존한다. GetComponentInParent로 찾으면 둘 다 같은
         // Player로 잡혀 경계에서 중복 진입/이탈이 생긴다(ColorTile.TryAddOccupant 주석의 그 버그).
         // GetComponent는 Player와 같은 GameObject의 몸통 콜라이더만 통과시킨다.
+        // 부활 직후 1초는 세지 않는다 — 생존자 위치에 겹쳐 나타나는 순간 정원이 초과돼
+        // 타일이 깨지고 둘 다 떨어진다(ReviveSystemDesign.md §3.1).
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead) return;
+        if (p == null || !p.CountsForOccupancy) return;
         _occupants.Add(p);
     }
 
     void PruneOccupants()
     {
         if (_occupants.Count == 0) return;
-        _occupants.RemoveWhere(p => p == null || p.IsDead);
+        _occupants.RemoveWhere(p => p == null || !p.CountsForOccupancy);
     }
 
     // ── 상태 진행 ────────────────────────────────────────────────
@@ -358,7 +360,7 @@ public class CapacityTile : MonoBehaviour
     }
 
     /// <summary>
-    /// 휴지 상태로 즉시 되돌린다. T4는 사망 시 씬 전체가 재로드되므로(StageResetOnPlayerDeath)
+    /// 휴지 상태로 즉시 되돌린다. T4는 스테이지 실패 시 씬 전체가 재로드되므로(StageNetworkState 실패 문)
     /// 보통 쓸 일이 없고, 제자리 리셋이 필요한 테스트·툴용이다.
     /// </summary>
     public void ResetTile()

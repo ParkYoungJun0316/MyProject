@@ -109,7 +109,7 @@ public class ContactKnockback : MonoBehaviour
         // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox(캐릭터 앞 트리거)가 먼저 닿아
         // 몸이 아직 안 올라왔는데 발사되는 것을 막는다 (PressurePad와 동일 관례).
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead || p.IsDowned) return;
+        if (p == null || p.IsDead) return;
 
         // 내 캐릭터만 판정 — 원격 캐릭터는 그 캐릭터의 Owner 머신이 판정한다.
         if (!p.isOwnerControlled) return;

@@ -115,7 +115,7 @@ public class ColorTile : MonoBehaviour
 
         if (_occupants.Count > 0)
         {
-            _occupants.RemoveWhere(p => p == null || p.IsDead);
+            _occupants.RemoveWhere(p => p == null || !p.CountsForOccupancy);
             if (_occupants.Count > 0)
                 _heldTime += Time.deltaTime;
             else
@@ -172,7 +172,7 @@ public class ColorTile : MonoBehaviour
 
         if (ignorePlayerCheck)
         {
-            if (p.IsDead) return;
+            if (!p.CountsForOccupancy) return; // 부활 직후 1초 제외(§3.1)
             if (_isCompleted) return;
             _isCompleted = true;
             PlayPressSfx();
@@ -181,7 +181,7 @@ public class ColorTile : MonoBehaviour
             return;
         }
 
-        if (p.IsDead) return;
+        if (!p.CountsForOccupancy) return; // 부활 직후 1초 제외(§3.1)
 
         if (_quotaMode)
         {
@@ -221,7 +221,7 @@ public class ColorTile : MonoBehaviour
 
     bool IsValidQuotaOccupant(Player p)
     {
-        if (p == null || p.IsDead) return false;
+        if (p == null || !p.CountsForOccupancy) return false;
         if (PlayerColorUtil.IsSharedTileColor(requiredColorType))
             return true;
         return p.isUniqueColor && p.playerColorType == requiredColorType;

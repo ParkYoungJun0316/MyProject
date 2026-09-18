@@ -57,7 +57,7 @@ public class PlayerPunchHitbox : MonoBehaviour
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
         Player target = other.GetComponent<Player>();
-        if (target == null || target == _owner || target.IsDead || target.IsDowned) return;
+        if (target == null || target == _owner || target.IsDead) return;
 
         _punch.TryRegisterHit(target, transform.position);
     }

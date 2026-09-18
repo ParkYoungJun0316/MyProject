@@ -74,7 +74,7 @@ public class TutorialCheerNameUI : MonoBehaviour
 
     // ── Localization (Tutorial 테이블, TutorialTranslations.md §CheerNamePanel) ──────────
     // 비어 있거나(IsEmpty) 테이블 로드가 아직 안 끝났으면 한국어 폴백 — OptionsMenuController/
-    // DeathOverlayUI와 동일 패턴(LocalizedOrFallback 참고).
+    // 로컬라이즈 폴백 패턴(LocalizedOrFallback 참고).
 
     [Header("Localization — 피드백")]
     [SerializeField] LocalizedString feedbackFormat;

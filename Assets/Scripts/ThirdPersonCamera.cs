@@ -98,6 +98,7 @@ public class ThirdPersonCamera : MonoBehaviour
     Transform _gameplayTarget; // 게임플레이 follow 대상 저장용
     Coroutine _blendCoroutine;
     bool _isInPreview; // 프리뷰(또는 블렌드) 진행 중 여부
+    bool _snapNextFrame; // SnapToTarget() 요청 — 다음 LateUpdate 1회만 보간 생략
 
     // ── Public 프로퍼티 ─────────────────────────────────────────────
     public float Yaw => _yaw;
@@ -177,7 +178,13 @@ public class ThirdPersonCamera : MonoBehaviour
         Vector3 pivot    = target.position + _activeOffset;
         Vector3 desiredPos = pivot + _currentRot * (Vector3.back * currentDistance);
 
-        if (positionDamping > 0f)
+        if (_snapNextFrame)
+        {
+            // 텔레포트 직후 1프레임: SmoothDamp를 건너뛰어 맵을 가로지르는 비행을 막는다(SnapToTarget 참고).
+            _snapNextFrame = false;
+            transform.position = desiredPos;
+        }
+        else if (positionDamping > 0f)
             transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref _posVelocity, positionDamping);
         else
             transform.position = desiredPos;
@@ -189,6 +196,29 @@ public class ThirdPersonCamera : MonoBehaviour
 
     /// <summary>외부에서 Yaw를 강제 설정 (리스폰, 씬 초기화 등)</summary>
     public void SetYaw(float yaw) => _yaw = yaw;
+
+    /// <summary>
+    /// 다음 LateUpdate에서 보간 없이 타겟 뒤 정위치로 즉시 이동. 플레이 중 텔레포트 전용
+    /// (현재 사용처 = 자동 부활 — ReviveSystemDesign.md §3·§9.3).
+    ///
+    /// [왜 즉시 대입이 아니라 1프레임 플래그인가] 호출부는 부활 ClientRpc(메시지 처리 레인)라
+    /// 여기서 위치를 직접 써도 **같은 프레임의 LateUpdate가 뒤이어 SmoothDamp로 덮어쓴다.**
+    /// 카메라 위치의 진실은 LateUpdate 하나이므로 거기서 소비해야 한다.
+    ///
+    /// [회전은 건드리지 않는다] rotationDamping은 각도 보간이고 텔레포트로 각도는 바뀌지 않는다.
+    /// yaw/pitch도 유지 — 부활 순간 시점 방향까지 바뀌면 방향감이 끊긴다.
+    ///
+    /// [프리뷰 중에는 무동작] 프리뷰/블렌드 중에는 target이 플레이어가 아니라 pivot이라
+    /// (BlendToPreview) 스냅하면 탑다운 프레이밍이 튄다. 인트로 도중 사망은 실제로 존재하는
+    /// 경로다(ForceGameplayViewImmediate 주석의 2026-09-14 사고). 프리뷰 종료 시
+    /// BlendToGameplay가 _posVelocity를 어차피 0으로 리셋하므로 놓치는 것도 없다.
+    /// </summary>
+    public void SnapToTarget()
+    {
+        if (_isInPreview) return;
+        _snapNextFrame = true;
+        _posVelocity   = Vector3.zero;
+    }
 
     /// <summary>
     /// 탑다운 프리뷰 시점으로 부드럽게 전환. Inspector에 지정된 Preview Preset 값을 사용.

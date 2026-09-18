@@ -88,7 +88,7 @@
 | 필요 인원 | 1 (자기 자신) — **투표 없음, 입력 즉시 발동** |
 | 버프 중 재트리거(Space 재입력) | 무시 |
 | 쿨타임 중 재트리거(Space 재입력) | 무시 |
-| 사망 | 씬 리로드로 자동 초기화(`StageResetOnPlayerDeath`, 기존 동일) |
+| 사망 | ⚠️ **2026-09-19 변경** — 사망이 더 이상 씬 리로드가 아니다(자동 부활, `ReviveSystemDesign.md`). 리로드는 목숨 0 사망·전원 사망·objective 실패에서만. `StageResetOnPlayerDeath`는 삭제됨. **부활 시 Cheer 상태를 초기화할지 확인 필요** |
 
 **쿨타임:** 버프 종료(`remainingTime == 0`) 순간부터 `cheerCooldownSeconds`(기존 15초 유지) 시작. 트리거 수단만 바뀌었을 뿐 쿨타임 규칙 자체는 변경 없음.
 

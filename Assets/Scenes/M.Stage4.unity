@@ -591,6 +591,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageNetworkState
   ShowTopMostFoldoutHeaderGroup: 1
+  disableRevive: 0
   deathReloadDelay: 1.75
 --- !u!114 &98879421
 MonoBehaviour:
@@ -3429,11 +3430,6 @@ MonoBehaviour:
   positionDamping: 0
   rotationDamping: 0
   lockCursor: 1
-  cameraObstructionLayers:
-    serializedVersion: 2
-    m_Bits: 973078529
-  cameraCollisionRadius: 0.3
-  cameraCollisionBuffer: 0.15
   previewDistance: 40
   previewPitch: 82
   previewYaw: 0
@@ -8395,7 +8391,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1871857761}
   - component: {fileID: 1871857762}
-  - component: {fileID: 1871857763}
   m_Layer: 0
   m_Name: StageFlow
   m_TagString: Untagged
@@ -8626,18 +8621,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &1871857763
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1871857760}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79b2fab2733786d44814d5f5c355dba3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StageResetOnPlayerDeath
 --- !u!1001 &1882288701
 PrefabInstance:
   m_ObjectHideFlags: 0

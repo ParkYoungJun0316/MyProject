@@ -3,7 +3,7 @@
 > Domain ownership only. Network / session / authority SSOT: `NetworkDesign.md`.  
 > Cheer / voice SSOT: `CheerAndTutorialDesign.md`.  
 > Co-op stage/minigame content SSOT: [`CoopStageAudit.md`](CoopStageAudit.md) (공유) · [`CoopStageAudit.M.md`](CoopStageAudit.M.md) · [`CoopStageAudit.T.md`](CoopStageAudit.T.md).  
-> Downed/Revive 시스템 SSOT (설계 중, 네트워크 권위 TBD): [`DownedReviveSystemDesign.md`](DownedReviveSystemDesign.md).
+> 사망/부활 시스템 SSOT: [`ReviveSystemDesign.md`](ReviveSystemDesign.md) — **다운(쓰러짐 + 팀원 살리기) 구조는 2026-09-19 전면 폐기**, 사망 + 1초 뒤 자동 부활로 교체.
 
 ## Scope (full release)
 
@@ -15,7 +15,7 @@
 
 ## Domain Ownership
 
-- **Player:** input, movement, stamina, dodge, respawn lifecycle, **downed/revive lifecycle** (`PlayerDownState` Host-side state, `PlayerReviveInteract` input — `DownedReviveSystemDesign.md`), own state events. **No** Vosk / mic / cheer-submit.
+- **Player:** input, movement, stamina, dodge, respawn lifecycle, **death/revive lifecycle** (`PlayerReviveState` — Host-side state only; 자동 부활이라 플레이어 입력 경로 없음 — `ReviveSystemDesign.md`), own state events. **No** Vosk / mic / cheer-submit.
 - **Enemy:** detection / chase / attack and local combat state only.
 - **Stage:** `StageObjective` + `StageManager` — stage-local win/fail. 축 SSOT: `NetworkDesign.md` §11A.
 - **Spawn / respawn (MVP):** `ColoredStartZone` + `spawnPoint` (not ColorSavePoint / StageCheckpoint save pipeline).

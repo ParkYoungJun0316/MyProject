@@ -9,7 +9,7 @@ using UnityEngine;
 /// [클리어 조건]
 /// - 연결된 챌린지의 OnChallengeComplete → Complete()
 /// - 라운드별 실패는 개인 데미지만 적용 — Objective는 Fail() 호출 안 함
-/// - HP 0 사망 → StageResetOnPlayerDeath가 씬 리셋 (기존 파이프라인)
+/// - HP 0 사망 → 자동 부활 또는 팀 목숨 소진 시 스테이지 실패 (ReviveSystemDesign.md §2)
 ///
 /// [StageManager 연동]
 /// - StageManager.StartStage() → Begin() → challenge.Activate() 자동 호출

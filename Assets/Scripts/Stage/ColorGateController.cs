@@ -11,12 +11,15 @@ using UnityEngine;
 ///  - 라운드 시작 상태는 **전부 닫힘**(NV 초기값 -1). 흑·백도 같은 규칙의 한 색일 뿐이다.
 ///  - 문 이동·닫힘 넉백은 각 문의 DoorController가 담당(openMode = SlideUp, latchOnOpen = false).
 ///
-/// [설계슬롯 vs 실제 색]
-///  맵은 Blue/Purple/Green/Yellow 4개의 **설계슬롯**으로 제작돼 있고, 런타임에 그 슬롯들이
-///  2층 안내자의 실제 색으로 재매핑된다(라운드 디렉터가 ApplySlotMapping 호출).
-///  Black/White는 재매핑 없이 고정. 2인이면 4슬롯이 전부 같은 안내자 색이 되므로
-///  그 색 패드 하나가 고유색 문 8개를 한꺼번에 여는데, 이는 §1.2가 의도한 동작이다
-///  (맵 BFS 검증도 "2인 = 실질 3색" 전제로 통과시킨 것 — §2-R).
+/// [설계슬롯 vs 실제 색 — SessionColorSlotMap이 SSOT]
+///  맵은 Blue/Purple/Green/Yellow 4개의 **설계슬롯**으로 제작돼 있다. 이번 판에 없는 색과
+///  **그 라운드 러너의 색**은 `SessionColorSlotMap`에서 **Common(누구나)** 으로 떨어진다
+///  (러너는 1층이라 2층 패드를 밟을 수 없으므로 슬롯을 들고 있을 이유가 없다).
+///  스테이지마다 바뀌는 것은 러너 색 한 겹뿐이고, 그건 디렉터가 `SetRunnerExclusion()`으로 넘긴다.
+///  Black/White는 치환 대상이 아니라 그대로 고정.
+///
+///  여러 슬롯이 Common으로 떨어지면 **Common 패드 하나가 그 문들을 한꺼번에 연다** — 인원이
+///  적을수록 문이 묶이는 것이 의도된 동작이다(§1.2. 맵 BFS 검증도 "2인 = 실질 3색" 전제로 통과).
 ///
 /// [네트워크]
 ///  상태는 StageNetworkState 전용 슬롯(OpenGateColor) 하나. Host만 쓰고, 전 머신은 매 프레임
@@ -33,14 +36,7 @@ using UnityEngine;
 /// </summary>
 public class ColorGateController : MonoBehaviour
 {
-    /// <summary>재매핑 대상인 고유색 설계슬롯. 이 순서가 ApplySlotMapping 인자의 순서다.</summary>
-    public static readonly PlayerColorType[] DesignSlots =
-    {
-        PlayerColorType.Blue,
-        PlayerColorType.Purple,
-        PlayerColorType.Green,
-        PlayerColorType.Yellow,
-    };
+    // 고유색 설계슬롯 목록은 SessionColorSlotMap.DesignSlots가 SSOT — 여기 복사본을 두지 않는다.
 
     [System.Serializable]
     public class DoorGroup
@@ -79,6 +75,7 @@ public class ColorGateController : MonoBehaviour
     bool _hasApplied;
     int  _appliedOpenColor;
     bool _appliedSolo;
+    int  _appliedMapVersion = -1;
 
     void Awake()
     {
@@ -98,10 +95,16 @@ public class ColorGateController : MonoBehaviour
     }
 
     // 맵이 라운드마다 켜졌다 꺼지므로, 다시 켜질 때 마지막 적용값을 버리고 현재 NV로 재수렴시킨다.
-    void OnEnable() => _hasApplied = false;
+    void OnEnable()
+    {
+        _hasApplied        = false;
+        _appliedMapVersion = -1;
+    }
 
     void Update()
     {
+        PullMappingIfChanged();
+
         bool solo      = IsSolo();
         int  wantColor = CurrentOpenColor();
 
@@ -109,48 +112,33 @@ public class ColorGateController : MonoBehaviour
         Apply(wantColor, solo);
     }
 
-    // ── 외부 API ────────────────────────────────────────────────
-
     /// <summary>
-    /// 라운드 디렉터(C4)가 라운드 시작 시 호출. 고유색 설계슬롯 4개(DesignSlots 순서)를
-    /// 2층 안내자 실제 색으로 재매핑한다. Black/White 묶음은 건드리지 않는다.
-    /// slotColors는 GameSessionColorDistribution.Distribute(안내자색목록, 4, rng) 결과를 그대로 넘긴다
-    /// (러너 색·빈 슬롯이 안내자 색으로 시드 랜덤하게 채워지는 것도 그 유틸이 처리).
+    /// `SessionColorSlotMap`에서 각 묶음의 실제 색을 당겨온다(push 아님 — 매핑이 언제 확정되든 수렴).
+    /// 매핑이 바뀌면 "어느 묶음이 열려야 하는가"의 답도 바뀌므로 개폐 적용도 강제로 다시 태운다.
     /// </summary>
-    public void ApplySlotMapping(IReadOnlyList<PlayerColorType> slotColors)
+    void PullMappingIfChanged()
     {
-        if (slotColors == null || slotColors.Count == 0)
-        {
-            Debug.LogWarning($"[ColorGateController] {name}: slotColors가 비어 재매핑을 건너뜁니다.");
-            return;
-        }
+        if (_appliedMapVersion == SessionColorSlotMap.Version) return;
+        _appliedMapVersion = SessionColorSlotMap.Version;
 
-        for (int i = 0; i < DesignSlots.Length; i++)
+        foreach (DoorGroup g in doorGroups)
         {
-            PlayerColorType slot   = DesignSlots[i];
-            PlayerColorType actual = slotColors[i % slotColors.Count];
-
-            DoorGroup g = FindGroup(slot);
             if (g == null) continue;
 
-            g.effectiveColor = actual;
+            g.effectiveColor = SessionColorSlotMap.Resolve(g.designColor);
+            if (g.visuals == null) continue;
             foreach (ColoredDoorVisual v in g.visuals)
-                if (v != null) v.Apply(actual);
+                if (v != null) v.Apply(g.effectiveColor);
         }
 
-        foreach (ColorGatePad pad in pads)
-            if (pad != null) pad.RefreshEffectiveColor();
-
-        // 매핑이 바뀌면 "어느 묶음이 열려야 하는가"의 답도 바뀌므로 다음 프레임에 강제 재적용.
         _hasApplied = false;
     }
 
-    /// <summary>designColor 슬롯의 런타임 실제 색. 매핑 전이면 designColor 그대로. 패드가 조회한다.</summary>
-    public PlayerColorType GetEffectiveColor(PlayerColorType designColor)
-    {
-        DoorGroup g = FindGroup(designColor);
-        return g != null ? g.effectiveColor : designColor;
-    }
+    // ── 외부 API ────────────────────────────────────────────────
+
+    /// <summary>designColor 슬롯의 런타임 실제 색. 패드가 조회한다.</summary>
+    public PlayerColorType GetEffectiveColor(PlayerColorType designColor) =>
+        SessionColorSlotMap.Resolve(designColor);
 
     /// <summary>
     /// Host 전용: 패드가 밟혔을 때 호출. color 문만 열고 나머지는 전부 닫는다.

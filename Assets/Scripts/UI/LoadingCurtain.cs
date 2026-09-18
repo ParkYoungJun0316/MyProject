@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -28,13 +30,31 @@ using UnityEngine.SceneManagement;
 /// TitleReturnFlow처럼 LoadScene이 동기적으로 바로 일어나는 곳은 BeginCoverRoutine()으로
 /// 페이드아웃이 끝날 때까지 대기한 뒤 실제 전환을 실행하면 된다.
 ///
-/// [네트워크 동기화 대기 — waitForPlayersReady]
-/// BeginCover(waitForPlayersReady: true)로 덮으면, 단순히 "이 머신의 씬 로드 완료"가 아니라
-/// PlayerSpawnCoordinator.OnPlayersReady(Host/Client 전원 스폰+색 동기화 확정 신호,
-/// NetworkDesign.md §11.3)가 실제로 도착할 때까지 커튼을 걷지 않는다.
-/// Host보다 Client가 정보를 늦게/빨리 받아 생기던 초반 프레임 동기화 어긋남을 커튼 뒤로 가려준다.
-/// 신호가 영영 안 오는 버그 상황을 대비해 playersReadyTimeoutSeconds 이후 강제로 페이드인한다
-/// (무한 암전 방지 안전장치) — 이때 경고 로그가 남으므로 콘솔에서 동기화 문제를 바로 알 수 있다.
+/// [준비 게이트 — 시간이 아니라 '조건'으로 걷는다 (2026-09-18, 전 씬 기본값)]
+/// 커튼은 "몇 초 지났으니 걷는다"가 아니라 **등록된 준비 게이트가 전부 끝나야** 걷힌다.
+/// 씬마다 기다릴 것이 다르므로(맵 활성화, NavMesh, 체이서, 텔레포트 …) 각 씬의 컴포넌트가
+/// <see cref="RegisterGate"/>로 자기 조건을 등록하고 끝나면 <see cref="MarkGateReady"/>를 부른다.
+///
+/// [등록은 코드가, 인스펙터가 아니다 — 왜]
+/// 씬 인스펙터에 "기다릴 것 목록"을 선언하는 방식도 있었지만 버렸다. 코드에 조건을 추가하고
+/// 씬 선언을 빠뜨리면 **그 조건을 그냥 안 기다리고 조용히 통과**한다 — 이 장치를 만든 이유가
+/// 소리 없이 무너진다. 코드 자기등록은 반대로 게이트가 안 오면 타임아웃 로그로 시끄럽게 드러난다.
+///
+/// 등록 레이스는 없다: 기본 게이트인 OnPlayersReady는 씬 로드 + 전원 스폰 **이후**에 오고,
+/// 씬 컴포넌트의 Start()는 그보다 항상 먼저다. 등록은 Start()에서 할 것(저장소 공통 관례).
+/// 비활성으로 시작하는 오브젝트는 스스로 등록할 수 없으므로 **항상 활성인 매니저급 컴포넌트가
+/// 대신 등록**한다.
+///
+/// [전원 준비 — 한 명이라도 안 끝나면 전원 대기]
+/// 로컬 게이트가 전부 끝나면 StageNetworkState가 Host에 보고하고, **전원이 모여야** 마지막
+/// 게이트가 풀린다. 한 명 때문에 전원이 기다리는 대가로, 누구는 이미 보이고 누구는 암전인
+/// 어긋난 순간이 사라진다.
+///
+/// [막혔을 때 — gateTimeoutSeconds]
+/// 게이트가 안 채워진 채 이 시간이 지나면 미완 게이트 이름을 로그로 남기고
+/// <see cref="OnGatesTimedOut"/>을 발행한다. 듣는 쪽(StageNetworkState)이 조용한 리로드로
+/// 재시도하겠다고 하면(<see cref="KeepCoveredForRetry"/>) 커튼을 덮은 채 유지하고,
+/// 아무도 안 맡으면 **그냥 걷고 진행한다** — 무한 암전보다 낫다.
 /// </summary>
 [RequireComponent(typeof(ScreenFader))]
 public class LoadingCurtain : MonoBehaviour
@@ -57,16 +77,34 @@ public class LoadingCurtain : MonoBehaviour
     [Tooltip("페이드아웃/페이드인에 걸리는 시간(초).")]
     [SerializeField] float defaultFadeDuration = 0.35f;
 
-    [Header("네트워크 동기화 대기 (선택)")]
-    [Tooltip("waitForPlayersReady=true로 BeginCover된 뒤 이 시간(초) 안에 OnPlayersReady가 안 오면 " +
-             "무한 암전을 막기 위해 강제로 페이드인한다(경고 로그 남김).")]
-    [SerializeField] float playersReadyTimeoutSeconds = 8f;
+    [Header("준비 게이트")]
+    [Tooltip("게이트가 안 채워진 채 이 시간(초)이 지나면 미완 게이트를 로그로 남기고 " +
+             "OnGatesTimedOut을 발행한다. 타이머는 새 진전이 있을 때마다(씬 로드·게이트 등록) 다시 시작한다.")]
+    [SerializeField] float gateTimeoutSeconds = 5f;
+
+    /// <summary>플레이어 스폰 완료 기본 게이트 id. BeginCover(waitForPlayersReady: true)가 등록한다.</summary>
+    public const string PlayersGate = "players";
+
+    /// <summary>전원 준비 취합 게이트 id. StageNetworkState가 등록하고 전원이 모이면 푼다.</summary>
+    public const string AllPlayersReadyGate = "net.allready";
+
+    /// <summary>
+    /// 게이트가 제때 안 채워졌다. 인자는 미완 게이트 이름들.
+    /// 듣는 쪽이 재시도를 맡으려면 <see cref="KeepCoveredForRetry"/>를 부를 것.
+    /// </summary>
+    public static event Action<string[]> OnGatesTimedOut;
 
     ScreenFader _fader;
     float _coverStartTime = -1f;
     Coroutine _endRoutine;
     bool _waitingForPlayersReady;
-    Coroutine _playersReadyTimeoutRoutine;
+
+    readonly HashSet<string> _gates = new HashSet<string>();
+    Coroutine _gateTimeoutRoutine;
+    bool      _endRequested;
+    bool      _retryHandled;
+    float?    _pendingMinHold;
+    float?    _pendingFade;
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -100,11 +138,13 @@ public class LoadingCurtain : MonoBehaviour
         StopWaitingForPlayersReady();
     }
 
-    // 안전장치 — 호출부가 EndCover를 깜빡해도 씬 로드가 끝나면 자동으로 걷힌다.
-    // 단, OnPlayersReady를 기다리는 중이면 로컬 씬 로드만으로는 걷지 않는다(동기화 확정 전 노출 방지).
+    // 안전장치 — 호출부가 EndCover를 깜빡해도 씬 로드가 끝나면 "요청"은 들어간다.
+    // 실제로 걷히는 것은 등록된 준비 게이트가 전부 풀린 뒤다.
     void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (_waitingForPlayersReady) return;
+        // 새 씬이 올라왔다 = 실제 준비 작업이 이제 시작된다. 타임아웃을 여기서 다시 시작해
+        // "씬 로딩이 오래 걸렸다"는 이유로 게이트가 타임아웃되는 일을 막는다.
+        RestartGateTimeout();
         EndCover();
     }
 
@@ -147,15 +187,32 @@ public class LoadingCurtain : MonoBehaviour
     }
 
     /// <summary>
-    /// 실제 작업 완료 시점에 호출. BeginCover부터 최소 유지시간이 지날 때까지 기다린 뒤 페이드인.
+    /// 실제 작업 완료 시점에 호출. **요청일 뿐** — 등록된 준비 게이트가 남아 있으면 그게 전부
+    /// 풀릴 때까지 실제로 걷지 않는다. BeginCover부터 최소 유지시간도 함께 지킨다.
     /// BeginCover 없이 호출되면 무시(안전).
     /// </summary>
     public void EndCover(float? minHoldSeconds = null, float? fadeDuration = null)
     {
         if (_coverStartTime < 0f) return;
 
+        _endRequested   = true;
+        _pendingMinHold = minHoldSeconds;
+        _pendingFade    = fadeDuration;
+
+        TryFinishCover();
+    }
+
+    void TryFinishCover()
+    {
+        if (!_endRequested || _coverStartTime < 0f) return;
+        if (_gates.Count > 0) return;   // 아직 기다릴 것이 남았다
+
+        StopGateTimeout();
+
         if (_endRoutine != null) StopCoroutine(_endRoutine);
-        _endRoutine = StartCoroutine(EndCoverRoutine(minHoldSeconds ?? defaultMinHoldSeconds, fadeDuration ?? defaultFadeDuration));
+        _endRoutine = StartCoroutine(EndCoverRoutine(
+            _pendingMinHold ?? defaultMinHoldSeconds,
+            _pendingFade ?? defaultFadeDuration));
     }
 
     IEnumerator EndCoverRoutine(float minHoldSeconds, float fadeDuration)
@@ -165,7 +222,8 @@ public class LoadingCurtain : MonoBehaviour
 
         _fader.FadeIn(fadeDuration);
         _coverStartTime = -1f;
-        _endRoutine = null;
+        _endRequested   = false;
+        _endRoutine     = null;
     }
 
     /// <summary>
@@ -180,6 +238,89 @@ public class LoadingCurtain : MonoBehaviour
         if (fd > 0f) yield return new WaitForSecondsRealtime(fd);
     }
 
+    // ── 준비 게이트 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 기다릴 조건을 등록한다. 덮여 있지 않으면 무시된다(걷힌 뒤 등록해봐야 아무 의미가 없다).
+    /// 같은 id를 여러 번 등록해도 하나로 취급한다 — 재시도·중복 호출에 안전하다.
+    /// </summary>
+    public void RegisterGate(string id)
+    {
+        if (string.IsNullOrEmpty(id) || _coverStartTime < 0f) return;
+        if (!_gates.Add(id)) return;
+
+        RestartGateTimeout(); // 새 진전이 있었으니 시간을 다시 준다
+    }
+
+    /// <summary>등록한 조건이 끝났다. 전부 끝나고 EndCover도 요청돼 있으면 그때 실제로 걷힌다.</summary>
+    public void MarkGateReady(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return;
+        if (!_gates.Remove(id)) return;
+
+        if (_gates.Count > 0) RestartGateTimeout();
+        TryFinishCover();
+    }
+
+    /// <summary>id 말고 다른 게이트가 아직 남아 있는가. 전원 준비 보고 시점을 잡는 데 쓴다.</summary>
+    public bool HasPendingGatesOtherThan(string id)
+    {
+        foreach (string g in _gates)
+            if (g != id) return true;
+        return false;
+    }
+
+    /// <summary>덮여 있는가. 게이트를 등록해도 되는 구간인지 확인용.</summary>
+    public bool IsCovered => _coverStartTime >= 0f;
+
+    /// <summary>
+    /// <see cref="OnGatesTimedOut"/> 핸들러 안에서만 호출. "내가 리로드로 재시도할 테니
+    /// 커튼을 덮은 채 두라"는 뜻이다. 아무도 부르지 않으면 커튼은 그냥 걷히고 진행한다.
+    /// </summary>
+    public void KeepCoveredForRetry() => _retryHandled = true;
+
+    void RestartGateTimeout()
+    {
+        StopGateTimeout();
+        if (_gates.Count == 0 || _coverStartTime < 0f) return;
+        _gateTimeoutRoutine = StartCoroutine(GateTimeoutRoutine());
+    }
+
+    void StopGateTimeout()
+    {
+        if (_gateTimeoutRoutine == null) return;
+        StopCoroutine(_gateTimeoutRoutine);
+        _gateTimeoutRoutine = null;
+    }
+
+    IEnumerator GateTimeoutRoutine()
+    {
+        yield return new WaitForSecondsRealtime(gateTimeoutSeconds);
+        _gateTimeoutRoutine = null;
+
+        var pending = new string[_gates.Count];
+        _gates.CopyTo(pending);
+
+        Debug.LogWarning($"[LoadingCurtain] 준비 게이트가 {gateTimeoutSeconds}초 안에 채워지지 않았습니다 — " +
+                         $"미완: {string.Join(", ", pending)}");
+
+        _retryHandled = false;
+        OnGatesTimedOut?.Invoke(pending);
+
+        // 누군가 리로드로 재시도하겠다고 했으면 덮은 채 유지한다.
+        // 새 씬이 로드되면 게이트가 다시 등록되고 타이머도 거기서 다시 시작한다.
+        if (_retryHandled) yield break;
+
+        _gates.Clear();
+        _waitingForPlayersReady = false;
+        PlayerSpawnCoordinator.OnPlayersReady -= HandlePlayersReady;
+
+        // 포기하고 진행 — 무한 암전보다 낫다. 어긋난 상태라면 대개 낙사 → §11 사망 문으로
+        // 전원 리로드가 걸려 스스로 복구된다.
+        _endRequested = true;
+        TryFinishCover();
+    }
+
     // ── 네트워크 동기화 대기 (waitForPlayersReady) ───────────────────
 
     /// <summary>
@@ -191,27 +332,18 @@ public class LoadingCurtain : MonoBehaviour
     /// </summary>
     void StartWaitingForPlayersReady()
     {
+        RegisterGate(PlayersGate);
+
         if (_waitingForPlayersReady) return;
         _waitingForPlayersReady = true;
 
         PlayerSpawnCoordinator.OnPlayersReady += HandlePlayersReady;
-
-        if (_playersReadyTimeoutRoutine != null) StopCoroutine(_playersReadyTimeoutRoutine);
-        _playersReadyTimeoutRoutine = StartCoroutine(PlayersReadyTimeoutRoutine());
     }
 
     void HandlePlayersReady()
     {
         StopWaitingForPlayersReady();
-        EndCover();
-    }
-
-    IEnumerator PlayersReadyTimeoutRoutine()
-    {
-        yield return new WaitForSecondsRealtime(playersReadyTimeoutSeconds);
-        Debug.LogWarning($"[LoadingCurtain] OnPlayersReady가 {playersReadyTimeoutSeconds}초 내에 오지 않아 " +
-                          "강제로 페이드인합니다 — 동기화 지연/버그 확인 필요.");
-        StopWaitingForPlayersReady();
+        MarkGateReady(PlayersGate);
         EndCover();
     }
 
@@ -220,11 +352,5 @@ public class LoadingCurtain : MonoBehaviour
         if (!_waitingForPlayersReady) return;
         _waitingForPlayersReady = false;
         PlayerSpawnCoordinator.OnPlayersReady -= HandlePlayersReady;
-
-        if (_playersReadyTimeoutRoutine != null)
-        {
-            StopCoroutine(_playersReadyTimeoutRoutine);
-            _playersReadyTimeoutRoutine = null;
-        }
     }
 }

@@ -31,11 +31,10 @@ using TMPro;
 /// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제(흑/백 팔레트로 색 바꾸면 구분 불가 문제)로 재도입됨.
 /// 이름은 이제 PlayerColorUtil.DefaultCheerNames 고정값이라 런타임에 안 바뀐다.
 ///
-/// [다운 표시(2026-09-14) — DownedReviveSystemDesign.md §6]
-/// 화면 중앙 배너(DeathOverlayUI)는 완전사망 전용으로 남기고, 다운은 이 패널의 체력 칸 쪽
-/// downIndicator(HELP 이미지 + downTimerText)로 표시한다. 체력이 낮다고 별도 경고 연출(점멸 등)은
-/// 없음 — 다운 여부만이 유일한 강조 트리거. 카운트다운은 PlayerDownState.RemainingDownTime(부활
-/// 시전 중엔 정지된 값)을 Update()에서 매 프레임 정수 초로 갱신한다.
+/// [사망 표시 없음 — ReviveSystemDesign.md §11.1/§11.2, 2026-09-19]
+/// 이 패널은 **이름 + HP만** 표시한다. 다운 표시(HELP 아이콘 + 카운트다운)는 다운 시스템과 함께,
+/// 사망 표시(SetDead)는 자동 부활과 함께 폐기됐다 — 1초 만에 살아나므로 하트를 비웠다 되돌리는
+/// 것이 깜빡임밖에 안 된다. 부활 직후 HP 0→3은 PlayerEvents.OnHealed로 자동 반영된다.
 ///
 /// 팀워드 응원 진행도는 이 패널이 아니라 캐릭터 머리 위 빨간 느낌표(PlayerCheerHeartsUI, 미통과만
 /// 표시 — 통과하면 소거, 2026-09-14 3차 변경)로 표시한다
@@ -73,23 +72,13 @@ public class TeamStatusUI : MonoBehaviour
         [Tooltip("아직 합류하지 않은 자리 표시 그룹(플레이스홀더). showEmptySlots가 true일 때만 사용.")]
         public GameObject emptyGroup;
 
-        [Tooltip("다운 시 표시할 그룹(HELP 이미지 + 타이머). 평소엔 비활성 상태로 배치.")]
-        public GameObject downIndicator;
-        [Tooltip("다운 생존 카운트다운 텍스트 (10 → 9 → 8 ... → 0).")]
-        public TextMeshProUGUI downTimerText;
-
         // ── 런타임 상태 (인스펙터 비노출) ──────────────────────────
         [System.NonSerialized] public int colorIndex = -1;
         [System.NonSerialized] public Player player;
         [System.NonSerialized] public PlayerEvents events;
-        [System.NonSerialized] public PlayerDownState downState;
         [System.NonSerialized] public System.Action onDamaged;
         [System.NonSerialized] public System.Action onHealed;
-        [System.NonSerialized] public System.Action onDied;
         [System.NonSerialized] public System.Action onRespawned;
-        [System.NonSerialized] public System.Action onDowned;
-        [System.NonSerialized] public System.Action onRevived;
-        [System.NonSerialized] public int shownDownSeconds = -1;
     }
 
     [Header("연결")]
@@ -168,9 +157,6 @@ public class TeamStatusUI : MonoBehaviour
                 Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 heartImages가 비어 있습니다 — HP가 표시되지 않습니다. ({name})", this);
             if (showEmptySlots && slot.emptyGroup == null)
                 Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 emptyGroup이 비어 있습니다 — showEmptySlots가 켜져 있는데 빈 자리 표시가 없습니다. ({name})", this);
-            if (slot.downIndicator == null || slot.downTimerText == null)
-                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 downIndicator/downTimerText가 비어 있습니다 — 다운 표시가 나타나지 않습니다. ({name})", this);
-
             usable++;
         }
 
@@ -358,7 +344,6 @@ public class TeamStatusUI : MonoBehaviour
         if (slot.heartImages != null)
             foreach (var h in slot.heartImages)
                 if (h != null) h.gameObject.SetActive(visible);
-        if (!visible && slot.downIndicator != null) slot.downIndicator.SetActive(false);
     }
 
     /// <summary>슬롯이 담당할 Player를 바꾼다. 실제로 바뀔 때만 PlayerEvents 구독을 갈아탄다.</summary>
@@ -372,39 +357,25 @@ public class TeamStatusUI : MonoBehaviour
         {
             if (slot.onDamaged != null) slot.events.OnDamaged -= slot.onDamaged;
             if (slot.onHealed != null) slot.events.OnHealed -= slot.onHealed;
-            if (slot.onDied != null) slot.events.OnDied -= slot.onDied;
             if (slot.onRespawned != null) slot.events.OnRespawned -= slot.onRespawned;
-            if (slot.onDowned != null) slot.events.OnDowned -= slot.onDowned;
-            if (slot.onRevived != null) slot.events.OnRevived -= slot.onRevived;
         }
 
         slot.player = player;
         slot.events = player != null ? player.GetComponent<PlayerEvents>() : null;
-        slot.downState = player != null ? player.GetComponent<PlayerDownState>() : null;
 
         if (slot.events != null)
         {
             var s = slot; // 클로저 캡처 안전화
             slot.onDamaged = () => RefreshSlotVisual(s);
             slot.onHealed = () => RefreshSlotVisual(s);
-            slot.onDied = () => SetDead(s, true);
-            slot.onRespawned = () => SetDead(s, false);
-            slot.onDowned = () => SetDowned(s, true);
-            slot.onRevived = () => SetDowned(s, false);
+            slot.onRespawned = () => RefreshSlotVisual(s);
             slot.events.OnDamaged += slot.onDamaged;
             slot.events.OnHealed += slot.onHealed;
-            slot.events.OnDied += slot.onDied;
             slot.events.OnRespawned += slot.onRespawned;
-            slot.events.OnDowned += slot.onDowned;
-            slot.events.OnRevived += slot.onRevived;
-
-            // 이미 다운 중인 플레이어를 새로 슬롯에 배정하는 경우(리빌드 타이밍) 초기 상태를 맞춘다.
-            SetDowned(slot, IsShowingDown(slot));
         }
         else
         {
-            slot.onDamaged = slot.onHealed = slot.onDied = slot.onRespawned = slot.onDowned = slot.onRevived = null;
-            SetDowned(slot, false);
+            slot.onDamaged = slot.onHealed = slot.onRespawned = null;
         }
     }
 
@@ -537,65 +508,4 @@ public class TeamStatusUI : MonoBehaviour
         }
     }
 
-    /// <summary>사망 시 하트를 전부 빈 하트로 표시. 죽으면 씬이 리셋되므로 별도 배경/텍스트 색 연출은 불필요.</summary>
-    void SetDead(ColorSlot slot, bool isDead)
-    {
-        if (slot == null || slot.root == null) return;
-
-        if (isDead && slot.heartImages != null)
-            foreach (var h in slot.heartImages)
-                if (h != null) h.sprite = emptyHeartSprite;
-
-        // 완전사망 후에도 PlayerDownState.IsDowned는 true로 남으므로(§9) 사망 시점에 직접 내린다.
-        if (isDead) SetDowned(slot, false);
-        else RefreshSlotVisual(slot);
-    }
-
-    // ── 다운 표시 (DownedReviveSystemDesign.md §6) ─────────────────
-
-    /// <summary>다운 중이면서 아직 완전사망 전인지. 사망 후 IsDowned가 true로 남는 설계(§9) 때문에 IsDead를 함께 본다.</summary>
-    static bool IsShowingDown(ColorSlot slot) =>
-        slot.downState != null && slot.downState.IsDowned && slot.player != null && !slot.player.IsDead;
-
-    /// <summary>
-    /// 다운 진입/해제 시 하트 5칸 ↔ HELP 인디케이터를 서로 배타적으로 전환한다.
-    /// 다운 중엔 하트를 완전히 숨겨 그 자리를 HELP+타이머가 대신 차지하게 하고(가독성 저하 방지,
-    /// 2026-09-15 사용자 피드백 — 예전엔 빈 하트 5칸이 그대로 남아있는 채로 HELP가 옆에 곁다리로
-    /// 붙어 나왔다), 해제 시엔 RefreshSlotVisual로 하트를 원상 복구한다.
-    /// </summary>
-    void SetDowned(ColorSlot slot, bool isDowned)
-    {
-        if (slot == null) return;
-        if (slot.downIndicator != null) slot.downIndicator.SetActive(isDowned);
-
-        if (isDowned)
-        {
-            if (slot.heartImages != null)
-                foreach (var h in slot.heartImages)
-                    if (h != null) h.gameObject.SetActive(false);
-        }
-        else
-        {
-            RefreshSlotVisual(slot);
-        }
-
-        slot.shownDownSeconds = -1;
-        if (isDowned) RefreshDownTimer(slot);
-    }
-
-    /// <summary>PlayerDownState.RemainingDownTime(부활 시전 중엔 정지된 값)을 정수 초로 표시. 값이 바뀔 때만 텍스트 갱신.</summary>
-    static void RefreshDownTimer(ColorSlot slot)
-    {
-        if (slot.downTimerText == null || slot.downState == null) return;
-        int seconds = Mathf.CeilToInt(slot.downState.RemainingDownTime);
-        if (seconds == slot.shownDownSeconds) return;
-        slot.shownDownSeconds = seconds;
-        slot.downTimerText.text = seconds.ToString();
-    }
-
-    void Update()
-    {
-        foreach (var slot in slots)
-            if (slot != null && IsShowingDown(slot)) RefreshDownTimer(slot);
-    }
 }

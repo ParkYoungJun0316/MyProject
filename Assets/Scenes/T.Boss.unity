@@ -2699,6 +2699,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageNetworkState
   ShowTopMostFoldoutHeaderGroup: 1
+  disableRevive: 0
   deathReloadDelay: 1.75
 --- !u!114 &116138189
 MonoBehaviour:
@@ -39009,7 +39010,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2018443943}
   - component: {fileID: 2018443942}
-  - component: {fileID: 2018443944}
   - component: {fileID: 2018443945}
   m_Layer: 0
   m_Name: BossFlow
@@ -39341,18 +39341,6 @@ Transform:
   - {fileID: 868003335}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2018443944
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2018443941}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79b2fab2733786d44814d5f5c355dba3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StageResetOnPlayerDeath
 --- !u!114 &2018443945
 MonoBehaviour:
   m_ObjectHideFlags: 0

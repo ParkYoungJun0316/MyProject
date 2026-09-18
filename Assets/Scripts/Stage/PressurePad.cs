@@ -11,10 +11,15 @@ using UnityEngine.Serialization;
 ///  - effectiveColor에 해당하는 플레이어가 requiredCount명 이상 올라가면 IsFulfilled = true → OnFulfilled 발생
 ///  - 인원이 부족해지면 IsFulfilled = false → OnUnfulfilled 발생
 ///
-/// [색상 규칙]
-///  - designColor  : Inspector에서 설정하는 4인 기준 원래 의도 색 (직렬화 유지)
-///  - effectiveColor : 런타임 실제 적용 색. StagePressurePadSetup이 SetEffectiveColor()로 덮어씀
+/// [색상 규칙 — SessionColorSlotMap이 SSOT]
+///  - designColor   : Inspector에서 설정하는 4인 기준 원래 설계 색 (직렬화 유지)
+///  - EffectiveColor: 런타임 실제 적용 색. **SessionColorSlotMap에서 직접 당겨온다.**
+///    이번 판에 그 색이 없으면 Common으로 떨어져 누구나 밟을 수 있게 된다.
 ///  - Common이면 모든 플레이어 허용
+///
+///  예전엔 StagePressurePadSetup이 씬 전역을 훑어 SetEffectiveColor()로 밀어넣었는데,
+///  그 방식은 호출 순서가 곧 정합성이고 1회 적용 후 래치라 실패해도 복구되지 않았다.
+///  지금은 이 패드가 스스로 당겨오므로 매핑이 언제 확정되든 다음 프레임에 수렴한다.
 ///
 /// [씬 설정]
 ///  1. 빈 GameObject에 Collider(Is Trigger = true) + 이 스크립트 추가
@@ -26,7 +31,7 @@ public class PressurePad : MonoBehaviour
 {
     [Header("색상 소유권")]
     [Tooltip("4인 기준 원래 설계 색. Common: 모든 플레이어 허용 / 나머지: 해당 색 고유색 플레이어만 허용.\n" +
-             "런타임 실제 적용은 effectiveColor 기준 (StagePressurePadSetup이 덮어씀).")]
+             "런타임 실제 적용은 SessionColorSlotMap이 정한다 — 이번 판에 그 색이 없으면 Common이 된다.")]
     [FormerlySerializedAs("ownerColor")]
     public PlayerColorType designColor = PlayerColorType.Common;
 
@@ -56,35 +61,55 @@ public class PressurePad : MonoBehaviour
     public bool IsFulfilled  => _isFulfilled;
     public int  CurrentCount => _players.Count;
 
-    /// <summary>런타임 실제 적용 색. Awake에서 designColor로 초기화되며 SetEffectiveColor()로 변경 가능.</summary>
+    /// <summary>런타임 실제 적용 색. SessionColorSlotMap에서 당겨온 값이다.</summary>
     public PlayerColorType EffectiveColor => _effectiveColor;
 
     PlayerColorType       _effectiveColor;
+    int                   _appliedMapVersion = -1;
     bool                  _isFulfilled;
     int                   _lastNotifiedCount = -1;
     readonly List<Player> _players = new List<Player>();
 
     void Awake()
     {
-        _effectiveColor = designColor;
-
         Collider col = GetComponent<Collider>();
         col.isTrigger = true;
+
+        PullEffectiveColor();
     }
 
     /// <summary>
-    /// 런타임 적용 색을 변경한다. StagePressurePadSetup에서 인원·색 배정 후 호출.
-    /// 현재 올라가 있는 플레이어 목록은 초기화되지 않으므로 Setup 완료 전에 호출할 것.
+    /// 매핑이 바뀌었을 때만 실제 색을 다시 당겨오고 비주얼을 맞춘다.
+    /// 색이 바뀌면 이미 올라가 있던 사람의 자격도 바뀌므로 점유를 재평가한다 —
+    /// 안 하면 "이제 못 밟는 색인데 여전히 밟은 것으로 세어지는" 상태가 남는다.
     /// </summary>
-    public void SetEffectiveColor(PlayerColorType color)
+    void PullEffectiveColor()
     {
-        _effectiveColor = color;
+        if (_appliedMapVersion == SessionColorSlotMap.Version) return;
+        _appliedMapVersion = SessionColorSlotMap.Version;
+
+        PlayerColorType next = SessionColorSlotMap.Resolve(designColor);
+        if (next == _effectiveColor && _players.Count == 0)
+        {
+            GetComponent<ColoredPadVisual>()?.Apply(_effectiveColor);
+            return;
+        }
+
+        _effectiveColor = next;
+        GetComponent<ColoredPadVisual>()?.Apply(_effectiveColor);
+
+        for (int i = _players.Count - 1; i >= 0; i--)
+        {
+            Player p = _players[i];
+            if (p == null || !p.CountsForOccupancy || !IsAllowed(p)) _players.RemoveAt(i);
+        }
+        Evaluate();
     }
 
     void OnTriggerEnter(Collider other)
     {
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead) return;
+        if (p == null || !p.CountsForOccupancy) return;
         if (!IsAllowed(p)) return;
         if (_players.Contains(p)) return;
 
@@ -108,7 +133,7 @@ public class PressurePad : MonoBehaviour
     void OnTriggerStay(Collider other)
     {
         Player p = other.GetComponent<Player>();
-        if (p == null || p.IsDead) return;
+        if (p == null || !p.CountsForOccupancy) return;
 
         bool allowedNow  = IsAllowed(p);
         bool alreadyOn   = _players.Contains(p);
@@ -129,10 +154,12 @@ public class PressurePad : MonoBehaviour
     // 죽은 플레이어를 매 프레임 정리
     void Update()
     {
+        PullEffectiveColor();
+
         bool changed = false;
         for (int i = _players.Count - 1; i >= 0; i--)
         {
-            if (_players[i] == null || _players[i].IsDead)
+            if (_players[i] == null || !_players[i].CountsForOccupancy)
             {
                 _players.RemoveAt(i);
                 changed = true;

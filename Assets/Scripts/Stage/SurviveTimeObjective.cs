@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 /// <summary>
 /// X초 동안 살아남기. targetTime 경과 시 완료.
-/// 사망·추락 처리는 Player / StageResetOnPlayerDeath·PhaseManager가 담당.
+/// 사망·추락 처리는 Player / PlayerReviveState·PhaseManager가 담당.
 /// </summary>
 public class SurviveTimeObjective : StageObjective
 {

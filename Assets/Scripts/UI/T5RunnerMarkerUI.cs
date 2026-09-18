@@ -7,12 +7,12 @@ using UnityEngine;
 /// `TStage5RunnerRedesign.md` §1.5.
 ///
 /// [왜 씬에 1개인가]
-/// 러너는 라운드마다 한 명뿐이라 마커도 하나면 충분하다. Player 프리팹에 붙이면 인원수만큼
+/// 러너는 판마다 한 명뿐이라 마커도 하나면 충분하다. Player 프리팹에 붙이면 인원수만큼
 /// 컴포넌트가 생기고 프리팹 수정까지 필요한데, 씬 오브젝트 하나가 러너를 따라다니면 그만이다.
 /// (PlayerNameTagUI가 프리팹에 붙는 건 사람마다 내용이 다르기 때문 — 여기는 그렇지 않다)
 ///
 /// [표시 규칙]
-/// - 라운드 진행 중이 아니면 숨김.
+/// - 러너가 아직 정해지지 않았으면 숨김.
 /// - **로컬 플레이어가 러너면 숨김** — 자기 머리 위 화살표는 시야만 가린다. 1층을 달리는
 ///   본인은 이미 자기 위치를 안다. 솔로도 이 규칙에 걸려 자동으로 안 보인다.
 /// - 그 외(=내가 2층 안내자)에게만 보인다. 이게 §1.5가 요구한 "2층 인원에게만".
@@ -79,9 +79,8 @@ public class T5RunnerMarkerUI : MonoBehaviour
         var net = StageNetworkState.Instance;
         var nm  = NetworkManager.Singleton;
         if (net == null || nm == null || !nm.IsListening) return null;
-        if (net.T5CurrentRound < 0) return null;
-
-        ulong runnerId = net.T5CurrentRunnerClientId;
+        ulong runnerId = net.T5RunnerClientId;
+        if (runnerId == StageNetworkState.NoRunner) return null; // 아직 미추첨
 
         // 내가 러너면 내 머리 위에 화살표를 띄우지 않는다.
         if (runnerId == nm.LocalClientId) return null;
@@ -98,7 +97,7 @@ public class T5RunnerMarkerUI : MonoBehaviour
 
     /// <summary>
     /// clientId로 Player를 찾는다. Client에서는 `ConnectedClients`가 비어 있으므로
-    /// 씬의 Player를 훑어 OwnerClientId로 대조한다 — 한 라운드에 한 번만 도는 경로다.
+    /// 씬의 Player를 훑어 OwnerClientId로 대조한다 — 판당 한 번만 도는 경로다.
     /// </summary>
     static Transform FindPlayerTransform(ulong clientId)
     {

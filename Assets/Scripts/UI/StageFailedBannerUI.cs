@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// 스프라이트·크기·위치는 이 패널의 Image / RectTransform에서 맞춘다. 이 스크립트는 타이밍만 담당.
 ///
 /// [트리거]
-/// StageNetworkState.OnAnyStageFailedPulse (Host 로컬 + ClientRpc) — NotifyPlayerDeathServerRpc
+/// StageNetworkState.OnAnyStageFailedPulse (Host 로컬 + ClientRpc) — BeginStageResetOnServer
 /// 진입 시 1회 발동하므로 즉사·다운 방치 만료 등 사망 원인과 무관하게 항상 뜬다.
 /// Image 미연결·미스프라이트면 배너만 없다.
 /// </summary>

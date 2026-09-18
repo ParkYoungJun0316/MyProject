@@ -129,9 +129,9 @@ public class SequenceRingObjective : StageObjective
     {
         OnProgressChanged?.Invoke();
 
-        // Fail() 확정도 동일하게 Host 레인에서만. KillAllPlayers()의 NetworkDamageUtil.ApplyInstantKill은
-        // 이미 내부적으로 Server 가드가 있어 전 머신에서 호출해도 안전 — 그대로 둔다.
-        KillAllPlayers();
+        // Fail() 확정도 동일하게 Host 레인에서만. 실패 처리는 Fail() → StageManager 한 경로뿐이다
+        // — 자체 전원 즉사(구 KillAllPlayers)는 StageManager의 실패 통보와 중복이라 삭제됐다
+        // (ReviveSystemDesign.md §6).
         if (IsClientOnly()) return;
 
         Fail();
@@ -141,16 +141,6 @@ public class SequenceRingObjective : StageObjective
     {
         var nm = NetworkManager.Singleton;
         return nm != null && nm.IsListening && !nm.IsServer;
-    }
-
-    void KillAllPlayers()
-    {
-        Player[] players = UnityEngine.Object.FindObjectsByType<Player>(FindObjectsSortMode.None);
-        foreach (Player p in players)
-        {
-            if (p == null || p.IsDead) continue;
-            NetworkDamageUtil.ApplyInstantKill(p);
-        }
     }
 
     // ── 구독 해제 ─────────────────────────────────────────────────
