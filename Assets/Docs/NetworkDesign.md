@@ -4,8 +4,8 @@
 **출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고.**  
 **사망/부활 스펙은 [`ReviveSystemDesign.md`](ReviveSystemDesign.md)가 1차 SSOT** — 이 문서는 축 규칙(권위·리로드 문·텔레포트)만 다룬다. ⚠️ 2026-09-19 다운 구조 폐기 → 사망+자동부활.  
 **데모 / Playtest 없음.** 목표 = **2026-09-16 Steam 정식 출시**만.  
-스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`**.  
-(`End.Demo` = 클리어 UI 씬명 레거시. 리네임은 별도 작업.)
+스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`**.  
+(`End` = 클리어 크레딧 씬. 구 `End`에서 리네임됨.)
 
 ---
 
@@ -31,7 +31,7 @@
 > **⭐ 2026-08-17 확정 — `1.Lobby` 씬 폐지.** 로비가 하던 일(Kick·색 선택·Ready·Start·Steam Invite UI)은 전부 `Tutorial` 씬 앞부분(사전 게이트 구간)으로 흡수됐다. **상세 SSOT는 §6B** — 이 절 표는 씬 시퀀스 개요만. 씬 파일명도 숫자 prefix 없이 `Title`/`Tutorial`로 정리(실제 리네임은 에디터 작업, 사용자 담당).
 
 ```
-Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End.Demo → Title
+Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End → Title
 ```
 
 | 씬 | 역할 |
@@ -40,15 +40,15 @@ Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → E
 | `Tutorial` | **Ship Must** — **사전 게이트 구간(구 Lobby 역할 흡수, §6B)** + 조작·CheerName·응원 체험 + `TutorialGatherZone` |
 | `M.Stage1`…`M.Stage5` / `M.Boss` | M 바이옴 + 보스 |
 | `T.Stage1`…`T.Stage5` / `T.Boss` | T 바이옴 + 보스 |
-| `End.Demo` | 클리어 UI → 타이틀 복귀 (씬명 레거시) |
+| `End` | 크레딧 → 타이틀 복귀 |
 
 `SceneFlowManager.sceneSequence` 권장 순서:  
-`Tutorial`, `M.Stage1`…`M.Stage5`, `M.Boss`, `T.Stage1`…`T.Stage5`, `T.Boss`, `End.Demo`.
+`Tutorial`, `M.Stage1`…`M.Stage5`, `M.Boss`, `T.Stage1`…`T.Stage5`, `T.Boss`, `End`.
 
 ### 2.2 솔로 (1인 Host)
 
 ```
-Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스테이지 시퀀스) → End.Demo → Title
+Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스테이지 시퀀스) → End → Title
 ```
 
 - **NGO 사용.** `LobbyMode.OnlineHost` + `partySize=1`. 멀티와 동일 코드 경로.
@@ -147,7 +147,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 | 문 | 경로 | Reason |
 |----|------|--------|
-| 클리어 | `EndDemoController` → `End.Demo` 복귀 버튼 | `EndDemo` (`FullRunReset`) |
+| 클리어 | `EndCreditsController` → 크레딧 종료/스킵 | `EndDemo` (`FullRunReset`) |
 | Client 이탈(본인이 끊김을 감지) | `DisconnectManager.OnClientLeft` | `ClientDisconnected` |
 | Host 이탈/Quit | `DisconnectManager.OnClickLeaveRoom` → 타 Client에 `NotifyAllReturnClientRpc` 통지 | `HostQuitRoom` |
 | Tutorial 사전 게이트 구간 Quit | Tutorial 상시 HUD의 나가기 버튼 (구 `LobbyMenuController.OnClickQuit` 역할 이전, 클래스명은 구현 시 확정) | `LobbyQuit` |
@@ -212,7 +212,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 2. 전원 `TutorialGatherZone`에 진입 → 카운트다운 → M.Stage1 전환 확인 (③)
 3. 인게임 중 Client 강제 종료(연결 끊기) → Host 포함 전원 타이틀 복귀 확인 (⑤)
 4. 인게임 중 Host 종료 → Client `NotifyAllReturnClientRpc` 수신 후 타이틀 복귀 확인 (⑤)
-5. 클리어(`End.Demo`) → 타이틀 복귀 버튼 → `GameSession`/`SceneFlowManager` 리셋 확인 (⑤→①)
+5. 클리어(`End`) → 크레딧 종료/스킵 → `GameSession`/`SceneFlowManager` 리셋 확인 (⑤→①)
 6. `grep`: 게임 코드 내 `NetworkManager.Shutdown()` 직접 호출 — `NetworkManagerSetup` 내부 1곳 제외 **0건**
 
 ---
@@ -585,9 +585,9 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 
 - Host가 `NetworkSceneManager.LoadScene` (Tutorial 게이트 통과→`M.Stage1`, 스테이지 전환, 리로드).
 - `SceneFlowManager.LoadNextScene`: `sceneSequence` 순서  
-  (`Tutorial` → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`).
-- `T.Boss` 클리어 → **`End.Demo`**.
-- `End.Demo`: 클리어 UI → **타이틀 복귀**.
+  (`Tutorial` → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`).
+- `T.Boss` 클리어 → **`End`**.
+- `End`: 클리어 UI → **타이틀 복귀**.
 
 ### 타이틀 복귀 시
 
@@ -1637,11 +1637,11 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 ---
 
-## 14. End.Demo
+## 14. End
 
-- 클리어 UI 씬 **`End.Demo`** (씬명 레거시 — 리네임 별도).
+- 클리어 UI 씬 **`End`** (구 `End`에서 리네임).
 - `T.Boss` 클리어 후 진입. 멀티/솔로 공통.
-- UI: 타이틀 복귀 버튼 → §8 타이틀 복귀 규칙.
+- UI: 검은 화면 크레딧 롤 → 종료/스킵 시 §8 타이틀 복귀 규칙.
 
 ---
 
@@ -1654,8 +1654,8 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | `TutorialGatherZone` 구현 (§6B.3) | 구현 시 |
 | 스테이지 씬 내 Player 프리팹 인스턴스 제거 | 구현 시 |
 | Network Player Prefab 생성 + NetworkManager 등록 | 구현 시 |
-| `End.Demo` 씬 (Build Settings 등록) | 구현 시 |
-| `sceneSequence`에 `Tutorial`·M1–5·M.Boss·T1–5·T.Boss·`End.Demo` | `SceneFlowManager` |
+| `End` 씬 (Build Settings 등록) | 구현 시 |
+| `sceneSequence`에 `Tutorial`·M1–5·M.Boss·T1–5·T.Boss·`End` | `SceneFlowManager` |
 
 ---
 
@@ -1680,7 +1680,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 11. 애니 → SFX → 응원 확장 → Tutorial → 난이도(Coming Soon play test) → 출시 QA
 12. **2026-09-16 정식 출시**
 13. **텔레메트리** — [`TelemetryDesign.md`](TelemetryDesign.md) (**출시 후 OK**)
-14. M/T 풀코스+보스 (`sceneSequence`) + `End.Demo` + UI 옵션
+14. M/T 풀코스+보스 (`sceneSequence`) + `End` + UI 옵션
 
 ### 16.2 Post-Launch
 

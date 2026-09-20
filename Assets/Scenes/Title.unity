@@ -500,7 +500,7 @@ MonoBehaviour:
   spinnerRotationSpeed: -180
   defaultMinHoldSeconds: 0.8
   defaultFadeDuration: 0.35
-  playersReadyTimeoutSeconds: 8
+  gateTimeoutSeconds: 5
 --- !u!114 &263808207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -661,7 +661,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleMenuController
   lobbySceneName: Tutorial
-  discordUrl: https://discord.gg/
+  discordUrl: https://discord.gg/BGNs5F2eg
   settingsPanel: {fileID: 1094401261}
   joinPanel: {fileID: 1443752480}
   roomCodeInputField: {fileID: 1331244839}
@@ -3315,6 +3315,7 @@ MonoBehaviour:
   - T.Stage4
   - T.Stage5
   - T.Boss
+  - End
   clearToTransitionDelay: 2.5
   _currentSceneIndex: -1
 --- !u!4 &1708256978

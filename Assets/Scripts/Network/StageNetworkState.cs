@@ -379,8 +379,8 @@ public class StageNetworkState : NetworkBehaviour
     );
 
     // ── T.Stage5 러너 슬롯 (T5 전용) ──
-    // 이번 판의 러너 clientId 하나뿐이다. 맵 인덱스는 **여기 없다** — 시드에서 나오므로
-    // StageVariantPicker가 전 머신에서 같은 답을 낸다(StageVariantPickerBase 주석의 규약).
+    // 이번 판의 러너 clientId 하나뿐이다. 맵 인덱스는 **여기 없다** — T5는 맵이 한 장이다
+    // (TStage5RunnerRedesign.md §1.1). 시드에서 파생되는 값은 각 머신이 직접 계산한다.
     // 러너만 NV인 이유는 Host 전권인 체이서가 "타겟의 진실"을 한 곳에서 읽어야 하기 때문이다.
     private readonly NetworkVariable<ulong> _t5Runner = new(
         NoRunner,
@@ -1679,12 +1679,12 @@ public class StageNetworkState : NetworkBehaviour
     // ── T.Stage4 파괴 타일 보고 (Client → Host → 전 머신, 상주 릴레이) ────
     // BreakTile은 판 하나에 수십~백 개라 NetworkObject로 만들 수 없다. 그래서 위 TrapProjectile과
     // 같은 이유로 이 오브젝트를 릴레이로 쓴다 — 타일은 전 머신 공통 인덱스로 가리킨다
-    // (BreakTileDirector가 이름순 정렬로 배정). `TStage4TrapRandomization.md` §4.1.
+    // (BreakTileDirector가 월드 좌표 정렬로 배정). `TStage4TrapRandomization.md` §4.1.
 
-    /// <summary>Host 레인 전용: 타일이 밟혔다는 보고. BreakTileDirector가 구독해 붕괴 시각을 정한다.</summary>
+    /// <summary>Host 레인 전용: 타일이 밟혔다는 보고. BreakTileDirector가 구독해 파괴 시각을 정한다.</summary>
     public event Action<int> OnBreakTileStepReported;
 
-    /// <summary>전 머신: (타일 인덱스, 붕괴 서버 시각). 이 값 하나로 전 머신이 같은 순간에 무너진다.</summary>
+    /// <summary>전 머신: (타일 인덱스, 파괴 서버 시각). 이 값 하나로 전 머신이 같은 순간에 부서진다.</summary>
     public event Action<int, double> OnBreakTileArmed;
 
     /// <summary>
@@ -1697,14 +1697,14 @@ public class StageNetworkState : NetworkBehaviour
         OnBreakTileStepReported?.Invoke(tileIndex);
     }
 
-    /// <summary>Host: 확정한 붕괴 서버 시각을 전 머신에 배포. BreakTileDirector에서만 호출.</summary>
+    /// <summary>Host: 확정한 파괴 서버 시각을 전 머신에 배포. BreakTileDirector에서만 호출.</summary>
     public void BroadcastBreakTileArm(int tileIndex, double collapseServerTime)
     {
         if (!IsServer || IsDespawned) return;
         ArmBreakTileClientRpc(tileIndex, collapseServerTime);
     }
 
-    /// <summary>Host 자신도 클라로서 받는다 — 붕괴 경로를 전 머신 하나로 유지한다.</summary>
+    /// <summary>Host 자신도 클라로서 받는다 — 파괴 경로를 전 머신 하나로 유지한다.</summary>
     [ClientRpc]
     void ArmBreakTileClientRpc(int tileIndex, double collapseServerTime)
     {

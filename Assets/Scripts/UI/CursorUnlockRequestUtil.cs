@@ -9,7 +9,7 @@ using UnityEngine;
 /// (요청 목록 → 실제 Cursor 상태로만 흐르는 단방향 — 2026-08-22, Bug Hunter 리뷰 3항목 중 2번 수정).
 ///
 /// [사용처] TutorialCheerNameUI, EscMenuController. (IsRequested만 읽는 쪽: Player Space 버프·PlayerEmoteMenuUI 숫자키·ThirdPersonCamera)
-/// TitleReturnFlow/EndDemoController처럼 인게임을 완전히 벗어나는 전역 전환은 이 유틸을 거치지
+/// TitleReturnFlow/EndCreditsController처럼 인게임을 완전히 벗어나는 전역 전환은 이 유틸을 거치지
 /// 않고 Cursor를 직접 강제 설정한다 — 그 시점엔 다른 UI 상태가 의미 없어지므로 정상.
 ///
 /// [정적 상태 안전성 — 파괴 시엔 Forget, 정상 닫힘일 때만 Release, 2026-08-22 수정]

@@ -1,4 +1,4 @@
-# 씬 준비 게이트 · 색 매핑 · 변형판 Picker
+# 씬 준비 게이트 · 색 매핑
 
 **상태(2026-09-18):** 코드 구현 완료 · 씬 배선 미완 · V단계 검증 전
 **이 문서가 아래 세 시스템의 SSOT다.** 셋 다 T4/T5에서 출발했지만 **전 씬 공통**이다.
@@ -7,7 +7,7 @@
 |---|---|---|---|
 | A | **씬 준비 게이트** | `LoadingCurtain` + `StageNetworkState` | 커튼은 시간이 아니라 **조건**으로 걷힌다 |
 | B | **색 매핑** | `SessionColorSlotMap` | 빈 색 슬롯 → **Common**. 조회자가 **당겨간다** |
-| C | **변형판 Picker** | `StageVariantPicker(Base)` | 겹쳐 둔 판 N개 중 시드로 골라 활성화 |
+| ~~C~~ | ~~**변형판 Picker**~~ | ~~`StageVariantPicker(Base)`~~ | **폐기 · 파일째 삭제(2026-09-21).** 살아남은 규약은 §C |
 
 ---
 
@@ -63,7 +63,6 @@ BeginCover
 |---|---|---|
 | `players` | `LoadingCurtain` | 전원 스폰(`PlayerSpawnCoordinator.OnPlayersReady`) |
 | `net.allready` | `StageNetworkState` | 전원이 자기 로컬 게이트를 끝냈다고 보고(§A.4 비트마스크) |
-| `t4.board` | `BreakTileDirector` | T4 격자 판 선택 완료. 판 5장이 비활성이라 **디렉터가 대신** 건다 |
 | `t5.map` | `T5RunnerDirector` | T5 미로 맵 선택 + 러너 발판 끄기 완료. 같은 이유로 디렉터가 대신 건다 |
 
 ### A.4 왜 NV 비트마스크인가 (ClientRpc 왕복이 아니라)
@@ -231,80 +230,60 @@ T5는 빠진 슬롯을 Common으로 풀지 않고 **벽**으로 막는다. 그�
 
 ---
 
-## C. 변형판 Picker — 겹쳐 두고 하나만 켠다
+## C. ❌ 변형판 Picker — 폐기 (2026-09-21. 코드 파일째 삭제)
 
-### C.1 두 개인 이유
+**`StageVariantPicker` · `StageVariantPickerBase`를 삭제했다.** 프로젝트 전체에서 사용처가 0이 됐다:
 
-라이프사이클이 다르다. 그리고 앞으로 T.Stage2·T.Boss도 시드화할 수 있으므로 공용 부품으로 뺐다.
+| 쓰던 곳 | 지금 |
+|---|---|
+| T5 미로 맵 7장 | **맵 1장으로 재설계** (2026-09-20, `TStage5RunnerRedesign.md` §1.1) |
+| T4 격자 판 5장 | **판 1장으로 축소** (2026-09-21, `TStage4TrapRandomization.md` §2.4.1) |
+| T.Boss 붕괴 트랙 | 후보가 **1장뿐**이라 뽑기가 의미 없었다 — 판을 활성 저장으로 바꾸고 Picker 제거 |
+| `StageVariantRoundPicker` | 그 전에 이미 삭제(2026-09-19, T5 라운드 구조 폐기) |
 
-| | 언제 고르나 | 쓰는 곳 |
-|---|---|---|
-| `StageVariantPicker` | **1회** (런당 한 판) | T4 격자 판 5장 · **T5 미로 맵 7장 중 1장** · 앞으로 T.Stage2·T.Boss도 |
+**"겹쳐 두고 시드로 하나만 켠다"는 축이 이 프로젝트에서 두 번 연속 폐기됐다.** 두 번 다 이유가
+같다 — 후보를 N장 유지하는 비용은 확실한데 **플레이어가 그 차이를 인지하지 못했다.**
+다시 꺼내기 전에 그 두 사례를 먼저 읽을 것.
 
-> **`StageVariantRoundPicker`는 삭제한다 (2026-09-19).** 유일한 사용처가 T5의 라운드 2개였고,
-> 그 구조가 폐기됐다(`TStage5RunnerRedesign.md` §1.1). 앞으로 시드로 지형을 바꾸는 곳은
-> **전부 `StageVariantPicker` 하나**를 쓴다.
+**살아남은 규약(다른 컴포넌트가 계속 쓴다):**
 
-### C.2 Picker는 NV를 건드리지 않는다
-
-> Picker가 하는 일: 후보 수집 · 시드 뽑기 · 앵커로 이동 · 활성화 토글
-> Picker가 **하지 않는** 일: 결과를 네트워크에 알리는 것
-
-**뽑은 결과는 어차피 NV에 실을 필요가 없다** — 입력이 시드뿐이라 전 머신이 같은 답을 낸다.
-NV가 필요해지는 것은 *시드에서 나오지 않는 것*뿐이고(T5의 러너 clientId는 Host 전권인 체이서가
-읽어야 해서 NV 1개를 쓴다), **그건 디렉터 몫이다.** Picker가 NV까지 건드리면 "어느 판인가"의
-답이 두 군데 생긴다.
-
-### C.3 salt — 계층 경로 자동 배정
-
-시드는 방 전체에 **하나뿐**이라 그대로 쓰면 시드를 쓰는 모든 컴포넌트가 같은 난수를 뽑는다.
-그래서 각자 고유한 덧칠 값(salt)을 XOR한다.
-
-**인스펙터에 손으로 넣지 않는다** — 실제로 '전 인스턴스 동일 색' 버그를 낸 이력이 있다.
-대신 `SceneStableRegistry<StageVariantPickerBase>`가 **씬 계층 경로**
-(`StageManager5#0002/T5_Mazes#0000/Map_03#0002` 같은 문자열)로 정렬해 번호를 자동 배정하고,
-그 번호를 salt에 섞는다. 같은 씬 파일을 로드하는 전 머신에서 같은 번호가 나온다.
-`WallLineRandomizer`·`Breakable`과 같은 방식이다.
-
-> ⚠️ **오브젝트 이름이나 부모를 바꾸면 번호가 달라져 그 판의 뽑기 결과가 통째로 바뀐다.**
-> 런마다 시드가 바뀌니 문제는 아니지만 "아까 그 배치 다시"는 되지 않는다.
-
-### C.4 ⚠️ 변형판은 씬에 '비활성'으로 저장할 것
-
-`CapacityTile.Awake()`처럼 **휴지 위치를 기준으로 무언가를 만드는** 컴포넌트가 안에 있으면,
-Awake를 마친 뒤에 판을 옮길 때 그 기준만 원래 자리에 남는다.
-비활성 오브젝트는 Awake가 돌지 않으므로 **'선택 → 이동 → 활성화'** 순서를 지키면 안전하다
-(`ActivateOnly()`가 그 순서다). 활성 상태로 저장돼 있으면 Awake에서 강제로 꺼서 막는다.
-
-> **`anchor`를 비우면(= 후보를 이미 제자리에 겹쳐 둔 경우) 위 위험은 아예 없어진다** —
-> 옮기는 동작 자체가 사라지기 때문이다. T4·T5가 둘 다 이쪽으로 갔다.
-> **그래도 비활성 저장 규칙은 유효하다**: 겹쳐 둔 후보가 동시에 켜지면 지형이 N겹이 된다.
-
-### C.5 호출 시점 — ⚠️ OnPlayersReady 이후
-
-`Pick()`을 `Start()`에서 부르면 안 된다. 사망 리로드 때 새 시드가 RPC로 오는데 그게 `Start`보다
-먼저 도착한다는 보장이 없어 **그 판만 이전 시드로** 골라 버린다.
-`PlayerSpawnCoordinator.OnPlayersReady` 이후에 부를 것(`BreakTileDirector`가 그렇게 한다).
-
+- **salt는 인스펙터에 손으로 넣지 않는다** — `SceneStableRegistry<T>`가 씬 계층 경로로 정렬해
+  자동 배정한다. '전 인스턴스 동일 색' 버그를 낸 이력이 있어 생긴 규약이고,
+  `WallLineRandomizer`·`ArrowTrap`·`DropTrap`·`WindTrap`·`TrapPlayerTracker`가 지금도 쓴다.
+- **시드에서 나오는 답은 NV에 싣지 않는다** — 입력이 시드뿐이면 전 머신이 같은 답을 낸다.
+  NV가 필요한 것은 *시드에서 나오지 않는 것*뿐이다(T5 러너 clientId).
+- **휴지 위치를 Awake에서 굽는 컴포넌트**(`CapacityTile`)가 들어 있는 지형은 **옮기지 않는다.**
+  Picker의 `anchor` 이동을 T4·T5가 둘 다 버린 이유이며, 판이 고정된 지금은 구조적으로 안전하다.
+- **지형 교체는 커튼이 덮인 뒤에** — `LoadingCurtain` 게이트(§A)는 그대로 유효하다.
+  T4의 `"t4.board"`가 없어진 것은 규약이 바뀌어서가 아니라 **교체 자체가 없어져서**다.
 ---
 
 ## D. 씬 배선 체크리스트 (사용자 작업 — 미완)
 
 ### D.1 T.Stage4
 
-0. **판 5장을 복도 위 같은 자리에 겹친다** (`TStage4TrapRandomization.md` §2.4.1 — 2026-09-18 확정).
-   전부 **비활성**으로 저장 (§C.4)
-1. 빈 GameObject에 **`StageVariantPicker`** 추가
-   - `variants`에 `T4_Grid10_P1`~`P5`
-   - **`anchor`는 비운다** — 겹쳐 뒀으므로 옮길 필요가 없고, 옮기지 않으면 §C.4의 위험이
-     구조적으로 사라진다
+0. **판 4장 삭제 — `T4_Grid10_P1 (3)`만 남긴다** (`TStage4TrapRandomization.md` §2.4.1 —
+   2026-09-21 확정). 남긴 판은 **활성**으로 저장 (켜 줄 Picker가 없어졌다)
+1. ~~`StageVariantPicker` 추가~~ → **불필요. 컴포넌트가 삭제됐다(§C)**
 2. `BreakTileDirector`
-   - `boardPicker` ← 위 Picker  *(구 `boards`/`boardAnchor`/`corridor`/`breakCount` 필드는 삭제됨)*
-   - `warnSeconds` = **1** (씬에 2로 저장돼 있으니 반드시 확인)
-   - 준비 게이트 `"t4.board"`는 **코드가 자동으로 건다** — 배선할 것 없음 (§A.3)
-3. **`T4Grid_Break` 머티리얼을 `T4Grid_Plain`과 동일하게** — 금 간 표시를 안 하기로 했으므로
-   후보가 보이면 안 된다. 현재 거의 검정(0.06,0.07,0.08) vs 분홍(0.94,0.64,0.76)
+   - `boardRoot` ← 남긴 판  *(비우면 씬 전체에서 `BreakTile`을 모은다)*
+   - `warnSeconds` = **1** (현재 값 그대로)
+   - 구 필드 `boardPicker`는 삭제됐고 씬 YAML의 잔재는 다음 저장 때 사라진다
+3. **`T4Grid_Break` 머티리얼을 `T4Grid_Cap`(흰색)과 동일하게** — 금 간 표시를 안 하기로 했으므로
+   후보가 보이면 안 된다. 현재 거의 검정(0.06,0.07,0.08). 타일이 프리팹이 된 뒤로는
+   **프리팹 머티리얼 한 번**이면 전부 반영된다
 4. ~~`BreakTile` 93개에 `SpikeLaneWarnMarker` 배선~~ → **완료(2026-09-18, 씬 YAML 확인)**
+
+### D.1.1 T.Boss (파괴 타일 358개)
+
+1. `StageVariantPicker` 오브젝트 **삭제** — 컴포넌트가 사라져 Missing Script로 남는다
+2. 붕괴 트랙 판을 **활성**으로 저장 (Picker가 켜 주던 것이 없어졌다)
+3. `BreakTileDirector.boardRoot` ← 그 판
+4. 타일에 파괴 연출 값 넣기 — `TStage4TrapRandomization.md` §1.4.1의 표와 같은 값
+5. **타일 358개에 밟기 감지용 `BoxCollider`(Is Trigger) 추가** — 없으면 밟아도 반응하지 않는다.
+   다중 선택 후 Add Component → Is Trigger ✓ · Center `(0, 0.5, 0)` · Size `(0.9, 0.3, 0.9)`.
+   **3m·5m 타일 모두 같은 로컬 값**이면 된다(둘 다 유닛 큐브를 균일 스케일한 것이라 월드에서
+   각각 2.7 × 0.3 × 2.7 · 4.5 × 0.3 × 4.5가 된다).
 
 ### D.2 T.Stage5
 

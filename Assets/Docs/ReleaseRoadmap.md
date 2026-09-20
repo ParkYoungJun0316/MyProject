@@ -72,7 +72,7 @@
 
 ### 2.1 Ship Must (9/16에 들어가야 함)
 
-- **플레이 경로:** Title → Lobby → **Tutorial** → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`
+- **플레이 경로:** Title → Lobby → **Tutorial** → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`
 - **솔로:** 동일 경로 (**NGO Host 1인**, `partySize=1`). 오프라인 모드 없음
 - **Steamworks (전부):** Steam Networking transport + Steam Lobby + Depot/알파 빌드 + Invite — §3 ④ · §4 순위 1~3(전부 완료: 코드·Depot 실사용 테스트·빌드 검수 통과). **로컬 NGO만으로 출시 불가**
 - **응원·보이스:** Dissonance + Vosk + 숫자키(1~4) + **응원 확장 2종**
@@ -206,7 +206,7 @@
 |---|------|------|
 | 10 | 응원 확장 2개 테스트 | 구현 완료, 테스트만 남음 — Cheer 문서. **검수 대기 중 병행** |
 | 11 | BGM 추가 | 🔶 코드 완료, 곡 배정·씬 배치·테스트 남음 — `SoundAndSettingsDesign.md` |
-| 12 | 옵션/설정 메뉴 (+ DialogueUI / End.Demo 마감) | 🔶 코드 완료, UI 프리팹 제작·연결 남음 — `SoundAndSettingsDesign.md` |
+| 12 | 옵션/설정 메뉴 (+ DialogueUI / End 마감) | 🔶 코드 완료, UI 프리팹 제작·연결 남음 — `SoundAndSettingsDesign.md` |
 | 13 | SFX 마무리 + BGM 음량 조절 | 🔶 코드 완료(클립별 보정 배율), 실사용 밸런스 조정 남음 |
 | 14 | 플레이어 애니메이션 | 트레일러 우선 → 인게임 |
 | 15 | Tutorial 씬 | 연습·말해보기 |

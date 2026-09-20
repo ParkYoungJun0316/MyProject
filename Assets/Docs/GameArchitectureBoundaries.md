@@ -7,7 +7,7 @@
 
 ## Scope (full release)
 
-- Play path **현재:** Title → Lobby → Tutorial → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`. **5스테이지 채우기 의무 없음** — 컷은 [`CoopStageAudit.md`](CoopStageAudit.md) §1.5. 시퀀스는 컷 확정 후에만 줄임. 판별 감사는 M/T 문서.
+- Play path **현재:** Title → Lobby → Tutorial → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`. **5스테이지 채우기 의무 없음** — 컷은 [`CoopStageAudit.md`](CoopStageAudit.md) §1.5. 시퀀스는 컷 확정 후에만 줄임. 판별 감사는 M/T 문서.
 - Solo = **NGO Host 1인** (`partySize=1`) — same path as multi. No offline mode.
 - **목표:** **2026-09-16 Steam 정식 출시.** 데모 / Playtest / Open·Release 이원화 **없음** (`ReleaseRoadmap.md`).
 - Multiplayer: NGO 2.9 Listen-Server
@@ -19,7 +19,7 @@
 - **Enemy:** detection / chase / attack and local combat state only.
 - **Stage:** `StageObjective` + `StageManager` — stage-local win/fail. 축 SSOT: `NetworkDesign.md` §11A.
 - **Spawn / respawn (MVP):** `ColoredStartZone` + `spawnPoint` (not ColorSavePoint / StageCheckpoint save pipeline).
-- **Flow:** `SceneFlowManager` — scene progression (M stages → M.Boss → T stages → T.Boss → `End.Demo`); stage-local systems do not load scenes directly.
+- **Flow:** `SceneFlowManager` — scene progression (M stages → M.Boss → T stages → T.Boss → `End`); stage-local systems do not load scenes directly.
 - **Damage:** `NetworkDamageUtil` — single networked damage entry (Host).
 - **Cheer/Voice:** `CheerKeywordEngine` (Owner detect) + `CheerService` (Host apply). See Cheer doc.
 - **Session leave (in-game):** `DisconnectManager` → `TitleReturnFlow` → `NetworkManagerSetup.Shutdown`.

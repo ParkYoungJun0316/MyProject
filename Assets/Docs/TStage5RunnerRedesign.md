@@ -713,7 +713,7 @@ PAD  Pad_Z9_White 102.0 96.536 White 9    이름 · cx · cz · 색 · 구간번
 ### 4.3 네트워크 권한
 
 **러너 clientId만 NV 1개.** 맵 인덱스는 **사라졌고**, 색 순열은 **시드에서 나오므로 NV에 싣지 않는다**
-(전 머신이 같은 답을 낸다 — `StageVariantPickerBase` 주석의 규약과 같다).
+(전 머신이 같은 답을 낸다 — `SceneReadyAndColorMapping.md` §C의 "시드에서 나오는 답은 NV에 싣지 않는다").
 
 | 것 | 어디서 | 왜 |
 |---|---|---|

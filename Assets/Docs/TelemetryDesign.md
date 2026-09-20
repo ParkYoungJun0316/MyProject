@@ -46,12 +46,12 @@ Inspector `enabled` 토글은 **로컬 디버그용**. 위 게이트가 **배포
 |--|------|------|
 | **세션 시작** | **`M.Stage1` 첫 로드** | 새 `sessionId`(UUID), 카운터·dwell 타이머 초기화. 멀티=로비 Start 후 / 솔로=로비 Start 후 동일. |
 | **세션 진행** | M·T 전 씬(보스 포함) 플레이 중 | 누적 카운터 갱신 + 주기 upsert (§전송 타이밍). |
-| **`run_complete`** | Host(또는 솔로 PC)가 **`End.Demo` 씬 로드** | `run_complete = true` (타이틀 복귀 **전**). |
+| **`run_complete`** | Host(또는 솔로 PC)가 **`End` 씬 로드** | `run_complete = true` (타이틀 복귀 **전**). |
 | **세션 끝** | Host(또는 솔로 PC) **`TitleReturnFlow.ExecuteReturn()`** | **마지막 upsert** + `quitAt` 기록 + `sessionId` 폐기. |
 
 **세션 끝 = Host `TitleReturnFlow` 1회.** 아래 경로는 전부 동일 훅:
 
-- `End.Demo` 타이틀 복귀 (`TitleReturnReason.EndDemo`)
+- `End` 타이틀 복귀 (`TitleReturnReason.EndDemo`)
 - Host Quit (`HostQuitRoom`)
 - Client 이탈 → Host `DisconnectManager` (`ClientDisconnected`)
 - Client가 End에서 먼저 나가도 Host도 타이틀 복귀 → Host `TitleReturnFlow`
@@ -75,7 +75,7 @@ timestamp | sessionId | buildVersion | playMode | partySize | run_complete | qui
 | `buildVersion` | string | `Application.version` (예: `1.0.0`) |
 | `playMode` | string | `Solo` / `Multi` (멀티 1인도 `Multi`) |
 | `partySize` | int | 1~4 |
-| `run_complete` | bool | `End.Demo` **씬 진입** 여부 |
+| `run_complete` | bool | `End` **씬 진입** 여부 |
 | `quitAt` | string | 세션 끝 upsert 시 Host 위치: `M` / `T` / `End` |
 | `M_dwell_sec` | float | **M 바이옴 합산** 체류(초) — `M.Stage*` + `M.Boss` |
 | `M_death_count` | int | **M 바이옴** 씬 로드(리로드 포함) 횟수 합산 |
@@ -163,7 +163,7 @@ Web App URL은 **Steam 정식 빌드** 설정에만 (에디터·localhost Inspec
 |---|-----|------|
 | 1 | **M.*/T.* `SceneManager.sceneLoaded`** (Host·솔로) | 세션 시작(첫 `M.Stage1`만), 해당 바이옴 `death_count +1`, dwell 타이머 시작 |
 | 2 | **씬 unload / 다음 씬 로드 직전** | 떠나는 씬 dwell을 해당 바이옴에 확정 |
-| 3 | **`End.Demo` sceneLoaded** (Host·솔로) | `run_complete = true` |
+| 3 | **`End` sceneLoaded** (Host·솔로) | `run_complete = true` |
 | 4 | **`TitleReturnFlow.ExecuteReturn()`** (Host·솔로) | `quitAt` = 현재 바이옴/`End`, **세션 끝 upsert**, 세션 상태 리셋 |
 | 5 | **`CheerService`** (Host·솔로) | reject reason별 +1, `ApplyBuff` 시 해당 바이옴 `buff_count +1`, timeout +1 |
 | 6 | **`CheerKeywordEngine`** (Client) | 미인식 → Host RPC |

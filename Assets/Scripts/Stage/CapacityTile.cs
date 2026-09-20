@@ -10,14 +10,22 @@ using UnityEngine.Events;
 ///  1. 타일 위 인원이 capacity를 초과하면 sinkSpeed로 "서서히" 침강한다.
 ///  2. 인원이 capacity 이하로 줄면 restoreSpeed로 빠르게 복귀한다.
 ///     침강보다 복귀가 훨씬 빠른 것이 의도된 비대칭이다 — 실수를 되돌릴 수 있어야 한다(§1.1).
-///  3. dropoutDepth까지 내려가면 바닥이 빠진다(솔리드 콜라이더 off) → 탑승자는 아래 공허로
+///  3. maxSinkDepth까지 내려가면 바닥이 빠진다(솔리드 콜라이더 off) → 탑승자는 아래 공허로
 ///     낙하 → Player.fallDeathY(프리팹 −15) 통과 시 낙사.
-///  4. 붕괴한 타일은 maxSinkDepth까지 물러났다가 스스로 복귀한다. 영구 파괴는 ①이 아니라
-///     ③(랜덤 바닥 파괴)의 몫이므로 여기서 구멍을 남기지 않는다.
+///  4. 바닥이 빠진 타일은 그대로 복귀한다. 영구 구멍을 남기는 것은 ①이 아니라 ③(BreakTile)의 몫이다.
+///     콜라이더는 **완전히 휴지로 돌아올 때까지 계속 꺼둔다** — 올라오는 판이 떨어지던 탑승자를
+///     아래에서 퍼올려 살려버리는 것을 막는 래치다.
+///
+/// [침강 구간은 하나뿐이다 (2026-09-21 — 경고/붕괴 2구간 폐기)]
+///  구안은 dropoutDepth(2.5m, 콜라이더 살아 있음)까지가 '경고 구간', 거기서 maxSinkDepth(6m)까지
+///  collapseSpeed로 더 물러나는 '붕괴 구간'이 따로 있었다. **뒤쪽 구간은 규칙에 아무 영향이 없는
+///  순수 연출**이었다(그 시점엔 이미 콜라이더가 꺼져 있다). 이해 비용만 치르고 있어서 합쳤다 —
+///  이제 깊이는 `maxSinkDepth` 하나이고, **거기 닿는 순간이 곧 바닥이 빠지는 순간**이다.
+///  덕분에 경고 색도 정직해졌다: **빨강 = 죽는 순간**(구안의 빨강은 '이미 빠진 뒤'였다).
 ///
 /// [권한 — 로컬 계산 (2026-09-18 확정)]
 ///  점유 계수·타일 높이 모두 각 머신이 로컬로 계산한다. 새 NetworkVariable·RPC 0개.
-///  - 점유 여부는 '플레이어 위치만의 함수'이고 위치는 CNT로 전 머신에 수렴하므로,
+///  - 점유 여부는 사실상 '플레이어 위치의 함수'이고 위치는 CNT로 전 머신에 수렴하므로,
 ///    머신 간 차이는 결과가 아니라 CNT 보간 지연(~100ms)만큼의 '시작 시점' 차이뿐이다.
 ///  - Host 권한으로 바꿔도 Host 역시 원격 클라를 같은 지연으로 보므로 지연이 사라지지 않고,
 ///    Host→클라 전파 한 홉이 더 붙어 내가 밟은 타일이 내 화면에서 RTT만큼 늦게 반응한다
@@ -35,22 +43,37 @@ using UnityEngine.Events;
 ///    Stay는 놓친 진입을 줍는 안전망이다 — PressurePad와 같은 구성.
 ///  - 남는 오차 = CNT 보간 지연. 그 이상은 로컬에서 줄일 수 없다.
 ///
-/// [씬 설정]
-///  1. 바닥 타일(Renderer + 솔리드 Collider, Is Trigger = false)에 이 컴포넌트를 붙인다.
-///  2. capacity를 설정한다(기본 1).
-///  3. 감지 기둥과 Kinematic Rigidbody는 런타임에 자동 생성되므로 손댈 것이 없다.
+/// [감지 — 타일과 함께 내려가는 트리거 콜라이더 (2026-09-21. 정적 감지 기둥 폐기)]
+///  같은 GameObject에 **Is Trigger 콜라이더를 하나 더** 둔다. 솔리드 바닥과 감지를 콜라이더
+///  두 개로 나누는 것이 전부이고, 런타임 생성물도 중계 컴포넌트도 없다.
+///
+///  구안은 감지 기둥을 별도 오브젝트로 만들어 **휴지 위치에 고정**했다. "트리거가 타일과 함께
+///  내려가면 탑승자가 트리거 밖으로 나가 점유 0 → 복귀 → 재진입 → 침강"의 진동이 생긴다고 봤기
+///  때문인데, **그 전제가 틀렸다**: 트리거가 타일과 같이 내려가면 탑승자의 **상대 위치가 바뀌지
+///  않으므로** 애초에 밖으로 나갈 일이 없다. 기둥이 아래로 `dropoutDepth + 1`만큼 뻗어 있던 것도
+///  "안 움직이니까 내려가는 탑승자를 따라가려던" 보정이었고, 같이 내려가면 통째로 불필요해진다.
+///
+///  그래서 없어진 필드: `detectHeightAbove` · `detectDepthBelowDropout` · `detectShrinkXZ`.
+///  전부 **콜라이더의 Size/Center로 직접 지정**한다 — 씬 뷰에서 보이고 마우스로 잡을 수 있다.
+///
+/// [씬 설정 — CapacityTile 프리팹 하나로 배포한다]
+///  타일은 `Assets/Prefab/CapacityTile.prefab` 인스턴스다. 아래 값이 전부 프리팹에 있으므로
+///  판에 몇 개를 깔든 **프리팹 한 번 수정으로 전부 반영된다.**
+///  1. 솔리드 콜라이더(Is Trigger = false) — 플레이어가 밟고 설 바닥.
+///  2. 감지 콜라이더(Is Trigger = true) — **XZ는 솔리드보다 좁게**(타일 이음새에서 한 사람이
+///     양쪽에 동시 계수되는 것을 막는다), **Y는 넉넉하게**(타일 위에 선 사람을 놓치지 않는다).
+///     7.8m 타일 기준 로컬 Size (0.9, 5, 0.9) = 월드 7.02 × 5 × 7.02.
+///  3. capacity를 설정한다(기본 1).
 ///  4. 탑다운에서는 높이 변화가 잘 안 읽히므로 warnRenderer를 채워 색으로 알리는 것을 권장한다.
-///  선택 상태에서 기즈모로 감지 기둥과 dropout 깊이를 미리 볼 수 있다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class CapacityTile : MonoBehaviour
 {
     enum TileState
     {
-        Idle,       // 휴지 — 깊이 0
-        Sinking,    // 과부하 침강 — 콜라이더 유지, 아직 복구 가능
-        Collapsing, // 바닥 빠짐 — 콜라이더 off, maxSinkDepth까지 후퇴(복구 불가)
-        Restoring,  // 상승
+        Idle,      // 휴지 — 깊이 0
+        Sinking,   // 과부하 침강 — maxSinkDepth에 닿으면 바닥이 빠진다
+        Restoring, // 상승
     }
 
     [Header("용량")]
@@ -58,39 +81,24 @@ public class CapacityTile : MonoBehaviour
              "인스펙터에서 자유롭게 2 이상으로 올리거나 내릴 수 있다. 0으로 두면 아무도 못 선다.")]
     public int capacity = 1;
 
-    [Header("침강 — 경고 구간 (복구 가능)")]
+    [Header("침강")]
     [Tooltip("과부하 중 내려가는 속도(m/s). 느릴수록 간격을 회복할 시간이 길어진다(§3.1 A안).")]
     [SerializeField] float sinkSpeed = 1f;
 
-    [Tooltip("이 깊이(m)에 닿으면 바닥이 빠진다. sinkSpeed 1 · 이 값 2.5 → 약 2.5초의 유예.")]
-    [SerializeField] float dropoutDepth = 2.5f;
-
-    [Header("침강 — 붕괴 구간 (복구 불가)")]
-    [Tooltip("바닥이 빠진 뒤 타일이 물러나는 속도(m/s). 연출 전용 — 이 시점엔 콜라이더가 이미 꺼져 있다.")]
-    [SerializeField] float collapseSpeed = 6f;
-
-    [Tooltip("타일이 내려가는 최대 깊이(m). 여기 닿으면 복귀를 시작한다.")]
-    [SerializeField] float maxSinkDepth = 6f;
+    [Tooltip("이 깊이(m)에 닿으면 바닥이 빠진다(콜라이더 off → 탑승자 낙하 → 낙사).\n" +
+             "유예 시간 = 이 값 ÷ sinkSpeed. 기본값 2.5 ÷ 1 = 2.5초.")]
+    [SerializeField] float maxSinkDepth = 2.5f;
 
     [Header("복귀")]
     [Tooltip("인원이 capacity 이하로 줄었을 때 올라오는 속도(m/s). 침강보다 크게 두는 것이 의도된 비대칭.\n" +
-             "순간이동(스냅)이 아닌 이유: 위에 선 플레이어를 뚫고 지나가기 때문.")]
+             "순간이동(스냅)이 아닌 이유: 위에 선 플레이어를 뚫고 지나가기 때문.\n" +
+             "⚠️ 이 값이 크면 바닥이 빠진 구멍이 그만큼 빨리 닫힌다 — 뒷사람에게는 구멍이 보이지 않는다.")]
     [SerializeField] float restoreSpeed = 8f;
 
-    [Header("감지 기둥 (런타임 자동 생성)")]
-    [Tooltip("타일 윗면 기준 위로 이만큼(m)까지를 '올라서 있다'로 본다. 플레이어 키보다 크게 잡을 것.")]
-    [SerializeField] float detectHeightAbove = 2.5f;
-
-    [Tooltip("dropoutDepth보다 이만큼(m) 더 아래까지 감지한다. 침강 중인 탑승자를 계속 점유로 세기 위함 —\n" +
-             "짧으면 내려가던 타일이 탑승자를 놓쳐 혼자 있는데도 계속 내려간 것처럼 보인다.")]
-    [SerializeField] float detectDepthBelowDropout = 1f;
-
-    [Tooltip("이웃 타일과 맞닿은 이음새에서 한 사람이 양쪽 타일에 동시 계수되는 것을 줄이려고 XZ를 이만큼(m) 줄인다.")]
-    [SerializeField] float detectShrinkXZ = 0.1f;
-
     [Header("경고 색 (선택)")]
-    [Tooltip("침강 진행도(0 → dropoutDepth)를 색으로 보여줄 Renderer. 비우면 색 연출 없음.\n" +
-             "탑다운에서는 높이 변화가 거의 안 읽히므로 이 색이 사실상 주 정보 채널이다.")]
+    [Tooltip("침강 진행도(0 → maxSinkDepth)를 색으로 보여줄 Renderer. 비우면 색 연출 없음.\n" +
+             "탑다운에서는 높이 변화가 거의 안 읽히므로 이 색이 사실상 주 정보 채널이다.\n" +
+             "빨강에 닿는 순간이 곧 바닥이 빠지는 순간이다.")]
     [SerializeField] Renderer warnRenderer;
     [Tooltip("URP Lit이면 _BaseColor. WarnMarkerColorFx와 같은 규약.")]
     [SerializeField] string warnColorProperty = "_BaseColor";
@@ -107,19 +115,19 @@ public class CapacityTile : MonoBehaviour
     [Tooltip("과부하가 풀려 복귀가 시작될 때 1회.")]
     public UnityEvent OnOverloadEnded;
 
-    [Tooltip("dropoutDepth 도달 — 바닥이 빠지는 순간 1회.")]
+    [Tooltip("maxSinkDepth 도달 — 바닥이 빠지는 순간 1회.")]
     public UnityEvent OnDropout;
 
     public int   CurrentCount => _occupants.Count;
     public bool  IsOverloaded => _occupants.Count > Mathf.Max(0, capacity);
     public float SinkDepth    => _depth;
-    public bool  HasCollapsed => _state == TileState.Collapsing || _collapsedThisCycle;
+    public bool  HasCollapsed => _collapsedThisCycle;
 
     readonly HashSet<Player> _occupants = new HashSet<Player>();
 
     TileState _state = TileState.Idle;
-    float     _depth;                 // 휴지 위치 기준 아래로 내려간 거리(m). 0 = 휴지.
-    bool      _collapsedThisCycle;    // 이번 주기에 붕괴를 거쳤는가 — 상승 중 콜라이더를 계속 꺼두기 위한 래치
+    float     _depth;              // 휴지 위치 기준 아래로 내려간 거리(m). 0 = 휴지.
+    bool      _collapsedThisCycle; // 이번 주기에 바닥이 빠졌는가 — 복귀가 끝날 때까지 콜라이더를 꺼두는 래치
     bool      _wasOverloaded;
     int       _lastNotifiedCount = -1;
     float     _lastAppliedDepth;
@@ -129,10 +137,7 @@ public class CapacityTile : MonoBehaviour
     Collider  _solid;
     Rigidbody _rb;
 
-    GameObject          _detectObject;
-    WarnMarkerColorFx   _warnFx;
-
-    static Transform s_detectRoot;    // 런타임 감지 기둥들을 모아두는 정리용 루트
+    WarnMarkerColorFx _warnFx;
 
     // ── 초기화 ────────────────────────────────────────────────
 
@@ -140,13 +145,7 @@ public class CapacityTile : MonoBehaviour
     {
         _restLocalPos = transform.localPosition;
 
-        _solid = GetComponent<Collider>();
-        if (_solid.isTrigger)
-        {
-            Debug.LogWarning(
-                $"[CapacityTile] {name}: 솔리드 콜라이더가 Is Trigger로 켜져 있다. " +
-                "플레이어가 밟고 설 바닥이어야 하므로 꺼야 한다.", this);
-        }
+        ResolveColliders();
 
         // DoorController와 동일한 이동 방식 — Kinematic Rigidbody + MovePosition.
         // transform.position 직접 대입은 위에 선 플레이어와의 충돌이 올바르게 풀리지 않고,
@@ -161,67 +160,48 @@ public class CapacityTile : MonoBehaviour
         if (warnRenderer != null)
             _warnFx = new WarnMarkerColorFx(warnRenderer, warnColorProperty, warnSafeColor, warnDangerColor);
 
-        BuildDetectionColumn();
         ApplyDepth();
     }
 
-    void OnEnable()
-    {
-        if (_detectObject != null) _detectObject.SetActive(true);
-    }
-
-    void OnDisable()
-    {
-        if (_detectObject != null) _detectObject.SetActive(false);
-        _occupants.Clear();
-    }
-
-    void OnDestroy()
-    {
-        if (_detectObject != null) Destroy(_detectObject);
-    }
-
     /// <summary>
-    /// 휴지 위치에 고정된 감지 기둥을 만든다. 타일의 자식이 아니라 별도 오브젝트인 이유는
-    /// CapacityTileTriggerRelay 주석 참고(피드백 루프 차단).
-    ///
-    /// 부모를 두지 않는 이유: 부모에 스케일·회전이 걸려 있으면 월드 AABB로 잰 크기를 그대로
-    /// BoxCollider.size에 넣을 수 없어 기둥이 타일과 어긋난다. T4 복도 바닥은 정적이라
-    /// (MovingCorridor가 움직이는 것은 앞뒤 벽이다) 루트에 두어도 따라갈 대상이 없다.
+    /// 솔리드(바닥)와 트리거(감지)를 갈라 잡는다. 같은 GameObject에 둘을 함께 두는 구성이라
+    /// GetComponent&lt;Collider&gt;() 한 번으로는 어느 쪽이 잡힐지 알 수 없다.
     /// </summary>
-    void BuildDetectionColumn()
+    void ResolveColliders()
     {
-        Bounds b = _solid.bounds; // 휴지 상태의 월드 AABB — 아직 한 번도 움직이지 않았다.
+        bool hasTrigger = false;
 
-        float topY   = b.max.y;
-        float upperY = topY + detectHeightAbove;
-        float lowerY = topY - (dropoutDepth + detectDepthBelowDropout);
-        float height = Mathf.Max(0.1f, upperY - lowerY);
+        var cols = GetComponents<Collider>();
+        for (int i = 0; i < cols.Length; i++)
+        {
+            if (cols[i].isTrigger) hasTrigger = true;
+            else if (_solid == null) _solid = cols[i];
+        }
 
-        if (s_detectRoot == null)
-            s_detectRoot = new GameObject("CapacityTileDetectors").transform;
+        if (_solid == null)
+        {
+            Debug.LogError(
+                $"[CapacityTile] {name}: 솔리드 콜라이더(Is Trigger = false)가 없다 — " +
+                "플레이어가 밟고 설 바닥이 없다.", this);
+        }
 
-        _detectObject = new GameObject($"{name}__Detect");
-        _detectObject.transform.SetParent(s_detectRoot, false);
-        _detectObject.transform.SetPositionAndRotation(
-            new Vector3(b.center.x, (upperY + lowerY) * 0.5f, b.center.z), Quaternion.identity);
-
-        var box = _detectObject.AddComponent<BoxCollider>();
-        box.isTrigger = true;
-        box.size = new Vector3(
-            Mathf.Max(0.1f, b.size.x - detectShrinkXZ * 2f),
-            height,
-            Mathf.Max(0.1f, b.size.z - detectShrinkXZ * 2f));
-
-        _detectObject.AddComponent<CapacityTileTriggerRelay>().Bind(this);
+        if (!hasTrigger)
+        {
+            Debug.LogWarning(
+                $"[CapacityTile] {name}: 감지용 트리거 콜라이더가 없다 — 점유가 잡히지 않아 " +
+                "이 타일은 절대 가라앉지 않는다. Is Trigger 콜라이더를 하나 더 붙일 것.", this);
+        }
     }
+
+    void OnDisable() => _occupants.Clear();
 
     // ── 점유 ────────────────────────────────────────────────────
+    // 이 콜백들은 같은 GameObject의 트리거 콜라이더에서만 온다(솔리드는 Collision 쪽이다).
 
-    public void HandleTriggerEnter(Collider other) => TryAddOccupant(other);
-    public void HandleTriggerStay(Collider other)  => TryAddOccupant(other);
+    void OnTriggerEnter(Collider other) => TryAddOccupant(other);
+    void OnTriggerStay(Collider other)  => TryAddOccupant(other);
 
-    public void HandleTriggerExit(Collider other)
+    void OnTriggerExit(Collider other)
     {
         // GetComponent (GetComponentInParent 아님) — 아래 TryAddOccupant 주석 참고.
         Player p = other.GetComponent<Player>();
@@ -286,25 +266,16 @@ public class CapacityTile : MonoBehaviour
                     break;
                 }
                 _depth += sinkSpeed * dt;
-                if (_depth >= dropoutDepth)
-                {
-                    _depth = dropoutDepth;
-                    EnterCollapse();
-                }
-                break;
-
-            case TileState.Collapsing:
-                _depth += collapseSpeed * dt;
                 if (_depth >= maxSinkDepth)
                 {
                     _depth = maxSinkDepth;
-                    _state = TileState.Restoring;
+                    EnterDropout();
                 }
                 break;
 
             case TileState.Restoring:
-                // 붕괴를 거치지 않은 복귀 중에 다시 과부하가 되면 그 자리에서 다시 가라앉는다.
-                // 붕괴를 거친 복귀는 되돌리지 않는다 — 콜라이더가 꺼져 있어 점유 자체가 성립하지 않는다.
+                // 바닥이 빠지지 않은 복귀 중에 다시 과부하가 되면 그 자리에서 다시 가라앉는다.
+                // 빠진 뒤의 복귀는 되돌리지 않는다 — 콜라이더가 꺼져 있어 점유 자체가 성립하지 않는다.
                 if (overloaded && !_collapsedThisCycle)
                 {
                     _state = TileState.Sinking;
@@ -320,16 +291,16 @@ public class CapacityTile : MonoBehaviour
                 break;
         }
 
-        // 콜라이더는 붕괴한 순간부터 휴지로 완전히 돌아올 때까지 꺼둔다.
+        // 콜라이더는 바닥이 빠진 순간부터 휴지로 완전히 돌아올 때까지 꺼둔다.
         // 상승 도중에 켜면 아직 떨어지는 중인 탑승자를 아래에서 퍼올려 살려버린다.
         SetSolidEnabled(!_collapsedThisCycle);
 
         ApplyDepth();
     }
 
-    void EnterCollapse()
+    void EnterDropout()
     {
-        _state = TileState.Collapsing;
+        _state = TileState.Restoring;
         _collapsedThisCycle = true;
         OnDropout?.Invoke();
     }
@@ -346,9 +317,9 @@ public class CapacityTile : MonoBehaviour
 
         _rb.MovePosition(restWorld + Vector3.down * _depth);
 
-        // 경고 색은 '붕괴까지 얼마나 남았는가'만 보여준다 — 붕괴 이후 후퇴 구간은 이미 끝난 판정이다.
+        // 빨강에 닿는 순간이 곧 바닥이 빠지는 순간이다(구간을 합치면서 정직해진 부분).
         if (_warnFx != null)
-            _warnFx.SetProgress(dropoutDepth > 0.0001f ? _depth / dropoutDepth : 0f);
+            _warnFx.SetProgress(maxSinkDepth > 0.0001f ? _depth / maxSinkDepth : 0f);
 
         _lastAppliedDepth = _depth;
         _depthApplied     = true;
@@ -378,43 +349,29 @@ public class CapacityTile : MonoBehaviour
         ApplyDepth();
     }
 
-    // 인스펙터에서 자유롭게 튜닝하는 값들이라, 상태 머신이 멈추는 조합만 막아둔다
-    // (특히 maxSinkDepth ≤ dropoutDepth면 붕괴 구간이 한 프레임 만에 끝나 바닥 빠짐이 안 보인다).
     void OnValidate()
     {
-        capacity      = Mathf.Max(0, capacity);
-        sinkSpeed     = Mathf.Max(0.01f, sinkSpeed);
-        dropoutDepth  = Mathf.Max(0.1f, dropoutDepth);
-        maxSinkDepth  = Mathf.Max(dropoutDepth + 0.1f, maxSinkDepth);
-        collapseSpeed = Mathf.Max(0.01f, collapseSpeed);
-        restoreSpeed  = Mathf.Max(0.01f, restoreSpeed);
+        capacity     = Mathf.Max(0, capacity);
+        sinkSpeed    = Mathf.Max(0.01f, sinkSpeed);
+        maxSinkDepth = Mathf.Max(0.1f, maxSinkDepth);
+        restoreSpeed = Mathf.Max(0.01f, restoreSpeed);
     }
 
     // ── 기즈모 ────────────────────────────────────────────────
 
-    // 타일을 100개 배치해야 하므로 감지 기둥과 붕괴 깊이를 씬 뷰에서 바로 확인할 수 있게 한다.
+    /// <summary>바닥이 빠지는 깊이를 씬 뷰에 그린다. 감지 범위는 콜라이더라 Unity가 알아서 그려 준다.</summary>
     void OnDrawGizmosSelected()
     {
-        Collider col = GetComponent<Collider>();
+        Collider col = null;
+        var cols = GetComponents<Collider>();
+        for (int i = 0; i < cols.Length; i++)
+            if (!cols[i].isTrigger) { col = cols[i]; break; }
         if (col == null) return;
 
-        Bounds b     = col.bounds;
-        float  topY  = b.max.y;
-        float  upper = topY + detectHeightAbove;
-        float  lower = topY - (dropoutDepth + detectDepthBelowDropout);
-
-        Gizmos.color = new Color(0f, 1f, 1f, 0.25f);
-        Gizmos.DrawWireCube(
-            new Vector3(b.center.x, (upper + lower) * 0.5f, b.center.z),
-            new Vector3(
-                Mathf.Max(0.1f, b.size.x - detectShrinkXZ * 2f),
-                Mathf.Max(0.1f, upper - lower),
-                Mathf.Max(0.1f, b.size.z - detectShrinkXZ * 2f)));
-
-        // 바닥이 빠지는 깊이
+        Bounds b = col.bounds;
         Gizmos.color = new Color(1f, 0.2f, 0.1f, 0.8f);
         Gizmos.DrawWireCube(
-            new Vector3(b.center.x, topY - dropoutDepth, b.center.z),
+            new Vector3(b.center.x, b.max.y - maxSinkDepth, b.center.z),
             new Vector3(b.size.x, 0.02f, b.size.z));
     }
 }

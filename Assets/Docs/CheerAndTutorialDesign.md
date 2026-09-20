@@ -23,7 +23,7 @@
 
 | 항목 | **[Ship Must]** |
 |------|-----------------|
-| 씬 흐름 | Title → **Tutorial** → M1…5→M.Boss → **Interlude** → T1…5→T.Boss → End.Demo (`1.Lobby` 폐지, 2026-08-17. `Interlude` 신규, §1.1) |
+| 씬 흐름 | Title → **Tutorial** → M1…5→M.Boss → **Interlude** → T1…5→T.Boss → End (`1.Lobby` 폐지, 2026-08-17. `Interlude` 신규, §1.1) |
 | Tutorial 씬 | **필수 경로** (연습 구간은 경험자 생략 가능). **구 Lobby 역할(색 배정·Invite·Start) 흡수** — §2 |
 | Interlude 씬 | **필수 경로** (생략 불가) — M.Boss 클리어 후 T.Stage1 진입 전, CheerName/TeamCheerWord **2차 변경** 기회 1회 — §1.1, §3.4 |
 | CheerName/TeamCheerWord | **딱 2번**: Tutorial(1차) + Interlude(2차)에서만 설정 가능 — 개인 CheerName은 각자, TeamCheerWord는 Host. 규칙 상세는 `CheerSystemDesign.md` §3, 2차 변경 절차는 §3.4 |
@@ -42,7 +42,7 @@
 ## 1. 씬 흐름
 
 ```
-Title → Tutorial → M.Stage1…5 → M.Boss → Interlude → T.Stage1…5 → T.Boss → End.Demo
+Title → Tutorial → M.Stage1…5 → M.Boss → Interlude → T.Stage1…5 → T.Boss → End
 ```
 
 정식 경로에 Tutorial **포함**. `1.Lobby`는 더 이상 존재하지 않는다 — 접속 즉시 `Tutorial`에 캐릭터가 스폰된다(색 자동배정, `NetworkDesign.md` §6B.2). 연습 콘텐츠(Stealth/응원 등)는 경험자가 생략 가능하지만(§4), **사전 게이트 구간 자체(스폰·게이트 통과)는 누구도 생략 불가**.
