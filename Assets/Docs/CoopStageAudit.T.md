@@ -18,7 +18,12 @@
 
 설계 감사만. `.cs` / Docs만 에이전트. 씬·MCP는 사용자 “구현해” / “MCP로 수정해줘” 전까지 금지.
 
-M·T1–T4를 다시 묻지 말 것. **T5·T.Boss 응원·페이즈는 보류** — 조임·안개를 플레이로 느끼기 전에 종이로 잠그지 않음. Runner/Chaser 재설계·T5 안개 재사용·세 번째 동사 지금 금지.
+M·T1–T4를 다시 묻지 말 것. **T.Boss 응원·페이즈는 보류** — 조임·안개를 플레이로 느끼기 전에 종이로 잠그지 않음. T5 안개 재사용·세 번째 동사 지금 금지.
+
+> **⚠️ T5 보류는 2026-09-20 해제됐다.** "Runner/Chaser 재설계 금지"도 같이 풀린다 —
+> 사용자 판단으로 T5를 전면 재설계했고 SSOT는 [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md)다.
+> **T5에 관해서는 이 문서가 아니라 그쪽이 최신이다.** 아래 T5 행·§H.6은 그 시점 이전의 기록으로 남긴다.
+> (**T5 응원**은 여전히 보류다 — 재설계는 지형·역할 구조에 대한 것이고 응원은 건드리지 않았다.)
 
 읽을 순서: **§H.6 → §H.2 T1–T4.** T5 행은 참조만.
 
@@ -30,7 +35,7 @@ M·T1–T4를 다시 묻지 말 것. **T5·T.Boss 응원·페이즈는 보류** 
 | T2 | 미니게임 **유지.** 팀 외침 = **거리 기반 안개 공격 초출** §5. 퍼즐 판정 안 고침 |
 | T3 | 조임 **복습**(같은 원통 반경 메카닉). 2인 장면 = **전원 외침 원상 복구**만. ColorWall **흑백** 초출 = 색 일(잠깐 멈춤), 2인 게이트 아님. 패드 Door_3 커먼. Door_1형 4색 겹침 삭제. Spike·볼더·Thron·점액·넉백은 압력 |
 | T4 | **바닥 낙사**가 판. 각자 생존, 2인 게이트 아님. ~~패드 밟으면 Door가 올라와 구멍 위 길이 됨~~ → **2026-09-19 잠금 해제: 색 패드·다리 문 전면 제거.** 바닥은 격자(용량 타일 + 파괴 타일)로 대체 — SSOT는 [`TStage4TrapRandomization.md`](TStage4TrapRandomization.md). SideSplit **삭제 예정**. MovingCorridor·ContactKnockback은 압력. 2인 장면 = **안개 걷힘**(변경 없음). 조임 원상 복구 없음 |
-| T5 | Floor + Runner/Chaser **유지**. 응원·2인 장면 **보류**. 지금 재설계·안개 재사용 없음 |
+| T5 | **전면 재설계됨(2026-09-20)** — 10×10 격자의 **모든 변이 색 문**, 1층 러너 1명 + 2층 안내자, 체이서는 문 관통. SSOT [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md). 응원·2인 장면은 **여전히 보류** |
 | T.Boss | ColorTile = M. 초출 시드 §4. **P3 팀 응원 = 조임 원상 복구로 확정(2026-09-10)** — T1·T3와 동일 `EsophagusSqueeze`, 코드 변경 없음. P1·P2·P4 팀 응원은 아직 보류. 페이즈 초안 §6 **[미잠금]** (P1·P2·P4 확정, **P3도 확정** — 천장 신규 오브젝트 아님, **Sphere 자체**에 `AdvancingWall`+`ColorWall` 부착 + 튕김 발판. **시계에 체크포인트 규칙 확정**(2026-09-10) — 페이즈 클리어마다 Sphere 고정 후퇴, 페이즈 간 시간 부채로 죽는 일 없게. **Sphere 컨트롤러 코드 됨(2026-09-10)** — 배선 모델은 같은 날 리뷰로 정정(`onPhaseComplete` 폐기·P3 재개 추가), 상세 §H.4. **4페이즈 승리조건 전부 배선 됨(2026-09-10, 2차 세션)** — P1/P2 ReachZone, P3 히트횟수(고정값 8, 임시), P4 서바이브 90초, §H.4 6번) |
 | 조임 원상 복구 | **T1·T3·T.Boss P3** |
 | 안개 | **T2 초출, T4 복습.** 거리 기반(Render Fog), 씬 전역 — 구간 분리 없음. 미리보기 정답 다시 보여주기 금지 |
@@ -110,7 +115,10 @@ M·T1–T4를 다시 묻지 말 것. **T5·T.Boss 응원·페이즈는 보류** 
 3. 에디터(사용자, 구현과 맞춰): T1 Door_1→Door_3. T3 Door_1형 4색 겹침 삭제·Door_3 커먼. ~~T4 패드→Door 길~~ **(2026-09-19 패드·문 전면 제거로 무효 — §1 T.Stage4)** · T4 SideSplit 삭제. T3 `ThronSeq.*`에 `NetworkObject`. + §H.4의 `EsophagusSqueeze`/`EsophagusFog` 배치.
 4. 초·안개 창·조임 속도는 해당 스테이지 때(인스펙터 `squeezeTargetRadius`/`maxDensity`/`attackDuration`/`recoverDuration`/`randomIntervalMin~Max`/`warnDuration`로 노출됨 — 플레이하며 튜닝).
 
-### H.6 다음 에이전트 — T5 보류 **[미잠금]**
+### H.6 다음 에이전트 — T5 보류 **[2026-09-20 해제]**
+
+> **이 절은 기록이다.** T5는 2026-09-20에 재설계로 잠금이 풀렸다 —
+> SSOT는 [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md). 아래는 해제 이전의 판단이다.
 
 T1–T4 설계는 끝. T5를 지금 감사하지 말 것.
 
@@ -143,7 +151,7 @@ ColorWall 일치 = 그 벽만 잠깐 멈춤 (색 일). 팀 외침 조임 = **전
 | T.Stage2 | Memory / ColoredMemory / Pioneer | **A [확정]** | 안개 걷힘 | 퍼즐 안 고침. 안개는 정답 미리보기 아님. 거리 기반 Render Fog | |
 | T.Stage3 | Wall·볼더·Spike·패드 + 조임 복습 | **A [확정]** §3 | 같은 원통 반경 조임. **전원 외침 원상 복구** | ColorWall은 2인 게이트 아님. **흑백** 초출 = 색 일. Door_1형 4색 겹침 삭제. Door_3 커먼 | Spike·볼더·Thron·점액·넉백은 압력 |
 | T.Stage4 | MovingCorridor + ContactKnockback + **격자 바닥(용량·파괴 타일)** | **A [확정]** §5<br>지형은 2026-09-19 갱신 | **안개 걷힘** (2인 장면) | ~~패드→Door 길~~ **제거(2026-09-19)** — 격자와 역할 중복. 넉백→낙사·바닥 판단은 각자 생존. SideSplit **삭제 예정**. 조임 원상 복구 없음 | 넉백은 압력. 협동으로 안 바꿈 |
-| T.Stage5 | Floor + Runner/Chaser | 보류 | 판 유지 | 응원·재설계 지금 없음 | |
+| T.Stage5 | **색 문 격자 + Runner/Chaser** | **재설계 완료(2026-09-20)**<br>SSOT [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) | 판 교체 | 문 180개·2층 패드 54개·문 관통 체이서. 응원은 여전히 보류 | 안내자 지연 = 러너 피격이 협동 장치 |
 | T.Boss | ColorTile + SurviveTime + AdvancingWall/ColorWall | 보류 | ColorTile = M. 초출 시드 §4. 페이즈 초안 §6(P3 확정 포함) | 응원 미정. 페이즈 자체는 확정. 조임 쓰면 T1·T3와 같은 원통 반경(축 선택 불필요) | |
 
 **T.Stage1.** 리맵 유지. Door_1 중첩 4색이 뒤죽박죽. Door_3 = 패드가 바로 앞 문과 1:1.
@@ -164,7 +172,10 @@ ColorWall 일치 = 그 벽만 잠깐 멈춤 (색 일). 팀 외침 조임 = **전
 > 항목이었고, T4의 2인 장면은 원래부터 **안개 걷힘**이다. 이 변경은 2인 요구를 늘리지도
 > 줄이지도 않는다.
 
-**T.Stage5 / T.Boss.** 설계 보류. Runner/Chaser 유지. 응원은 T1–T4를 플레이한 뒤에.
+**T.Stage5.** 지형·역할은 **2026-09-20 재설계 완료**([`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md)).
+**응원은 여전히 보류** — T1–T4를 플레이한 뒤에.
+
+**T.Boss.** 설계 보류. 응원은 T1–T4를 플레이한 뒤에.
 
 ---
 

@@ -106,7 +106,22 @@
 - `DoorNetworkSync.cs`(+`.meta`) 삭제. `Door.Y/G/P/B/C.prefab`에서 `DoorNetworkSync`/`NetworkObject` 컴포넌트 제거(사용자 작업, 에디터).
 - **ParrelSync 2인 검증 통과(2026-08)** — Host/Client 양쪽 문 개폐 연출 동일 확인.
 
-### 3.2 T5 AI 네트워크 설계 (2026-08 확정 — 구현 전)
+### 3.2 T5 AI 네트워크 설계 (2026-08 확정 → **구현 완료, 2026-09-20 갱신**)
+
+> **현재 상태 (T5 재설계 반영 — SSOT는 [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) §1.7):**
+>
+> | 항목 | 값 |
+> |---|---|
+> | 스폰 | **Host만** `Instantiate` + `NetworkObject.Spawn()`. 러너가 시작 존을 벗어날 때 **1회 4마리**(인원 무관, 솔로도 4) |
+> | 스폰 위치 | 격자 동서남북 **4점 고정** — S(54,6) · W(6,54) · N(54,114) · E(114,54). 맵이 1장이라 뽑기가 없다 |
+> | 타겟 | **러너 한 명만.** `StageNetworkState.T5RunnerClientId`(NV)가 단일 진실 |
+> | 리스폰 | **없다.** 맞으면 소멸 = **러너를 때릴 기회가 판당 4번**이라는 뜻(의도된 곡선) |
+> | **문** | **관통한다.** 문에 `NavMeshObstacle`을 붙이지 않고, **`Door` 레이어 × `Enemy` 레이어 충돌을 해제**했다.<br>⚠️ 그것만으로는 부족하다 — **`NavMeshSurface.layerMask`에서 `Door`를 빼야** 닫힌 문이 navmesh에 구워지지 않는다 |
+> | 속도 | **4 m/s** 목표(러너 10). 프리팹은 아직 8 — V단계에서 맞춘다 |
+> | 데미지 | 2 (러너 `maxHeart` 5 → 3방 사망) |
+>
+> `Stage5TargetRunner`는 **더 이상 존재하지 않는다**(재설계로 삭제). 아래 2026-08 기록에 남은 이름은
+> 그 시점의 것이다.
 
 **배경**: `Stage5ChaserSpawner.StartSpawning()`이 로컬 `Instantiate()`(NetworkObject 없음) + 시드 없는 `Random.Range` 셔플로 스폰 위치를 고르고, `Stage5ChaserAI.Update()`/`Stage5TargetRunner.Update()`가 각 머신에서 독립적으로 `NavMeshAgent` 추적을 수행한다 — Host/Client가 서로 다른 위치에 서로 다른 수의 개체를 스폰하고, 위치도 서서히 어긋날 수 있는 상태. `NetworkDesign.md` §9A.5.1이 "이미 Host 경로(확인만)"로 분류한 `Enemy.cs`/`EnemyHitbox.cs`는 실제 코드베이스에 존재하지 않음(grep 0건) — 재사용할 선례가 없다. **`T.Stage5.unity`에서만 쓰인다(GUID 검색으로 확인, 2026-08 사용자 확정) — M.Stage5와 무관, T 단독 범위.**
 

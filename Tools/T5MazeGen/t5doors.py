@@ -218,25 +218,33 @@ def color_sequence(rng, n_seg, parts):
 def partitions():
     """(label, cmap, 전환 하한, 벽이 된 색). cmap은 문 색 → 런타임 그룹.
 
-    러너 색은 Common으로 떨어진다(러너는 1층이라 자기 패드를 못 밟는다).
-    없는 색은 `MISSING_IS_WALL`에 따라 벽이 되거나 Common으로 합쳐진다.
+    **T5에는 Common이 없다 (2026-09-20).** 열 수 없는 색은 전부 벽이다:
+     · 없는 색  — 들고 있는 사람이 아예 없다.
+     · 러너 색  — 러너는 1층이라 2층 패드를 밟을 수 없다.
+    구 규칙은 러너 색을 Common(누구나 엶)으로 뒀는데, 문 180개에서는 그 30개가 통째로
+    "아무나 여는 문"이 되어 격자가 헐거워진다.
+
     색 이름 자체는 전환 수에 영향이 없으므로(그룹 구조만 본다),
-    **몇 개가 벽이 되는가**만 경우의 수로 돌린다."""
+    **몇 개가 벽이 되는가**만 경우의 수로 돌린다 — n인이면 벽은 (5 - n)색이다."""
     out = []
 
-    def make(walled, label, floor):
+    def make_for(runner, walled, label, floor):
         cmap = {c: c for c in COLORS}
-        cmap[UNIQUE[0]] = "Common"                 # 러너 색
-        for w in walled:
+        walls = set(walled) | {runner}             # 없는 색 + 러너 색
+        for w in walls:
             cmap[w] = "Wall" if MISSING_IS_WALL else "Common"
-        return (label, cmap, floor, set(walled) if MISSING_IS_WALL else set())
+        return (label, cmap, floor, walls if MISSING_IS_WALL else set())
 
-    out.append(make((), "4p", MIN_SW_4P))
-    for w in UNIQUE[1:]:                           # 3인 — 없는 색 1개
-        out.append(make((w,), "3p", MIN_SW_3P))
-    for a in range(1, len(UNIQUE)):                # 2인 — 없는 색 2개
-        for b in range(a + 1, len(UNIQUE)):
-            out.append(make((UNIQUE[a], UNIQUE[b]), "2p", MIN_SW_2P))
+    # 러너가 누구냐에 따라 벽이 되는 색이 달라지고, 배치가 대칭이 아니라 결과도 달라진다.
+    # 그래서 **러너 색도 경우의 수로 돌린다** — 구 버전은 UNIQUE[0]만 봤다.
+    for runner in UNIQUE:
+        others = [c for c in UNIQUE if c != runner]
+        out.append(make_for(runner, (), "4p", MIN_SW_4P))
+        for w in others:                           # 3인 — 없는 색 1개
+            out.append(make_for(runner, (w,), "3p", MIN_SW_3P))
+        for a in range(len(others)):               # 2인 — 없는 색 2개
+            for b in range(a + 1, len(others)):
+                out.append(make_for(runner, (others[a], others[b]), "2p", MIN_SW_2P))
     return out
 
 
@@ -599,7 +607,7 @@ def build(seed):
 
     return {
         "seed": seed,
-        "rule": {"missingColorIsWall": MISSING_IS_WALL},
+        "rule": {"missingColorIsWall": MISSING_IS_WALL, "runnerColorIsWall": True},
         "grid": {"n": N, "pitch": PITCH, "extent": EXTENT, "doorWidth": WIDTH,
                  "doorThickness": THICK, "doorHeight": HEIGHT},
         "startCell": list(START), "goalCell": list(GOAL),

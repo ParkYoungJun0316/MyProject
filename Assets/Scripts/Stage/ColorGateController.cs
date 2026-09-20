@@ -3,36 +3,46 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// 색 게이트 컨트롤러 (T.Stage5 러너 미로). 맵(Map_XX) 루트마다 1개.
-/// `TStage5RunnerRedesign.md` §1.2가 SSOT.
+/// 색 게이트 컨트롤러 (T.Stage5). **`T5_Maze` 루트에 1개** — 맵이 1장이라 씬에 하나뿐이다.
+/// `TStage5RunnerRedesign.md` §1.4 / §1.5 / §1.6이 SSOT.
 ///
 /// [동작 — 배타 색 게이트]
 ///  - 한 번에 **한 색만** 열린다. 패드를 밟으면 그 색 문만 Open, 나머지는 전부 Close.
-///  - 라운드 시작 상태는 **전부 닫힘**(NV 초기값 -1). 흑·백도 같은 규칙의 한 색일 뿐이다.
+///  - 시작 상태는 **전부 닫힘**(NV 초기값 -1). 흑·백도 같은 규칙의 한 색일 뿐이다.
+///  - 격자의 **모든 변이 문**이라 문은 180개고, 전환 1회에 실제로 움직이는 것은 60개다
+///    (열려 있던 30개가 닫히고 새 색 30개가 열린다. 나머지는 이미 닫혀 있어 Close()가 무동작).
 ///  - 문 이동·닫힘 넉백은 각 문의 DoorController가 담당(openMode = SlideUp, latchOnOpen = false).
 ///
-/// [설계슬롯 vs 실제 색 — SessionColorSlotMap이 SSOT]
-///  맵은 Blue/Purple/Green/Yellow 4개의 **설계슬롯**으로 제작돼 있다. 이번 판에 없는 색과
-///  **그 라운드 러너의 색**은 `SessionColorSlotMap`에서 **Common(누구나)** 으로 떨어진다
-///  (러너는 1층이라 2층 패드를 밟을 수 없으므로 슬롯을 들고 있을 이유가 없다).
-///  스테이지마다 바뀌는 것은 러너 색 한 겹뿐이고, 그건 디렉터가 `SetRunnerExclusion()`으로 넘긴다.
-///  Black/White는 치환 대상이 아니라 그대로 고정.
+/// [설계슬롯 → 실제 색 — SessionColorSlotMap이 SSOT]
+///  문은 Blue/Purple/Green/Yellow 4개의 **설계슬롯** + 흑·백으로 제작돼 있고, 거기에 두 겹이 얹힌다.
+///   ① **시드 순열**(`SetDesignPermutation`) — 매판 다른 사람이 그 문의 열쇠를 쥔다(§1.12).
+///   ② **러너 제외**(`SetRunnerExclusion`) — 러너 색은 **벽**이 된다(아래).
+///  Black/White는 두 겹 모두의 대상이 아니라 그대로 고정.
 ///
-///  여러 슬롯이 Common으로 떨어지면 **Common 패드 하나가 그 문들을 한꺼번에 연다** — 인원이
-///  적을수록 문이 묶이는 것이 의도된 동작이다(§1.2. 맵 BFS 검증도 "2인 = 실질 3색" 전제로 통과).
+/// [⚠️ T5에는 Common이 없다 — 열 수 없는 색은 전부 **벽** (2026-09-20 §1.4)]
+///  벽이 되는 색은 둘이다:
+///   · **이번 판에 없는 색** — 들고 있는 사람이 아예 없다.
+///   · **러너 색** — 러너는 1층이라 2층 패드를 밟을 수 없다.
+///  둘 다 `SessionColorSlotMap.IsSlotAbsent()`가 판정하고, 그 묶음은 **영영 안 열리며 패드도 숨긴다.**
+///
+///  구 규칙(없는 색·러너 색 → Common = 누구나 엶)을 문 180개에 그대로 쓰면 **2인에서 문의 절반이
+///  패드 하나로 열려** 러너가 거의 걸어서 골인한다(실측 최소 전환 5회). 벽 규칙에서는 인원이 줄수록
+///  격자가 **촘촘해진다** — seed 7036 실측 최소 전환: 4인 12~13 · 3인 13~14 · 2인 14~15 · 솔로 27.
+///  연결성은 §1.6의 **흑 ∪ 백 조건**이 전 인원에서 보장하므로 어떤 인원에서도 막히지 않는다.
+///
+/// [솔로 — 흑·백 동시 열림 고정 (§1.6)]
+///  고유색·Common 문은 **전부 닫힘 고정**(열어줄 안내자가 없다), **흑·백만 동시에 열어** 고정 미로로
+///  만들고 2층 패드는 전부 숨긴다. 구 규칙("솔로는 문 전부 Open")은 폐기됐다 — 모든 변이 문인
+///  구조에서 전부 열면 **벽이 하나도 없는 120×120 빈 들판**이 되어 대각선으로 달리면 끝난다.
 ///
 /// [네트워크]
 ///  상태는 StageNetworkState 전용 슬롯(OpenGateColor) 하나. Host만 쓰고, 전 머신은 매 프레임
 ///  이 값과 마지막 적용값을 비교해 다르면 DoorController.Open()/Close()를 재생한다
 ///  (스폰 초기 동기화 순서와 무관하게 항상 최종값으로 수렴).
 ///
-/// [솔로]
-///  §1.2에 따라 문을 전부 Open으로 고정하고 2층 패드를 숨긴다 — 안내자가 없으므로
-///  색 게이트 자체가 성립하지 않는다.
-///
 /// [Inspector]
 ///  doorGroups : 설계슬롯 6색 각각의 문 부모(Doors/Blue … Doors/White). 비활성 자식 포함 수집.
-///  pads       : 비우면 이 맵 하위의 ColorGatePad를 자동 수집.
+///  pads       : 비우면 이 하위의 ColorGatePad를 자동 수집(9구간 × 6 = 54개).
 /// </summary>
 public class ColorGateController : MonoBehaviour
 {
@@ -52,6 +62,9 @@ public class ColorGateController : MonoBehaviour
 
         /// <summary>런타임 실제 적용 색. 재매핑 전에는 designColor와 같다.</summary>
         [System.NonSerialized] public PlayerColorType effectiveColor;
+
+        /// <summary>이번 판에 아무도 열 수 없어 **영영 안 열리는** 묶음인가(§1.4 벽 규칙 — 없는 색·러너 색).</summary>
+        [System.NonSerialized] public bool isWall;
     }
 
     [Header("색별 문 묶음")]
@@ -126,6 +139,8 @@ public class ColorGateController : MonoBehaviour
             if (g == null) continue;
 
             g.effectiveColor = SessionColorSlotMap.Resolve(g.designColor);
+            g.isWall         = SessionColorSlotMap.IsSlotAbsent(g.designColor);
+
             if (g.visuals == null) continue;
             foreach (ColoredDoorVisual v in g.visuals)
                 if (v != null) v.Apply(g.effectiveColor);
@@ -216,20 +231,29 @@ public class ColorGateController : MonoBehaviour
         {
             if (g?.doors == null) continue;
 
-            // 솔로는 전부 열림 고정. 그 외에는 실제 색이 열린 색과 같은 묶음만 열린다
-            // (여러 슬롯이 같은 색으로 매핑되면 그 묶음들이 함께 열리는 게 정상 — 상단 주석 참고).
-            bool open = solo || (openColor >= 0 && (int)g.effectiveColor == openColor);
+            bool open;
+            if (g.isWall)   open = false;                    // 없는 색·러너 색 = 벽. 무엇을 밟아도 안 열린다 (§1.4)
+            else if (solo)  open = IsBlackOrWhite(g.effectiveColor); // 솔로는 흑·백만 동시 열림 (§1.6)
+            else            open = openColor >= 0 && (int)g.effectiveColor == openColor;
+
             SetDoors(g.doors, open);
         }
 
-        // 솔로는 안내자가 없어 색 게이트가 성립하지 않으므로 2층 패드를 숨긴다 (§1.2).
-        bool padsVisible = !solo;
+        // 솔로는 안내자가 없어 색 게이트가 성립하지 않으므로 전부 숨긴다(§1.6).
+        // 다인승에서도 **벽이 된 색(없는 색·러너 색)의 패드는 숨긴다** — 열 대상이 없다(§1.5).
+        // 구간당 보이는 패드: 4인 5개(고유 3 + 흑 + 백) · 3인 4개 · 2인 3개 · 솔로 0개.
         foreach (ColorGatePad pad in pads)
         {
-            if (pad == null || pad.gameObject.activeSelf == padsVisible) continue;
-            pad.gameObject.SetActive(padsVisible);
+            if (pad == null) continue;
+
+            bool visible = !solo && !SessionColorSlotMap.IsSlotAbsent(pad.DesignColor);
+            if (pad.gameObject.activeSelf == visible) continue;
+            pad.gameObject.SetActive(visible);
         }
     }
+
+    static bool IsBlackOrWhite(PlayerColorType c) =>
+        c == PlayerColorType.Black || c == PlayerColorType.White;
 
     static void SetDoors(DoorController[] doors, bool open)
     {

@@ -51,6 +51,10 @@ public class GameSession : MonoBehaviour
     // 씬 인트로 대화를 이미 본 키 목록 (사망 리로드 후 재표시 방지)
     private readonly HashSet<string> _seenIntroKeys = new HashSet<string>();
 
+    // T.Stage5 러너 로테이션 — 이번 사이클에서 이미 러너를 한 clientId.
+    // 씬 리로드를 넘어 살아남아야 해서 여기 있다(StageNetworkState는 씬과 함께 사라진다).
+    private readonly HashSet<ulong> _t5RunnerHistory = new HashSet<ulong>();
+
     /// <summary>Host가 안 건드리면 이 값. CheerService._teamCheerWord 기본값과 동일.</summary>
     public const string DefaultTeamCheerWord = "fighting";
 
@@ -246,6 +250,40 @@ public class GameSession : MonoBehaviour
     /// <summary>해당 씬 키의 인트로 대화를 봤다고 기록.</summary>
     public void MarkIntroSeen(string key) => _seenIntroKeys.Add(key);
 
+    // ── T.Stage5 러너 로테이션 ────────────────────────────────────
+
+    /// <summary>
+    /// 이번 사이클에서 아직 러너를 안 한 clientId만 남긴 후보 목록.
+    /// **전원이 한 번씩 했으면(=후보가 빔) 기록을 리셋하고 전체를 돌려준다** — 사이클이 한 바퀴 돌았다.
+    ///
+    /// 순수 랜덤 재추첨이면 4인에서도 1/4 확률로 같은 사람이 연속으로 러너가 된다.
+    /// T5는 실패 → 리로드 → 재추첨이 곧 러너 교대 기회라(`TStage5RunnerRedesign.md` §1.8),
+    /// 연속 당첨이 나오면 "부활을 안 주는" 설계 명분이 통째로 무너진다.
+    ///
+    /// 입력이 명단 하나뿐이라 **전 머신이 같은 답을 낸다** — 러너 뽑기가 로컬 계산인 이유와 같다.
+    /// </summary>
+    public List<ulong> GetT5RunnerCandidates(IReadOnlyList<ulong> allClientIds)
+    {
+        var candidates = new List<ulong>();
+        if (allClientIds == null) return candidates;
+
+        foreach (ulong id in allClientIds)
+            if (!_t5RunnerHistory.Contains(id)) candidates.Add(id);
+
+        if (candidates.Count == 0)
+        {
+            _t5RunnerHistory.Clear();            // 사이클 종료 → 다음 바퀴
+            candidates.AddRange(allClientIds);
+        }
+        return candidates;
+    }
+
+    /// <summary>이번 판 러너를 기록한다. 뽑기 직후 전 머신이 각자 부른다.</summary>
+    public void MarkT5Runner(ulong clientId) => _t5RunnerHistory.Add(clientId);
+
+    /// <summary>솔로는 후보가 본인 1명이라 매번 본인이 된다 — 기록이 쌓여도 위 리셋이 바로 푼다.</summary>
+    public int T5RunnerHistoryCount => _t5RunnerHistory.Count;
+
     /// <summary>
     /// 활성 플레이어·색 목록 초기화. TitleReturnFlow에서 호출.
     /// 타이머·채팅 초기화는 TitleReturnFlow가 직접 처리한다.
@@ -259,6 +297,7 @@ public class GameSession : MonoBehaviour
         _sessionTeamCheerWord = null;
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
+        _t5RunnerHistory.Clear();
         SessionColorSlotMap.Clear();
 
         Debug.Log("[GameSession] 세션 런타임 상태 리셋 완료");

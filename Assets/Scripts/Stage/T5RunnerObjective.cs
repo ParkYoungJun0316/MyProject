@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 /// <summary>
 /// T.Stage5 목표 — 러너는 1층 Goal, 안내자는 2층 Goal. 제한시간 안에 **전원이** 자기 Goal에 있어야 한다.
-/// SSOT: `Assets/Docs/TStage5RunnerRedesign.md` §1.6
+/// SSOT: `Assets/Docs/TStage5RunnerRedesign.md` §1.8
 ///
 /// [왜 전용 클래스인가 — 기존 둘 다 쓸 수 없다]
 ///  · `SurviveTimeObjective`는 **시간을 채우면 Complete()** 다. T5는 시간 초과가 실패라 승패가 반대다.
@@ -41,7 +41,12 @@ using UnityEngine.Events;
 ///  0. 이 씬의 `StageNetworkState`에서 **Disable Revive를 체크**(§7.1).
 ///  1. `StageManager.objectives`에 이 컴포넌트를 등록(T5는 이것 하나뿐).
 ///  2. runnerGoal / guideGoal에 각각 1층·2층 Goal 존 콜라이더를 연결. 두 존은 XZ가 같고 높이만 다르다.
-///  3. timeLimit = 120.
+///  3. timeLimit = **110** (§1.8).
+///
+/// [왜 110초인가 — 전환 12회 구조의 시간 산수]
+///  경로 27칸 · 피치 12 기준 주행만 32초. 여기에 전환 대기가 붙는다 —
+///  최적 12회 × 반응 2초면 56초, 실전값(16회 × 3초)이면 80초다. 90초면 최적 플레이 말고는 거의
+///  다 실패한다. 시간이 늘어도 2층은 계속 할 일이 있어 지루해지지 않는다는 판단으로 110을 잡았다.
 /// </summary>
 public class T5RunnerObjective : StageObjective
 {
@@ -52,9 +57,12 @@ public class T5RunnerObjective : StageObjective
     [Tooltip("2층 Goal 존(안내자 전용). 1층 Goal과 같은 XZ, 2층 높이.")]
     [SerializeField] Collider guideGoal;
 
+    /// <summary>1층 Goal 존(읽기 전용). 지도 UI가 goal 점 위치로 쓴다 — 좌표를 따로 적어두지 않기 위해서다.</summary>
+    public Collider RunnerGoalZone => runnerGoal;
+
     [Header("제한 시간")]
-    [Tooltip("이 시간(초)을 넘기면 실패. §1.1 = 120초.")]
-    public float timeLimit = 120f;
+    [Tooltip("이 시간(초)을 넘기면 실패. §1.8 = 110초 (실측 밴드 100~120).")]
+    public float timeLimit = 110f;
 
     [Header("이벤트 (UI 연결용)")]
     [Tooltip("남은 시간이 갱신될 때 호출(올림 초가 바뀔 때만). ObjectiveUI가 자동 구독.")]

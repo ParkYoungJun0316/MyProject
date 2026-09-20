@@ -8263,6 +8263,7 @@ RectTransform:
   - {fileID: 2255952591472645915}
   - {fileID: 6082267042364652072}
   - {fileID: 9220870414326576665}
+  - {fileID: 3700873622569951014}
   - {fileID: 3430203352817491551}
   - {fileID: 7636975557991693948}
   - {fileID: 5600779737478229738}
@@ -14757,6 +14758,68 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &8959843887085537515
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3700873622569951014}
+  - component: {fileID: 6729738813659494812}
+  m_Layer: 5
+  m_Name: T5Map_Panel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &3700873622569951014
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8959843887085537515}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7604708059740714457}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -135}
+  m_SizeDelta: {x: 220, y: 220}
+  m_Pivot: {x: 0.5, y: 1}
+--- !u!114 &6729738813659494812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8959843887085537515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23502d8bdc1a85e41a8470dba31f0dc4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::T5MinimapUI
+  worldMin: {x: -12, y: -12}
+  worldMax: {x: 108, y: 108}
+  padding: 10
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.45}
+  gridCells: 10
+  gridColor: {r: 1, g: 1, b: 1, a: 0.18}
+  gridThickness: 1
+  startColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+  goalColor: {r: 0.4, g: 1, b: 0.5, a: 1}
+  runnerColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  chaserColor: {r: 1, g: 0.25, b: 0.25, a: 1}
+  staticDotSize: 10
+  actorDotSize: 12
+  chaserRescanInterval: 0.5
 --- !u!1 &9070456836414494304
 GameObject:
   m_ObjectHideFlags: 0

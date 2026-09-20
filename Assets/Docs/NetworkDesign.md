@@ -1343,6 +1343,10 @@ if (PlayerSpawnCoordinator.IsReady) Handler();   // 늦은 구독 대비
 
 - 상세: [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) §1.2 (텔레포트를 버린 새 시작 절차)
 
+> **2026-09-20 재확인:** T5 재설계(씬·코드)가 끝난 뒤에도 **T5는 텔레포트를 쓰지 않는다** —
+> 안내자는 발판으로 2층에 올라가고, 2층에서 못 내려오게 막는 것도 `ContactKnockback`이다.
+> 이 절은 **부활 전용 SSOT**로 남는다. 삭제하지 말 것.
+
 ---
 
 ## 11A. 스테이지 진행 축 (SSOT)

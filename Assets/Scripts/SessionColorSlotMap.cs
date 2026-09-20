@@ -33,10 +33,16 @@ using System.Collections.Generic;
 ///  `FindObjectsByType`으로 훑어 밀어넣으면 ① 나중에 생기거나 늦게 켜지는 대상이 누락되고
 ///  ② 호출 순서가 곧 정합성이 되며 ③ 1회 적용 후 래치라 실패해도 복구 경로가 없다.
 ///
-/// [T5 라운드 제외]
-///  T.Stage5는 라운드마다 러너가 바뀌고 러너는 1층이라 패드를 밟을 수 없다. 그래서 그 라운드의
-///  **러너 색도 Common**으로 떨어뜨린다 — `SetRunnerExclusion()`이 그 한 겹이다.
-///  T1/T4는 이 호출이 없으므로 활성 색만으로 씬 로드 즉시 확정된다.
+/// [T5 고유색 순열 — 2026-09-20]
+///  T5는 씬 로드 때 `SetDesignPermutation(seed)`으로 고유 4색을 한 번 섞는다. 문 180개의 색 배치가
+///  같아도 **매판 다른 사람이 그 문의 열쇠를 쥔다**(`TStage5RunnerRedesign.md` §1.12).
+///  흑·백은 순열 대상이 아니므로 생성기가 보장한 연결성·최소 전환 횟수는 그대로 산다.
+///
+/// [T5 러너 제외 — Common이 아니라 벽]
+///  T.Stage5의 러너는 1층이라 2층 패드를 밟을 수 없다. 그래서 러너 색은 **이번 판에 없는 색과
+///  똑같이 취급**한다 — `SetRunnerExclusion()`이 그 한 겹이고, 판정은 `IsSlotAbsent()`가 한다.
+///  **T5에는 Common 문도 Common 패드도 없다**(2026-09-20 §1.4).
+///  T1/T4는 이 호출이 없고, 그쪽에서 "없는 색"은 여전히 Resolve가 Common으로 떨어뜨린다.
 /// </summary>
 public static class SessionColorSlotMap
 {
@@ -57,6 +63,13 @@ public static class SessionColorSlotMap
     static readonly HashSet<PlayerColorType> s_activeSlots = new HashSet<PlayerColorType>();
     static PlayerColorType s_excluded = PlayerColorType.Common; // Common = 제외 없음
 
+    // 이번 판의 고유색 순열. designSlot → "실제로 그 색이 칠해진 것처럼" 취급할 슬롯.
+    // 비어 있으면 항등(순열 없음)이고, 그것이 T1/T4의 상태다 — T5만 SetDesignPermutation()으로 얹는다.
+    static readonly Dictionary<PlayerColorType, PlayerColorType> s_permutation =
+        new Dictionary<PlayerColorType, PlayerColorType>();
+
+    const int PermutationSalt = 0x54355043; // "T5PC" — 러너 뽑기 시드와 같은 시드를 써도 답이 갈리게
+
     /// <summary>
     /// 설계슬롯의 이번 판 실제 색.
     /// 고유색 슬롯이 이번 판에 살아 있고 라운드 제외 대상도 아니면 자기 자신,
@@ -65,8 +78,40 @@ public static class SessionColorSlotMap
     public static PlayerColorType Resolve(PlayerColorType designSlot)
     {
         if (!IsDesignSlot(designSlot)) return designSlot;   // 흑·백·Common 등은 치환 대상이 아니다
-        if (designSlot == s_excluded) return PlayerColorType.Common;
-        return s_activeSlots.Contains(designSlot) ? designSlot : PlayerColorType.Common;
+
+        PlayerColorType actual = Permute(designSlot);       // 순열이 없으면 자기 자신
+        return s_activeSlots.Contains(actual) ? actual : PlayerColorType.Common;
+    }
+
+    /// <summary>
+    /// 설계슬롯에 이번 판 순열을 적용한 슬롯. 순열이 없으면(T1/T4) 자기 자신이다.
+    /// <see cref="Resolve"/>가 안에서 쓰는 것과 같은 값 — 벽 판정(T5)처럼 "Common으로 떨어지기 전"이
+    /// 필요한 쪽만 직접 부른다.
+    /// </summary>
+    public static PlayerColorType Permute(PlayerColorType designSlot)
+    {
+        if (!IsDesignSlot(designSlot)) return designSlot;
+        PlayerColorType mapped;
+        return s_permutation.TryGetValue(designSlot, out mapped) ? mapped : designSlot;
+    }
+
+    /// <summary>
+    /// 이 슬롯이 이번 판에 **아무도 열 수 없는 색인가** = T5의 "벽" 판정 (`TStage5RunnerRedesign.md` §1.4).
+    /// 둘 다 벽이다:
+    ///  · **이번 판에 없는 색** — 들고 있는 사람이 아예 없다.
+    ///  · **러너 색** — 그 색을 든 사람은 1층에 있어 2층 패드를 밟을 수 없다(`SetRunnerExclusion`).
+    ///
+    /// T1/T4는 이 질문을 하지 않는다. 그쪽에서 "없는 색"은 <see cref="Resolve"/>가 Common으로
+    /// 떨어뜨려 **누구나 밟는 패드**가 되고, 그게 그 스테이지들의 완화 규칙이다(`PressurePad`).
+    /// 같은 처리를 문 180개짜리 T5에 쓰면 2인에서 문의 절반이 한 번에 열려 스테이지가 사라진다.
+    /// 흑·백·Common은 치환 대상이 아니므로 언제나 false(= 벽이 될 수 없다).
+    /// </summary>
+    public static bool IsSlotAbsent(PlayerColorType designSlot)
+    {
+        if (!IsDesignSlot(designSlot)) return false;
+
+        PlayerColorType actual = Permute(designSlot);
+        return actual == s_excluded || !s_activeSlots.Contains(actual);
     }
 
     /// <summary>designSlot이 치환 대상(고유색 4슬롯)인가.</summary>
@@ -86,6 +131,7 @@ public static class SessionColorSlotMap
     {
         s_activeSlots.Clear();
         s_excluded = PlayerColorType.Common;
+        s_permutation.Clear();   // 순열도 판마다 다시 정한다 — T5가 OnPlayersReady에서 얹는다
 
         if (activeColors != null)
             foreach (PlayerColorType c in activeColors)
@@ -95,7 +141,49 @@ public static class SessionColorSlotMap
     }
 
     /// <summary>
-    /// T5 전용: 슬롯에서 빼둘 색(= 러너 색). Common을 넘기면 제외 없음.
+    /// T5 전용: 이번 판의 고유색 순열을 시드로 정한다(`TStage5RunnerRedesign.md` §1.12 / §4.2-2).
+    /// 문에 칠해진 설계 4색을 섞어 **매판 다른 사람이 열쇠를 쥐게** 한다.
+    ///
+    /// 흑·백·Common은 건드리지 않는다 — 그래서 §1.6의 "흑 ∪ 백이 start→goal을 잇는다"와
+    /// 생성기가 보장한 최소 전환 횟수가 **순열에 대해 불변**이고, 순열마다 검증을 다시 돌릴 필요가 없다.
+    ///
+    /// 전 머신이 같은 시드로 같은 답을 내므로 NV에 싣지 않는다(§4.3).
+    /// 값이 실제로 바뀔 때만 Version이 오른다.
+    /// </summary>
+    public static void SetDesignPermutation(int seed)
+    {
+        var shuffled = new List<PlayerColorType>(DesignSlots);
+
+        var rng = new System.Random(seed ^ PermutationSalt);
+        for (int i = shuffled.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(0, i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
+
+        bool changed = false;
+        for (int i = 0; i < DesignSlots.Length; i++)
+        {
+            PlayerColorType from = DesignSlots[i];
+            PlayerColorType to   = shuffled[i];
+
+            PlayerColorType prev;
+            if (!s_permutation.TryGetValue(from, out prev) || prev != to) changed = true;
+            s_permutation[from] = to;
+        }
+
+        if (changed) Version++;
+    }
+
+    /// <summary>
+    /// T5 전용: 이번 판 러너의 색. Common을 넘기면 제외 없음.
+    ///
+    /// **이 색은 <see cref="IsSlotAbsent"/>에서 "없는 색"과 같이 벽이 된다** (2026-09-20 §1.4).
+    /// 구 규칙은 러너 색을 Common(누구나 엶)으로 떨어뜨렸는데, 모든 변이 문인 구조에서는
+    /// 러너 색 30개가 통째로 "아무나 여는 문"이 되어 격자가 헐거워진다. 러너는 1층이라 애초에
+    /// 자기 패드를 밟을 수 없으므로 **그 색은 이번 판에 없는 색과 다를 게 없다**는 쪽으로 통일했다.
+    /// 그래서 T5에는 Common 문도 Common 패드도 존재하지 않는다.
+    ///
     /// 값이 실제로 바뀔 때만 Version이 오른다 — 같은 값을 다시 넣으면 조회자를 깨우지 않는다.
     /// </summary>
     public static void SetRunnerExclusion(PlayerColorType excluded)
@@ -110,6 +198,7 @@ public static class SessionColorSlotMap
     {
         s_activeSlots.Clear();
         s_excluded = PlayerColorType.Common;
+        s_permutation.Clear();
         Version++;
     }
 }
