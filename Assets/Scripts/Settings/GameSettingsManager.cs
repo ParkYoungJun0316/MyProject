@@ -40,7 +40,8 @@ public class GameSettingsManager : MonoBehaviour
     const string KeyMicDevice    = "Settings.MicDevice";
     const string KeyChatFontSize = "Settings.ChatFontSize";
     const string KeyDigitCheer   = "Settings.DigitCheerEnabled";
-    const string KeyTipEnabled   = "Settings.TipEnabled";
+    // 구 "Settings.TipEnabled"(표시 여부, 기본 ON)와 의미가 달라 키를 새로 둔다 — 옛 저장값이 "항상 표시"로 새지 않게.
+    const string KeyTipAlwaysShow = "Settings.TipAlwaysShow";
     const string KeyMouseSensitivity = "Settings.MouseSensitivity";
 
     /// <summary>채팅 글자 크기 슬라이더 min/max — OptionsMenuController Slider Inspector 값과 맞춰야 함.</summary>
@@ -71,8 +72,9 @@ public class GameSettingsManager : MonoBehaviour
     public float  ChatFontSize  { get; private set; } = 14f;
     /// <summary>T키 팀 응원(CheerDigitInput). 기본 OFF — 음성이 기본 수단. Options에서 켠다.</summary>
     public bool   DigitCheerEnabled { get; private set; }
-    /// <summary>인게임 Tip 패널 표시 여부. 기본 ON. 로컬 표시 설정 — 네트워크 무관.</summary>
-    public bool   TipEnabled { get; private set; } = true;
+    /// <summary>인게임 Tip 본문 항상 표시. 기본 OFF — OFF면 "[Tab] Tip" 헤더만 보이고 Tab 홀드 중에만 본문.
+    /// ON이면 Tab과 무관하게 본문이 항상 보인다. 로컬 표시 설정 — 네트워크 무관.</summary>
+    public bool   TipAlwaysShow { get; private set; }
     /// <summary>마우스(카메라 회전) 감도 배율. ThirdPersonCamera가 매 프레임 이 값을 pull해서
     /// sensitivityX/sensitivityY(Inspector 기본값)에 곱연산 — §1 pull 원칙과 동일 패턴(push 아님).</summary>
     public float  MouseSensitivity { get; private set; } = 1f;
@@ -100,11 +102,11 @@ public class GameSettingsManager : MonoBehaviour
     public event Action<bool> MicMutedChanged;
 
     /// <summary>
-    /// Tip 표시 설정이 바뀔 때 발생(옵션 패널 토글 + 기본값 리셋 공통 경로).
+    /// Tip 항상 표시 설정이 바뀔 때 발생(옵션 패널 토글 + 기본값 리셋 공통 경로).
     /// TipUI가 구독해서 이미 떠 있는 Tip 패널을 즉시 숨기거나 다시 보여줌 —
     /// ChatFontSizeChanged와 같은 이유(런타임 중 이미 떠 있는 UI 갱신)로 §1 pull 원칙 예외.
     /// </summary>
-    public event Action<bool> TipEnabledChanged;
+    public event Action<bool> TipAlwaysShowChanged;
 
     /// <summary>
     /// 모니터의 진짜 네이티브(최대) 해상도. 저장된 해상도를 적용하기 전(ApplySavedDisplay 호출 전)
@@ -149,7 +151,7 @@ public class GameSettingsManager : MonoBehaviour
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
         ChatFontSize  = PlayerPrefs.GetFloat(KeyChatFontSize, defaultChatFontSize);
         DigitCheerEnabled = PlayerPrefs.GetInt(KeyDigitCheer, 0) == 1;
-        TipEnabled    = PlayerPrefs.GetInt(KeyTipEnabled, 1) == 1;
+        TipAlwaysShow = PlayerPrefs.GetInt(KeyTipAlwaysShow, 0) == 1;
         MouseSensitivity = PlayerPrefs.GetFloat(KeyMouseSensitivity, defaultMouseSensitivity);
 
         NativeResolution = QueryNativeResolution();
@@ -264,12 +266,12 @@ public class GameSettingsManager : MonoBehaviour
         PlayerPrefs.SetInt(KeyDigitCheer, value ? 1 : 0);
     }
 
-    /// <summary>옵션 메뉴 "Tip 표시" 토글에서 호출. 즉시 적용 + 저장. 기본 ON.</summary>
-    public void SetTipEnabled(bool value)
+    /// <summary>옵션 메뉴 "Tip 항상 표시" 토글에서 호출(ON = 본문 항상 표시). 즉시 적용 + 저장. 기본 OFF.</summary>
+    public void SetTipAlwaysShow(bool value)
     {
-        TipEnabled = value;
-        PlayerPrefs.SetInt(KeyTipEnabled, value ? 1 : 0);
-        TipEnabledChanged?.Invoke(value);
+        TipAlwaysShow = value;
+        PlayerPrefs.SetInt(KeyTipAlwaysShow, value ? 1 : 0);
+        TipAlwaysShowChanged?.Invoke(value);
     }
 
     /// <summary>옵션 메뉴 마이크 입력장치 드롭다운에서 호출. 즉시 적용 + 저장.
@@ -377,7 +379,7 @@ public class GameSettingsManager : MonoBehaviour
     /// <summary>
     /// 옵션 메뉴 "기본값" 버튼에서 호출. 볼륨·채팅 글자 크기는 Inspector 기본값, 화면은 현 모니터
     /// 네이티브 해상도 + 전체화면(독점), 언어는 수동 선택 해제 후 Steam/systemLanguage 자동감지로 되돌림.
-    /// 숫자키 응원은 기본 OFF, Tip 표시는 기본 ON. 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
+    /// 숫자키 응원은 기본 OFF, Tip 항상 표시도 기본 OFF. 밝기는 아직 구현된 설정이 아니라 범위에서 제외(SoundAndSettingsDesign.md §8).
     /// </summary>
     public void ResetToDefaults()
     {
@@ -387,7 +389,7 @@ public class GameSettingsManager : MonoBehaviour
         SetMicVolume(defaultMicVolume);
         SetChatFontSize(defaultChatFontSize);
         SetDigitCheerEnabled(false);
-        SetTipEnabled(true);
+        SetTipAlwaysShow(false);
         SetMouseSensitivity(defaultMouseSensitivity);
 
         ApplyDisplay(NativeResolution.width, NativeResolution.height, FullScreenMode.ExclusiveFullScreen);

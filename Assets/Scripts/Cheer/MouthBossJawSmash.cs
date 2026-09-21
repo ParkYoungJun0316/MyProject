@@ -364,6 +364,15 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         yield return WaitUntilServerTime(openEnd);
         TriggerIdle();
 
+        // 마지막 회차는 응원 창을 열지 않는다(2026-09-21 확정) — 창이 열리면 복구된 25칸 위에서
+        // 엔딩 대화가 나온다. 마지막 1칸만 남은 채로 곧장 OnChallengeComplete → Bossdown 대화 →
+        // ForceBreakAllTilesForEnding으로 이어져야 한다.
+        if (cycleIndex >= totalCycles)
+        {
+            _phase = HazardPhase.Idle;
+            yield break;
+        }
+
         // 5. CheerWindow — 이 시점부터만 응원이 유효(§7 인과관계 반전).
         _phase = HazardPhase.CheerWindow;
         _recoverQueued = false;

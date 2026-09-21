@@ -28,10 +28,7 @@ public class EndCreditsController : MonoBehaviour
         "Bug reports: discord.gg/BGNs5F2eg\n" +
         "\n" +
         "\n" +
-        "Thank you for playing\n" +
-        "\n" +
-        "Season 2\n" +
-        "See you in the stomach";
+        "Thank you for playing";
 
     [Header("스크롤")]
     [SerializeField] RectTransform viewport;

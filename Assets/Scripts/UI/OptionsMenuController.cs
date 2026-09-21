@@ -26,7 +26,7 @@ using UnityEngine.UI;
 /// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
 ///   (Inspector에서 Slider의 minValue/maxValue를 10~24로 설정).
 /// - digitCheerToggle   : Toggle — "T키로 응원하기". 미연결이면 설정 UI만 없음(기본 OFF 유지).
-/// - tipToggle          : Toggle — "Tip 표시". 미연결이면 설정 UI만 없음(기본 ON 유지).
+/// - tipToggle          : Toggle — "Tip 항상 표시"(ON = 본문 항상 표시, OFF = Tab 홀드 중에만). 미연결이면 설정 UI만 없음(기본 OFF 유지).
 /// - mouseSensitivitySlider : Slider — 마우스(카메라 회전) 감도 배율. min/max는
 ///   GameSettingsManager.Min/MaxMouseSensitivity(0.1~2)와 일치시킬 것. ThirdPersonCamera가
 ///   pull 방식으로 매 프레임 반영(별도 push 이벤트 불필요).
@@ -62,7 +62,7 @@ public class OptionsMenuController : MonoBehaviour
     [SerializeField] private Toggle digitCheerToggle;
 
     [Header("Tip")]
-    [Tooltip("인게임 Tip 패널 표시. 기본 ON.")]
+    [Tooltip("인게임 Tip 본문 항상 표시. 기본 OFF (OFF면 Tab 홀드 중에만 본문 표시).")]
     [SerializeField] private Toggle tipToggle;
 
     [Header("채팅")]
@@ -342,7 +342,7 @@ public class OptionsMenuController : MonoBehaviour
     {
         GameSettingsManager settings = GameSettingsManager.Instance;
         if (settings != null && tipToggle != null)
-            tipToggle.isOn = settings.TipEnabled;
+            tipToggle.isOn = settings.TipAlwaysShow;
     }
 
     void RefreshChatFontSizeSlider()
@@ -461,7 +461,7 @@ public class OptionsMenuController : MonoBehaviour
     void OnTipChanged(bool value)
     {
         if (_refreshing) return;
-        GameSettingsManager.Instance?.SetTipEnabled(value);
+        GameSettingsManager.Instance?.SetTipAlwaysShow(value);
     }
 
     void OnMicVolumeChanged(float value)

@@ -1,7 +1,7 @@
 # Revive System Design (부활 시스템)
 
 **상태(2026-09-19):** **다운 시스템 전면 폐기 — 사망 + 자동 부활 구조로 교체.**
-**설계 확정 ✅ · UI 확정 ✅(§11) · 코드 구현 완료 ✅ · 에디터 작업 남음 ⬜(§10.1)**
+**설계 확정 ✅ · UI 확정 ✅(§11) · 코드 구현 완료 ✅ · 에디터 작업 완료 ✅(§10.1, 2026-09-21 전수 확인)**
 
 > **읽을 순서:** §2(판정) → §3(부활) → §9.3(텔레포트 — `NetworkDesign.md` §11.9 규칙 필수) →
 > §10(변경 지점) → §11(UI). T5 예외는 §7.1 + `TStage5RunnerRedesign.md` §1.6.
@@ -387,10 +387,33 @@ Host `Update()`가 매 프레임 도는 자리라 플래그 한 줄이면 순서
 - **Enemy:** `PlayerDead` 레이어 전환은 그대로라 추적 제외가 유지된다. `IsDowned` 참조만 `IsDead`로 정리.
 - **Camera:** `ThirdPersonCamera.SnapToTarget()` 신규 — §9.3.
 
-### 10.1 에디터 작업 (사용자) — ⬜ 남은 작업
+### 10.1 에디터 작업 — ✅ 완료 (2026-09-21 전수 확인)
 
-코드는 전부 반영됐고 **컴파일도 통과했다**. 스크립트가 지워졌으므로 아래는 지금 전부 **Missing Script**
-상태다. 전수 검색(삭제된 스크립트 GUID로 `.unity`/`.prefab` 스캔) 결과가 아래가 전부다.
+코드는 전부 반영됐고 **컴파일도 통과했다**. 아래 표는 2026-09-19 시점의 남은 작업 목록이었고,
+**2026-09-21 전수 확인 결과 플레이 경로에서는 전부 끝났다.**
+
+> **확인 방법:** `Assets` 전체의 `.unity`/`.prefab` **463개**에서 `m_Script`가 가리키는 GUID를
+> `AssetDatabase.GUIDToAssetPath`로 역해석해 해결 안 되는 것(= Missing Script)을 전부 뽑고,
+> 두 프리팹은 Unity에 실제 로드해 `GetComponents`에 `null`이 있는지 따로 봤다.
+>
+> | 항목 | 결과 |
+> |---|---|
+> | `Kkultteok.prefab` | Missing Script 0 · `ReviveHoneyMist` 오브젝트 없음 |
+> | `UI.prefab` | Missing Script 0 · `LocalDownOverlay`/`DeathDelayOverlayUI`/`ReviveInteractPrompt` 전부 없음 |
+> | 플레이 경로 14개 씬 | 미해결 스크립트 GUID 0 · `StageResetOnPlayerDeath` 0 |
+> | `T.Stage5` | `disableRevive: 1` ✅ |
+> | `TeamLivesUI` | `icon` = `Icon` 연결됨 (`content`/`countText`도) |
+> | `DeathUI` String Table | 5개 키 없음 |
+>
+> **⬜ 남은 것 — 전부 플레이 경로 밖이라 일부러 안 건드렸다.**
+> `StageResetOnPlayerDeath` GUID(`79b2fab…`)가 아직 있는 파일 16개:
+> `Assets/Scenes/Backup/*` 14개 · `Assets/Scenes/식도/T.Stage5 1.unity` · `Assets/_Recovery/0.unity`.
+> 백업에서 지우면 백업이 아니게 되므로 사용자 판단 대상.
+>
+> **문서에 없던 잔여물 1건:** `Assets/Resources/Crowdin/CrowdinTranslations.asset`에
+> `Down.Guide`·`Down.Reviving`·`Revive.Prompt`·`Revive.Casting`·`Revive.Cancelled` 5개가 남아 있다.
+> String Table에선 지워졌고 참조 코드도 없어 **죽은 데이터**다(동작 영향 없음). Crowdin 파이프라인을
+> 어떻게 돌리느냐에 달려 있어 손대지 않았다.
 
 | 대상 | 할 일 | 확인된 위치 |
 |---|---|---|

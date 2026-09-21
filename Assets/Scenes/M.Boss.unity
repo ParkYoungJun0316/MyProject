@@ -4056,6 +4056,11 @@ MonoBehaviour:
   minColorRounds: 3
   maxColorRounds: 4
   roundTimeLimit: 8
+  roundTimeLimitByPlayerCount:
+  - 5.5
+  - 6.5
+  - 7.5
+  - 9
   resolveDelay: 5
   wrongDamage: 1
   zoneRig: {fileID: 315391217}
@@ -8439,6 +8444,14 @@ MonoBehaviour:
   positionDamping: 0
   rotationDamping: 0
   lockCursor: 1
+  cameraObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 704643072
+  cameraCollisionRadius: 0.3
+  cameraCollisionBuffer: 0.15
+  pullInSmoothTime: 0.05
+  pullOutSmoothTime: 0.25
+  logObstructionHits: 0
   previewDistance: 40
   previewPitch: 82
   previewYaw: 0
@@ -10743,8 +10756,8 @@ MonoBehaviour:
   openClipLength: 2
   warnDuration: 3
   toothBreakDuration: 1
-  cheerWindowSeconds: 6
-  interCycleGap: 5
+  cheerWindowSeconds: 5
+  interCycleGap: 2
   screenFader: {fileID: 763942137}
   totalCycles: 6
   tilesPerCycleStep: 4
@@ -22240,7 +22253,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalScale: {x: 4.649087, y: 4.649087, z: 4.649087}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 401791856}
@@ -22620,7 +22633,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 4, y: 4, z: 4}
+  m_Size: {x: 4.30192, y: 4.30192, z: 4.30192}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &4102062435675715304
 MeshRenderer:

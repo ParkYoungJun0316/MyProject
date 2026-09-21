@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.UI;
@@ -23,8 +24,15 @@ using TMPro;
 ///   Client = StageNetworkState.OnAllPhasesCompleteClientPulse (펄스는 Host에서 발동하지 않음).
 ///   그 외 씬은 보통 스테이지 전환으로 사라지므로 꺼둔다.
 ///
-/// - 옵션 "Tip 표시"(GameSettingsManager.TipEnabled)가 꺼져 있으면 키는 기억만 하고 숨긴다.
-///   스테이지 도중 다시 켜면 현재 페이즈 팁이 바로 보인다.
+/// [노출 방식 — 2026-09-21]
+/// - 헤더(<c>[Tab 아이콘] Tip</c>)는 보여줄 키가 있으면 항상 보인다.
+/// - 본문 + 배경은 기본 숨김. <b>Tab을 누르고 있는 동안만</b> 보인다 (토글 아님 — 켜놓고 잊으면
+///   상시 텍스트 박스로 되돌아가므로). 채팅·치어네임 입력·ESC 메뉴 중엔 Tab을 무시한다
+///   (uGUI가 Tab을 Selectable 포커스 이동에 쓰므로 충돌 방지).
+/// - 옵션 "Tip 항상 표시"(GameSettingsManager.TipAlwaysShow, 기본 OFF)를 켜면 Tab과 무관하게 본문이
+///   항상 보인다 (이때 Tab은 무반응).
+/// - 제목(Txt.TipTitle)이 본문(Txt.Tip)의 자식이라 본문 GameObject를 끄면 제목도 꺼진다 —
+///   본문은 TMP 컴포넌트 enabled만 끄고 GameObject는 켜 둔다.
 ///
 /// NGO 쓰기 없음. 표시만.
 /// </summary>
@@ -39,6 +47,8 @@ public class TipUI : MonoBehaviour
     [SerializeField] TextMeshProUGUI bodyText;
     [Tooltip("Txt.Tip/Txt.TipTitle — 비우면 자식에서 찾는다.")]
     [SerializeField] TextMeshProUGUI titleText;
+    [Tooltip("제목 옆 Tab 키 아이콘 Image (keyboard-outlined/tab.png). 헤더와 함께 켜고 끈다. 비워도 동작.")]
+    [SerializeField] Image tabIcon;
 
     [Header("전 Phase 완료 시")]
     [Tooltip("전 Phase 완료 시 팁을 숨길지 (Host·Client 모두).\n" +
@@ -52,6 +62,7 @@ public class TipUI : MonoBehaviour
     bool _subscribedCompletePulse;
     bool _subscribedPhase;
     string _currentKey;
+    bool _tabHeld;
     Coroutine _waitSns;
     Coroutine _waitPhase;
 
@@ -79,7 +90,7 @@ public class TipUI : MonoBehaviour
     {
         LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
         if (GameSettingsManager.Instance != null)
-            GameSettingsManager.Instance.TipEnabledChanged += OnTipEnabledChanged;
+            GameSettingsManager.Instance.TipAlwaysShowChanged += OnTipAlwaysShowChanged;
         RefreshVisible();
         if (hideOnAllPhasesComplete)
         {
@@ -97,7 +108,8 @@ public class TipUI : MonoBehaviour
     {
         LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
         if (GameSettingsManager.Instance != null)
-            GameSettingsManager.Instance.TipEnabledChanged -= OnTipEnabledChanged;
+            GameSettingsManager.Instance.TipAlwaysShowChanged -= OnTipAlwaysShowChanged;
+        _tabHeld = false;
         UnsubscribeCompletePulse();
         UnsubscribePhase();
         if (_waitSns != null)
@@ -110,6 +122,23 @@ public class TipUI : MonoBehaviour
             StopCoroutine(_waitPhase);
             _waitPhase = null;
         }
+    }
+
+    void Update()
+    {
+        bool held = ReadTabHeld();
+        if (held == _tabHeld) return;
+        _tabHeld = held;
+        RefreshVisible();
+    }
+
+    // CheerDigitInput(채팅·치어네임)과 DialogueUI(ESC 메뉴 = CursorUnlockRequestUtil)의 게이팅을 그대로 따른다.
+    static bool ReadTabHeld()
+    {
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CursorUnlockRequestUtil.IsRequested)
+            return false;
+        var kb = Keyboard.current;
+        return kb != null && kb.tabKey.isPressed;
     }
 
     IEnumerator WaitLocalizationThenApply()
@@ -312,23 +341,32 @@ public class TipUI : MonoBehaviour
         return string.Join("\n", lines);
     }
 
-    void OnTipEnabledChanged(bool _) => RefreshVisible();
+    void OnTipAlwaysShowChanged(bool _) => RefreshVisible();
 
-    /// <summary>보여줄 키가 있고 옵션이 켜져 있을 때만 표시.</summary>
+    /// <summary>헤더 = 키가 있으면 항상. 본문 + 배경 = 키가 있고 (옵션 "항상 표시" 또는 Tab 홀드 중).</summary>
     void RefreshVisible()
     {
-        bool enabledBySetting = GameSettingsManager.Instance == null || GameSettingsManager.Instance.TipEnabled;
-        SetVisible(enabledBySetting && !string.IsNullOrEmpty(_currentKey));
+        bool hasKey = !string.IsNullOrEmpty(_currentKey);
+        bool alwaysShow = GameSettingsManager.Instance != null && GameSettingsManager.Instance.TipAlwaysShow;
+        SetVisible(hasKey, hasKey && (alwaysShow || _tabHeld));
     }
 
-    void SetVisible(bool visible)
+    void SetVisible(bool header, bool body)
     {
         if (_bgImage == null)
             TryGetComponent(out _bgImage);
         if (_bgImage != null)
-            _bgImage.enabled = visible;
+            _bgImage.enabled = body;
         if (bodyText != null)
-            bodyText.gameObject.SetActive(visible);
+        {
+            // 제목이 본문의 자식이라 GameObject는 헤더 기준으로만 켜고, 본문 글자는 컴포넌트로 끈다.
+            bodyText.gameObject.SetActive(header);
+            bodyText.enabled = body;
+        }
+        if (titleText != null)
+            titleText.gameObject.SetActive(header);
+        if (tabIcon != null)
+            tabIcon.gameObject.SetActive(header);
     }
 
     static readonly Dictionary<string, string> KoreanFallback = new Dictionary<string, string>

@@ -372,9 +372,10 @@ public static class SetupSettingUILocalization
         Add("Settings.DigitCheer",
             "Cheer with T Key", "T키로 응원하기", "Tキーで応援", "用T键加油", "用T鍵加油",
             "Поддержка клавишей T", "Cheer mit T-Taste", "Cheer (touche T)", "Cheer con tecla T", "Cheer con tecla T", "Cheer com tecla T", "Cheer klawiszem T");
+        // ON = Tip 본문 항상 표시 (OFF면 Tab 홀드 중에만) — 2026-09-21 "팁 표시" → "팁 항상 표시"
         Add("Settings.Tip",
-            "Show Tips", "팁 표시", "ヒント表示", "显示提示", "顯示提示",
-            "Подсказки", "Tipps anzeigen", "Afficher les astuces", "Mostrar consejos", "Mostrar consejos", "Mostrar dicas", "Pokaż wskazówki");
+            "Always Show Tips", "팁 항상 표시", "ヒントを常に表示", "始终显示提示", "總是顯示提示",
+            "Всегда показывать подсказки", "Tipps immer anzeigen", "Toujours afficher les astuces", "Mostrar siempre consejos", "Mostrar siempre consejos", "Sempre mostrar dicas", "Zawsze pokazuj wskazówki");
 
         Add("Settings.MasterVolume",
             "Master Volume", "마스터 볼륨", "マスター音量", "主音量", "主音量",

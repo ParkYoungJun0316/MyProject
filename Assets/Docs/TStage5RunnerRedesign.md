@@ -64,8 +64,9 @@
 |---|---|---|---|
 | 0 | 씬 로드 | 색별 고정 스폰 `(0,0,5)/(5,0,0)/(0,0,-5)/(-5,0,0)`. 커튼 덮인 채 | `PlayerSpawnManager` |
 | 1 | `OnPlayersReady` | 시드로 **러너 1명 + 고유색 순열** 확정 → 색 매핑 적용 → **러너 발판만 끄기** → 게이트 `t5.map` 해제 → 커튼 걷힘 | 디렉터 |
-| 2 | 즉시 | 각자 자기 `ColoredStartZone` 안 → **3초 카운트다운** | `StageStartGate` |
-| 3 | 카운트다운 완료 | `StartStage()` + **발판 활성화**(러너 것 제외) → 안내자가 발사통을 타고 2층으로 발사 | `OnCountdownComplete` |
+| 1.5 | 커튼 걷힘 | `StageFlow` PhaseManager(1 phase) `onPhaseEnter` → `PhaseDialogueGate.Begin` + Tip → 전원 대화 완료 `OnAllReady` → `StageStartGate.Arm()` (게이트는 `armOnStart=false`) | `PhaseDialogueGate` |
+| 2 | Arm 직후 | 각자 자기 `ColoredStartZone` 안 → **3초 카운트다운** | `StageStartGate` |
+| 3 | 카운트다운 완료 | `StartStage()` + **발판 활성화**(러너 것 제외) → 안내자가 발사통을 타고 2층으로 발사 | `OnCountdownComplete` → `T5RunnerDirector.BeginStage` |
 | 3.5 | **안내자가 각자 y≥51 통과** | **그 사람 몫의 바닥 판을 닫는다**(§1.3) — 아직 상승 중일 때 발밑에서 | 디렉터 |
 | 4 | **안내자 전원 도착**(또는 안전망 8초) | **남은 판 닫기 → 발판 끄기 → 대각 barrier 해제**. **이 순서가 사양이다** — barrier가 먼저 풀리면 러너가 구멍 뚫린 2층을 등지고 출발한다 | 디렉터 |
 | 5 | 러너가 시작 존 이탈 | **체이서 4마리 스폰** | 이탈 트리거 |
@@ -546,7 +547,7 @@ Common으로 두면 러너 색 문 약 30개가 통째로 "아무나 여는 문"
 | 7 | 시작 홀 barrier · 발판 4개 · 투명 통로 | ✅ barrier 6장(외곽 4 @±6 + **중앙 대각 2장**, y 0.5~3.5 — `LaunchShaft` 밑단 y=3과 이어짐) · 발판 4개(VerticalUp **force 24**, 비활성 저장) · 통로는 `T5_Common/LaunchShaft`가 이미 있었다(±6, y 3~26) |
 | 8 | 체이서 스폰 4점 + `Stage5ChaserSpawner` (씬 루트, §1.4 좌표) | ✅ |
 | 9 | 러너 **시작 존 이탈 트리거** `T5_RunnerStartZone` | ✅ 원점 ±11 × 높이 10 — 시작칸 (0,0)의 내부가 1~11이라 **첫 문을 지나는 순간** 체이서가 나온다 |
-| 10 | 잔재 삭제 — `BackGround/Stage5Barrier` · `T5RunnerAnnounce` · `StageFlow`의 `PhaseManager` | ✅ |
+| 10 | 잔재 삭제 — `BackGround/Stage5Barrier` · `T5RunnerAnnounce` | ✅ — **`StageFlow`의 `PhaseManager`는 잔재가 아니다(2026-09-21 정정).** 삭제하자 대화 게이트 `Begin`·Tip·클리어 후 `LoadNextScene`/`ShowSceneClear` 호출자가 사라져 게이트가 Arm되지 않았다. T.Stage4와 같은 1-phase(`manualAdvanceOnly`) 구성으로 복구: `StageManager.OnStageClear → AdvancePhase → onAllPhasesComplete` |
 | 11 | `Goal`의 `ReachZoneObjective` → **`T5RunnerObjective`로 교체** | ✅ runnerGoal=Goal · guideGoal=Goal2F · timeLimit=110 · `StageManager.objectives`에 단독 등록 |
 | 12 | **2층 도착 존** `T5_Arrival2F` | ✅ x 8~120 · y 25~27 · z −6~120 — **발사통(±6)을 비켜 간다**(아래 ⚠️) |
 

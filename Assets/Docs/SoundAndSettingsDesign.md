@@ -819,6 +819,7 @@ SFX, 2026-09-01) 참고 — `StageNetworkState.NotifyChallengeStepResult`(RPC �
 이상한 글자가 나왔음. `Settings.DigitCheer` 키(12개 로케일)로 교체 완료.
 
 **Tip 표시 토글 (2026-09-17):** `Row_DigitCheer` 오른쪽 절반에 `Label_Tip`/`Toggle_Tip` 추가 → `OptionsMenuController.tipToggle` → `GameSettingsManager.SetTipEnabled` (`Settings.TipEnabled`, 기본 ON, 기본값 리셋 시 ON). `TipUI`는 `TipEnabledChanged`를 구독해 떠 있는 팁을 즉시 숨기거나 다시 보여줌(끈 동안에도 현재 키는 기억). 라벨 키 `Settings.Tip`(12개 로케일).
+  - **의미 변경 (2026-09-21): "Tip 항상 표시"로 전환.** Tip 본문이 기본 숨김 + Tab 홀드 중에만 보이도록 바뀌면서(`StageTipLines.md` §노출 방식), 이 토글은 **ON = Tab과 무관하게 본문 항상 표시**, 기본 **OFF**가 됐다. `GameSettingsManager.TipEnabled/SetTipEnabled/TipEnabledChanged` → `TipAlwaysShow/SetTipAlwaysShow/TipAlwaysShowChanged`, 저장 키도 `Settings.TipAlwaysShow`로 새로 둠(옛 `Settings.TipEnabled=1` 저장값이 "항상 표시"로 새지 않게). 기본값 리셋 시 OFF. `OptionsMenuController.tipToggle` 필드명은 그대로라 인스펙터 재배선 없음. 라벨 `Settings.Tip`도 "팁 표시" → **"팁 항상 표시"**로 12개 로케일 변경(`SetupSettingUILocalization.cs` + `SettingUI_*` String Table 동시 갱신; en "Always Show Tips", ru "Всегда показывать подсказки"가 최장 — `Label_Tip` 276px를 넘지만 패널 테두리 안, 렌더 확인).
 
 **NGO 영향 없음** — Owner 로컬 카메라(`LocalPlayerCamera`/`ThirdPersonCamera`) 전용 설정, 네트워크
 동기화 불필요.

@@ -1,8 +1,15 @@
 # StageTipLines — Tip HUD 한국어 SSOT
 
 > 인게임 `Tip_Panel`(`UI.prefab`, Chat 위 360×320, 본문 자동 크기 16~20 · 줄 간격 +8 · 제목 아래 한 줄 띄움)에 넣을 **규칙 안내** 원문.
-> DialogueUI 대사(`StageDialogueLines.md` / `StageDialogueTranslations.md`)와 **별개**다 — 대사 줄 재사용이 아니라, 플레이 중 상시 볼 짧은 규칙만 둔다.
+> DialogueUI 대사(`StageDialogueLines.md` / `StageDialogueTranslations.md`)와 **별개**다 — 대사 줄 재사용이 아니라, 플레이 중 필요할 때 꺼내 볼 짧은 규칙만 둔다.
 > 번역본: [`StageTipTranslations.md`](StageTipTranslations.md) (`en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl`).
+
+## 노출 방식 (2026-09-21)
+
+- 헤더 `[Tab 아이콘] Tip`은 보여줄 키가 있으면 **항상** 보인다 (아이콘: `GameInputControllerIconsFree/keyboard/keyboard-outlined/tab.png`, `TipUI.tabIcon`).
+- 본문 + 배경은 **기본 숨김**, **Tab을 누르고 있는 동안만** 보인다 (토글 아님). 채팅·치어네임 입력·ESC 메뉴 중엔 Tab 무시.
+- 옵션 `ESC → 설정 → 일반 → Tip 항상 표시`(`GameSettingsManager.TipAlwaysShow`, 기본 OFF)를 켜면 Tab과 무관하게 본문이 항상 보인다 (Tab 무반응).
+- 페이즈 시작 시 자동으로 펼치는 카드/타이머는 **두지 않는다** — 대화창을 읽는 동안 시간이 지나가고, 보스 P2 이후엔 대화창이 없어 기준점이 없기 때문.
 
 ## 표시 규칙
 

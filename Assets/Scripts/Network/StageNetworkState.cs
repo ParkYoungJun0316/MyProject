@@ -164,33 +164,35 @@ public struct PhaseStartSignal : INetworkSerializable, IEquatable<PhaseStartSign
 }
 
 /// <summary>
-/// T.Boss Sphere 색 히트 상태(BossSpherePhaseDriver 전용 슬롯).
-/// checkpointIndex = 히트가 속한 체크포인트 칸, hitSerial = 그 칸에서 Host가 확정한 누적 히트 수,
-/// descentStartServerTime = 이번 하강(칸 진입 또는 히트 후 재개)이 시작되는 서버 시각.
-/// 전 머신은 (checkpointIndex, hitSerial)로 정지 재생 여부와 다음 색을, descentStartServerTime으로
-/// 하강 진행도를 결정론적으로 계산한다(로컬 경과 시간 누적 금지 — MovingCorridor와 같은 이유).
-/// 칸과 번호를 한 NV로 묶는 이유는 PhaseStartSignal과 동일 — 별도 NV면 도착 순서가 보장되지 않아
-/// Client가 이전 칸의 번호를 새 칸의 것으로 오인할 수 있다.
+/// T.Boss Sphere 하강 상태(BossSpherePhaseDriver 전용 슬롯).
+/// checkpointIndex = 지금 하강 중인 체크포인트 칸,
+/// descentStartServerTime = 그 하강이 시작되는 서버 시각.
+/// 전 머신이 descentStartServerTime 기준으로 하강 진행도를 결정론적으로 계산한다
+/// (로컬 경과 시간 누적 금지 — MovingCorridor와 같은 이유).
+/// 칸과 시작 시각을 한 NV로 묶는 이유는 PhaseStartSignal과 동일 — 별도 NV면 도착 순서가 보장되지
+/// 않아 Client가 이전 칸의 시작 시각을 새 칸의 것으로 오인할 수 있다.
+///
+/// [2026-09-21 개명] 구 이름은 BossSphereHitState, 구 필드는 hitSerial이었다 —
+/// P3의 "Sphere에 색 맞춰 부딪히기"가 폐기되면서 히트 번호는 사라지고
+/// 이 슬롯은 하강 시각 동기화 전용으로만 남았다.
 /// </summary>
-public struct BossSphereHitState : INetworkSerializable, IEquatable<BossSphereHitState>
+public struct BossSphereDescentState : INetworkSerializable, IEquatable<BossSphereDescentState>
 {
     public int    checkpointIndex;
-    public int    hitSerial;
     public double descentStartServerTime;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref checkpointIndex);
-        serializer.SerializeValue(ref hitSerial);
         serializer.SerializeValue(ref descentStartServerTime);
     }
 
-    public bool Equals(BossSphereHitState other) =>
-        checkpointIndex == other.checkpointIndex && hitSerial == other.hitSerial
+    public bool Equals(BossSphereDescentState other) =>
+        checkpointIndex == other.checkpointIndex
         && descentStartServerTime.Equals(other.descentStartServerTime);
 
-    public override bool Equals(object obj) => obj is BossSphereHitState other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(checkpointIndex, hitSerial, descentStartServerTime);
+    public override bool Equals(object obj) => obj is BossSphereDescentState other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(checkpointIndex, descentStartServerTime);
 }
 
 /// <summary>
@@ -292,13 +294,12 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // ── T.Boss Sphere 색 히트 동기화 (BossSpherePhaseDriver 전용 슬롯, 2026-09-17 버그 수정) ──
-    // [버그] ColorWall.HandleContact가 각 머신의 로컬 물리 충돌로 정지·색 전환을 독자 실행했다.
-    // Client에선 원격 플레이어가 kinematic이라 남의 히트를 구조적으로 못 보고(PioneerPathTile과 동일
-    // 클래스), 히트 카운트는 Host 물리가 본 충돌만 셌다 → Host/Client Sphere 위치·색이 갈라지고
-    // Client 히트는 거의 인식되지 않았다. 맞힌 본인(Owner)이 보고 → Host 확정 → 이 슬롯으로 전원 재생.
-    private readonly NetworkVariable<BossSphereHitState> _bossSphereHit = new(
-        new BossSphereHitState { checkpointIndex = -1, hitSerial = 0, descentStartServerTime = -1.0 },
+    // ── T.Boss Sphere 하강 동기화 (BossSpherePhaseDriver 전용 슬롯, 2026-09-18 버그 수정) ──
+    // [버그] 하강을 각 머신이 로컬 경과 시간으로 누적했다. Client는 이벤트를 받은 시각부터 늦게
+    // 출발하고 프레임 히치로 버려진 시간이 100초가 넘는 하강 내내 남았다(MovingCorridor와 같은
+    // 버그 클래스). Host가 하강 시작 서버 시각을 이 슬롯에 실어 보내고 전 머신이 그 기준으로 센다.
+    private readonly NetworkVariable<BossSphereDescentState> _bossSphereDescent = new(
+        new BossSphereDescentState { checkpointIndex = -1, descentStartServerTime = -1.0 },
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
@@ -526,10 +527,10 @@ public class StageNetworkState : NetworkBehaviour
     /// <summary>보스 페이즈 클리어 수가 바뀔 때 발동. 전 머신 공통 구독점 — BossFightObjective가 구독해 OnPhaseCleared를 발동.</summary>
     public event Action<int> OnBossPhasesClearedChanged;
 
-    /// <summary>T.Boss Sphere 색 히트 상태가 바뀔 때 발동. 전 머신(Host 포함) 공통 구독점 — BossSpherePhaseDriver 전용.</summary>
-    public event Action<BossSphereHitState> OnBossSphereHitChanged;
+    /// <summary>T.Boss Sphere 하강 상태가 바뀔 때 발동. 전 머신(Host 포함) 공통 구독점 — BossSpherePhaseDriver 전용.</summary>
+    public event Action<BossSphereDescentState> OnBossSphereDescentChanged;
 
-    public BossSphereHitState BossSphereHit => _bossSphereHit.Value;
+    public BossSphereDescentState BossSphereDescent => _bossSphereDescent.Value;
 
     /// <summary>MovingCorridor 시작 서버 시각. -1 = 아직 시작 안 함.</summary>
     public double CorridorStartServerTime => _corridorStartServerTime.Value;
@@ -615,7 +616,7 @@ public class StageNetworkState : NetworkBehaviour
         _challengeStep.OnValueChanged    += OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        += OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged += OnBossPhasesClearedNv;
-        _bossSphereHit.OnValueChanged    += OnBossSphereHitNv;
+        _bossSphereDescent.OnValueChanged += OnBossSphereDescentNv;
         _doorOpenStates.OnListChanged    += OnDoorOpenStatesChanged;
         _pioneerTileUnlocked.OnListChanged += OnPioneerTileUnlockedChanged;
         _trackerTargets.OnListChanged    += OnTrackerTargetsChanged;
@@ -642,7 +643,7 @@ public class StageNetworkState : NetworkBehaviour
         _challengeStep.OnValueChanged    -= OnChallengeStepChangedNv;
         _floorRoll.OnValueChanged        -= OnFloorRollChangedNv;
         _bossPhasesCleared.OnValueChanged -= OnBossPhasesClearedNv;
-        _bossSphereHit.OnValueChanged    -= OnBossSphereHitNv;
+        _bossSphereDescent.OnValueChanged -= OnBossSphereDescentNv;
         _doorOpenStates.OnListChanged    -= OnDoorOpenStatesChanged;
         _pioneerTileUnlocked.OnListChanged -= OnPioneerTileUnlockedChanged;
         _trackerTargets.OnListChanged    -= OnTrackerTargetsChanged;
@@ -1115,44 +1116,21 @@ public class StageNetworkState : NetworkBehaviour
 
     void OnBossPhasesClearedNv(int prev, int next) => OnBossPhasesClearedChanged?.Invoke(next);
 
-    // ── T.Boss Sphere 색 히트 (BossSpherePhaseDriver 전용) ─────────
+    // ── T.Boss Sphere 하강 (BossSpherePhaseDriver 전용) ────────────
 
-    /// <summary>Host: Sphere 히트·하강 상태 확정. BossSpherePhaseDriver만 호출(칸 진입 시 0 리셋 / 히트 승인 시 +1).</summary>
-    public void SetBossSphereHit(int checkpointIndex, int hitSerial, double descentStartServerTime)
+    /// <summary>Host: Sphere 하강 상태 확정. BossSpherePhaseDriver만 호출(칸 진입 시).</summary>
+    public void SetBossSphereDescent(int checkpointIndex, double descentStartServerTime)
     {
         if (!IsServer || IsDespawned) return;
-        _bossSphereHit.Value = new BossSphereHitState
+        _bossSphereDescent.Value = new BossSphereDescentState
         {
             checkpointIndex        = checkpointIndex,
-            hitSerial              = hitSerial,
             descentStartServerTime = descentStartServerTime,
         };
     }
 
-    void OnBossSphereHitNv(BossSphereHitState prev, BossSphereHitState next) => OnBossSphereHitChanged?.Invoke(next);
-
-    /// <summary>
-    /// Owner(Host 포함): 내 캐릭터가 Sphere에 색을 맞춰 부딪혔다고 보고. hitSerial은 보고 시점에
-    /// 이 머신이 보고 있던 번호 — Host가 현재 번호와 다르면(그 사이 다른 히트가 확정됨) 버린다.
-    /// 투사체 피격 보고(ReportTrapHitServerRpc)와 같은 "Client 감지 → Host 확정" 모델.
-    /// </summary>
-    public void ReportBossSphereHit(ulong playerNetId, int checkpointIndex, int hitSerial)
-    {
-        if (!IsSpawned) return;
-        ReportBossSphereHitServerRpc(playerNetId, checkpointIndex, hitSerial);
-    }
-
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    void ReportBossSphereHitServerRpc(ulong playerNetId, int checkpointIndex, int hitSerial, RpcParams rpcParams = default)
-    {
-        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerNetId, out var playerNetObj))
-            return;
-        // 자기 캐릭터의 히트만 보고할 수 있다
-        if (playerNetObj.OwnerClientId != rpcParams.Receive.SenderClientId) return;
-
-        BossSpherePhaseDriver.Instance?.TryAcceptHitFromHost(
-            playerNetObj.GetComponent<Player>(), checkpointIndex, hitSerial);
-    }
+    void OnBossSphereDescentNv(BossSphereDescentState prev, BossSphereDescentState next) =>
+        OnBossSphereDescentChanged?.Invoke(next);
 
     // ── 문(Door) 개폐 동기화 (Door 전용 슬롯) ──────────────────────
 
@@ -1501,7 +1479,7 @@ public class StageNetworkState : NetworkBehaviour
     // 라우팅 실패가 구조적으로 없다 — "이미 처리됨"은 아래 TryGetValue 가드 하나로 끝낸다.
 
     /// <summary>Client(전원): 발사체 피격 보고. Host가 발사체를 찾아 데미지+Despawn을 위임.
-    /// 보고자는 피격 플레이어의 Owner여야 한다(§9.0.1-d) — ReportBossSphereHitServerRpc와 같은 가드.</summary>
+    /// 보고자는 피격 플레이어의 Owner여야 한다(§9.0.1-d).</summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void ReportTrapHitServerRpc(ulong projectileNetId, ulong playerNetId, RpcParams rpcParams = default)
     {

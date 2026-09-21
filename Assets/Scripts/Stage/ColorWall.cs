@@ -120,21 +120,8 @@ public class ColorWall : MonoBehaviour
     WallWaveController  _waveController;
     ContactDamage       _contactDamage;
 
-    // 설정되면 로컬 정지·OnColorMatch 대신 "내 캐릭터(Owner)가 색을 맞춰 닿았다"만 이 핸들러로 보고한다.
-    // 판정 확정·정지·색 전환은 핸들러 쪽(Host 확정 → 전원 동기 재생)이 전담 — BossSpherePhaseDriver 전용.
-    System.Action<Player> _networkHitHandler;
-
     // ── 현재 논리 색 외부 읽기용 ──────────────────────────────────
     public WallColorType CurrentColor => _wallColor;
-
-    /// <summary>색 일치 시 정지 시간(초). 외부 동기 정지(BossSpherePhaseDriver)가 같은 값을 쓰도록 노출.</summary>
-    public float PauseDuration => pauseDuration;
-
-    /// <summary>플레이어가 지금 이 벽 색과 일치하는지. Host 측 히트 검증용.</summary>
-    public bool Matches(Player p) => p != null && !p.IsDead && IsColorMatch(p);
-
-    /// <summary>네트워크 히트 모드로 전환. null이면 기존 로컬 정지 동작으로 복귀.</summary>
-    public void SetNetworkHitHandler(System.Action<Player> handler) => _networkHitHandler = handler;
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
@@ -207,14 +194,6 @@ public class ColorWall : MonoBehaviour
     {
         Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
-
-        if (_networkHitHandler != null)
-        {
-            // 원격 캐릭터는 머신마다 보간 위치·물리 설정이 달라 충돌 판정이 갈라지므로 보지 않는다.
-            if (p.isOwnerControlled && IsColorMatch(p))
-                _networkHitHandler(p);
-            return;
-        }
 
         if (IsColorMatch(p))
         {

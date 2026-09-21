@@ -102,8 +102,14 @@ public class SideSplitChallenge : MonoBehaviour
     [Tooltip("색 조건이 포함되는 라운드 수 최대값. totalRounds보다 작게 설정해 최소 1라운드는 항상 색 조건 없이 시작하는 것을 권장.")]
     [SerializeField] int maxColorRounds = 4;
 
-    [Tooltip("라운드당 제한시간(초). 0보다 커야 판정이 작동함")]
+    [Tooltip("라운드당 제한시간(초). 0보다 커야 판정이 작동함.\n" +
+             "roundTimeLimitByPlayerCount가 비어 있거나 해당 인원 칸이 0 이하면 이 값을 쓴다.")]
     public float roundTimeLimit = 0f;
+
+    [Tooltip("인원수별 라운드 제한시간(초). [0]=1인, [1]=2인, [2]=3인, [3]=4인. 모든 라운드에 같은 값.\n" +
+             "비워 두면 roundTimeLimit 하나로 동작(기존 씬 호환). 인원이 늘수록 1인 통로 교행·역할 분담에\n" +
+             "시간이 들어서 1인과 4인의 체감 난이도가 크게 갈린다(PlaytestLog #10, 2026-09-21).")]
+    public float[] roundTimeLimitByPlayerCount = new float[0];
 
     [Tooltip("결과 연출 후 다음 라운드까지 대기 시간(초)")]
     public float resolveDelay = 0f;
@@ -366,8 +372,25 @@ public class SideSplitChallenge : MonoBehaviour
         });
 
         StopTimer();
-        if (roundTimeLimit > 0f)
+        if (RoundTimeLimit > 0f)
             _timerCoroutine = StartCoroutine(TimerRoutine());
+    }
+
+    /// <summary>
+    /// 이번 판의 라운드 제한시간. 인원수는 GameSession.ActivePlayerCount(전 머신 동일, RegenerateRoundPlan과
+    /// 같은 전제)라 타이머·판정·회전 스냅 시각이 머신마다 갈리지 않는다.
+    /// </summary>
+    float RoundTimeLimit
+    {
+        get
+        {
+            int players = GameSession.Instance != null ? GameSession.Instance.ActivePlayerCount : CountAlivePlayers();
+            int i = players - 1;
+            if (roundTimeLimitByPlayerCount != null && i >= 0 && i < roundTimeLimitByPlayerCount.Length
+                && roundTimeLimitByPlayerCount[i] > 0f)
+                return roundTimeLimitByPlayerCount[i];
+            return roundTimeLimit;
+        }
     }
 
     /// <summary>
@@ -382,7 +405,7 @@ public class SideSplitChallenge : MonoBehaviour
         {
             double startTime = _netState != null ? _netState.ChallengeStepStartServerTime : 0.0;
             double elapsed    = (nm != null ? nm.ServerTime.Time : 0.0) - startTime;
-            float  remaining  = Mathf.Max(0f, roundTimeLimit - (float)elapsed);
+            float  remaining  = Mathf.Max(0f, RoundTimeLimit - (float)elapsed);
 
             OnTimerTick?.Invoke(remaining);
             if (remaining <= 0f) break;
@@ -613,7 +636,7 @@ public class SideSplitChallenge : MonoBehaviour
 
         var    nm              = NetworkManager.Singleton;
         double startServerTime = _netState != null ? _netState.ChallengeStepStartServerTime : 0.0;
-        double snapAt          = startServerTime + roundTimeLimit + resolveDelay - lockBeforeRoundStart;
+        double snapAt          = startServerTime + RoundTimeLimit + resolveDelay - lockBeforeRoundStart;
 
         while (true)
         {

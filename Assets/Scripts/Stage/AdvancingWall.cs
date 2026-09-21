@@ -144,8 +144,7 @@ public class AdvancingWall : MonoBehaviour
     /// <summary>Awake 시점의 시작 위치(불변 앵커). SnapToDistance()가 "시작 위치 기준 절대 거리"를
     /// 계산하는 기준점으로 쓴다 — _currentOrigin은 이동마다 갱신되지만 이건 고정.</summary>
     Vector3 _startOrigin;
-    /// <summary>현재 진행 중인 AdvanceEntry의 목표 지점(전진 완료 위치). RunEntry가 사이클마다 갱신.
-    /// CompleteCurrentEntryNow()가 중단 시 스냅 대상으로 참조한다.</summary>
+    /// <summary>현재 진행 중인 AdvanceEntry의 목표 지점(전진 완료 위치). RunEntry가 사이클마다 갱신.</summary>
     Vector3 _advanceTarget;
 
     Rigidbody _rb;
@@ -163,8 +162,7 @@ public class AdvancingWall : MonoBehaviour
         _rb.isKinematic = true;
         _currentOrigin  = transform.position;
         _startOrigin    = _currentOrigin;
-        // 엔트리가 한 번도 안 돈 상태에서 CompleteCurrentEntryNow()가 불려도 월드 원점(0,0,0)으로
-        // 순간이동하지 않도록 현재 위치로 초기화.
+        // 엔트리가 한 번도 안 돈 상태에서 참조돼도 월드 원점(0,0,0)을 가리키지 않도록 현재 위치로 초기화.
         _advanceTarget  = _currentOrigin;
     }
 
@@ -229,48 +227,10 @@ public class AdvancingWall : MonoBehaviour
     }
 
     /// <summary>
-    /// 진행 중인 이동을 즉시 멈추고 이번 엔트리의 목표 지점(_advanceTarget)으로 스냅.
-    /// OnAdvanceCompleted는 발동하지 않음(자연 완료와 구분) — T.Boss 페이즈 시간 내 클리어처럼
-    /// "아직 안 끝났지만 강제로 끝낸다"는 신호를 자연 완료(OnAdvanceCompleted → 시간 초과 처리)와
-    /// 구분해야 하는 외부 스케줄러(BossSpherePhaseDriver 등) 전용.
-    /// 코루틴 중단이라 _isActive = false로 정리한다.
-    ///
-    /// 색 일치 일시정지(PauseByColorRoutine)가 진행 중이면 그것도 같이 취소한다 —
-    /// 안 그러면 ① 그 코루틴의 LerpTo가 스냅한 위치를 다시 덮어쓰고,
-    /// ② _isPausedByColor가 남아 다음 RunOnce()가 통째로 무시된다.
-    /// 진행 중인 엔트리가 없으면(이미 자연 완료 / 정지 상태) 위치는 건드리지 않는다.
-    /// </summary>
-    public void CompleteCurrentEntryNow()
-    {
-        if (_pauseCoroutine != null)
-        {
-            StopCoroutine(_pauseCoroutine);
-            _pauseCoroutine = null;
-        }
-        _isPausedByColor = false;
-
-        if (_advanceCoroutine != null)
-        {
-            StopCoroutine(_advanceCoroutine);
-            _advanceCoroutine = null;
-        }
-        telegraph?.Cancel();
-        StopMoveLoop();
-
-        if (!_isActive) return;
-
-        float advancedDist = Vector3.Distance(_currentOrigin, _advanceTarget);
-        _rb.MovePosition(_advanceTarget);
-        _currentOrigin  = _advanceTarget;
-        _totalAdvanced += advancedDist;
-        _isActive = false;
-    }
-
-    /// <summary>
     /// 시작 위치(Awake 시점, _startOrigin) 기준 절대 거리로 원점을 강제 스냅.
-    /// 진행 중인 이동·색 정지가 있으면 전부 취소하고 값을 덮어쓴다. CompleteCurrentEntryNow()와 달리
-    /// "이번 엔트리의 목표(_advanceTarget)"가 아니라 임의의 절대 거리로 이동한다 — 목적지가 항상
-    /// 종점(바닥)인 T.Boss Sphere 체크포인트 모델(BossSpherePhaseDriver, 2026-09-11 재설계) 전용.
+    /// 진행 중인 이동·색 정지가 있으면 전부 취소하고 값을 덮어쓴다.
+    /// 목적지가 항상 종점(바닥)인 T.Boss Sphere 체크포인트 모델
+    /// (BossSpherePhaseDriver, 2026-09-11 재설계) 전용 —
     /// 클리어 시 "그 페이즈가 시작한 체크포인트"로 위로 되돌리는 데 쓴다.
     /// OnAdvanceCompleted 등 이벤트는 발동하지 않음(스냅 전용, 자연 완료와 구분).
     /// </summary>
@@ -360,9 +320,6 @@ public class AdvancingWall : MonoBehaviour
             overrideReturnDuration = returnMoveDuration
         }));
     }
-
-    /// <summary>색 일치 정지 시 원점 복귀에 걸리는 시간(초). 외부 동기 스케줄러가 재개 시각 계산에 사용.</summary>
-    public float PauseReturnDuration => Mathf.Max(pauseReturnDuration, 0.05f);
 
     /// <summary>
     /// 서버 시각 기준 1회 전진(후퇴 없음). 진행도 = (ServerTime − startServerTime) / duration 이라
