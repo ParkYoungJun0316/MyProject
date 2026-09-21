@@ -23,6 +23,9 @@ public class SideSplitZone : MonoBehaviour
     [Tooltip("판정 실패 시 잠깐 표시.")]
     public Color failColor = new Color(0.95f, 0.2f, 0.2f, 1f);
 
+    [Tooltip("상태 색을 칠할 표시용 Renderer(바닥 패드 등). 비우면 기존대로 GetComponentInChildren — 자식에 간판 등 다른 Renderer가 있으면 반드시 지정할 것.")]
+    [SerializeField] Renderer visual;
+
     readonly List<Player> _occupants = new List<Player>();
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -33,7 +36,7 @@ public class SideSplitZone : MonoBehaviour
 
     void Awake()
     {
-        _rend = GetComponentInChildren<Renderer>();
+        _rend = visual != null ? visual : GetComponentInChildren<Renderer>();
         _mpb  = new MaterialPropertyBlock();
 
         Collider col = GetComponent<Collider>();

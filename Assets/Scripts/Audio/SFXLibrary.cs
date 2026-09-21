@@ -109,6 +109,13 @@ public class SFXLibrary : ScriptableObject
              "TileRestoreRewindGroup / TileRewindSettings.sfxId.")]
     public AudioClip ReverseTime;
 
+    // ── Minigame Timer ───────────────────────────────────────────
+    [Header("Minigame Timer")]
+    [Tooltip("라운드 제한시간 동안 PlayLoop로 틀고 타이머가 끝나면 StopLoop(2D). SideSplitWorldDisplay.")]
+    public AudioClip Minigame_TimerTick;
+    [Tooltip("라운드 공개 전 3·2·1 카운트다운 — 숫자가 바뀔 때마다 1회(2D). SideSplitWorldDisplay.")]
+    public AudioClip Minigame_CountdownTick;
+
     // ── 클립별 볼륨 보정 ──────────────────────────────────────────
 
     [Serializable]
@@ -186,6 +193,9 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Pad_Press:                         return Pad_Press;
 
             case SFXId.ReverseTime:                       return ReverseTime;
+
+            case SFXId.Minigame_TimerTick:                return Minigame_TimerTick;
+            case SFXId.Minigame_CountdownTick:            return Minigame_CountdownTick;
 
             default: return null;
         }

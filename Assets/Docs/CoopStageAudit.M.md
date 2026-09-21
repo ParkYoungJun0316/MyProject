@@ -100,7 +100,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | 침 초출 | **M2 (2.1부터).** 2.2·보스 복습. PhysicMaterial 아님 — `Player.Move()` 얼음 가속/코스트 (`salivaAccelTime` / `salivaDecelTime`). §6 |
 | 혀 초출 | **M4.1.** 보스·M4.2 복습. M6·M7 없음. 4.1 가운데 1칸. 클립 끝에 칸 끔 (`SweepBreak` 안 씀). 꺼진 칸 낙사→방 리셋. §5 |
 | 입 창 리듬 | **개념만.** M1·M3·보스. M2·M5 없음. 초·횟수·데미지는 나중에 |
-| M.Boss | §7 (2026-09-08 재확정, 5→**4페이즈**). 1 Barrier+침, 2 **SideSplit(4방향·회전, 중앙 FixedBox)**+닫힘, 3 Drop+화살+혀, **4 입 닫힘(무조건)+타일 파괴(파괴음), 6회 누적 4N개, Open 후 응원 창(마지막 회차 제외) → 마지막 1칸 남고 삼켜 T**(2026-09-08, 혀 MixedSweep 폐기). Grid·Sequence·ColorTile·WindTrap 안 씀 — 페이즈당 되돌림 대상 하나(침/닫힘/혀)만. 시드=Host ChallengeStart |
+| M.Boss | §7 (2026-09-08 재확정, 5→**4페이즈**). 1 Barrier+침, 2 **SideSplit(4방향·카운트다운 후 재배치, 중앙 FixedBox)**+닫힘, 3 Drop+화살+혀, **4 입 닫힘(무조건)+타일 파괴(파괴음), 6회 누적 4N개, Open 후 응원 창(마지막 회차 제외) → 마지막 1칸 남고 삼켜 T**(2026-09-08, 혀 MixedSweep 폐기). Grid·Sequence·ColorTile·WindTrap 안 씀 — 페이즈당 되돌림 대상 하나(침/닫힘/혀)만. 시드=Host ChallengeStart |
 
 ### H.3 M에서 버린 제안
 
@@ -344,7 +344,7 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 | # | 입 + 일 | 되돌림 |
 |---|--------|--------|
 | 1 | Barrier + 침 — 패드가 미끄러움 | 침 |
-| 2 | SideSplit(4방향, 3라운드부터 존 회전) + 닫힘 — 중앙 FixedBox로 옆 구간은 1인 통로, 겹칠 곳은 꼭짓점 4곳뿐 | 닫힘 |
+| 2 | SideSplit(4방향, 3라운드부터 카운트다운 동안 존 재배치) + 닫힘 — 중앙 FixedBox로 옆 구간은 1인 통로, 겹칠 곳은 꼭짓점 4곳뿐 | 닫힘 |
 | 3 | Drop + 화살 + 혀 — 혀가 장면 | 혀 |
 | 4 | 입 닫힘(무조건) + 타일 파괴(파괴음), 6회 누적 → 삼켜 T | 닫힘(보스 전용 새 변형) |
 
@@ -353,7 +353,8 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 **P2 [2026-09-21 정정 — 씬 기준]:** 문서의 옛 안(`SafeZoneWarnSign`+닫힘)은 씬에 반영되지 않았고, 실제 P2는 **`SideSplitChallenge` 4방향 + `MouthController`(닫힘)** 이다. 되돌림 대상은 `MouthController`(닫힘) 하나 — SideSplit은 `ITeamCheerRevert`가 아니다.
 - 구성: `Boss 60-130/StageManager_Boss2` — `SplitZoneRig`(존 4개, ±11) · 중앙 `FixedBox`(콜라이더 20m, 레이어 Wall) · `Ground` 25×25. `StageStartGate_P2.OnCountdownComplete` → `FixedBox`/`SplitZoneRig` SetActive + `StartChallenge`.
 - 동선: 박스 때문에 옆 구간(폭 ≈1.75m, 몸 지름 1.5m)은 **1인 통로**, 서로 비켜설 수 있는 곳은 **꼭짓점 4곳**뿐.
-- 수치: 7라운드, `resolveDelay` 5초(유지 확정 2026-09-21), `rotationStartRound` 3. 라운드 시간은 **인원별 고정** `roundTimeLimitByPlayerCount` = [1인 5.5, 2인 6.5, 3인 7.5, 4인 9]초(2026-09-21 — 1인 통로 교행·역할 분담 비용 반영, 계산은 PlaytestLog #10). 중앙 `FixedBox`는 보이는 면=충돌 면=±10(카메라 SphereCast가 메시 안으로 들어가던 문제 수정).
+- **표시 [2026-09-22]:** 화면 문장 UI(`SideSplitUI`) 대신 월드 표시(`SideSplitWorldDisplay`) — 매 라운드(첫 라운드 포함) 간판에 3·2·1 → 방향 글씨 + 하트(개수=인원, 색 하트=그 색 필수, 빈 하트=아무나) 공개(0명 방향은 하트만 없고 간판·타이머는 네 방향 동일), 간판 채움이 줄어드는 타이머. 라운드 사이 **스핀 폐기** — 카운트다운 동안 90° 스냅해 공개 순간 방향이 다른 자리에서 나타난다. M.Stage2 2.1도 동일. SSOT [`MinigameDesign.md`](MinigameDesign.md) §1.8.
+- 수치: 7라운드, 판정→다음 라운드 타이머 시작까지 5초 유지(2026-09-21 확정) — 2026-09-22 월드 표시 전환 후 결과 `resolveDelay` 3초 + 카운트다운 `preRoundCountdown` 3초 + 공개 후 읽는 시간 `revealReadHold` 1초(쉬는 시간이 짧다는 피드백으로 5초 → 7초), `rotationStartRound` 3. 라운드 시간은 **인원별 고정** `roundTimeLimitByPlayerCount` = [1인 5.5, 2인 6.5, 3인 7.5, 4인 9]초(2026-09-21 — 1인 통로 교행·역할 분담 비용 반영, 계산은 PlaytestLog #10). 중앙 `FixedBox`는 보이는 면=충돌 면=±10(카메라 SphereCast가 메시 안으로 들어가던 문제 수정).
 
 **P4 [확정 2026-09-08 — 입 닫힘 기반으로 전면 교체, 혀 `MixedSweep`은 보스에서 폐기. 코드+에디터 2026-09-09]:** 혀가 아니라 입 닫힘을 마지막 공격 수단으로 쓴다. **인과관계가 지금까지의 닫힘(M1·M3·P2)과 반대다** — 응원이 Close를 막는 게 아니라, Close→Open이 끝난 뒤에만 응원 창이 열려 사후 복구만 한다. 기존 `MouthController.teamCheerHazard`로는 못 표현 → **`MouthBossJawSmash`** (P4 전용 클래스, MouthBG Close/Open을 직접 구동). 같은 아레나에 `MouthController`를 붙이지 않는다(씬당 `ITeamCheerRevert` 하나).
 

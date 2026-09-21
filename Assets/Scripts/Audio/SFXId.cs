@@ -79,4 +79,8 @@ public enum SFXId
 
     // ── Tile Restore (바닥 파편 되감기) ───────────────────────────
     ReverseTime                    = 34,
+
+    // ── Minigame Timer ───────────────────────────────────────────
+    Minigame_TimerTick             = 35, // 라운드 제한시간 동안만 루프
+    Minigame_CountdownTick         = 36, // 라운드 공개 전 3·2·1 — 숫자 바뀔 때마다 1회
 }

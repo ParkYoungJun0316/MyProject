@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &8987468443594760639
+--- !u!1 &3509965044472261656
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,51 +8,47 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6395967552471971101}
-  - component: {fileID: 4303519732519928052}
-  - component: {fileID: 930912667872142462}
-  - component: {fileID: 6288976382157520654}
-  - component: {fileID: 3264395167441152536}
-  - component: {fileID: 1839642309127998815}
-  - component: {fileID: 3162023101445404687}
-  - component: {fileID: 5899696332290302367}
+  - component: {fileID: 8640858839430303686}
+  - component: {fileID: 5879169544291736011}
+  - component: {fileID: 106145686521397926}
+  - component: {fileID: 7673746958694367030}
   m_Layer: 16
-  m_Name: IceCream
+  m_Name: Visual
   m_TagString: EnemyBullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6395967552471971101
+--- !u!4 &8640858839430303686
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8987468443594760639}
+  m_GameObject: {fileID: 3509965044472261656}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 60, y: 60, z: 60}
+  m_LocalPosition: {x: 0.00016901828, y: -0.03353249, z: -0.00032670796}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 6395967552471971101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4303519732519928052
+--- !u!33 &5879169544291736011
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8987468443594760639}
+  m_GameObject: {fileID: 3509965044472261656}
   m_Mesh: {fileID: -5622055955579957312, guid: f07d596f78a95d64194f632410c99eb8, type: 3}
---- !u!23 &930912667872142462
+--- !u!23 &106145686521397926
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8987468443594760639}
+  m_GameObject: {fileID: 3509965044472261656}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -95,6 +91,64 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &7673746958694367030
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3509965044472261656}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -5622055955579957312, guid: f07d596f78a95d64194f632410c99eb8, type: 3}
+--- !u!1 &8987468443594760639
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6395967552471971101}
+  - component: {fileID: 6288976382157520654}
+  - component: {fileID: 3264395167441152536}
+  - component: {fileID: 1839642309127998815}
+  - component: {fileID: 5899696332290302367}
+  m_Layer: 16
+  m_Name: IceCream
+  m_TagString: EnemyBullet
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6395967552471971101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8987468443594760639}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 60, y: 60, z: 60}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8640858839430303686}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &6288976382157520654
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -166,28 +220,6 @@ MonoBehaviour:
   destroyOnPlayer: 1
   hitEffectPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
   hitEffectLifetime: 4
---- !u!64 &3162023101445404687
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8987468443594760639}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5622055955579957312, guid: f07d596f78a95d64194f632410c99eb8, type: 3}
 --- !u!114 &5899696332290302367
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -19,6 +19,7 @@ T.Stage5 StageStartGate 불량으로 T.Boss 이후는 미테스트.
 |---|---|---|---|---|
 | 5 | M.Boss P2 | 중앙 FixedBox에서 **카메라**가 벽을 뚫음(플레이어 아님) | 원인: `Box.fbx` 메시 4.3 vs BoxCollider 4 → ×5 스케일에서 보이는 면 ±10.75, 충돌 면 ±10. 카메라 SphereCast가 충돌 면 앞(x=10.45)에 멈춰 **보이는 메시 안 0.3m**에 들어감(플레이 모드 실측). 조치: 스케일 5→4.649, 콜라이더 4→4.302 → 보이는 면=충돌 면=±10(게임플레이 동선 그대로). 재측정 결과 카메라가 메시 밖 | verify |
 | 10 | M.Boss P2 | 제한 시간이 감으로 잡혀 있어 긴장감 부족 | 계산: 1인 최악 ≈4.8s(8s면 쉬움) / 4인 통상 ≈6.5–7s·통로 교행 충돌 시 ≈8.5–9s. 조치: `SideSplitChallenge.roundTimeLimitByPlayerCount` 추가, M.Boss = [5.5, 6.5, 7.5, 9]. resolveDelay 5 유지 | verify |
+| 13 | M.Stage2 2.1 · M.Boss P2 | SideSplit 안내 UI(검정 박스+흰 문장)가 안 읽힘, 라운드 시작 시점을 몰라 갑자기 타이머만 돎, 스핀 중 방향을 못 읽음 (2026-09-22) | 화면 UI 폐기 → 월드 표시: 매 라운드 3·2·1 카운트다운(첫 라운드 포함) → 간판 글씨+하트 공개, 간판 채움 타이머(네 방향 동일, 마지막 1초 빨강 고정 — 바닥 타이머·깜빡임·0명 흐림은 같은 날 제거), 틱 2종(카운트다운/진행). 스핀 폐기 → 카운트다운 중 90° 스냅. 간격: 결과 resolveDelay 3초 + 카운트다운 3초 + 공개 후 읽는 시간 revealReadHold 1초(처음 2+3으로 했다가 "쉬는 시간 짧음" 피드백으로 같은 날 조정). [`MinigameDesign.md`](MinigameDesign.md) §1.8 | verify |
 | 12a | M.Boss P4 | 패턴 간 텀이 김 | interCycleGap 5→2, cheerWindowSeconds 6→5 (MCP 적용) | verify |
 | 12b | M.Boss P4 | 마지막 1칸 남으면 Dialogue 후 종료여야 하는데, TeamCheer 발동 + 바닥 복구 후 Dialogue가 나옴 | 원인: 6회차에도 응원 창이 열려 성공 시 25칸 복구 후 클리어. 조치: `MouthBossJawSmash` 마지막 회차는 창 없이 Open 직후 클리어 | verify |
 

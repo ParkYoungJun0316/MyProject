@@ -26,7 +26,7 @@
 
 ### 1.1 컨셉
 
-통로가 **왼쪽/오른쪽**으로 갈라지고, 각 방향 끝에 도달 판정 지점이 있다. 라운드 시작 시 UI가 "몇 명이 어느 방향으로 가야 하는지"(+ 특정 색 포함 여부)를 공지하고, 플레이어들은 제한시간 안에 정확한 인원·색으로 재배치해야 통과한다.
+통로가 **왼쪽/오른쪽**으로 갈라지고, 각 방향 끝에 도달 판정 지점이 있다. 라운드마다 3·2·1 카운트다운 후 방향 간판 아래 하트로 "몇 명이 어느 방향으로 가야 하는지"(+ 특정 색 포함 여부)가 공개되고, 플레이어들은 제한시간 안에 정확한 인원·색으로 재배치해야 통과한다. (공지 방식은 2026-09-22 화면 문장 UI → 월드 표시로 교체 — §1.8)
 
 예시:
 - "왼쪽 3명, 오른쪽 1명"
@@ -61,11 +61,12 @@
 - 결과 연출은 Host가 직접 재생 + `NotifyChallengeOutcomeClientRpc`로 Client 동기화 (OX퀴즈와 동일 원칙)
 - **설계 가정:** 실패 시 "누가 잘못 섰는지" 개별로 가려내지 않고 전원 동일 데미지 처리(팀 전체 조건이라 개인 귀책이 애매함) — 추후 다르게 가고 싶으면 `SideSplitChallenge.Judge()`만 수정하면 됨
 
-### 1.5 UI (구현 완료)
+### 1.5 UI
 
-- `SideSplitUI` — Unity Localization `LocalizedString.Arguments`(Smart Format) 기반 문장형 템플릿 3종: 색 조건 없음/왼쪽에 색 조건/오른쪽에 색 조건
-- 색상명(`Blue`/`Purple`/`Green`/`Yellow`)도 각각 `LocalizedString`으로 Inspector에서 String Table 연결(문자열 직접 입력 아님, `OXQuizManager.OXQuestion` 패턴과 동일)
-- 진행도("n/m 라운드")는 기존 `ObjectiveUI`/`RoundProgressObjective` 패턴 그대로 재사용 (`SideSplitObjective`)
+- ~~`SideSplitUI` — Unity Localization `LocalizedString.Arguments`(Smart Format) 기반 문장형 템플릿 3종: 색 조건 없음/왼쪽에 색 조건/오른쪽에 색 조건~~
+- ~~색상명(`Blue`/`Purple`/`Green`/`Yellow`)도 각각 `LocalizedString`으로 Inspector에서 String Table 연결~~
+- **2026-09-22 폐기 → 월드 표시(`SideSplitWorldDisplay`)로 교체, §1.8.** 이유: 화면 중앙 검정 박스 + 흰 문장(`앞 2명 / 뒤 1명 / …`)은 문장을 처음부터 읽어야 방향별 인원이 나오고, 판을 봐야 할 순간에 화면 가운데를 가렸다. 흰 카운트다운 숫자도 밝은 배경에서 안 읽혔다.
+- 진행도("n/m 라운드")는 기존 `ObjectiveUI`/`RoundProgressObjective` 패턴 그대로 재사용 (`SideSplitObjective`) — 변경 없음
 
 ### 1.6 남은 작업 (에디터 — 사용자)
 
@@ -103,6 +104,47 @@
 - [ ] `T.Stage4`의 `totalRounds`/`minColorRounds`/`maxColorRounds`는 인원 수 대비 4방향 분배 체감 난이도를 실제 플레이해보고 튜닝(코드 변경 불필요, Inspector 값만 조정)
 - [ ] ParrelSync 2인 검증(4방향 분배·판정·UI 동기화)
 
+### 1.8 카운트다운 · 재배치 · 월드 표시 (2026-09-22) **[확정]**
+
+플레이 피드백: ① 안내 UI가 안 읽힘(§1.5) ② 라운드가 언제 시작하는지 모르고 갑자기 타이머만 돎 ③ 라운드 사이 스핀 중엔 방향을 못 읽음.
+
+**라운드 한 번의 흐름 (전 머신 동일 — 전부 `ChallengeStepStartServerTime` 기준)**
+
+```
+ChallengeStepBegin(i) ─ 재배치 스냅 ─ [카운트다운 preRoundCountdown=3초]
+                                      간판 글씨 숨김, 네 간판 모두 큰 숫자 3·2·1
+                     ─ OnRoundReady ─ [읽는 시간 revealReadHold=1초] 방향 글씨 + 하트 공개, 채움 꽉 찬 채 정지
+                                    ─ [제한시간 roundTimeLimit(ByPlayerCount)] 네 간판 채움이 줄어듦 + 진행 틱
+                     ─ 판정(Host) ─ [resolveDelay=3초] 간판 채움이 성공/실패 색으로 꽉 참
+                     ─ ChallengeStepBegin(i+1) …
+```
+
+| 항목 | 규칙 |
+|---|---|
+| 카운트다운 | **첫 라운드 포함** 매 라운드 3초. 이 동안 타이머 안 돎. `SideSplitChallenge.preRoundCountdown`, 이벤트 `OnCountdownTick(남은 초)`. 제한시간·판정 시각은 스텝 시작 + 카운트다운 이후로 밀림 |
+| 라운드 간격 | 결과 표시 `resolveDelay` **3초** + 카운트다운 **3초** + 읽는 시간 `revealReadHold` **1초** (M.Stage2·M.Boss). 처음엔 결과 2 + 카운트다운 3(= 옛 5초)이었으나 "쉬는 시간이 짧다"는 피드백으로 같은 날 결과 +1초, 읽는 시간 +1초 추가. 카운트다운을 늘리지 않은 이유: 카운트다운 중엔 볼 정보가 없어 빈 대기가 됨 — 늘린 시간은 결과 소화와 하트 읽기에 씀 |
+| 재배치 (구 "회전") | **스핀 폐기.** `rotationStartRound` 라운드부터 카운트다운 시작 순간 `zoneRig`를 90° 단위로 스냅(`rotationSteps`, 시드 결정 — 변경 없음). 카운트다운 동안 네 간판이 똑같이 숫자만 보여서, 공개 순간 방향이 "다른 자리에서 나타난다". 판 4개가 중심 대칭이라 서는 자리는 그대로. 삭제 필드: `rotationSpinSpeedBase`/`rotationSpinSpeedStep`/`lockBeforeRoundStart` |
+| 인원 표시 | 방향 간판 아래 하트 패널. **하트 개수 = 필요 인원**, **색 하트(HP 아이콘) = 그 색 플레이어 필수**, **빈 하트 = 아무나**. 0명 방향은 **하트만 없다** — 간판·패널·타이머는 네 방향 모두 똑같이 보이고 판단은 하트로만 한다(흐리게·강조 없음, 2026-09-22 확정). 글자 없음 → 문구 로컬라이제이션 불필요 |
+| 남은 시간 | **네 간판 모두** 글씨 뒤 배경이 꽉 찬 색에서 한쪽으로 줄어듦(숫자 없음). 마지막 1초는 빨강(깜빡임 없이 유지). 바닥 패드엔 타이머 없음(2026-09-22 삭제) |
+| 읽는 시간 | 공개 직후 `revealReadHold`초 동안 채움이 꽉 찬 채 멈춰 있다가 줄기 시작. 판정 시각도 그만큼 밀림(제한시간 자체는 그대로) |
+| 소리 | 3·2·1 숫자가 바뀔 때마다 `SFXId.Minigame_CountdownTick` 1회. 채움이 **줄기 시작하는 순간**(읽는 시간 끝)부터 `SFXId.Minigame_TimerTick` 루프 → 시간 종료·판정 시 정지 |
+| 화면 UI | `SideSplitUI` 사용 안 함 — 두 씬에서 `challenge` 연결 해제 |
+
+**구현 (2026-09-22)**
+
+- `SideSplitChallenge` — `preRoundCountdown`, `revealReadHold`, `OnCountdownTick`, `CurrentRoundTimeLimit` 추가. `TimerRoutine`이 카운트다운 → `OnRoundReady` → 제한시간을 한 코루틴에서 진행. 스핀 코루틴·필드 삭제, 스냅은 `HandleChallengeStepChanged`에서만. 새 RPC·NV 없음
+- `SideSplitWorldDisplay`(신규, `Scripts/UI`) — 챌린지 이벤트 구독·표시만. 방향별 `DirectionView`(간판 배경/글씨/카운트다운 TMP/하트 패널/하트 줄/채움 렌더러)
+- `SideSplitZone` — 상태 색을 칠할 `visual` Renderer 지정(자식 간판을 잘못 잡지 않게)
+- 채움 = 불투명 Unlit + Alpha Clip. 텍스처 알파가 위치 그라데이션이라 `_Cutoff = 1 - 남은비율`로 잘라 줄어들게 한다(커스텀 셰이더 없음)
+- 에셋 `Assets/Mat/SplitZone/` — 바닥 패드, 간판 배경·채움·글씨(Figma `Ingame/SplitZone/*.png` 글자 모양), 하트 패널, 흰색 빈 하트(`Figma/Ingame/Heart/None.png` 색만 흰색). 색 하트는 `Figma/Ingame/Heart/*HP.png`
+- 씬(M.Stage2·M.Boss) — 존 박스·간판 큐브는 렌더링만 끔(판정 볼륨·충돌 그대로). 표시 오브젝트는 전부 `SplitZoneRig` 자식이라 재배치를 따라감
+
+**남은 작업**
+
+- [ ] 플레이 검증(Host + ParrelSync 클라이언트): 카운트다운 동기, 공개 순간 재배치, 간판 채움, 틱 2종, 성공/실패 색
+- [ ] `Minigame_CountdownTick` 클립 준비 → `SFXLibrary` 연결(비어 있으면 무음으로 건너뜀)
+- [ ] 정리(사용자 확인 후): `UI.prefab`의 `SideSplit_Panel`, `SideSplitUI.cs`, String Table `SideSplit`(13개 언어) 삭제
+
 ---
 
 ## 2. 구현 매핑 — 기존 챌린지 축 재사용 (구현 완료)
@@ -118,13 +160,14 @@
 | 진행도 UI | `ObjectiveUI` | 그대로 재사용 (변경 없음) |
 | 시작 트리거 흐름 | `StageStartGate → StartStage/StartQuiz` 연동 | `StageStartGate.OnCountdownComplete → SideSplitChallenge.StartChallenge()`로 교체 (씬 연결은 사용자 작업, §1.6) |
 | 조건 불일치 데미지 | `NetworkDamageUtil` | 그대로 재사용 (변경 없음) |
-| 문장형 안내 UI | (신규) | `SideSplitUI` — `LocalizedString.Arguments`(Smart Format) 기반 동적 문장 템플릿 |
+| ~~문장형 안내 UI~~ | ~~(신규)~~ | ~~`SideSplitUI`~~ → **월드 표시 `SideSplitWorldDisplay`** (2026-09-22, §1.8) |
 
 **파일 목록**
 - `Assets/Scripts/Stage/SideSplitChallenge.cs` — 매니저 (+ `SideSplitRound`/`SideSplitRoundInfo`/`SideSplitRoundEvent`/`SideSplitFloatEvent`)
 - `Assets/Scripts/Stage/SideSplitZone.cs` — 좌/우 판정 볼륨
 - `Assets/Scripts/Stage/SideSplitObjective.cs` — 스테이지 목표 연동
-- `Assets/Scripts/UI/SideSplitUI.cs` — 문장형 안내 UI
+- ~~`Assets/Scripts/UI/SideSplitUI.cs` — 문장형 안내 UI~~ (2026-09-22 미사용, 삭제 예정)
+- `Assets/Scripts/UI/SideSplitWorldDisplay.cs` — 월드 표시(카운트다운·하트·채움·틱)
 - `Assets/Scripts/Network/StageNetworkState.cs` — `ChallengeOwnerType.SideSplit` 추가
 
 **결론:** 코드 재사용률이 높아 난이도는 예상대로 **낮음~중간**이었다. 신규 설계는 "좌/우 인원+색상 랜덤 생성기", "좌/우 판정 볼륨", "문장형 안내 UI" 3가지로 국한됐다.
@@ -162,5 +205,5 @@
 | 이름 | 상태 | 배치 스테이지 | 비고 |
 |---|---|---|---|
 | ~~OX퀴즈~~ | **삭제 완료** | ~~`M.Stage2`, `T.Stage4`~~ | §0, §3 참고 |
-| SideSplit (좌우 분기, T.Stage4는 4방향) | **코드 작성 완료 — 씬 배치·검증 대기** | `M.Stage2`(좌우), `T.Stage4`(좌우앞뒤) | §1/§2/§1.7 참고 |
+| SideSplit (4방향) | **월드 표시·카운트다운 적용(2026-09-22) — 플레이 검증 대기** | `M.Stage2`, `M.Boss` P2 (T.Stage4는 삭제 예정 — `CoopStageAudit.T.md`) | §1/§2/§1.7/§1.8 참고 |
 | 미니게임 B | **미정** | — | 사용자 언급: "미니게임 1개 더 추가될 수 있음" — 아이디어 확정 시 §5로 추가 |
