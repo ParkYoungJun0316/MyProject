@@ -298,6 +298,12 @@ public class AdvancingWall : MonoBehaviour
     /// 외부 스케줄러가 "정지가 끝났는지" 판별하는 데 사용.</summary>
     public bool IsPausedByColor => _isPausedByColor;
 
+    /// <summary>전진 완료 후 후퇴 시작까지 대기(초). 외부 스케줄러가 사이클 길이를 미리 계산할 때 쓴다.</summary>
+    public float ReturnDelay => returnDelay;
+
+    /// <summary>출발 전 텔레그래프 길이(초). 없으면 0. 외부 스케줄러가 사이클 길이를 미리 계산할 때 쓴다.</summary>
+    public float TelegraphDuration => telegraph != null ? Mathf.Max(0f, telegraph.Duration) : 0f;
+
     /// <summary>
     /// 한 번 전진·후퇴 실행 (WallLineRandomizer 등 외부 스케줄 전용).
     /// 이미 이동 중이거나 색 일시정지 상태이면 무시.
@@ -319,6 +325,68 @@ public class AdvancingWall : MonoBehaviour
             overrideMoveDuration   = advanceMoveDuration,
             overrideReturnDuration = returnMoveDuration
         }));
+    }
+
+    /// <summary>
+    /// 돌진 1회 — 현재 원점에서 surgeDistance만큼 전진한 뒤, **시작 위치 기준 절대 거리**
+    /// retreatToDistance 지점으로 후퇴한다. WallLineRandomizer 계단식 압박(T.Boss P4) 전용.
+    ///
+    /// RunOnce와 다른 점: 새 원점을 **출발 전에** 확정한다. RunOnce는 후퇴가 끝나야 원점을 옮기므로
+    /// ColorWall 색 일치로 사이클이 끊기면 그 회차의 순전진이 통째로 사라졌다 — 색을 맞추라고 만든
+    /// 페이즈에서 잘 맞출수록 벽이 안 다가오는 버그였다. 여기서는 끊겨도 PauseByColorRoutine이
+    /// 새 원점으로 복귀하므로 계단은 그대로 내려간다.
+    /// 후퇴 목표가 절대 거리라 머신마다 색 일치 판정이 갈려도 도착 위치는 같다.
+    /// 이동 중이거나 색 일시정지 상태이면 무시.
+    /// </summary>
+    public void RunSurge(float surgeDistance, float retreatToDistance, float advanceMoveDuration, float returnMoveDuration)
+    {
+        if (_isActive || _isPausedByColor) return;
+        _advanceCoroutine = StartCoroutine(RunSurgeRoutine(
+            surgeDistance, retreatToDistance,
+            advanceMoveDuration > 0f ? advanceMoveDuration : moveDuration,
+            returnMoveDuration  > 0f ? returnMoveDuration  : returnDuration));
+    }
+
+    IEnumerator RunSurgeRoutine(float surgeDistance, float retreatToDistance, float advDur, float retDur)
+    {
+        _isActive = true;
+
+        Vector3 worldDir      = transform.TransformDirection(moveDirection.normalized);
+        Vector3 from          = _currentOrigin;
+        Vector3 advanceTarget = from + worldDir * surgeDistance;
+        Vector3 newOrigin     = _startOrigin + worldDir * retreatToDistance;
+
+        _advanceTarget = advanceTarget;
+        // 원점을 먼저 옮긴다 — 위 summary 참고.
+        _currentOrigin = newOrigin;
+        _totalAdvanced = retreatToDistance;
+
+        if (telegraph != null && telegraph.Duration > 0f)
+        {
+            telegraph.Play();
+            yield return new WaitForSeconds(telegraph.Duration);
+            telegraph.Cancel();
+        }
+
+        OnAdvanceStarted?.Invoke();
+        StartMoveLoop();
+        yield return LerpTo(from, advanceTarget, advDur);
+        StopMoveLoop();
+        _rb.MovePosition(advanceTarget);
+        OnAdvanceCompleted?.Invoke();
+
+        if (returnDelay > 0f)
+            yield return new WaitForSeconds(returnDelay);
+
+        OnRetreatStarted?.Invoke();
+        StartMoveLoop();
+        yield return LerpTo(advanceTarget, newOrigin, retDur);
+        StopMoveLoop();
+        _rb.MovePosition(newOrigin);
+        OnRetreatCompleted?.Invoke();
+
+        _isActive         = false;
+        _advanceCoroutine = null;
     }
 
     /// <summary>

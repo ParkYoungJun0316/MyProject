@@ -105,6 +105,11 @@ public class BreakTile : MonoBehaviour
     [Tooltip("타일 중심에서 이만큼 아래(m)에 파티클을 스폰한다. 분출이 구멍을 뚫고 올라오는 그림을 만든다.")]
     [SerializeField] float particleDepth = 1f;
 
+    [Tooltip("파티클 프리팹이 맞춰진 기준 타일 한 변(m). AcidGeyser는 3m 타일 기준이다.\n" +
+             "실제 타일 한 변(Renderer bounds의 x·z 중 큰 값) ÷ 이 값만큼 파티클을 균일하게 키운다\n" +
+             "(T.Boss P1 5m → ×1.67, T.Stage4 7.8m → ×2.6). 0이면 프리팹 크기 그대로.")]
+    [SerializeField] float particleReferenceTileSize = 3f;
+
     [Tooltip("파티클 강제 소멸 시간(초). 0이면 프리팹의 Stop Action(Destroy)에 맡긴다 —\n" +
              "Looping이 켜진 프리팹을 물렸을 때만 쓰는 안전망이다.")]
     [SerializeField] float particleLifetime = 0f;
@@ -252,7 +257,8 @@ public class BreakTile : MonoBehaviour
         // (SpikeLane.Trigger()가 ResetWarning을 부르는 것과 같다).
         warnMarker?.ResetWarning();
 
-        Vector3 center = Center();
+        Vector3 center   = Center();
+        float   tileSize = TileSize();
         if (_solid != null) _solid.enabled = false;
 
         SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, center, destroyMinDistance, destroyMaxDistance);
@@ -261,7 +267,7 @@ public class BreakTile : MonoBehaviour
         SpawnDebris();
         if (_renderer != null) _renderer.enabled = false;
 
-        SpawnBreakParticle(center);
+        SpawnBreakParticle(center, tileSize);
         OnCollapsed?.Invoke();
     }
 
@@ -274,7 +280,7 @@ public class BreakTile : MonoBehaviour
                                            debrisImpulseMin, debrisImpulseMax, DebrisSeed(), debrisScale);
     }
 
-    void SpawnBreakParticle(Vector3 center)
+    void SpawnBreakParticle(Vector3 center, float tileSize)
     {
         if (breakParticlePrefab == null) return;
 
@@ -285,7 +291,42 @@ public class BreakTile : MonoBehaviour
                                 center + Vector3.down * particleDepth,
                                 breakParticlePrefab.transform.rotation);
 
+        if (particleReferenceTileSize > 0f && tileSize > 0f)
+            ScaleParticle(_particle, tileSize / particleReferenceTileSize);
+
         if (particleLifetime > 0f) Destroy(_particle, particleLifetime);
+    }
+
+    /// <summary>
+    /// 파티클 묶음 전체를 균일하게 scale배 한다(폭·입자 크기·분출 높이 모두 비례).
+    /// 루트 스케일만 바꾸면 안 된다 — AcidGeyser의 시스템들은 Scaling Mode가 Local/Shape라
+    /// 부모 스케일을 무시한다. 그래서 전부 Hierarchy로 돌린 뒤 루트를 키운다.
+    /// Hierarchy 모드에서도 World 시뮬레이션 공간 시스템은 속도가 스케일되지 않으므로
+    /// 분출 높이가 같이 커지도록 시작 속도를 직접 곱한다(Local 공간 시스템은 transform이 알아서 늘린다).
+    /// 스폰 직후 같은 프레임이라 아직 방출된 입자가 없다 — 첫 입자부터 새 값이 적용된다.
+    /// </summary>
+    static void ScaleParticle(GameObject root, float scale)
+    {
+        if (Mathf.Approximately(scale, 1f)) return;
+
+        root.transform.localScale *= scale;
+
+        var systems = root.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < systems.Length; i++)
+        {
+            var main = systems[i].main;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            if (main.simulationSpace != ParticleSystemSimulationSpace.Local)
+                main.startSpeedMultiplier *= scale;
+        }
+    }
+
+    /// <summary>타일 한 변(m) — Renderer bounds의 x·z 중 큰 값. Renderer가 없으면 0(스케일링 생략).</summary>
+    float TileSize()
+    {
+        if (_renderer == null) return 0f;
+        Vector3 size = _renderer.bounds.size;
+        return Mathf.Max(size.x, size.z);
     }
 
     /// <summary>
@@ -348,6 +389,7 @@ public class BreakTile : MonoBehaviour
         debrisImpulseMax    = Mathf.Max(debrisImpulseMin, debrisImpulseMax);
         debrisScale         = Mathf.Max(0.01f, debrisScale);
         particleLifetime    = Mathf.Max(0f, particleLifetime);
+        particleReferenceTileSize = Mathf.Max(0f, particleReferenceTileSize);
         destroyMinDistance  = Mathf.Max(0f, destroyMinDistance);
         destroyMaxDistance  = Mathf.Max(destroyMinDistance, destroyMaxDistance);
     }

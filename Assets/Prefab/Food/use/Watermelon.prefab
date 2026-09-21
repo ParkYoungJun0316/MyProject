@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6451065092276276398
+--- !u!1 &4986620698779973961
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,52 +8,46 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6396246080513812485}
-  - component: {fileID: 767757914312563591}
-  - component: {fileID: 2637971047066448550}
-  - component: {fileID: 529481500668241617}
-  - component: {fileID: 5753364629308104850}
-  - component: {fileID: 2190596333247130865}
-  - component: {fileID: 1342536871511576810}
-  - component: {fileID: -3239274801629366045}
-  - component: {fileID: 5562808852775946574}
+  - component: {fileID: 7834035727992214424}
+  - component: {fileID: 1272382126471930368}
+  - component: {fileID: 6219910154201508629}
   m_Layer: 16
-  m_Name: Watermelon
-  m_TagString: EnemyBullet
+  m_Name: Visual
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6396246080513812485
+--- !u!4 &7834035727992214424
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6451065092276276398}
+  m_GameObject: {fileID: 4986620698779973961}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 30, y: 30, z: 30}
+  m_LocalPosition: {x: -0.0018745959, y: 0.016666668, z: 0.01999701}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 6396246080513812485}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &767757914312563591
+--- !u!33 &1272382126471930368
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6451065092276276398}
+  m_GameObject: {fileID: 4986620698779973961}
   m_Mesh: {fileID: 2519597968918171194, guid: f9bec50f8595338488477583e4dd1675, type: 3}
---- !u!23 &2637971047066448550
+--- !u!23 &6219910154201508629
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6451065092276276398}
+  m_GameObject: {fileID: 4986620698779973961}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -96,6 +90,44 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &6451065092276276398
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6396246080513812485}
+  - component: {fileID: 529481500668241617}
+  - component: {fileID: 5753364629308104850}
+  - component: {fileID: 2190596333247130865}
+  - component: {fileID: 1342536871511576810}
+  - component: {fileID: -3239274801629366045}
+  - component: {fileID: 8019906891849442518}
+  m_Layer: 16
+  m_Name: Watermelon
+  m_TagString: EnemyBullet
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6396246080513812485
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6451065092276276398}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 30, y: 30, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7834035727992214424}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &529481500668241617
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -225,8 +257,8 @@ MonoBehaviour:
   rollMinDistance: 40
   rollMaxDistance: 200
   rollRolloffMode: 0
---- !u!64 &5562808852775946574
-MeshCollider:
+--- !u!65 &8019906891849442518
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -243,7 +275,6 @@ MeshCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 2519597968918171194, guid: f9bec50f8595338488477583e4dd1675, type: 3}
+  serializedVersion: 3
+  m_Size: {x: 0.53333336, y: 0.16666667, z: 0.33333334}
+  m_Center: {x: 0, y: 0.15, z: 0}

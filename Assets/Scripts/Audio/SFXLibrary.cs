@@ -103,6 +103,12 @@ public class SFXLibrary : ScriptableObject
     [Tooltip("PressurePad / ColorTile이 고유색(또는 Common)으로 정확히 인식됐을 때 3D 재생.")]
     public AudioClip Pad_Press;
 
+    // ── Tile Restore ─────────────────────────────────────────────
+    [Header("Tile Restore")]
+    [Tooltip("혀/입 닫힘으로 부서진 바닥이 응원으로 복구될 때 — 파편 되감기가 모이기 시작하는 순간 복구 1회당 1번(2D).\n" +
+             "TileRestoreRewindGroup / TileRewindSettings.sfxId.")]
+    public AudioClip ReverseTime;
+
     // ── 클립별 볼륨 보정 ──────────────────────────────────────────
 
     [Serializable]
@@ -178,6 +184,8 @@ public class SFXLibrary : ScriptableObject
             case SFXId.Wind_Push:                         return Wind_Push;
 
             case SFXId.Pad_Press:                         return Pad_Press;
+
+            case SFXId.ReverseTime:                       return ReverseTime;
 
             default: return null;
         }

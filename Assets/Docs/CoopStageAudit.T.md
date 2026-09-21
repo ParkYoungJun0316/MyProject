@@ -108,6 +108,7 @@ M·T1–T4를 다시 묻지 말 것. **T.Boss 응원·페이즈는 보류** — 
   - **(2026-09-18) 하강 시계 동기화:** 하강이 `AdvancingWall.RunOnce`(로컬 경과 시간 누적) + 각 머신 이벤트 수신 시각 시작이라 Client가 늦게 출발하고 히치 손실이 100~200초 하강 내내 남았다(MovingCorridor와 같은 클래스). Host가 하강 시작 서버 시각(칸 진입 = 그 순간 / 히트 후 = 지금 + 복귀 + 정지)을 `BossSphereHitState.descentStartServerTime`으로 배포하고, 전 머신이 `AdvancingWall.RunOnceSynced`(진행도 = 서버 시각 경과 ÷ 시간제한)로 하강. 바닥 도달(전멸) 시각도 Host/Client 일치.
   - **P4 (`PhaseSurviveChallenge`, 신규 코드 없음):** P4 아레나 밑에 `PhaseSurviveChallenge_P4` 신규 배치, `targetTime=90`. `PhaseData[3].onPhaseEnter → Begin()` 추가, `OnChallengeComplete → BossFightObjective.NotifyPhaseCleared()` 추가.
   - 전부 `UnityEventTools.AddVoidPersistentListener` + 호출 전 중복 검사(대상+메서드명 일치 시 스킵)로 배선해 재실행해도 안전.
+  - **P4 벽 계단식 압박(2026-09-22 확정·코드 됨):** `WallLineRandomizer.useSqueeze`(BossWall_F/B/L/R만 켬 — T1·T3는 끔). 돌진 = 남은 바닥 한 변 × 0.9(100→90, 90→81 …), 속도 30m/s 일정(돌진이 짧아질수록 전진 시간도 준다). 후퇴할 때마다 시작 지점이 한 칸씩 안으로 — 한 칸 = 남은 거리 ÷ 남은 시간에 들어갈 횟수(8~9회, 약 5.6m). **Phase 시작 + 90초에 정확히 피벗 45 전진 = 10×10**, 마지막 돌진 뒤 남은 거리는 90초 정각에 맞춰 천천히 붙는다. 벽마다 첫 돌진 3~7초 시드 랜덤(동시 출발 방지), 간격 4~6초 유지. **색 일치로 멈춰도 계단은 내려간다**(`AdvancingWall.RunSurge`가 원점을 출발 전에 확정 — 구 `RunOnce`+후퇴 비율 0.925는 멈추면 그 회차 순전진이 사라져 잘 맞출수록 안 다가오는 버그였다). "동시에 오면 같은 색" 규칙은 **기각**.
 
   **남은 것 = 씬 배선(사용자).** 코드는 위대로 전부 반영됨.
 - **에디터(사용자, 남음):** T1/T3 씬에 `EsophagusSqueeze` 배치 — 이 오브젝트를 식도 원통 중심에 두고, 자식으로 판자 8개를 45°씩 등간격 방사형 배치(각 판자 = Box 오브젝트 + `Rigidbody(Is Kinematic=true, Interpolate)` + `BoxCollider`, 폭은 원래 반경에서 이웃과 맞물리는 값). `segments[]`에 그 8개 Transform 연결, `squeezeTargetRadius`/`attackDuration`/`recoverDuration`/`randomIntervalMin~Max`/`warnDuration` 튜닝(선택 시 Gizmo로 원래→목표 반경 이동 경로 확인 가능). T2/T4 씬에 `EsophagusFog` 배치(`maxDensity`/`fogColor`/같은 랜덤·클립 필드 튜닝). 안개는 URP **빌트인 Fog**(Lighting > Environment)를 코드가 켜므로 별도 Volume 오버라이드 없음 — URP Lit 계열만 반영, 커스텀/Unlit 셰이더(Boulder 등)는 범위 밖. `TeamCheerWarningUI`는 M과 동일하게 `CheerService.OnHazardWindowChanged` 구독 — 씬에 해당 UI prefab 배치 여부만 확인. 둘 다 씬당 **하나만** 둘 것(`CheerService.RegisterRevert`가 중복 등록 경고).
@@ -292,6 +293,17 @@ Memory 미리보기 정답을 다시 켜지 않음(안개가 걷혀도 정답 �
 >
 > **⚠️ 그래서 P3에는 지금 클리어 조건이 없다.** 새 판이 정해질 때까지 P3는 시간 초과로만
 > 끝난다. 임시 오브젝티브를 얹지 않기로 확정(2026-09-21) — 정해지면 그때 갈아끼운다.
+
+> **✅ 새 P3 (2026-09-22 사용자 확정): M.Stage5 그리드 + 안전 칸 외 전부 붕괴.**
+> M.Stage5(`CoopStageAudit.M.md` §8 + 붕괴)를 그대로 가져와 극한으로 쓴다 — §4 초출 금지와 맞음(M5가 먼저 가르침).
+>
+> - **판:** 원점 25×25 = 5m 칸 5×5(M.Stage5와 같은 칸·간격). 원점 20×20 전제는 그리드 칸이 대신 지킨다 —
+>   P3 시작과 라운드 사이엔 전 칸이 멀쩡하다. 옛 P3 바닥 `Ground (1)`~`(7)`은 **비활성**(삭제 아님).
+> - **규칙:** `GridChallenge`(M5와 같은 커브) + `GridTileCollapse` **`AllExceptSafe`** — 매 라운드 안전 칸만 남기고
+>   전부 무작위 순서로 3칸씩 0.2s 간격 붕괴(첫 붕괴 1.2s, 칸마다 0.8s 전 경고), 정산 순간 전부 복구.
+>   Common 칸 = 낙사 즉사, 남의 색·모드 틀림 = 개인 데미지 2.
+> - **클리어:** 전 라운드 완료 → `GridRoundObjective.Complete` → P3 `StageManager.OnStageClear` →
+>   `BossFlow.NotifyPhaseCleared`(기존 배선). 라운드 수(지금 8)와 P3 시간 제한은 서로 맞춰 사용자가 튜닝.
 
 **페이즈별 클리어 조건 확정(2026-09-10, 배선 됨):** P1 = `ReachZoneObjective`(도달 존, 기존 씬 배치 재사용). P2 = 동일 `ReachZoneObjective`. P3 = Sphere `ColorWall` 색 히트 **누적 횟수**(`BossSpherePhaseDriver.requiredHitCounts[2]`, 지금은 인원수 무관 **고정값 8**로 임시 — 1~4인 난이도 분리는 나중). P4 = `PhaseSurviveChallenge` 90초 생존. 전부 `BossFightObjective.NotifyPhaseCleared()`로 귀결 → `PhaseManager.AdvancePhase()`. 상세·배선 위치는 §H.4 6번.
 

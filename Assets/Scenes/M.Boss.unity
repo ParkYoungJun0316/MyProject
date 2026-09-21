@@ -10745,9 +10745,13 @@ MonoBehaviour:
   tileDebrisLifetime: 2
   tileDebrisImpulseMin: 2
   tileDebrisImpulseMax: 5
-  restorePopDuration: 0
-  restorePopAmplitude: 0.12
-  restorePopJitter: 0
+  restoreRewind:
+    duration: 0.8
+    distanceMin: 2
+    distanceMax: 5
+    origin: 0
+    stagger: 0.15
+    sfxId: 34
   mouthAnimator: {fileID: 434174311}
   openTrigger: doOpen
   closeTrigger: doClose
@@ -21062,9 +21066,13 @@ MonoBehaviour:
   tileDebrisLifetime: 2
   tileDebrisImpulseMin: 2
   tileDebrisImpulseMax: 5
-  restorePopDuration: 2
-  restorePopAmplitude: 0.1
-  restorePopJitter: 1
+  restoreRewind:
+    duration: 0.8
+    distanceMin: 2
+    distanceMax: 5
+    origin: 0
+    stagger: 0.15
+    sfxId: 34
   centerWarnMarker: {fileID: 76037448}
   leftWarnMarker: {fileID: 1325810079}
   rightWarnMarker: {fileID: 1861812332}

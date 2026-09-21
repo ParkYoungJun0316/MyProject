@@ -449,7 +449,7 @@ Tutorial CheerName 설정 구역(`TutorialCheerNameUI`, `CheerAndTutorialDesign.
 
 | 파라미터 | 위치 | 설명 | 값 |
 |---|---|---|---|
-| `PlayerBuffSystem.buffSettings[type].duration` | `PlayerBuffSystem` | Shield/SpeedUp 지속 | Shield 5초 / SpeedUp 10초 (기존 유지) |
+| `PlayerBuffSystem.buffSettings[type].duration` | `PlayerBuffSystem` | Shield/SpeedUp 지속 | Shield 5초 / SpeedUp **5초·+6**(기본 10→16m/s, 1.6배) — 2026-09-21 변경(구 10초·+15는 버프 해제 시 이질감 + 평균 속도 1.6배로 T.Stage1 볼더 무력화). 버프 필수 구간 T.Stage1 `WallMover_Seq_2`는 이 값에 맞춰 재계산(PlaytestLog #8) |
 | `cheerCooldownSeconds` | `CheerService` | 개인 버프 종료 후 쿨 | 15초 (기존 유지) |
 | ~~`teamCheerTimeoutSeconds`~~ | — | **삭제됨 (2026-09-14).** 첫 인식 후 10초 표 리셋 폐기. 1회 통과는 창이 끝날 때까지 유지 | — |
 | `chatRateLimitSeconds` | `CheerService` | 숫자키 응원 간격 | 0.5~1초 (기존 유지) |

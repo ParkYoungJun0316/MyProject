@@ -3430,6 +3430,14 @@ MonoBehaviour:
   positionDamping: 0
   rotationDamping: 0
   lockCursor: 1
+  cameraObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 704643072
+  cameraCollisionRadius: 0.3
+  cameraCollisionBuffer: 0.15
+  pullInSmoothTime: 0.05
+  pullOutSmoothTime: 0.25
+  logObstructionHits: 0
   previewDistance: 40
   previewPitch: 82
   previewYaw: 0
@@ -8313,7 +8321,7 @@ MonoBehaviour:
   - {fileID: 736840453}
   targetStepCountByPlayerCount: 2300000041000000460000004b000000
   timeLimitByPlayerCount:
-  - 35
+  - 28
   - 65
   - 70
   - 75
@@ -9654,7 +9662,7 @@ MonoBehaviour:
   - {fileID: 1539369860}
   targetStepCountByPlayerCount: 280000004b000000550000005f000000
   timeLimitByPlayerCount:
-  - 35
+  - 22
   - 55
   - 65
   - 75

@@ -87,17 +87,10 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [Tooltip("파편에 가할 임펄스 힘 최대값.")]
     [SerializeField] float tileDebrisImpulseMax = 5f;
 
-    [Header("복구 연출 (선택 — 판정은 항상 즉시, 이건 시각 연출만. TileRestorePopGroup 공용)")]
-    [Tooltip("복구 시 살짝 부풀었다 가라앉는 연출 시간(초). 0이면 연출 없음(기존과 동일, 즉시 복구만).")]
-    [SerializeField] float restorePopDuration = 0f;
-
-    [Tooltip("부풀어 오르는 최대 배율(0.06 = 최대 106%). 0이면 연출 없음과 동일.\n" +
-             "콜라이더도 같이 커진다 — 0.06이면 타일 윗면이 약 3cm 올라가고 좌우로 0.15m씩 이웃 칸을 " +
-             "침범해, 복구 순간 근처에 선 플레이어가 살짝 들리거나 밀릴 수 있다.")]
-    [SerializeField] float restorePopAmplitude = 0.06f;
-
-    [Tooltip("여러 타일이 한꺼번에 복구될 때 조금씩 다르게 보이도록 지속시간에 주는 랜덤 폭(초, ±). 0이면 랜덤 없음.")]
-    [SerializeField] float restorePopJitter = 0f;
+    [Header("복구 연출 — 파편 되감기 (판정은 항상 즉시, 이건 시각 연출만. TileRestoreRewindGroup 공용)")]
+    [Tooltip("복구 시 tileDebrisPrefab을 새로 스폰해 랜덤 위치에서 제자리로 모이게 한다. duration 0이면 즉시 복구. " +
+             "구 팝(부풀었다 가라앉기)은 2026-09-22 폐기.")]
+    [SerializeField] TileRewindSettings restoreRewind = new TileRewindSettings();
 
     [Header("입 애니메이터 (이 페이즈 전용 — MouthController와 별개, 응원 없이 무조건 발동)")]
     [Tooltip("비워두면 이 GO 또는 자식(비활성 포함)에서 자동 탐색")]
@@ -168,9 +161,9 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     // 정리하면 lifetime을 기다리지 않고 즉시 치워진다(TongueController와 동일 패턴).
     readonly List<GameObject> _spawnedDebris = new();
 
-    // 복구 연출(스케일 팝). 타일별 원래 스케일·코루틴 추적은 전부 여기가 들고 있다
+    // 복구 연출(파편 되감기). 타일별 코루틴·스폰 파편·꺼 둔 Renderer 추적은 전부 여기가 들고 있다
     // (TongueController와 공용 — 같은 부기를 두 함정이 복제하지 않는다).
-    TileRestorePopGroup _restorePop;
+    TileRestoreRewindGroup _restoreRewind;
 
     const float AnchorWaitTimeout = 3f;
     const int TileAxis = 2;
@@ -196,7 +189,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         if (mouthAnimator == null)
             mouthAnimator = GetComponent<Animator>() ?? GetComponentInChildren<Animator>(true);
 
-        _restorePop = new TileRestorePopGroup(this);
+        _restoreRewind = new TileRestoreRewindGroup(this);
 
         ValidateWiring();
     }
@@ -208,7 +201,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         // 엔딩(ForceBreakAllTilesForEnding)으로 부순 채 페이즈가 꺼졌다가 같은 세션에서 P4가 다시
         // 켜지는 경우, 여기서 25칸이 한꺼번에 부풀면 복구 연출이 아니라 버그로 보인다 — 페이즈 시작
         // 복구는 연출 없이 즉시.
-        RestoreAllTiles(playPop: false);
+        RestoreAllTiles(playRewind: false);
         TriggerIdle();
         _bindRoutine = StartCoroutine(BindAndStartHazard());
     }
@@ -223,9 +216,9 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         ResetHazardFlags();
         if (!_endingBroken)
             RestoreAllTiles();
-        // StopAllCoroutines()가 진행 중이던 팝 코루틴을 자체 정리(스케일 원복) 없이 죽였을 수
-        // 있다 — 타일이 부푼 채로 멈춰 있는 그림을 막기 위해 명시적으로 되돌린다.
-        _restorePop.ResetAll();
+        // StopAllCoroutines()가 진행 중이던 되감기 코루틴을 자체 정리(파편 삭제·Renderer 복원) 없이 죽였을 수
+        // 있다 — 렌더러가 꺼진 채(투명 바닥)로 남거나 파편이 허공에 떠 있는 그림을 막기 위해 명시적으로 되돌린다.
+        _restoreRewind.ResetAll();
         // 페이드는 ScreenFader 자기 코루틴이라 위 StopAllCoroutines로 안 멈춘다(MouthController와 동일 이유).
         if (screenFader != null)
             screenFader.FadeIn(0f);
@@ -490,11 +483,11 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
             _spawnedDebris.Add(debris);
     }
 
-    /// <param name="playPop">false면 복구 연출 없이 즉시 복구만(페이즈 시작 복구 등).</param>
-    void RestoreAllTiles(bool playPop = true)
+    /// <param name="playRewind">false면 복구 연출 없이 즉시 복구만(페이즈 시작 복구 등).</param>
+    void RestoreAllTiles(bool playRewind = true)
     {
         for (int i = 0; i < floorTiles.Length; i++)
-            SetTileActive(i, true, playPop);
+            SetTileActive(i, true, playRewind);
         _brokenIndices.Clear();
         ClearDebris();
     }
@@ -511,7 +504,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         _spawnedDebris.Clear();
     }
 
-    void SetTileActive(int index, bool active, bool playPop = true)
+    void SetTileActive(int index, bool active, bool playRewind = true)
     {
         if (index < 0 || index >= floorTiles.Length) return;
         GameObject tile = floorTiles[index];
@@ -519,16 +512,16 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
         if (active)
         {
-            // 판정(SetActive)은 항상 먼저 즉시 끝낸다 — 팝은 그 뒤에 얹히는 순수 시각 연출.
+            // 판정(SetActive)은 항상 먼저 즉시 끝낸다 — 되감기는 그 뒤에 얹히는 순수 시각 연출.
             bool wasInactive = !tile.activeSelf;
             tile.SetActive(true);
-            if (wasInactive && playPop)
-                _restorePop.Play(tile, restorePopDuration, restorePopAmplitude, restorePopJitter);
+            if (wasInactive && playRewind)
+                _restoreRewind.Play(tile, tileDebrisPrefab, restoreRewind);
         }
         else
         {
-            // 원래 스케일 캐시 + 아직 도는 팝 접기(복구 직후 같은 칸이 다시 부서지는 경우 방어).
-            _restorePop.OnTileBroken(tile);
+            // 아직 도는 되감기 접기(복구 직후 같은 칸이 다시 부서지는 경우 방어).
+            _restoreRewind.OnTileBroken(tile);
             tile.SetActive(false);
         }
     }

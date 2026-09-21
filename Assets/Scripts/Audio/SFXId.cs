@@ -76,4 +76,7 @@ public enum SFXId
 
     // ── Trap / Hazard (추가) ──────────────────────────────────────
     Trap_CeilingWall_Move          = 33,
+
+    // ── Tile Restore (바닥 파편 되감기) ───────────────────────────
+    ReverseTime                    = 34,
 }

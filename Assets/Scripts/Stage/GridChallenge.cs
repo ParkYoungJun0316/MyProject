@@ -133,7 +133,17 @@ public class GridChallenge : MonoBehaviour
 
     public bool IsRunning => _isRunning;
     public int TotalRounds => totalRounds;
+    public float RoundDuration => roundDuration;
     public int CurrentRoundIndex { get; private set; } = -1;
+
+    /// <summary>이번 라운드 보드를 만든 시드(전 머신 동일). 라운드 연동 연출(GridTileCollapse)이 같은 시드를 쓴다.</summary>
+    public int CurrentRoundSeed { get; private set; }
+
+    /// <summary>보드 칸 배열(인덱스 = GridIndex). 읽기 전용 — 상태 변경은 이 챌린지만.</summary>
+    public IReadOnlyList<GridTile> Tiles => tiles;
+
+    /// <summary>이번 라운드 안전 칸이면 true. 라운드 밖(정산 후~다음 라운드 전)엔 전부 false.</summary>
+    public bool IsSafeTileThisRound(int index) => _currentSafeTiles.ContainsKey(index);
 
     void Awake()
     {
@@ -328,6 +338,7 @@ public class GridChallenge : MonoBehaviour
         CurrentRoundIndex = stepIndex;
 
         int seed = _netState != null ? _netState.ChallengeSeed : 0;
+        CurrentRoundSeed = seed;
         var rng  = new System.Random(seed);
         PickRandomTiles(rng);
         ApplyTileStates();

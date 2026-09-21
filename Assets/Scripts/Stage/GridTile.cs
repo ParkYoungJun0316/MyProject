@@ -99,6 +99,13 @@ public class GridTile : MonoBehaviour
         _occupants.Remove(p);
     }
 
+    /// <summary>
+    /// GridTileCollapse가 칸을 깨면(SetActive false) OnTriggerExit이 오지 않아 위에 있던 플레이어가
+    /// 점유로 남는다 — 낙사 후 부활하면 IsDead=false라 RefreshOccupants도 못 걸러, 다음 라운드에 이 칸이
+    /// 안전 칸이 되면 서 있지도 않은 사람이 통과한다. 꺼질 때 비우고, 다시 켜지면 트리거가 새로 채운다.
+    /// </summary>
+    void OnDisable() => _occupants.Clear();
+
     /// <summary>사망·리셋 시 유령 점유 제거.</summary>
     public void RefreshOccupants()
     {

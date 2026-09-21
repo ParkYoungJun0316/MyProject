@@ -229,12 +229,23 @@ public class CheerProgressUI : MonoBehaviour
         SetState(CheerState.BuffActive);
     }
 
-    /// <summary>Shield charge 소모로 버프가 제거되면 즉시 Cooldown 전환.</summary>
+    /// <summary>
+    /// Shield charge 소모로 버프가 제거되면 즉시 Cooldown 전환.
+    ///
+    /// [버그 수정 2026-09-21] Host(CheerService)의 쿨은 charge 소모와 무관하게 **원래 duration이 끝난
+    /// 뒤부터** 돈다(_buffEnd = 발동 + duration). 예전엔 소모 순간부터 쿨 15초를 세서, 남은 duration만큼
+    /// UI가 먼저 "사용 가능"을 띄우고 실제 Space는 Host에서 거절됐다. 남은 duration을 쿨에 얹어
+    /// Host 시각과 맞춘다. 이 머신의 _buffStartTime은 RPC 수신 시각이라 Host보다 늦으므로 항상 안전
+    /// 쪽(조금 늦게 풀림)으로만 어긋난다.
+    /// </summary>
     void HandleBuffRemoved(PlayerBuffSystem.BuffType type)
     {
         if (!IsCheerBuffType(type)) return;
         if (type != _activeBuffType) return; // 다른 버프 타입 제거 이벤트는 무시
         if (_state != CheerState.BuffActive) return;
+        float unusedBuffTime = Mathf.Max(0f, _buffDuration - (Time.time - _buffStartTime));
+        var svc = CheerService.Instance;
+        _cooldownDuration  = (svc != null ? svc.CooldownDuration : _cooldownDuration) + unusedBuffTime;
         _cooldownStartTime = Time.time;
         SetState(CheerState.Cooldown);
     }

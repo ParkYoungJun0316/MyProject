@@ -1,5 +1,95 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8492391883525768037
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7952546305164912043}
+  - component: {fileID: 5048185299586502535}
+  - component: {fileID: 1161290116890745568}
+  m_Layer: 16
+  m_Name: Visual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7952546305164912043
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8492391883525768037}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.00007380545, y: 0.019426497, z: 0.00046288443}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4676381876951670938}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &5048185299586502535
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8492391883525768037}
+  m_Mesh: {fileID: 1508623699123522411, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
+--- !u!23 &1161290116890745568
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8492391883525768037}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: ad39eccb39be39f40b3ba8c2298f9fd2, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1001 &5147440613120673649
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -80,13 +170,15 @@ PrefabInstance:
       propertyPath: m_TagString
       value: EnemyBullet
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -7511558181221131132, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
+    - {fileID: -5754084199372789682, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8237974344538476107}
+      addedObject: {fileID: 7952546305164912043}
+    m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4311294709405640711}
@@ -104,35 +196,18 @@ PrefabInstance:
       addedObject: {fileID: -8731481905873274478}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 874884916592064810}
+      addedObject: {fileID: 1148675687218144519}
   m_SourcePrefab: {fileID: 100100000, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
+--- !u!4 &4676381876951670938 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
+  m_PrefabInstance: {fileID: 5147440613120673649}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5453305162312923680 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
   m_PrefabInstance: {fileID: 5147440613120673649}
   m_PrefabAsset: {fileID: 0}
---- !u!64 &8237974344538476107
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5453305162312923680}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 0
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 1508623699123522411, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
 --- !u!54 &4311294709405640711
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -262,8 +337,8 @@ MonoBehaviour:
   rollMinDistance: 40
   rollMaxDistance: 200
   rollRolloffMode: 0
---- !u!64 &874884916592064810
-MeshCollider:
+--- !u!65 &1148675687218144519
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -280,7 +355,6 @@ MeshCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 1508623699123522411, guid: a96f480cc7062c74d819aa8835ad0a7a, type: 3}
+  serializedVersion: 3
+  m_Size: {x: 0.104, y: 0.02, z: 0.04}
+  m_Center: {x: 0, y: 0.004, z: 0.012}

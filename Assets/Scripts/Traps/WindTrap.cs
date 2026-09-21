@@ -51,6 +51,12 @@ public class WindTrap : TrapBase
     [Tooltip("반복 시 한 사이클 길이 (초). loopSchedule=true일 때만 사용")]
     [SerializeField] private float schedulePeriod = 3f;
 
+    [Tooltip("true면 스케줄 기준 시각을 PhaseStartServerTime 대신 StageStartServerTime(StageStartGate 카운트다운\n" +
+             "완료 순간)으로 잡는다. 카운트다운 완료로 시작하는 챌린지(예: M.Stage5 Grid 라운드)와 바람 주기를\n" +
+             "맞출 때 사용 — 페이즈 시작 기준이면 플레이어가 존에 모이는 시간만큼 매판 어긋난다.\n" +
+             "씬에 StageStartGate가 하나일 때만 쓸 것(여러 게이트 씬은 신호 슬롯을 공유한다).")]
+    [SerializeField] private bool anchorToStageStart = false;
+
     [Header("난이도 단계 (시간 경과 → 힘 배율 상승)")]
     [Tooltip("afterSeconds 이후 speedMultiplier 배율을 적용. afterSeconds 오름차순 입력")]
     [SerializeField] private SpeedPhase[] speedPhases = new SpeedPhase[0];
@@ -70,6 +76,7 @@ public class WindTrap : TrapBase
     float _scheduleStartTime;
     float _phaseForceMultiplier = 1f;
     bool _windActive;
+    bool _particleEmissionStopped;
     Collider _zone;
 
     // Host/Client가 같은 Push/Pull(Random)을 뽑도록 OnTrapTrigger 발동 횟수를 시드 salt로 사용.
@@ -229,7 +236,18 @@ public class WindTrap : TrapBase
         // StageStartServerTime이 아니라 별도 슬롯인 PhaseStartServerTime을 쓴다 — StageStartGate가
         // 그 값을 "이 방 게이트 완료" 1회성 신호로 배타적으로 쓰므로 같이 쓰면 안 된다.
         // StageNetworkState가 없는 씬(테스트 등)에서는 로컬 Activate() 시각으로 폴백.
-        if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
+        if (anchorToStageStart && StageNetworkState.Instance != null)
+        {
+            // 카운트다운 완료 신호가 올 때까지 대기(Host는 MarkStageStart, Client는 NV 수신).
+            while (isRunning && StageNetworkState.Instance != null && StageNetworkState.Instance.StageStartServerTime <= 0)
+                yield return null;
+            if (!isRunning || StageNetworkState.Instance == null) yield break;
+
+            _scheduleStartTime = (float)StageNetworkState.Instance.StageStartServerTime + initialDelay;
+            while (nm != null && (float)nm.ServerTime.Time < _scheduleStartTime)
+                yield return null;
+        }
+        else if (StageNetworkState.Instance != null && StageNetworkState.Instance.PhaseStartServerTime > 0)
         {
             _scheduleStartTime = (float)StageNetworkState.Instance.PhaseStartServerTime + initialDelay;
             while (nm != null && (float)nm.ServerTime.Time < _scheduleStartTime)
@@ -327,6 +345,7 @@ public class WindTrap : TrapBase
 
         // charge 완료 → FixedUpdate 힘 적용 시작
         _windForceElapsed = 0f;
+        _particleEmissionStopped = false;
         _forceActive = true;
     }
 
@@ -338,6 +357,15 @@ public class WindTrap : TrapBase
         {
             ApplyForceToAll(ForceMode.Force);
             _windForceElapsed += Time.fixedDeltaTime;
+
+            // Stop()은 방출만 멈추고 이미 나온 입자는 수명(M.Stage5 기준 0.6~1.1초)만큼 남는다 —
+            // 바람이 끝난 뒤에도 파티클이 보이던 원인(PlaytestLog #4). 최대 수명만큼 먼저 방출을
+            // 멈춰 마지막 입자가 힘 종료 시점에 같이 사라지게 한다.
+            if (!_particleEmissionStopped && _windForceElapsed >= windDuration - ActiveParticleMaxLifetime())
+            {
+                _particleEmissionStopped = true;
+                StopActiveParticle();
+            }
         }
         else
         {
@@ -389,6 +417,17 @@ public class WindTrap : TrapBase
 
     /// <summary>이번 사이클에서 확정된 모드(_activeWindMode)에 대응하는 파티클.</summary>
     ParticleSystem GetActiveParticle() => _activeWindMode == WindMode.Push ? pushParticle : pullParticle;
+
+    /// <summary>활성 파티클(자식 포함) 중 가장 긴 입자 수명. 파티클이 없으면 0 — 방출을 힘 종료 때 멈춘다.</summary>
+    float ActiveParticleMaxLifetime()
+    {
+        ParticleSystem root = GetActiveParticle();
+        if (root == null) return 0f;
+        float max = 0f;
+        foreach (ParticleSystem p in root.GetComponentsInChildren<ParticleSystem>(true))
+            max = Mathf.Max(max, p.main.startLifetime.constantMax);
+        return max;
+    }
 
     // GetActiveParticle()?.Play()/Stop() 형태는 쓰지 않는다 — UnityEngine.Object에 대한 ?.는
     // C# 컴파일러가 raw null 체크만 하고 Object의 fake-null(오버로드된 ==) 판정을 건너뛰어,
