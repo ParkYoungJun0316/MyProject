@@ -135,6 +135,7 @@ MonoBehaviour:
   debrisScale: 4
   breakParticlePrefab: {fileID: 3856406306235114014, guid: e4931a8b200e9234ca7e334145b68dd4, type: 3}
   particleDepth: 1
+  particleReferenceTileSize: 3
   particleLifetime: 0
   destroyMinDistance: 5
   destroyMaxDistance: 50
@@ -232,7 +233,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -270,5 +271,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 3208955963481525286}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}

@@ -4,21 +4,21 @@ using UnityEngine;
 /// 버프 VFX 전담 컴포넌트. Player.Network 프리팹 루트에 추가.
 ///
 /// [담당]
-///   Shield / SpeedUp 버프 VFX ON·OFF만. 색은 각 머티리얼에 고정된 값을 그대로 쓰고
-///   플레이어 고유색/흑백을 따라가지 않는다.
+///   Shield / SpeedUp 버프 VFX ON·OFF.
 ///
-///   (2026-09-02: 이전에는 Shield 막 색을 플레이어 색에 맞췄으나 —
-///   Shield는 Additive 블렌드라 검정(RGB 0)일 때 안 보이고, MaterialPropertyBlock으로
-///   DstBlend를 바꿔도 GPU 블렌드 스테이트는 실제로 안 바뀌어 우회가 먹히지 않았음.
-///   SpeedUp도 Additive ColorMode + 밝은 베이스 텍스처와 겹치면 어떤 tint를 넣어도
-///   흰색으로 saturate돼 색이 안 먹혔음. 두 문제의 근본 원인이 같아 색 추종 자체를
-///   제거함. Shield를 또렷하게 보이려면 ShieldBubble.mat의 Surface Type을
-///   Alpha Blend로 바꿔야 함 — 에셋 수정은 Inspector에서 사용자가 직접.)
+///   Shield : Buff/Shield의 ShieldBubbleFx(투명막 + Sparkles + BreakShards).
+///            막·파편 색 = Player.uniqueColor (흑백 모드와 무관하게 고유색 고정).
+///            버프 제거(피격으로 charge 소진 / 시간 만료 공통) 시 Break — 막이 사라지고 파편이 흩어짐.
+///            파편이 보여야 하므로 Shield 루트는 제거 시 비활성화하지 않는다.
+///   SpeedUp: Buff/SpeedUp의 흰 먼지(Dust = 달릴 때 거리 비례, DustIdle = 서 있을 때 구름). 색 고정.
+///
+///   (2026-09-23: 흰 Additive 구체 → ShieldMembrane 셰이더(알파 블렌드 프레넬)로 교체.
+///   예전 색 추종이 검정에서 안 보이던 원인은 Additive 블렌드였고, 알파 블렌드라 해결됨.)
 ///
 /// [배치 방법]
 ///   1. Player.Network 루트에 Add Component → PlayerBuffVisual.
 ///   2. Inspector에서 shieldRoot / speedUpRoot에 Buff/Shield, Buff/SpeedUp 오브젝트 연결.
-///   3. 각 파티클 오브젝트는 평소 비활성 + Play On Awake = Off 상태여야 함.
+///   3. 각 오브젝트는 평소 비활성 + 파티클 Play On Awake = Off 상태여야 함.
 /// </summary>
 public class PlayerBuffVisual : MonoBehaviour
 {
@@ -29,7 +29,10 @@ public class PlayerBuffVisual : MonoBehaviour
     // ── 내부 참조 ──────────────────────────────────────────────────
 
     PlayerBuffSystem _buffSystem;
+    Player _player;
+    ShieldBubbleFx _shieldFx;
 
+    // 루프 파티클만 ON/OFF 대상. 1회성(BreakShards)은 ShieldBubbleFx가 직접 재생.
     ParticleSystem[] _shieldParticles;
     ParticleSystem[] _speedUpParticles;
 
@@ -38,13 +41,17 @@ public class PlayerBuffVisual : MonoBehaviour
     void Awake()
     {
         _buffSystem = GetComponent<PlayerBuffSystem>();
+        _player = GetComponent<Player>();
+        if (shieldRoot != null) _shieldFx = shieldRoot.GetComponent<ShieldBubbleFx>();
 
-        _shieldParticles  = CollectParticles(shieldRoot);
-        _speedUpParticles = CollectParticles(speedUpRoot);
+        _shieldParticles  = CollectLoopParticles(shieldRoot);
+        _speedUpParticles = CollectLoopParticles(speedUpRoot);
 
         if (_buffSystem == null) Debug.LogWarning($"[BuffVisual] PlayerBuffSystem 없음 — {name}", this);
+        if (_player == null)     Debug.LogWarning($"[BuffVisual] Player 없음 — {name}", this);
         if (shieldRoot  == null) Debug.LogWarning($"[BuffVisual] shieldRoot 미연결 — {name}", this);
         if (speedUpRoot == null) Debug.LogWarning($"[BuffVisual] speedUpRoot 미연결 — {name}", this);
+        if (shieldRoot != null && _shieldFx == null) Debug.LogWarning($"[BuffVisual] Buff/Shield에 ShieldBubbleFx 없음 — {name}", this);
     }
 
     void OnEnable()
@@ -65,10 +72,10 @@ public class PlayerBuffVisual : MonoBehaviour
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: Shield ON")]
-    void Test_ShieldOn()  => ActivateVFX(shieldRoot, _shieldParticles);
+    void Test_ShieldOn()  => ShowShield();
 
-    [ContextMenu("테스트: Shield OFF")]
-    void Test_ShieldOff() => DeactivateVFX(shieldRoot, _shieldParticles);
+    [ContextMenu("테스트: Shield OFF (깨짐)")]
+    void Test_ShieldOff() => BreakShield();
 
     [ContextMenu("테스트: SpeedUp ON")]
     void Test_SpeedUpOn()  => ActivateVFX(speedUpRoot, _speedUpParticles);
@@ -84,7 +91,7 @@ public class PlayerBuffVisual : MonoBehaviour
         switch (type)
         {
             case PlayerBuffSystem.BuffType.Shield:
-                ActivateVFX(shieldRoot, _shieldParticles);
+                ShowShield();
                 break;
             case PlayerBuffSystem.BuffType.SpeedUp:
                 ActivateVFX(speedUpRoot, _speedUpParticles);
@@ -97,12 +104,31 @@ public class PlayerBuffVisual : MonoBehaviour
         switch (type)
         {
             case PlayerBuffSystem.BuffType.Shield:
-                DeactivateVFX(shieldRoot, _shieldParticles);
+                BreakShield();
                 break;
             case PlayerBuffSystem.BuffType.SpeedUp:
                 DeactivateVFX(speedUpRoot, _speedUpParticles);
                 break;
         }
+    }
+
+    // ── Shield ───────────────────────────────────────────────────
+
+    void ShowShield()
+    {
+        if (shieldRoot == null) return;
+        ActivateVFX(shieldRoot, _shieldParticles);
+        if (_shieldFx == null) return;
+        if (_player != null) _shieldFx.SetColor(_player.uniqueColor);
+        _shieldFx.Show();
+    }
+
+    void BreakShield()
+    {
+        if (shieldRoot == null) return;
+        StopParticles(_shieldParticles);
+        if (_shieldFx != null) _shieldFx.Break();
+        else shieldRoot.SetActive(false);
     }
 
     // ── VFX 제어 ─────────────────────────────────────────────────
@@ -146,9 +172,10 @@ public class PlayerBuffVisual : MonoBehaviour
 
     // ── 유틸 ─────────────────────────────────────────────────────
 
-    static ParticleSystem[] CollectParticles(GameObject root)
+    static ParticleSystem[] CollectLoopParticles(GameObject root)
     {
         if (root == null) return System.Array.Empty<ParticleSystem>();
-        return root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+        var all = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+        return System.Array.FindAll(all, ps => ps.main.loop);
     }
 }

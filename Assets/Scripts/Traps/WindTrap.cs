@@ -9,6 +9,8 @@ using UnityEngine;
 /// 바람 함정 — Push(밀어냄) / Pull(당김) 두 모드 지원.
 /// fireAtSeconds 스케줄에 맞춰 windDuration 동안 범위 내 대상에 힘을 가함.
 /// loopSchedule=true이면 schedulePeriod마다 패턴을 반복.
+/// fireAtSeconds를 비우면 스스로는 불지 않고 FireNow()로만 발동한다(M.Stage5: GridRoundWind가 라운드에 맞춰 호출).
+/// 예고는 바닥 경고 대신 파티클 선행(particleLeadSeconds) — 힘보다 먼저 파티클이 켜진다.
 /// speedPhases로 시간 경과에 따른 힘 단계 상승을 지원.
 ///
 /// [설정 방법]
@@ -68,6 +70,12 @@ public class WindTrap : TrapBase
     [Tooltip("Pull 모드일 때 재생할 파티클. 없으면 생략")]
     [SerializeField] private ParticleSystem pullParticle = null;
 
+    [Tooltip("힘 적용보다 이 시간(초) 먼저 파티클을 켠다 — 바람 예고. 0이면 힘과 동시. 충전 시간보다 길면 충전 시작 순간으로 클램프")]
+    [SerializeField] private float particleLeadSeconds = 0f;
+
+    [Tooltip("지속 바람의 시작·끝 부드럽게(초). 힘이 0→최대로 올라가고 끝에 최대→0으로 내려간다 — 갑자기 밀리는 느낌(멀미) 완화. 0이면 즉시")]
+    [SerializeField] private float rampSeconds = 0f;
+
     [Header("사운드 (바람 루프 — 2D)")]
     [Tooltip("windDuration > 0일 때 바람이 지속되는 동안 재생되는 루프. 발동~종료에 맞춰 자동으로 켜고 끔.")]
 
@@ -87,6 +95,8 @@ public class WindTrap : TrapBase
     float _windChargeTime = 0f;
     bool  _forceActive = false;    // charge 완료 후 FixedUpdate 힘 적용 허용 플래그
     float _windForceElapsed = 0f;
+    float _activeDuration = 0f;   // 이번 발동의 지속 시간 — 기본 windDuration, FireNow(duration)이 덮어씀
+    float _pendingDuration = -1f; // FireNow로 받은 지속 시간(충전 끝날 때 _activeDuration으로 확정)
 
     // Random 모드일 때 이번 사이클에서 확정된 모드. MouthWindAnimator가 이 값을 읽음
     WindMode _activeWindMode = WindMode.Push;
@@ -103,18 +113,18 @@ public class WindTrap : TrapBase
     public bool IsWindActive => _windActive;
 
     /// <summary>
-    /// MouthWindAnimator / WindWarnSign이 Awake에서 설정.
-    /// 이 시간만큼 바람 발동을 지연시켜 입 오므림·경고 표시와 동기화.
-    /// 여러 컴포넌트가 호출하면 더 긴 쪽을 유지한다(경고 lead가 입 클립보다 길면 바람을 그만큼 더 미룸).
+    /// MouthWindAnimator가 Awake에서 설정.
+    /// 이 시간만큼 바람 발동을 지연시켜 입 오므림과 동기화.
+    /// 여러 컴포넌트가 호출하면 더 긴 쪽을 유지한다.
     /// </summary>
     public float WindChargeTime => _windChargeTime;
 
     public void SetWindChargeTime(float t) => _windChargeTime = Mathf.Max(_windChargeTime, Mathf.Max(0f, t));
 
-    /// <summary>바람 발동 _windChargeTime 전에 호출. MouthWindAnimator / WindWarnSign이 구독.</summary>
+    /// <summary>바람 발동 _windChargeTime 전에 호출. MouthWindAnimator가 구독.</summary>
     public event System.Action OnWindCharge;
 
-    /// <summary>바람 효과 종료 시 호출. MouthWindAnimator / WindWarnSign이 구독.</summary>
+    /// <summary>바람 효과 종료 시 호출. MouthWindAnimator가 구독.</summary>
     public event System.Action OnWindEnd;
 
     /// <summary>
@@ -126,7 +136,7 @@ public class WindTrap : TrapBase
 
     // ── Mouth 연출(Pull/Push Open/Hold/Close) 네트워크 동기화 (stable ID 레지스트리) ──
     // WindTrap의 바람 판정(WindCycle/FixedUpdate 힘 적용)은 Owner 물리 권한이라 그대로 각
-    // 피어가 로컬로 실행한다(안 건드림). 오직 MouthWindAnimator / WindWarnSign 연출만 Host 로컬
+    // 피어가 로컬로 실행한다(안 건드림). 오직 MouthWindAnimator 연출만 Host 로컬
     // 이벤트 + ClientRpc로 통일한다 — 각 피어가 자기 로컬 OnWindCharge/OnWindEnd로 직접
     // 재생하면 Client의 ServerTime 추정 오차·백그라운드 스로틀링에 따라 애니메이션 타이밍이
     // Host와 어긋난다 (ArrowTrap Mouth 동기화와 동일 이유 — 2026-07-27).
@@ -136,22 +146,20 @@ public class WindTrap : TrapBase
     static readonly SceneStableRegistry<WindTrap> _registry = new SceneStableRegistry<WindTrap>();
     int _netIndex = -1;
 
-    /// <summary>StageNetworkState.SyncWindChargeClientRpc 수신 시 Client에서 호출. Mouth 오므림 + 경고 사인 재생.</summary>
+    /// <summary>StageNetworkState.SyncWindChargeClientRpc 수신 시 Client에서 호출. Mouth 오므림 재생.</summary>
     public static void PlayChargeById(int id)
     {
         WindTrap t = _registry.Get(id);
         if (t == null) return;
         t.GetComponent<MouthWindAnimator>()?.PlayChargeFromNetwork();
-        t.GetComponent<WindWarnSign>()?.PlayWarnFromNetwork();
     }
 
-    /// <summary>StageNetworkState.SyncWindEndClientRpc 수신 시 Client에서 호출. Mouth 복귀 + 경고 사인 숨김.</summary>
+    /// <summary>StageNetworkState.SyncWindEndClientRpc 수신 시 Client에서 호출. Mouth 복귀.</summary>
     public static void PlayEndById(int id)
     {
         WindTrap t = _registry.Get(id);
         if (t == null) return;
         t.GetComponent<MouthWindAnimator>()?.PlayEndFromNetwork();
-        t.GetComponent<WindWarnSign>()?.PlayHideFromNetwork();
     }
 
     void RelayWindChargeToClients()
@@ -295,6 +303,27 @@ public class WindTrap : TrapBase
         StartCoroutine(WindCycle());
     }
 
+    /// <summary>
+    /// 외부 스케줄러(GridRoundWind)용 즉시 발동 — 전 머신이 같은 절대 시각에 각자 호출한다(힘은 Owner 물리라
+    /// 원래 각 피어 로컬 실행). 충전(입 연출 + 파티클 선행) → 힘 순서는 스케줄 발동과 동일.
+    /// </summary>
+    /// <param name="duration">이번 발동의 힘 지속 시간(초). 0 이하면 windDuration.</param>
+    public void FireNow(float duration = -1f)
+    {
+        if (!isActiveAndEnabled || _windActive) return;
+        _pendingDuration = duration;
+        OnTrapTrigger();
+    }
+
+    /// <summary>
+    /// 외부 스케줄러용 조기 종료 — 힘이 걸리는 중이면 다음 FixedUpdate에서 정상 종료 경로(파티클·루프 정지,
+    /// OnWindEnd → 입 복귀 동기화)를 그대로 탄다. 충전 중이거나 불고 있지 않으면 아무것도 안 한다.
+    /// </summary>
+    public void StopWind()
+    {
+        if (_forceActive) _windForceElapsed = _activeDuration;
+    }
+
     IEnumerator WindCycle()
     {
         _windActive = true;
@@ -321,14 +350,23 @@ public class WindTrap : TrapBase
 
         // 사전 충전: MouthWindAnimator가 SetWindChargeTime을 설정했을 때 입 오므림과 동기화
         OnWindCharge?.Invoke();
-        if (_windChargeTime > 0f)
-            yield return new WaitForSeconds(_windChargeTime);
+
+        // 파티클 선행: 충전 끝(힘 시작)보다 particleLeadSeconds 먼저 켠다 — 바닥 경고 대신 바람 예고.
+        float lead = Mathf.Clamp(particleLeadSeconds, 0f, _windChargeTime);
+        if (_windChargeTime - lead > 0f)
+            yield return new WaitForSeconds(_windChargeTime - lead);
 
         PlayActiveParticle();
 
+        if (lead > 0f)
+            yield return new WaitForSeconds(lead);
+
         SFXId windSfx = _activeWindMode == WindMode.Push ? SFXId.Wind_Push : SFXId.Wind_Pull;
 
-        if (windDuration <= 0f)
+        _activeDuration = _pendingDuration > 0f ? _pendingDuration : windDuration;
+        _pendingDuration = -1f;
+
+        if (_activeDuration <= 0f)
         {
             // 순간 Impulse: 지속되는 상태가 없으므로 1회성 재생. 작은 맵 스케일에서 방향성보다
             // 확실히 들리는 게 중요해서 2D로 재생(2026-08-29, SoundAndSettingsDesign.md §11).
@@ -353,15 +391,15 @@ public class WindTrap : TrapBase
     {
         if (!_forceActive) return;
 
-        if (_windForceElapsed < windDuration)
+        if (_windForceElapsed < _activeDuration)
         {
-            ApplyForceToAll(ForceMode.Force);
+            ApplyForceToAll(ForceMode.Force, RampFactor());
             _windForceElapsed += Time.fixedDeltaTime;
 
             // Stop()은 방출만 멈추고 이미 나온 입자는 수명(M.Stage5 기준 0.6~1.1초)만큼 남는다 —
             // 바람이 끝난 뒤에도 파티클이 보이던 원인(PlaytestLog #4). 최대 수명만큼 먼저 방출을
             // 멈춰 마지막 입자가 힘 종료 시점에 같이 사라지게 한다.
-            if (!_particleEmissionStopped && _windForceElapsed >= windDuration - ActiveParticleMaxLifetime())
+            if (!_particleEmissionStopped && _windForceElapsed >= _activeDuration - ActiveParticleMaxLifetime())
             {
                 _particleEmissionStopped = true;
                 StopActiveParticle();
@@ -452,9 +490,19 @@ public class WindTrap : TrapBase
         if (pullParticle != null) pullParticle.Stop();
     }
 
-    void ApplyForceToAll(ForceMode mode)
+    // 지속 바람의 시작·끝 램프(0~1). rampSeconds가 지속 시간의 절반보다 길면 절반으로 줄인다.
+    float RampFactor()
     {
-        float force = GetCurrentForce();
+        float ramp = Mathf.Min(rampSeconds, _activeDuration * 0.5f);
+        if (ramp <= 0f) return 1f;
+        float up   = _windForceElapsed / ramp;
+        float down = (_activeDuration - _windForceElapsed) / ramp;
+        return Mathf.Clamp01(Mathf.Min(up, down));
+    }
+
+    void ApplyForceToAll(ForceMode mode, float scale = 1f)
+    {
+        float force = GetCurrentForce() * scale;
         if (force <= 0f) return;
 
         for (int i = _targetsInZone.Count - 1; i >= 0; i--)

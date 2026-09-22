@@ -892,7 +892,7 @@ public class StageNetworkState : NetworkBehaviour
 
     /// <summary>
     /// Host: Breakable이 파괴 지연(breakDelay)에 들어가는 순간 호출 — Client도 같은 순간부터
-    /// 경고색(노랑→빨강) 보간을 시작하게 한다. breakDelay 자체는 씬에 저장된 동일 직렬화
+    /// 경고색(탠저린→진홍) 보간을 시작하게 한다. breakDelay 자체는 씬에 저장된 동일 직렬화
     /// 값이라 지속시간을 실어보낼 필요 없이 "지금 시작" 트리거만 보낸다.
     /// 실제 파괴 확정은 이 RPC와 별개로 SyncBreakClientRpc가 담당한다.
     /// </summary>

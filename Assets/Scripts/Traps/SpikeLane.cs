@@ -22,7 +22,7 @@ public class SpikeLane : MonoBehaviour
         _traps = GetComponentsInChildren<SpikeTrap>(true);
     }
 
-    /// <summary>경고 시작. duration초 동안 마커가 노랑→빨강으로 보간된다 (SpikeLaneField가 호출).</summary>
+    /// <summary>경고 시작. duration초 동안 마커가 탠저린→진홍으로 보간된다 (SpikeLaneField가 호출).</summary>
     public void PlayWarning(float duration) => warnMarker?.PlayWarning(duration);
 
     /// <summary>이 레인의 모든 스파이크 일괄 발동. 가시가 튀어오르는 순간이므로 경고 마커는 즉시 끈다.</summary>

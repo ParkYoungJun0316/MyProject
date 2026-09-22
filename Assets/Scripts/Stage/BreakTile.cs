@@ -11,7 +11,7 @@ using UnityEngine.Events;
 ///     경고 연출이 이미 있으므로 미리 금 간 모습을 보여줄 필요가 없고, 후보 위치가 보이면
 ///     그 자체가 암기 대상이 되어 랜덤화의 목적(§0)이 사라진다.
 ///  2. 밟힘 — 플레이어가 윗면을 밟는 순간 경고가 시작된다.
-///  3. 경고 — warnMarker가 노랑→빨강으로 물든다.
+///  3. 경고 — warnMarker가 탠저린→진홍으로 물든다.
 ///  4. 파괴 — **그 자리에서 부서진다.** 콜라이더·Renderer가 같은 프레임에 꺼지고 파편(RubbleShards)과
 ///     분출 파티클이 태어난다. 슬래브가 아래로 꺼지던 구안(2026-09-21 폐기)과 달리 구멍 밑으로
 ///     내려가는 판이 없다. 위에 있던 사람은 공허로 낙하하고 Player.fallDeathY(프리팹 −15)를
@@ -75,7 +75,7 @@ public class BreakTile : MonoBehaviour
     }
 
     [Header("경고")]
-    [Tooltip("이 타일의 경고 마커. SpikeTrap·혀·M.Boss 턱과 같은 컴포넌트(노랑→빨강)로 통일한다.\n" +
+    [Tooltip("이 타일의 경고 마커. SpikeTrap·혀·M.Boss 턱과 같은 컴포넌트(탠저린→진홍)로 통일한다.\n" +
              "타일 위를 덮도록 스케일을 맞춰 자식으로 배치할 것. 비우면 경고 연출이 생략된다.")]
     [SerializeField] SpikeLaneWarnMarker warnMarker;
 

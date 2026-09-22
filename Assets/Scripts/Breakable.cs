@@ -49,7 +49,7 @@ public class Breakable : MonoBehaviour
             b?.ApplyBreakFromNetwork();
     }
 
-    /// <summary>stable ID로 Breakable을 찾아 Client 측 경고색(노랑→빨강) 예고만 재생.
+    /// <summary>stable ID로 Breakable을 찾아 Client 측 경고색(탠저린→진홍) 예고만 재생.
     /// StageNetworkState.SyncBreakPendingClientRpc에서 호출.</summary>
     public static void BreakPendingById(int id)
     {
@@ -159,17 +159,14 @@ public class Breakable : MonoBehaviour
              "false: 각 머신에서 독립 처리 (런타임 스폰 오브젝트에 부착된 Breakable 등).")]
     [SerializeField] bool syncBreakOverNetwork = true;
 
-    [Header("경고 색상 (breakDelay 동안 노랑→빨강)")]
-    [Tooltip("true면 breakDelay 동안 이 오브젝트 자신의 머티리얼 색을 warnStartColor→warnEndColor로 " +
+    [Header("경고 색상 (breakDelay 동안 WarnPalette 탠저린→진홍)")]
+    [Tooltip("true면 breakDelay 동안 이 오브젝트 자신의 머티리얼 색을 WarnPalette.Start→End로 " +
              "보간해 파괴를 예고한다. breakDelay가 0이면 예고할 시간이 없으므로 무시된다.\n" +
              "Host/Client 모두 SyncBreakPendingClientRpc로 같은 순간 시작하므로 두 머신에서 동일하게 보인다.")]
     [SerializeField] bool warnColorEnabled = false;
 
     [Tooltip("색을 입힐 셰이더 프로퍼티. URP Lit 기준 _BaseColor.")]
     [SerializeField] string warnColorProperty = "_BaseColor";
-
-    [SerializeField] Color warnStartColor = Color.yellow;
-    [SerializeField] Color warnEndColor = Color.red;
 
     [Header("이벤트")]
     [Tooltip("최종 파괴 직전 호출. 연출·스테이지 연동 등에 사용.")]
@@ -209,7 +206,7 @@ public class Breakable : MonoBehaviour
             _warnFx = new WarnMarkerColorFx[_renderers.Length];
             for (int i = 0; i < _renderers.Length; i++)
                 if (_renderers[i] != null)
-                    _warnFx[i] = new WarnMarkerColorFx(_renderers[i], warnColorProperty, warnStartColor, warnEndColor);
+                    _warnFx[i] = new WarnMarkerColorFx(_renderers[i], warnColorProperty, WarnPalette.Start, WarnPalette.End);
         }
 
         // 이번 씬 세대의 레지스트리가 아직 없으면 전체를 한 번에 구성(월드 좌표 정렬).
@@ -339,7 +336,7 @@ public class Breakable : MonoBehaviour
         _warnRoutine = StartCoroutine(WarnColorRoutine(breakDelay));
     }
 
-    /// <summary>duration에 걸쳐 warnStartColor→warnEndColor로 보간. BreakSequenceRoutine(Host, 파괴까지
+    /// <summary>duration에 걸쳐 WarnPalette.Start→End로 보간. BreakSequenceRoutine(Host, 파괴까지
     /// 이어짐)과 ApplyPendingWarnFromNetwork(Client, 예고만)이 공유 — 별도 StartCoroutine으로 감싸지
     /// 않고 직접 yield return해야 호출부의 코루틴 핸들 하나로 정지(OnDisable 등)가 가능하다.</summary>
     IEnumerator WarnColorRoutine(float duration)

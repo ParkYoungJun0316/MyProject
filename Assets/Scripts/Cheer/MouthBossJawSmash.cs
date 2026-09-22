@@ -61,7 +61,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [SerializeField] GameObject[] floorTiles = new GameObject[0];
 
     [Tooltip("floorTiles와 같은 인덱스로 매칭되는 SpikeLaneWarnMarker. Warning 중 이번 회차에 부술 타일만 PlayWarning.\n" +
-             "비워두면 경고 연출 생략. SpikeTrap/혀와 동일 컴포넌트(노랑→빨강).")]
+             "비워두면 경고 연출 생략. SpikeTrap/혀와 동일 컴포넌트(탠저린→진홍).")]
     [SerializeField] SpikeLaneWarnMarker[] warnMarkers = new SpikeLaneWarnMarker[0];
 
     [Header("파괴음 (3D — Breaking 순간 재생. 암전 중이라 시각 연출 대신 사운드로 임팩트 전달)")]

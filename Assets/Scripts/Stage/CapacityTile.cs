@@ -98,12 +98,11 @@ public class CapacityTile : MonoBehaviour
     [Header("경고 색 (선택)")]
     [Tooltip("침강 진행도(0 → maxSinkDepth)를 색으로 보여줄 Renderer. 비우면 색 연출 없음.\n" +
              "탑다운에서는 높이 변화가 거의 안 읽히므로 이 색이 사실상 주 정보 채널이다.\n" +
-             "빨강에 닿는 순간이 곧 바닥이 빠지는 순간이다.")]
+             "진홍에 닿는 순간이 곧 바닥이 빠지는 순간이다.")]
     [SerializeField] Renderer warnRenderer;
     [Tooltip("URP Lit이면 _BaseColor. WarnMarkerColorFx와 같은 규약.")]
     [SerializeField] string warnColorProperty = "_BaseColor";
-    [SerializeField] Color warnSafeColor   = Color.white;
-    [SerializeField] Color warnDangerColor = Color.red;
+    // 색은 WarnPalette 공용: Safe(흰색) → End(진홍).
 
     [Header("이벤트")]
     [Tooltip("타일 위 인원이 바뀔 때 (currentCount, capacity). UI·연출 전용 — 전 머신에서 발동.")]
@@ -158,7 +157,7 @@ public class CapacityTile : MonoBehaviour
         _rb.interpolation = RigidbodyInterpolation.Interpolate;
 
         if (warnRenderer != null)
-            _warnFx = new WarnMarkerColorFx(warnRenderer, warnColorProperty, warnSafeColor, warnDangerColor);
+            _warnFx = new WarnMarkerColorFx(warnRenderer, warnColorProperty, WarnPalette.Safe, WarnPalette.End);
 
         ApplyDepth();
     }
@@ -317,7 +316,7 @@ public class CapacityTile : MonoBehaviour
 
         _rb.MovePosition(restWorld + Vector3.down * _depth);
 
-        // 빨강에 닿는 순간이 곧 바닥이 빠지는 순간이다(구간을 합치면서 정직해진 부분).
+        // 진홍에 닿는 순간이 곧 바닥이 빠지는 순간이다(구간을 합치면서 정직해진 부분).
         if (_warnFx != null)
             _warnFx.SetProgress(maxSinkDepth > 0.0001f ? _depth / maxSinkDepth : 0f);
 

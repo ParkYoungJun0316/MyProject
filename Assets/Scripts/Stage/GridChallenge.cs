@@ -22,6 +22,40 @@ public class GridSafePhase
     public int minBwCount = 0;
 }
 
+/// <summary>안전 칸 규칙. 사이클·붕괴·정산 데미지는 두 규칙이 같고, "누가 어느 칸에서 통과하나"만 다르다.</summary>
+public enum GridSafeRule
+{
+    /// <summary>M.Stage5 — 고유색/흑백 칸. 자기 모드에 맞는 칸에 서야 통과(§8).</summary>
+    PlayerColor,
+    /// <summary>
+    /// T.Boss P3 — 공용 칸(색 없음, 누구나). 칸당 1명. 한 칸에 2명 이상이면 그 칸 위 전원 실패
+    /// (경계에 걸쳐 두 칸에 등록된 사람도 양쪽 칸에 센다 — 사용자 확정 2026-09-23).
+    /// </summary>
+    SharedSolo,
+}
+
+/// <summary>SharedSolo 전용 — 안전 칸 수 = 인원 + extraTiles. afterRound: 이 라운드 인덱스(0부터)부터 적용.</summary>
+[System.Serializable]
+public class GridSharedSafePhase
+{
+    [Tooltip("이 라운드 인덱스(0부터)부터 이 단계를 적용")]
+    public int afterRound;
+
+    [Tooltip("인원 수에 더할 여유 칸 수. 0 = 딱 인원 수(한 명만 헷갈려도 누군가 남는다)")]
+    public int extraTiles = 0;
+}
+
+/// <summary>라운드 경과에 따른 공개~정산 시간. afterRound: 이 라운드 인덱스(0부터)부터 적용.</summary>
+[System.Serializable]
+public class GridRoundDurationPhase
+{
+    [Tooltip("이 라운드 인덱스(0부터)부터 적용")]
+    public int afterRound;
+
+    [Tooltip("공개~정산 시간(초)")]
+    public float duration = 4.5f;
+}
+
 /// <summary>
 /// 5×5 혼합판(Grid) 챌린지 — M.Stage5.
 /// GridColorChallenge(고유색 전용) + GridBWTileChallenge(흑백 전용)를 통합해 한 보드·한 라운드 줄로
@@ -32,6 +66,11 @@ public class GridSafePhase
 /// Generate(전 머신 각자 동일 시드로 로컬 재생성) → Judge(Host 레인만) → Resolve(성공/실패 전파 →
 /// 다음 라운드/완료 결정). stepIndex를 라운드 번호로 사용 — 라운드마다 Host가 ChallengeStart(newSeed)
 /// 뒤 곧바로 ChallengeStepBegin(round)를 같은 프레임에 호출한다(원자적 2단 쓰기).
+///
+/// [라운드 사이클 — 2026-09-22] 정산 → 멈춤(settleHoldSeconds) → 복구(restoreSeconds) → 휴식(restSeconds)
+/// → 선행(preRevealSeconds: 다음 라운드 시드 배포, 안전 칸은 계산만 하고 숨김, OnRoundPreReveal)
+/// → 라운드(roundDuration: 안전 칸 공개 OnRoundStarted ~ 정산 OnRoundSettled). 라운드당 챌린지 스텝 2개
+/// (짝수 = 선행, 홀수 = 공개)로 전파한다 — 새 RPC/NV 없음. 붕괴·바람은 PreRevealServerTime 기준으로 돈다.
 ///
 /// [풀 구성]
 ///  - 활성 고유색(GameSession 기준, 2인=2색/4인=4색) + Black + White
@@ -52,6 +91,10 @@ public class GridSafePhase
 ///    하나라도 있으면 통과 (사용자 확정 2026-09-11, PlayerPassed 주석 참고)
 ///  - Default 칸 / 칸 밖 / 모드 틀림 → 개인 데미지(NetworkDamageUtil). Objective는 Fail() 호출 안 함
 ///    — 라운드 실패는 항상 개인 데미지만, HP 0이면 기존 방 리셋 파이프라인
+///
+/// [SharedSolo — T.Boss P3, 2026-09-23] 위 풀·판정 대신: 안전 칸 = 인원 + 여유(sharedSafePhases) 개의
+/// 공용 칸(색 없음, 칸은 Default 그대로 — 표시는 SafeZoneWarnSign 마커). 통과 = 안전 칸 위에 있고, 내가 밟은
+/// 안전 칸이 전부 "혼자"일 것. 겹친 칸 위 전원이 같은 개인 데미지를 받는다. 사이클·붕괴는 M5와 동일.
 ///
 /// [씬]
 ///  - 자식에 GridTile 25개 + Collider(Is Trigger)
@@ -86,26 +129,49 @@ public class GridChallenge : MonoBehaviour
     [SerializeField] float autoStartDelay = 0f;
 
     [Header("라운드")]
-    [Tooltip("한 라운드 제한 시간(초). 끝에 한 번 판정")]
+    [Tooltip("안전 칸 공개 ~ 정산(초). 끝에 한 번 판정. roundDurationPhases가 있으면 그쪽이 우선")]
     [SerializeField] float roundDuration = 0f;
+
+    [Tooltip("라운드 경과에 따라 공개 시간을 바꾼다(후반 압박). afterRound 오름차순. 비어 있으면 roundDuration 고정")]
+    [SerializeField] GridRoundDurationPhase[] roundDurationPhases = new GridRoundDurationPhase[0];
 
     [Tooltip("Activate() 1회 시 진행할 라운드 수")]
     [SerializeField] int totalRounds = 0;
 
-    [Tooltip("라운드 사이 대기(초). 0이면 즉시 다음 라운드")]
-    [SerializeField] float cooldownBetweenRounds = 0f;
+    [Header("라운드 사이클 (정산 → 멈춤 → 복구 → 휴식 → 선행 → 라운드)")]
+    [Tooltip("정산 직후 아무것도 바뀌지 않고 결과만 보여주는 시간(초). 이후 복구 시작")]
+    [SerializeField] float settleHoldSeconds = 0.5f;
+
+    [Tooltip("복구 전용 시간(초). GridTileCollapse의 복구 연출이 이 안에 끝나야 한다")]
+    [SerializeField] float restoreSeconds = 1.5f;
+
+    [Tooltip("복구 후 정말 아무 일도 없는 숨 고르기(초)")]
+    [SerializeField] float restSeconds = 2f;
+
+    [Tooltip("다음 라운드 시드를 먼저 배포하고 안전 칸은 숨긴 채 보내는 시간(초). GridTileCollapse는 " +
+             "이때부터 경고·파괴를 시작한다. 0이면 공개와 동시에 시작(선행 없음)")]
+    [SerializeField] float preRevealSeconds = 0f;
 
     [Header("안전 칸 단계 (GridSafePhase)")]
     [Tooltip("라운드 경과에 따라 안전 칸 수 + 흑백 최소 보장을 조정.\n" +
              "afterRound 오름차순 입력. 비어 있으면 매 라운드 1칸, 흑백 최소 0.")]
     [SerializeField] GridSafePhase[] safeTilePhases = new GridSafePhase[0];
 
+    [Header("안전 칸 규칙")]
+    [Tooltip("PlayerColor = M.Stage5(고유색/흑백 칸, safeTilePhases 사용)\n" +
+             "SharedSolo = T.Boss P3(공용 칸 1명, sharedSafePhases 사용 — safeTilePhases 무시)")]
+    [SerializeField] GridSafeRule safeRule = GridSafeRule.PlayerColor;
+
+    [Tooltip("SharedSolo 전용. 안전 칸 수 = 인원 + extraTiles. afterRound 오름차순. 비어 있으면 여유 0(딱 인원 수)")]
+    [SerializeField] GridSharedSafePhase[] sharedSafePhases = new GridSharedSafePhase[0];
+
     [Header("플레이어")]
     [Tooltip("0이면 생존한 모든 Player를 검사. 4인 플레이 시 4 권장")]
     [SerializeField] int requiredAliveCount = 0;
 
     [Header("정산 데미지 (개인)")]
-    [Tooltip("정산 시 자기 모드에 맞는 안전 칸에 없는 플레이어 개인에게 적용.")]
+    [Tooltip("정산 시 통과 못 한 플레이어 개인에게 적용. PlayerColor = 자기 모드 칸에 없음 / " +
+             "SharedSolo = 안전 칸에 없음 또는 2명 이상 겹친 칸 위")]
     [SerializeField] int individualDamageOnFail = 0;
 
     [Header("이벤트")]
@@ -113,7 +179,11 @@ public class GridChallenge : MonoBehaviour
     public UnityEvent OnChallengeComplete;
     public UnityEvent OnChallengeCancelled;
 
-    [Tooltip("라운드 인덱스(0부터)")]
+    [Tooltip("라운드 인덱스(0부터). 선행 시작 — 이번 라운드 안전 칸은 계산만 됐고 아직 숨김. " +
+             "preRevealSeconds가 0이면 OnRoundStarted 직전 같은 프레임에 발생")]
+    public UnityEvent<int> OnRoundPreReveal;
+
+    [Tooltip("라운드 인덱스(0부터). 안전 칸 공개 순간")]
     public UnityEvent<int> OnRoundStarted;
 
     [Tooltip("라운드 인덱스, 성공 여부")]
@@ -134,16 +204,78 @@ public class GridChallenge : MonoBehaviour
     public bool IsRunning => _isRunning;
     public int TotalRounds => totalRounds;
     public float RoundDuration => roundDuration;
+
+    /// <summary>이번 라운드(CurrentRoundIndex)의 공개~정산 시간.</summary>
+    public float CurrentRoundDuration => RoundDurationFor(CurrentRoundIndex);
+
+    public float RoundDurationFor(int round)
+    {
+        float d = roundDuration;
+        if (roundDurationPhases != null)
+            foreach (GridRoundDurationPhase p in roundDurationPhases)
+                if (p != null && round >= p.afterRound && p.duration > 0f)
+                    d = p.duration;
+        return d;
+    }
+    public float SettleHoldSeconds => settleHoldSeconds;
+    public float RestoreSeconds => restoreSeconds;
+    public float RestSeconds => restSeconds;
+    public float PreRevealSeconds => Mathf.Max(0f, preRevealSeconds);
     public int CurrentRoundIndex { get; private set; } = -1;
 
     /// <summary>이번 라운드 보드를 만든 시드(전 머신 동일). 라운드 연동 연출(GridTileCollapse)이 같은 시드를 쓴다.</summary>
     public int CurrentRoundSeed { get; private set; }
 
+    /// <summary>
+    /// 이번 라운드 선행 시작 ServerTime(전 머신 동일 절대 시각). 라운드 연동 연출(붕괴·바람)의 시간 앵커 —
+    /// 각 머신이 이벤트를 받은 로컬 시각이 아니라 이 값 기준으로 돌아 Host/Client가 같은 순간에 맞는다.
+    /// </summary>
+    public double PreRevealServerTime { get; private set; } = -1.0;
+
+    /// <summary>이번 라운드 안전 칸 공개 ServerTime = PreRevealServerTime + PreRevealSeconds.</summary>
+    public double RevealServerTime => PreRevealServerTime + PreRevealSeconds;
+
     /// <summary>보드 칸 배열(인덱스 = GridIndex). 읽기 전용 — 상태 변경은 이 챌린지만.</summary>
     public IReadOnlyList<GridTile> Tiles => tiles;
 
-    /// <summary>이번 라운드 안전 칸이면 true. 라운드 밖(정산 후~다음 라운드 전)엔 전부 false.</summary>
+    /// <summary>
+    /// 이번 라운드 안전 칸이면 true. 선행 구간(OnRoundPreReveal~공개 전)에는 화면엔 숨겨진 **계획된** 안전 칸을
+    /// 돌려준다 — GridTileCollapse가 공개 전에 깰 칸을 고를 때 안전 칸을 피하기 위해서. 정산 후~다음 선행 전엔 전부 false.
+    /// </summary>
     public bool IsSafeTileThisRound(int index) => _currentSafeTiles.ContainsKey(index);
+
+    public GridSafeRule SafeRule => safeRule;
+
+    /// <summary>이번 라운드 안전 칸 인덱스. IsSafeTileThisRound와 같은 계약(선행 구간엔 숨겨진 계획값).</summary>
+    public IEnumerable<int> SafeTileIndices => _currentSafeTiles.Keys;
+
+    /// <summary>
+    /// SharedSolo: 이 안전 칸 위 생존자가 2명 이상인가. 정산 판정(Host)과 안전 연출(각 머신 로컬)이 같은 규칙을 쓴다 —
+    /// 점유는 트리거 기반 로컬 값이라 머신 간 차이는 CNT 보간 지연만큼뿐이다(CapacityTile과 같은 판단).
+    /// </summary>
+    public bool IsSharedSafeTileOverloaded(int index) => SafeTileOccupantCount(index) >= 2;
+
+    /// <summary>이번 라운드 안전 칸 위 생존자 수. 안전 칸이 아니면 0. 연출(0명/1명/2명 이상)용.</summary>
+    public int SafeTileOccupantCount(int index)
+    {
+        if (!_currentSafeTiles.ContainsKey(index) || index < 0 || index >= tiles.Length || tiles[index] == null)
+            return 0;
+        return CountAliveOccupants(tiles[index]);
+    }
+
+    static int CountAliveOccupants(GridTile t)
+    {
+        int n = 0;
+        foreach (Player p in t.Occupants)
+            if (p != null && !p.IsDead) n++;
+        return n;
+    }
+
+    // 챌린지 스텝 NV 인코딩: 라운드당 스텝 2개 — 짝수 = 선행 시작(새 시드), 홀수 = 안전 칸 공개(시드 유지).
+    // 새 RPC/NV 없이 기존 _challengeStep 한 슬롯으로 두 순간을 전파한다.
+    static int PreRevealStep(int round) => round * 2;
+    static int RevealStep(int round) => round * 2 + 1;
+    int _preRevealedRound = -1; // 이 머신이 선행 처리를 끝낸 라운드 — 짝수 스텝을 못 받고 홀수만 온 경우 보충용
 
     void Awake()
     {
@@ -175,6 +307,7 @@ public class GridChallenge : MonoBehaviour
 
         if (_judgeCoroutine != null) { StopCoroutine(_judgeCoroutine); _judgeCoroutine = null; }
         _isRunning = false;
+        _preRevealedRound = -1; // 재활성화 후 라운드 0 선행이 "이미 처리됨"으로 건너뛰어지지 않게
     }
 
     /// <summary>
@@ -267,7 +400,7 @@ public class GridChallenge : MonoBehaviour
         if (emptySlots > 0)
             Debug.LogWarning($"[GridChallenge] tiles에 빈 슬롯 {emptySlots}개 — 안전 칸 배정에서 제외됩니다. 인스펙터 확인.", this);
 
-        if (safeTilePhases == null || safeTilePhases.Length == 0)
+        if (safeRule == GridSafeRule.PlayerColor && (safeTilePhases == null || safeTilePhases.Length == 0))
             Debug.LogWarning("[GridChallenge] safeTilePhases가 비어 있습니다 — 매 라운드 1칸/흑백 최소 0으로 돕니다. " +
                              "그 1칸이 고유색으로 뽑히면 나머지 인원은 설 곳이 없어 라운드를 통과할 수 없습니다 " +
                              "(CoopStageAudit.M.md §8 커브 표 입력 필요).", this);
@@ -295,6 +428,8 @@ public class GridChallenge : MonoBehaviour
 
         _isRunning = false;
         CurrentRoundIndex = -1;
+        _preRevealedRound = -1;
+        PreRevealServerTime = -1.0;
         _currentSafeTiles.Clear();
         _uniqueColorsThisRound.Clear();
         SetAllTilesDefault();
@@ -302,22 +437,70 @@ public class GridChallenge : MonoBehaviour
     }
 
     /// <summary>
-    /// Host: 라운드 시작. 새 라운드 시드를 생성해 배포한다 — Activate()의 최초 호출과 동일한
-    /// 원자적 2단 쓰기(ChallengeStart 뒤 곧바로 ChallengeStepBegin)이므로 Client는 항상 최종
-    /// 커밋된 값(새 시드 + 이번 라운드 인덱스)만 관찰한다 (§11B ②RoundStart).
+    /// Host: 라운드 시작 = 선행 시작. 새 라운드 시드와 선행 스텝을 배포한다 — ChallengeStart 뒤 곧바로
+    /// ChallengeStepBegin을 같은 프레임에 쓰는 원자적 2단 쓰기이므로 Client는 항상 최종 커밋된 값
+    /// (새 시드 + 이번 스텝)만 관찰한다 (§11B ②RoundStart). 선행이 0초면 공개 스텝을 바로 쓴다.
+    /// 이후 공개·판정·다음 라운드는 RoundRoutine이 이어서 진행한다.
     /// </summary>
     void StartRound(int round)
     {
+        if (_judgeCoroutine != null) StopCoroutine(_judgeCoroutine);
+        _judgeCoroutine = StartCoroutine(RoundRoutine(round));
+    }
+
+    // ── 라운드 진행 (Host 전용 — §11B ②RoundStart / ④Judge / ⑤Resolve) ─────────
+
+    /// <summary>
+    /// 한 라운드 전체: 선행 → 공개 → 판정 → (멈춤 + 복구 + 휴식 → 다음 라운드) 또는 (멈춤 + 복구 → 완료).
+    /// 복구 연출 자체는 GridTileCollapse가 OnRoundSettled를 받아 settleHoldSeconds 뒤에 재생한다 —
+    /// 여기서는 그 시간을 비워 두기만 한다.
+    /// </summary>
+    IEnumerator RoundRoutine(int round)
+    {
         int seed = Random.Range(int.MinValue, int.MaxValue);
         _netState.ChallengeStart(seed, ChallengeOwnerType.Grid);
-        _netState.ChallengeStepBegin(round);
+
+        if (PreRevealSeconds > 0f)
+        {
+            _netState.ChallengeStepBegin(PreRevealStep(round));
+            yield return new WaitForSeconds(PreRevealSeconds);
+            if (_netState == null) yield break;
+        }
+
+        _netState.ChallengeStepBegin(RevealStep(round));
+
+        yield return new WaitForSeconds(RoundDurationFor(round));
+
+        List<Player> alive = GatherAlivePlayers();
+        EvaluateRound(alive, out bool roundSuccess);
+        ApplyIndividualDamage(alive);
+
+        HandleRoundOutcome(round, roundSuccess);
+        // Rpc 송신은 캐시(_netState)가 아니라 Instance로 — 캐시는 Despawn 이후에도 살아있어 씬 언로드·
+        // 사망 리로드 구간에서 낡은 NetworkObjectId로 메시지가 나간다(수신 측 라우팅 실패 → purge 경고).
+        // Instance는 OnNetworkDespawn에서 null이 되므로 `?.`가 그 창구를 닫는다.
+        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(roundSuccess);
+
+        // 마지막 라운드도 복구 연출이 보이도록 멈춤 + 복구까지 기다린 뒤 완료한다
+        // (완료 순간 GridTileCollapse는 연출 없이 즉시 복구하므로, 먼저 끝나면 복구가 안 보인다).
+        float afterSettle = Mathf.Max(0f, settleHoldSeconds) + Mathf.Max(0f, restoreSeconds);
+        bool last = round >= totalRounds - 1;
+        if (!last) afterSettle += Mathf.Max(0f, restSeconds);
+
+        if (afterSettle > 0f)
+            yield return new WaitForSeconds(afterSettle);
+
+        _judgeCoroutine = null;
+        if (last) _netState?.ChallengeCleared(true);
+        else      StartRound(round + 1);
     }
 
     // ── 라운드 생성 (전 머신 공통 — StageNetworkState NV 구독, §11B ③Generate) ──
 
     /// <summary>
-    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드로 라운드를 생성한다.
-    /// 판정(JudgeRoutine)은 이 메서드 끝에서 Host만 시작한다 (§11B ④Judge).
+    /// StageNetworkState.OnChallengeStepChanged 구독 핸들러. Host/Client 동일 코드.
+    /// 짝수 스텝 = 선행 시작(안전 칸 계산만, 숨김), 홀수 스텝 = 공개(칸 색 적용).
+    /// 판정은 Host의 RoundRoutine이 담당한다 (§11B ④Judge).
     /// </summary>
     void HandleChallengeStepChanged(int stepIndex)
     {
@@ -335,50 +518,29 @@ public class GridChallenge : MonoBehaviour
             OnChallengeStarted?.Invoke();
         }
 
-        CurrentRoundIndex = stepIndex;
+        int round = stepIndex / 2;
+        bool reveal = (stepIndex & 1) == 1;
+        double stepTime = _netState.ChallengeStepStartServerTime;
 
-        int seed = _netState != null ? _netState.ChallengeSeed : 0;
-        CurrentRoundSeed = seed;
-        var rng  = new System.Random(seed);
-        PickRandomTiles(rng);
+        // 선행 처리. 홀수(공개)만 도착한 경우 — 선행 0초이거나 두 NV 쓰기가 한 번에 합쳐져 도착 — 에도
+        // 여기서 보충해 OnRoundPreReveal이 항상 먼저 한 번 발생하게 한다.
+        if (_preRevealedRound != round)
+        {
+            _preRevealedRound = round;
+            CurrentRoundIndex = round;
+
+            int seed = _netState.ChallengeSeed;
+            CurrentRoundSeed = seed;
+            PickRandomTiles(new System.Random(seed));
+
+            PreRevealServerTime = reveal ? stepTime - PreRevealSeconds : stepTime;
+            OnRoundPreReveal?.Invoke(round);
+        }
+
+        if (!reveal) return;
+
         ApplyTileStates();
-
-        OnRoundStarted?.Invoke(stepIndex);
-
-        // 판정은 Host 레인에서만 (§11B ④Judge) — Client는 결과를 ClientRpc로만 관찰
-        if (IsClientOnly()) return;
-
-        if (_judgeCoroutine != null) StopCoroutine(_judgeCoroutine);
-        _judgeCoroutine = StartCoroutine(JudgeRoutine(stepIndex));
-    }
-
-    // ── 판정 (Host 전용, §11B ④Judge) ─────────────────────────────
-
-    IEnumerator JudgeRoutine(int round)
-    {
-        yield return new WaitForSeconds(roundDuration);
-
-        List<Player> alive = GatherAlivePlayers();
-        EvaluateRound(alive, out bool roundSuccess);
-        ApplyIndividualDamage(alive);
-
-        HandleRoundOutcome(round, roundSuccess);
-        // Rpc 송신은 캐시(_netState)가 아니라 Instance로 — 캐시는 Despawn 이후에도 살아있어 씬 언로드·
-        // 사망 리로드 구간에서 낡은 NetworkObjectId로 메시지가 나간다(수신 측 라우팅 실패 → purge 경고).
-        // Instance는 OnNetworkDespawn에서 null이 되므로 `?.`가 그 창구를 닫는다.
-        StageNetworkState.Instance?.NotifyChallengeOutcomeClientRpc(roundSuccess);
-
-        if (round < totalRounds - 1)
-        {
-            if (cooldownBetweenRounds > 0f)
-                yield return new WaitForSeconds(cooldownBetweenRounds);
-
-            StartRound(round + 1);
-        }
-        else
-        {
-            _netState?.ChallengeCleared(true);
-        }
+        OnRoundStarted?.Invoke(round);
     }
 
     // ── 결과 반영 (전 머신 공통 — Host는 직접 호출, Client는 ClientRpc로 수신) ──
@@ -394,6 +556,9 @@ public class GridChallenge : MonoBehaviour
     {
         OnRoundSettled?.Invoke(round, success);
         SetAllTilesDefault();
+        // 정산 후~다음 선행 전엔 안전 칸 없음(IsSafeTileThisRound 계약). 판정·데미지는 이미 끝났다.
+        _currentSafeTiles.Clear();
+        _uniqueColorsThisRound.Clear();
     }
 
     /// <summary>
@@ -416,6 +581,8 @@ public class GridChallenge : MonoBehaviour
 
         _isRunning = false;
         CurrentRoundIndex = -1;
+        _preRevealedRound = -1;
+        PreRevealServerTime = -1.0;
         _currentSafeTiles.Clear();
         _uniqueColorsThisRound.Clear();
         OnChallengeComplete?.Invoke();
@@ -443,23 +610,13 @@ public class GridChallenge : MonoBehaviour
         _currentSafeTiles.Clear();
         _uniqueColorsThisRound.Clear();
 
-        IReadOnlyList<PlayerColorType> activeColors;
-        if (GameSession.Instance != null)
+        IReadOnlyList<PlayerColorType> activeColors = GetActiveColorsForBoard();
+
+        if (safeRule == GridSafeRule.SharedSolo)
         {
-            activeColors = GameSession.Instance.GetActiveColors();
-        }
-        else
-        {
-            // 폴백은 Host/Client가 서로 다른 색 풀을 만들 수 있는 자리다 — Host엔 GameSession이 있고
-            // 이 머신엔 없으면 2인 세션인데 여기만 4색 풀이 돼 보드가 조용히 갈라진다(같은 시드를
-            // 써도 풀이 다르면 결과가 다름). 추적 가능하도록 1회만 경고한다(라운드마다 찍으면 묻힘).
-            activeColors = FallbackColorOrder;
-            if (!_warnedNoGameSession)
-            {
-                _warnedNoGameSession = true;
-                Debug.LogWarning("[GridChallenge] GameSession이 없어 고유색 4색 폴백으로 보드를 만듭니다 — " +
-                                 "Host와 색 풀이 다르면 Host/Client 보드가 어긋납니다.", this);
-            }
+            // 인원 = 활성 고유색 수(PlayerColor 풀과 같은 소스 — 전 머신 동일 보드).
+            PickSharedTiles(rng, activeColors.Count + GetSharedExtraTiles());
+            return;
         }
 
         var colorPool = new List<PlayerColorType>(activeColors);
@@ -513,6 +670,48 @@ public class GridChallenge : MonoBehaviour
             if (c == PlayerColorType.Blue || c == PlayerColorType.Purple ||
                 c == PlayerColorType.Green || c == PlayerColorType.Yellow)
                 _uniqueColorsThisRound.Add(c);
+        }
+    }
+
+    IReadOnlyList<PlayerColorType> GetActiveColorsForBoard()
+    {
+        if (GameSession.Instance != null)
+            return GameSession.Instance.GetActiveColors();
+
+        // 폴백은 Host/Client가 서로 다른 색 풀을 만들 수 있는 자리다 — Host엔 GameSession이 있고
+        // 이 머신엔 없으면 2인 세션인데 여기만 4색 풀이 돼 보드가 조용히 갈라진다(같은 시드를
+        // 써도 풀이 다르면 결과가 다름). 추적 가능하도록 1회만 경고한다(라운드마다 찍으면 묻힘).
+        if (!_warnedNoGameSession)
+        {
+            _warnedNoGameSession = true;
+            Debug.LogWarning("[GridChallenge] GameSession이 없어 고유색 4색 폴백으로 보드를 만듭니다 — " +
+                             "Host와 색 풀이 다르면 Host/Client 보드가 어긋납니다.", this);
+        }
+        return FallbackColorOrder;
+    }
+
+    int GetSharedExtraTiles()
+    {
+        int extra = 0;
+        if (sharedSafePhases != null)
+            foreach (GridSharedSafePhase phase in sharedSafePhases)
+                if (phase != null && CurrentRoundIndex >= phase.afterRound)
+                    extra = phase.extraTiles;
+        return Mathf.Max(0, extra);
+    }
+
+    /// <summary>SharedSolo: 겹치지 않는 칸 count개를 공용 안전 칸으로. 칸 상태는 Common(색 없음) — 표시는 마커 몫.</summary>
+    void PickSharedTiles(System.Random rng, int count)
+    {
+        var tileIndexPool = new List<int>(tiles.Length);
+        for (int i = 0; i < tiles.Length; i++)
+            if (tiles[i] != null) tileIndexPool.Add(i);
+
+        for (int n = 0; n < count && tileIndexPool.Count > 0; n++)
+        {
+            int pick = rng.Next(0, tileIndexPool.Count);
+            _currentSafeTiles[tileIndexPool[pick]] = PlayerColorType.Common;
+            tileIndexPool.RemoveAt(pick);
         }
     }
 
@@ -576,6 +775,9 @@ public class GridChallenge : MonoBehaviour
     /// </summary>
     bool PlayerPassed(Player p)
     {
+        if (safeRule == GridSafeRule.SharedSolo)
+            return PlayerPassedShared(p);
+
         bool colorInPool = _uniqueColorsThisRound.Contains(p.playerColorType);
 
         // 모드가 어긋나면 어느 칸에 서 있든 실패 — 내 색이 나왔는데 흑백 모드이거나, 안 나왔는데
@@ -590,6 +792,24 @@ public class GridChallenge : MonoBehaviour
             if (t != null && t.State == required && t.ContainsPlayer(p)) return true;
 
         return false;
+    }
+
+    /// <summary>
+    /// SharedSolo 판정: 안전 칸 하나 이상을 밟고 있고, 밟은 안전 칸이 전부 혼자일 때만 통과.
+    /// 경계에 걸쳐 두 칸에 등록된 사람은 양쪽 칸에 세므로, 한쪽 칸이 겹치면 그 사람도 그 칸의 원래 주인도 실패
+    /// (사용자 확정 2026-09-23 — M5 관대 판정과 달리 "어느 한 칸이라도 통과"로 보지 않는다).
+    /// </summary>
+    bool PlayerPassedShared(Player p)
+    {
+        bool onSafe = false;
+        foreach (int index in _currentSafeTiles.Keys)
+        {
+            GridTile t = tiles[index];
+            if (t == null || !t.ContainsPlayer(p)) continue;
+            if (CountAliveOccupants(t) >= 2) return false;
+            onSafe = true;
+        }
+        return onSafe;
     }
 
     List<Player> GatherAlivePlayers()

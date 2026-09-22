@@ -785,7 +785,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -831,8 +831,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 69502008}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &73144942
 GameObject:
   m_ObjectHideFlags: 0
@@ -956,8 +954,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 76037449}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!23 &76037449
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -983,7 +979,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1343,7 +1339,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1389,8 +1385,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 103110744}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &110343015
 GameObject:
   m_ObjectHideFlags: 0
@@ -6612,8 +6606,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 906400282}
   targetRenderer: {fileID: 906400284}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1.5
   holdAfterFire: 0
   fadePhases: []
@@ -7909,8 +7903,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 1470481922}
   targetRenderer: {fileID: 1470481924}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1
   holdAfterFire: 0
   fadePhases:
@@ -8930,7 +8924,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8976,8 +8970,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 850550628}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &850760310
 GameObject:
   m_ObjectHideFlags: 0
@@ -9037,7 +9029,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -9083,8 +9075,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 850760312}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &874127489
 GameObject:
   m_ObjectHideFlags: 0
@@ -9955,7 +9945,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -10001,8 +9991,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 928155995}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &933186121
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11417,7 +11405,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -11463,8 +11451,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1088974816}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1089047689
 GameObject:
   m_ObjectHideFlags: 0
@@ -11568,7 +11554,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -11614,8 +11600,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1089052300}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &1092088820
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12122,7 +12106,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12168,8 +12152,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1140625368}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1170593626
 GameObject:
   m_ObjectHideFlags: 0
@@ -12369,7 +12351,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12415,8 +12397,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1178114717}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1180567566
 GameObject:
   m_ObjectHideFlags: 0
@@ -12916,7 +12896,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12962,8 +12942,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1186502509}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1193441808
 GameObject:
   m_ObjectHideFlags: 0
@@ -13347,8 +13325,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 743550645}
   targetRenderer: {fileID: 743550647}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1
   holdAfterFire: 0
   fadePhases:
@@ -13567,7 +13545,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13613,8 +13591,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1246734870}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1246849854
 GameObject:
   m_ObjectHideFlags: 0
@@ -13708,7 +13684,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13754,8 +13730,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1259038555}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!134 &1260643310
 PhysicsMaterial:
   m_ObjectHideFlags: 0
@@ -13908,7 +13882,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13954,8 +13928,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1269611270}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1272016276
 GameObject:
   m_ObjectHideFlags: 0
@@ -14386,8 +14358,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1325810080}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!23 &1325810080
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -14413,7 +14383,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14519,7 +14489,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14565,8 +14535,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1341612501}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &1350353040
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14680,8 +14648,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 2071535904}
   targetRenderer: {fileID: 2071535906}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1
   holdAfterFire: 0
   fadePhases:
@@ -15161,8 +15129,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 1804192898}
   targetRenderer: {fileID: 1804192900}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1
   holdAfterFire: 0
   fadePhases:
@@ -15923,8 +15891,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 73144942}
   targetRenderer: {fileID: 73144944}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1.5
   holdAfterFire: 0
   fadePhases: []
@@ -16303,7 +16271,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16349,8 +16317,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1476433985}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1492554361
 GameObject:
   m_ObjectHideFlags: 0
@@ -16571,7 +16537,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16617,8 +16583,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1517170093}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1522066014
 GameObject:
   m_ObjectHideFlags: 0
@@ -16678,7 +16642,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16724,8 +16688,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1522066016}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1526467836
 GameObject:
   m_ObjectHideFlags: 0
@@ -18020,7 +17982,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -18066,8 +18028,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1615677123}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1622963691
 GameObject:
   m_ObjectHideFlags: 0
@@ -18217,7 +18177,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -18263,8 +18223,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1630372459}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1641478872
 GameObject:
   m_ObjectHideFlags: 0
@@ -18355,7 +18313,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -18401,8 +18359,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1643530060}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &1644823611
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19552,7 +19508,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -19598,8 +19554,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1771681042}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1783024501
 GameObject:
   m_ObjectHideFlags: 0
@@ -20299,7 +20253,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20345,8 +20299,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1810005002}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1811863251
 GameObject:
   m_ObjectHideFlags: 0
@@ -20567,8 +20519,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 1223614949}
   targetRenderer: {fileID: 1223614951}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1.5
   holdAfterFire: 0
   fadePhases: []
@@ -20761,7 +20713,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20807,8 +20759,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1822649846}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1823986640
 GameObject:
   m_ObjectHideFlags: 0
@@ -21273,8 +21223,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1861812333}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!23 &1861812333
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -21300,7 +21248,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -21576,7 +21524,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -21622,8 +21570,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1896913572}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1897192346
 GameObject:
   m_ObjectHideFlags: 0
@@ -21683,7 +21629,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: d644de77fa1e7964bb244768f1dfb696, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -21729,8 +21675,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeLaneWarnMarker
   targetRenderer: {fileID: 1897192348}
   colorProperty: _BaseColor
-  warnStartColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  warnEndColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &1899275342
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22361,8 +22305,8 @@ MonoBehaviour:
   warnSignObject: {fileID: 535193511}
   targetRenderer: {fileID: 535193513}
   colorProperty: _BaseColor
-  warnStartColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
-  warnEndColor: {r: 0.93, g: 0.16, b: 0.22, a: 0.95}
+  startFill: 0.3
+  easeOutPower: 2
   warnLeadTime: 1.5
   holdAfterFire: 0
   fadePhases: []

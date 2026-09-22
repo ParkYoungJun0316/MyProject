@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -19,6 +20,16 @@ using UnityEngine;
 /// Host/Client 모두 자기 머신에서 ScheduleLoop를 돌린다. 기준 시각은 ArrowTrap/DropTrap과
 /// 같은 PhaseStartServerTime(절대 ServerTime)이라, 늦게 켜져도 대기만 짧아지고 표시 시각은
 /// 같다. 순수 연출이라 RPC 없음 — 바닥 타일 색 등 "공유된 시계를 각자 그린다"와 동일.
+///
+/// [그리드 연동 — T.Boss P3, 2026-09-23] grid를 지정하면 cycles 대신 GridChallenge(SharedSolo)를 따른다.
+/// 안전 칸 공개(OnRoundStarted) 순간 안전 칸마다 markerVisual 복제를 띄우고, 정산(OnRoundSettled)에 전부 숨긴다.
+/// markerVisual = ArrivalPad(ZonePadVisual) 인스턴스 — 칸 위 생존자 수로 3상태를 칠한다:
+///   0명 = 기본(크림 테두리 + 빛 벽 + 파티클, 가장 밝게 — "비었다, 와라")
+///   1명 = 초록 테두리, 빛 벽·파티클 끔 (선 사람에겐 "안전", 남에겐 "찼다")
+///   2명 이상 = 흐린 회색 테두리, 빛 벽·파티클 끔 ("안전 꺼짐" — 위치는 남겨 한 명이 나가면 켜진다는 게 읽히게)
+/// 빨강은 쓰지 않는다(붕괴 경고 탠저린→진홍과 겹침). 인원은 GridChallenge.SafeTileOccupantCount(각 머신 로컬 점유 —
+/// 정산 판정과 같은 규칙). markerVisual에 ZonePadVisual이 없으면 2명 이상일 때 마커를 끄는 것으로 대신한다.
+/// 이 모드에선 warnParticle을 쓰지 않는다.
 /// </summary>
 public class SafeZoneWarnSign : MonoBehaviour
 {
@@ -56,7 +67,24 @@ public class SafeZoneWarnSign : MonoBehaviour
              "(표시 시작 시각보다 먼저 숨기는 건 불가능 — 자동으로 0에서 클램프됨).")]
     [SerializeField] private float holdAfterFire = 0f;
 
+    [Header("그리드 연동 (T.Boss P3) — 지정하면 cycles 대신 이쪽")]
+    [Tooltip("SharedSolo GridChallenge. 지정하면 cycles 스케줄을 돌리지 않는다")]
+    [SerializeField] private GridChallenge grid = null;
+
+    [Header("그리드 모드 — 칸 상태 색 (0명은 ZonePadVisual 기본값)")]
+    [SerializeField] private Color occupiedBorder = new Color(0.35f, 1f, 0.45f, 1f);
+    [SerializeField] private Color occupiedFill = new Color(0.35f, 1f, 0.45f, 0.22f);
+    [SerializeField] private Color overloadedBorder = new Color(0.6f, 0.6f, 0.6f, 0.35f);
+    [SerializeField] private Color overloadedFill = new Color(0.6f, 0.6f, 0.6f, 0.06f);
+
     Coroutine _scheduleCoroutine;
+
+    // 그리드 모드: 슬롯 n = n번째 안전 칸. 0번은 씬의 원본, 나머지는 복제.
+    readonly List<GameObject> _markers = new List<GameObject>();
+    readonly List<ZonePadVisual> _pads = new List<ZonePadVisual>();
+    readonly List<int> _shownTiles = new List<int>();
+    readonly List<int> _shownState = new List<int>(); // 슬롯별 마지막 상태(0/1/2) — 바뀔 때만 칠한다
+    bool _gridSubscribed;
 
     void Awake()
     {
@@ -66,6 +94,11 @@ public class SafeZoneWarnSign : MonoBehaviour
     // Stage SetActive(false → true) 사이클 시 자동 재시작 (TrapBase.OnEnable과 동일 원칙)
     void OnEnable()
     {
+        if (grid != null)
+        {
+            SubscribeGrid();
+            return;
+        }
         _scheduleCoroutine = StartCoroutine(ScheduleLoop());
     }
 
@@ -76,7 +109,117 @@ public class SafeZoneWarnSign : MonoBehaviour
             StopCoroutine(_scheduleCoroutine);
             _scheduleCoroutine = null;
         }
+        UnsubscribeGrid();
+        HideGridMarkers();
         HideMarker();
+    }
+
+    // ── 그리드 모드 ─────────────────────────────────────────────
+
+    void SubscribeGrid()
+    {
+        if (_gridSubscribed) return;
+        grid.OnRoundStarted.AddListener(HandleGridRoundStarted);
+        grid.OnRoundSettled.AddListener(HandleGridRoundSettled);
+        grid.OnChallengeComplete.AddListener(HideGridMarkers);
+        grid.OnChallengeCancelled.AddListener(HideGridMarkers);
+        _gridSubscribed = true;
+    }
+
+    void UnsubscribeGrid()
+    {
+        if (!_gridSubscribed || grid == null) return;
+        grid.OnRoundStarted.RemoveListener(HandleGridRoundStarted);
+        grid.OnRoundSettled.RemoveListener(HandleGridRoundSettled);
+        grid.OnChallengeComplete.RemoveListener(HideGridMarkers);
+        grid.OnChallengeCancelled.RemoveListener(HideGridMarkers);
+        _gridSubscribed = false;
+    }
+
+    void HandleGridRoundStarted(int round)
+    {
+        HideGridMarkers();
+        IReadOnlyList<GridTile> tiles = grid.Tiles;
+        foreach (int index in grid.SafeTileIndices)
+            if (tiles != null && index >= 0 && index < tiles.Count && tiles[index] != null)
+                _shownTiles.Add(index);
+        _shownTiles.Sort(); // 슬롯 배정을 전 머신에서 같게(Dictionary 순서에 기대지 않음)
+
+        for (int slot = 0; slot < _shownTiles.Count; slot++)
+        {
+            GameObject m = GetSlot(slot);
+            if (m == null) break;
+            // 비활성 상태에서 옮긴 뒤 켠다 — ZonePadVisual은 OnEnable에서 이 위치로 발판·파티클을 맞춘다.
+            m.transform.position = tiles[_shownTiles[slot]].transform.position + Vector3.up * markerHeightOffset;
+            _shownState.Add(-1);
+        }
+        RefreshGridMarkers();
+    }
+
+    void HandleGridRoundSettled(int round, bool success) => HideGridMarkers();
+
+    void Update()
+    {
+        if (_shownTiles.Count > 0) RefreshGridMarkers();
+    }
+
+    void RefreshGridMarkers()
+    {
+        for (int slot = 0; slot < _shownTiles.Count && slot < _markers.Count; slot++)
+        {
+            int state = Mathf.Min(2, grid.SafeTileOccupantCount(_shownTiles[slot]));
+            if (_shownState[slot] == state) continue;
+            _shownState[slot] = state;
+
+            GameObject m = _markers[slot];
+            ZonePadVisual pad = _pads[slot];
+            if (pad == null)
+            {
+                SetActiveIfChanged(m, state < 2);
+                continue;
+            }
+
+            SetActiveIfChanged(m, true);
+            if (state == 0)      pad.ClearOverride();
+            else if (state == 1) pad.SetOverride(occupiedBorder, occupiedFill, false);
+            else                 pad.SetOverride(overloadedBorder, overloadedFill, false);
+        }
+    }
+
+    void HideGridMarkers()
+    {
+        _shownTiles.Clear();
+        _shownState.Clear();
+        for (int i = 0; i < _markers.Count; i++)
+        {
+            if (_pads[i] != null) _pads[i].ClearOverride();
+            SetActiveIfChanged(_markers[i], false);
+        }
+    }
+
+    /// <summary>슬롯 n의 표시 오브젝트. 0번은 씬 원본, 모자라면 원본을 같은 부모 아래 복제한다. 원본이 없으면 null.</summary>
+    GameObject GetSlot(int slot)
+    {
+        if (markerVisual == null) return null;
+        if (_markers.Count == 0) AddSlot(markerVisual);
+        while (_markers.Count <= slot)
+        {
+            GameObject clone = Instantiate(markerVisual, markerVisual.transform.parent);
+            clone.SetActive(false);
+            AddSlot(clone);
+        }
+        return _markers[slot];
+    }
+
+    void AddSlot(GameObject go)
+    {
+        _markers.Add(go);
+        _pads.Add(go.GetComponent<ZonePadVisual>());
+    }
+
+    static void SetActiveIfChanged(GameObject go, bool active)
+    {
+        if (go != null && go.activeSelf != active) go.SetActive(active);
     }
 
     IEnumerator ScheduleLoop()

@@ -12,14 +12,11 @@ using UnityEngine;
 /// - holdAfterFire: 발사 시각 기준 숨김 오프셋. 0 = 발사 즉시 숨김, 양수 = 발사 후에도 유지,
 ///   음수 = 발사 전에 미리 숨김 (SafeZoneWarnSign과 동일).
 ///
-/// [비주얼 — 2026-09-22 재설계]
-/// "노랑→빨강 채움 막대"를 폭 표시(테두리, 경고 내내 고정) + 타이밍 표시(흰 섬광이 입→끝으로
-/// 이동, 끝에 닿는 순간 = 발사)로 교체. 발사체가 실제로 날아오는 구간은 표시하지 않는다 —
-/// 판단은 경고(폭+섬광 도달 시점)만으로 끝내고 비행 경로는 발사체 자체를 보고 피한다.
-/// C# 쪽은 그대로 진행도 t=0→1(경고 시작→발사)을 매 프레임 ArrowWarnMarker 셰이더의
-/// _Fill에 넘길 뿐 — 해석은 셰이더가 담당(ArrowWarnMarker.shader 상단 주석 참고).
-/// warnStartColor/warnEndColor는 이제 폭 테두리·배경 틴트 색(같은 값 권장 — 색 전이 없이
-/// 고정 빨강)이고, 섬광 색은 머티리얼의 _FlashColor(기본 흰색)가 담당한다.
+/// [비주얼 — 2026-09-22]
+/// 흰 섬광 방식은 폐기, 셰이더 기반 "시작색→끝색 채움(입→끝) + 발사 직전 펄스"로 복귀.
+/// 채움이 끝에 닿는 순간 = 발사. C# 쪽은 채움 위치(startFill+easeOutPower 곡선)를 _Fill에,
+/// 시간 진행도를 _Progress에, WarnPalette.Start→End 보간색을 _BaseColor에 넘길 뿐 — 해석은
+/// WarnMarker 셰이더가 담당(WarnMarker.shader 상단 주석 참고, ArrowWarnMarker.mat은 _FillMode=0).
 ///
 /// [동기화 방식 — Mouth 계열과 동일 패턴]
 /// Host만 로컬 TrapBase 이벤트를 직접 구독해 재생하고(zero latency, IsServer 가드),
@@ -49,10 +46,19 @@ public class ArrowWarnSign : MonoBehaviour
     [Tooltip("색을 입힐 Renderer. 비워두면 warnSignObject(또는 그 자식)에서 자동 탐색")]
     [SerializeField] private Renderer targetRenderer = null;
 
-    [Header("색상 보간 (0=경고 시작, 1=발사)")]
+    [Header("색 (값은 WarnPalette 공용 — 0=경고 시작, 1=발사)")]
     [SerializeField] private string colorProperty = "_BaseColor";
-    [SerializeField] private Color warnStartColor = Color.yellow;
-    [SerializeField] private Color warnEndColor = Color.red;
+
+    [Header("채움 곡선 (발사 시각은 불변 — 채움 위치 분배만 바꿈)")]
+    [Tooltip("경고가 뜨는 순간 이미 채워져 있는 비율(0~0.9). 0 = 입에서부터 채움. " +
+             "플레이어가 거의 안 보는 입 쪽 구간에 시간을 쓰지 않게 한다.")]
+    [Range(0f, 0.9f)]
+    [SerializeField] private float startFill = 0f;
+
+    [Tooltip("뒤로 갈수록 느려지는 정도. 1 = 일정 속도, 2 = 끝부분에 시간을 몰아줌(권장 시작값). " +
+             "3 이상은 끝이 늘어져 발사 순간이 흐려질 수 있음.")]
+    [Range(1f, 4f)]
+    [SerializeField] private float easeOutPower = 1f;
 
     [Header("타이밍")]
     [Tooltip("발사 전 경고를 미리 보여줄 시간(초). TrapBase.preFireChargeTime에 반영됨")]
@@ -89,7 +95,7 @@ public class ArrowWarnSign : MonoBehaviour
             Debug.LogWarning($"[ArrowWarnSign] {name}: targetRenderer를 찾지 못했습니다 — " +
                               "warnSignObject 또는 targetRenderer를 인스펙터에서 지정하세요.", this);
 
-        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, warnStartColor, warnEndColor, "_Fill");
+        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, WarnPalette.Start, WarnPalette.End, "_Fill", "_Progress");
         SetVisible(false);
     }
 
@@ -150,7 +156,7 @@ public class ArrowWarnSign : MonoBehaviour
 
     /// <summary>Host는 OnFiring 직접 구독, Client는 SyncArrowFireClientRpc 수신으로 호출됨.
     /// 경고 루틴이 아직 안 끝났어도(비활성화 등으로 일찍 발사되는 경우 대비) 항상 정리하는
-    /// 안전망 — WindWarnSign.PlayHideFromNetwork와 동일 패턴.</summary>
+    /// 안전망.</summary>
     public void PlayHideFromNetwork()
     {
         StopWarnRoutine();
@@ -173,8 +179,8 @@ public class ArrowWarnSign : MonoBehaviour
     }
 
     /// <summary>
-    /// warnLeadTime 동안만 노랑→빨강으로 보이게 하고, 발사(OnFiring)까지 정확히 그 순간에
-    /// 끝나도록 표시 시작을 지연시킨다(WindWarnSign.WarnRoutine과 동일한 showDelay 방식).
+    /// warnLeadTime 동안만 시작색→끝색으로 채워 보이게 하고, 발사(OnFiring)까지 정확히 그 순간에
+    /// 끝나도록 표시 시작을 지연시킨다(showDelay 방식).
     /// Mouth 연출이 같은 오브젝트에 있어 실제 preFireChargeTime(=_trap.PreFireChargeTime)이
     /// warnLeadTime보다 길게 병합된 경우, 그 차이(showDelay)만큼 기다렸다가 표시를 시작해야
     /// "표시 시작~빨강 도달"이 정확히 warnLeadTime초가 되고 딱 발사 순간에 맞아떨어진다.
@@ -235,7 +241,16 @@ public class ArrowWarnSign : MonoBehaviour
         _warnCoroutine = null;
     }
 
-    void SetProgress(float t) => _fx.SetProgress(t, GetFadeAlphaMultiplier());
+    // 색·펄스는 시간 t 기준, 채움 위치만 startFill + ease-out으로 재분배 — t=1에서 항상 fill=1이라
+    // "채움이 끝에 닿는 순간 = 발사"는 유지된다.
+    void SetProgress(float t) => _fx.SetProgress(t, GetFadeAlphaMultiplier(), EvaluateFill(t));
+
+    float EvaluateFill(float t)
+    {
+        t = Mathf.Clamp01(t);
+        float eased = 1f - Mathf.Pow(1f - t, Mathf.Max(1f, easeOutPower));
+        return Mathf.Lerp(Mathf.Clamp01(startFill), 1f, eased);
+    }
 
     float GetFadeAlphaMultiplier() => WarnFadePhase.Evaluate(fadePhases);
 

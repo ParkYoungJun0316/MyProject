@@ -3,15 +3,16 @@ using UnityEngine;
 
 /// <summary>
 /// SpikeLane 경고 마커 — 레인 전체 길이를 덮는 긴 데칼(라인 메시)에 부착.
-/// DropWarnMarker(_Fill 채움)와 달리 채움이 아니라 진행도 0→1에 따라 노란색→빨간색으로
-/// 색 자체를 보간한다. 1(완전 빨강)에 도달하는 순간이 곧 SpikeLaneField가 이 레인을
+/// 가시 레인뿐 아니라 BreakTile / GridTileCollapse / MouthBossJawSmash / TongueController의
+/// 칸형 경고도 전부 이 컴포넌트를 쓴다. 채움 없이 진행도 0→1에 따라 WarnPalette.Start(탠저린)→
+/// End(진홍)로 색 자체를 보간한다(WarnMarker 셰이더 _FillMode=1, 발동 직전 펄스는 _Progress 기준). 1(완전 빨강)에 도달하는 순간이 곧 SpikeLaneField가 이 레인을
 /// 발동시키는 시점(SetPreFireChargeTime(warningDuration)으로 스케줄에 반영됨).
 ///
 /// [설정 방법]
 /// 1. SpikeLane 자식으로 배치, 그 레인의 SpikeTrap 타일들 전체 길이를 덮도록 직접 스케일 조절
 /// 2. targetRenderer에 마커 메시 Renderer 연결 (비워두면 자식에서 자동 탐색)
-/// 3. 전용 머티리얼(URP Lit, _BaseColor 사용) 연결 — 실제 색은 MaterialPropertyBlock으로 덮어써서
-///    보간하므로 머티리얼 자체의 기본 색은 의미 없음
+/// 3. Assets/Mat/Traps/WarnMarkerTile.mat(WarnMarker 셰이더, _FillMode=1) 연결 — 실제 색은
+///    MaterialPropertyBlock으로 덮어써서 보간하므로 머티리얼 자체의 기본 색은 의미 없음
 /// </summary>
 public class SpikeLaneWarnMarker : MonoBehaviour
 {
@@ -19,12 +20,9 @@ public class SpikeLaneWarnMarker : MonoBehaviour
     [Tooltip("색을 입힐 Renderer. 비워두면 자식에서 자동 탐색")]
     [SerializeField] private Renderer targetRenderer = null;
 
-    [Header("색상 보간 (0=경고 시작, 1=발동)")]
+    [Header("색 (값은 WarnPalette 공용 — 0=경고 시작, 1=발동)")]
     [Tooltip("Renderer 머티리얼의 색 셰이더 프로퍼티 이름")]
     [SerializeField] private string colorProperty = "_BaseColor";
-
-    [SerializeField] private Color warnStartColor = Color.yellow;
-    [SerializeField] private Color warnEndColor = Color.red;
 
     WarnMarkerColorFx _fx;
     Coroutine _routine;
@@ -44,11 +42,11 @@ public class SpikeLaneWarnMarker : MonoBehaviour
         if (targetRenderer == null)
             targetRenderer = GetComponentInChildren<Renderer>();
 
-        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, warnStartColor, warnEndColor);
+        _fx = new WarnMarkerColorFx(targetRenderer, colorProperty, WarnPalette.Start, WarnPalette.End, null, "_Progress");
         SetVisible(false);
     }
 
-    /// <summary>duration(초) 동안 진행도 0→1(노랑→빨강)로 갱신하며 표시. 완료 후에도 빨간 채로
+    /// <summary>duration(초) 동안 진행도 0→1(탠저린→진홍)로 갱신하며 표시. 완료 후에도 진홍 채로
     /// 계속 보이는 상태를 유지한다 — 언제 끌지는 호출부(SpikeLane.Trigger())가 결정.</summary>
     public void PlayWarning(float duration)
     {

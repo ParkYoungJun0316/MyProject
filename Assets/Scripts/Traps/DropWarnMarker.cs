@@ -20,16 +20,28 @@ public class DropWarnMarker : MonoBehaviour
     [Tooltip("Renderer 머티리얼의 채움 셰이더 프로퍼티 이름 (0~1 float)")]
     [SerializeField] private string fillProperty = "_Fill";
 
+    [Tooltip("Renderer 머티리얼의 색 셰이더 프로퍼티 이름. 색 값은 WarnPalette 공용(Start→End, " +
+             "채움 진행도에 따라 보간). 알파는 머티리얼에 설정된 값을 그대로 유지한다.")]
+    [SerializeField] private string colorProperty = "_Color";
+
     MaterialPropertyBlock _block;
     int _fillId;
+    int _colorId;
+    float _baseAlpha = 1f;
 
     void Awake()
     {
         if (targetRenderer == null)
             targetRenderer = GetComponentInChildren<Renderer>();
 
-        _fillId = Shader.PropertyToID(fillProperty);
-        _block  = new MaterialPropertyBlock();
+        _fillId  = Shader.PropertyToID(fillProperty);
+        _colorId = Shader.PropertyToID(colorProperty);
+        _block   = new MaterialPropertyBlock();
+
+        var mat = targetRenderer != null ? targetRenderer.sharedMaterial : null;
+        if (mat != null && mat.HasProperty(_colorId))
+            _baseAlpha = mat.GetColor(_colorId).a;
+
         SetProgress(0f);
     }
 
@@ -37,8 +49,13 @@ public class DropWarnMarker : MonoBehaviour
     {
         if (targetRenderer == null) return;
 
+        t = Mathf.Clamp01(t);
+        Color c = Color.Lerp(WarnPalette.Start, WarnPalette.End, t);
+        c.a = _baseAlpha;
+
         targetRenderer.GetPropertyBlock(_block);
-        _block.SetFloat(_fillId, Mathf.Clamp01(t));
+        _block.SetFloat(_fillId, t);
+        _block.SetColor(_colorId, c);
         targetRenderer.SetPropertyBlock(_block);
     }
 

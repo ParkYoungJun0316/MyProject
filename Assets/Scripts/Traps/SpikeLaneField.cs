@@ -37,7 +37,7 @@ public class SpikeLaneField : TrapBase
     [SerializeField] bool excludeLastLanes = false;
 
     [Header("경고 연출")]
-    [Tooltip("경고 표시 시간(초). 이 시간 동안 선택된 레인의 마커가 노랑→빨강으로 보간되고,\n" +
+    [Tooltip("경고 표시 시간(초). 이 시간 동안 선택된 레인의 마커가 탠저린→진홍으로 보간되고,\n" +
              "다 차는 순간 그 레인이 발동한다. 0이면 경고 없이 즉시 발동")]
     [SerializeField] float warningDuration = 0f;
 
@@ -124,7 +124,7 @@ public class SpikeLaneField : TrapBase
 
     /// <summary>
     /// 경고 시작(OnPreFireCharge, warningDuration>0일 때만 발행). 이 시점에 발동할 레인을 미리
-    /// 뽑아 각 레인의 마커를 warningDuration 동안 노랑→빨강으로 재생한다. 실제 발동(OnTrapTrigger)은
+    /// 뽑아 각 레인의 마커를 warningDuration 동안 탠저린→진홍으로 재생한다. 실제 발동(OnTrapTrigger)은
     /// preFireChargeTime(=warningDuration) 뒤에 이 선택을 그대로 재사용한다.
     /// </summary>
     void HandleWarnStart()
