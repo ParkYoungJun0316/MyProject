@@ -266,6 +266,7 @@ flowchart LR
 ## 5. `TutorialGatherZone` · Dialogue
 
 - **`TutorialGatherZone`**: 색 구분 없는 **단일** 트리거 존. 존 안 인원 == 접속 중인 전체 인원이면 카운트다운 → 통과 시 인원 동결 → `M.Stage1` 로드. **동적 인원(중간 합류/이탈)에도 헤드카운트 비교라 별도 로직 불필요.** 네트워크 세부(이탈 정책, Writer, 솔로 케이스)는 `NetworkDesign.md` §6B.3~4가 SSOT.
+- **표시 [2026-09-22]:** 존 = 흰 도자기 접시(`PlateCeramic.mat`) + 안쪽 가장자리 민트 링(`GatherRing`). 접시 남쪽 끝 `GatherSign`(M.Stage2 SideSplit과 같은 간판 톤) — "Start" 간판 + 아래 하트 패널: 접속 인원만큼 하트, **존에 들어온 사람은 그 사람 색 하트, 아직 안 온 사람은 빈 하트**. 전원이 모이면 간판 글씨 대신 3·2·1(`TutorialGatherDisplay`, `TutorialNetworkManager.OnGateCountdown*` 구독 — 판정·진행은 그대로 Host). 화면 카운트다운 UI(`StartCountdownUI`)는 **Tutorial에서만** 연결 해제 — 스테이지 시작 게이트·Interlude는 기존 UI 그대로. 하트 = 사람 수라는 표시 규칙을 여기서 먼저 보여 SideSplit(`MinigameDesign.md` §1.8)로 이어진다.
 - 구 `StageStartGate`/`ColoredStartZone`(색별 지정 구역) 방식은 Tutorial에서 **`TutorialGatherZone`으로 대체**됐다. **M/T 스테이지의 색별 게이트는 영향 없음** — 그쪽은 계속 `StageStartGate`/`ColoredStartZone`/`StageNetworkState` 유지.
 - DialogueUI: Tutorial = 손 연습, M/T = 구역별 필수.
 

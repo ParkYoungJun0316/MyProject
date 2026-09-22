@@ -128,7 +128,7 @@ ChallengeStepBegin(i) ─ 재배치 스냅 ─ [카운트다운 preRoundCountdow
 | 남은 시간 | **네 간판 모두** 글씨 뒤 배경이 꽉 찬 색에서 한쪽으로 줄어듦(숫자 없음). 마지막 1초는 빨강(깜빡임 없이 유지). 바닥 패드엔 타이머 없음(2026-09-22 삭제) |
 | 읽는 시간 | 공개 직후 `revealReadHold`초 동안 채움이 꽉 찬 채 멈춰 있다가 줄기 시작. 판정 시각도 그만큼 밀림(제한시간 자체는 그대로) |
 | 소리 | 3·2·1 숫자가 바뀔 때마다 `SFXId.Minigame_CountdownTick` 1회. 채움이 **줄기 시작하는 순간**(읽는 시간 끝)부터 `SFXId.Minigame_TimerTick` 루프 → 시간 종료·판정 시 정지 |
-| 화면 UI | `SideSplitUI` 사용 안 함 — 두 씬에서 `challenge` 연결 해제 |
+| 화면 UI | 없음 — `SideSplitUI`·`UI.prefab`의 `SideSplit_Panel`·String Table `SideSplit` 삭제(2026-09-22) |
 
 **구현 (2026-09-22)**
 
@@ -143,7 +143,7 @@ ChallengeStepBegin(i) ─ 재배치 스냅 ─ [카운트다운 preRoundCountdow
 
 - [ ] 플레이 검증(Host + ParrelSync 클라이언트): 카운트다운 동기, 공개 순간 재배치, 간판 채움, 틱 2종, 성공/실패 색
 - [ ] `Minigame_CountdownTick` 클립 준비 → `SFXLibrary` 연결(비어 있으면 무음으로 건너뜀)
-- [ ] 정리(사용자 확인 후): `UI.prefab`의 `SideSplit_Panel`, `SideSplitUI.cs`, String Table `SideSplit`(13개 언어) 삭제
+- [x] 정리(2026-09-22): `UI.prefab`의 `SideSplit_Panel`, `SideSplitUI.cs`, String Table `SideSplit`(컬렉션+공유 데이터+13개 언어, Addressables 항목 포함) 삭제. M.Stage2·M.Boss·T.Stage4의 UI 인스턴스에 남아 있던 패널 덮어쓰기 항목도 제거(`Scenes/Backup/`은 미변경)
 
 ---
 
@@ -166,7 +166,7 @@ ChallengeStepBegin(i) ─ 재배치 스냅 ─ [카운트다운 preRoundCountdow
 - `Assets/Scripts/Stage/SideSplitChallenge.cs` — 매니저 (+ `SideSplitRound`/`SideSplitRoundInfo`/`SideSplitRoundEvent`/`SideSplitFloatEvent`)
 - `Assets/Scripts/Stage/SideSplitZone.cs` — 좌/우 판정 볼륨
 - `Assets/Scripts/Stage/SideSplitObjective.cs` — 스테이지 목표 연동
-- ~~`Assets/Scripts/UI/SideSplitUI.cs` — 문장형 안내 UI~~ (2026-09-22 미사용, 삭제 예정)
+- ~~`Assets/Scripts/UI/SideSplitUI.cs` — 문장형 안내 UI~~ (2026-09-22 삭제)
 - `Assets/Scripts/UI/SideSplitWorldDisplay.cs` — 월드 표시(카운트다운·하트·채움·틱)
 - `Assets/Scripts/Network/StageNetworkState.cs` — `ChallengeOwnerType.SideSplit` 추가
 

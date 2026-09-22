@@ -178,7 +178,7 @@ public class SideSplitChallenge : MonoBehaviour
     /// <summary>StartChallenge() 이후 true. SideSplitObjective.Begin()에서 이미 진행 중인지 판별에 사용.</summary>
     public bool IsStarted => _challengeStarted;
 
-    /// <summary>frontZone/backZone이 둘 다 연결돼 있으면 4방향 모드(T.Stage4). SideSplitUI에서 안내 문구 분기용.</summary>
+    /// <summary>frontZone/backZone이 둘 다 연결돼 있으면 4방향 모드.</summary>
     public bool IsFourDirection => frontZone != null && backZone != null;
 
     /// <summary>활성 zone 하나(방향 태그 + 참조). 고정 순서(Left→Right→Front→Back)로만 열거 — 결정적 시드 소비 순서 보장.</summary>

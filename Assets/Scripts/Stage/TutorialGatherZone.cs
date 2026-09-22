@@ -26,6 +26,9 @@ public class TutorialGatherZone : MonoBehaviour
 
     public int OccupantCount => _occupants.Count;
 
+    /// <summary>해당 클라이언트의 플레이어가 지금 존 안에 있는지 — 표시 전용(TutorialGatherDisplay).</summary>
+    public bool Contains(ulong clientId) => _occupants.ContainsKey(clientId);
+
     void Awake()
     {
         Instance = this;
