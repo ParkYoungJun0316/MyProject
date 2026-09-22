@@ -33,7 +33,7 @@ M·T1–T4를 다시 묻지 말 것. **T.Boss 응원·페이즈는 보류** — 
 |------|------|
 | T1 | 고유색 패드·리맵 **유지**. Door_3. Door_1은 사용자가 버리거나 단순화. 볼더 유지. **조임 초출** = 식도 원통 반경 축소(전방향, 랜덤 주기 공격) + ColorWall 고유(좌우, 별도 압박). 팀 외침 = Warning 중이면 공격 취소, Hold 중이면 **원상 복구**. §3 |
 | T2 | 미니게임 **유지.** 팀 외침 = **거리 기반 안개 공격 초출** §5. 퍼즐 판정 안 고침 |
-| T3 | 조임 **복습**(같은 원통 반경 메카닉). 2인 장면 = **전원 외침 원상 복구**만. ColorWall **흑백** 초출 = 색 일(잠깐 멈춤), 2인 게이트 아님. 패드 Door_3 커먼. Door_1형 4색 겹침 삭제. Spike·볼더·Thron·점액·넉백은 압력 |
+| T3 | 조임 **복습**(같은 원통 반경 메카닉). 2인 장면 = **전원 외침 원상 복구**만. ColorWall **흑백** 초출 = 색 일(잠깐 멈춤), 2인 게이트 아님. 패드 Door_3 커먼. Door_1형 4색 겹침 삭제. Spike·볼더·Thron·점액·넉백은 압력. **구간 데드라인(2026-09-23 추가)은 [`TStage3SegmentDeadline.md`](TStage3SegmentDeadline.md) — 위 잠금은 그대로 유효** |
 | T4 | **바닥 낙사**가 판. 각자 생존, 2인 게이트 아님. ~~패드 밟으면 Door가 올라와 구멍 위 길이 됨~~ → **2026-09-19 잠금 해제: 색 패드·다리 문 전면 제거.** 바닥은 격자(용량 타일 + 파괴 타일)로 대체 — SSOT는 [`TStage4TrapRandomization.md`](TStage4TrapRandomization.md). SideSplit **삭제 예정**. MovingCorridor·ContactKnockback은 압력. 2인 장면 = **안개 걷힘**(변경 없음). 조임 원상 복구 없음 |
 | T5 | **전면 재설계됨(2026-09-20)** — 10×10 격자의 **모든 변이 색 문**, 1층 러너 1명 + 2층 안내자, 체이서는 문 관통. SSOT [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md). 응원·2인 장면은 **여전히 보류** |
 | T.Boss | ColorTile = M. 초출 시드 §4. **P3 팀 응원 = 조임 원상 복구로 확정(2026-09-10)** — T1·T3와 동일 `EsophagusSqueeze`, 코드 변경 없음. P1·P2·P4 팀 응원은 아직 보류. 페이즈 초안 §6 **[미잠금]** (P1·P2·P4 확정, **P3도 확정** — 천장 신규 오브젝트 아님, **Sphere 자체**에 `AdvancingWall`+`ColorWall` 부착 + 튕김 발판. **시계에 체크포인트 규칙 확정**(2026-09-10) — 페이즈 클리어마다 Sphere 고정 후퇴, 페이즈 간 시간 부채로 죽는 일 없게. **Sphere 컨트롤러 코드 됨(2026-09-10)** — 배선 모델은 같은 날 리뷰로 정정(`onPhaseComplete` 폐기·P3 재개 추가), 상세 §H.4. **4페이즈 승리조건 전부 배선 됨(2026-09-10, 2차 세션)** — P1/P2 ReachZone, P3 히트횟수(고정값 8, 임시), P4 서바이브 90초, §H.4 6번) | **⚠️ 2026-09-21 P3 전면 폐기** — Sphere 색 히트·튕김 발판·히트 카운트 승리조건 전부 버림(멀미 + 15회 동일 반복). Sphere는 순수 시계로만 남음. **새 P3 확정(2026-09-23)** = 그리드 공용 칸 1명 전용 + N라운드 버티기 — §6 ✅ 블록.
@@ -154,7 +154,7 @@ ColorWall 일치 = 그 벽만 잠깐 멈춤 (색 일). 팀 외침 조임 = **전
 |----|-------------|------|-----------|-----------|----------------|
 | T.Stage1 | 패드·문·볼더 + 조임 초출 | **A [확정]** §3 | Door_3. 원통 반경 조임(전방향, 랜덤 주기 공격). 원상 복구 | ColorWall **고유**(좌우 압박, 별도) + 원통 반경. Door_1은 사용자가 Door_3으로 | 볼더 **유지** |
 | T.Stage2 | Memory / ColoredMemory / Pioneer | **A [확정]** | 안개 걷힘 | 퍼즐 안 고침. 안개는 정답 미리보기 아님. 거리 기반 Render Fog | |
-| T.Stage3 | Wall·볼더·Spike·패드 + 조임 복습 | **A [확정]** §3 | 같은 원통 반경 조임. **전원 외침 원상 복구** | ColorWall은 2인 게이트 아님. **흑백** 초출 = 색 일. Door_1형 4색 겹침 삭제. Door_3 커먼 | Spike·볼더·Thron·점액·넉백은 압력 |
+| T.Stage3 | Wall·볼더·Spike·패드 + 조임 복습 **+ 구간 데드라인(2026-09-23 추가)** | **A [확정]** §3 | 같은 원통 반경 조임. **전원 외침 원상 복구** | ColorWall은 2인 게이트 아님. **흑백** 초출 = 색 일. Door_1형 4색 겹침 삭제. Door_3 커먼. **구간 시계는 [`TStage3SegmentDeadline.md`](TStage3SegmentDeadline.md)** | Spike·볼더·Thron·점액·넉백은 압력 |
 | T.Stage4 | MovingCorridor + ContactKnockback + **격자 바닥(용량·파괴 타일)** | **A [확정]** §5<br>지형은 2026-09-19 갱신 | **안개 걷힘** (2인 장면) | ~~패드→Door 길~~ **제거(2026-09-19)** — 격자와 역할 중복. 넉백→낙사·바닥 판단은 각자 생존. SideSplit **삭제 예정**. 조임 원상 복구 없음 | 넉백은 압력. 협동으로 안 바꿈 |
 | T.Stage5 | **색 문 격자 + Runner/Chaser** | **재설계 완료(2026-09-20)**<br>SSOT [`TStage5RunnerRedesign.md`](TStage5RunnerRedesign.md) | 판 교체 | 문 180개·2층 패드 54개·문 관통 체이서. 응원은 여전히 보류 | 안내자 지연 = 러너 피격이 협동 장치 |
 | T.Boss | ColorTile + SurviveTime + AdvancingWall/ColorWall | 보류 | ColorTile = M. 초출 시드 §4. 페이즈 초안 §6 (**P3는 2026-09-21 폐기 → 2026-09-23 그리드 공용 칸으로 확정**) | 응원 미정. 페이즈 자체는 확정. 조임 쓰면 T1·T3와 같은 원통 반경(축 선택 불필요) | |
@@ -164,6 +164,12 @@ ColorWall 일치 = 그 벽만 잠깐 멈춤 (색 일). 팀 외침 조임 = **전
 **T.Stage2.** 제일 쉬운 판. 퍼즐 유지. 안개만 추가.
 
 **T.Stage3.** 2인 장면 = **조임 + 전원 외침 원상 복구.** 한 명이 안 외치면 벽이 안 돌아감. ColorWall 흑백은 색 수업(잠깐 멈춤)이지 2인 게이트가 아님. 고유 두 벽을 동시에 멈춰야 살게 만들지 않음. Door_3 커먼 유지. 4색 겹침 문은 삭제. 함정은 압력.
+
+> **구간 데드라인 추가 (2026-09-23) — SSOT는 [`TStage3SegmentDeadline.md`](TStage3SegmentDeadline.md).**
+> 통로를 5구간(경계 z 295·595·905·1068·1180)으로 나누고 구간마다 제한 시간(50/50/160/45/30초)을 준다.
+> 못 나가면 그 구간 끝 40m가 위액 가스(`ContactDamage`)로 덮인다. **위 설계는 전부 그대로 유효하다** —
+> 조임·ColorWall 흑백·Door_3는 건드리지 않았고, 시계 축만 얹었다.
+> 쫓아오는 체이서는 **기각**(T5 정체성 중복 + 멈춤 동사 무력화) — 기각 목록은 그 문서 §2.
 
 **T.Stage4.** 판 = **ContactKnockback + 뚫린 바닥.** 부딪히면 튕기고, 구멍으로 낙사. 각자 생존. 2인 게이트 아님. Door_1형 4색 겹침 없음. 2인 장면 = **안개 걷힘** — 한 명이 안 외치면 바닥이 안 보임. SideSplit 삭제 예정. MovingCorridor는 압력. 조임 원상 복구 없음.
 
@@ -312,13 +318,17 @@ Memory 미리보기 정답을 다시 켜지 않음(안개가 걷혀도 정답 �
 >      무작위 파괴 중 자동 복구는 **유지**(M5와 같음 — 복구가 없으면 끝까지 남는 칸 = 안전 칸이라 공개 전에 답이 샌다).
 >   낙사(안전 칸 밖)는 즉사, 겹침은 데미지 2 — 빈 칸에 못 갈 바엔 남의 칸에 뛰어드는 게 합리적인 선택이 되고,
 >   그게 "누가 어디로 갈지" 외치게 만드는 압박이다(의도).
-> - **표시:** `SafeZoneWarnSign` 그리드 모드 — 공개 순간 안전 칸마다 마커, 겹치면 그 칸만 마커 꺼짐(선택 `overloadedVisual` 켜짐).
+> - **표시(2026-09-23 확정):** `SafeZoneWarnSign` 그리드 모드 — 공개 순간 안전 칸마다 **ArrivalPad(`ZonePadVisual`)** 를 칸 크기
+>   사각(4.9m, 모서리 0.5·테두리 0.4·빛 벽 1.5m, 칸 윗면 +0.05m)으로 띄운다. 도착 지점이 가르친 "빛나는 사각형 = 설 곳" 재사용.
+>   **0명 = 크림 테두리 + 빛 벽 + 파티클(가장 밝게 — 빈 칸이 제일 눈에 띄어야 한다)** · **1명 = 초록 테두리만**(선 사람에겐 안전,
+>   남에겐 "찼다") · **2명 이상 = 흐린 회색 테두리만**(안전 꺼짐, 위치는 남겨 한 명이 나가면 켜진다는 게 읽히게).
+>   빨강은 안 쓴다(붕괴 경고 탠저린→진홍과 겹침). 1명일 때 초록을 가장 밝게 하자는 초안은 "남에게 '가라'로 읽힌다"는 이유로 기각.
 >   칸 머티리얼은 Default 그대로.
 > - **클리어:** 전 라운드 완료 → `GridRoundObjective.Complete` → P3 `StageManager.OnStageClear` →
 >   `BossFlow.NotifyPhaseCleared`(기존 배선). 라운드 수와 P3 시간 제한은 서로 맞춰 사용자가 튜닝.
 > - **코드(2026-09-23):** `GridChallenge.safeRule = SharedSolo` + `sharedSafePhases[]`(afterRound/extraTiles) ·
 >   `GridTileCollapse.mode = AllExceptSafe` **재정의**(= Random 박자 파괴 + 정산 `finalSweepLead`초 전 전부, 구 "처음부터 전부·복구 없음" 폐기) ·
->   `SafeZoneWarnSign.grid`/`overloadedVisual`. 새 RPC/NV 없음 — 안전 칸은 라운드 시드로 전 머신 동일, 겹침 연출은 각 머신 로컬 점유, 정산은 Host.
+>   `SafeZoneWarnSign.grid` + 상태 색 · `ZonePadVisual.SetOverride`/`ClearOverride`. 새 RPC/NV 없음 — 안전 칸은 라운드 시드로 전 머신 동일, 겹침 연출은 각 머신 로컬 점유, 정산은 Host.
 
 **페이즈별 클리어 조건 확정(2026-09-10, 배선 됨):** P1 = `ReachZoneObjective`(도달 존, 기존 씬 배치 재사용). P2 = 동일 `ReachZoneObjective`. P3 = ~~Sphere `ColorWall` 색 히트 누적 횟수~~ **→ 2026-09-23: `GridRoundObjective`(전 라운드 버티기, 위 ✅ 블록)**. P4 = `PhaseSurviveChallenge` 90초 생존. 전부 `BossFightObjective.NotifyPhaseCleared()`로 귀결 → `PhaseManager.AdvancePhase()`. 상세·배선 위치는 §H.4 6번.
 

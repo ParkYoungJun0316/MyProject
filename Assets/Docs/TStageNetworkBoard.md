@@ -229,9 +229,29 @@ T1 Must — 전부 완료(패드/볼더/문 ParrelSync 2인 검증 통과, 2026-
 
 ---
 
+### 3.7 T3 구간 시계 슬롯 (2026-09-23 신설 — 코드 완료, 실기 검증 대기)
+
+`StageNetworkState`에 `NetworkList<double> _segmentStartTimes` 추가. index = 구간, 값 = 그 구간 시계가
+시작한 서버 시각(0 = 미시작). Host가 트리거를 판정해 `MarkSegmentStart(index)`로 찍고, 전 머신이
+`GetSegmentStartTime(index)`를 읽어 **각자 로컬로** 카운트한다 — **새 RPC 0개.**
+
+- 패턴 분류: **E(월드 모션)에 준함** — Host가 시작 시각만 확정하고 진행은 전 머신 로컬 시뮬.
+  `_corridorStartServerTime`(MovingCorridor, §3.3)과 같은 계열이고, 구간이 여럿이라 단일 NV 대신 `NetworkList`를 썼다.
+- 구간마다 슬롯이 따로인 이유: 다음 구간이 시작해도 **앞 구간 시각이 덮이면 안 된다**(뒤처진 사람에게 앞 구간
+  시계가 계속 흘러야 함).
+- 시계 소비자(`SegmentTimer`)를 `NetworkObject`로 만들지 않은 이유: 씬 배치 `NetworkObject`의 `OnEnable` ↔ NGO 스폰
+  레이스([`TrapNetworkBoard.md`](TrapNetworkBoard.md) §7의 `BoulderSpawnManager` 사고와 동일 유형)를 피하려고
+  상주 릴레이인 `StageNetworkState`에 슬롯을 뒀다. `BreakTileDirector`와 같은 원칙.
+- 데미지는 `ContactDamage`가 Host에서만 적용(`NetworkDamageUtil`). 클라의 가스 활성화는 연출뿐이라
+  수십 ms 차이가 판정을 가르지 않는다.
+- 설계 SSOT: [`TStage3SegmentDeadline.md`](TStage3SegmentDeadline.md).
+
+---
+
 ## 5. 상호 참조
 
 - 관측성 규칙 SSOT: [`NetworkDesign.md`](NetworkDesign.md) §9B.
+- T3 구간 시계 설계: [`TStage3SegmentDeadline.md`](TStage3SegmentDeadline.md) (네트워크 부분은 §3.7).
 - 그룹 1(B) 트랩 세부: [`TrapNetworkBoard.md`](TrapNetworkBoard.md).
 - M.Stage 축 완료 기록 + "T 라운드 이월 체크리스트": [`MStageNetworkBoard.md`](MStageNetworkBoard.md).
 

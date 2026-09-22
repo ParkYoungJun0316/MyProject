@@ -314,6 +314,19 @@ public class StageNetworkState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // ── 구역 시계 시작 서버 시각 (SegmentTimer 슬롯 — T.Stage3 구역 데드라인) ──
+    // index = SegmentTimer.segmentIndex(인스펙터 수동 배정, 자동 정렬 배정 아님 — 구역은 씬에 몇 개
+    // 없고 순서가 지형으로 고정돼 있어 이름순 수집 규약이 필요 없다). 값 = 그 구역 시계가 시작한
+    // 서버 시각, 0 = 아직 시작 안 함.
+    // [왜 NV인가] "이 구역 시계는 언제 시작했나"는 일회성 이벤트가 아니라 지속 상태다(§9 Sync 규칙) —
+    // ClientRpc로 보내면 그 순간 수신 준비가 안 된 Client에게 값이 영구 유실돼 카운트다운이 아예 안 돈다.
+    // NV면 스폰 시 현재값이 자동 동기화되고, 구역마다 슬롯이 따로라 다음 구역이 시작해도 앞 구역
+    // 시각이 덮이지 않는다(뒤처진 사람에게 앞 구역 시계가 계속 살아 있어야 한다).
+    // [왜 SegmentTimer가 직접 NetworkObject가 아닌가] 씬 배치 NetworkObject는 OnEnable()이 NGO 스폰
+    // 처리보다 먼저 돌아 IsServer 가드에 걸리는 레이스가 있다 — T.Stage3의 BoulderSpawnManager가
+    // 실제로 그 사고를 냈다(TrapNetworkBoard.md §7). 상주 릴레이인 여기에 슬롯을 두면 그 레이스가 없다.
+    private readonly NetworkList<double> _segmentStartTimes = new();
+
     // ── 팀 공유 목숨 (ReviveSystemDesign.md §4) ──
     // 스테이지 시작 시 (인원수 − 1)로 초기화, **사망마다** -1, 회복 없음. -1은 "아직 미초기화" 센티널
     // — PlayerSpawnCoordinator.OnPlayersReady에서 실제 인원수로 확정한다(파티 크기가 그 전엔 불안정).
@@ -540,6 +553,25 @@ public class StageNetworkState : NetworkBehaviour
     {
         if (!IsServer || IsDespawned) return;
         _corridorStartServerTime.Value = serverTime;
+    }
+
+    /// <summary>구역 index의 시계 시작 서버 시각. 0 = 아직 시작 안 함.</summary>
+    public double GetSegmentStartTime(int index) =>
+        index >= 0 && index < _segmentStartTimes.Count ? _segmentStartTimes[index] : 0d;
+
+    /// <summary>
+    /// Host: 구역 index의 시계를 지금 서버 시각으로 확정. SegmentTimer.StartTimer()에서만 호출.
+    /// 이미 시작한 구역이면 무시한다(트리거에 두 번째 플레이어가 들어와도 시계가 리셋되지 않는다).
+    /// 슬롯은 index가 닿는 만큼 그때그때 늘린다 — 구역 개수를 미리 확정하는 Init 호출이 없어도
+    /// 되고(문·트래커 슬롯과 다른 점), 구역이 z 순서대로 시작하지 않아도 안전하다.
+    /// </summary>
+    public void MarkSegmentStart(int index)
+    {
+        if (!IsServer || IsDespawned || index < 0) return;
+        while (_segmentStartTimes.Count <= index)
+            _segmentStartTimes.Add(0d);
+        if (_segmentStartTimes[index] > 0d) return;
+        _segmentStartTimes[index] = NetworkManager.Singleton.ServerTime.Time;
     }
 
     /// <summary>문 개폐 상태가 바뀔 때 발동(index, isOpen). Client가 구독해 DoorController.Open()/Close() 호출용.</summary>

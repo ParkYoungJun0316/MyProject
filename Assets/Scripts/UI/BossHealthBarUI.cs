@@ -76,6 +76,12 @@ public class BossHealthBarUI : MonoBehaviour
              "fillAmount을 진행도(0~1)로 매 프레임 갱신한다. 비우면 갱신하지 않음.")]
     [SerializeField] Image spherePinkFill;
 
+    [Tooltip("마커가 트랙 양 끝에서 더 안쪽으로 들어올 여백(px). 마커 반지름은 이미 자동으로\n" +
+             "보정되므로(진행도 0에서 마커 왼쪽 변이 트랙 왼쪽 끝에 맞음) 0으로 둬도 마커가\n" +
+             "트랙 밖으로 나가지 않는다. 식도 그림처럼 끝이 좁아지는 배경에서 더 안쪽에\n" +
+             "붙이고 싶을 때만 값을 준다.")]
+    [SerializeField] float markerEdgePadding = 0f;
+
     RectTransform _rt;
     float         _lastMarkerProgress = -1f;
 
@@ -154,12 +160,31 @@ public class BossHealthBarUI : MonoBehaviour
 
         if (sphereMarkerRect != null)
         {
-            sphereMarkerRect.anchorMin = new Vector2(p, 0.5f);
-            sphereMarkerRect.anchorMax = new Vector2(p, 0.5f);
+            // 마커 중심을 그대로 0~1에 놓으면 양 끝에서 마커가 트랙 밖으로 절반 삐져나온다.
+            // 마커 반지름(+여백)만큼 안쪽으로 좁힌 구간에 매핑해 항상 트랙 안에 머물게 한다.
+            float x = ApplyMarkerEdgeInset(p);
+            sphereMarkerRect.anchorMin = new Vector2(x, 0.5f);
+            sphereMarkerRect.anchorMax = new Vector2(x, 0.5f);
         }
 
         if (spherePinkFill != null)
             spherePinkFill.fillAmount = p;
+    }
+
+    /// <summary>진행도(0~1)를 "마커가 트랙 안에 완전히 들어오는" 구간으로 다시 매핑한다.
+    /// 트랙 폭을 못 구하거나 마커가 트랙보다 크면 원래 값을 그대로 쓴다.</summary>
+    float ApplyMarkerEdgeInset(float p)
+    {
+        var track = sphereMarkerRect.parent as RectTransform;
+        if (track == null) return p;
+
+        float trackWidth = track.rect.width;
+        if (trackWidth <= 0f) return p;
+
+        float inset = (sphereMarkerRect.rect.width * 0.5f + markerEdgePadding) / trackWidth;
+        if (inset <= 0f || inset >= 0.5f) return p;
+
+        return Mathf.Lerp(inset, 1f - inset, p);
     }
 
     IEnumerator ShakeRoutine()
