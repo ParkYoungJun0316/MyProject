@@ -3,19 +3,23 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// ArrowTrap 발사 전 경고 사인. SpikeLaneWarnMarker와 같이 노랑→빨강으로 보간하고,
-/// 타이밍은 SafeZoneWarnSign과 같은 인스펙터 쌍(warnLeadTime / holdAfterFire)으로 조절한다.
+/// ArrowTrap 발사 전 경고 사인. 타이밍은 SafeZoneWarnSign과 같은 인스펙터 쌍
+/// (warnLeadTime / holdAfterFire)으로 조절한다.
 ///
 /// [타이밍]
 /// - warnLeadTime: 발사 전에 경고를 미리 보여줄 시간. TrapBase.preFireChargeTime에 반영되어
 ///   OnPreFireCharge가 이 시간만큼 앞당겨진다. Mouth 연출이 같이 있으면 둘 중 더 긴 값이 쓰인다.
 /// - holdAfterFire: 발사 시각 기준 숨김 오프셋. 0 = 발사 즉시 숨김, 양수 = 발사 후에도 유지,
 ///   음수 = 발사 전에 미리 숨김 (SafeZoneWarnSign과 동일).
-/// - 색 보간은 warnLeadTime 동안 0→1. 발사 시점에 완전 빨강(holdAfterFire가 음수면 그 전에 숨김).
 ///
-/// [비주얼]
-/// warnSignObject에 ArrowWarnMarker 셰이더 머티리얼(반투명 외곽 + 경로 채움)을 둔다.
-/// 진행도 t=0→1 동안 노랑→빨강(_BaseColor)과 입→끝 채움(_Fill)을 같이 갱신한다.
+/// [비주얼 — 2026-09-22 재설계]
+/// "노랑→빨강 채움 막대"를 폭 표시(테두리, 경고 내내 고정) + 타이밍 표시(흰 섬광이 입→끝으로
+/// 이동, 끝에 닿는 순간 = 발사)로 교체. 발사체가 실제로 날아오는 구간은 표시하지 않는다 —
+/// 판단은 경고(폭+섬광 도달 시점)만으로 끝내고 비행 경로는 발사체 자체를 보고 피한다.
+/// C# 쪽은 그대로 진행도 t=0→1(경고 시작→발사)을 매 프레임 ArrowWarnMarker 셰이더의
+/// _Fill에 넘길 뿐 — 해석은 셰이더가 담당(ArrowWarnMarker.shader 상단 주석 참고).
+/// warnStartColor/warnEndColor는 이제 폭 테두리·배경 틴트 색(같은 값 권장 — 색 전이 없이
+/// 고정 빨강)이고, 섬광 색은 머티리얼의 _FlashColor(기본 흰색)가 담당한다.
 ///
 /// [동기화 방식 — Mouth 계열과 동일 패턴]
 /// Host만 로컬 TrapBase 이벤트를 직접 구독해 재생하고(zero latency, IsServer 가드),
