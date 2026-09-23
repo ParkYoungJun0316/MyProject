@@ -24,6 +24,8 @@
 - 키 (제안): `Title.<씬 이름>` — 예: `Title.M.Stage1`, `Title.T.Boss`.
 - String Table / 씬은 에이전트가 쓰지 않는다. 사람이 Localization Tables에 넣는다.
 
+> **2026-09-24 최종본:** ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl 제목을 최종 카피로 교체해 String Table `StageTitle_*`에 반영(`pt`는 `pt-BR`과 동일). ko·en은 그대로.
+
 ## 3. 제목 (ko / en)
 
 | 키 | ko | en |
@@ -52,36 +54,36 @@
 ### 아시아권
 
 | 키 | ja | zh-Hans | zh-Hant |
-|---|---|---|---|
-| `Title.M.Stage1` | 休まない口 | 永不停歇的嘴 | 永不停歇的嘴 |
+|---| --- | --- | --- |
+| `Title.M.Stage1` | 落ち着かない口 | 不安分的嘴巴 | 不安分的嘴巴 |
 | `Title.M.Stage2` | あふれるよだれ | 满溢的口水 | 滿溢的口水 |
 | `Title.M.Stage3` | 狭い通路 | 狭窄的通道 | 狹窄的通道 |
-| `Title.M.Stage4` | 地下の舌 | 地下之舌 | 地下之舌 |
+| `Title.M.Stage4` | 下から迫る舌 | 下方的舌头 | 下方的舌頭 |
 | `Title.M.Stage5` | 終わりなき崩壊 | 无尽的崩塌 | 無盡的崩塌 |
-| `Title.M.Boss` | 最後の脱出チャンス | 最后的逃脱机会 | 最後的逃脫機會 |
-| `Title.T.Stage1` | 転がるキャンディー | 滚来的糖果 | 滾來的糖果 |
-| `Title.T.Stage2` | 見えない道 | 看不见的路 | 看不見的路 |
-| `Title.T.Stage3` | 胃液の逆流 | 胃酸倒流 | 胃酸倒流 |
-| `Title.T.Stage4` | 重量オーバー | 超重 | 超重 |
-| `Title.T.Stage5` | ドアを開けて | 快开门 | 快開門 |
-| `Title.T.Boss` | キャンディーが落ちる前に | 在糖果落地之前 | 在糖果落地之前 |
+| `Title.M.Boss` | 最後の脱出チャンス | 最后的逃生机会 | 最後的逃生機會 |
+| `Title.T.Stage1` | 転がるキャンディ | 滚动的糖果 | 滾動的糖果 |
+| `Title.T.Stage2` | 見えない道 | 看不见的道路 | 看不見的道路 |
+| `Title.T.Stage3` | 胃液の逆流 | 胃酸反流 | 胃酸逆流 |
+| `Title.T.Stage4` | 定員オーバー | 超出承载人数 | 超出承載人數 |
+| `Title.T.Stage5` | ドアを開けて | 打开大门 | 打開大門 |
+| `Title.T.Boss` | キャンディが落ちる前に | 糖果落地之前 | 糖果落地之前 |
 
 ### 유럽·중남미권
 
 | 키 | es | es-419 | fr | de | pt-BR | ru | pl |
-|---|---|---|---|---|---|---|---|
-| `Title.M.Stage1` | La boca incansable | La boca incansable | La bouche infatigable | Der unermüdliche Mund | A boca incansável | Неутомимый рот | Niestrudzone usta |
-| `Title.M.Stage2` | Saliva desbordante | Saliva desbordante | Salive débordante | Überquellender Speichel | Saliva transbordante | Слюна через край | Wzbierająca ślina |
-| `Title.M.Stage3` | El pasaje estrecho | El pasaje angosto | Le passage étroit | Der enge Durchgang | A passagem estreita | Узкий проход | Wąskie przejście |
-| `Title.M.Stage4` | La lengua subterránea | La lengua subterránea | La langue souterraine | Die Zunge in der Tiefe | A língua subterrânea | Подземный язык | Podziemny język |
-| `Title.M.Stage5` | Derrumbe sin fin | Derrumbe sin fin | Effondrement sans fin | Endloser Einsturz | Desmoronamento sem fim | Бесконечное обрушение | Niekończący się rozpad |
-| `Title.M.Boss` | La última oportunidad de escapar | La última oportunidad de escapar | La dernière chance de s'échapper | Die letzte Chance zur Flucht | A última chance de escapar | Последний шанс на побег | Ostatnia szansa na ucieczkę |
-| `Title.T.Stage1` | El caramelo rodante | El caramelo rodante | Le bonbon qui roule | Das rollende Bonbon | O doce rolante | Катящаяся конфета | Toczący się cukierek |
-| `Title.T.Stage2` | El camino invisible | El camino invisible | Le chemin invisible | Der unsichtbare Weg | O caminho invisível | Невидимый путь | Niewidzialna ścieżka |
-| `Title.T.Stage3` | Reflujo ácido | Reflujo ácido | Reflux acide | Säure-Reflux | Refluxo ácido | Кислотный рефлюкс | Kwaśny refluks |
-| `Title.T.Stage4` | Exceso de peso | Exceso de peso | Surcharge | Überlast | Excesso de peso | Перегруз | Przeciążenie |
-| `Title.T.Stage5` | Abre la puerta | Abre la puerta | Ouvre la porte | Mach die Tür auf | Abre a porta | Открой дверь | Otwórz drzwi |
-| `Title.T.Boss` | Antes de que caiga el caramelo | Antes de que caiga el caramelo | Avant que le bonbon tombe | Bevor das Bonbon landet | Antes que o doce caia | Пока конфета не упала | Zanim cukierek spadnie |
+|---| --- | --- | --- | --- | --- | --- | --- |
+| `Title.M.Stage1` | La Boca Inquieta | La Boca Inquieta | La Bouche Agitée | Der Unruhige Mund | A Boca Inquieta | Беспокойный рот | Niespokojne Usta |
+| `Title.M.Stage2` | Saliva Desbordada | Baba Desbordada | Salive Débordante | Überlaufender Speichel | Saliva Transbordando | Слюна через край | Przelewająca się Ślina |
+| `Title.M.Stage3` | El Pasaje Estrecho | El Pasaje Estrecho | Le Passage Étroit | Der Enge Durchgang | A Passagem Estreita | Узкий проход | Wąskie Przejście |
+| `Title.M.Stage4` | La Lengua de Abajo | La Lengua de Abajo | La Langue d'en Bas | Die Zunge in der Tiefe | A Língua Lá Embaixo | Язык снизу | Język z Dołu |
+| `Title.M.Stage5` | Derrumbe Sin Fin | Derrumbe Sin Fin | Effondrement Sans Fin | Endloser Einsturz | Desmoronamento Sem Fim | Бесконечный обвал | Niekończące się Zawalenie |
+| `Title.M.Boss` | La Última Oportunidad de Escapar | La Última Oportunidad de Escapar | La Dernière Chance de S'échapper | Die Letzte Chance zur Flucht | A Última Chance de Escapar | Последний шанс на побег | Ostatnia Szansa na Ucieczkę |
+| `Title.T.Stage1` | El Caramelo Rodante | El Dulce Rodante | Le Bonbon Roulant | Das Rollende Bonbon | O Doce Rolante | Катящаяся конфета | Toczący się Cukierek |
+| `Title.T.Stage2` | El Camino Invisible | El Camino Invisible | Le Chemin Invisible | Der Unsichtbare Weg | O Caminho Invisível | Невидимый путь | Niewidzialna Droga |
+| `Title.T.Stage3` | Reflujo Ácido | Reflujo Ácido | Reflux Acide | Saurer Reflux | Refluxo Ácido | Кислотный рефлюкс | Refluks Kwasu |
+| `Title.T.Stage4` | Exceso de Capacidad | Exceso de Capacidad | Capacité Dépassée | Überlastung | Capacidade Esgotada | Превышение вместимости | Przekroczona Pojemność |
+| `Title.T.Stage5` | Abre la Puerta | Abre la Puerta | Ouvrez la Porte | Öffnet die Tür | Abra a Porta | Откройте дверь | Otwórz Drzwi |
+| `Title.T.Boss` | Antes de que Caiga el Caramelo | Antes de que Caiga el Dulce | Avant que le Bonbon ne Tombe | Bevor das Bonbon Landet | Antes que o Doce Caia | До падения конфеты | Zanim Cukierek Spadnie |
 
 ## 5. 구현
 

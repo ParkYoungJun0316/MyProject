@@ -8,6 +8,8 @@
 > 표시 시 비어 있지 않은 줄 앞에 `•` 불릿. 빈 줄에는 점 없음. `Tools/Setup StageTip Localization`이 테이블에 같이 넣는다.
 
 > **2026-09-24 전면 재번역:** ko·en 확정 후 **영어 기준**으로 10개 언어 재작성(대사 개정 작업과 함께). `Tip.M.Stage4.1`·`Tip.T.Stage2.1`·`Tip.M.Boss.4`는 영어가 안 바뀌어 기존 번역 유지. String Table에도 반영 완료(`pt`는 `pt-BR`과 동일).
+>
+> **2026-09-24 진짜 최종본:** 위 10개 언어 문장을 다시 교체해 String Table `StageTip_*`에 반영(`pt`는 `pt-BR`과 동일). ko·en은 그대로. 팀 구호 용어는 대사와 같이 ja チームの掛け声 / es·es-419 grito de equipo / fr cri d'équipe / de Teamruf / pt-BR grito da equipe / ru командный клич / pl okrzyk drużyny.
 
 ## 번역 규칙
 
@@ -15,7 +17,7 @@
 2. 한국어를 직역하지 말 것. 그 언어권 HUD·코옵에서 실제로 쓰는 말로.
 3. 소리 내어 읽히게. Tip은 합니다체 원문 → 각 언어의 **짧은 지시문**(en 명령형, ja です/ます, de/fr/ru/pl 비격식 2인칭, es 스페인/중남미 어휘 분리, pt-BR).
 
-**용어 [2026-09-17 통일]:** 경고 때 외치는 단어 = Tutorial 설정 UI와 같은 말 — ko `팀 키워드`, en `team word`, ja `チームの合言葉`, zh `团队关键词`/`團隊關鍵詞`, es `palabra de equipo`, fr `mot d'équipe`, de `Team-Wort`, pt-BR `palavra da equipe`, ru `командное слово`, pl `hasło drużyny`. (예전 `팀 응원 이름` / `team cheer` / `Teamruf` / `cri d'équipe` 등은 폐기. 스토리 대사의 `팀 구호`는 캐릭터 말투라 유지.)
+**용어:** 팁 HUD에서 외치는 말은 대사와 같다 — ja `チームの掛け声`, zh `团队口令`/`團隊口令`, es·es-419 `grito de equipo`, fr `cri d'équipe`, de `Teamruf`, pt-BR `grito da equipe`, ru `командный клич`, pl `okrzyk drużyny`. ko `팀 키워드`, en `team word`는 그대로.
 
 **고정:** `Ctrl` / `Space` / `"TEAMCHEER"` 는 모든 언어에서 그대로. 키 강조 태그는 아직 안 씀.
 
@@ -40,16 +42,16 @@
 - en: Only one color's mouth rises at a time.
 Anyone can use black and white pads by matching their color.
 When "TEAMCHEER" pops up at the top, shout your team word.
-- ja: 一度に上がる口は一色だけです。\n白黒の足場は、色を合わせれば誰でも使えます。\n上に「TEAMCHEER」が出たら、チームの合言葉を叫んでください。
-- zh-Hans: 一次只会升起一种颜色的嘴。\n黑白踏板谁都能用，对好颜色就行。\n顶部出现“TEAMCHEER”时，喊出团队关键词。
-- zh-Hant: 一次只會升起一種顏色的嘴。\n黑白踏板誰都能用，對好顏色就行。\n頂部出現「TEAMCHEER」時，喊出團隊關鍵詞。
-- es: Solo sube la boca de un color cada vez.\nCualquiera puede usar las placas blancas y negras si iguala su color.\nCuando salga "TEAMCHEER" arriba, gritad la palabra de equipo.
-- es-419: Solo sube la boca de un color a la vez.\nCualquiera puede usar las placas blancas y negras si iguala su color.\nCuando aparezca "TEAMCHEER" arriba, griten la palabra de equipo.
-- fr: Une seule bouche de couleur se lève à la fois.\nTout le monde peut utiliser les dalles noires et blanches en accordant sa couleur.\nQuand "TEAMCHEER" s'affiche en haut, crie le mot d'équipe.
-- de: Es fährt immer nur ein Mund einer Farbe hoch.\nSchwarze und weiße Platten kann jeder nutzen, der seine Farbe anpasst.\nWenn oben "TEAMCHEER" erscheint, ruf das Team-Wort.
-- pt-BR: Só sobe a boca de uma cor por vez.\nQualquer um pode usar as placas pretas e brancas ajustando a cor.\nQuando "TEAMCHEER" aparecer no topo, grite a palavra da equipe.
-- ru: За раз поднимается рот только одного цвета.\nЧёрные и белые плиты может использовать любой, подстроив цвет.\nКогда сверху появится «TEAMCHEER», выкрикни командное слово.
-- pl: Naraz unoszą się usta tylko jednego koloru.\nZ czarnych i białych płytek może korzystać każdy, kto dopasuje kolor.\nGdy u góry pojawi się „TEAMCHEER”, wykrzycz hasło drużyny.
+- ja: 一度に1色の口だけがせり上がります。\n自分の色を合わせれば、誰でも黒と白のパッドを使えます。\n上に「TEAMCHEER」が出たら、チームの掛け声を叫んでください。
+- zh-Hans: 每次只会升起一种颜色的嘴巴。\n只要将自己的颜色与黑色或白色的踏板匹配，任何人都可以使用。\n当顶部出现“TEAMCHEER”时，大声喊出你的团队口令。
+- zh-Hant: 每次只會升起一種顏色的嘴巴。\n只要將自己的顏色與黑色或白色的踏板匹配，任何人都可以使用。\n當頂部出現「TEAMCHEER」時，大聲喊出你的團隊口令。
+- es: Solo se eleva la boca de un color a la vez.\nCualquiera puede usar las plataformas negras y blancas haciendo coincidir su color.\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.
+- es-419: Solo se eleva la boca de un color a la vez.\nCualquiera puede usar las plataformas negras y blancas al hacer coincidir su color.\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.
+- fr: Une seule bouche d'une couleur se soulève à la fois.\nN'importe qui peut utiliser les plateformes noires et blanches en faisant correspondre sa couleur.\nLorsque « TEAMCHEER » apparaît en haut de l'écran, criez le cri d'équipe.
+- de: Immer nur der Mund einer Farbe fährt nach oben.\nJeder kann die schwarzen und weißen Flächen benutzen, indem er seine Farbe anpasst.\nWenn oben „TEAMCHEER“ erscheint, ruft laut euren Teamruf.
+- pt-BR: Apenas a boca de uma cor sobe por vez.\nQualquer jogador pode usar as placas pretas e brancas ao combinar sua cor.\nQuando “TEAMCHEER” aparecer no topo, grite o grito da equipe.
+- ru: За раз поднимается только рот одного цвета.\nЛюбой игрок может использовать чёрные и белые платформы, если совпадёт с ними по цвету.\nКогда вверху появится «TEAMCHEER», выкрикните командный клич.
+- pl: Naraz unoszą się usta tylko jednego koloru.\nKażdy może korzystać z czarnych i białych platform, dopasowując do nich swój kolor.\nGdy u góry pojawi się „TEAMCHEER”, wykrzyczcie okrzyk drużyny.
 
 ## Tip.M.Stage2.1
 
@@ -61,31 +63,31 @@ When "TEAMCHEER" pops up at the top, shout your team word.
 Everyone sees something different. Share what you see!
 When "TEAMCHEER" pops up at the top, shout your team word.
 Defense buff also blocks round-fail damage.
-- ja: 各ゾーンには、看板の下のKKUL-TTEOKと同じ人数が必要です。多くても少なくてもダメです。\n見えているものは人によって違います。見えたものを伝え合ってください。\n上に「TEAMCHEER」が出たら、チームの合言葉を叫んでください。\n防御バフはラウンド失敗のダメージも防ぎます。
-- zh-Hans: 每个区域的人数要和牌子下的 KKUL-TTEOK 数量一样，不多不少。\n每个人看到的都不一样，把你看到的说出来！\n顶部出现“TEAMCHEER”时，喊出团队关键词。\n防御增益也能挡住回合失败的伤害。
-- zh-Hant: 每個區域的人數要和牌子下的 KKUL-TTEOK 數量一樣，不多不少。\n每個人看到的都不一樣，把你看到的說出來！\n頂部出現「TEAMCHEER」時，喊出團隊關鍵詞。\n防禦增益也能擋下回合失敗的傷害。
-- es: Cada zona necesita tantos jugadores como KKUL-TTEOK haya bajo su cartel: ni más ni menos.\nCada uno ve algo distinto. ¡Compartid lo que veis!\nCuando salga "TEAMCHEER" arriba, gritad la palabra de equipo.\nLa mejora de defensa también bloquea el daño por fallar la ronda.
-- es-419: Cada zona necesita tantos jugadores como KKUL-TTEOK haya bajo su letrero: ni más ni menos.\nCada uno ve algo distinto. ¡Compartan lo que ven!\nCuando aparezca "TEAMCHEER" arriba, griten la palabra de equipo.\nLa mejora de defensa también bloquea el daño por fallar la ronda.
-- fr: Chaque zone doit avoir autant de joueurs que de KKUL-TTEOK sous son panneau — ni plus, ni moins.\nChacun voit quelque chose de différent. Partagez ce que vous voyez !\nQuand "TEAMCHEER" s'affiche en haut, crie le mot d'équipe.\nLe bonus de défense bloque aussi les dégâts d'un round raté.
-- de: Jede Zone braucht genau so viele Spieler, wie KKUL-TTEOK unter ihrem Schild sind – nicht mehr, nicht weniger.\nJeder sieht etwas anderes. Sagt an, was ihr seht!\nWenn oben "TEAMCHEER" erscheint, ruf das Team-Wort.\nDer Verteidigungs-Buff blockt auch Schaden bei verlorener Runde.
-- pt-BR: Cada área precisa de tantos jogadores quanto os KKUL-TTEOK embaixo da placa — nem mais, nem menos.\nCada um vê uma coisa diferente. Contem o que estão vendo!\nQuando "TEAMCHEER" aparecer no topo, grite a palavra da equipe.\nO buff de defesa também bloqueia o dano de rodada perdida.
-- ru: В каждой зоне должно быть столько игроков, сколько KKUL-TTEOK под её табличкой, — ни больше ни меньше.\nКаждый видит своё. Рассказывайте, что видите!\nКогда сверху появится «TEAMCHEER», выкрикни командное слово.\nБафф защиты также блокирует урон за проваленный раунд.
-- pl: W każdej strefie musi być tylu graczy, ile KKUL-TTEOK jest pod jej tabliczką — ani więcej, ani mniej.\nKażdy widzi coś innego. Mówcie, co widzicie!\nGdy u góry pojawi się „TEAMCHEER”, wykrzycz hasło drużyny.\nWzmocnienie obrony blokuje też obrażenia za przegraną rundę.
+- ja: 各ゾーンには、看板の下にあるKKUL-TTEOKの数と同じ人数を入れる必要があります。多すぎても少なすぎてもダメです。\n全員が違うものを見ます。見えたものを共有しましょう！\n上に「TEAMCHEER」が出たら、チームの掛け声を叫んでください。\n防御バフはラウンド失敗時のダメージも防ぎます。
+- zh-Hans: 每个区域的人数必须与标志下方的KKUL-TTEOK数量完全一致，不能多，也不能少。\n每个人看到的东西都不一样。分享你看到的内容！\n当顶部出现“TEAMCHEER”时，大声喊出你的团队口令。\n防御增益还可以抵挡本回合失败时受到的伤害。
+- zh-Hant: 每個區域的人數必須與標誌下方的KKUL-TTEOK數量完全一致，不能多，也不能少。\n每個人看到的東西都不一樣。分享你看到的內容！\n當頂部出現「TEAMCHEER」時，大聲喊出你的團隊口令。\n防禦增益也可以抵擋本回合失敗時受到的傷害。
+- es: Cada zona necesita exactamente tantos jugadores como KKUL-TTEOK haya bajo su señal. Ni más ni menos.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- es-419: Cada zona necesita exactamente tantos jugadores como KKUL-TTEOK haya debajo de su señal. Ni uno más ni uno menos.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- fr: Chaque zone doit contenir exactement autant de joueurs qu'il y a de KKUL-TTEOK sous son panneau. Ni plus ni moins.\nTout le monde voit quelque chose de différent. Partagez ce que vous voyez !\nLorsque « TEAMCHEER » apparaît en haut de l'écran, criez le cri d'équipe.\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
+- de: In jeder Zone müssen genau so viele Spieler stehen, wie KKUL-TTEOK unter dem Schild angezeigt werden. Nicht mehr und nicht weniger.\nJeder sieht etwas anderes. Teilt, was ihr seht!\nWenn oben „TEAMCHEER“ erscheint, ruft laut euren Teamruf.\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
+- pt-BR: Cada zona precisa de exatamente a mesma quantidade de jogadores que houver de KKUL-TTEOK abaixo da placa. Nem mais, nem menos.\nCada jogador vê algo diferente. Compartilhe o que você vê!\nQuando “TEAMCHEER” aparecer no topo, grite o grito da equipe.\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
+- ru: В каждой зоне должно быть ровно столько игроков, сколько KKUL-TTEOK находится под её табличкой. Ни больше ни меньше.\nКаждый видит что-то своё. Делитесь тем, что видите!\nКогда вверху появится «TEAMCHEER», выкрикните командный клич.\nЗащитный бафф также блокирует урон при провале раунда.
+- pl: W każdej strefie musi być dokładnie tylu graczy, ile KKUL-TTEOK znajduje się pod jej znakiem. Ani więcej, ani mniej.\nKażdy widzi coś innego. Podzielcie się tym, co widzicie!\nGdy u góry pojawi się „TEAMCHEER”, wykrzyczcie okrzyk drużyny.\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
 
 ## Tip.M.Stage2.2
 
 - ko: Ctrl로 흑/백 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
 - en: Press Ctrl to match your color to the black or white floor and avoid being targeted.
-- ja: Ctrlで自分の色を白黒の床に合わせて、狙われないようにしてください。
-- zh-Hans: 按 Ctrl 把你的颜色换成黑白地板的颜色，避免被瞄准。
-- zh-Hant: 按 Ctrl 把你的顏色換成黑白地板的顏色，避免被瞄準。
-- es: Pulsa Ctrl para igualar tu color con el suelo blanco o negro y que no te apunten.
-- es-419: Presiona Ctrl para igualar tu color con el piso blanco o negro y que no te apunten.
-- fr: Appuie sur Ctrl pour accorder ta couleur au sol noir ou blanc et ne plus être ciblé.
-- de: Drück Ctrl, um deine Farbe an den schwarzen oder weißen Boden anzupassen, damit du nicht anvisiert wirst.
-- pt-BR: Aperte Ctrl pra igualar sua cor ao chão preto ou branco e não virar alvo.
-- ru: Нажми Ctrl, чтобы подогнать свой цвет под чёрный или белый пол и не попасть под прицел.
-- pl: Wciśnij Ctrl, żeby dopasować swój kolor do czarnej lub białej podłogi i nie być na celowniku.
+- ja: Ctrlを押して自分の色を黒または白の床に合わせ、狙われるのを避けましょう。
+- zh-Hans: 按下Ctrl，让自己的颜色与黑色或白色地板匹配，避免成为攻击目标。
+- zh-Hant: 按下Ctrl，讓自己的顏色與黑色或白色地板匹配，避免成為攻擊目標。
+- es: Pulsa Ctrl para hacer coincidir tu color con el suelo negro o blanco y evitar que te conviertan en objetivo.
+- es-419: Presiona Ctrl para hacer coincidir tu color con el piso negro o blanco y evitar ser el objetivo.
+- fr: Appuyez sur Ctrl pour faire correspondre votre couleur au sol noir ou blanc et éviter d'être pris pour cible.
+- de: Drücke Ctrl, um deine Farbe an den schwarzen oder weißen Boden anzupassen und nicht ins Visier genommen zu werden.
+- pt-BR: Pressione Ctrl para combinar sua cor com o piso preto ou branco e evitar ser o alvo.
+- ru: Нажмите Ctrl, чтобы подобрать цвет под чёрный или белый пол и избежать атаки.
+- pl: Naciśnij Ctrl, aby dopasować swój kolor do czarnej lub białej podłogi i uniknąć namierzenia.
 
 ## Tip.M.Stage3
 
@@ -93,47 +95,47 @@ Defense buff also blocks round-fail damage.
 고유색 타일은 해당 색만, 흑백 타일은 누구나 점수를 올릴 수 있습니다.
 - en: Stand on a tile for 2 seconds to score.
 Colored tiles only count for that color. Black and white tiles count for anyone.
-- ja: タイルに2秒乗ると得点です。\n色付きのタイルはその色の人だけ、白黒のタイルは誰でも得点になります。
-- zh-Hans: 在方块上站 2 秒得分。\n彩色方块只算对应颜色的人，黑白方块谁都算。
-- zh-Hant: 在方塊上站 2 秒得分。\n彩色方塊只算對應顏色的人，黑白方塊誰都算。
-- es: Quédate 2 segundos en una baldosa para puntuar.\nLas de color solo cuentan para ese color; las blancas y negras, para cualquiera.
-- es-419: Quédate 2 segundos en una baldosa para puntuar.\nLas de color solo cuentan para ese color; las blancas y negras, para cualquiera.
-- fr: Reste 2 secondes sur une dalle pour marquer.\nLes dalles colorées ne comptent que pour leur couleur ; les noires et blanches, pour tout le monde.
-- de: Bleib 2 Sekunden auf einer Kachel, um zu punkten.\nBunte Kacheln zählen nur für ihre Farbe, schwarze und weiße für alle.
-- pt-BR: Fique 2 segundos num bloco pra marcar ponto.\nBlocos coloridos só contam pra sua cor; pretos e brancos contam pra qualquer um.
-- ru: Постой на плитке 2 секунды, чтобы получить очко.\nЦветные плитки засчитываются только своему цвету, чёрные и белые — всем.
-- pl: Postój 2 sekundy na kafelku, żeby zdobyć punkt.\nKolorowe kafelki liczą się tylko dla swojego koloru, czarne i białe — dla każdego.
+- ja: タイルの上に2秒間立つとスコアを獲得します。\n色付きタイルは、その色のプレイヤーだけがカウントされます。黒と白のタイルは誰でもカウントされます。
+- zh-Hans: 在一个方块上站满2秒即可得分。\n彩色方块只有对应颜色的玩家可以计分。黑色和白色方块任何人都可以计分。
+- zh-Hant: 在一個方塊上站滿2秒即可得分。\n彩色方塊只有對應顏色的玩家可以計分。黑色和白色方塊任何人都可以計分。
+- es: Ponte sobre una baldosa durante 2 segundos para conseguir puntos.\nLas baldosas de colores solo cuentan para los jugadores de ese color. Las baldosas negras y blancas cuentan para cualquiera.
+- es-419: Quédate sobre una casilla durante 2 segundos para ganar puntos.\nLas casillas de colores solo cuentan para los jugadores de ese color. Las casillas negras y blancas cuentan para cualquiera.
+- fr: Restez sur une dalle pendant 2 secondes pour marquer des points.\nLes dalles colorées ne comptent que pour les joueurs de cette couleur. Les dalles noires et blanches comptent pour tout le monde.
+- de: Bleibe 2 Sekunden auf einem Feld stehen, um Punkte zu erhalten.\nFarbige Felder zählen nur für Spieler dieser Farbe. Schwarze und weiße Felder zählen für alle.
+- pt-BR: Fique em uma plataforma por 2 segundos para marcar pontos.\nAs plataformas coloridas só contam para jogadores daquela cor. As plataformas pretas e brancas contam para qualquer jogador.
+- ru: Стойте на плитке 2 секунды, чтобы заработать очки.\nЦветные плитки засчитываются только для игроков соответствующего цвета. Чёрные и белые плитки подходят всем.
+- pl: Stań na kafelku przez 2 sekundy, aby zdobyć punkty.\nKolorowe kafelki liczą się tylko dla graczy w danym kolorze. Czarne i białe kafelki liczą się dla każdego.
 
 ## Tip.M.Stage4.1
 
 - ko: 자기 색이 뜨면 Space를 누르세요.\n흰색은 아무나 눌러도 되고, 검은색은 1초 뒤 자동으로 넘어갑니다.\n미니게임 중에는 Space 버프를 쓸 수 없습니다.
 - en: Press Space when your color lights up.\nAnyone can hit white. Black skips to the next turn after 1 second.\nYou can't use your Space buff during this minigame.
-- ja: 自分の色が点灯したらSpaceを押してください。\n白は誰でも押せます。黒は1秒後に自動で次に進みます。\nミニゲーム中はSpaceのバフは使えません。
-- zh-Hans: 亮起自己的颜色时按 Space。\n白色谁都可以按。黑色 1 秒后会自动进入下一轮。\n小游戏进行中不能用 Space 增益。
-- zh-Hant: 亮起自己的顏色時按 Space。\n白色誰都可以按。黑色 1 秒後會自動進入下一輪。\n小遊戲進行中不能用 Space 增益。
-- es: Pulsa Space cuando salga tu color.\nEl blanco lo puede pulsar cualquiera. El negro pasa al siguiente turno al cabo de 1 segundo.\nDurante el minijuego no puedes usar el buff de Space.
-- es-419: Presiona Space cuando salga tu color.\nEl blanco lo puede presionar cualquiera. El negro pasa al siguiente turno después de 1 segundo.\nDurante el minijuego no puedes usar el buff de Space.
-- fr: Appuie sur Space quand ta couleur s'allume.\nLe blanc, n'importe qui peut appuyer. Le noir passe au tour suivant au bout d'1 seconde.\nPendant le mini-jeu, tu ne peux pas utiliser le buff Space.
-- de: Drück Space, wenn deine Farbe aufleuchtet.\nWeiß darf jeder drücken. Schwarz geht nach 1 Sekunde automatisch weiter.\nWährend des Minispiels geht der Space-Buff nicht.
-- pt-BR: Aperte Space quando a sua cor acender.\nBranco qualquer um pode apertar. Preto passa pro próximo turno depois de 1 segundo.\nDurante o minigame você não pode usar o buff do Space.
-- ru: Нажми Space, когда загорится твой цвет.\nБелую может нажать кто угодно. Чёрная через 1 секунду сама перейдёт дальше.\nВо время мини-игры бафф на Space не работает.
-- pl: Wciśnij Space, gdy zapali się twój kolor.\nBiały może nacisnąć każdy. Czarny po 1 sekundzie sam przechodzi dalej.\nW minigrze nie użyjesz buffa na Space.
+- ja: 自分の色が光ったらSpaceを押しましょう。\n白は誰でも叩けます。黒は1秒後に次のターンへ進みます。\nこのミニゲーム中はSpaceバフを使用できません。
+- zh-Hans: 当你的颜色亮起时按下Space。\n白色任何人都可以击打。黑色在1秒后会自动进入下一回合。\n在这个小游戏中无法使用Space增益。
+- zh-Hant: 當你的顏色亮起時按下Space。\n白色任何人都可以擊打。黑色在1秒後會自動進入下一回合。\n在這個小遊戲中無法使用Space增益。
+- es: Pulsa Space cuando se ilumine tu color.\nCualquiera puede golpear la blanca. La negra pasa al siguiente turno después de 1 segundo.\nNo puedes usar tu potenciador de Space durante este minijuego.
+- es-419: Presiona Space cuando se ilumine tu color.\nCualquiera puede golpear la casilla blanca. La negra pasa al siguiente turno después de 1 segundo.\nNo puedes usar tu potenciador de Space durante este minijuego.
+- fr: Appuyez sur Space lorsque votre couleur s'allume.\nTout le monde peut frapper la case blanche. La noire passe au tour suivant après 1 seconde.\nVous ne pouvez pas utiliser votre bonus de Space pendant ce mini-jeu.
+- de: Drücke Space, wenn deine Farbe aufleuchtet.\nAuf Weiß kann jeder schlagen. Schwarz wechselt nach 1 Sekunde zum nächsten Zug.\nWährend dieses Minispiels kannst du deinen Space-Buff nicht benutzen.
+- pt-BR: Pressione Space quando a sua cor acender.\nQualquer jogador pode bater na branca. A preta passa para o próximo turno após 1 segundo.\nVocê não pode usar seu bônus de Space durante este minijogo.
+- ru: Нажмите Space, когда загорится ваш цвет.\nБелую может нажать кто угодно. Чёрная через 1 секунду переходит к следующему ходу.\nВо время мини-игры бафф на Space не работает.
+- pl: Naciśnij Space, gdy zaświeci się twój kolor.\nBiały może nacisnąć każdy. Czarny po 1 sekundzie sam przechodzi dalej.\nPodczas tej minigry nie możesz używać wzmocnienia Space.
 
 ## Tip.M.Stage4.2
 
 - ko: 한 칸 앞의 바닥만 보여 줍니다.\n누를 칸을 미리 외워 두세요.
 - en: You only see one tile ahead.
 Memorize which tile to press.
-- ja: 1マス先の床しか見えません。\n押すマスを覚えておいてください。
-- zh-Hans: 只能看到前面一格。\n记住要按哪一格。
-- zh-Hant: 只能看到前面一格。\n記住要按哪一格。
-- es: Solo ves la siguiente baldosa.\nMemoriza cuál tienes que pulsar.
-- es-419: Solo ves la siguiente baldosa.\nMemoriza cuál tienes que presionar.
-- fr: Tu ne vois que la case suivante.\nRetiens sur laquelle appuyer.
-- de: Du siehst nur ein Feld voraus.\nMerk dir, welches du drücken musst.
-- pt-BR: Você só vê um bloco à frente.\nGrave qual bloco apertar.
-- ru: Видна только одна плитка вперёд.\nЗапоминай, на какую нажимать.
-- pl: Widzisz tylko jeden kafelek do przodu.\nZapamiętaj, który trzeba wcisnąć.
+- ja: 1つ先のタイルしか見えません。\nどのタイルを押すか覚えておきましょう。
+- zh-Hans: 你只能看到前方一个方块。\n记住要按下哪个方块。
+- zh-Hant: 你只能看到前方一個方塊。\n記住要按下哪個方塊。
+- es: Solo puedes ver la baldosa que tienes justo delante.\nMemoriza qué baldosa debes pulsar.
+- es-419: Solo puedes ver la casilla que está justo adelante.\nMemoriza qué casilla debes presionar.
+- fr: Vous ne voyez qu'une seule case devant vous.\nMémorisez la case sur laquelle appuyer.
+- de: Du siehst nur ein Feld vor dir.\nMerke dir, auf welches Feld du drücken musst.
+- pt-BR: Você só consegue ver a plataforma logo à frente.\nMemorize qual plataforma deve pressionar.
+- ru: Вы видите только одну плитку впереди.\nЗапомните, на какую плитку нужно нажать.
+- pl: Widzisz tylko jeden kafelek przed sobą.\nZapamiętaj, który kafelek nacisnąć.
 
 ## Tip.M.Stage4.3
 
@@ -141,16 +143,16 @@ Memorize which tile to press.
 - en: Press Ctrl to match your color to the floor and avoid being targeted.
 Shout your team word while "TEAMCHEER" is up to repair the floor.
 If it's already broken, hold out until the next warning.
-- ja: Ctrlで自分の色を床に合わせて、狙われないようにしてください。\n「TEAMCHEER」が出ている間にチームの合言葉を叫ぶと、床が直ります。\nもう壊れてしまったら、次の警告まで耐えてください。
-- zh-Hans: 按 Ctrl 把你的颜色换成地板的颜色，避免被瞄准。\n“TEAMCHEER”出现时喊出团队关键词，就能修好地板。\n如果已经碎了，就撑到下一次警告。
-- zh-Hant: 按 Ctrl 把你的顏色換成地板的顏色，避免被瞄準。\n「TEAMCHEER」出現時喊出團隊關鍵詞，就能修好地板。\n如果已經碎了，就撐到下一次警告。
-- es: Pulsa Ctrl para igualar tu color con el suelo y que no te apunten.\nGritad la palabra de equipo mientras aparezca "TEAMCHEER" para reparar el suelo.\nSi ya se ha roto, aguanta hasta el siguiente aviso.
-- es-419: Presiona Ctrl para igualar tu color con el piso y que no te apunten.\nGriten la palabra de equipo mientras aparezca "TEAMCHEER" para reparar el piso.\nSi ya se rompió, aguanta hasta la siguiente advertencia.
-- fr: Appuie sur Ctrl pour accorder ta couleur au sol et ne plus être ciblé.\nCrie le mot d'équipe pendant que "TEAMCHEER" est affiché pour réparer le sol.\nS'il est déjà cassé, tiens jusqu'à la prochaine alerte.
-- de: Drück Ctrl, um deine Farbe an den Boden anzupassen, damit du nicht anvisiert wirst.\nRuf das Team-Wort, solange "TEAMCHEER" angezeigt wird, um den Boden zu reparieren.\nIst er schon kaputt, halt bis zur nächsten Warnung durch.
-- pt-BR: Aperte Ctrl pra igualar sua cor à do chão e não virar alvo.\nGrite a palavra da equipe enquanto "TEAMCHEER" estiver na tela pra consertar o chão.\nSe já quebrou, aguente até o próximo aviso.
-- ru: Нажми Ctrl, чтобы подогнать свой цвет под пол и не попасть под прицел.\nВыкрикни командное слово, пока горит «TEAMCHEER», — и пол восстановится.\nЕсли пол уже сломан, продержись до следующего предупреждения.
-- pl: Wciśnij Ctrl, żeby dopasować swój kolor do podłogi i nie być na celowniku.\nWykrzycz hasło drużyny, póki widać „TEAMCHEER”, żeby naprawić podłogę.\nJeśli już pękła, wytrzymaj do następnego ostrzeżenia.
+- ja: Ctrlを押して自分の色を床に合わせ、狙われるのを避けましょう。\n「TEAMCHEER」が出ている間にチームの掛け声を叫ぶと、床が直ります。\nすでに壊れている場合は、次の警告が出るまで耐え抜きましょう。
+- zh-Hans: 按下Ctrl，让自己的颜色与地板匹配，避免成为攻击目标。\n“TEAMCHEER”出现时，喊出你的团队口令来修复地板。\n如果地板已经损坏，就坚持到下一次警告出现。
+- zh-Hant: 按下Ctrl，讓自己的顏色與地板匹配，避免成為攻擊目標。\n「TEAMCHEER」出現時，喊出你的團隊口令來修復地板。\n如果地板已經損壞，就撐到下一次警告出現。
+- es: Pulsa Ctrl para hacer coincidir tu color con el suelo y evitar que te conviertan en objetivo.\nCuando aparezca «TEAMCHEER», grita el grito de equipo para reparar el suelo.\nSi ya está roto, aguanta hasta la siguiente advertencia.
+- es-419: Presiona Ctrl para hacer coincidir tu color con el piso y evitar ser el objetivo.\nCuando aparezca «TEAMCHEER», grita el grito de equipo para reparar el piso.\nSi ya está roto, resiste hasta la siguiente advertencia.
+- fr: Appuyez sur Ctrl pour faire correspondre votre couleur au sol et éviter d'être pris pour cible.\nLorsque « TEAMCHEER » est affiché, criez le cri d'équipe pour réparer le sol.\nS'il est déjà cassé, tenez bon jusqu'au prochain avertissement.
+- de: Drücke Ctrl, um deine Farbe an den Boden anzupassen und nicht ins Visier genommen zu werden.\nWenn „TEAMCHEER“ erscheint, rufe deinen Teamruf, um den Boden zu reparieren.\nWenn er bereits kaputt ist, halte bis zur nächsten Warnung durch.
+- pt-BR: Pressione Ctrl para combinar sua cor com o piso e evitar ser o alvo.\nQuando “TEAMCHEER” aparecer, grite o grito da equipe para reparar o piso.\nSe ele já estiver quebrado, aguente até o próximo aviso.
+- ru: Нажмите Ctrl, чтобы подобрать цвет под цвет пола и избежать атаки.\nКогда появляется «TEAMCHEER», выкрикните командный клич, чтобы восстановить пол.\nЕсли пол уже сломан, продержитесь до следующего предупреждения.
+- pl: Naciśnij Ctrl, aby dopasować swój kolor do podłogi i uniknąć namierzenia.\nGdy pojawi się „TEAMCHEER”, wykrzycz okrzyk drużyny, aby naprawić podłogę.\nJeśli podłoga jest już zniszczona, wytrzymaj do następnego ostrzeżenia.
 
 ## Tip.M.Stage5
 
@@ -159,16 +161,16 @@ If it's already broken, hold out until the next warning.
 If not, hold out on a black or white tile.
 Match your character's color to the floor, too.
 Defense buff also blocks round-fail damage.
-- ja: 自分の色のマスが出たら、その上に乗ってください。\n出なければ、黒か白のマスで耐えてください。\nキャラの色も床に合わせてください。\n防御バフはラウンド失敗のダメージも防ぎます。
-- zh-Hans: 出现你颜色的格子就站上去。\n没有的话，就站在黑色或白色格子上撑住。\n角色颜色也要对上地板。\n防御增益也能挡住回合失败的伤害。
-- zh-Hant: 出現你顏色的格子就站上去。\n沒有的話，就站在黑色或白色格子上撐住。\n角色顏色也要對上地板。\n防禦增益也能擋下回合失敗的傷害。
-- es: Si sale una casilla de tu color, ponte encima.\nSi no, aguanta en una casilla negra o blanca.\nIguala también el color de tu personaje con el del suelo.\nLa mejora de defensa también bloquea el daño por fallar la ronda.
-- es-419: Si sale una casilla de tu color, ponte encima.\nSi no, aguanta en una casilla negra o blanca.\nIguala también el color de tu personaje con el del piso.\nLa mejora de defensa también bloquea el daño por fallar la ronda.
-- fr: Si une case de ta couleur apparaît, mets-toi dessus.\nSinon, tiens bon sur une case noire ou blanche.\nAccorde aussi la couleur de ton perso au sol.\nLe bonus de défense bloque aussi les dégâts d'un round raté.
-- de: Kommt ein Feld in deiner Farbe, stell dich drauf.\nWenn nicht, halt dich auf einem schwarzen oder weißen Feld.\nPass auch die Farbe deines Charakters an den Boden an.\nDer Verteidigungs-Buff blockt auch Schaden bei verlorener Runde.
-- pt-BR: Se aparecer um bloco da sua cor, fique em cima dele.\nSe não, aguente num bloco preto ou branco.\nAjuste também a cor do personagem à do chão.\nO buff de defesa também bloqueia o dano de rodada perdida.
-- ru: Если появилась клетка твоего цвета — встань на неё.\nЕсли нет — держись на чёрной или белой клетке.\nЦвет персонажа тоже подгони под пол.\nБафф защиты также блокирует урон за проваленный раунд.
-- pl: Jeśli pojawi się pole w twoim kolorze, stań na nim.\nJeśli nie — wytrzymaj na czarnym albo białym polu.\nDopasuj też kolor postaci do podłogi.\nWzmocnienie obrony blokuje też obrażenia za przegraną rundę.
+- ja: 自分の色のタイルが出現したら、その上に立ちましょう。\nなければ、黒または白のタイルで耐え抜きましょう。\nキャラクターの色も床の色に合わせましょう。\n防御バフはラウンド失敗時のダメージも防ぎます。
+- zh-Hans: 如果出现与你颜色相同的方块，就站上去。\n如果没有，就站在黑色或白色方块上坚持下去。\n角色的颜色也要与地板匹配。\n防御增益还可以抵挡本回合失败时受到的伤害。
+- zh-Hant: 如果出現與你顏色相同的方塊，就站上去。\n如果沒有，就站在黑色或白色方塊上撐下去。\n角色的顏色也要與地板匹配。\n防禦增益也可以抵擋本回合失敗時受到的傷害。
+- es: Si aparece una baldosa de tu color, ponte sobre ella.\nSi no, aguanta sobre una baldosa negra o blanca.\nHaz coincidir también el color de tu personaje con el del suelo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- es-419: Si aparece una casilla de tu color, párate sobre ella.\nSi no, resiste sobre una casilla negra o blanca.\nHaz coincidir también el color de tu personaje con el del piso.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- fr: Si une dalle de votre couleur apparaît, placez-vous dessus.\nSinon, tenez bon sur une dalle noire ou blanche.\nFaites également correspondre la couleur de votre personnage à celle du sol.\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
+- de: Wenn ein Feld in deiner Farbe erscheint, stelle dich darauf.\nWenn nicht, halte dich auf einem schwarzen oder weißen Feld.\nPasse auch die Farbe deiner Figur an die Farbe des Bodens an.\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
+- pt-BR: Se aparecer uma plataforma da sua cor, fique sobre ela.\nCaso contrário, aguente em uma plataforma preta ou branca.\nCombine também a cor do seu personagem com a cor do piso.\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
+- ru: Если появилась плитка вашего цвета, встаньте на неё.\nЕсли её нет, держитесь на чёрной или белой плитке.\nЦвет персонажа тоже должен совпадать с цветом пола.\nЗащитный бафф также блокирует урон при провале раунда.
+- pl: Jeśli pojawi się kafelek w twoim kolorze, stań na nim.\nJeśli go nie ma, wytrzymaj na czarnym lub białym kafelku.\nDopasuj również kolor swojej postaci do koloru podłogi.\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
 
 ## Tip.M.Boss.1
 
@@ -177,16 +179,16 @@ Defense buff also blocks round-fail damage.
 - ko: 한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.
 - en: Only one color's mouth rises at a time.
 Anyone can use black and white pads by matching their color.
-- ja: 一度に上がる口は一色だけです。\n白黒の足場は、色を合わせれば誰でも使えます。
-- zh-Hans: 一次只会升起一种颜色的嘴。\n黑白踏板谁都能用，对好颜色就行。
-- zh-Hant: 一次只會升起一種顏色的嘴。\n黑白踏板誰都能用，對好顏色就行。
-- es: Solo sube la boca de un color cada vez.\nCualquiera puede usar las placas blancas y negras si iguala su color.
-- es-419: Solo sube la boca de un color a la vez.\nCualquiera puede usar las placas blancas y negras si iguala su color.
-- fr: Une seule bouche de couleur se lève à la fois.\nTout le monde peut utiliser les dalles noires et blanches en accordant sa couleur.
-- de: Es fährt immer nur ein Mund einer Farbe hoch.\nSchwarze und weiße Platten kann jeder nutzen, der seine Farbe anpasst.
-- pt-BR: Só sobe a boca de uma cor por vez.\nQualquer um pode usar as placas pretas e brancas ajustando a cor.
-- ru: За раз поднимается рот только одного цвета.\nЧёрные и белые плиты может использовать любой, подстроив цвет.
-- pl: Naraz unoszą się usta tylko jednego koloru.\nZ czarnych i białych płytek może korzystać każdy, kto dopasuje kolor.
+- ja: 一度に1色の口だけがせり上がります。\n自分の色を合わせれば、誰でも黒と白のパッドを使えます。
+- zh-Hans: 每次只会升起一种颜色的嘴巴。\n只要匹配自己的颜色，任何人都可以使用黑色和白色踏板。
+- zh-Hant: 每次只會升起一種顏色的嘴巴。\n只要匹配自己的顏色，任何人都可以使用黑色和白色踏板。
+- es: Solo se eleva la boca de un color a la vez.\nCualquiera puede usar las plataformas negras y blancas haciendo coincidir su color.
+- es-419: Solo se eleva la boca de un color a la vez.\nCualquiera puede usar las plataformas negras y blancas al hacer coincidir su color.
+- fr: Une seule bouche d'une couleur se soulève à la fois.\nN'importe qui peut utiliser les plateformes noires et blanches en faisant correspondre sa couleur.
+- de: Immer nur der Mund einer Farbe fährt nach oben.\nJeder kann die schwarzen und weißen Flächen benutzen, indem er seine Farbe anpasst.
+- pt-BR: Apenas a boca de uma cor sobe por vez.\nQualquer jogador pode usar as placas pretas e brancas ao combinar sua cor.
+- ru: За раз поднимается только рот одного цвета.\nЛюбой игрок может использовать чёрные и белые платформы, если совпадёт с ними по цвету.
+- pl: Naraz unoszą się usta tylko jednego koloru.\nKażdy może korzystać z czarnych i białych platform, dopasowując do nich swój kolor.
 
 ## Tip.M.Boss.2
 
@@ -196,16 +198,16 @@ Anyone can use black and white pads by matching their color.
 방어 버프는 라운드 실패 데미지도 막아 줍니다.
 - en: Everyone sees something different. Share what you see!
 Defense buff also blocks round-fail damage.
-- ja: 見えているものは人によって違います。見えたものを伝え合ってください。\n防御バフはラウンド失敗のダメージも防ぎます。
-- zh-Hans: 每个人看到的都不一样，把你看到的说出来！\n防御增益也能挡住回合失败的伤害。
-- zh-Hant: 每個人看到的都不一樣，把你看到的說出來！\n防禦增益也能擋下回合失敗的傷害。
-- es: Cada uno ve algo distinto. ¡Compartid lo que veis!\nLa mejora de defensa también bloquea el daño por fallar la ronda.
-- es-419: Cada uno ve algo distinto. ¡Compartan lo que ven!\nLa mejora de defensa también bloquea el daño por fallar la ronda.
-- fr: Chacun voit quelque chose de différent. Partagez ce que vous voyez !\nLe bonus de défense bloque aussi les dégâts d'un round raté.
-- de: Jeder sieht etwas anderes. Sagt an, was ihr seht!\nDer Verteidigungs-Buff blockt auch Schaden bei verlorener Runde.
-- pt-BR: Cada um vê uma coisa diferente. Contem o que estão vendo!\nO buff de defesa também bloqueia o dano de rodada perdida.
-- ru: Каждый видит своё. Рассказывайте, что видите!\nБафф защиты также блокирует урон за проваленный раунд.
-- pl: Każdy widzi coś innego. Mówcie, co widzicie!\nWzmocnienie obrony blokuje też obrażenia za przegraną rundę.
+- ja: 全員が違うものを見ます。見えたものを共有しましょう！\n防御バフはラウンド失敗時のダメージも防ぎます。
+- zh-Hans: 每个人看到的东西都不一样。分享你看到的内容！\n防御增益还可以抵挡本回合失败时受到的伤害。
+- zh-Hant: 每個人看到的東西都不一樣。分享你看到的內容！\n防禦增益也可以抵擋本回合失敗時受到的傷害。
+- es: Cada jugador ve algo diferente. ¡Comparte lo que ves!\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- es-419: Cada jugador ve algo diferente. ¡Comparte lo que ves!\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- fr: Tout le monde voit quelque chose de différent. Partagez ce que vous voyez !\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
+- de: Jeder sieht etwas anderes. Teilt, was ihr seht!\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
+- pt-BR: Cada jogador vê algo diferente. Compartilhe o que você vê!\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
+- ru: Каждый видит что-то своё. Делитесь тем, что видите!\nЗащитный бафф также блокирует урон при провале раунда.
+- pl: Każdy widzi coś innego. Podzielcie się tym, co widzicie!\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
 
 ## Tip.M.Boss.3
 
@@ -213,16 +215,16 @@ Defense buff also blocks round-fail damage.
 
 - ko: Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
 - en: Press Ctrl to match your color to the floor and avoid being targeted.
-- ja: Ctrlで自分の色を床に合わせて、狙われないようにしてください。
-- zh-Hans: 按 Ctrl 把你的颜色换成地板的颜色，避免被瞄准。
-- zh-Hant: 按 Ctrl 把你的顏色換成地板的顏色，避免被瞄準。
-- es: Pulsa Ctrl para igualar tu color con el suelo y que no te apunten.
-- es-419: Presiona Ctrl para igualar tu color con el piso y que no te apunten.
-- fr: Appuie sur Ctrl pour accorder ta couleur au sol et ne plus être ciblé.
-- de: Drück Ctrl, um deine Farbe an den Boden anzupassen, damit du nicht anvisiert wirst.
-- pt-BR: Aperte Ctrl pra igualar sua cor à do chão e não virar alvo.
-- ru: Нажми Ctrl, чтобы подогнать свой цвет под пол и не попасть под прицел.
-- pl: Wciśnij Ctrl, żeby dopasować swój kolor do podłogi i nie być na celowniku.
+- ja: Ctrlを押して自分の色を床に合わせ、狙われるのを避けましょう。
+- zh-Hans: 按下Ctrl，让自己的颜色与地板匹配，避免成为攻击目标。
+- zh-Hant: 按下Ctrl，讓自己的顏色與地板匹配，避免成為攻擊目標。
+- es: Pulsa Ctrl para hacer coincidir tu color con el suelo y evitar que te conviertan en objetivo.
+- es-419: Presiona Ctrl para hacer coincidir tu color con el piso y evitar ser el objetivo.
+- fr: Appuyez sur Ctrl pour faire correspondre votre couleur au sol et éviter d'être pris pour cible.
+- de: Drücke Ctrl, um deine Farbe an den Boden anzupassen und nicht ins Visier genommen zu werden.
+- pt-BR: Pressione Ctrl para combinar sua cor com o piso e evitar ser o alvo.
+- ru: Нажмите Ctrl, чтобы подобрать цвет под цвет пола и избежать атаки.
+- pl: Naciśnij Ctrl, aby dopasować swój kolor do podłogi i uniknąć namierzenia.
 
 ## Tip.M.Boss.4
 
@@ -230,16 +232,16 @@ Defense buff also blocks round-fail damage.
 
 - ko: 입이 열리면 팀 키워드를 외쳐 부서진 바닥을 복구하세요.
 - en: When the mouth opens, shout your team word to repair the broken floor.
-- ja: 口が開いたら、チームの合言葉を叫んで壊れた床を直してください。
-- zh-Hans: 嘴张开后，喊出团队关键词修好碎掉的地板。
-- zh-Hant: 嘴張開後，喊出團隊關鍵詞修好碎掉的地板。
-- es: Cuando se abra la boca, gritad la palabra de equipo para reparar el suelo roto.
-- es-419: Cuando se abra la boca, griten la palabra de equipo para reparar el piso roto.
-- fr: Quand la bouche s'ouvre, crie le mot d'équipe pour réparer le sol cassé.
-- de: Wenn sich der Mund öffnet, ruf das Team-Wort, um den kaputten Boden zu reparieren.
-- pt-BR: Quando a boca abrir, grite a palavra da equipe pra consertar o chão quebrado.
-- ru: Когда рот откроется, выкрикни командное слово — сломанный пол починится.
-- pl: Gdy usta się otworzą, wykrzycz hasło drużyny, żeby naprawić pękniętą podłogę.
+- ja: 口が開いたら、チームの掛け声を叫んで壊れた床を直してください。
+- zh-Hans: 嘴巴张开时，大声喊出你的团队口令来修复损坏的地板。
+- zh-Hant: 嘴巴張開時，大聲喊出你的團隊口令來修復損壞的地板。
+- es: Cuando la boca se abra, grita el grito de equipo para reparar el suelo roto.
+- es-419: Cuando la boca se abra, grita el grito de equipo para reparar el piso roto.
+- fr: Lorsque la bouche s'ouvre, criez le cri d'équipe pour réparer le sol cassé.
+- de: Wenn sich der Mund öffnet, rufe deinen Teamruf, um den kaputten Boden zu reparieren.
+- pt-BR: Quando a boca abrir, grite o grito da equipe para reparar o piso quebrado.
+- ru: Когда рот открывается, выкрикните командный клич, чтобы восстановить сломанный пол.
+- pl: Gdy usta się otworzą, wykrzycz okrzyk drużyny, aby naprawić zniszczoną podłogę.
 
 ---
 
@@ -247,30 +249,30 @@ Defense buff also blocks round-fail damage.
 
 - ko: 벽 색에 맞춰 부딪히세요.
 - en: Ram the walls that match your color.
-- ja: 自分の色と同じ壁に体当たりしてください。
-- zh-Hans: 撞向和你颜色相同的墙。
-- zh-Hant: 撞向和你顏色相同的牆。
-- es: Embiste las paredes de tu color.
-- es-419: Embiste las paredes de tu color.
-- fr: Fonce dans les murs de ta couleur.
-- de: Renn gegen die Wände in deiner Farbe.
-- pt-BR: Trombe nas paredes da sua cor.
-- ru: Врезайся в стены своего цвета.
-- pl: Taranuj ściany w swoim kolorze.
+- ja: 自分の色と同じ壁に突進しましょう。
+- zh-Hans: 撞向与你颜色相同的墙。
+- zh-Hant: 撞向與你顏色相同的牆。
+- es: Embiste las paredes que coincidan con tu color.
+- es-419: Embiste las paredes que coincidan con tu color.
+- fr: Foncez dans les murs correspondant à votre couleur.
+- de: Ramme die Wände, die zu deiner Farbe passen.
+- pt-BR: Invista contra as paredes que combinarem com a sua cor.
+- ru: Тараньте стены, которые соответствуют вашему цвету.
+- pl: Szarżuj w ściany pasujące do twojego koloru.
 
 ## Tip.T.Stage2.1
 
 - ko: 길을 외워 두세요.
 - en: Memorize the path.
-- ja: 道を覚えておいてください。
-- zh-Hans: 把路记下来。
-- zh-Hant: 把路記下來。
+- ja: 道順を覚えましょう。
+- zh-Hans: 记住路线。
+- zh-Hant: 記住路線。
 - es: Memoriza el camino.
 - es-419: Memoriza el camino.
-- fr: Retiens le chemin.
-- de: Merk dir den Weg.
-- pt-BR: Decore o caminho.
-- ru: Запомни дорогу.
+- fr: Mémorisez le chemin.
+- de: Merke dir den Weg.
+- pt-BR: Memorize o caminho.
+- ru: Запомните путь.
 - pl: Zapamiętaj drogę.
 
 ## Tip.T.Stage2.2
@@ -279,31 +281,31 @@ Defense buff also blocks round-fail damage.
 칸과 캐릭터 색을 맞추세요.
 - en: Only step on tiles in your color.
 Match your character's color to the tiles.
-- ja: 自分の色のマスだけを踏んでください。\nキャラの色をマスに合わせてください。
-- zh-Hans: 只踩你颜色的格子。\n角色颜色要和格子对上。
-- zh-Hant: 只踩你顏色的格子。\n角色顏色要和格子對上。
-- es: Pisa solo las baldosas de tu color.\nIguala el color de tu personaje con el de las baldosas.
-- es-419: Pisa solo las baldosas de tu color.\nIguala el color de tu personaje con el de las baldosas.
-- fr: Ne marche que sur les cases de ta couleur.\nAccorde la couleur de ton perso à celle des cases.
-- de: Tritt nur auf Felder in deiner Farbe.\nPass die Farbe deines Charakters an die Felder an.
-- pt-BR: Pise só nos blocos da sua cor.\nAjuste a cor do personagem à dos blocos.
-- ru: Наступай только на клетки своего цвета.\nПодгони цвет персонажа под клетки.
-- pl: Stawaj tylko na polach w swoim kolorze.\nDopasuj kolor postaci do pól.
+- ja: 自分の色のタイルだけを踏みましょう。\nキャラクターの色をタイルの色に合わせましょう。
+- zh-Hans: 只能踩与你颜色相同的方块。\n让角色的颜色与方块匹配。
+- zh-Hant: 只能踩與你顏色相同的方塊。\n讓角色的顏色與方塊匹配。
+- es: Pisa solo las baldosas de tu color.\nHaz coincidir el color de tu personaje con el de las baldosas.
+- es-419: Pisa solo las casillas de tu color.\nHaz coincidir el color de tu personaje con el de las casillas.
+- fr: Marchez uniquement sur les dalles de votre couleur.\nFaites correspondre la couleur de votre personnage à celle des dalles.
+- de: Betritt nur Felder deiner Farbe.\nPasse die Farbe deiner Figur an die Farbe der Felder an.
+- pt-BR: Pise apenas nas plataformas da sua cor.\nCombine a cor do seu personagem com a cor das plataformas.
+- ru: Наступайте только на плитки своего цвета.\nЦвет персонажа должен совпадать с цветом плиток.
+- pl: Stąpaj tylko po kafelkach w swoim kolorze.\nDopasuj kolor swojej postaci do koloru kafelków.
 
 ## Tip.T.Stage2.3
 
 - ko: 담당 색이 먼저 지나가야 다른 팀원도 그 바닥을 밟을 수 있습니다.
 - en: The zone's color goes first, then everyone else can follow.
-- ja: そのエリアの色の人が先に通れば、ほかの人も続けます。
-- zh-Hans: 该区域的颜色先走，其他人再跟上。
-- zh-Hant: 該區域的顏色先走，其他人再跟上。
-- es: Primero pasa el color de la zona; después pueden seguirle los demás.
-- es-419: Primero pasa el color de la zona; después pueden seguirle los demás.
-- fr: La couleur de la zone passe en premier, puis les autres peuvent suivre.
-- de: Zuerst geht die Farbe der Zone, dann können alle anderen folgen.
-- pt-BR: A cor da área vai primeiro, depois os outros podem seguir.
-- ru: Сначала идёт цвет зоны, потом за ним могут пройти остальные.
-- pl: Najpierw idzie kolor strefy, potem reszta może za nim.
+- ja: ゾーンと同じ色のプレイヤーが先に進み、その後みんなが続きます。
+- zh-Hans: 与区域颜色相同的玩家先通过，然后其他人跟上。
+- zh-Hant: 與區域顏色相同的玩家先通過，然後其他人跟上。
+- es: El jugador del color de la zona va primero y los demás pueden seguirlo.
+- es-419: El jugador del color de la zona va primero y los demás pueden seguirlo.
+- fr: Le joueur de la couleur de la zone passe en premier, puis les autres peuvent suivre.
+- de: Der Spieler in der Farbe der Zone geht zuerst, danach können alle anderen folgen.
+- pt-BR: O jogador da cor da zona passa primeiro, e os demais podem seguir.
+- ru: Сначала проходит игрок цвета зоны, затем остальные могут идти следом.
+- pl: Gracz w kolorze strefy przechodzi pierwszy, a reszta może ruszyć za nim.
 
 ## Tip.T.Stage3
 
@@ -311,16 +313,16 @@ Match your character's color to the tiles.
 양옆 벽에 색을 맞춰 부딪히면 벽이 뒤로 물러납니다.
 - en: Clear each section before the sign's timer runs out, or acid will flood it.
 Match the side walls' color and ram them to push them back.
-- ja: 看板のタイマーが切れる前に区間を抜けてください。遅れると胃液があふれます。\n両側の壁と色を合わせて体当たりすると、壁が押し戻されます。
-- zh-Hans: 在牌子的计时结束前通过这一段，否则胃液会涌上来。\n对上两侧墙壁的颜色撞过去，就能把墙推回去。
-- zh-Hant: 在牌子的計時結束前通過這一段，否則胃液會湧上來。\n對上兩側牆壁的顏色撞過去，就能把牆推回去。
-- es: Pasa cada tramo antes de que se acabe el tiempo del cartel o se inundará de ácido.\nIguala el color de las paredes laterales y embístelas para hacerlas retroceder.
-- es-419: Pasa cada tramo antes de que se acabe el tiempo del letrero o se va a inundar de ácido.\nIguala el color de las paredes laterales y embístelas para hacerlas retroceder.
-- fr: Passe chaque section avant la fin du chrono du panneau, sinon l'acide l'inonde.\nAccorde ta couleur aux murs latéraux et fonce dedans pour les repousser.
-- de: Schaff jeden Abschnitt, bevor der Timer am Schild abläuft, sonst flutet ihn die Säure.\nPass deine Farbe an die Seitenwände an und ramm sie, um sie zurückzudrängen.
-- pt-BR: Passe cada trecho antes do tempo da placa acabar, senão o ácido inunda tudo.\nIguale a cor das paredes laterais e trombe nelas pra empurrá-las de volta.
-- ru: Пройди участок, пока не истёк таймер на табличке, иначе его зальёт кислотой.\nПодгони цвет под боковые стены и врежься в них, чтобы оттолкнуть.
-- pl: Przejdź odcinek, zanim skończy się czas na tabliczce, bo zaleje go kwas.\nDopasuj kolor do bocznych ścian i taranuj je, żeby je odepchnąć.
+- ja: 看板のタイマーが切れる前に各エリアをクリアしましょう。間に合わないと胃液が流れ込みます。\n両側の壁の色を合わせて突進し、壁を押し戻しましょう。
+- zh-Hans: 在标志上的计时器结束前清除每个区域，否则胃酸会灌满该区域。\n匹配两侧墙壁的颜色并撞击它们，把墙推回去。
+- zh-Hant: 在標誌上的計時器結束前清除每個區域，否則胃酸會灌滿該區域。\n匹配兩側牆壁的顏色並撞擊它們，把牆推回去。
+- es: Limpia cada sección antes de que se acabe el temporizador de la señal o el ácido inundará la zona.\nHaz coincidir el color de las paredes laterales y embístelas para hacerlas retroceder.
+- es-419: Limpia cada sección antes de que se acabe el temporizador de la señal o el ácido inundará la zona.\nHaz coincidir el color de las paredes laterales y embístelas para hacerlas retroceder.
+- fr: Terminez chaque section avant la fin du minuteur du panneau, sinon la zone sera inondée d'acide.\nFaites correspondre la couleur des murs latéraux et foncez dedans pour les repousser.
+- de: Schließe jeden Abschnitt ab, bevor der Timer des Schilds abläuft, sonst wird er mit Säure überflutet.\nPasse die Farbe der Seitenwände an und ramme sie, um sie zurückzudrücken.
+- pt-BR: Conclua cada seção antes que o cronômetro da placa termine, ou ela será inundada por ácido.\nCombine a cor das paredes laterais e invista contra elas para empurrá-las de volta.
+- ru: Очистите каждый участок до того, как закончится таймер на табличке, иначе его затопит кислотой.\nПодберите цвет боковых стен и тараном оттолкните их назад.
+- pl: Ukończ każdą sekcję, zanim skończy się czas na znaku, inaczej zaleje ją kwas.\nDopasuj kolor bocznych ścian i szarżuj w nie, aby je odepchnąć.
 
 ## Tip.T.Stage4
 
@@ -330,39 +332,38 @@ Match the side walls' color and ram them to push them back.
 - en: One player per tile. Any more and it'll sink.
 Some of the tiles are breakable.
 Touching the front and back walls or the swellings will knock you back.
-- ja: 1マスに乗れるのは1人だけです。それ以上乗ると沈みます。\n割れるマスが混ざっています。\n前後の壁や腫れに触れると弾き飛ばされます。
-- zh-Hans: 一格只能站一个人，多了就会下沉。\n有些格子会碎。\n碰到前后的墙或肿块会被弹开。
-- zh-Hant: 一格只能站一個人，多了就會下沉。\n有些格子會碎。\n碰到前後的牆或腫塊會被彈開。
-- es: Un jugador por casilla; si hay más, se hunde.\nAlgunas casillas se rompen.\nSi tocas las paredes delantera y trasera o las hinchazones, saldrás despedido.
-- es-419: Un jugador por casilla; si hay más, se hunde.\nAlgunas casillas se rompen.\nSi tocas las paredes delantera y trasera o las hinchazones, vas a salir despedido.
-- fr: Un joueur par case : au-delà, elle s'enfonce.\nCertaines cases peuvent se briser.\nToucher les murs avant et arrière ou les gonflements te repousse.
-- de: Ein Spieler pro Feld – mehr, und es sinkt ab.\nManche Felder können brechen.\nWenn du die vordere und hintere Wand oder die Schwellungen berührst, wirst du zurückgeschleudert.
-- pt-BR: Um jogador por bloco. Se tiver mais, ele afunda.\nAlguns blocos quebram.\nEncostar nas paredes da frente e de trás ou nos inchaços te joga pra trás.
-- ru: Один игрок на клетку. Больше — и она проседает.\nНекоторые клетки ломаются.\nЕсли коснёшься передней и задней стен или отёков, тебя отбросит.
-- pl: Jeden gracz na pole. Więcej — i pole się zapada.\nNiektóre pola pękają.\nDotknięcie przedniej i tylnej ściany albo opuchlizny cię odrzuci.
+- ja: 1枚のタイルにつき1人までです。2人以上乗ると沈みます。\n壊れるタイルもあります。\n前後の壁や腫れた部分に触れると、後ろに弾き飛ばされます。
+- zh-Hans: 每个方块只能站一名玩家。人数超过就会下沉。\n有些方块可以被破坏。\n碰到前后墙或肿起的部位会被弹开。
+- zh-Hant: 每個方塊只能站一名玩家。人數超過就會下沉。\n有些方塊可以被破壞。\n碰到前後牆或腫起的部位會被彈開。
+- es: Solo puede haber un jugador por baldosa. Si hay más, se hundirá.\nAlgunas baldosas pueden romperse.\nTocar las paredes delantera y trasera o las protuberancias te hará retroceder.
+- es-419: Solo puede haber un jugador por casilla. Si hay más, se hundirá.\nAlgunas casillas pueden romperse.\nTocar las paredes del frente y de atrás o las protuberancias hará que retrocedas.
+- fr: Un seul joueur par dalle. S'il y en a plus, elle s'enfonce.\nCertaines dalles peuvent se casser.\nToucher les murs avant ou arrière ou les renflements vous fera reculer.
+- de: Pro Feld darf nur ein Spieler stehen. Bei mehreren Spielern sinkt es ein.\nEinige Felder können zerbrechen.\nWenn du die vordere oder hintere Wand oder die Wölbungen berührst, wirst du zurückgestoßen.
+- pt-BR: Apenas um jogador por plataforma. Se houver mais, ela afundará.\nAlgumas plataformas podem quebrar.\nTocar nas paredes da frente, de trás ou nas saliências fará você recuar.
+- ru: На каждой плитке может стоять только один игрок. Если игроков больше, плитка провалится.\nНекоторые плитки могут ломаться.\nПрикосновение к передней или задней стене либо к выпуклостям отбросит вас назад.
+- pl: Na każdym kafelku może stać tylko jeden gracz. Jeśli będzie ich więcej, kafelek się zapadnie.\nNiektóre kafelki można zniszczyć.\nDotknięcie przedniej lub tylnej ściany albo wybrzuszeń odrzuci cię do tyłu.
 
 ## Tip.T.Stage5.1
 
 > 2026-09-18 러너 재설계로 13개 로케일 전부 교체 (`TStage5RunnerRedesign.md`).
 > 옛 흑백 토글 문구는 폐기. String Table 에셋에도 반영 완료(`StageTip_*.asset`).
-> ko/en 외 11개는 **기계번역이므로 원어민 검수 전** — Steam AI 표기 검토 대상
-> (`project_steam_ai_disclosure`).
+> ko/en 외 10개 언어는 **2026-09-24 최종본**으로 교체됨 (`StageTip_*` 반영).
 
 - ko: 러너 한 명이 미로를 달리고, 나머지는 2층에서 길을 안내합니다.
 패드를 밟으면 그 색 문만 열리고 나머지는 전부 닫힙니다.
 - en: One runner races through the maze while the others guide from the second floor.
 Stepping on a pad opens only that color's doors and closes all the rest.
-- ja: ランナー1人が迷路を走り、ほかの人は2階から道を案内します。\nパネルを踏むと、その色の扉だけが開き、ほかはすべて閉まります。
-- zh-Hans: 一名跑者在迷宫里跑，其他人在二楼指路。\n踩下踏板只会打开那个颜色的门，其他门全部关上。
-- zh-Hant: 一名跑者在迷宮裡跑，其他人在二樓指路。\n踩下踏板只會打開那個顏色的門，其他門全部關上。
-- es: Un corredor recorre el laberinto y los demás lo guían desde el segundo piso.\nAl pisar una placa se abren solo las puertas de ese color y se cierran todas las demás.
-- es-419: Un corredor recorre el laberinto y los demás lo guían desde el segundo piso.\nAl pisar una placa se abren solo las puertas de ese color y se cierran todas las demás.
-- fr: Un coureur traverse le labyrinthe pendant que les autres le guident depuis l'étage.\nMarcher sur une dalle ouvre seulement les portes de cette couleur et ferme toutes les autres.
-- de: Ein Läufer rennt durchs Labyrinth, die anderen lotsen ihn vom oberen Stock aus.\nWer auf eine Platte tritt, öffnet nur die Türen dieser Farbe – alle anderen gehen zu.
-- pt-BR: Um corredor atravessa o labirinto enquanto os outros guiam do andar de cima.\nPisar numa placa abre só as portas daquela cor e fecha todas as outras.
+- ja: 1人が迷路を駆け抜け、他のプレイヤーは2階から道を案内します。\nパッドを踏むと、その色のドアだけが開き、それ以外のドアはすべて閉まります。
+- zh-Hans: 一名玩家穿过迷宫，其他玩家从二楼负责指引路线。\n踩下踏板后，只有对应颜色的门会打开，其余所有门都会关闭。
+- zh-Hant: 一名玩家穿過迷宮，其他玩家從二樓負責指引路線。\n踩下踏板後，只有對應顏色的門會打開，其餘所有門都會關閉。
+- es: Un jugador atraviesa el laberinto mientras los demás le guían desde el segundo piso.\nAl pisar una plataforma, solo se abren las puertas de ese color y todas las demás se cierran.
+- es-419: Un jugador atraviesa el laberinto mientras los demás lo guían desde el segundo piso.\nAl pisar una plataforma, solo se abren las puertas de ese color y todas las demás se cierran.
+- fr: Un joueur traverse le labyrinthe pendant que les autres le guident depuis le deuxième étage.\nMarcher sur une plateforme n'ouvre que les portes de cette couleur et ferme toutes les autres.
+- de: Ein Spieler läuft durch das Labyrinth, während die anderen ihn vom zweiten Stock aus führen.\nWenn du auf eine Fläche trittst, öffnen sich nur die Türen dieser Farbe und alle anderen schließen sich.
+- pt-BR: Um jogador atravessa o labirinto enquanto os outros o guiam do segundo andar.\nAo pisar em uma placa, apenas as portas daquela cor se abrem e todas as outras se fecham.
 - pt: (pt-BR과 동일 — 기존 이 키의 관례를 따름)
-- ru: Один бегун проходит лабиринт, остальные направляют его со второго этажа.\nПлита открывает только двери своего цвета и закрывает все остальные.
-- pl: Jeden biegacz przemierza labirynt, a reszta prowadzi go z piętra.\nNadepnięcie płytki otwiera tylko drzwi w jej kolorze i zamyka wszystkie inne.
+- ru: Один игрок проходит лабиринт, а остальные направляют его со второго этажа.\nНаступив на платформу, вы открываете только двери соответствующего цвета, а все остальные закрываются.
+- pl: Jeden gracz biegnie przez labirynt, a pozostali kierują nim z drugiego piętra.\nNadepnięcie na platformę otwiera tylko drzwi w tym samym kolorze i zamyka wszystkie pozostałe.
 
 ---
 
@@ -374,16 +375,16 @@ Stepping on a pad opens only that color's doors and closes all the rest.
 - en: Reach the goal.
 
 Finish this section before the candy hits the ground.
-- ja: ゴールまで到達してください。\n\nアメが地面に着く前に、この区間をクリアしてください。
-- zh-Hans: 到达终点。\n\n在糖果落地前完成这一段。
-- zh-Hant: 到達終點。\n\n在糖果落地前完成這一段。
-- es: Llega a la meta.\n\nSupera esta fase antes de que el caramelo toque el suelo.
-- es-419: Llega a la meta.\n\nSupera esta fase antes de que el dulce toque el piso.
-- fr: Atteins l'arrivée.\n\nTermine cette section avant que le bonbon touche le sol.
-- de: Erreiche das Ziel.\n\nSchaff diesen Abschnitt, bevor das Bonbon den Boden erreicht.
-- pt-BR: Alcance o objetivo.\n\nTermine esta etapa antes que a bala chegue ao chão.
-- ru: Доберись до цели.\n\nПройди этот этап, пока леденец не коснулся земли.
-- pl: Dotrzyj do celu.\n\nUkończ ten etap, zanim cukierek uderzy w ziemię.
+- ja: ゴールを目指しましょう。\n\nキャンディが地面に落ちる前に、このエリアをクリアしましょう。
+- zh-Hans: 到达终点。\n\n在糖果落地前完成这一部分。
+- zh-Hant: 到達終點。\n\n在糖果落地前完成這一部分。
+- es: Llega a la meta.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
+- es-419: Llega a la meta.\n\nCompleta esta sección antes de que el dulce toque el suelo.
+- fr: Atteignez l'arrivée.\n\nTerminez cette section avant que le bonbon ne touche le sol.
+- de: Erreiche das Ziel.\n\nSchließe diesen Abschnitt ab, bevor das Bonbon den Boden berührt.
+- pt-BR: Chegue ao objetivo.\n\nConclua esta seção antes que o doce toque o chão.
+- ru: Доберитесь до цели.\n\nЗавершите этот участок до того, как конфета упадёт на землю.
+- pl: Dotrzyj do celu.\n\nUkończ tę sekcję, zanim cukierek spadnie na ziemię.
 
 ## Tip.T.Boss.2
 
@@ -393,16 +394,16 @@ Finish this section before the candy hits the ground.
 - en: Step on the pads to make a path, then reach the goal.
 
 Finish this section before the candy hits the ground.
-- ja: 足場を踏んで道を作り、ゴールまで到達してください。\n\nアメが地面に着く前に、この区間をクリアしてください。
-- zh-Hans: 踩踏板铺出道路，然后到达终点。\n\n在糖果落地前完成这一段。
-- zh-Hant: 踩踏板鋪出道路，然後到達終點。\n\n在糖果落地前完成這一段。
-- es: Pisa las placas para abrir camino y luego llega a la meta.\n\nSupera esta fase antes de que el caramelo toque el suelo.
-- es-419: Pisa las placas para abrir camino y luego llega a la meta.\n\nSupera esta fase antes de que el dulce toque el piso.
-- fr: Marche sur les dalles pour créer un chemin, puis atteins l'arrivée.\n\nTermine cette section avant que le bonbon touche le sol.
-- de: Tritt auf die Platten, um einen Weg zu bauen, und erreiche dann das Ziel.\n\nSchaff diesen Abschnitt, bevor das Bonbon den Boden erreicht.
-- pt-BR: Pise nas placas pra formar um caminho e depois alcance o objetivo.\n\nTermine esta etapa antes que a bala chegue ao chão.
-- ru: Наступай на плиты, чтобы проложить путь, и доберись до цели.\n\nПройди этот этап, пока леденец не коснулся земли.
-- pl: Stawaj na płytkach, żeby utworzyć drogę, a potem dotrzyj do celu.\n\nUkończ ten etap, zanim cukierek uderzy w ziemię.
+- ja: パッドを踏んで道を作り、ゴールを目指しましょう。\n\nキャンディが地面に落ちる前に、このエリアをクリアしましょう。
+- zh-Hans: 踩下踏板制造道路，然后到达终点。\n\n在糖果落地前完成这一部分。
+- zh-Hant: 踩下踏板製造道路，然後到達終點。\n\n在糖果落地前完成這一部分。
+- es: Pisa las plataformas para crear un camino y después llega a la meta.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
+- es-419: Pisa las plataformas para crear un camino y después llega a la meta.\n\nCompleta esta sección antes de que el dulce toque el suelo.
+- fr: Marchez sur les plateformes pour créer un chemin, puis atteignez l'arrivée.\n\nTerminez cette section avant que le bonbon ne touche le sol.
+- de: Betritt die Flächen, um einen Weg zu bilden, und erreiche dann das Ziel.\n\nSchließe diesen Abschnitt ab, bevor das Bonbon den Boden berührt.
+- pt-BR: Pise nas placas para criar um caminho e depois chegue ao objetivo.\n\nConclua esta seção antes que o doce toque o chão.
+- ru: Наступайте на платформы, чтобы создать путь, затем доберитесь до цели.\n\nЗавершите этот участок до того, как конфета упадёт на землю.
+- pl: Stawaj na platformach, aby utworzyć drogę, a następnie dotrzyj do celu.\n\nUkończ tę sekcję, zanim cukierek spadnie na ziemię.
 
 ## Tip.T.Boss.3
 
@@ -412,31 +413,31 @@ Finish this section before the candy hits the ground.
 - en: One player per safe tile. Doubling up hurts.
 
 Finish this section before the candy hits the ground.
-- ja: 安全なマスには1人ずつ乗ってください。重なるとダメージを受けます。\n\nアメが地面に着く前に、この区間をクリアしてください。
-- zh-Hans: 每个安全格只能站一个人，挤在一起会受伤。\n\n在糖果落地前完成这一段。
-- zh-Hant: 每個安全格只能站一個人，擠在一起會受傷。\n\n在糖果落地前完成這一段。
-- es: Un jugador por casilla segura; compartirla hace daño.\n\nSupera esta fase antes de que el caramelo toque el suelo.
-- es-419: Un jugador por casilla segura; compartirla hace daño.\n\nSupera esta fase antes de que el dulce toque el piso.
-- fr: Un joueur par case sûre. À plusieurs, on prend des dégâts.\n\nTermine cette section avant que le bonbon touche le sol.
-- de: Ein Spieler pro sicherem Feld. Zu zweit gibt's Schaden.\n\nSchaff diesen Abschnitt, bevor das Bonbon den Boden erreicht.
-- pt-BR: Um jogador por bloco seguro. Dividir o bloco causa dano.\n\nTermine esta etapa antes que a bala chegue ao chão.
-- ru: Один игрок на безопасную клетку. Вдвоём — получите урон.\n\nПройди этот этап, пока леденец не коснулся земли.
-- pl: Jeden gracz na bezpieczne pole. Tłok oznacza obrażenia.\n\nUkończ ten etap, zanim cukierek uderzy w ziemię.
+- ja: 安全なタイル1枚につき1人までです。2人で乗るとダメージを受けます。\n\nキャンディが地面に落ちる前に、このエリアをクリアしましょう。
+- zh-Hans: 每个安全方块只能站一名玩家。两人同时站上去会受到伤害。\n\n在糖果落地前完成这一部分。
+- zh-Hant: 每個安全方塊只能站一名玩家。兩人同時站上去會受到傷害。\n\n在糖果落地前完成這一部分。
+- es: Solo puede haber un jugador por baldosa segura. Si se juntan dos, recibirán daño.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
+- es-419: Solo puede haber un jugador por casilla segura. Si dos se juntan, recibirán daño.\n\nCompleta esta sección antes de que el dulce toque el suelo.
+- fr: Un seul joueur par dalle sûre. Si deux joueurs se retrouvent dessus, ils subissent des dégâts.\n\nTerminez cette section avant que le bonbon ne touche le sol.
+- de: Pro sicherem Feld darf nur ein Spieler stehen. Wenn zwei darauf stehen, erleiden sie Schaden.\n\nSchließe diesen Abschnitt ab, bevor das Bonbon den Boden berührt.
+- pt-BR: Apenas um jogador por plataforma segura. Se dois ficarem juntos, eles sofrerão dano.\n\nConclua esta seção antes que o doce toque o chão.
+- ru: На каждой безопасной плитке может стоять только один игрок. Если встанут двое, они получат урон.\n\nЗавершите этот участок до того, как конфета упадёт на землю.
+- pl: Na każdym bezpiecznym kafelku może stać tylko jeden gracz. Jeśli staną na nim dwie osoby, otrzymają obrażenia.\n\nUkończ tę sekcję, zanim cukierek spadnie na ziemię.
 
 ## Tip.T.Boss.4
 
 - ko: 색을 맞춰 벽에 부딪히세요.
 - en: Match the wall's color and ram it.
-- ja: 壁と色を合わせて体当たりしてください。
-- zh-Hans: 对上墙的颜色撞过去。
-- zh-Hant: 對上牆的顏色撞過去。
-- es: Iguala el color de la pared y embístela.
-- es-419: Iguala el color de la pared y embístela.
-- fr: Accorde ta couleur au mur et fonce dedans.
-- de: Pass deine Farbe an die Wand an und ramm sie.
-- pt-BR: Iguale a cor da parede e trombe nela.
-- ru: Подгони цвет под стену и врежься в неё.
-- pl: Dopasuj kolor do ściany i taranuj ją.
+- ja: 壁の色を合わせて突進しましょう。
+- zh-Hans: 匹配墙壁的颜色并撞击它。
+- zh-Hant: 匹配牆壁的顏色並撞擊它。
+- es: Haz coincidir tu color con el de la pared y embístela.
+- es-419: Haz coincidir tu color con el de la pared y embístela.
+- fr: Faites correspondre votre couleur à celle du mur et foncez dedans.
+- de: Passe deine Farbe an die Wandfarbe an und ramme sie.
+- pt-BR: Combine sua cor com a da parede e invista contra ela.
+- ru: Подберите цвет под цвет стены и тараном ударьте по ней.
+- pl: Dopasuj swój kolor do koloru ściany i szarżuj w nią.
 
 ---
 

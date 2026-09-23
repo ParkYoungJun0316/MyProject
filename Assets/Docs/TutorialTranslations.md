@@ -29,7 +29,7 @@
 | `Tutorial.Board_Controls.Row_Color2` | `.../Row_Color2/Label` |
 | `Tutorial.Board_Controls.Row_Buff` | `.../Row_Buff/Label` |
 | `Tutorial.Board_Controls.Row_BuffUse` | `.../Row_BuffUse/Label` |
-| `Tutorial.Board_Controls.Row_Revive` | `.../Row_Revive/Label` (신규, 2026-09-14 — 구 `Row_Voice` 자리 재사용) |
+| `Tutorial.Board_Controls.Row_Tip` | `.../Row_Tip/Label` (2026-09-24 — 구 `Row_Revive` 개명·교체, 그 전엔 `Row_Voice` 자리) |
 | `Tutorial.Board_Controls.Row_Emot` | `.../Row_Emot/Label` |
 | `Tutorial.Board_Controls.Row_Speek` | `.../Row_Speek/Label` |
 | `Tutorial.Board_TeamCheer.Title` / `.Body` | `TutorialInfoBoards/Board_TeamCheer/Face/Title`, `/Body` (2026-09-14 — 구 `Board_Test` 내용 흡수) |
@@ -166,23 +166,28 @@
 - ru: Использовать бафф
 - pl: Użyj wzmocnienia
 
-### `Tutorial.Board_Controls.Row_Revive`
+### `Tutorial.Board_Controls.Row_Tip` **[2026-09-24 — 구 `Row_Revive` 자리 교체]**
 
-> **[2026-09-17]** 괄호 설명(다운된 팀원 옆에서 홀드) 삭제 → `팀 부활`로 축약. 긴 언어(de/ru/pt/es)가 칸을 3줄까지 넘쳤기 때문.
+> **[2026-09-24, MCP]** 부활이 자동(사망 1초 후, `ReviveSystemDesign.md`)이 되어 E 홀드 "팀 부활" 안내가 틀린 말이 됨 → 같은 칸을 Tab 홀드 Tip 안내로 교체. 키는 `RenameKey`로 개명(키 ID `1395064700000001` 유지), 씬 GO `Row_Revive` → `Row_Tip`, 아이콘 `keyboard-solid/e.png` → `keyboard-solid/tab.png`.
+> - `Tip`은 모든 언어에서 번역하지 않는다 — HUD 헤더(`[Tab] Tip`)가 전 로케일 고정 `Tip`이라 같은 글자를 보여야 연결된다.
+> - `(홀드)`는 토글로 오해하지 않게 넣음(Tip 본문은 Tab을 누르고 있는 동안만 보임, `StageTipLines.md` §노출 방식).
+> - zh는 `查`가 Noto SC/TC Static 아틀라스에 없어 `显示/顯示`를 씀.
+> - 실측(13로케일, 폭 540·Auto Size 20~30): 전부 30 유지, 최장 ru 442.
+> - 구 값(참고): ko 팀 부활 / en Team Revive — 다운+E 홀드 설계 시절 문구, 2026-09-17에 괄호 설명 삭제 후 축약됐던 것.
 
-- ko: 팀 부활
-- en: Team Revive
-- ja: チーム蘇生
-- zh-Hans: 队友复活
-- zh-Hant: 隊友復活
-- es: Reanimar al equipo
-- es-419: Revivir al equipo
-- fr: Réanimer l'équipe
-- de: Team wiederbeleben
-- pt: Reanimar a equipa
-- pt-BR: Reviver a equipe
-- ru: Поднять союзника
-- pl: Ożywianie drużyny
+- ko: Tip 보기 (홀드)
+- en: Show Tip (Hold)
+- ja: Tipを表示（長押し）
+- zh-Hans: 显示 Tip（按住）
+- zh-Hant: 顯示 Tip（按住）
+- es: Ver Tip (mantén)
+- es-419: Ver Tip (mantén)
+- fr: Voir le Tip (maintenir)
+- de: Tip anzeigen (halten)
+- pt: Ver Tip (manter)
+- pt-BR: Ver Tip (segurar)
+- ru: Показать Tip (удерживать)
+- pl: Pokaż Tip (przytrzymaj)
 
 ### `Tutorial.Board_Controls.Row_Emot`
 
@@ -515,6 +520,7 @@
 5. [ ] Play 모드에서 Controls 보드 6행+Note 스모크 (사용자, `Row_Voice` 아이콘 오브젝트도 씬에서 제거할 것)
 6. **[2026-09-17, MCP]** 다국어 넘침 정리 — `Row_Revive` → `팀 부활`(13로케일), `Row_BuffNote` 키·`Row_Buff/Note` GO 삭제, BG 가로 1.75, 라벨 Auto Size 20~30 + 줄바꿈 끔, 오른쪽 열 폭 540·x=210. 13로케일 프리뷰 렌더로 겹침 없음 확인.
 7. [ ] Tutorial 씬 저장 + Play 모드에서 Locale 바꿔 Controls 보드 스모크 (사용자)
+8. **[2026-09-24, MCP]** `Row_Revive` → `Row_Tip`(Tab 아이콘, "Tip 보기 (홀드)") 교체 — 키 개명 + 13로케일 값 + 씬 GO/아이콘/`LocalizeStringEvent` 키 갱신, 씬 저장(diff 4줄만). 13로케일 폭 실측 통과. ⬜ Play 모드 확인 남음
 
 ### CheerNamePanel **[2026-09-14 개편 — TeamCheerWord 전용]**
 
