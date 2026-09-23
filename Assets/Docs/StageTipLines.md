@@ -1,6 +1,6 @@
 # StageTipLines — Tip HUD 한국어 SSOT
 
-> 인게임 `Tip_Panel`(`UI.prefab`, Chat 위 360×320, 본문 자동 크기 16~20 · 줄 간격 +8 · 제목 아래 한 줄 띄움)에 넣을 **규칙 안내** 원문.
+> 인게임 `Tip_Panel`(`UI.prefab`, Chat 위 360×450(2026-09-24 320→450), 본문 자동 크기 16~26(2026-09-24 20→26 — 전 언어·전 Tip 들어가는 것 측정 확인, 가장 긴 `Tip.M.Stage2.1`은 18~23으로 줄어듦) · 줄 간격 +8 · 제목 아래 한 줄 띄움)에 넣을 **규칙 안내** 원문.
 > DialogueUI 대사(`StageDialogueLines.md` / `StageDialogueTranslations.md`)와 **별개**다 — 대사 줄 재사용이 아니라, 플레이 중 필요할 때 꺼내 볼 짧은 규칙만 둔다.
 > 번역본: [`StageTipTranslations.md`](StageTipTranslations.md) (`en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl`).
 
