@@ -102,7 +102,7 @@
 
 > 번역 규칙: **1)** 언어별 문법에 맞게, **2)** 그 언어권에서 실제 쓰는 말투로, **3)** "꿀떡"은 전 언어 공통으로 로마자 표기 `KKUL-TTEOK` 그대로 사용(한국 고유 음식이라 의미 번역 대신 음차 유지 — 필요하면 별도로 "한국식 꿀떡(honey rice cake)" 주석을 붙일 것). 키 강조 태그(`<color=#FFD24D><b>Space</b></color>` 등)와 줄바꿈 규칙은 모든 언어 동일 적용.
 >
-> **번역 기준 = 영어 (2026-09-24):** 한국어 원문 → 영어 확정 → 나머지 10개 언어는 **영어에서** 옮긴다. 진행은 씬마다 ko·en만 확정하고, 나머지 언어는 전 씬이 끝난 뒤 한 번에 번역한다 — 그 전까지 ko·en 외 언어는 옛 대사가 남아 있을 수 있음.
+> **번역 기준 = 영어 (2026-09-24):** 한국어 원문 → 영어 확정 → 나머지 10개 언어는 **영어에서** 옮긴다. 진행은 씬마다 ko·en만 확정하고, 나머지 언어는 전 씬이 끝난 뒤 한 번에 번역한다 — 그 전까지 ko·en 외 언어는 옛 대사가 남아 있을 수 있음. → **2026-09-24 전 씬 ko·en 확정 후 10개 언어 일괄 재번역 완료**(M·T 번역 섹션 전체 교체, String Table `Dialogue_*` 반영). 용어: 팀 구호 = ja チームの掛け声 / zh 团队口号·團隊口號 / es·es-419 grito de equipo / fr cri d'équipe / de Teamruf / pt-BR grito da equipe / ru командный клич / pl okrzyk drużyny. 사탕 = アメ / 糖果 / caramelo(es)·dulce(es-419) / bonbon / Bonbon / bala / леденец / cukierek. 입 주인 = 3인칭 남성(he/他/él/il/er/ele/он/on), ja는 주어 생략. 말하는 사람(꿀떡) 1인칭 ja = わたし.
 >
 > ~~속담(M.Stage1-2) 직역 규칙~~ — 2026-09-24 M.Stage1-2에서 속담 삭제로 폐기.
 >
@@ -178,692 +178,672 @@ Does that mean we can finally escape...?
 ### JA
 
 **M.Stage1**
-1. 美味しい果物やお菓子を差し置いて、なんでKKUL-TTEOKを食べちゃったんだよ!!!
-2. 虎穴に入るとも、冷静でいれば生き延びられるって言うだろ..!  
-これからは生き残ることだけ考えよう。
-3. 周りにある色付きの口の位置、よく覚えておいて。  
+1. おいしい果物がたくさんあるのに、なんでわたしを食べたの！？
+2. ここからは、生き残ることだけ考えて。
+3. 周りにある色付きの口の場所、よく覚えておいて。  
 足場を踏むと、その色の口がせり上がって歯を砕いてくれるよ。
 4. 一度に上がるのは一色だけ。  
 みんなで踏んでも意味ないよ。
-5. ここが閉じそうになったら…みんなでチームの掛け声を叫んで!  
-じゃないと、前が見えなくなっちゃうよ。
+5. 巨大な口が閉じそうになったら、みんなでチームの掛け声を叫んで！  
+じゃないと、目の前が真っ暗になっちゃうよ。
 
 **M.Stage2 — 2.1**
-1. 画面に表示された通り、安全エリアに入って!
-2. 食べる前に辛いものでも食べたのかな..?  
+1. KKUL-TTEOKの数だけゾーンに入って！でも見えるのは自分の看板のKKUL-TTEOKだけだから、声をかけ合って！
+2. わたしを食べる前に、辛いものでも食べたのかな…？  
 床からよだれがどんどん湧いてくる。
-3. 床によだれが広がって滑りやすくなってる。  
-みんなでチームの掛け声を叫べば消せるよ。
+3. よだれで床がツルツルになっちゃう。  
+みんなでチームの掛け声を叫べば、消せるよ！
 
 **M.Stage2 — 2.2**
-1. 今度は上からもよだれが落ちてくる!  
-辛いもの食べて、酸っぱいものまで食べたに違いない。  
-KKUL-TTEOKで中和しようとしてるんだ、絶対!
-2. 落ちてくるよだれの中には私を狙ってくるものもあって、<color=#FFD24D><b>Ctrl</b></color>で床の色と自分の色を合わせればロックオンが外れるよ。
+1. 今度は上からも垂れてきた！  
+辛いものと酸っぱいものを食べたに違いないよ。
+2. 落ちてくるよだれの中に、わたしを狙ってるのがある！  
+<color=#FFD24D><b>Ctrl</b></color>でわたしの色を床に合わせれば、見失うはず。
 
 **M.Stage3**
-1. 床に色付きのタイルが出現するよ。  
-その上に2秒立っていればスコアが上がる。
-2. 白や黒のタイルは誰が踏んでもいいけど、固有色のタイルはその色じゃないとスコアが上がらないよ。  
-道をふさがずに素早く動いて!
+1. 床に色付きのタイルが出てくるよ。  
+2秒乗っていれば1点！
+2. 白と黒のタイルは誰でもOK。でも色付きのタイルは、その色の人しか点にならないよ。  
+お互い邪魔しないように、素早く動いて！
 
 **M.Stage4 — 4.1**
-1. 自分の色が床に出たら<color=#FFD24D><b>Space</b></color>を押して。  
-白は誰が押してもいいけど、黒は押しちゃダメ!  
-黒は1秒後に自動で次の番に進むよ。
-2. 足元で何かが動いてる…気をつけて!  
-舌の攻撃が来る!
-3. 舌が中央の足場を壊して道を妨げるよ。  
-みんなでチームの掛け声を叫べば元に戻って、壊れた道も直るよ。
+1. 床に自分の色が出たら<color=#FFD24D><b>Space</b></color>！  
+白は誰が押してもいいけど、黒は押しちゃダメ！  
+黒は1秒たつと勝手に次の番に進むよ。
+2. 足の下で何か動いてる…気をつけて！  
+舌が来るよ！
+3. 舌が真ん中の足場を壊して、道をふさいじゃう。  
+みんなでチームの掛け声を叫べば引っ込んで、壊れた道も元に戻るよ。
 
 **M.Stage4 — 4.2**
-1. これからは1マス先しか見えなくなるよ。  
-しっかり覚えておいて!
+1. ここからは、1マス先の床しか見えないよ。  
+しっかり覚えてね！
 
 **M.Stage4 — 4.3**
-1. ここにも私を狙ってくるものがある。  
-<color=#FFD24D><b>Ctrl</b></color>で床の色と自分の色を合わせればロックオンが外れるよ。
-2. 今度は舌が左か右の床を丸ごと壊すよ。  
-チームの掛け声で防げるけど、防げないとそのまま壊れる。
-3. 警告が出ている間にチームの掛け声を叫ばないと元に戻らないよ。  
-床が壊れたら、次の警告が出るまで持ちこたえるしかない。
+1. ここにもわたしを狙ってるのがいる！  
+<color=#FFD24D><b>Ctrl</b></color>でわたしの色を床に合わせれば、見失うはず。
+2. 今度は舌が、床の左か右を丸ごと壊しにくるよ。  
+チームの掛け声を叫べば止められる。叫べなかったら、そのまま壊れちゃう。
+3. 床が元に戻るのは、警告が出ている間にチームの掛け声を叫んだときだけ。  
+壊れちゃったら、次の警告まで耐えるしかないよ。
 
 **M.Stage5**
-1. 運動でもしてるのかな!急に息が荒くなった。
-2. 床に色のマスがつくよ。  
-自分の色が出たら、そのマスにだけ立って。  
-出てなかったら黒か白、自分の白黒に合わせて耐えて!
-3. 色に合わせて、キャラの色も必ず合わせなきゃ!
+1. 運動でもしてるのかな？急に息が荒くなった！
+2. 床に色付きのマスが光るよ。  
+自分の色が出たら、そのマスにだけ乗って。  
+出なかったら、黒か白、自分に合うほうで耐えて！
 
 **M.Boss — Intro**
-1. はあ…はあ…もう少し耐えれば、生きて出られそうだ…
+1. はぁ…はぁ…もう少し耐えれば、生きて出られそう…
 
 **M.Boss — Bossdown**
-1. ……口の中が静かになった。  
-やっと脱出できるってこと…?
-2. …………(ガキッ!)
-3. まずい、飲み込まれる…!!
+1. …口の中が静かになった。  
+やっと脱出できるのかな…？
+2. …………（ガリッ！）
+3. まずい、飲み込まれる…！！
 
 ### ZH-Hans
 
 **M.Stage1**
-1. 你怎么放着好吃的水果和零食不吃,偏偏吃了个KKUL-TTEOK!!!
-2. 常言道,就算误入虎穴,只要保持镇定就能活下来..!  
-从现在起,只想着怎么活下去。
-3. 记好周围那些彩色嘴巴的位置。  
-踩上踏板,那个颜色的嘴巴就会升起来,把牙齿砸碎。
+1. 那么多好吃的水果不吃，干嘛偏偏吃我啊！？
+2. 从现在起，只管想着怎么活下去。
+3. 记住周围那些彩色嘴巴的位置。  
+踩下踏板，那个颜色的嘴就会升起来，帮我们把牙齿砸碎。
 4. 一次只会升起一种颜色。  
 大家一起踩也没用。
-5. 这里要是快关上了……大家一起喊团队口号!  
-不然眼前就会变得一片漆黑。
+5. 巨大的嘴要合上的时候，大家一起喊团队口号！  
+不然眼前就会一片漆黑。
 
 **M.Stage2 — 2.1**
-1. 按照画面提示进入安全区!
-2. 吃我之前是不是吃了辣的..?  
-地上的口水不停地往上冒。
-3. 地上全是口水,很滑。  
-大家一起喊团队口号就能清掉。
+1. 按 KKUL-TTEOK 的数量进区域！不过每个人只看得到自己牌子上的，互相报一下！
+2. 他吃我之前是不是吃了辣的……？  
+地上一直在冒口水。
+3. 这么多口水，地板会变得很滑。  
+大家一起喊团队口号就能清掉！
 
 **M.Stage2 — 2.2**
-1. 现在上面也开始滴口水了!  
-肯定是吃了辣的又吃了酸的。  
-一定是想用KKUL-TTEOK来中和!
-2. 掉下来的口水里有的会瞄准我,用<color=#FFD24D><b>Ctrl</b></color>把地板颜色和自己的颜色对上就能解除锁定。
+1. 现在连上面都开始滴了！  
+他肯定吃了又辣又酸的东西。
+2. 掉下来的口水里有瞄准我的！  
+按 <color=#FFD24D><b>Ctrl</b></color> 把我的颜色换成地板的颜色，它就找不到我了。
 
 **M.Stage3**
-1. 地上会出现彩色瓷砖。  
-在上面站2秒分数就会增加。
-2. 白色和黑色瓷砖谁踩都行,但专属颜色瓷砖只有对应颜色才能加分。  
-别挡路,动作快点!
+1. 地上会冒出彩色方块。  
+在上面站 2 秒就能得 1 分。
+2. 白色和黑色方块谁都能用，但彩色方块只算那个颜色的人的分。  
+别挡着彼此，动作快！
 
 **M.Stage4 — 4.1**
-1. 你的颜色出现在地上时按<color=#FFD24D><b>Space</b></color>。  
-白色谁按都行,黑色不能按!  
-黑色会在1秒后自动轮到下一个人。
-2. 脚下好像有什么在动……小心!  
-舌头攻击来了!
-3. 舌头会砸碎中间的踏板,挡住去路。  
-大家一起喊团队口号就能让它降下去,损坏的路也会恢复原状。
+1. 地上出现你的颜色时按 <color=#FFD24D><b>Space</b></color>。  
+白色谁都能按，黑色千万别碰！  
+黑色过 1 秒会自动轮到下一个。
+2. 脚底下有什么在动……小心！  
+舌头来了！
+3. 舌头会砸碎中间的踏板，把路堵住。  
+大家一起喊团队口号，它就会缩回去，碎掉的路也会恢复。
 
 **M.Stage4 — 4.2**
-1. 从现在起只会显示前面一格。  
-要好好记住!
+1. 从现在起，只能看到前面一格。  
+一定要记住！
 
 **M.Stage4 — 4.3**
-1. 这里也有瞄准我的东西。  
-用<color=#FFD24D><b>Ctrl</b></color>把地板颜色和自己的颜色对上就能解除锁定。
-2. 这次舌头会把左边或右边的地板整片砸碎。  
-喊团队口号就能挡住,喊不出来就会直接碎掉。
-3. 只有在警告出现的时候喊团队口号才能恢复原状。  
-地板碎了之后,只能撑到下一次警告出现。
+1. 这里也有东西在瞄准我！  
+按 <color=#FFD24D><b>Ctrl</b></color> 把我的颜色换成地板的颜色，它就找不到我了。
+2. 这次舌头会把左边或右边的地板整片砸掉。  
+喊团队口号就能拦住，喊不出来就直接碎了。
+3. 只有在警告出现时喊团队口号，地板才会恢复。  
+一旦碎了，就只能撑到下一次警告。
 
 **M.Stage5**
-1. 好像在运动!呼吸突然变粗重了。
-2. 地上会亮起颜色格子。  
-出现你的颜色就只能站在那一格。  
-没出现就站黑或白，按你的黑白撑住!
-3. 一定要让角色颜色也对上!
+1. 他是在运动吗？呼吸突然变得好粗！
+2. 地上会亮起彩色格子。  
+出现你的颜色就只站那一格。  
+没出现的话，就站在黑白里跟你对得上的那种撑住！
 
 **M.Boss — Intro**
-1. 呼……呼……再撑一下,好像就能活着出去了……
+1. 呼……呼……再撑一下，好像就能活着出去了……
 
 **M.Boss — Bossdown**
 1. ……嘴里安静下来了。  
-难道终于能逃出去了……?
-2. .....(咔嚓!)
-3. 糟了,要被吞下去了……!!
+终于能逃出去了吗……？
+2. ……（咔嚓！）
+3. 糟了，要被吞下去了……！！
 
 ### ZH-Hant
 
 **M.Stage1**
-1. 你怎麼放着好吃的水果和零食不吃,偏偏吃了個KKUL-TTEOK啊!!!
-2. 常言道,就算誤入虎穴,只要保持鎮定就能活下來..!  
-從現在起,只想著怎麼活下去。
-3. 記好周圍那些彩色嘴巴的位置。  
-踩上踏板,那個顏色的嘴巴就會升起來,把牙齒砸碎。
+1. 那麼多好吃的水果不吃，幹嘛偏偏吃我啊！？
+2. 從現在起，只管想著怎麼活下去。
+3. 記住周圍那些彩色嘴巴的位置。  
+踩下踏板，那個顏色的嘴就會升起來，幫我們把牙齒砸碎。
 4. 一次只會升起一種顏色。  
 大家一起踩也沒用。
-5. 這裡要是快關上了……大家一起喊團隊口號!  
-不然眼前就會變得一片漆黑。
+5. 巨大的嘴要合上的時候，大家一起喊團隊口號！  
+不然眼前就會一片漆黑。
 
 **M.Stage2 — 2.1**
-1. 照畫面提示進入安全區!
-2. 吃我之前是不是吃了辣的..?  
-地上的口水一直冒出來。
-3. 地上都是口水,很滑。  
-大家一起喊團隊口號就能清掉。
+1. 按 KKUL-TTEOK 的數量進區域！不過每個人只看得到自己牌子上的，互相報一下！
+2. 他吃我之前是不是吃了辣的……？  
+地上一直在冒口水。
+3. 這麼多口水，地板會變得很滑。  
+大家一起喊團隊口號就能清掉！
 
 **M.Stage2 — 2.2**
-1. 現在上面也開始滴口水了!  
-肯定是吃了辣的又吃了酸的。  
-一定是想用KKUL-TTEOK來中和!
-2. 掉下來的口水裡有的會瞄準我,用<color=#FFD24D><b>Ctrl</b></color>把地板顏色和自己的顏色對上就能解除鎖定。
+1. 現在連上面都開始滴了！  
+他肯定吃了又辣又酸的東西。
+2. 掉下來的口水裡有瞄準我的！  
+按 <color=#FFD24D><b>Ctrl</b></color> 把我的顏色換成地板的顏色，它就找不到我了。
 
 **M.Stage3**
-1. 地上會出現彩色磁磚。  
-站在上面2秒分數就會增加。
-2. 白色和黑色磁磚誰踩都行,但專屬顏色磁磚只有對應顏色才能加分。  
-別擋路,動作快點!
+1. 地上會冒出彩色方塊。  
+在上面站 2 秒就能得 1 分。
+2. 白色和黑色方塊誰都能用，但彩色方塊只算那個顏色的人的分。  
+別擋著彼此，動作快！
 
 **M.Stage4 — 4.1**
-1. 你的顏色出現在地上時按<color=#FFD24D><b>Space</b></color>。  
-白色誰按都行,黑色不能按!  
-黑色會在1秒後自動輪到下一個人。
-2. 腳下好像有什麼在動……小心!  
-舌頭攻擊來了!
-3. 舌頭會砸碎中間的踏板,擋住去路。  
-大家一起喊團隊口號就能讓它降下去,壞掉的路也會恢復原狀。
+1. 地上出現你的顏色時按 <color=#FFD24D><b>Space</b></color>。  
+白色誰都能按，黑色千萬別碰！  
+黑色過 1 秒會自動輪到下一個。
+2. 腳底下有什麼在動……小心！  
+舌頭來了！
+3. 舌頭會砸碎中間的踏板，把路堵住。  
+大家一起喊團隊口號，它就會縮回去，碎掉的路也會恢復。
 
 **M.Stage4 — 4.2**
-1. 從現在起只會顯示前面一格。  
-要好好記住!
+1. 從現在起，只能看到前面一格。  
+一定要記住！
 
 **M.Stage4 — 4.3**
-1. 這裡也有瞄準我的東西。  
-用<color=#FFD24D><b>Ctrl</b></color>把地板顏色和自己的顏色對上就能解除鎖定。
-2. 這次舌頭會把左邊或右邊的地板整片砸碎。  
-喊團隊口號就能擋住,喊不出來就會直接碎掉。
-3. 只有在警告出現的時候喊團隊口號才能恢復原狀。  
-地板碎了之後,只能撐到下一次警告出現。
+1. 這裡也有東西在瞄準我！  
+按 <color=#FFD24D><b>Ctrl</b></color> 把我的顏色換成地板的顏色，它就找不到我了。
+2. 這次舌頭會把左邊或右邊的地板整片砸掉。  
+喊團隊口號就能攔住，喊不出來就直接碎了。
+3. 只有在警告出現時喊團隊口號，地板才會恢復。  
+一旦碎了，就只能撐到下一次警告。
 
 **M.Stage5**
-1. 好像在運動!呼吸突然變粗重了。
-2. 地上會亮起顏色格子。  
-出現你的顏色就只能站在那一格。  
-沒出現就站黑或白，按你的黑白撐住!
-3. 一定要讓角色顏色也對上!
+1. 他是在運動嗎？呼吸突然變得好粗！
+2. 地上會亮起彩色格子。  
+出現你的顏色就只站那一格。  
+沒出現的話，就站在黑白裡跟你對得上的那種撐住！
 
 **M.Boss — Intro**
-1. 呼……呼……再撐一下,好像就能活著出去了……
+1. 呼……呼……再撐一下，好像就能活著出去了……
 
 **M.Boss — Bossdown**
 1. ……嘴裡安靜下來了。  
-難道終於能逃出去了……?
-2. .....(喀嚓!)
-3. 糟了,要被吞下去了……!!
+終於能逃出去了嗎……？
+2. ……（咔嚓！）
+3. 糟了，要被吞下去了……！！
 
 ### ES
 
 **M.Stage1**
-1. ¡¿Por qué comiste un KKUL-TTEOK en vez de toda la fruta y las chuches tan ricas que había?!
-2. Dicen que hasta en la cueva del tigre se sobrevive si mantienes la cabeza fría..!  
-A partir de ahora, pensad solo en sobrevivir.
-3. Acordaos bien de dónde están las bocas de colores de alrededor.  
-Si pisáis la palanca, la boca de ese color se alza y os rompe los dientes.
+1. ¡¿Con toda la fruta rica que había, por qué me has comido a mí?!
+2. A partir de ahora, pensad solo en sobrevivir.
+3. Fijaos bien en dónde están las bocas de colores.  
+Si pisáis la placa, la boca de ese color se alzará y hará pedazos los dientes.
 4. Solo sube un color cada vez.  
-No sirve de nada pisarla todos a la vez.
-5. Si esto empieza a cerrarse... ¡gritad todos el grito de equipo!  
-Si no, os quedaréis sin ver nada.
+No sirve de nada que piséis todos a la vez.
+5. Cuando la boca gigante empiece a cerrarse, ¡gritad todos el grito de equipo!  
+Si no, todo se quedará a oscuras.
 
 **M.Stage2 — 2.1**
-1. ¡Entrad en la zona segura que marca la pantalla!
-2. ¿Habrá comido algo picante antes de tragarme..?  
-No paran de salir babas del suelo.
-3. El suelo está lleno de babas resbaladizas.  
-Gritad todos el grito de equipo para quitarlas.
+1. ¡En cada zona tiene que haber tantos como KKUL-TTEOK! Cada uno solo ve los de su cartel, ¡así que avisaos!
+2. ¿Habrá comido algo picante antes de comerme…?  
+No para de salir baba del suelo.
+3. Con tanta baba, el suelo va a resbalar.  
+¡Si gritamos juntos el grito de equipo, podemos quitarla!
 
 **M.Stage2 — 2.2**
-1. ¡Ahora también caen babas desde arriba!  
-Seguro que ha comido algo picante y encima algo ácido.  
-¡Está claro que quiere neutralizarlo con un KKUL-TTEOK!
-2. Algunas de las babas que caen me apuntan a mí: pulsad <color=#FFD24D><b>Ctrl</b></color> para igualar el color del suelo con el vuestro y que se desactive el bloqueo.
+1. ¡Ahora también gotea desde arriba!  
+Seguro que ha comido algo picante y ácido.
+2. ¡Algunas gotas me están apuntando!  
+Iguala mi color con el del suelo con <color=#FFD24D><b>Ctrl</b></color> y me perderán de vista.
 
 **M.Stage3**
-1. Aparecerán baldosas de colores en el suelo.  
-Quedaos 2 segundos encima de una y subirá la puntuación.
-2. Las baldosas blancas o negras las puede pisar cualquiera, pero las de color único solo suman puntos si las pisa ese color.  
-¡No bloqueéis el paso, moveos rápido!
+1. Van a aparecer baldosas de colores en el suelo.  
+Quédate 2 segundos encima de una para sumar un punto.
+2. Las baldosas blancas y negras valen para cualquiera, pero las de color solo cuentan para ese color.  
+¡No os estorbéis y moveos rápido!
 
 **M.Stage4 — 4.1**
-1. Cuando aparezca tu color en el suelo, pulsa <color=#FFD24D><b>Space</b></color>.  
-Al blanco puede darle cualquiera, ¡pero al negro no le deis!  
-El negro pasará automáticamente al siguiente turno después de 1 segundo.
-2. Algo se mueve bajo nuestros pies... ¡cuidado!  
-¡Viene un ataque de lengua!
-3. La lengua destrozará la plataforma central y bloqueará el camino.  
-Gritad todos el grito de equipo para que baje de nuevo y se repare el camino roto.
+1. Cuando salga tu color en el suelo, pulsa <color=#FFD24D><b>Space</b></color>.  
+El blanco lo puede pulsar cualquiera, ¡pero el negro ni tocarlo!  
+El negro pasa solo al siguiente turno al cabo de 1 segundo.
+2. Algo se mueve bajo nuestros pies… ¡cuidado!  
+¡Ahí viene la lengua!
+3. La lengua va a romper la plataforma del centro y cortar el paso.  
+Si gritamos juntos el grito de equipo, bajará y el camino roto volverá a estar como antes.
 
 **M.Stage4 — 4.2**
-1. A partir de ahora solo se verá una baldosa por delante.  
-¡Memorizadla bien!
+1. A partir de ahora solo verás la siguiente baldosa.  
+¡Memorízala bien!
 
 **M.Stage4 — 4.3**
-1. Aquí también hay algo que me apunta.  
-Pulsad <color=#FFD24D><b>Ctrl</b></color> para igualar el color del suelo con el vuestro y desactivar el bloqueo.
-2. Esta vez la lengua destrozará todo el suelo de la izquierda o de la derecha.  
-Gritad el grito de equipo para bloquearla; si no lo hacéis, se romperá sin más.
-3. Solo se repara si gritáis el grito de equipo mientras esté activo el aviso.  
-Una vez roto el suelo, no queda más remedio que aguantar hasta el próximo aviso.
+1. ¡Aquí también hay algo apuntándome!  
+Iguala mi color con el del suelo con <color=#FFD24D><b>Ctrl</b></color> y me perderá de vista.
+2. Esta vez la lengua va a destrozar todo el lado izquierdo o derecho del suelo.  
+Gritad el grito de equipo para pararla; si no, se romperá.
+3. El suelo solo vuelve si gritáis el grito de equipo mientras está el aviso.  
+Si ya se ha roto, tocará aguantar hasta el siguiente aviso.
 
 **M.Stage5**
-1. ¡Parece que está haciendo ejercicio! De repente respira con más fuerza.
-2. En el suelo se encenderán casillas de color.  
-Si sale tu color, párate solo en esa casilla.  
-Si no sale, aguanta en negro o blanco, según el tuyo.
-3. ¡También tienes que igualar el color de tu personaje!
+1. ¿Estará haciendo ejercicio o qué? ¡De repente respira con fuerza!
+2. Se van a iluminar casillas de colores en el suelo.  
+Si sale tu color, ponte solo en esa casilla.  
+Si no, aguanta en la negra o la blanca, ¡la que coincida contigo!
 
 **M.Boss — Intro**
-1. Fiu... fiu... con un poco más de aguante, parece que podremos salir con vida...
+1. Uf… uf… un poco más y a lo mejor salimos vivos de aquí…
 
 **M.Boss — Bossdown**
-1. ...La boca se ha quedado callada.  
-¿Será que por fin podemos escapar...?
-2. .....(¡CRAC!)
-3. No puede ser, ¡nos está tragando...!!
+1. …Aquí dentro se ha quedado todo en silencio.  
+¿Será que por fin podemos escapar…?
+2. …(¡CRAC!)
+3. ¡Oh, no, nos está tragando…!!
 
 ### ES-419
 
 **M.Stage1**
-1. ¡¿Por qué comiste un KKUL-TTEOK en lugar de toda la fruta y los dulces tan ricos que había?!
-2. Dicen que hasta en la cueva del tigre se puede sobrevivir si mantienes la cabeza fría..!  
-De ahora en adelante, piensen solo en sobrevivir.
-3. Recuerden bien dónde están las bocas de colores que hay alrededor.  
-Si pisan la palanca, la boca de ese color se levanta y les rompe los dientes.
-4. Solo se levanta un color a la vez.  
-No sirve de nada pisarla todos juntos.
-5. Si esto empieza a cerrarse... ¡griten todos el grito de equipo!  
-Si no, se van a quedar sin ver nada.
+1. ¡¿Con toda la fruta rica que había, por qué me comiste a mí?!
+2. De ahora en adelante, piensen solo en sobrevivir.
+3. Fíjense bien dónde están las bocas de colores.  
+Si pisan la placa, la boca de ese color se va a levantar y hará pedazos los dientes.
+4. Solo sube un color a la vez.  
+No sirve de nada que pisen todos juntos.
+5. Cuando la boca gigante empiece a cerrarse, ¡griten todos el grito de equipo!  
+Si no, todo se va a quedar a oscuras.
 
 **M.Stage2 — 2.1**
-1. ¡Entren a la zona segura que marca la pantalla!
-2. ¿Habrá comido algo picante antes de tragarme..?  
-No paran de salir babas del piso.
-3. El piso está lleno de babas resbalosas.  
-Griten todos el grito de equipo para quitarlas.
+1. ¡En cada zona tiene que haber tantos como KKUL-TTEOK! Cada uno solo ve los de su letrero, ¡así que avísense!
+2. ¿Habrá comido algo picante antes de comerme…?  
+No para de salir baba del piso.
+3. Con tanta baba, el piso va a quedar resbaloso.  
+¡Si gritamos juntos el grito de equipo, podemos quitarla!
 
 **M.Stage2 — 2.2**
-1. ¡Ahora también caen babas desde arriba!  
-Seguro que comió algo picante y encima algo ácido.  
-¡Está clarísimo que quiere neutralizarlo con un KKUL-TTEOK!
-2. Algunas de las babas que caen me apuntan a mí: presionen <color=#FFD24D><b>Ctrl</b></color> para igualar el color del piso con el suyo y desactivar el bloqueo.
+1. ¡Ahora también gotea desde arriba!  
+Seguro que comió algo picante y ácido.
+2. ¡Algunas gotas me están apuntando!  
+Iguala mi color con el del piso con <color=#FFD24D><b>Ctrl</b></color> y me van a perder de vista.
 
 **M.Stage3**
 1. Van a aparecer baldosas de colores en el piso.  
-Quédense 2 segundos encima de una y sube el puntaje.
-2. Las baldosas blancas o negras las puede pisar cualquiera, pero las de color único solo suman puntos si las pisa ese color.  
-¡No bloqueen el paso, muévanse rápido!
+Quédate 2 segundos encima de una para sumar un punto.
+2. Las baldosas blancas y negras sirven para cualquiera, pero las de color solo cuentan para ese color.  
+¡No se estorben y muévanse rápido!
 
 **M.Stage4 — 4.1**
-1. Cuando aparezca tu color en el piso, presiona <color=#FFD24D><b>Space</b></color>.  
-Al blanco le puede dar cualquiera, ¡pero al negro no le den!  
-El negro va a pasar automáticamente al siguiente turno después de 1 segundo.
-2. Algo se mueve bajo nuestros pies... ¡cuidado!  
-¡Viene un ataque de lengua!
-3. La lengua va a destrozar la plataforma del centro y bloquear el camino.  
-Griten todos el grito de equipo para que baje de nuevo y se repare el camino roto.
+1. Cuando salga tu color en el piso, presiona <color=#FFD24D><b>Space</b></color>.  
+El blanco lo puede presionar cualquiera, ¡pero el negro ni lo toquen!  
+El negro pasa solo al siguiente turno después de 1 segundo.
+2. Algo se mueve bajo nuestros pies… ¡cuidado!  
+¡Ahí viene la lengua!
+3. La lengua va a romper la plataforma del centro y cortar el paso.  
+Si gritamos juntos el grito de equipo, va a bajar y el camino roto va a volver a estar como antes.
 
 **M.Stage4 — 4.2**
-1. De ahora en adelante solo se va a ver una baldosa más adelante.  
-¡Memorícenla bien!
+1. De ahora en adelante solo vas a ver la siguiente baldosa.  
+¡Memorízala bien!
 
 **M.Stage4 — 4.3**
-1. Aquí también hay algo que me apunta.  
-Presionen <color=#FFD24D><b>Ctrl</b></color> para igualar el color del piso con el suyo y desactivar el bloqueo.
-2. Esta vez la lengua va a destrozar todo el piso de la izquierda o de la derecha.  
-Griten el grito de equipo para bloquearla; si no lo hacen, se rompe nomás.
-3. Solo se repara si gritan el grito de equipo mientras esté activa la advertencia.  
-Una vez que se rompe el piso, no queda otra que aguantar hasta la próxima advertencia.
+1. ¡Aquí también hay algo apuntándome!  
+Iguala mi color con el del piso con <color=#FFD24D><b>Ctrl</b></color> y me va a perder de vista.
+2. Esta vez la lengua va a destrozar todo el lado izquierdo o derecho del piso.  
+Griten el grito de equipo para detenerla; si no, se va a romper.
+3. El piso solo vuelve si gritan el grito de equipo mientras está la advertencia.  
+Si ya se rompió, les va a tocar aguantar hasta la siguiente advertencia.
 
 **M.Stage5**
-1. ¡Parece que está haciendo ejercicio! De repente empezó a respirar más fuerte.
-2. En el piso se van a encender casillas de color.  
-Si sale tu color, párate solo en esa casilla.  
-Si no sale, aguanta en negro o blanco, según el tuyo.
-3. ¡También tienes que igualar el color de tu personaje!
+1. ¿Estará haciendo ejercicio o qué? ¡De repente está respirando fuerte!
+2. Se van a iluminar casillas de colores en el piso.  
+Si sale tu color, ponte solo en esa casilla.  
+Si no, aguanta en la negra o la blanca, ¡la que coincida contigo!
 
 **M.Boss — Intro**
-1. Fiu... fiu... con un poco más de aguante, parece que vamos a poder salir con vida...
+1. Uf… uf… un poco más y tal vez salgamos vivos de aquí…
 
 **M.Boss — Bossdown**
-1. ...La boca se quedó callada.  
-¿Será que por fin podemos escapar...?
-2. .....(¡CRAC!)
-3. No puede ser, ¡nos está tragando...!!
+1. …Aquí adentro se quedó todo en silencio.  
+¿Será que por fin podemos escapar…?
+2. …(¡CRAC!)
+3. ¡Oh, no, nos está tragando…!!
 
 ### FR
 
 **M.Stage1**
-1. Pourquoi tu as mangé un KKUL-TTEOK au lieu de tous ces bons fruits et bonbons !!!
-2. On dit qu'on peut survivre même dans la tanière du tigre si on garde la tête froide..!  
-À partir de maintenant, pensons juste à survivre.
-3. Souvenez-vous bien de l'emplacement des bouches colorées autour de vous.  
-Marchez sur la dalle, et la bouche de cette couleur se soulèvera pour briser les dents.
+1. Il y avait plein de bons fruits… pourquoi c'est moi que tu as mangé ?!
+2. À partir de maintenant, pensez juste à survivre.
+3. Retenez bien où sont les bouches colorées autour de vous.  
+Marchez sur la dalle, et la bouche de cette couleur surgira pour briser les dents.
 4. Une seule couleur monte à la fois.  
 Ça ne sert à rien de marcher dessus tous ensemble.
-5. Si ça commence à se refermer... criez tous le cri d'équipe !  
-Sinon, vous ne verrez plus rien devant vous.
+5. Quand la bouche géante commence à se fermer, criez tous le cri d'équipe !  
+Sinon, tout va devenir noir.
 
 **M.Stage2 — 2.1**
-1. Entrez dans la zone sûre indiquée à l'écran !
-2. Il a mangé épicé avant de m'avaler, ou quoi..?  
-La bave n'arrête pas de monter du sol.
-3. Le sol est couvert de bave glissante.  
-Criez tous le cri d'équipe pour l'effacer.
+1. Autant de joueurs par zone que de KKUL-TTEOK ! Chacun ne voit que ceux de son panneau, alors annoncez-les !
+2. Il a mangé un truc épicé avant de me manger… ?  
+La bave n'arrête pas de remonter du sol.
+3. Avec toute cette bave, le sol va glisser.  
+Crions le cri d'équipe ensemble et on pourra la faire disparaître !
 
 **M.Stage2 — 2.2**
-1. Maintenant ça dégouline même d'en haut !  
-Il a sûrement mangé épicé, et en plus quelque chose d'acide.  
-Il essaie clairement de neutraliser ça avec un KKUL-TTEOK !
-2. Certaines gouttes qui tombent me visent : appuyez sur <color=#FFD24D><b>Ctrl</b></color> pour assortir la couleur du sol à la vôtre et débloquer le ciblage.
+1. Maintenant, ça coule aussi d'en haut !  
+Il a dû manger un truc épicé et acide.
+2. Certaines gouttes me visent !  
+Accorde ma couleur au sol avec <color=#FFD24D><b>Ctrl</b></color> et elles me perdront de vue.
 
 **M.Stage3**
 1. Des dalles colorées vont apparaître au sol.  
-Restez dessus 2 secondes et le score augmente.
-2. Les dalles blanches ou noires, n'importe qui peut les prendre, mais les dalles de couleur unique ne comptent que pour cette couleur.  
-Ne bloquez pas le passage, bougez vite !
+Reste 2 secondes dessus pour marquer un point.
+2. Les dalles blanches et noires, c'est pour tout le monde, mais une dalle colorée ne compte que pour sa couleur.  
+Ne vous gênez pas et bougez vite !
 
 **M.Stage4 — 4.1**
 1. Quand ta couleur apparaît au sol, appuie sur <color=#FFD24D><b>Space</b></color>.  
-N'importe qui peut appuyer pour le blanc, mais pas pour le noir !  
-Pour le noir, ça passe automatiquement au tour suivant après 1 seconde.
-2. Quelque chose bouge sous nos pieds... attention !  
-Une attaque de langue arrive !
-3. La langue va détruire la plateforme centrale et bloquer le chemin.  
-Criez tous le cri d'équipe pour la faire redescendre et réparer le chemin détruit.
+Le blanc, tout le monde peut appuyer, mais surtout pas le noir !  
+Le noir passe tout seul au tour suivant au bout d'1 seconde.
+2. Quelque chose bouge sous nos pieds… attention !  
+Voilà la langue !
+3. La langue va briser la plateforme du milieu et bloquer le passage.  
+Criez le cri d'équipe ensemble et elle redescendra — le chemin cassé reviendra aussi.
 
 **M.Stage4 — 4.2**
-1. À partir de maintenant, une seule dalle en avance sera visible.  
-Mémorisez-la bien !
+1. À partir de maintenant, tu ne verras que la case suivante.  
+Retiens-la bien !
 
 **M.Stage4 — 4.3**
-1. Ici aussi, quelque chose me vise.  
-Appuyez sur <color=#FFD24D><b>Ctrl</b></color> pour assortir la couleur du sol à la vôtre et débloquer le ciblage.
-2. Cette fois, la langue va détruire tout le sol de gauche ou de droite.  
-Criez le cri d'équipe pour la bloquer ; sinon, ça se casse tout simplement.
-3. Ça ne se répare que si vous criez le cri d'équipe pendant que l'alerte est active.  
-Une fois le sol détruit, il faudra tenir jusqu'à la prochaine alerte.
+1. Ici aussi, quelque chose me vise !  
+Accorde ma couleur au sol avec <color=#FFD24D><b>Ctrl</b></color> et ça me perdra de vue.
+2. Cette fois, la langue va détruire tout le côté gauche ou droit du sol.  
+Criez le cri d'équipe pour l'arrêter — sinon, il va se briser.
+3. Le sol ne revient que si vous criez le cri d'équipe pendant l'alerte.  
+Une fois cassé, il faudra tenir jusqu'à la prochaine alerte.
 
 **M.Stage5**
-1. On dirait qu'il fait de l'exercice ! Sa respiration est devenue soudainement plus forte.
-2. Des cases de couleur vont s'allumer au sol.  
-Si ta couleur apparaît, tiens-toi uniquement sur cette case.  
-Sinon, tiens bon sur le noir ou le blanc, selon le tien.
-3. Il faut aussi faire correspondre la couleur de ton perso !
+1. Il fait du sport ou quoi ? Sa respiration s'est emballée d'un coup !
+2. Des cases colorées vont s'allumer au sol.  
+Si ta couleur apparaît, mets-toi uniquement sur cette case.  
+Sinon, tiens bon sur le noir ou le blanc — celui qui te correspond !
 
 **M.Boss — Intro**
-1. Hah... hah... encore un peu, et on devrait pouvoir sortir vivants...
+1. Hah… hah… encore un petit effort et on pourrait vraiment s'en sortir vivants…
 
 **M.Boss — Bossdown**
-1. ...C'est devenu calme à l'intérieur.  
-Est-ce qu'on va enfin pouvoir s'échapper... ?
-2. .....(CRAC !)
-3. Non, on se fait avaler... !!
+1. …C'est devenu calme ici.  
+On va enfin pouvoir s'échapper… ?
+2. …(CRAC !)
+3. Oh non, on se fait avaler… !!
 
 ### DE
 
 **M.Stage1**
-1. Warum hast du all die leckeren Früchte und Snacks liegen lassen und stattdessen ein KKUL-TTEOK gegessen?!
-2. Man sagt, selbst in der Höhle des Tigers überlebt man, wenn man einen kühlen Kopf bewahrt..!  
-Von jetzt an denken wir nur ans Überleben.
-3. Merkt euch gut, wo die bunten Mäuler um euch herum sind.  
-Tretet auf das Pedal, dann fährt das Maul dieser Farbe hoch und zertrümmert die Zähne.
-4. Es fährt immer nur eine Farbe gleichzeitig hoch.  
-Es bringt nichts, wenn ihr alle zusammen draufsteht.
-5. Wenn sich das hier zu schließen beginnt... ruft alle zusammen den Teamruf!  
-Sonst seht ihr bald nichts mehr.
+1. Da gibt's so viel leckeres Obst, und du isst ausgerechnet mich?!
+2. Ab jetzt zählt nur noch eins: überleben.
+3. Merkt euch, wo die bunten Mäuler um euch herum sind.  
+Tretet auf die Platte, dann schießt das Maul in der Farbe hoch und zertrümmert die Zähne.
+4. Es fährt immer nur eine Farbe hoch.  
+Zusammen draufzutreten bringt nichts.
+5. Wenn sich das riesige Maul schließt, ruft alle den Teamruf!  
+Sonst wird alles dunkel.
 
 **M.Stage2 — 2.1**
-1. Geht in die Sicherheitszone, die auf dem Bildschirm angezeigt wird!
-2. Hat es vor dem Verschlucken irgendwas Scharfes gegessen..?  
-Vom Boden steigt ständig Speichel auf.
-3. Der Boden ist voller rutschigem Speichel.  
-Ruft alle zusammen den Teamruf, um ihn zu beseitigen.
+1. Pro Zone so viele Leute, wie KKUL-TTEOK da sind! Jeder sieht nur die auf seinem Schild, also sagt sie an!
+2. Hat er was Scharfes gegessen, bevor er mich gegessen hat…?  
+Aus dem Boden quillt ständig Sabber hoch.
+3. Bei so viel Sabber wird der Boden rutschig.  
+Wenn wir zusammen den Teamruf rufen, kriegen wir ihn weg!
 
 **M.Stage2 — 2.2**
-1. Jetzt tropft es sogar von oben!  
-Es hat bestimmt Scharfes und dazu noch Saures gegessen.  
-Es will das eindeutig mit einem KKUL-TTEOK neutralisieren!
-2. Manche der herabfallenden Tropfen zielen auf mich – drückt <color=#FFD24D><b>Ctrl</b></color>, um die Bodenfarbe an eure eigene anzupassen und die Zielerfassung zu lösen.
+1. Jetzt tropft's auch noch von oben!  
+Er muss was Scharfes und Saures gegessen haben.
+2. Ein paar Tropfen zielen auf mich!  
+Pass meine Farbe mit <color=#FFD24D><b>Ctrl</b></color> an den Boden an, dann verlieren sie mich.
 
 **M.Stage3**
-1. Auf dem Boden erscheinen bunte Kacheln.  
-Steht 2 Sekunden darauf, dann steigt der Punktestand.
-2. Weiße oder schwarze Kacheln darf jeder betreten, aber bei Kacheln mit einer eigenen Farbe zählt nur diese Farbe.  
-Blockiert den Weg nicht, bewegt euch schnell!
+1. Gleich tauchen bunte Kacheln auf dem Boden auf.  
+Bleib 2 Sekunden drauf, dann gibt's einen Punkt.
+2. Weiße und schwarze Kacheln gehen für alle, bunte zählen nur für ihre Farbe.  
+Steht euch nicht im Weg und macht schnell!
 
 **M.Stage4 — 4.1**
-1. Wenn deine Farbe auf dem Boden aufleuchtet, drück <color=#FFD24D><b>Space</b></color>.  
-Bei Weiß darf jeder drücken, aber bei Schwarz nicht!  
-Bei Schwarz geht es nach 1 Sekunde automatisch zum nächsten Zug über.
-2. Unter unseren Füßen bewegt sich etwas... Vorsicht!  
-Ein Zungenangriff kommt!
-3. Die Zunge zerstört die Plattform in der Mitte und blockiert den Weg.  
-Ruft alle zusammen den Teamruf, damit sie wieder runtergeht und der zerstörte Weg repariert wird.
+1. Wenn deine Farbe am Boden auftaucht, drück <color=#FFD24D><b>Space</b></color>.  
+Weiß darf jeder drücken, aber Finger weg von Schwarz!  
+Schwarz geht nach 1 Sekunde von selbst weiter.
+2. Unter unseren Füßen bewegt sich was… pass auf!  
+Da kommt die Zunge!
+3. Die Zunge zertrümmert die mittlere Plattform und versperrt den Weg.  
+Ruft zusammen den Teamruf, dann zieht sie sich zurück – und der kaputte Weg kommt auch wieder.
 
 **M.Stage4 — 4.2**
-1. Von jetzt an wird nur noch eine Kachel im Voraus angezeigt.  
-Merkt sie euch gut!
+1. Ab jetzt siehst du nur noch ein Feld voraus.  
+Merk es dir gut!
 
 **M.Stage4 — 4.3**
-1. Auch hier zielt etwas auf mich.  
-Drückt <color=#FFD24D><b>Ctrl</b></color>, um die Bodenfarbe an eure eigene anzupassen und die Zielerfassung zu lösen.
-2. Diesmal zerstört die Zunge den ganzen Boden links oder rechts.  
-Ruft den Teamruf, um sie zu blockieren – wenn nicht, bricht er einfach zusammen.
-3. Er wird nur repariert, wenn ihr den Teamruf ruft, während die Warnung aktiv ist.  
-Ist der Boden erst zerstört, müsst ihr bis zur nächsten Warnung durchhalten.
+1. Auch hier zielt was auf mich!  
+Pass meine Farbe mit <color=#FFD24D><b>Ctrl</b></color> an den Boden an, dann verliert es mich.
+2. Diesmal zertrümmert die Zunge die komplette linke oder rechte Bodenhälfte.  
+Ruft den Teamruf, um sie aufzuhalten – sonst bricht alles weg.
+3. Der Boden kommt nur zurück, wenn ihr den Teamruf ruft, solange die Warnung da ist.  
+Ist er einmal kaputt, müsst ihr bis zur nächsten Warnung durchhalten.
 
 **M.Stage5**
-1. Sieht aus, als würde es trainieren! Der Atem ist plötzlich schwerer geworden.
-2. Auf dem Boden leuchten Farbfelder auf.  
-Wenn deine Farbe kommt, stell dich nur auf dieses Feld.  
-Wenn nicht, halt dich auf Schwarz oder Weiß — passend zu deinem.
-3. Du musst die Farbe auch bei deinem Charakter anpassen!
+1. Macht der gerade Sport oder was? Er atmet plötzlich total schwer!
+2. Gleich leuchten bunte Felder am Boden auf.  
+Kommt deine Farbe, stell dich nur auf dieses Feld.  
+Wenn nicht, halt dich auf Schwarz oder Weiß – je nachdem, was zu dir passt!
 
 **M.Boss — Intro**
-1. Haah... haah... noch ein bisschen durchhalten, dann schaffen wir es vielleicht lebend raus...
+1. Hah… hah… nur noch ein bisschen, dann kommen wir vielleicht lebend hier raus…
 
 **M.Boss — Bossdown**
-1. ...Es ist ruhig geworden hier drin.  
-Heißt das, wir können endlich entkommen...?
-2. .....(KRACH!)
-3. Oh nein, wir werden verschluckt...!!
+1. …Hier drin ist es still geworden.  
+Können wir endlich raus…?
+2. …(KNACK!)
+3. Oh nein, wir werden verschluckt…!!
 
 ### PT-BR
 
 **M.Stage1**
-1. Por que você comeu um KKUL-TTEOK e deixou passar todas aquelas frutas e guloseimas gostosas?!
-2. Dizem que até no covil do tigre dá pra sobreviver se você mantiver a cabeça fria..!  
-A partir de agora, só pense em sobreviver.
-3. Decore bem onde estão as bocas coloridas ao redor.  
-Se pisar no pedal, a boca daquela cor sobe e quebra os dentes.
+1. Com tanta fruta gostosa, por que você foi me comer?!
+2. De agora em diante, só pensem em sobreviver.
+3. Guardem bem onde ficam as bocas coloridas em volta.  
+Pisou na placa, a boca daquela cor sobe e quebra os dentes.
 4. Só sobe uma cor por vez.  
 Não adianta todo mundo pisar junto.
-5. Se isso aqui começar a fechar... gritem todos juntos o grito do time!  
-Senão, vocês vão ficar sem enxergar nada.
+5. Quando a boca gigante começar a fechar, todo mundo grita o grito da equipe!  
+Senão, vai ficar tudo escuro.
 
 **M.Stage2 — 2.1**
-1. Entrem na zona segura marcada na tela!
-2. Será que comeu algo apimentado antes de me engolir..?  
-Não para de sair baba do chão.
-3. O chão está cheio de baba escorregadia.  
-Gritem todos juntos o grito do time pra sumir com ela.
+1. Cada área precisa ter a mesma quantidade de gente que de KKUL-TTEOK! Cada um só vê os da própria placa, então avisem!
+2. Será que ele comeu algo apimentado antes de me comer…?  
+Não para de brotar baba do chão.
+3. Com tanta baba, o chão vai ficar escorregadio.  
+Se a gente gritar o grito da equipe junto, dá pra limpar!
 
 **M.Stage2 — 2.2**
-1. Agora tá pingando baba de cima também!  
-Com certeza comeu algo apimentado e ainda por cima algo ácido.  
-Só pode estar tentando neutralizar com um KKUL-TTEOK!
-2. Algumas das gotas que caem estão mirando em mim: aperta <color=#FFD24D><b>Ctrl</b></color> pra combinar a cor do chão com a sua e travar a mira.
+1. Agora tá pingando de cima também!  
+Ele deve ter comido algo apimentado e azedo.
+2. Algumas gotas estão mirando em mim!  
+Iguale minha cor à do chão com <color=#FFD24D><b>Ctrl</b></color> e elas me perdem de vista.
 
 **M.Stage3**
 1. Vão aparecer blocos coloridos no chão.  
-Fique 2 segundos em cima e a pontuação sobe.
-2. Blocos brancos ou pretos qualquer um pode pisar, mas os de cor única só somam ponto se for daquela cor.  
-Não bloqueia o caminho, se mexe rápido!
+Fique 2 segundos em cima de um pra marcar ponto.
+2. Os blocos brancos e pretos valem pra qualquer um, mas os coloridos só contam pra aquela cor.  
+Não atrapalhem uns aos outros e sejam rápidos!
 
 **M.Stage4 — 4.1**
-1. Quando sua cor aparecer no chão, aperta <color=#FFD24D><b>Space</b></color>.  
-No branco qualquer um pode apertar, mas no preto não aperte!  
-No preto, passa automático pro próximo turno depois de 1 segundo.
-2. Tem algo se mexendo debaixo dos nossos pés... cuidado!  
-Vem um ataque de língua!
-3. A língua vai destruir a plataforma do centro e bloquear o caminho.  
-Gritem todos juntos o grito do time pra ela descer de novo e o caminho quebrado se consertar.
+1. Quando a sua cor aparecer no chão, aperte <color=#FFD24D><b>Space</b></color>.  
+Branco qualquer um pode apertar, mas preto nem pensar!  
+O preto passa sozinho pro próximo turno depois de 1 segundo.
+2. Tem alguma coisa se mexendo debaixo da gente… cuidado!  
+Lá vem a língua!
+3. A língua vai quebrar a plataforma do meio e bloquear o caminho.  
+Gritem o grito da equipe juntos que ela desce de novo — e o caminho quebrado volta também.
 
 **M.Stage4 — 4.2**
-1. A partir de agora só vai mostrar um bloco à frente.  
-Decorem bem!
+1. De agora em diante, você só vai ver um bloco à frente.  
+Grave bem!
 
 **M.Stage4 — 4.3**
-1. Aqui também tem algo mirando em mim.  
-Aperta <color=#FFD24D><b>Ctrl</b></color> pra combinar a cor do chão com a sua e travar a mira.
-2. Dessa vez a língua vai destruir o chão inteiro da esquerda ou da direita.  
-Gritem o grito do time pra bloquear; se não conseguirem, ela quebra do mesmo jeito.
-3. Só conserta se vocês gritarem o grito do time enquanto o aviso estiver ativo.  
-Depois que o chão quebra, só resta aguentar até o próximo aviso.
+1. Aqui também tem algo mirando em mim!  
+Iguale minha cor à do chão com <color=#FFD24D><b>Ctrl</b></color> e ele me perde de vista.
+2. Dessa vez a língua vai destruir o lado esquerdo ou direito inteiro do chão.  
+Gritem o grito da equipe pra impedir — senão, vai quebrar.
+3. O chão só volta se vocês gritarem o grito da equipe enquanto o aviso estiver na tela.  
+Se já quebrou, vai ter que aguentar até o próximo aviso.
 
 **M.Stage5**
-1. Parece que tá se exercitando! A respiração ficou pesada do nada.
-2. Casas coloridas vão acender no chão.  
-Se a sua cor aparecer, fique só naquela casa.  
-Se não aparecer, aguente no preto ou branco, do seu.
-3. Tem que acertar a cor do personagem também!
+1. Ele tá malhando ou o quê? A respiração dele ficou pesada do nada!
+2. Vão acender blocos coloridos no chão.  
+Se a sua cor aparecer, fique só naquele bloco.  
+Se não aparecer, aguente no preto ou no branco — o que combinar com você!
 
 **M.Boss — Intro**
-1. Haah... haah... com mais um pouco de esforço, parece que a gente sai vivo daqui...
+1. Ufa… ufa… só mais um pouco e talvez a gente saia vivo daqui…
 
 **M.Boss — Bossdown**
-1. ...Ficou tudo quieto aqui dentro.  
-Será que finalmente dá pra escapar...?
-2. .....(CRAC!)
-3. Não, estamos sendo engolidos...!!
+1. …Ficou tudo quieto aqui dentro.  
+Será que finalmente dá pra escapar…?
+2. …(CRAC!)
+3. Ah, não, a gente tá sendo engolido…!!
 
 ### RU
 
 **M.Stage1**
-1. Почему ты съел KKUL-TTEOK, а не всю эту вкусную фрукту и сладости?!
-2. Говорят, даже в логове тигра можно выжить, если не терять голову..!  
-Теперь думаем только о том, как выжить.
-3. Хорошенько запомните, где находятся цветные рты вокруг.  
-Наступишь на плиту — рот того цвета поднимется и раздробит зубы.
+1. Столько вкусных фруктов, а ты съел именно меня?!
+2. С этого момента думайте только о том, как выжить.
+3. Запомните, где вокруг стоят цветные рты.  
+Наступите на плиту — рот этого цвета поднимется и раскрошит зубы.
 4. За раз поднимается только один цвет.  
 Наступать всем вместе бесполезно.
-5. Если это начнёт закрываться... кричите все вместе командный клич!  
-Иначе вы больше ничего не увидите.
+5. Когда огромный рот начнёт закрываться, кричите все командный клич!  
+Иначе всё погрузится во тьму.
 
 **M.Stage2 — 2.1**
-1. Заходите в безопасную зону, как показано на экране!
-2. Оно что, съело что-то острое перед тем, как проглотить меня..?  
-С пола постоянно поднимается слюна.
-3. Пол залит скользкой слюной.  
-Кричите все вместе командный клич, чтобы её убрать.
+1. В каждой зоне — столько игроков, сколько KKUL-TTEOK! Каждый видит только свою табличку, так что говорите вслух!
+2. Он что, съел что-то острое перед тем, как съесть меня…?  
+Из пола всё время сочится слюна.
+3. От всей этой слюны пол станет скользким.  
+Крикнем вместе командный клич — и уберём её!
 
 **M.Stage2 — 2.2**
-1. Теперь слюна капает ещё и сверху!  
-Точно съело что-то острое, а потом ещё и кислое.  
-Явно пытается нейтрализовать это KKUL-TTEOK!
-2. Некоторые из падающих капель целятся в меня — нажми <color=#FFD24D><b>Ctrl</b></color>, чтобы совпасть цветом пола со своим и снять захват цели.
+1. Теперь капает ещё и сверху!  
+Он наверняка съел что-то острое и кислое.
+2. Некоторые капли целятся в меня!  
+Подгони мой цвет под пол через <color=#FFD24D><b>Ctrl</b></color> — и они меня потеряют.
 
 **M.Stage3**
-1. На полу появятся цветные плитки.  
-Постой на ней 2 секунды — очки вырастут.
-2. На белые и чёрные плитки может вставать кто угодно, а на плитки уникального цвета — только соответствующий цвет.  
-Не загораживайте путь, двигайтесь быстрее!
+1. На полу будут появляться цветные плитки.  
+Постой на одной 2 секунды — получишь очко.
+2. Белые и чёрные плитки подходят всем, а цветная засчитывается только своему цвету.  
+Не мешайте друг другу и двигайтесь быстрее!
 
 **M.Stage4 — 4.1**
-1. Когда твой цвет появится на полу, нажми <color=#FFD24D><b>Space</b></color>.  
-На белый может нажать кто угодно, а на чёрный — не нажимай!  
-На чёрном ход автоматически перейдёт к следующему через 1 секунду.
-2. Что-то шевелится у нас под ногами... осторожно!  
-Сейчас будет атака языком!
-3. Язык разрушит платформу в центре и перекроет путь.  
-Кричите все вместе командный клич, чтобы он опустился, а разрушенный путь восстановился.
+1. Когда на полу появится твой цвет, жми <color=#FFD24D><b>Space</b></color>.  
+На белый может нажать кто угодно, а чёрный не трогай!  
+Чёрный сам перейдёт к следующему ходу через 1 секунду.
+2. Под ногами что-то шевелится… осторожно!  
+Вот и язык!
+3. Язык разобьёт центральную плиту и перекроет путь.  
+Крикните вместе командный клич — он уйдёт вниз, а разрушенный путь восстановится.
 
 **M.Stage4 — 4.2**
-1. Теперь будет видна только одна плитка вперёд.  
-Хорошенько запоминайте!
+1. Теперь ты будешь видеть только одну плитку вперёд.  
+Запоминай хорошенько!
 
 **M.Stage4 — 4.3**
-1. Здесь тоже что-то целится в меня.  
-Нажми <color=#FFD24D><b>Ctrl</b></color>, чтобы совпасть цветом пола со своим и снять захват цели.
-2. На этот раз язык разрушит весь пол слева или справа.  
-Кричите командный клич, чтобы заблокировать это — если не успеете, пол просто разрушится.
-3. Восстановится только если вы прокричите командный клич, пока идёт предупреждение.  
-После того как пол разрушен, остаётся только продержаться до следующего предупреждения.
+1. И здесь что-то целится в меня!  
+Подгони мой цвет под пол через <color=#FFD24D><b>Ctrl</b></color> — и оно меня потеряет.
+2. На этот раз язык разнесёт всю левую или правую половину пола.  
+Крикните командный клич, чтобы остановить его, — иначе пол развалится.
+3. Пол вернётся, только если крикнуть командный клич, пока висит предупреждение.  
+Если он уже сломан — придётся продержаться до следующего.
 
 **M.Stage5**
-1. Похоже, оно тренируется! Дыхание вдруг стало тяжёлым.
-2. На полу загорятся цветные клетки.  
-Если выпал твой цвет — стой только на той клетке.  
-Если нет — держись на чёрной или белой, под свою.
-3. Цвет персонажа тоже обязательно нужно подогнать!
+1. Он что, спортом занялся? Дыхание вдруг стало тяжёлым!
+2. На полу будут загораться цветные клетки.  
+Появился твой цвет — стой только на этой клетке.  
+Если нет, держись на чёрной или белой — той, что совпадает с тобой!
 
 **M.Boss — Intro**
-1. Ха... ха... ещё немного продержаться, и мы, кажется, сможем выбраться живыми...
+1. Фух… фух… ещё чуть-чуть — и, может, выберемся живыми…
 
 **M.Boss — Bossdown**
-1. ...Внутри стало тихо.  
-Неужели мы наконец сможем сбежать...?
-2. .....(ХРУСТЬ!)
-3. Нет, нас проглатывают...!!
+1. …Во рту стало тихо.  
+Неужели мы наконец выберемся…?
+2. …(ХРУСТЬ!)
+3. О нет, нас глотают…!!
 
 ### PL
 
 **M.Stage1**
-1. Dlaczego zjadłeś KKUL-TTEOK zamiast tych wszystkich pysznych owoców i słodyczy?!
-2. Podobno nawet w jaskini tygrysa można przeżyć, jeśli zachowa się zimną krew..!  
-Od teraz myślimy tylko o przetrwaniu.
-3. Zapamiętajcie dobrze, gdzie są kolorowe pyski wokół nas.  
-Jak nadepniesz na płytkę, pysk tego koloru wyskoczy i zmiażdży zęby.
+1. Tyle pysznych owoców, a ty zjadłeś akurat mnie?!
+2. Od teraz myślcie tylko o tym, żeby przeżyć.
+3. Zapamiętajcie, gdzie wokół są kolorowe usta.  
+Stańcie na płytce, a usta w tym kolorze wyskoczą i pokruszą zęby.
 4. Naraz podnosi się tylko jeden kolor.  
-Nie ma sensu deptać razem wszystkim.
-5. Jeśli to zacznie się zamykać... krzyczcie wszyscy okrzyk drużyny!  
-Inaczej nic nie będziecie widzieć.
+Wspólne deptanie nic nie da.
+5. Kiedy wielkie usta zaczną się zamykać, krzyczcie wszyscy okrzyk drużyny!  
+Inaczej zrobi się zupełnie ciemno.
 
 **M.Stage2 — 2.1**
-1. Wejdźcie do bezpiecznej strefy pokazanej na ekranie!
-2. Chyba zjadło coś ostrego, zanim mnie połknęło..?  
-Z podłogi ciągle wypływa ślina.
-3. Podłoga jest śliska od śliny.  
-Krzyczcie wszyscy okrzyk drużyny, żeby ją usunąć.
+1. W każdej strefie tylu graczy, ile jest KKUL-TTEOK! Każdy widzi tylko te na swojej tabliczce, więc mówcie na głos!
+2. Zjadł coś ostrego, zanim zjadł mnie…?  
+Z podłogi cały czas wypływa ślina.
+3. Od tej śliny podłoga zrobi się śliska.  
+Krzyknijmy razem okrzyk drużyny, to ją usuniemy!
 
 **M.Stage2 — 2.2**
-1. Teraz ślina kapie też z góry!  
-Na pewno zjadło coś ostrego, a do tego coś kwaśnego.  
-Na pewno próbuje to zneutralizować KKUL-TTEOKIEM!
-2. Niektóre z opadających kropel celują we mnie – wciśnij <color=#FFD24D><b>Ctrl</b></color>, żeby dopasować kolor podłogi do swojego i zdjąć namierzanie.
+1. Teraz kapie też z góry!  
+Musiał zjeść coś ostrego i kwaśnego.
+2. Niektóre krople celują we mnie!  
+Dopasuj mój kolor do podłogi przez <color=#FFD24D><b>Ctrl</b></color>, a stracą mnie z oczu.
 
 **M.Stage3**
-1. Na podłodze pojawią się kolorowe płytki.  
-Postój na niej 2 sekundy, a wynik wzrośnie.
-2. Białe i czarne płytki może zdeptać każdy, ale te w unikalnym kolorze liczą punkty tylko dla tego koloru.  
-Nie blokujcie drogi, ruszajcie się szybko!
+1. Na podłodze będą wyskakiwać kolorowe kafelki.  
+Postój na jednym 2 sekundy, a zdobędziesz punkt.
+2. Białe i czarne kafelki są dla każdego, ale kolorowy liczy się tylko dla swojego koloru.  
+Nie wchodźcie sobie w drogę i ruszajcie się szybko!
 
 **M.Stage4 — 4.1**
-1. Gdy twój kolor pojawi się na podłodze, wciśnij <color=#FFD24D><b>Space</b></color>.  
-Biały może wcisnąć każdy, ale czarnego nie wciskajcie!  
-Przy czarnym po 1 sekundzie automatycznie przechodzi do następnej tury.
-2. Coś się rusza pod naszymi stopami... uważajcie!  
-Nadchodzi atak językiem!
-3. Język zniszczy platformę na środku i zablokuje drogę.  
-Krzyczcie wszyscy okrzyk drużyny, żeby opadł z powrotem, a zniszczona droga się naprawiła.
+1. Gdy na podłodze pojawi się twój kolor, wciśnij <color=#FFD24D><b>Space</b></color>.  
+Biały może wcisnąć każdy, ale czarnego nie ruszaj!  
+Czarny sam przejdzie do następnej tury po 1 sekundzie.
+2. Coś się rusza pod nami… uważaj!  
+Nadchodzi język!
+3. Język rozwali środkową platformę i zablokuje drogę.  
+Krzyknijcie razem okrzyk drużyny, a schowa się z powrotem — zniszczona droga też wróci.
 
 **M.Stage4 — 4.2**
-1. Od teraz będzie widać tylko jedną płytkę do przodu.  
-Zapamiętajcie ją dobrze!
+1. Od teraz zobaczysz tylko jeden kafelek do przodu.  
+Zapamiętaj go dobrze!
 
 **M.Stage4 — 4.3**
-1. Tutaj też coś we mnie celuje.  
-Wciśnij <color=#FFD24D><b>Ctrl</b></color>, żeby dopasować kolor podłogi do swojego i zdjąć namierzanie.
-2. Tym razem język zniszczy całą podłogę po lewej albo po prawej.  
-Krzyczcie okrzyk drużyny, żeby to zablokować – jeśli się nie uda, po prostu się zniszczy.
-3. Naprawi się tylko wtedy, gdy krzykniecie okrzyk drużyny w trakcie ostrzeżenia.  
-Gdy podłoga już się zniszczy, trzeba wytrzymać do następnego ostrzeżenia.
+1. Tu też coś we mnie celuje!  
+Dopasuj mój kolor do podłogi przez <color=#FFD24D><b>Ctrl</b></color>, a straci mnie z oczu.
+2. Tym razem język rozwali całą lewą albo prawą stronę podłogi.  
+Krzyknijcie okrzyk drużyny, żeby go zatrzymać — inaczej wszystko się rozpadnie.
+3. Podłoga wraca tylko wtedy, gdy krzykniecie okrzyk drużyny, póki widać ostrzeżenie.  
+Jak już się rozpadnie, trzeba wytrzymać do następnego ostrzeżenia.
 
 **M.Stage5**
-1. Chyba właśnie ćwiczy! Oddech nagle zrobił się ciężki.
-2. Na podłodze zapalą się kolorowe pola.  
-Jeśli wypadnie twój kolor, stań tylko na tym polu.  
-Jeśli nie — wytrzymaj na czarnym lub białym, według swojego.
-3. Kolor postaci też musisz dopasować!
+1. Ćwiczy czy co? Nagle zaczął ciężko oddychać!
+2. Na podłodze zaczną się świecić kolorowe pola.  
+Jeśli pojawi się twój kolor, stań tylko na tym polu.  
+Jeśli nie, wytrzymaj na czarnym albo białym — tym, który do ciebie pasuje!
 
 **M.Boss — Intro**
-1. Hał... hał... jeszcze trochę wytrzymać i chyba uda nam się wyjść stąd żywi...
+1. Uff… uff… jeszcze trochę i może wyjdziemy stąd żywi…
 
 **M.Boss — Bossdown**
-1. ...W środku zrobiło się cicho.  
-Czyżbyśmy wreszcie mogli uciec...?
-2. .....(CHRUP!)
-3. O nie, zostajemy połknięci...!!
+1. …Zrobiło się tu cicho.  
+Czyżbyśmy w końcu mogli uciec…?
+2. …(CHRUP!)
+3. O nie, połyka nas…!!
 
 ---
 
@@ -920,18 +900,18 @@ Czyżbyśmy wreszcie mogli uciec...?
 ## T.Boss (BossFightObjective — 시간 구간 기반 연속 생존)
 
 **Intro**
-1. 식도의 마지막 부분이야...  
-이 아래는 분명 위액으로 가득 차있을 거야. 준비 없이 내려가면 위험해.
-2. 천장에 아까의 사탕이 점점 내려오고 있어.  
-땅에 닿기 전에 바닥을 만들어서 막아야 해.  
-안 그러면 우리도 같이 휩쓸려 떨어질 거야.
-3. 각 구간을 해결하면 바닥이 생겨. 얼른 만들어서 저걸 막아야 해!
+1. 식도의 마지막이야...  
+이 아래는 위액으로 가득 차 있을 거야. 준비 없이 내려가면 위험해.
+2. 아까의 사탕이 천장에서 점점 떨어지고 있어.  
+땅에 닿기 전에 저걸 멈춰야 해!
 
 **Bossdown**
-1. 휴우~~ 가까스로 막았네... 이제 생각해보자. 어떻게 안전하게 내려갈지.
-2. 꿀꺽... 꿀꺽... 이게 무슨 소리지...?
-3. 목이 막혀서 물을 마시기 시작했어! 사탕이 바닥을 부순다!!
-4. 으아아아아아아아아...!!
+1. 후... 가까스로 막았네...  
+이제 생각해보자. 어떻게 안전하게 내려갈지.
+2. 꿀꺽... 꿀꺽...  
+목이 막혀서 물을 마시기 시작했어! 사탕이 내려온다!
+
+*(2026-09-24 개정: Intro 3→2줄, Bossdown 4→2줄. 씬 Intro `Text (TMP) (3)` 삭제, Bossdown `Text (TMP) (3)`·`(4)`는 UI 프리팹 소속이라 배열에서만 뺌(size 2)·키 연결 프리팹 기본값으로. 키 `T.Boss.Intro.Line3`·`Bossdown.Line3`·`Line4` 삭제. 대사 줄 번호에 걸린 연출 없음 — 전부 `OnSequenceComplete`/`OnAllReady`.)*
 
 *(2번 = T.Stage1 "사탕을 삼켰잖아...!"의 그 사탕이 식도를 타고 밀려 내려오며 커진 것 — 조임(연동운동)에 밀려 내려오는 설정, `CoopStageAudit.T.md` §6 "시계"(Sphere). 3번 = 구간(P1–P4)마다 Pioneer/Door/ColorWall+튕김 등으로 바닥을 넓혀 막음. Bossdown 3·4번 대사와 동시에 바닥이 부서지며 추락 — 위(胃)는 확정하지 않고 클리프행어로 마무리(시즌2 여지 보존).)*
 
@@ -979,578 +959,486 @@ Some tiles break easily, so react fast!
 3. Only one color of door opens at a time. Something's chasing us, so hurry!
 
 **T.Boss — Intro**
-1. This is the last stretch of the esophagus...  
-Below here has to be full of stomach acid. Going down unprepared is way too risky.
-2. That candy from before is coming down from the ceiling, and it's bigger now.  
-We need to build a floor before it hits bottom.  
-If we don't, we'll get swept down with it.
-3. Clearing each section builds part of the floor. Hurry and build it to block that thing!
+1. This is the end of the esophagus...  
+It's gotta be full of stomach acid down there. It's dangerous to go down without preparation.
+2. That candy from before is falling from the ceiling.  
+We've gotta stop it before it hits the ground!
 
 **T.Boss — Bossdown**
-1. Phew... we barely held it back... now let's think about how to get down safely from here.
-2. Gulp... gulp... what is that sound...?
-3. Its throat's clogged and it's starting to drink water! The candy's breaking through the floor!!
-4. AAAAAAAAAH...!!
+1. Phew... we barely stopped it...  
+Now let's figure out how to get down safely.
+2. Gulp... gulp...  
+He's choking, so he started drinking water! The candy's coming down!
 
 ### JA
 
 **T.Stage1**
-1. 飲み込まれて食道まで来ちゃった…  
-こうなったら、下まで降りて逃げるしかない。
-2. 食道が周期的に締まってくるよ。  
-警告が出たら、みんなでチームの掛け声を叫んで止めよう!
+1. 飲み込まれて、食道まで来ちゃった…  
+こうなったら、下へ降りて出口を探すしかない。
+2. 食道が締めつけてくるよ。  
+警告が出たら、みんなでチームの掛け声を叫んで止めて！
 3. 両側から色の壁が迫ってくるよ。  
-自分の色が出た壁には直接ぶつかって — そうすれば壁が後ろに下がるはず。
-4. …ゴロゴロゴロ…?  
-今転がってきてるの、まさかアメ玉じゃないよね?!踏まれたくないなら走れ!!
+わたしの色が出た壁には、思いきり体当たりして。そうすれば押し返せる。
+4. 後ろから転がってくるの…アメ！？ぺちゃんこになりたくなかったら走って！
 
 **T.Stage2 — Stage1**
-1. 光ってるマスだけしっかり覚えて。間違えて踏んだら即死だよ。
-2. ゲップが出かけて食道でつっかえちゃった…ガスが溜まり始めてるよ。  
-濃くなって前が見えなくなったら、みんなでチームの掛け声を叫んで払おう。
+1. 食道にガスがたまってきてるみたい…  
+濃くなって前が見えなくなったら、チームの掛け声で吹き飛ばして！
 
 **T.Stage2 — Stage2**
-1. 今度は色ごとに見せるよ。必ず自分の色に合わせて!  
-色が合ってても白黒状態なら死ぬから気をつけて。
+1. わたしの色を覚えて、同じ色のマスを進んで！
 
 **T.Stage2 — Stage3**
-1. 区域ごとに担当の色があるよ。担当が先に通らないと道は安全にならない!  
-順番は絶対守って!
+1. そのエリアの色の人が先に通れば、道が安全になるよ。割り込み禁止！
 
 **T.Stage3**
-1. 足元に気をつけて。逆流性食道炎かも…酸性の液体が上がってきてる!
-2. 見えない場所から棘の攻撃が来るよ。常に気を抜かないで。
-3. 両側の壁が白黒に切り替わるよ。  
-色を合わせて壁にぶつかって、迫ってくる壁を押し返せ!
+1. 逆流性食道炎っぽい…胃液が上がってきてる！  
+看板のタイマーが切れる前に区間を抜けないと、胃液に沈んじゃうよ！
 
 **T.Stage4**
-1. アレルギー反応が出たみたい。食道にむくみができてる。  
-ぶつかると弾き飛ばされるよ。
+1. アレルギー反応かな…食道がパンパンに腫れてる。
+2. 食道が敏感になってて、1マスに1人しか乗れないよ。  
+割れやすいマスもあるから、素早く動いて！
 
 **T.Stage5**
-1. 急に食道が痙攣して、通路が完全に絡まっちゃった。このままじゃ出口が見つからないよ…
-2. この白黒の膜、何かに触れるたびに開いたり閉じたりしてるみたい。
-3. 上のほうにも道があるみたい。まずはあそこから探してみよう。
-2. 壁にぶつかると弾き飛ばされるよ。  
-これを上手く使えば逃げられそうだね?
+1. 急に食道がうねって、通路がふさがっちゃった！
+2. 1人は下を走って、ほかのみんなは色のパネルを踏んで扉を開けて！
+3. 一度に開くのは一色の扉だけ。何かが追ってくるから、急いで！
 
 **T.Boss — Intro**
-1. 食道の最後の部分だ…  
-この下は絶対胃液でいっぱいのはず。準備なしで降りるのは危険すぎる。
-2. さっきのアメ玉が天井からどんどん下がってきてる。  
-地面に着く前に足場を作って止めないと。  
-じゃないと私たちも一緒に飲み込まれて落ちちゃう。
-3. 各区間を突破すれば足場ができるよ。早く作ってあれを止めよう!
+1. 食道の終わりだ…  
+この下はきっと胃液でいっぱい。準備なしで降りるのは危ないよ。
+2. さっきのアメが天井からどんどん落ちてきてる。  
+地面に着く前に止めなきゃ！
 
 **T.Boss — Bossdown**
-1. ふぅ…なんとか止めたね…さあ考えよう。どうやって安全に降りるか。
-2. …ゴクッ…ゴクッ…この音は何…?
-3. のどが詰まって水を飲み始めた!アメ玉が足場を壊す!!
-4. うわああああああああ…!!
+1. ふう…なんとか止められた…  
+さて、どうやって安全に降りるか考えよう。
+2. ゴクッ…ゴクッ…  
+喉が詰まって水を飲み始めた！アメが落ちてくる！
 
 ### ZH-Hans
 
 **T.Stage1**
-1. 被吞下去掉进食道里了……  
-到这一步,只能往下走想办法逃出去了。
-2. 食道会周期性地收缩。  
-警告一出现,大家一起喊团队口号把它顶回去!
-3. 两侧的彩色墙会挤过来。  
-哪面墙是你的颜色,就直接撞上去——墙会被撞退回去。
-4. ……咕噜咕噜咕噜?  
-现在滚过来的这个,难道是糖果吗?!不想被压扁就快跑!!
+1. 被吞下去了……现在到了食道。  
+没办法了，只能往下走找出口。
+2. 食道会挤压过来。  
+警告一出现，大家一起喊团队口号挡住它！
+3. 两边会有彩色墙壁压过来。  
+墙上出现我的颜色时就直接撞上去，这样就能把它推回去。
+4. 后面滚过来的是……糖果吗？！不想被压扁就快跑！
 
 **T.Stage2 — Stage1**
-1. 只记住发光的格子就行。踩错格子会立刻死。
-2. 打嗝打到一半被食道堵住了……气体开始积起来了。  
-变浓看不清路的时候,大家一起喊团队口号把它清掉。
+1. 食道里好像在积气……  
+浓到看不清的时候，就喊团队口号把它驱散！
 
 **T.Stage2 — Stage2**
-1. 这次会按颜色分别显示。一定要对上你自己的颜色!  
-颜色对了也没用,黑白状态照样会死。
+1. 记住我的颜色，沿着同色的格子走！
 
 **T.Stage2 — Stage3**
-1. 每个区域都有对应的负责颜色。负责的颜色先走一遍,路才会变安全!  
-一定要按顺序来!
+1. 得让这个区域的颜色先走，路才会安全。不准插队！
 
 **T.Stage3**
-1. 小心脚下。是不是有反流性食道炎啊,胃酸都涌上来了!
-2. 看不见的地方会有尖刺攻击过来。时刻保持警惕。
-3. 两侧的墙会变成黑白色。  
-对上颜色撞上去,把压过来的墙推回去!
+1. 好像是胃食管反流……胃液涌上来了！  
+要是没在牌子上的计时结束前通过这一段，就会泡在胃液里！
 
 **T.Stage4**
-1. 好像是过敏反应,食道里长出了一堆浮肿。  
-撞到这些东西会被弹飞出去。
+1. 大概是过敏了……食道肿得厉害。
+2. 食道变得很敏感，一格只能站一个人。  
+有些格子很容易碎，反应要快！
 
 **T.Stage5**
-1. 食道突然痉挛，通道彻底缠在了一起。这样下去找不到出口……
-2. 这些黑白膜好像一碰到什么就会开合。
-3. 上面好像也有路。先从那边找找看吧。
-2. 撞到墙会被弹开。  
-好好利用这个说不定能逃掉?
+1. 食道突然一阵翻腾，通道被堵住了！
+2. 一个人在下面跑，其他人踩彩色踏板开门！
+3. 一次只会开一种颜色的门。有东西在追我们，快点！
 
 **T.Boss — Intro**
-1. 这是食道的最后一段了……  
-下面肯定全是胃液。毫无准备就下去太危险了。
-2. 天花板上那块糖果正在慢慢降下来,而且越来越大。  
-得赶紧搭出地面挡住它。  
-不然我们也会一起被冲下去。
-3. 每解决一个区间就会生成一块地面。赶紧搭好挡住那东西!
+1. 这是食道的尽头了……  
+下面肯定全是胃液。没准备好就下去太危险了。
+2. 刚才那颗糖果正从天花板上慢慢掉下来。  
+必须在它落地前拦住它！
 
 **T.Boss — Bossdown**
-1. 呼……总算是挡住了……好,想想接下来要怎么安全地下去。
-2. 咕咚……咕咚……这是什么声音……?
-3. 它嗓子堵住了,开始咕嘟咕嘟灌水!糖果把地面砸破了!!
-4. 啊啊啊啊啊啊啊啊啊……!!
+1. 呼……总算拦住了……  
+现在想想怎么安全下去吧。
+2. 咕嘟……咕嘟……  
+他噎住了，开始喝水了！糖果要掉下来了！
 
 ### ZH-Hant
 
 **T.Stage1**
-1. 被吞下去掉進食道裡了……  
-到這一步,只能往下走想辦法逃出去了。
-2. 食道會週期性地收縮。  
-警告一出現,大家一起喊團隊口號把它頂回去!
-3. 兩側的彩色牆會擠過來。  
-哪面牆是你的顏色,就直接撞上去——牆會被撞退回去。
-4. ……咕嚕咕嚕咕嚕?  
-現在滾過來的這個,難道是糖果嗎?!不想被壓扁就快跑!!
+1. 被吞下去了……現在到了食道。  
+沒辦法了，只能往下走找出口。
+2. 食道會擠壓過來。  
+警告一出現，大家一起喊團隊口號擋住它！
+3. 兩邊會有彩色牆壁壓過來。  
+牆上出現我的顏色時就直接撞上去，這樣就能把它推回去。
+4. 後面滾過來的是……糖果嗎？！不想被壓扁就快跑！
 
 **T.Stage2 — Stage1**
-1. 只要記住發光的格子就好。踩錯格子會立刻死掉。
-2. 打嗝打到一半被食道卡住了……氣體開始積起來了。  
-變濃看不清路的時候,大家一起喊團隊口號把它清掉。
+1. 食道裡好像在積氣……  
+濃到看不清的時候，就喊團隊口號把它驅散！
 
 **T.Stage2 — Stage2**
-1. 這次會按顏色分別顯示。一定要對上你自己的顏色!  
-顏色對了也沒用,黑白狀態照樣會死。
+1. 記住我的顏色，沿著同色的格子走！
 
 **T.Stage2 — Stage3**
-1. 每個區域都有對應的負責顏色。負責的顏色要先走一遍,路才會變安全!  
-一定要按順序來!
+1. 得讓這個區域的顏色先走，路才會安全。不准插隊！
 
 **T.Stage3**
-1. 小心腳下。是不是有胃食道逆流啊,胃酸都湧上來了!
-2. 看不見的地方會有尖刺攻擊過來。要隨時保持警覺。
-3. 兩側的牆會變成黑白色。  
-對上顏色撞上去,把壓過來的牆推回去!
+1. 好像是胃食道逆流……胃液湧上來了！  
+要是沒在牌子上的計時結束前通過這一段，就會泡在胃液裡！
 
 **T.Stage4**
-1. 好像是過敏反應,食道裡長出了一堆浮腫。  
-撞到這些東西會被彈飛出去。
+1. 大概是過敏了……食道腫得厲害。
+2. 食道變得很敏感，一格只能站一個人。  
+有些格子很容易碎，反應要快！
 
 **T.Stage5**
-1. 食道突然痙攣，通道徹底纏在了一起。這樣下去找不到出口……
-2. 這些黑白膜好像一碰到什麼就會開合。
-3. 上面好像也有路。先從那邊找找看吧。
-2. 撞到牆會被彈開。  
-好好利用這個,說不定能逃掉?
+1. 食道突然一陣翻騰，通道被堵住了！
+2. 一個人在下面跑，其他人踩彩色踏板開門！
+3. 一次只會開一種顏色的門。有東西在追我們，快點！
 
 **T.Boss — Intro**
-1. 這是食道的最後一段了……  
-下面肯定全是胃液。毫無準備就下去太危險了。
-2. 天花板上那顆糖果正在慢慢降下來,而且越變越大。  
-得趕緊搭出地板擋住它。  
-不然我們也會一起被沖下去。
-3. 每解決一個區段就會生成一塊地板。趕緊搭好擋住那東西!
+1. 這是食道的盡頭了……  
+下面肯定全是胃液。沒準備好就下去太危險了。
+2. 剛才那顆糖果正從天花板上慢慢掉下來。  
+必須在它落地前攔住它！
 
 **T.Boss — Bossdown**
-1. 呼……總算是擋住了……好,想想接下來要怎麼安全下去。
-2. 咕嘟……咕嘟……這是什麼聲音……?
-3. 牠喉頭卡住了,開始咕嘟咕嘟灌水!糖果正在把地板砸破!!
-4. 啊啊啊啊啊啊啊啊啊……!!
+1. 呼……總算攔住了……  
+現在想想怎麼安全下去吧。
+2. 咕嘟……咕嘟……  
+他噎住了，開始喝水了！糖果要掉下來了！
 
 ### ES
 
 **T.Stage1**
-1. Nos tragó y acabamos en el esófago...  
-Así las cosas, no queda otra que bajar y escapar.
-2. El esófago se va a contraer a intervalos aleatorios.  
-En cuanto salga el aviso, ¡gritad todos el grito de equipo para detenerlo!
-3. Unas paredes de colores avanzarán desde los lados.  
-Si una pared muestra tu color, chócate contra ella sin miedo — retrocederá.
-4. ...¿ese ruido de algo rodando?  
-¡No me digáis que es el caramelo de antes!? ¡Corred si no queréis quedar aplastados!!
+1. Nos ha tragado… ahora estamos en el esófago.  
+No queda otra: hay que bajar y buscar una salida.
+2. El esófago nos va a apretujar.  
+Cuando salga el aviso, ¡gritad juntos el grito de equipo para pararlo!
+3. Van a venir paredes de colores por los dos lados.  
+Si una pared muestra mi color, embístela de lleno: así la harás retroceder.
+4. ¡¿Eso que viene rodando por detrás es un caramelo?! ¡Corred si no queréis acabar aplastados!
 
 **T.Stage2 — Stage1**
-1. Memorizad solo las baldosas que brillan. Si pisáis la equivocada, es muerte instantánea.
-2. Se le atascó un eructo en el esófago... está empezando a acumularse el gas.  
-Si se pone tan espeso que no se ve nada, gritad el grito de equipo para despejarlo.
+1. Creo que se está acumulando gas en el esófago…  
+Si se pone tan denso que no se ve nada, ¡gritad el grito de equipo para despejarlo!
 
 **T.Stage2 — Stage2**
-1. Esta vez las va a mostrar por colores. ¡Tenéis que acertar con vuestro propio color!  
-Aunque el color sea el correcto, si está en blanco y negro, morís igual.
+1. ¡Recuerda mi color y avanza por las baldosas que coincidan!
 
 **T.Stage2 — Stage3**
-1. Cada zona tiene un color asignado. ¡El camino solo se vuelve seguro después de que pase primero ese color!  
-¡Respetad el orden!
+1. Primero tiene que pasar el color de la zona; después el camino será seguro. ¡No os coléis!
 
 **T.Stage3**
-1. Cuidado con el suelo. Debe tener reflujo — ¡le está subiendo ácido del estómago!
-2. Vendrán ataques de púas desde donde no se ve. Estad siempre alerta.
-3. Las paredes de los lados se van a poner en blanco y negro.  
-¡Igualad el color y chocad contra la pared para hacer retroceder la presión!
+1. Parece reflujo… ¡está subiendo ácido del estómago!  
+Si no pasamos cada tramo antes de que se acabe el tiempo del cartel, ¡acabaremos nadando en él!
 
 **T.Stage4**
-1. Debe ser una reacción alérgica — le han salido bultos por todo el esófago.  
-Si chocáis con uno, saldréis despedidos.
+1. Debe de ser una reacción alérgica… el esófago está todo hinchado.
+2. Está tan sensible que solo cabe uno por casilla.  
+Algunas casillas se rompen fácilmente, ¡reaccionad rápido!
 
 **T.Stage5**
-1. El esófago se convulsionó de repente y el paso quedó completamente enredado. Así no vamos a encontrar la salida...
-2. Estas membranas en blanco y negro parecen abrirse y cerrarse cada vez que algo las activa.
-3. Parece que también hay un camino arriba. Habrá que buscar por ahí primero.
-2. Si chocáis contra una pared, saldréis despedidos.  
-Podríamos usar eso para escapar, ¿no?
+1. ¡El esófago se ha sacudido de golpe y ha bloqueado el paso!
+2. Uno corre abajo. ¡Los demás, pisad las placas de color para abrir las puertas!
+3. Solo se abren las puertas de un color a la vez. ¡Algo nos persigue, daos prisa!
 
 **T.Boss — Intro**
-1. Este es el último tramo del esófago...  
-Ahí abajo tiene que estar lleno de ácido del estómago. Bajar sin prepararnos es demasiado peligroso.
-2. El caramelo de antes está bajando por el techo, y cada vez es más grande.  
-Tenemos que construir suelo antes de que toque fondo.  
-Si no, nos arrastrará con él.
-3. Al superar cada tramo se genera parte del suelo. ¡Rápido, construidlo para detener a eso!
+1. Este es el final del esófago…  
+Ahí abajo debe de estar lleno de ácido. Bajar sin prepararse es peligroso.
+2. El caramelo de antes está cayendo del techo.  
+¡Hay que pararlo antes de que toque el suelo!
 
 **T.Boss — Bossdown**
-1. Fiu... por poco lo detenemos... ahora pensemos. Cómo bajar de forma segura desde aquí.
-2. Glup... glup... ¿qué es ese sonido...?
-3. ¡Se le atascó la garganta y se puso a beber agua! ¡El caramelo está rompiendo el suelo!!
-4. ¡AAAAAAAAAH...!!
+1. Uf… por los pelos…  
+Ahora pensemos cómo bajar sin peligro.
+2. Glup… glup…  
+¡Se ha atragantado y se ha puesto a beber agua! ¡El caramelo está bajando!
 
 ### ES-419
 
 **T.Stage1**
-1. Nos tragó y terminamos en el esófago...  
-Así las cosas, no queda de otra más que bajar y escapar.
-2. El esófago se va a contraer a intervalos aleatorios.  
-En cuanto aparezca la advertencia, ¡griten todos el grito de equipo para detenerlo!
-3. Van a avanzar paredes de colores desde los costados.  
-Si una pared muestra tu color, chócate contra ella sin miedo — va a retroceder.
-4. ...¿ese ruido de algo rodando?  
-¡No me digan que es el caramelo de antes!? ¡Corran si no quieren terminar aplastados!!
+1. Nos tragó… ahora estamos en el esófago.  
+No queda de otra: hay que bajar y buscar una salida.
+2. El esófago nos va a apretar.  
+Cuando aparezca la advertencia, ¡griten juntos el grito de equipo para detenerlo!
+3. Van a venir paredes de colores por los dos lados.  
+Si una pared muestra mi color, embístela de lleno: así la vas a hacer retroceder.
+4. ¡¿Eso que viene rodando atrás es un dulce?! ¡Corran si no quieren quedar aplastados!
 
 **T.Stage2 — Stage1**
-1. Memoricen solo las baldosas que brillan. Si pisan la equivocada, es muerte instantánea.
-2. Se le atoró un eructo en el esófago... está empezando a acumularse el gas.  
-Si se pone tan espeso que no se ve nada, griten el grito de equipo para despejarlo.
+1. Creo que se está juntando gas en el esófago…  
+Si se pone tan denso que no se ve nada, ¡griten el grito de equipo para despejarlo!
 
 **T.Stage2 — Stage2**
-1. Esta vez las va a mostrar por colores. ¡Tienen que acertar con su propio color!  
-Aunque el color sea el correcto, si está en blanco y negro, mueren igual.
+1. ¡Recuerda mi color y avanza por las baldosas que coincidan!
 
 **T.Stage2 — Stage3**
-1. Cada zona tiene un color asignado. ¡El camino solo se vuelve seguro después de que pase primero ese color!  
-¡Respeten el orden!
+1. Primero tiene que pasar el color de la zona; después el camino va a ser seguro. ¡Nada de saltarse la fila!
 
 **T.Stage3**
-1. Cuidado con el piso. Debe tener reflujo — ¡le está subiendo ácido del estómago!
-2. Van a venir ataques de púas desde donde no se ve. Estén siempre alerta.
-3. Las paredes de los costados se van a poner en blanco y negro.  
-¡Igualen el color y choquen contra la pared para hacer retroceder la presión!
+1. Parece reflujo… ¡está subiendo ácido del estómago!  
+Si no pasamos cada tramo antes de que se acabe el tiempo del letrero, ¡vamos a terminar nadando en él!
 
 **T.Stage4**
-1. Debe ser una reacción alérgica — le salieron bultos por todo el esófago.  
-Si chocan con uno, van a salir volando.
+1. Debe ser una reacción alérgica… el esófago está todo hinchado.
+2. Está tan sensible que solo cabe uno por casilla.  
+Algunas casillas se rompen fácil, ¡reaccionen rápido!
 
 **T.Stage5**
-1. El esófago se convulsionó de repente y el paso quedó todo enredado. Así no vamos a encontrar la salida...
-2. Estas membranas en blanco y negro parecen abrirse y cerrarse cada vez que algo las activa.
-3. Parece que también hay un camino arriba. Hay que empezar a buscar por ahí.
-2. Si chocan contra una pared, van a salir despedidos.  
-Podríamos usar eso para escapar, ¿no?
+1. ¡El esófago se sacudió de golpe y bloqueó el paso!
+2. Uno corre abajo. ¡Los demás, pisen las placas de color para abrir las puertas!
+3. Solo se abren las puertas de un color a la vez. ¡Algo nos persigue, apúrense!
 
 **T.Boss — Intro**
-1. Este es el último tramo del esófago...  
-Ahí abajo debe estar lleno de ácido del estómago. Bajar sin prepararnos es demasiado peligroso.
-2. El caramelo de antes está bajando por el techo, y cada vez está más grande.  
-Tenemos que construir piso antes de que toque fondo.  
-Si no, nos va a arrastrar con él.
-3. Al superar cada tramo se genera parte del piso. ¡Rápido, constrúyanlo para detener a eso!
+1. Este es el final del esófago…  
+Ahí abajo debe estar lleno de ácido. Bajar sin prepararse es peligroso.
+2. El dulce de antes está cayendo del techo.  
+¡Hay que detenerlo antes de que toque el piso!
 
 **T.Boss — Bossdown**
-1. Fiu... por poco lo detenemos... ahora pensemos. Cómo bajar de forma segura desde aquí.
-2. Glup... glup... ¿qué es ese sonido...?
-3. ¡Se le atoró la garganta y empezó a beber agua! ¡El caramelo está rompiendo el piso!!
-4. ¡AAAAAAAAAH...!!
+1. Uf… apenas lo logramos…  
+Ahora pensemos cómo bajar sin peligro.
+2. Glup… glup…  
+¡Se atragantó y se puso a tomar agua! ¡El dulce está bajando!
 
 ### FR
 
 **T.Stage1**
-1. On a été avalés et on s'est retrouvés dans l'œsophage...  
-Vu la situation, il ne reste plus qu'à descendre pour s'échapper.
-2. L'œsophage va se resserrer à intervalles aléatoires.  
-Dès que l'alerte apparaît, criez tous le cri d'équipe pour l'arrêter !
-3. Des murs colorés vont avancer des deux côtés.  
-Si un mur montre ta couleur, jette-toi dessus sans hésiter — il reculera.
-4. ...ce bruit de truc qui roule ?  
-Ne me dites pas que c'est le bonbon d'avant !? Courez si vous ne voulez pas finir écrasés !!
+1. On s'est fait avaler… on est dans l'œsophage, maintenant.  
+Pas le choix : il faut descendre et trouver une sortie.
+2. L'œsophage va se resserrer sur nous.  
+Dès que l'alerte apparaît, criez le cri d'équipe ensemble pour l'arrêter !
+3. Des murs colorés vont se refermer des deux côtés.  
+Si un mur affiche ma couleur, fonce dedans : ça le fera reculer.
+4. C'est un bonbon qui roule derrière nous ?! Courez si vous ne voulez pas finir en crêpe !
 
 **T.Stage2 — Stage1**
-1. Mémorisez juste les dalles qui brillent. Marchez sur la mauvaise et c'est la mort instantanée.
-2. Un rot est resté coincé dans l'œsophage... le gaz commence à s'accumuler.  
-S'il devient trop épais pour voir, criez le cri d'équipe pour le dissiper.
+1. On dirait que du gaz s'accumule dans l'œsophage…  
+S'il devient trop épais pour voir, criez le cri d'équipe pour le dissiper !
 
 **T.Stage2 — Stage2**
-1. Cette fois, ça va s'afficher par couleur. Tu dois absolument faire correspondre ta propre couleur !  
-Même si la couleur est correcte, tu meurs quand même si c'est en noir et blanc.
+1. Retiens ma couleur et avance sur les cases qui correspondent !
 
 **T.Stage2 — Stage3**
-1. Chaque zone a une couleur assignée. Le chemin ne devient sûr qu'une fois que cette couleur est passée en premier !  
-Respectez bien l'ordre !
+1. La couleur de la zone doit passer en premier, ensuite le chemin sera sûr. On ne double pas !
 
 **T.Stage3**
-1. Attention au sol. On dirait un reflux — c'est de l'acide gastrique qui remonte !
-2. Des attaques de pics vont venir d'endroits invisibles. Restez toujours sur vos gardes.
-3. Les murs des deux côtés vont passer en noir et blanc.  
-Fais correspondre la couleur et jette-toi sur le mur pour repousser la pression !
+1. On dirait du reflux… l'acide gastrique remonte !  
+Si on ne passe pas chaque section avant la fin du chrono du panneau, on va finir par nager dedans !
 
 **T.Stage4**
-1. On dirait une réaction allergique — des gonflements sont apparus dans tout l'œsophage.  
-Si vous en touchez un, vous serez projetés en arrière.
+1. Ça doit être une réaction allergique… l'œsophage est tout enflé.
+2. Il est devenu si sensible qu'un seul d'entre nous peut tenir par case.  
+Certaines cases se brisent facilement, alors réagissez vite !
 
 **T.Stage5**
-1. L'œsophage s'est soudain contracté et le passage s'est complètement emmêlé. À ce rythme, on ne trouvera pas la sortie...
-2. Ces membranes noires et blanches ont l'air de s'ouvrir et de se fermer dès que quelque chose les déclenche.
-3. On dirait qu'il y a aussi un chemin en haut. Commençons par chercher par là.
-2. Si vous touchez un mur, vous serez repoussés.  
-On pourrait s'en servir pour s'échapper, non ?
+1. L'œsophage s'est contracté d'un coup et le passage est bloqué !
+2. L'un de nous court en bas. Les autres, marchez sur les dalles de couleur pour ouvrir les portes !
+3. Une seule couleur de porte s'ouvre à la fois. Quelque chose nous poursuit, dépêchez-vous !
 
 **T.Boss — Intro**
-1. C'est la dernière partie de l'œsophage...  
-En bas, ça doit être plein d'acide gastrique. Descendre sans préparation est bien trop dangereux.
-2. Le bonbon d'avant descend du plafond, et il grossit de plus en plus.  
-On doit construire un sol avant qu'il touche le fond.  
-Sinon on sera emportés avec lui.
-3. Chaque section terminée fait apparaître une partie du sol. Vite, construisez-le pour bloquer ce truc !
+1. C'est la fin de l'œsophage…  
+En bas, ça doit être rempli d'acide gastrique. Descendre sans se préparer, c'est dangereux.
+2. Le bonbon de tout à l'heure tombe du plafond.  
+Il faut l'arrêter avant qu'il touche le sol !
 
 **T.Boss — Bossdown**
-1. Ouf... on a réussi à le bloquer de justesse... bon, réfléchissons. Comment descendre en sécurité à partir d'ici.
-2. Glou... glou... c'est quoi ce bruit...?
-3. Sa gorge s'est bouchée et il commence à boire de l'eau ! Le bonbon défonce le sol !!
-4. AAAAAAAAAH...!!
+1. Ouf… on l'a arrêté de justesse…  
+Maintenant, réfléchissons à comment descendre sans risque.
+2. Glou… glou…  
+Il s'étouffe et s'est mis à boire de l'eau ! Le bonbon descend !
 
 ### DE
 
 **T.Stage1**
-1. Wir wurden verschluckt und sind in der Speiseröhre gelandet...  
-So wie die Dinge stehen, bleibt uns nur, nach unten zu gehen und zu entkommen.
-2. Die Speiseröhre wird sich in zufälligen Abständen zusammenziehen.  
-Sobald die Warnung erscheint, ruft alle zusammen den Teamruf, um sie zu stoppen!
-3. Von beiden Seiten drängen bunte Wände heran.  
-Zeigt eine Wand deine Farbe, ramm einfach direkt rein — dann wird sie zurückgestoßen.
-4. ...dieses Rumpeln?  
-Sag bloß, das ist das Bonbon von vorhin, das da angerollt kommt?! Rennt, wenn ihr nicht zerquetscht werden wollt!!
+1. Wir wurden verschluckt… jetzt sind wir in der Speiseröhre.  
+Keine Wahl – wir müssen runter und einen Ausweg finden.
+2. Die Speiseröhre wird sich um uns zusammenziehen.  
+Sobald die Warnung kommt, ruft zusammen den Teamruf, um sie zu stoppen!
+3. Von beiden Seiten rücken bunte Wände an.  
+Zeigt eine Wand meine Farbe, renn voll rein – dann weicht sie zurück.
+4. Rollt da etwa ein Bonbon hinter uns her?! Lauft, wenn ihr nicht platt gewalzt werden wollt!
 
 **T.Stage2 — Stage1**
-1. Merkt euch nur die aufleuchtenden Felder. Tretet ihr aufs falsche, ist es sofort vorbei.
-2. Ein Rülpser blieb in der Speiseröhre stecken... es sammelt sich langsam Gas an.  
-Wird es zu dicht, um noch etwas zu sehen, ruft den Teamruf, um es zu vertreiben.
+1. Ich glaub, in der Speiseröhre staut sich Gas…  
+Wenn's so dicht wird, dass man nichts mehr sieht, vertreibt es mit dem Teamruf!
 
 **T.Stage2 — Stage2**
-1. Diesmal wird es nach Farben angezeigt. Du musst unbedingt deine eigene Farbe treffen!  
-Selbst wenn die Farbe stimmt, stirbst du trotzdem, wenn es schwarz-weiß ist.
+1. Merk dir meine Farbe und lauf über die Felder, die dazu passen!
 
 **T.Stage2 — Stage3**
-1. Jede Zone hat eine zuständige Farbe. Der Weg wird erst sicher, wenn diese Farbe zuerst durchgeht!  
-Haltet unbedingt die Reihenfolge ein!
+1. Die Farbe der Zone muss zuerst durch, dann ist der Weg sicher. Nicht vordrängeln!
 
 **T.Stage3**
-1. Passt auf den Boden auf. Das sieht nach Reflux aus — da steigt Magensäure hoch!
-2. Aus unsichtbaren Stellen kommen Stachelangriffe. Bleibt immer wachsam.
-3. Die Wände an beiden Seiten werden schwarz-weiß.  
-Pass die Farbe an und ramm gegen die Wand, um den Druck zurückzudrängen!
+1. Fühlt sich nach Sodbrennen an… da kommt Magensäure hoch!  
+Wenn wir nicht jeden Abschnitt schaffen, bevor der Timer am Schild abläuft, schwimmen wir gleich drin!
 
 **T.Stage4**
-1. Sieht nach einer allergischen Reaktion aus — überall in der Speiseröhre sind Schwellungen entstanden.  
-Berührt ihr eine davon, werdet ihr zurückgeschleudert.
+1. Muss eine allergische Reaktion sein… die Speiseröhre ist total geschwollen.
+2. Sie ist so empfindlich, dass nur einer von uns auf jedem Feld stehen kann.  
+Manche Felder brechen leicht, also reagiert schnell!
 
 **T.Stage5**
-1. Die Speiseröhre hat sich plötzlich verkrampft und der Weg ist jetzt völlig verknotet. So finden wir den Ausgang nie...
-2. Diese schwarz-weißen Membranen scheinen sich zu öffnen und zu schließen, sobald irgendwas sie auslöst.
-3. Sieht so aus, als gäbe es auch oben einen Weg. Fangen wir da an zu suchen.
-2. Berührt ihr eine Wand, werdet ihr zurückgeschleudert.  
-Vielleicht können wir das nutzen, um zu entkommen, was?
+1. Die Speiseröhre hat plötzlich gezuckt und der Durchgang ist versperrt!
+2. Einer von uns rennt unten. Alle anderen treten auf die Farbplatten, um die Türen zu öffnen!
+3. Es öffnen sich immer nur die Türen einer Farbe. Irgendwas verfolgt uns, beeilt euch!
 
 **T.Boss — Intro**
-1. Das ist der letzte Abschnitt der Speiseröhre...  
-Da unten muss es voller Magensäure sein. Unvorbereitet runterzugehen ist viel zu riskant.
-2. Das Bonbon von vorhin kommt von der Decke herab und wird immer größer.  
-Wir müssen einen Boden bauen, bevor es unten aufschlägt.  
-Sonst werden wir mit runtergerissen.
-3. Schafft man jeden Abschnitt, entsteht ein Stück Boden. Schnell, baut ihn, um das Ding zu stoppen!
+1. Das ist das Ende der Speiseröhre…  
+Da unten ist bestimmt alles voller Magensäure. Ohne Vorbereitung runterzugehen ist gefährlich.
+2. Das Bonbon von vorhin fällt von der Decke.  
+Wir müssen es aufhalten, bevor es unten aufschlägt!
 
 **T.Boss — Bossdown**
-1. Puh... gerade noch geschafft, es zu stoppen... jetzt lasst uns überlegen, wie wir hier sicher runterkommen.
-2. Schluck... schluck... was ist das für ein Geräusch...?
-3. Sein Hals ist verstopft, und es fängt an, Wasser zu trinken! Das Bonbon zerschmettert den Boden!!
-4. AAAAAAAAAH...!!
+1. Puh… gerade noch aufgehalten…  
+Jetzt überlegen wir, wie wir sicher runterkommen.
+2. Gluck… gluck…  
+Er hat sich verschluckt und fängt an, Wasser zu trinken! Das Bonbon kommt runter!
 
 ### PT-BR
 
 **T.Stage1**
-1. A gente foi engolido e acabou no esôfago...  
-Já que é assim, só resta descer e escapar.
-2. O esôfago vai se contrair em intervalos aleatórios.  
-Quando aparecer o aviso, gritem todos juntos o grito do time pra parar isso!
-3. Paredes coloridas vão avançar dos dois lados.  
-Se uma parede mostrar sua cor, bate direto nela — ela vai recuar.
-4. ...esse barulho de coisa rolando?  
-Não me diga que é aquela bala rolando de novo?! Corram se não quiserem ser esmagados!!
+1. A gente foi engolido… agora estamos no esôfago.  
+Não tem jeito — temos que descer e achar uma saída.
+2. O esôfago vai apertar a gente.  
+Quando o aviso aparecer, gritem juntos o grito da equipe pra impedir!
+3. Paredes coloridas vão vir dos dois lados.  
+Se uma parede mostrar a minha cor, pode trombar com tudo — isso empurra ela pra trás.
+4. Isso rolando atrás da gente é uma bala?! Corram se não quiserem virar panqueca!
 
 **T.Stage2 — Stage1**
-1. Decorem só os blocos que brilham. Se pisarem no errado, é morte instantânea.
-2. Um arroto ficou entalado no esôfago... o gás está começando a se acumular.  
-Se ficar tão denso que não dá pra ver nada, gritem o grito do time pra limpar isso.
+1. Acho que tá acumulando gás no esôfago…  
+Se ficar tão denso que não dá pra ver, gritem o grito da equipe pra dissipar!
 
 **T.Stage2 — Stage2**
-1. Agora vai mostrar por cor. Você tem que acertar a sua própria cor!  
-Mesmo se a cor bater, se estiver em preto e branco, você morre do mesmo jeito.
+1. Lembre a minha cor e vá pelos blocos que combinam com ela!
 
 **T.Stage2 — Stage3**
-1. Cada área tem uma cor responsável. O caminho só fica seguro depois que essa cor passar primeiro!  
-Respeitem bem a ordem!
+1. A cor da área tem que ir primeiro, aí o caminho fica seguro. Nada de furar fila!
 
 **T.Stage3**
-1. Cuidado com o chão. Deve ser refluxo — tá subindo ácido do estômago!
-2. Vão vir ataques de espinho de lugares que a gente não vê. Fiquem sempre atentos.
-3. As paredes dos dois lados vão virar preto e branco.  
-Acerte a cor e bata na parede pra empurrar a pressão de volta!
+1. Parece refluxo… o suco gástrico tá subindo!  
+Se a gente não passar cada trecho antes do tempo da placa acabar, vamos acabar nadando nele!
 
 **T.Stage4**
-1. Deve ser uma reação alérgica — surgiram inchaços por todo o esôfago.  
-Se baterem em um desses, vão ser lançados pra trás.
+1. Deve ser uma reação alérgica… o esôfago tá todo inchado.
+2. Ficou tão sensível que só cabe um de nós por bloco.  
+Alguns blocos quebram fácil, então reajam rápido!
 
 **T.Stage5**
-1. O esôfago se contraiu de repente e o caminho ficou todo emaranhado. Desse jeito não vamos achar a saída...
-2. Essas membranas preto e branco parecem abrir e fechar toda vez que algo as aciona.
-3. Parece que tem um caminho lá em cima também. Vamos começar a procurar por ali.
-2. Se baterem numa parede, vão ser lançados pra trás.  
-Dá pra usar isso pra fugir, né?
+1. O esôfago se contorceu do nada e bloqueou a passagem!
+2. Um de nós corre lá embaixo. O resto, pise nas placas coloridas pra abrir as portas!
+3. Só abrem as portas de uma cor por vez. Tem alguma coisa atrás da gente, corram!
 
 **T.Boss — Intro**
-1. Esse é o último trecho do esôfago...  
-Aí embaixo deve estar cheio de ácido do estômago. Descer sem se preparar é arriscado demais.
-2. Aquela bala de antes tá descendo do teto, e cada vez maior.  
-A gente precisa construir um chão antes que ela toque o fundo.  
-Senão vamos ser arrastados junto.
-3. Cada trecho que a gente vence gera uma parte do chão. Rápido, construam isso pra bloquear aquilo!
+1. Aqui é o fim do esôfago…  
+Lá embaixo deve estar cheio de suco gástrico. Descer sem se preparar é perigoso.
+2. Aquela bala de antes tá caindo do teto.  
+A gente tem que parar ela antes de chegar no chão!
 
 **T.Boss — Bossdown**
-1. Ufa... quase não deu, mas paramos... agora vamos pensar. Como descer daqui em segurança.
-2. Glup... glup... que som é esse...?
-3. A garganta dele entupiu e ele começou a beber água! A bala tá quebrando o chão!!
-4. AAAAAAAAAH...!!
+1. Ufa… foi por pouco…  
+Agora vamos pensar em como descer com segurança.
+2. Glup… glup…  
+Ele engasgou e começou a beber água! A bala tá descendo!
 
 ### RU
 
 **T.Stage1**
-1. Нас проглотили, и мы оказались в пищеводе...  
-В такой ситуации остаётся только спускаться вниз и искать выход.
-2. Пищевод будет периодически сжиматься.  
-Как только появится предупреждение, кричите все вместе командный клич, чтобы остановить это!
-3. С обеих сторон на нас будут надвигаться цветные стены.  
-Если стена показывает твой цвет — врезайся в неё прямо, она отступит назад.
-4. ...это что, что-то катится?  
-Только не говорите, что это та самая конфета?! Бегите, если не хотите быть раздавленными!!
+1. Нас проглотили… теперь мы в пищеводе.  
+Выбора нет — надо спускаться и искать выход.
+2. Пищевод будет сжиматься вокруг нас.  
+Как появится предупреждение — кричите вместе командный клич, чтобы остановить это!
+3. С обеих сторон будут надвигаться цветные стены.  
+Если на стене мой цвет — врежься в неё с разгону, и она отступит.
+4. Это что, за нами катится леденец?! Бегите, если не хотите превратиться в лепёшку!
 
 **T.Stage2 — Stage1**
-1. Запоминайте только светящиеся плитки. Наступишь на неправильную — мгновенная смерть.
-2. Отрыжка застряла в пищеводе... газ начинает скапливаться.  
-Если станет так густо, что ничего не видно, кричите командный клич, чтобы его развеять.
+1. Кажется, в пищеводе скапливается газ…  
+Если станет так густо, что ничего не видно, — кричите командный клич, чтобы его разогнать!
 
 **T.Stage2 — Stage2**
-1. На этот раз плитки будут показаны по цветам. Обязательно совпади со своим цветом!  
-Даже если цвет верный, при чёрно-белом режиме всё равно умрёшь.
+1. Запомни мой цвет и иди по клеткам того же цвета!
 
 **T.Stage2 — Stage3**
-1. У каждой зоны есть свой цвет-ответственный. Путь станет безопасным только после того, как этот цвет пройдёт первым!  
-Обязательно соблюдайте порядок!
+1. Сначала должен пройти цвет этой зоны — потом путь будет безопасным. Не лезьте вперёд!
 
 **T.Stage3**
-1. Осторожно с полом. Похоже на рефлюкс — это желудочный сок поднимается!
-2. Атаки шипами будут прилетать из невидимых мест. Будьте всегда начеку.
-3. Стены с обеих сторон станут чёрно-белыми.  
-Совпади цветом и врежься в стену, чтобы оттолкнуть напирающее давление!
+1. Похоже на рефлюкс… поднимается желудочный сок!  
+Если не пройдём участок, пока не истёк таймер на табличке, будем в нём плавать!
 
 **T.Stage4**
-1. Похоже на аллергическую реакцию — по всему пищеводу появились отёки.  
-Столкнёшься с одним из них — тебя отбросит.
+1. Похоже на аллергию… пищевод весь распух.
+2. Он стал таким чувствительным, что на одной клетке может стоять только один.  
+Некоторые клетки легко ломаются, так что реагируйте быстро!
 
 **T.Stage5**
-1. Пищевод вдруг свело судорогой, и проход весь перепутался. Так мы выход не найдём...
-2. Эти чёрно-белые перепонки, похоже, открываются и закрываются каждый раз, когда что-то их задевает.
-3. Кажется, наверху тоже есть проход. Начнём искать оттуда.
-2. Врежешься в стену — тебя отбросит назад.  
-Можно этим воспользоваться, чтобы сбежать, да?
+1. Пищевод вдруг содрогнулся, и проход перекрыло!
+2. Один бежит внизу. Остальные — наступайте на цветные плиты, чтобы открывать двери!
+3. За раз открываются двери только одного цвета. За нами что-то гонится, быстрее!
 
 **T.Boss — Intro**
-1. Это последний участок пищевода...  
-Там внизу наверняка всё заполнено желудочным соком. Спускаться без подготовки слишком опасно.
-2. Та самая конфета опускается с потолка сверху и становится всё больше.  
-Нужно построить пол, пока она не коснулась дна.  
-Иначе нас снесёт вместе с ней.
-3. За каждый пройденный участок появляется часть пола. Быстрее строим его, чтобы остановить эту штуку!
+1. Это конец пищевода…  
+Внизу наверняка полно желудочного сока. Спускаться без подготовки опасно.
+2. Тот самый леденец падает с потолка.  
+Надо остановить его, пока он не коснулся земли!
 
 **T.Boss — Bossdown**
-1. Уф... еле остановили... теперь подумаем. Как безопасно спуститься отсюда.
-2. Буль... буль... что это за звук...?
-3. У него забило горло, и оно начало пить воду! Конфета проламывает пол!!
-4. А-А-А-А-А-А-А-А-А...!!
+1. Фух… еле остановили…  
+Теперь давайте придумаем, как безопасно спуститься.
+2. Глык… глык…  
+Он подавился и начал пить воду! Леденец падает!
 
 ### PL
 
 **T.Stage1**
-1. Zostaliśmy połknięci i wylądowaliśmy w przełyku...  
-W takiej sytuacji nie ma innego wyjścia, jak zejść niżej i uciec.
-2. Przełyk będzie się ściskał w losowych odstępach.  
-Jak tylko pojawi się ostrzeżenie, krzyczcie wszyscy okrzyk drużyny, żeby to zatrzymać!
-3. Z obu stron będą napierać kolorowe ściany.  
-Jeśli ściana pokazuje twój kolor, walnij w nią prosto — odskoczy do tyłu.
-4. ...ten dźwięk czegoś, co się kotłuje?  
-Tylko nie mówcie, że to ten sam cukierek?! Biegnijcie, jeśli nie chcecie zostać rozgnieceni!!
+1. Połknął nas… jesteśmy teraz w przełyku.  
+Nie ma wyboru — trzeba zejść na dół i znaleźć wyjście.
+2. Przełyk będzie się na nas zaciskał.  
+Gdy pojawi się ostrzeżenie, krzyknijcie razem okrzyk drużyny, żeby go powstrzymać!
+3. Z obu stron nadjadą kolorowe ściany.  
+Jeśli ściana ma mój kolor, wbij się w nią z całej siły — wtedy się cofnie.
+4. Czy to cukierek toczy się za nami?! Biegiem, jeśli nie chcecie zostać naleśnikiem!
 
 **T.Stage2 — Stage1**
-1. Zapamiętajcie tylko świecące płytki. Nadepniecie na złą — to natychmiastowa śmierć.
-2. Odbicie zatrzymało się w przełyku... gaz zaczyna się gromadzić.  
-Jak zrobi się tak gęsto, że nic nie widać, krzyczcie okrzyk drużyny, żeby go rozgonić.
+1. Chyba w przełyku zbiera się gaz…  
+Jak zrobi się tak gęsto, że nic nie widać, krzyknijcie okrzyk drużyny, żeby go rozwiać!
 
 **T.Stage2 — Stage2**
-1. Tym razem będzie pokazywać po kolorach. Musisz koniecznie trafić w swój kolor!  
-Nawet jeśli kolor się zgadza, i tak zginiesz, jeśli będzie czarno-białe.
+1. Zapamiętaj mój kolor i idź po polach, które do niego pasują!
 
 **T.Stage2 — Stage3**
-1. Każda strefa ma przypisany kolor. Droga staje się bezpieczna tylko wtedy, gdy ten kolor przejdzie pierwszy!  
-Koniecznie trzymajcie się kolejności!
+1. Najpierw musi przejść kolor strefy, dopiero wtedy droga będzie bezpieczna. Nie wpychajcie się!
 
 **T.Stage3**
-1. Uważajcie na podłogę. Musi mieć refluks — podchodzi kwas żołądkowy!
-2. Ataki kolcami będą nadchodzić z miejsc, których nie widać. Bądźcie stale czujni.
-3. Ściany po obu stronach zmienią się na czarno-białe.  
-Dopasuj kolor i uderz w ścianę, żeby odeprzeć napór!
+1. Chyba refluks… podchodzi kwas żołądkowy!  
+Jeśli nie przejdziemy odcinka, zanim skończy się czas na tabliczce, będziemy w nim pływać!
 
 **T.Stage4**
-1. To pewnie reakcja alergiczna — w całym przełyku powstały obrzęki.  
-Uderzycie w jeden z nich, i zostaniecie odrzuceni.
+1. To chyba reakcja alergiczna… przełyk cały spuchł.
+2. Zrobił się tak wrażliwy, że na jednym polu zmieści się tylko jedno z nas.  
+Niektóre pola łatwo pękają, więc reagujcie szybko!
 
 **T.Stage5**
-1. Przełyk nagle się skurczył i korytarz zrobił się kompletnie poplątany. W tym tempie nie znajdziemy wyjścia...
-2. Te czarno-białe błony chyba otwierają się i zamykają za każdym razem, gdy coś je uruchomi.
-3. Wygląda na to, że na górze też jest droga. Zacznijmy szukać stamtąd.
-2. Uderzysz w ścianę i zostaniesz odrzucony.  
-Może da się to wykorzystać, żeby uciec, co?
+1. Przełyk nagle się wzdrygnął i przejście się zablokowało!
+2. Jedno z nas biegnie na dole. Reszta — stawajcie na kolorowych płytkach, żeby otwierać drzwi!
+3. Naraz otwierają się drzwi tylko jednego koloru. Coś nas goni, pośpieszcie się!
 
 **T.Boss — Intro**
-1. To ostatni odcinek przełyku...  
-Tam w dole musi być pełno kwasu żołądkowego. Zejście bez przygotowania jest zbyt ryzykowne.
-2. Ten cukierek z wcześniej opada z sufitu i robi się coraz większy.  
-Musimy zbudować podłogę, zanim dotknie dna.  
-Inaczej zniesie nas razem z nim.
-3. Za każdy pokonany odcinek powstaje kawałek podłogi. Szybko, budujcie ją, żeby to zablokować!
+1. To już koniec przełyku…  
+Na dole na pewno jest pełno kwasu żołądkowego. Schodzenie bez przygotowania jest niebezpieczne.
+2. Ten cukierek z wcześniej spada z sufitu.  
+Musimy go zatrzymać, zanim uderzy w ziemię!
 
 **T.Boss — Bossdown**
-1. Uff... jakoś udało się to zatrzymać... teraz pomyślmy. Jak bezpiecznie zejść stąd.
-2. Chlup... chlup... co to za dźwięk...?
-3. Gardło mu się zatkało i zaczęło pić wodę! Cukierek rozwala podłogę!!
-4. AAAAAAAAAH...!!
+1. Uff… ledwo go zatrzymaliśmy…  
+To teraz pomyślmy, jak bezpiecznie zejść.
+2. Glup… glup…  
+Zakrztusił się i zaczął pić wodę! Cukierek spada!
 
 ---
 

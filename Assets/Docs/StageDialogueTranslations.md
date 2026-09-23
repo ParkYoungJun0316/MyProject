@@ -1,5 +1,7 @@
 # StageDialogueTranslations — M/T 스테이지 대사 11개 언어 번역본
 
+> ⚠️ **폐기(2026-09-24):** 이 문서는 옛 키·옛 대사 기준이라 더 이상 SSOT가 아니다. 현재 대사 번역은 [`StageDialogueLines.md`](StageDialogueLines.md)의 M/T 번역 섹션과 String Table `Dialogue_*`가 기준이다.
+
 > SSOT 원문: [`StageDialogueLines.md`](StageDialogueLines.md) (한국어 확정본).
 > 이 문서는 그 원문을 `en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl` 11개 언어로 번역한 결과다
 > (`SteamworksIntegrationDesign.md` 트랙4 §10 코어 12개 언어 중 ko 제외).
