@@ -262,6 +262,23 @@ public class TitleMenuController : MonoBehaviour
     /// <summary>실패로 끝난 시도만 되돌린다 — 성공하면 씬이 바뀌므로 해제할 필요가 없다.</summary>
     void EndSteamConnectAttempt() => _steamConnectInFlight = false;
 
+    // [2026-09-24] 접속 대기 커튼 — 방 만들기·초대 참여는 Steam 왕복(로비·P2P 연결·씬 동기화) 동안 몇 초씩
+    // 아무 반응 없는 타이틀이 보여 "초대가 안 됐다"로 읽혔고, 그 사이 버튼을 마구 눌렀다. 시작 즉시 덮고
+    // (커튼이 입력도 막는다) 스폰 완료(OnPlayersReady)에 걷는다. 실패하면 커튼만 걷는다 — 별도 오류 표시 없음.
+
+    /// <summary>초대 참여는 씬 로드 전 대기가 길어 기본 게이트 타임아웃(5초)으론 도중에 걷힌다.</summary>
+    const float JoinCoverTimeoutSeconds = 30f;
+
+    static void BeginConnectCover(bool longTimeout)
+    {
+        var curtain = LoadingCurtain.Instance;
+        if (curtain == null) return;
+        if (longTimeout) curtain.UseLongTimeout(JoinCoverTimeoutSeconds);
+        curtain.BeginCover(waitForPlayersReady: true);
+    }
+
+    static void AbortConnectCover() => LoadingCurtain.Instance?.AbortCover();
+
     // ── 버튼 콜백 ─────────────────────────────────────────────────
 
     /// <summary>
@@ -320,10 +337,13 @@ public class TitleMenuController : MonoBehaviour
         if (TryRestartForCreateGame())
             return;
 
+        BeginConnectCover(longTimeout: false);
+
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError("[TitleMenuController] SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
             EndSteamConnectAttempt();
+            AbortConnectCover();
             return;
         }
 
@@ -336,6 +356,7 @@ public class TitleMenuController : MonoBehaviour
             {
                 Debug.LogError("[TitleMenuController] Steam Lobby 생성 실패. 로비 이동 중단.");
                 EndSteamConnectAttempt();
+                AbortConnectCover();
                 return;
             }
 
@@ -346,6 +367,7 @@ public class TitleMenuController : MonoBehaviour
                 Debug.LogError("[TitleMenuController] StartHostSteam 실패. Lobby 정리 후 중단.");
                 SteamLobbyManager.Instance.LeaveCurrentLobby();
                 EndSteamConnectAttempt();
+                AbortConnectCover();
                 return;
             }
 
@@ -358,6 +380,7 @@ public class TitleMenuController : MonoBehaviour
         {
             Debug.LogError($"[TitleMenuController] CreateGameSteamAsync 예외 — {e}");
             EndSteamConnectAttempt();
+            AbortConnectCover();
         }
     }
 
@@ -439,12 +462,16 @@ public class TitleMenuController : MonoBehaviour
         if (TryRestartForWarmReconnect(lobbyId))
             return;
 
+        // 냉기동은 부팅 커튼이 아직 덮여 있어 그대로 이어서 덮는다(타이틀이 한 번도 안 보인다).
+        BeginConnectCover(longTimeout: true);
+
         if (SteamLobbyManager.Instance == null || NetworkManagerSetup.Instance == null)
         {
             Debug.LogError($"[TitleMenuController] JoinGameSteamAsync — source={source}, " +
                            "SteamLobbyManager/NetworkManagerSetup을 찾을 수 없습니다.");
             SetJoinStatus("Failed to join.");
             EndSteamConnectAttempt();
+            AbortConnectCover();
             return;
         }
 
@@ -455,6 +482,7 @@ public class TitleMenuController : MonoBehaviour
             {
                 SetJoinStatus("Room not found.");
                 EndSteamConnectAttempt();
+                AbortConnectCover();
                 return;
             }
 
@@ -474,6 +502,7 @@ public class TitleMenuController : MonoBehaviour
             {
                 SetJoinStatus("Failed to join.");
                 EndSteamConnectAttempt();
+                AbortConnectCover();
             }
         }
         catch (System.Exception e)
@@ -481,6 +510,7 @@ public class TitleMenuController : MonoBehaviour
             Debug.LogError($"[TitleMenuController] JoinGameSteamAsync — source={source}, 예외 — {e}");
             SetJoinStatus("Failed to join.");
             EndSteamConnectAttempt();
+            AbortConnectCover();
         }
     }
 

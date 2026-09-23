@@ -220,7 +220,7 @@ public class InterludeNetworkManager : NetworkBehaviour
             Debug.LogError("[InterludeNetworkManager] 게이트 완료 — SceneFlowManager.Instance null, 씬 전환 중단");
             return;
         }
-        SceneFlowManager.Instance.LoadNextScene();
+        SceneFlowManager.Instance.LoadNextSceneWithoutClearDelay();
     }
 
     /// <summary>

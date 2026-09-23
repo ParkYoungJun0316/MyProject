@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// 씬 전환·로딩·사망 리로드·타이틀 복귀 등 "시간이 걸리는 전환 구간"을 하나로 통일해서
@@ -55,6 +56,14 @@ using UnityEngine.SceneManagement;
 /// <see cref="OnGatesTimedOut"/>을 발행한다. 듣는 쪽(StageNetworkState)이 조용한 리로드로
 /// 재시도하겠다고 하면(<see cref="KeepCoveredForRetry"/>) 커튼을 덮은 채 유지하고,
 /// 아무도 안 맡으면 **그냥 걷고 진행한다** — 무한 암전보다 낫다.
+/// 초대 참여처럼 씬 로드 전 대기가 긴 구간은 <see cref="UseLongTimeout"/>로 이번 커튼만 늘린다.
+///
+/// [입력 차단 — 2026-09-24]
+/// 덮여 있는 동안은 UI 클릭을 막는다. 초대 접속을 기다리는 몇 초 사이 타이틀 버튼(Start/Join)을
+/// 마구 눌러 접속이 꼬이던 문제 때문. 걷히기 시작하면 바로 푼다.
+///
+/// [실패 — AbortCover]
+/// 덮고 기다리던 작업(방 만들기·초대 참여)이 실패하면 게이트를 버리고 바로 걷는다.
 /// </summary>
 [RequireComponent(typeof(ScreenFader))]
 public class LoadingCurtain : MonoBehaviour
@@ -105,6 +114,10 @@ public class LoadingCurtain : MonoBehaviour
     bool      _retryHandled;
     float?    _pendingMinHold;
     float?    _pendingFade;
+    float?    _timeoutOverride;
+
+    CanvasGroup _canvasGroup;
+    Graphic     _blocker;
 
     // ── 초기화 ────────────────────────────────────────────────────
 
@@ -118,10 +131,29 @@ public class LoadingCurtain : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(transform.root.gameObject);
         _fader = GetComponent<ScreenFader>();
+        SetupInputBlocker();
 
         // 게임 최초 부팅 시: 완전 암전 상태로 시작해 타이틀로 자연스럽게 페이드인(팝인 방지).
         _fader.SetAlpha(1f);
         _coverStartTime = Time.unscaledTime;
+        SetBlocking(true);
+    }
+
+    // 커튼 Canvas에 레이캐스터가 없으면 붙인다 — 최상단 Canvas라 여기서 맞으면 아래 UI는 클릭이 안 된다.
+    void SetupInputBlocker()
+    {
+        _canvasGroup = GetComponent<CanvasGroup>();
+        _blocker     = GetComponent<Graphic>();
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
+            canvas.gameObject.AddComponent<GraphicRaycaster>();
+    }
+
+    void SetBlocking(bool block)
+    {
+        if (_canvasGroup != null) _canvasGroup.blocksRaycasts = block;
+        if (_blocker != null)     _blocker.raycastTarget      = block;
     }
 
     void Start()
@@ -182,6 +214,7 @@ public class LoadingCurtain : MonoBehaviour
 
         _coverStartTime = Time.unscaledTime;
         _fader.FadeOut(fadeDuration ?? defaultFadeDuration);
+        SetBlocking(true);
 
         if (waitForPlayersReady) StartWaitingForPlayersReady();
     }
@@ -220,10 +253,45 @@ public class LoadingCurtain : MonoBehaviour
         float remain = minHoldSeconds - (Time.unscaledTime - _coverStartTime);
         if (remain > 0f) yield return new WaitForSecondsRealtime(remain);
 
+        _endRoutine = null;
+
+        // 최소 유지시간을 기다리는 사이 새 게이트가 등록됐다(예: 부팅 커튼이 걷히려는 순간 +connect_lobby
+        // 참여가 시작됨). 요청은 살려 두고 멈춘다 — 그 게이트가 풀릴 때 TryFinishCover가 다시 부른다.
+        if (_gates.Count > 0) yield break;
+
         _fader.FadeIn(fadeDuration);
-        _coverStartTime = -1f;
-        _endRequested   = false;
-        _endRoutine     = null;
+        SetBlocking(false);
+        _coverStartTime  = -1f;
+        _endRequested    = false;
+        _timeoutOverride = null;
+    }
+
+    /// <summary>
+    /// 덮고 기다리던 작업이 실패했다(방 만들기·초대 참여). 남은 게이트를 버리고 바로 걷는다.
+    /// 덮여 있지 않으면 무시.
+    /// </summary>
+    public void AbortCover()
+    {
+        if (_coverStartTime < 0f) return;
+
+        _gates.Clear();
+        StopWaitingForPlayersReady();
+        StopGateTimeout();
+
+        _endRequested   = true;
+        _pendingMinHold = 0f;
+        _pendingFade    = null;
+        TryFinishCover();
+    }
+
+    /// <summary>
+    /// 이번 커튼에 한해 게이트 타임아웃을 늘린다 — 씬 로드 전 대기가 긴 구간(초대 참여: 로비 참가 +
+    /// P2P 연결 + 씬 동기화) 전용. 커튼이 걷히면 기본값으로 돌아간다.
+    /// </summary>
+    public void UseLongTimeout(float seconds)
+    {
+        _timeoutOverride = seconds;
+        RestartGateTimeout();
     }
 
     /// <summary>
@@ -295,13 +363,14 @@ public class LoadingCurtain : MonoBehaviour
 
     IEnumerator GateTimeoutRoutine()
     {
-        yield return new WaitForSecondsRealtime(gateTimeoutSeconds);
+        float timeout = _timeoutOverride ?? gateTimeoutSeconds;
+        yield return new WaitForSecondsRealtime(timeout);
         _gateTimeoutRoutine = null;
 
         var pending = new string[_gates.Count];
         _gates.CopyTo(pending);
 
-        Debug.LogWarning($"[LoadingCurtain] 준비 게이트가 {gateTimeoutSeconds}초 안에 채워지지 않았습니다 — " +
+        Debug.LogWarning($"[LoadingCurtain] 준비 게이트가 {timeout}초 안에 채워지지 않았습니다 — " +
                          $"미완: {string.Join(", ", pending)}");
 
         _retryHandled = false;

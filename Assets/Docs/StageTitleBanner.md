@@ -1,6 +1,6 @@
 # StageTitleBanner — 씬 진입 제목 배너
 
-> **상태(2026-09-23):** 규칙·제목·번역 확정. 코드·UI 미착수.
+> **상태(2026-09-24):** 규칙·제목·번역 확정. 코드 완료(컴파일 통과). UI.prefab 배치 완료. 테이블 생성·플레이 검증 남음.
 > 출처: 플레이테스트 의견 — "장소가 바뀌면 이름이 뜨는 배너(예: 불타오르는 용암지대)가 있으면 좋겠다".
 
 ## 1. 규칙
@@ -83,7 +83,24 @@
 | `Title.T.Stage5` | Abre la puerta | Abre la puerta | Ouvre la porte | Mach die Tür auf | Abre a porta | Открой дверь | Otwórz drzwi |
 | `Title.T.Boss` | Antes de que caiga el caramelo | Antes de que caiga el caramelo | Avant que le bonbon tombe | Bevor das Bonbon landet | Antes que o doce caia | Пока конфета не упала | Zanim cukierek spadnie |
 
-## 5. 열려 있는 항목
+## 5. 구현
 
-- 구현: 트리거(커튼 걷힘 신호), 재도전 판정(DialogueUI와 같은 기준 재사용), 배너 UI 연출(페이드 시간·폰트·배경) — 미착수.
-- 씬별 제목 데이터를 어디에 둘지(씬 컴포넌트 필드 vs 씬 이름 → 키 매핑) — 미정.
+| 파일 | 역할 |
+|---|---|
+| `Scripts/UI/StageTitleBannerUI.cs` | 키 = `Title.` + 활성 씬 이름(씬별 설정 없음). 한국어 폴백 목록에 없는 씬은 무시. 로딩 커튼 `IsCovered`가 false가 되면 재생 — 이벤트가 아니라 상태를 봐서 구독 전 걷힘·타임아웃 포기도 똑같이 잡는다. 본 키 `StageTitle/<씬>`을 `GameSession` 인트로 본 목록에 **실제로 띄울 때** 기록 → 사망/준비 실패 리로드 때 안 뜸. CanvasGroup 알파: 대기 0.2 → 인 0.5 → 유지 2 → 아웃 0.7초(unscaled, 인스펙터 조정) |
+| `Scripts/UI/DialogueUI.cs` | `StartSequence()`가 배너 진행 중이면 끝난 뒤 이 피어에서 연다(`StageTitleBannerUI.WhenClear`). 줄 넘김이 원래 로컬이라 네트워크 변경 없음 |
+| `Editor/SetupStageTitleLocalization.cs` | `Tools / Setup StageTitle Localization` — 이 문서 §3·§4 표를 읽어 `StageTitle` String Table 채움 |
+
+배너 진행 여부(`IsHolding`)는 Awake에서 세운다 — PhaseManager.Start → Phase 0 인트로 대화가 같은 Start 패스에서 열릴 수 있어서.
+
+### 에디터 작업 (사용자)
+
+1. ~~UI.prefab 배치~~ **완료(2026-09-24, MCP)** — `UI/StageTitle`(앵커 0.5,0.75 · 1400×120 · 검정 50% 띠 · CanvasGroup · 활성) + 자식 `Txt.StageTitle`(Fredoka-Bold 흰색 Bold, 자동 크기 36~64, 줄바꿈 없음). StageClear 바로 앞 형제. 폰트는 런타임에 로케일 폰트로 교체된다.
+2. `Tools / Setup StageTitle Localization` 실행.
+3. 플레이 검증: M.Stage1 진입 시 커튼 → 배너 → 대사 순서 / 사망 리로드 시 배너·대사 안 뜸 / 언어 변경 시 폰트.
+
+## 6. 같이 고친 것 — 대사 본 키 M/T 충돌
+
+`PhaseDialogueGate.showOnceKey`가 M과 T에서 같은 값(`Stage1`, `Stage2.1`, `Stage3.1`, `Stage4.1`, `Boss.Intro`, `Bossdown` …)이라,
+한 판을 이어 하면 T 쪽 인트로/보스다운 대사가 "이미 봄"으로 스킵돼야 했다(코드 추론, 플레이 미확인).
+2026-09-24부터 기록 키를 코드가 `<씬 이름>/<showOnceKey>`로 만든다 — 인스펙터 값은 씬 안에서만 고유하면 된다.

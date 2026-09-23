@@ -212,8 +212,12 @@ public class NetworkManagerSetup : MonoBehaviour
         _transport.SetConnectionData(address, port);
 
         bool ok = _net.StartClient();
-        if (ok) Debug.Log($"[NetworkManagerSetup] Client 시작됨 — {address}:{port}");
-        else    Debug.LogError("[NetworkManagerSetup] StartClient() 실패");
+        if (ok)
+        {
+            Debug.Log($"[NetworkManagerSetup] Client 시작됨 — {address}:{port}");
+            SubscribeSceneDiag(); // 로컬(ParrelSync) Client도 전환 커튼(CoverOnClientSceneLoad)이 필요
+        }
+        else Debug.LogError("[NetworkManagerSetup] StartClient() 실패");
         return ok;
     }
 
@@ -349,10 +353,29 @@ public class NetworkManagerSetup : MonoBehaviour
         if (_diagSceneManagerSubscribed == _net.SceneManager) return; // 이 세션에서 이미 구독함
 
         if (_diagSceneManagerSubscribed != null)
+        {
             _diagSceneManagerSubscribed.OnSceneEvent -= DiagOnSceneEvent;
+            _diagSceneManagerSubscribed.OnSceneEvent -= CoverOnClientSceneLoad;
+        }
 
         _net.SceneManager.OnSceneEvent += DiagOnSceneEvent;
+        _net.SceneManager.OnSceneEvent += CoverOnClientSceneLoad;
         _diagSceneManagerSubscribed = _net.SceneManager;
+    }
+
+    /// <summary>
+    /// [2026-09-24] Client 전환 커튼. 씬 전환 커튼은 Host 레인(SceneFlowManager.TransitionTo)에서만 쳐져서
+    /// Client는 사망 리로드(전용 ClientRpc)를 빼면 전환마다 커튼 없이 컷으로 넘어갔고, 덮여 있지 않으니
+    /// 씬 준비 게이트(StageNetworkState)도 건너뛰어 Host에 준비 보고를 안 했다. Host가 LoadScene을 부르면
+    /// Client에 오는 Load 이벤트에서 Host와 같은 방식(waitForPlayersReady)으로 덮는다 — 이미 덮여 있으면 무시.
+    /// </summary>
+    private void CoverOnClientSceneLoad(SceneEvent sceneEvent)
+    {
+        if (_net == null || _net.IsServer) return;
+        if (sceneEvent.SceneEventType != SceneEventType.Load) return;
+        if (sceneEvent.ClientId != _net.LocalClientId) return;
+
+        LoadingCurtain.Instance?.BeginCover(waitForPlayersReady: true);
     }
 
     private void DiagOnSceneEvent(SceneEvent sceneEvent)

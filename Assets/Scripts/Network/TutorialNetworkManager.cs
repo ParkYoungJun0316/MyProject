@@ -361,7 +361,7 @@ public class TutorialNetworkManager : NetworkBehaviour
             SceneFlowManager.Instance.LoadSceneByIndex(_devTargetStageIndex);
             return;
         }
-        SceneFlowManager.Instance.LoadNextScene();
+        SceneFlowManager.Instance.LoadNextSceneWithoutClearDelay();
     }
 
     /// <summary>

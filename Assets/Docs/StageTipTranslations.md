@@ -35,7 +35,9 @@
 ## Tip.M.Stage1
 
 - ko: 한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.\n상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.
-- en: Only one color of mouth comes up at a time.\nAnyone can match their color and step on black-and-white pads.\nWhen "TEAMCHEER" pops up at the top, shout your team word.
+- en: Only one color's mouth rises at a time.
+Anyone can use black and white pads by matching their color.
+When "TEAMCHEER" pops up at the top, shout your team word.
 - ja: 一度に上がる口は一色だけです。\n白黒の足場は、色を合わせて誰でも踏めます。\n上に「TEAMCHEER」が出たら、チームの合言葉を叫んでください。
 - zh-Hans: 一次只会升起一种颜色的嘴。\n黑白踏板谁都可以对好颜色再踩。\n顶部出现 “TEAMCHEER” 时，喊出团队关键词。
 - zh-Hant: 一次只會升起一種顏色的嘴。\n黑白踏板誰都可以對好顏色再踩。\n頂部出現「TEAMCHEER」時，喊出團隊關鍵詞。
@@ -49,8 +51,14 @@
 
 ## Tip.M.Stage2.1
 
-- ko: 지정된 색은 그 구역에 반드시 들어가야 합니다.\n상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.\n방어 버프는 라운드 실패 데미지도 막아 줍니다.
-- en: The assigned color has to be in that zone.\nWhen "TEAMCHEER" pops up at the top, shout your team word.\nThe Defense buff also blocks round-fail damage.
+- ko: 간판 아래 꿀떡 수만큼 그 구역에 들어가세요.
+비대칭 정보를 각자 가지고 있습니다. 서로 공유하세요.
+상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.
+방어 버프는 라운드 실패 데미지도 막아 줍니다.
+- en: Each zone needs as many players as there are KKUL-TTEOK under its sign — no more, no less.
+Everyone sees something different. Share what you see!
+When "TEAMCHEER" pops up at the top, shout your team word.
+Defense buff also blocks round-fail damage.
 - ja: 指定された色は、そのエリアに必ず入ってください。\n上に「TEAMCHEER」が出たら、チームの合言葉を叫んでください。\n防御バフはラウンド失敗のダメージも防いでくれます。
 - zh-Hans: 指定颜色必须进入那个区域。\n顶部出现 “TEAMCHEER” 时，喊出团队关键词。\n防御增益也能挡住回合失败的伤害。
 - zh-Hant: 指定顏色必須進入那個區域。\n頂部出現「TEAMCHEER」時，喊出團隊關鍵詞。\n防禦增益也能擋下回合失敗的傷害。
@@ -65,7 +73,7 @@
 ## Tip.M.Stage2.2
 
 - ko: Ctrl로 흑/백 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
-- en: Press Ctrl to match your character to the black or white floor and break the lock-on.
+- en: Press Ctrl to match your color to the black or white floor and avoid being targeted.
 - ja: Ctrlで床の白黒にキャラの色を合わせて、ロックオンを外してください。
 - zh-Hans: 按 Ctrl，把角色颜色对成地板的黑或白，甩掉锁定。
 - zh-Hant: 按 Ctrl，把角色顏色對成地板的黑或白，甩掉鎖定。
@@ -79,8 +87,10 @@
 
 ## Tip.M.Stage3
 
-- ko: 타일을 2초 동안 밟아야 점수가 올라갑니다.\n고유색 타일은 그 색만, 흑백 타일은 누구든 밟을 수 있습니다.
-- en: Stand on a tile for 2 seconds to score.\nUnique-color tiles only count for that color. Anyone can step on black or white.
+- ko: 타일을 2초 동안 밟아야 점수가 올라갑니다.
+고유색 타일은 해당 색만, 흑백 타일은 누구나 점수를 올릴 수 있습니다.
+- en: Stand on a tile for 2 seconds to score.
+Colored tiles only count for that color. Black and white tiles count for anyone.
 - ja: タイルの上に2秒立つとスコアが入ります。\n固有色のタイルはその色だけ、白黒は誰でも踏めます。
 - zh-Hans: 在格子上站满 2 秒才加分。\n专属色格子只有该颜色能踩，黑白谁都可以踩。
 - zh-Hant: 在格子上站滿 2 秒才加分。\n專屬色格子只有該顏色能踩，黑白誰都可以踩。
@@ -110,7 +120,8 @@
 ## Tip.M.Stage4.2
 
 - ko: 한 칸 앞의 바닥만 보여 줍니다.\n누를 칸을 미리 외워 두세요.
-- en: You only see one tile ahead.\nMemorize which ones to press.
+- en: You only see one tile ahead.
+Memorize which tile to press.
 - ja: 1マス先の床しか見えません。\n押すマスを覚えておいてください。
 - zh-Hans: 只能看到前面一格。\n要按的格子请先记住。
 - zh-Hant: 只能看到前面一格。\n要按的格子請先記住。
@@ -125,7 +136,9 @@
 ## Tip.M.Stage4.3
 
 - ko: Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.\n"TEAMCHEER" 경고가 뜰 때 팀 키워드를 외치면 바닥이 복구됩니다.\n이미 부서진 뒤에는 다음 경고까지 버티세요.
-- en: Press Ctrl to match your character to the floor color and break the lock-on.\nShout the team word while "TEAMCHEER" is up to repair the floor.\nIf it's already broken, hold out until the next warning.
+- en: Press Ctrl to match your color to the floor and avoid being targeted.
+Shout your team word while "TEAMCHEER" is up to repair the floor.
+If it's already broken, hold out until the next warning.
 - ja: Ctrlで床の色にキャラの色を合わせて、ロックオンを外してください。\n「TEAMCHEER」の間にチームの合言葉を叫ぶと、床が直ります。\nすでに壊れたあとは、次の警告まで耐えてください。
 - zh-Hans: 按 Ctrl，把角色颜色对成地板颜色，甩掉锁定。\n“TEAMCHEER” 出现时喊出团队关键词，地板就会修好。\n已经碎了的话，撑到下一次警告。
 - zh-Hant: 按 Ctrl，把角色顏色對成地板顏色，甩掉鎖定。\n「TEAMCHEER」出現時喊出團隊關鍵詞，地板就會修好。\n已經碎了的話，撐到下一次警告。
@@ -140,7 +153,10 @@
 ## Tip.M.Stage5
 
 - ko: 고유색 칸이 나오면 그 칸 위에 서야 합니다.\n고유색이 없으면 흑백 칸 위에서 버티세요.\n바닥 색에 맞춰 캐릭터 색도 바꾸세요.\n방어 버프는 라운드 실패 데미지도 막아 줍니다.
-- en: If a unique-color tile appears, stand on it.\nIf it doesn't, hold out on black or white.\nMatch your character's color to the floor too.\nThe Defense buff also blocks round-fail damage.
+- en: If a tile in your color appears, stand on it.
+If not, hold out on a black or white tile.
+Match your character's color to the floor, too.
+Defense buff also blocks round-fail damage.
 - ja: 固有色のマスが出たら、その上に乗ってください。\n出なければ白黒のマスで耐えてください。\n床の色に合わせてキャラの色も変えてください。\n防御バフはラウンド失敗のダメージも防いでくれます。
 - zh-Hans: 出现专属色格子时，必须站上去。\n没有专属色就站在黑白格子上撑住。\n角色颜色也要对上地板。\n防御增益也能挡住回合失败的伤害。
 - zh-Hant: 出現專屬色格子時，必須站上去。\n沒有專屬色就站在黑白格子上撐住。\n角色顏色也要對上地板。\n防禦增益也能擋下回合失敗的傷害。
@@ -157,7 +173,8 @@
 > M.Boss P1 (Barrier + 화살 + 침). `Tip.M.Stage1` 앞 두 줄 — TEAMCHEER 경고 줄은 뺌.
 
 - ko: 한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.
-- en: Only one color of mouth comes up at a time.\nAnyone can match their color and step on black-and-white pads.
+- en: Only one color's mouth rises at a time.
+Anyone can use black and white pads by matching their color.
 - ja: 一度に上がる口は一色だけです。\n白黒の足場は、色を合わせて誰でも踏めます。
 - zh-Hans: 一次只会升起一种颜色的嘴。\n黑白踏板谁都可以对好颜色再踩。
 - zh-Hant: 一次只會升起一種顏色的嘴。\n黑白踏板誰都可以對好顏色再踩。
@@ -173,8 +190,10 @@
 
 > M.Boss P2 (SideSplit 판정 + 입 닫힘).
 
-- ko: 방어 버프는 라운드 실패 데미지도 막아 줍니다.
-- en: The Defense buff also blocks round-fail damage.
+- ko: 비대칭 정보를 각자 가지고 있습니다. 서로 공유하세요.
+방어 버프는 라운드 실패 데미지도 막아 줍니다.
+- en: Everyone sees something different. Share what you see!
+Defense buff also blocks round-fail damage.
 - ja: 防御バフはラウンド失敗のダメージも防いでくれます。
 - zh-Hans: 防御增益也能挡住回合失败的伤害。
 - zh-Hant: 防禦增益也能擋下回合失敗的傷害。
@@ -191,7 +210,7 @@
 > M.Boss P3 (Drop + 화살 + 혀). `Tip.M.Stage4.3` 첫 줄.
 
 - ko: Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
-- en: Press Ctrl to match your character to the floor color and break the lock-on.
+- en: Press Ctrl to match your color to the floor and avoid being targeted.
 - ja: Ctrlで床の色にキャラの色を合わせて、ロックオンを外してください。
 - zh-Hans: 按 Ctrl，把角色颜色对成地板颜色，甩掉锁定。
 - zh-Hant: 按 Ctrl，把角色顏色對成地板顏色，甩掉鎖定。
@@ -224,8 +243,8 @@
 
 ## Tip.T.Stage1
 
-- ko: 내 색이 뜬 양옆 벽에 부딪히면 벽이 뒤로 물러납니다.
-- en: Ram the side walls when they show your color — they'll get knocked back.
+- ko: 벽 색에 맞춰 부딪히세요.
+- en: Ram the walls that match your color.
 - ja: 自分の色が出た左右の壁にぶつかると、壁が下がります。
 - zh-Hans: 撞上亮着自己颜色的两侧墙壁，墙就会往后退。
 - zh-Hant: 撞上亮著自己顏色的兩側牆壁，牆就會往後退。
@@ -254,8 +273,10 @@
 
 ## Tip.T.Stage2.2
 
-- ko: 자기 색 칸만 밟으세요.\n칸 색이 맞아도 캐릭터가 흑백이면 안 됩니다.
-- en: Only step on tiles of your color.\nEven if the tile matches, don't do it while you're black or white.
+- ko: 자기 색 칸만 밟으세요.
+칸과 캐릭터 색을 맞추세요.
+- en: Only step on tiles in your color.
+Match your character's color to the tiles.
 - ja: 自分の色のマスだけ踏んでください。\nマスの色が合っていても、キャラが白黒のときはダメです。
 - zh-Hans: 只踩自己颜色的格子。\n格子颜色对了，角色却是黑白也不行。
 - zh-Hant: 只踩自己顏色的格子。\n格子顏色對了，角色卻是黑白也不行。
@@ -270,7 +291,7 @@
 ## Tip.T.Stage2.3
 
 - ko: 담당 색이 먼저 지나가야 다른 팀원도 그 바닥을 밟을 수 있습니다.
-- en: The assigned color has to go first before anyone else can step on that floor.
+- en: The zone's color goes first, then everyone else can follow.
 - ja: 担当色が先に通らないと、他のメンバーはその床を踏めません。
 - zh-Hans: 负责的颜色先过去，其他队员才能踩那块地板。
 - zh-Hant: 負責的顏色先過去，其他隊員才能踩那塊地板。
@@ -284,8 +305,10 @@
 
 ## Tip.T.Stage3
 
-- ko: 양옆 벽에 색을 맞춰 부딪히면 벽이 뒤로 물러납니다.
-- en: Match the side walls' color and ram them — they'll get knocked back.
+- ko: 간판 시간 안에 구간을 통과하세요. 늦으면 위액이 차오릅니다.
+양옆 벽에 색을 맞춰 부딪히면 벽이 뒤로 물러납니다.
+- en: Clear each section before the sign's timer runs out, or acid will flood it.
+Match the side walls' color and ram them to push them back.
 - ja: 左右の壁に色を合わせてぶつかると、壁が下がります。
 - zh-Hans: 对好两侧墙壁的颜色再撞上去，墙就会往后退。
 - zh-Hant: 對好兩側牆壁的顏色再撞上去，牆就會往後退。
@@ -299,8 +322,12 @@
 
 ## Tip.T.Stage4
 
-- ko: 앞뒤 벽과 부종에 닿으면 튕겨 나갑니다.
-- en: Touching the front or back walls, or the swellings, will bounce you.
+- ko: 한 칸에 한 명만 서세요. 둘 이상 서면 칸이 가라앉습니다.
+깨지는 칸이 섞여 있습니다.
+앞뒤 벽과 부종에 닿으면 튕겨 나갑니다.
+- en: One player per tile. Any more and it'll sink.
+Some of the tiles are breakable.
+Touching the front and back walls or the swellings will knock you back.
 - ja: 前後の壁と腫れに触れると弾かれます。
 - zh-Hans: 碰到前后的墙或肿块会被弹开。
 - zh-Hant: 碰到前後的牆或腫塊會被彈開。
@@ -319,8 +346,10 @@
 > ko/en 외 11개는 **기계번역이므로 원어민 검수 전** — Steam AI 표기 검토 대상
 > (`project_steam_ai_disclosure`).
 
-- ko: 러너 한 명이 미로를 달리고, 나머지는 2층에서 길을 안내합니다.\n패드를 밟으면 그 색 문만 열리고 나머지는 전부 닫힙니다.\n고유색 패드는 그 색 플레이어만, 흑·백 패드는 누구나 밟을 수 있습니다.
-- en: One runner races through the maze while the others guide from the second floor.\nStepping on a pad opens only that color's doors and closes all the rest.\nColored pads work only for that color's player; black and white pads work for anyone.
+- ko: 러너 한 명이 미로를 달리고, 나머지는 2층에서 길을 안내합니다.
+패드를 밟으면 그 색 문만 열리고 나머지는 전부 닫힙니다.
+- en: One runner races through the maze while the others guide from the second floor.
+Stepping on a pad opens only that color's doors and closes all the rest.
 - ja: ランナー1人が迷路を走り、残りは2階から道を案内します。\nパッドを踏むと、その色の扉だけが開き、ほかはすべて閉じます。\n固有色のパッドはその色のプレイヤーだけ、黒と白のパッドは誰でも踏めます。
 - zh-Hans: 一名奔跑者在迷宫中奔跑，其他人在二楼指路。\n踩下踏板后，只有该颜色的门会打开，其余全部关闭。\n专属颜色的踏板只有该颜色的玩家能踩，黑白踏板任何人都能踩。
 - zh-Hant: 一名奔跑者在迷宮中奔跑，其他人在二樓指路。\n踩下踏板後，只有該顏色的門會打開，其餘全部關閉。\n專屬顏色的踏板只有該顏色的玩家能踩，黑白踏板任何人都能踩。

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Phase 진입 시 대화(DialogueUI)를 띄우고, 전원이 다 읽으면(또는 스킵되면) OnAllReady를
@@ -22,7 +23,8 @@ using UnityEngine.Events;
 /// [씬 설정]
 /// 1. 스폰된 NetworkObject(예: StageNetworkState가 붙은 오브젝트)에 씬 인트로/Phase별로 하나씩 부착
 /// 2. dialogueUI : 이 대화 전용 Dialogue_Panel (handleInputLocally=true 필수). 비우면 대화 없이 즉시 OnAllReady
-/// 3. showOnceKey : 고유 키 (예: "M.Stage4" 씬 인트로, "M.Stage4.1" Phase별) — 사망 리로드 후 재관람 방지. 비우면 매번 다시 표시
+/// 3. showOnceKey : 씬 안에서 고유한 키 (예: "Stage4.1") — 사망 리로드 후 재관람 방지. 비우면 매번 다시 표시.
+///    실제 기록 키는 코드가 씬 이름을 앞에 붙인다("M.Stage4/Stage4.1") — M/T가 같은 키를 써도 안 겹친다
 /// 4. 씬 최초 진입이면 Phase0 onPhaseEnter / Phase 중간이면 해당 Phase onPhaseEnter → 이 컴포넌트의 Begin() 연결
 /// 5. OnAllReady → StageStartGate.Arm 또는 StageManager.StartStage 등 다음 단계 연결
 /// </summary>
@@ -65,9 +67,15 @@ public class PhaseDialogueGate : NetworkBehaviour
 
         if (!IsServer) return;
 
-        bool alreadySeen = !string.IsNullOrEmpty(showOnceKey)
+        // [2026-09-24] 씬 이름을 붙인다 — M.Stage1·T.Stage1이 둘 다 "Stage1"을 써서 한 판을 이어 하면
+        // T 쪽 인트로가 "이미 봄"으로 스킵되던 충돌 제거.
+        string seenKey = string.IsNullOrEmpty(showOnceKey)
+            ? null
+            : SceneManager.GetActiveScene().name + "/" + showOnceKey;
+
+        bool alreadySeen = seenKey != null
             && GameSession.Instance != null
-            && GameSession.Instance.IsIntroSeen(showOnceKey);
+            && GameSession.Instance.IsIntroSeen(seenKey);
 
         if (alreadySeen || dialogueUI == null)
         {
@@ -76,8 +84,8 @@ public class PhaseDialogueGate : NetworkBehaviour
             return;
         }
 
-        if (!string.IsNullOrEmpty(showOnceKey))
-            GameSession.Instance?.MarkIntroSeen(showOnceKey);
+        if (seenKey != null)
+            GameSession.Instance?.MarkIntroSeen(seenKey);
 
         SubscribeComplete();
         dialogueUI.StartSequence();

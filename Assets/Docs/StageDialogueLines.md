@@ -17,24 +17,23 @@
 
 ## M.Stage1 (`DirectionalBarrier` 이동 + 소리 초출)
 
-1. 왜 맛있는 과일들이랑 군것질들을 빼고 꿀떡을 먹은 거야!!!
-2. 호랑이 굴에 들어가도 정신만 차리면 살 수 있다고 했어..!  
-이제부터 생존만 생각해.
+1. 왜 맛있는 과일들을 빼고 날 먹은 거야!!
+2. 이제부터 생존만 생각해.
 3. 주위에 있는 색깔 입들 위치를 잘 기억해둬.  
 발판을 밟으면 그 색 입이 솟아올라서 이빨을 부숴줄 거야.
 4. 한 번에 한 색만 올라와.  
 다 같이 밟아봤자 소용없어.
-5. 여기가 닫히려고 하면... 다 같이 팀 구호를 외쳐!  
-안 그러면 앞이 안 보이게 될 거야.
+5. 거대한 입이 닫히려고 하면 다 같이 팀 구호를 외쳐.  
+안 그러면 앞이 어두워질 거야.
 
 *(색 패드/응원 설명은 `2.Tutorial` 씬 담당 — M.Stage1에서 재설명하지 않음. **단, 은신(Stealth)은 예외** — Tutorial 구역 1이 생략 가능인 데다 실사용처가 `M.Stage2`(2.2)·`M.Stage4`(4.3)·`M.Boss`(1페이즈)뿐으로 희소해서, Tutorial 단독 교육을 신뢰하지 않고 **첫 실사용 스테이지(`M.Stage2` 2.2)에서 다시 짚어준다**(아래 참고). `CheerAndTutorialDesign.md` §4 참고.)*
 
-*(3번 "색깔 입" = `DirectionalBarrier`/`MouthBarrier` 프리팹(`DoorController`). 5번 "여기" = `MouthController`(방 전체 닫힘, 소리 초출) — 서로 다른 단어로 분리해 헷갈리지 않게 함.)*
+*(3번 "색깔 입" = `DirectionalBarrier`/`MouthBarrier` 프리팹(`DoorController`). 5번 "거대한 입" = `MouthController`(방 전체 닫힘, 소리 초출) — 수식어(색깔/거대한)로 구분해 헷갈리지 않게 함. 2026-09-24 개정: 1번 꿀떡 명시·2번 속담 삭제·5번 "여기"→"거대한 입".)*
 
 ## M.Stage2 (`SideSplitChallenge` — 2.1 SideSplit+침 / 2.2 Drop+침)
 
 **2.1 — SideSplit 첫 등장 + 침 초출**
-1. 화면에 표시된 대로 안전 구역에 들어가면 돼!
+1. 꿀떡 수만큼 들어가! 근데 자기 간판 꿀떡만 보이니까 서로 알려줘!
 2. 날 먹기 전에 매운 걸 먹었나..?  
 바닥에 침들이 자꾸 올라와.
 3. 바닥에 침이 깔려 미끄러울 거야.  
@@ -42,8 +41,7 @@
 
 **2.2 — 은신 첫 등장 (Drop+침 구간, `TrapPlayerTracker` 최초 사용)**
 1. 이제는 위에서도 침이 떨어지잖아!  
-매운 음식을 먹고 신 음식까지 먹은 게 분명해.  
-꿀떡으로 중화하려는 거야, 분명!
+매운 음식을 먹고 신 음식까지 먹은 게 분명해.
 2. 떨어지는 침 중에 날 조준하는 게 있는데, <color=#FFD24D><b>Ctrl</b></color>로 바닥 색이랑 내 색을 맞추면 조준이 풀릴 거야.
 
 ## M.Stage3 (`ColorTileChallenge` — 점수제)
@@ -59,10 +57,10 @@
 1. 네 색이 바닥에 뜨면 <color=#FFD24D><b>Space</b></color>를 눌러.  
 흰색은 아무나 눌러도 되고, 검은색은 누르면 안 돼!  
 검은색은 1초 뒤에 자동으로 다음 차례로 넘어갈 거야.
-2. 발 밑에서 뭔가 움직이고 있어..조심해!  
+2. 발밑에서 뭔가 움직이고 있어... 조심해!  
 혀 공격이 들어온다!
 3. 가운데 발판을 부수고 혀가 길을 방해할 거야.  
-다 같이 팀 구호를 외치면 다시 내려가고, 부서진 길도 원상복구 될 거야.
+다 같이 팀 구호를 외치면 다시 내려가고, 부서진 길도 원상복구될 거야.
 
 **4.2 — 난이도업**
 1. 이제부터는 한 칸 앞 바닥만 보여줄 거야.  
@@ -82,9 +80,8 @@
 2. 바닥에 색 칸이 켜질 거야.  
 네 색이 나오면 그 칸에만 서.  
 안 나왔으면 검은색이나 흰색, 네 흑백에 맞춰서 버텨!
-3. 반드시 색에 맞춰서 캐릭터 색도 맞춰야 해!
 
-*(한 보드·한 라운드 줄. Color/BW 페이즈 분리 없음. 네 색이 나온 라운드는 그 칸만, 없으면 흑백. 캐릭터 색도 맞출 것.)*
+*(한 보드·한 라운드 줄. Color/BW 페이즈 분리 없음. 네 색이 나온 라운드는 그 칸만, 없으면 흑백. 캐릭터 색도 맞출 것. 2026-09-24: 3번(캐릭터 색 맞추기) 대사 삭제 — Tip 3번이 담당. 바닥 붕괴는 보면 바로 알 수 있어 대사·Tip 안내 없음.)*
 
 ## M.Boss (BossFightObjective — 몬스터 없음, 스테이지 함정 자체가 보스)
 
@@ -105,69 +102,69 @@
 
 > 번역 규칙: **1)** 언어별 문법에 맞게, **2)** 그 언어권에서 실제 쓰는 말투로, **3)** "꿀떡"은 전 언어 공통으로 로마자 표기 `KKUL-TTEOK` 그대로 사용(한국 고유 음식이라 의미 번역 대신 음차 유지 — 필요하면 별도로 "한국식 꿀떡(honey rice cake)" 주석을 붙일 것). 키 강조 태그(`<color=#FFD24D><b>Space</b></color>` 등)와 줄바꿈 규칙은 모든 언어 동일 적용.
 >
-> **속담(M.Stage1-2)은 언어별 관용구로 교체하지 않고, "호랑이 굴에 들어가도 정신만 차리면 산다"를 전 언어 공통으로 직역**한다 — 한국 속담 자체를 보여주는 것이 목적.
+> **번역 기준 = 영어 (2026-09-24):** 한국어 원문 → 영어 확정 → 나머지 10개 언어는 **영어에서** 옮긴다. 진행은 씬마다 ko·en만 확정하고, 나머지 언어는 전 씬이 끝난 뒤 한 번에 번역한다 — 그 전까지 ko·en 외 언어는 옛 대사가 남아 있을 수 있음.
+>
+> ~~속담(M.Stage1-2) 직역 규칙~~ — 2026-09-24 M.Stage1-2에서 속담 삭제로 폐기.
 >
 > ⚠️ 11개 언어 전체를 1차로 초안 작성한 것으로, 특히 JA/ZH/RU/PL은 원어민 검수 권장.
 
 ### EN
 
 **M.Stage1**
-1. Why'd you skip all the tasty fruit and snacks and eat a KKUL-TTEOK instead?!
-2. They say you can survive even a tiger's den if you keep your wits about you..!  
-From now on, just focus on staying alive.
+1. Why'd you skip all the tasty fruit and eat me instead?!
+2. From now on, just focus on staying alive.
 3. Remember where the colored mouths around you are.  
 Step on the pad, and that color's mouth will rise up and smash the teeth.
 4. Only one color rises at a time.  
 Stepping on it together won't help.
-5. If this place starts to close... everyone shout the team cheer!  
-Otherwise you won't be able to see a thing.
+5. When the giant mouth starts to close, everyone shout the team cheer!  
+Otherwise everything will go dark.
 
 **M.Stage2 — 2.1**
-1. Get into the safe zone shown on screen!
-2. Did it eat something spicy before swallowing me..?  
-Drool keeps rising up from the floor.
-3. The floor's covered in slippery drool.  
-Everyone shout the team cheer together to clear it.
+1. Match each zone's KKUL-TTEOK count! You only see your own sign's, so call them out!
+2. Did he eat something spicy before he ate me..?  
+Drool keeps bubbling up from the floor.
+3. All this drool's gonna make the floor slippery.  
+Shout the team cheer together and we can clear it!
 
 **M.Stage2 — 2.2**
 1. Now it's dripping from above too!  
-It must've eaten something spicy, then something sour on top of that.  
-It's definitely trying to neutralize it with a KKUL-TTEOK!
-2. Some of the falling drops are targeting me — press <color=#FFD24D><b>Ctrl</b></color> to match the floor color to your own and break the lock-on.
+He must've eaten something spicy and sour.
+2. Some of the falling drool is targeting me!  
+Match my color to the floor with <color=#FFD24D><b>Ctrl</b></color> and it'll lose track of me.
 
 **M.Stage3**
-1. Colored tiles will appear on the floor.  
-Stand on one for 2 seconds and your score goes up.
-2. Anyone can step on white or black tiles, but only your own color counts on unique-color tiles.  
-Don't block the way — move fast!
+1. Colored tiles are gonna pop up on the floor.  
+Stand on one for 2 seconds to score a point.
+2. Anyone can use white or black tiles, but a colored tile only counts for that color.  
+Stay out of each other's way and move fast!
 
 **M.Stage4 — 4.1**
-1. Press <color=#FFD24D><b>Space</b></color> when your color lights up on the floor.  
-Anyone can press for white, but don't press for black!  
-Black will move to the next turn automatically after 1 second.
-2. Something's moving under our feet..watch out!  
-It's a tongue attack!
-3. The tongue will smash the platform in the center and block the way.  
-Everyone shout the team cheer to bring it back down and repair the broken path.
+1. When your color shows up on the floor, hit <color=#FFD24D><b>Space</b></color>.  
+Anyone can hit white, but don't touch black!  
+Black passes to the next turn on its own after 1 second.
+2. Something's moving under our feet... watch out!  
+Here comes the tongue!
+3. The tongue's gonna smash the middle platform and block the way.  
+Shout the team cheer together and it'll go back down — the broken path will be restored, too.
 
 **M.Stage4 — 4.2**
-1. From now on, it'll only show you one tile ahead.  
-Remember it well!
+1. From now on, you'll only see one tile ahead.  
+Make sure you remember it!
 
 **M.Stage4 — 4.3**
-1. There's something targeting me here too.  
-Press <color=#FFD24D><b>Ctrl</b></color> to match the floor color to your own and break the lock-on.
-2. This time the tongue will smash the entire left or right floor.  
-Shout the team cheer to block it — if you don't, it'll just break.
-3. It only repairs if you shout the team cheer while the warning is up.  
-Once the floor breaks, you'll just have to hold out until the next warning.
+1. Something's targeting me here too!  
+Match my color to the floor with <color=#FFD24D><b>Ctrl</b></color> and it'll lose track of me.
+2. This time, the tongue's gonna smash the whole left or right side of the floor.  
+Shout the team cheer to stop it — if you don't, it's gonna break.
+3. The floor only comes back if you shout the team cheer while the warning's up.  
+Once it's broken, you'll just have to hang on until the next warning.
 
 **M.Stage5**
-1. Feels like it's working out! Its breathing suddenly got rough.
-2. Colored tiles will light up on the floor.  
-If your color appears, stand on that tile only.  
-If it doesn't, hold out on black or white — match yours.
-3. You have to match your character's color too!
+1. Is he working out or something? His breathing suddenly got rough!
+2. Colored tiles are gonna light up on the floor.  
+If your color shows up, stand on that tile only.  
+If it doesn't, hang on to black or white — whichever matches you!
 
 **M.Boss — Intro**
 1. Haah... haah... just a little more and we might actually make it out alive...
@@ -874,55 +871,51 @@ Czyżbyśmy wreszcie mogli uciec...?
 
 1. 삼켜져서 식도로 넘어왔어...  
 이렇게 된 이상, 아래로 내려가서 탈출하는 수밖에 없어.
-2. 식도가 주기적으로 조여올 거야.  
+2. 식도가 조여올 거야.  
 경고가 뜨면, 다 같이 팀 구호를 외쳐서 막아!
 3. 양옆에서 색벽이 밀려올 거야.  
-내 색이 뜬 벽엔 직접 부딪혀 — 그러면 벽이 뒤로 물러날 거야.
-4. ...데구르르르르?  
-지금 굴러오고 있는 게 설마 사탕이야?! 깔리기 싫으면 달려!!
+내 색이 뜬 벽엔 직접 부딪혀.  
+그러면 벽이 뒤로 물러날 거야.
+4. 지금 뒤에서 굴러오는 거, 사탕이야?! 깔리기 싫으면 달려!
 
 *(1번 = 식도 진입(M→T 전환). 2번 "조여온다" = 식도 원통 반경 축소(`EsophagusSqueeze`, 전방향, 랜덤 주기 공격) — Warning 중 외치면 공격 취소, Hold 중 외치면 원상 복구. 3번 "색벽" = `ColorWall` 고유색(좌우 압박, 되돌림 대상 아님) — 접촉 시 색 일치면 `AdvancingWall.PauseTemporarily()`로 원점 후퇴 + 일시정지(`ColorWall.cs` `HandleContact`/`PauseRoutine`). **T1은 고유색, 흑백은 T3 초출**(`CoopStageAudit.T.md` §4 잠금). 4번 = `BoulderSpawnManager` 추격 시작(`ReachZoneObjective`).)*
 
 ## T.Stage2 (MemoryPath / ColoredMemoryPath / PioneerPathManager — 안개 초출)
 
 **Stage1 — MemoryPath (+ 안개 초출)**
-1. 빛나는 칸만 잘 외워둬. 잘못 밟으면 그대로 즉사야.
-2. 트림이 나오다가 식도에 막혀버렸어... 가스가 차오르기 시작하고 있어.  
-짙어져서 앞이 안 보이면 팀 구호를 외쳐서 걷어내자.
+1. 식도에 가스가 차는 것 같은데...  
+짙어져서 앞이 안 보이면 팀 구호를 외쳐서 걷어내.
 
 **Stage2 — ColoredMemoryPath**
-1. 이번엔 색깔별로 보여줄 거야. 반드시 네 색에 맞춰야 해!  
-색이 맞아도 흑백이면 죽을 거야.
+1. 내 색을 기억하고 칸과 색을 맞춰서 이동해!
 
 **Stage3 — PioneerPathManager**
-1. 구역마다 담당 색이 있어. 담당이 먼저 지나가야 그제야 길이 안전해져!  
-꼭 순서를 지켜!
+1. 담당 구역의 색이 먼저 지나가야 길이 안전해져. 순서를 꼭 지켜!
 
-*(Stage1 1번 = `MemoryPathTile`, Trap은 `NetworkDamageUtil.ApplyInstantKill` 즉사. 2번 "가스" = 안개 초출 — 거리 기반 Render Fog(`EsophagusFog`), 씬 전역 적용·구간 분리 없음, 걷혀도 정답 하이라이트가 다시 뜨는 게 아니라 그 순간의 바닥만 보임. Stage2 = `ColoredMemoryPathTile.IsSafeFor`, 고유색 비활성(흑백) 상태면 색이 맞아도 즉사. Stage3 = `PioneerPathTile`, 미개방 타일을 pioneer 아닌 색이 밟거나 흑백 상태면 즉사, Trap 타일은 누가 밟든 항상 즉사.)*
+*(Stage1: 2026-09-24 옛 1번(외워둬·즉사) 삭제 — 즉사는 겪으면 바로 알고 Tip이 "길을 외워 두세요"를 담당. 키는 `T.Stage2.Stage1.Line1` 하나로 정리(옛 Line2 키 삭제). `MemoryPathTile` Trap은 `NetworkDamageUtil.ApplyInstantKill` 즉사. 1번 "가스" = 안개 초출 — 거리 기반 Render Fog(`EsophagusFog`), 씬 전역 적용·구간 분리 없음, 걷혀도 정답 하이라이트가 다시 뜨는 게 아니라 그 순간의 바닥만 보임. Stage2 = `ColoredMemoryPathTile.IsSafeFor`, 고유색 비활성(흑백) 상태면 색이 맞아도 즉사. Stage3 = `PioneerPathTile`, 미개방 타일을 pioneer 아닌 색이 밟거나 흑백 상태면 즉사, Trap 타일은 누가 밟든 항상 즉사.)*
 
 ## T.Stage3 (Wall·볼더·Spike·패드 — 조임 복습 + ColorWall 흑백 초출)
 
-1. 바닥을 조심해. 역류성 식도염이 있나 봐. 산성 물질이 올라오잖아!
-2. 안 보이는 곳에서 가시 공격이 올 거야. 항상 유의해.
-3. 양옆의 벽이 흑백으로 바뀔 거야.  
-색에 맞춰 벽에 부딪혀서, 압박하는 벽을 밀어내!
+1. 역류성 식도염이 있나 봐. 위액이 올라오고 있어!  
+간판 시간 안에 구간을 못 지나가면 위액에 잠길 거야!
 
-*(1번 = `GreenMucusTrap`(`AcidPool`/`AcidHazardVFX` + `ContactDamage`) — "점액"(압력) 카테고리. 2번 = `SpikeTrap`(바닥에서 올라오는 가시, `ContactDamage`류 데미지) — T.Stage3.unity에 다수 배치. 3번 = `ColorWall` 흑백 초출 — 접촉 시 색 일치면 `AdvancingWall.PauseTemporarily()`로 원점 후퇴+정지(2인 게이트 아님). 조임 복습(`EsophagusSqueeze`)은 T1과 동일 메카닉이라 대사엔 안 넣음 — 2인 장면은 전원 외침 원상 복구.)*
+*(2026-09-24 개정: 1번을 구간 시계·위액 설명으로 교체(`TStage3SegmentDeadline.md`), 옛 3번(흑백 색벽) 삭제 — 양옆 벽은 T1에서 학습, Tip 2번이 담당. 씬 `Text (TMP) (3)`·키 `T.Stage3.Line3` 제거. 옛 2번(가시) 삭제 — 함정을 하나하나 설명하지 않음. `Text (TMP) (2)`는 UI 프리팹 소속이라 배열에서만 빼고(size 1) 키 연결은 프리팹 기본값으로 되돌림, 키 `T.Stage3.Line2` 제거. 이하 옛 메모: 1번 = `GreenMucusTrap`(`AcidPool`/`AcidHazardVFX` + `ContactDamage`) — "점액"(압력) 카테고리. 2번 = `SpikeTrap`(바닥에서 올라오는 가시, `ContactDamage`류 데미지) — T.Stage3.unity에 다수 배치. 3번 = `ColorWall` 흑백 초출 — 접촉 시 색 일치면 `AdvancingWall.PauseTemporarily()`로 원점 후퇴+정지(2인 게이트 아님). 조임 복습(`EsophagusSqueeze`)은 T1과 동일 메카닉이라 대사엔 안 넣음 — 2인 장면은 전원 외침 원상 복구.)*
 
 ## T.Stage4 (MovingCorridor + ContactKnockback + 구멍 바닥 + 패드→Door 길 — 안개 복습)
 
-1. 알레르기 반응이 왔나 봐. 식도에 부종들이 생겼어.  
-이것들에 부딪히면 튕겨져 나갈 거야.
+1. 알레르기 반응이 왔나 봐. 식도에 부종이 생겼어.
+2. 식도가 민감해져서 한 칸에 한 명만 설 수 있어.  
+어떤 칸은 쉽게 깨지니까 빠르게 반응해야 해.
 
-*("부종" = `ContactKnockback`(순수 넉백, HP 무관) + 구멍 바닥(각자 생존, 2인 게이트 아님), T3에 잠깐 나온 걸 T4에서 메인으로. 패드→`DoorController` 길, 안개 복습(`EsophagusFog`)은 T1·T2에서 이미 가르쳐서 대사 없이 감.)*
+*(2026-09-24 개정: 넉백 설명은 Tip 3번으로 넘기고, 2번 신설 — 용량 타일(한 칸 1명)·파괴 타일(`TStage4TrapRandomization.md`). 패드→Door 길은 2026-09-19 제거됨. 2번은 UI 프리팹의 `Text (TMP) (2)`(이 씬에서 제거 오버라이드돼 있던 것)를 되살려 새 키 `T.Stage4.Line2`에 연결. 이하 옛 메모: "부종" = `ContactKnockback`(순수 넉백, HP 무관) + 구멍 바닥(각자 생존, 2인 게이트 아님), T3에 잠깐 나온 걸 T4에서 메인으로. 패드→`DoorController` 길, 안개 복습(`EsophagusFog`)은 T1·T2에서 이미 가르쳐서 대사 없이 감.)*
 
 ## T.Stage5 (흑/백 토글 미로 — ReachZone)
 
-1. 갑자기 식도가 요동치더니 통로가 완전히 뒤엉켜버렸어. 이대로는 출구를 못 찾겠는데...
-2. 이 흑백 막들, 뭘 건드릴 때마다 열리고 닫히나 봐.
-3. 위쪽에도 길이 있는 것 같아. 저기부터 가봐야겠어.
+1. 갑자기 식도가 요동치더니 통로가 막혀버렸어.
+2. 한 명은 아래에서 달리고, 나머지는 위에서 패드를 이용하여 문을 열어줘!
+3. 한 번에 한 색 문만 열려. 뭔가 쫓아오니까 서둘러!
 
-*(1번 = 미로 진입. 2번 "흑백 막" = `BlackWhiteDoorToggle`/`BlackWhiteTogglePad` — 패드를 밟을 때마다 흑/백 문이 전역으로 뒤바뀜. 3번 = 2층 점프대 안내(3곳 중 하나). 키는 `T.Stage5.Line1`~`Line3`(기존 `T.Stage5.Stage1.Line1`/`Stage3.Line1`/`Stage3.Line2` id 재사용, 이름만 정리). 패널 1개, `showOnceKey=Stage5`. 클리어 = `ReachZoneObjective` 전원 골.)*
+*(2026-09-24 개정: 러너 재설계(`TStage5RunnerRedesign.md`)에 맞춰 3줄 전면 교체 — 1번 진입, 2번 러너/안내자 역할, 3번 한 색만 열림+체이서. 이하 옛 메모(흑백 토글 미로, 폐기): 1번 = 미로 진입. 2번 "흑백 막" = `BlackWhiteDoorToggle`/`BlackWhiteTogglePad` — 패드를 밟을 때마다 흑/백 문이 전역으로 뒤바뀜. 3번 = 2층 점프대 안내(3곳 중 하나). 키는 `T.Stage5.Line1`~`Line3`(기존 `T.Stage5.Stage1.Line1`/`Stage3.Line1`/`Stage3.Line2` id 재사용, 이름만 정리). 패널 1개, `showOnceKey=Stage5`. 클리어 = `ReachZoneObjective` 전원 골.)*
 
 ## T.Boss (BossFightObjective — 시간 구간 기반 연속 생존)
 
@@ -953,42 +946,37 @@ Czyżbyśmy wreszcie mogli uciec...?
 ### EN
 
 **T.Stage1**
-1. We got swallowed and ended up in the esophagus...  
-At this point, there's nothing to do but head down and escape.
-2. The esophagus is going to squeeze in on us at random intervals.  
-When the warning pops up, everyone shout the team cheer to stop it!
-3. Colored walls will push in from both sides.  
-If a wall shows your color, slam right into it — it'll get knocked back.
-4. ...rumble, rumble?  
-Don't tell me that's the candy rolling toward us?! Run if you don't want to get flattened!!
+1. We got swallowed... now we're in the esophagus.  
+No choice now — we've gotta head down and find a way out.
+2. The esophagus is gonna squeeze in on us.  
+When the warning pops up, shout the team cheer together to stop it!
+3. Colored walls are gonna close in from both sides.  
+If a wall shows my color, ram right into it — that'll push it back.
+4. Is that candy rolling up behind us?! Run unless you wanna get flattened!
 
 **T.Stage2 — Stage1**
-1. Remember only the glowing tiles. Step on the wrong one and it's an instant kill.
-2. A burp got stuck in the esophagus... gas is starting to build up.  
-If it gets too thick to see through, shout the team cheer to clear it out.
+1. I think gas is building up in the esophagus...  
+If it gets too thick to see, shout the team cheer to clear it!
 
 **T.Stage2 — Stage2**
-1. This time it'll show tiles by color. You have to match your own color!  
-Even if the color's right, you'll still die if it's in black-and-white mode.
+1. Remember my color and move along the tiles that match it!
 
 **T.Stage2 — Stage3**
-1. Each zone has an assigned color. The path only becomes safe once that color goes through first!  
-Stick to the order!
+1. The zone's color has to go first, then the path's gonna be safe. Don't cut in line!
 
 **T.Stage3**
-1. Watch your step. Feels like acid reflux — that's stomach acid coming up!
-2. Spike attacks will come from places you can't see. Stay alert at all times.
-3. The walls on both sides will turn black-and-white.  
-Match the color and slam into the wall to push back the pressure!
+1. Feels like acid reflux... stomach acid's coming up!  
+If we don't clear each section before the sign's timer runs out, we're gonna be swimming in it!
 
 **T.Stage4**
-1. Must be an allergic reaction — swelling's popped up all through the esophagus.  
-Bump into one of these and you'll get knocked flying.
+1. Must be an allergic reaction... the esophagus is all swollen up.
+2. It's gotten so sensitive that only one of us can stand on each tile.  
+Some tiles break easily, so react fast!
 
 **T.Stage5**
-1. The esophagus suddenly convulsed and the path got completely tangled up. At this rate we won't find the way out...
-2. These black-and-white membranes seem to open and close whenever something triggers them.
-3. There's a path up above too. Let's start looking from there.
+1. The esophagus suddenly convulsed and the passage got blocked off!
+2. One of us runs down below. Everyone else, step on the color pads to open the doors!
+3. Only one color of door opens at a time. Something's chasing us, so hurry!
 
 **T.Boss — Intro**
 1. This is the last stretch of the esophagus...  

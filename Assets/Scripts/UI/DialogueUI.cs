@@ -124,6 +124,14 @@ public class DialogueUI : MonoBehaviour
     public void StartSequence()
     {
         if (dialogueLines == null || dialogueLines.Length == 0) return;
+
+        // 씬 제목 배너가 먼저다 — 끝난 뒤 이 피어에서만 연다(줄 넘김이 원래 로컬이라 동기화 불필요).
+        if (StageTitleBannerUI.IsHolding)
+        {
+            StageTitleBannerUI.WhenClear(() => { if (this != null) StartSequence(); });
+            return;
+        }
+
         _lineIndex = 0;
         _isPlaying = true;
         _inputEnabledAt = Time.unscaledTime + OpenInputGraceSeconds;

@@ -127,7 +127,15 @@ public class SceneFlowManager : MonoBehaviour
     /// 다음 씬으로 전환.
     /// PhaseManager.onAllPhasesComplete 또는 StageManager.OnStageClear 에 연결.
     /// </summary>
-    public void LoadNextScene()
+    public void LoadNextScene() => LoadNext(clearToTransitionDelay);
+
+    /// <summary>
+    /// 게이트(Tutorial/Interlude) 통과 전환 — 보여줄 클리어 배너가 없으므로 clearToTransitionDelay 없이
+    /// 바로 암전한다. 대기를 두면 함정만 멈춘 화면이 2.5초 멈춰 있는 것처럼 보였다(2026-09-24).
+    /// </summary>
+    public void LoadNextSceneWithoutClearDelay() => LoadNext(0f);
+
+    void LoadNext(float preDelay)
     {
         if (_isTransitioning) return;
 
@@ -156,7 +164,7 @@ public class SceneFlowManager : MonoBehaviour
 
         // _isTransitioning은 TransitionTo가 첫 yield 전에 세운다(StartCoroutine은 첫 yield까지
         // 동기 실행) — 여기서 따로 세우지 않아도 재진입 가드가 같은 프레임부터 유효하다.
-        StartCoroutine(TransitionTo(sceneSequence[nextIndex], clearToTransitionDelay));
+        StartCoroutine(TransitionTo(sceneSequence[nextIndex], preDelay));
     }
 
     /// <summary>

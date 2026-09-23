@@ -57,7 +57,22 @@ public static class TileDebrisUtil
         if (tileRend != null && tileRend.bounds.size.sqrMagnitude > 0.0001f)
             spawnPos = tileRend.bounds.center;
 
-        GameObject debris = Object.Instantiate(debrisPrefab, spawnPos, tile.transform.rotation);
+        return SpawnAt(debrisPrefab, spawnPos, tile.transform.rotation, mat, debrisLifetime,
+                       impulseMin, impulseMax, seed, debrisScale);
+    }
+
+    /// <summary>
+    /// 위치·회전·재질을 직접 받는 버전. 칸으로 나뉘지 않은 통판 바닥(T.Boss P4 Ground)을
+    /// 여러 칸으로 쪼개 부수는 연출처럼, 스폰 지점이 대상 오브젝트 하나의 중심이 아닐 때 쓴다.
+    /// mat이 null이면 프리팹 재질 그대로.
+    /// </summary>
+    public static GameObject SpawnAt(GameObject debrisPrefab, Vector3 spawnPos, Quaternion rotation, Material mat,
+                                     float debrisLifetime, float impulseMin, float impulseMax, int seed,
+                                     float debrisScale = 1f)
+    {
+        if (debrisPrefab == null) return null;
+
+        GameObject debris = Object.Instantiate(debrisPrefab, spawnPos, rotation);
         if (debrisScale != 1f)
             debris.transform.localScale *= debrisScale;
 
