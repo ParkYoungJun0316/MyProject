@@ -752,6 +752,13 @@ public class StageNetworkState : NetworkBehaviour
         // ESC Reset을 누르는 경로가 실제로 존재한다.
         if (SceneFlowManager.Instance != null && SceneFlowManager.Instance.IsTransitioning) return;
 
+        // 씬의 모든 Phase가 끝났으면(= 클리어 확정) 전환 전이라도 실패·리셋을 무시한다(2026-09-23).
+        // 일반 스테이지는 클리어와 LoadNextScene이 같은 이벤트라 위 가드로 충분하지만, 보스(M/T)는
+        // 클리어 → Bossdown 대화 → 대화 종료 후 LoadNextScene이라 대화 중 낙사가 보스 전체 리로드로
+        // 이어졌다. 목숨이 남았으면 부활은 그대로 돌고, 없으면 죽은 채로 전환을 기다린다.
+        // ReviveSystemDesign.md §2.
+        if (PhaseManager.Instance != null && PhaseManager.Instance.AllPhasesComplete) return;
+
         if (_resetPending) return;
         _resetPending = true;
 

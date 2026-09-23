@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -28,12 +29,15 @@ public class ContactDamage : MonoBehaviour
     [Tooltip("true: 이 컴포넌트가 활성화된 동안만 데미지 적용\nDeactivate()로 비활성화 가능")]
     [SerializeField] bool isActive = true;
 
-    float _nextDamageTime;
+    // 쿨다운은 플레이어별 — 한 볼륨에 여럿이 들어가도 각자 간격마다 맞는다.
+    readonly Dictionary<Player, float> _nextDamageTime = new Dictionary<Player, float>();
 
     // ── 외부 호출 ────────────────────────────────────────────────
 
     public void Activate()   => isActive = true;
     public void Deactivate() => isActive = false;
+
+    void OnDisable() => _nextDamageTime.Clear();
 
     // ── 충돌 감지 ────────────────────────────────────────────────
 
@@ -69,13 +73,13 @@ public class ContactDamage : MonoBehaviour
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
-        if (Time.time < _nextDamageTime) return;
-
         // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox는 무시 (ContactKnockback과 동일).
         Player p = other.GetComponent<Player>();
         if (p == null) return;
 
+        if (_nextDamageTime.TryGetValue(p, out float next) && Time.time < next) return;
+
         NetworkDamageUtil.ApplyDamage(p, damage);
-        _nextDamageTime = Time.time + Mathf.Max(damageInterval, MinDamageInterval);
+        _nextDamageTime[p] = Time.time + Mathf.Max(damageInterval, MinDamageInterval);
     }
 }

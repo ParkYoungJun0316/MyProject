@@ -1,8 +1,8 @@
 # T.Stage3 구간 데드라인 (구간 시계) 계획서
 
 **상태(2026-09-23):** 설계 ✅ · **코드 ✅**(`SegmentTimer` / `SegmentTimerSign` / `StageNetworkState` 슬롯) ·
-**씬 배치 ✅**(구역 5개 · 판정 볼륨 20개 · 가스 5개 · 간판 5개 · 정리 배선) ·
-**남은 것: 가스 색 틴트(연출) · 실플레이 검증 · `wallIntervalMin/Max` 적용(§6)**
+**씬 배치 ✅**(구역 5개 · 판정 볼륨 5개(구간 전체) · 위액 수면 5개 · 간판 5개 · 정리 배선) ·
+**남은 것: 실플레이 검증 · `wallIntervalMin/Max` 적용(§6)**
 
 **이 문서가 T.Stage3 구간 데드라인 SSOT.** 기존 T3 설계(`CoopStageAudit.T.md` §H.2·§3)는 **그대로 유효**하다 —
 조임(`EsophagusSqueeze`) 복습, 전원 외침 원상 복구, ColorWall 흑백 초출은 건드리지 않았다.
@@ -16,7 +16,7 @@
 ## 0. 한 줄 요약
 
 1300m 통로를 **5구간으로 나누고 구간마다 제한 시간**을 준다.
-시간 안에 못 나가면 **그 구간 끝이 위액 가스로 덮여** 지나갈 때마다 피를 흘린다.
+시간 안에 못 나가면 **그 구간 전체에 위액이 차올라** 남아 있는 동안 피를 흘린다.
 쫓아오는 물체는 없다 — **쫓기는 감각은 시계가 만든다.**
 
 ---
@@ -86,15 +86,17 @@
 |---|---|
 | 판정 | **`ContactDamage`** (`SpikeTrap` 아님). damage 1, damageInterval 1 |
 | 왜 즉사가 아닌가 | 지속 데미지면 **아프지만 뚫고 갈 수 있다** — 뒤처짐의 대가가 "즉사 후 리셋"이 아니라 "피 흘리며 따라붙기"가 된다. 낙사 즉사는 부활(생존자 위치)이 곧 전진이라 압박이 사라진다 |
-| 덮는 범위 | 구간 **끝 40m**, 통로 전폭(x −19~+19). 구간 전체가 아니다 — **"여기서부턴 대가 없이 못 지나간다"**면 충분하고 물량도 적다 |
-| 연출 | `EffectExamples/Smoke & Steam Effects/PoisonGas.prefab` **구간당 1개**. 판정 볼륨마다 붙이지 않는다 |
-| 가스 스케일 | `(13, 10, 40)` = 판정 범위와 일치시킴. **보이는 곳 = 아픈 곳** |
-| `maxParticles` | 1000 → **300** (상한값. 실제 방출은 rate 3/15/10 · 수명 8/3/3초라 동시 100개 남짓) |
-| 색 | **미정 — 초록 틴트는 사용자 작업.** 위액 느낌 |
+| 덮는 범위 | **구간 전체**(§3 경계 z에 정확히), 통로 전폭. 판정 볼륨 **구간당 1개**(40 × 6 × 구간 길이). 2026-09-23 "끝 40m"에서 변경 — **구간 전체가 위험하다는 걸 보여야** 뒤처짐이 읽힌다 |
+| 연출 | **위액 수면** `Assets/Art/Particle/GastricAcidPlane.prefab` **구간당 1개** (2026-09-23 확정) |
+| 수면 원본 | `SalivaWaterPlane`의 **프리팹 Variant** + 복제 머티리얼 `GastricAcidPlane.mat`(탁한 황록, 알파 0.62, 약한 연두 Emission, 노멀맵·굴절 유지). **원본 머티리얼은 M.Stage2·M.Boss가 쓰므로 손대지 않는다** |
+| 크기 | Plane(10m) × `(3.8, 1, 구간 길이/10)` = 판정 범위와 일치. 높이 y 0.65(바닥 윗면 0.5). **보이는 곳 = 아픈 곳** — 수면은 경계가 선명해 이 원칙을 지킨다 |
+| 차오름 | `SegmentAcidRise`: 시간 초과 **3초 전**부터 바닥 1m 아래에서 차올라 **0초에 제자리** → 그 순간 `activateOnTimeout`이 `ContactDamage`를 켠다. 차오르는 3초 동안은 데미지 없음 |
+| 가스 폐기 | 초기 `PoisonGas` 가스(구간당 1개)는 **폐기**(2026-09-23) — 잘 안 보이고, 잘 보이게 하려면 파티클 비용이 커서 |
 
-**C구간만 위치가 다르다.** `Ground`가 z 595에서 끊기고 905에서 다시 시작한다(그 사이는 쿠키 발판 점프 구간).
-띠를 깔 연속 바닥이 없어서 **C의 판정을 착지 지점(z 905~945)에 뒀다** — "점프를 늦게 끝내면 착지할 자리가 가스밭".
-대안으로 마지막 발판 몇 개(z 863~900) 위에 올리는 안이 있으나 발판이 9.67m라 크기를 줄여야 해서 보류.
+**C구간만 높이가 다르다.** `Ground`가 z 595~905에서 끊기고 그 사이는 쿠키 튕김 발판(`ContactKnockback` VerticalUp, 힘 10,
+윗면 전부 y 0.8)만 있다. 판정을 **y 0.3~1.5 얇은 띠**로 두어 **쿠키를 밟는 순간만 맞고, 튕겨 떠 있는 동안은 안 맞는다**
+(튕김 최고점 ≈5m). 수면은 y 0.95 한 장 — 쿠키 사이 구멍 위도 덮여 "위험한 바닥"처럼 보이는데 **의도대로 확정**(2026-09-23).
+(이전안: 착지 지점 z 905~945만 판정 → 구간 전체 덮기로 바뀌며 폐기.)
 
 ## 5. 정리(끄기) 규칙 **[확정]**
 
@@ -102,12 +104,12 @@
 
 | 시점 | 끄는 것 |
 |---|---|
-| `Segment.C` 시계 시작 | `Hazard.A` + **`SpikeLaneField`** |
-| `Segment.D` 시계 시작 | `Hazard.B` |
-| `Segment.E` 시계 시작 | `Hazard.C` |
+| `Segment.C` 시계 시작 | `Hazard.A` + `AcidSurface.A` + **`SpikeLaneField`** |
+| `Segment.D` 시계 시작 | `Hazard.B` + `AcidSurface.B` |
+| `Segment.E` 시계 시작 | `Hazard.C` + `AcidSurface.C` |
 
 - 배선은 `SegmentTimer.onTimerStarted` UnityEvent → 대상 `GameObject.SetActive(false)`. **코드 0줄.**
-- `Hazard.X`를 끄면 가스와 `ContactDamage` 판정이 **같이** 사라진다.
+- `Hazard.X`와 **`AcidSurface.X`를 같이** 끈다(수면은 차오르는 3초를 보여줘야 해서 Hazard 밖에 있다).
 - **`SpikeLaneField`는 D가 아니라 C에서 끈다** — 가시 390개가 전부 z 12.8~539.8에 있어 C 진입(595) 시점엔
   이미 전부 뒤다. 가시마다 `SpikeBurst` 파티클이 달려 있어 이 씬에서 제일 무거운 덩어리다.
 - **알고 넘어갈 것:** A를 끄면 A에 남아 있던 사람의 데미지도 사라진다. 2구간 뒤라 이미 죽어서 생존자 옆으로
@@ -175,12 +177,16 @@ public void   MarkSegmentStart(int index)   // Host 전용. 이미 시작했으�
 - 데미지는 `ContactDamage`가 Host에서만 적용한다(`!IsServer` 리턴 → `NetworkDamageUtil.ApplyDamage`).
   클라이언트에서 가스가 켜지는 건 연출뿐이라 타이밍이 수십 ms 갈려도 판정이 갈라지지 않는다.
 
-### 7.4 알려진 한계 — `ContactDamage`의 쿨다운
+### 7.4 `ContactDamage` 쿨다운 — 플레이어별로 수정 (2026-09-23)
 
-`ContactDamage._nextDamageTime`은 **플레이어별이 아니라 컴포넌트별**이다. 볼륨 하나에 4명이 들어가면
-1초에 한 명만 맞는다. 그래서 구간마다 볼륨을 **4개로 나눠** 깔았다(좌우로 갈라지면 서로 다른 볼륨).
-그래도 두 명이 나란히 붙어 달리면 한 명은 안 맞는다. 완전히 고치려면 플레이어별 쿨다운으로 바꿔야 하는데
-**25곳에서 쓰는 공용 컴포넌트라 이번 라운드에서는 건드리지 않았다.**
+원래 `_nextDamageTime`이 **컴포넌트별**이라 볼륨 하나에 4명이 들어가면 1초에 한 명만 맞았다(그래서 한때 볼륨을 4개로 쪼갰다).
+**`Dictionary<Player, float>` 플레이어별 쿨다운으로 고쳤다** — 공용 컴포넌트라 이 수정은 쓰는 곳 전부에 적용된다
+(여럿이 동시에 닿으면 각자 간격마다 맞는다). 비활성화 시 기록을 비운다. 그래서 구간당 볼륨 1개로 합쳤다.
+
+### 7.5 `Assets/Scripts/Stage/SegmentAcidRise.cs` (신규)
+
+수면 연출 전용. `SegmentTimer.RemainingSeconds`만 읽어 `riseSeconds`(3) 전부터 `riseDepth`(1m) 아래에서 차오르고
+시간 초과 순간 제자리. 판정은 소유하지 않는다.
 
 ## 8. 씬 구성 (T.Stage3, 배치 완료)
 
@@ -190,12 +196,13 @@ public void   MarkSegmentStart(int index)   // Host 전용. 이미 시작했으�
 SegmentDeadlines
 ├─ Segment.A   trigger z=30    dur 50    → activateOnTimeout = [Hazard.A]
 ├─ Segment.B   trigger z=295   dur 50    → [Hazard.B]
-├─ Segment.C   trigger z=595   dur 160   → [Hazard.C]   + onTimerStarted: Hazard.A off, SpikeLaneField off
-├─ Segment.D   trigger z=905   dur 45    → [Hazard.D]   + onTimerStarted: Hazard.B off
-├─ Segment.E   trigger z=1068  dur 30    → [Hazard.E]   + onTimerStarted: Hazard.C off
+├─ Segment.C   trigger z=595   dur 160   → [Hazard.C]   + onTimerStarted: Hazard.A·AcidSurface.A off, SpikeLaneField off
+├─ Segment.D   trigger z=905   dur 45    → [Hazard.D]   + onTimerStarted: Hazard.B·AcidSurface.B off
+├─ Segment.E   trigger z=1068  dur 30    → [Hazard.E]   + onTimerStarted: Hazard.C·AcidSurface.C off
 ├─ Hazard.A~E  (비활성 대기)
-│    ├─ Acid.X.0~3   BoxCollider(Is Trigger) 9.5×6×40 + ContactDamage(1 / 1초)
-│    └─ Gas.X        PoisonGas 프리팹 인스턴스, scale (13,10,40), maxParticles 300
+│    └─ Acid.X.0     BoxCollider(Is Trigger) 40×6×구간길이 + ContactDamage(1 / 1초)   ※ C만 y 0.3~1.5 띠
+├─ AcidSurface.A~E  (활성 — Renderer만 숨김) GastricAcidPlane 인스턴스, y 0.65(C 0.95), scale (3.8,1,구간길이/10)
+│                   SegmentAcidRise(timer = Segment.X, riseSeconds 3, riseDepth 1)
 └─ Sign.A~E   z = 295 / 595 / 905 / 1068 / 1180, y=14, 2배(20×11.4)
      ├─ SignFace.X / SignFill.X / SignCount.X   (M.Stage2 SplitZoneRig에서 복사)
      └─ SegmentTimerSign (timer / timerFills=SignFill / secondsText=SignCount / warnSeconds 5)
@@ -204,16 +211,18 @@ SegmentDeadlines
 - **트리거 박스:** 40(폭) × 12(높이) × 2(두께), 통로를 가로지른다.
 - **간판은 구역 끝(다음 체크포인트)에 선다.** 구역 시작에 두면 지나가는 순간 등 뒤로 사라진다.
   Quad 노멀이 −z라 회전 0으로 달려오는 쪽을 본다. y=7·원본 크기로는 PushWay 블록에 가려서 y=14 / 2배로 올렸다.
-- **판정 범위:** Hazard.A z 255~295 · B 555~595 · C 905~945 · D 1028~1068 · E 1140~1180.
+- **판정 범위 = 구간 전체:** A z 12~295 · B 295~595 · C 595~905 · D 905~1068 · E 1068~1180.
 
-**주의 — 가스는 반드시 프리팹 인스턴스로 둘 것.** `Object.Instantiate`로 복제하면 프리팹 링크가 끊겨
+**주의 — 씬의 연출 오브젝트는 반드시 프리팹 인스턴스로 둘 것**(당시 가스, 현재 수면). `Object.Instantiate`로 복제하면 프리팹 링크가 끊겨
 파티클 데이터가 통째로 씬에 박힌다 — 실제로 그렇게 했다가 씬 파일이 **77,466줄** 늘어났고,
 `PrefabUtility.InstantiatePrefab`으로 다시 만들어 5,121줄로 줄였다.
 
 ## 9. 남은 것
 
-1. **가스 색 틴트** (연출 — 사용자)
+1. ~~가스 색 틴트~~ → 위액 수면으로 교체 완료(§4, 2026-09-23)
 2. **실플레이 검증** — ParrelSync 2인 또는 빌드 2개. 특히 ① 카운트다운이 전원 동일한가 ② 시간 초과 순간이
-   전 머신에서 같이 오는가 ③ C구간 착지 지점 판정이 의도대로인가
+   전 머신에서 같이 오는가 ③ (삭제 — ⑥으로 대체) ④ 수면이 3초 전부터 차올라 0초에 멈추고
+   그때부터 데미지가 들어오는가 ⑤ PushWay·빵 장애물 밑에 수면이 비치는 곳이 어색하지 않은가
+   ⑥ C: 쿠키를 밟을 때마다 맞고 떠 있는 동안은 안 맞는가 ⑦ 여럿이 같은 볼륨에 있을 때 각자 맞는가
 3. **§6의 미적용 값** — `wallIntervalMin/Max` 6~9초 적용, `ColorWall.pauseDuration` 결정
 4. 제한시간 재조정 — 4인 플레이 후. 제일 먼저 흔들릴 값은 **C(160초)**

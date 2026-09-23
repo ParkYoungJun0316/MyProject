@@ -15,7 +15,7 @@ using UnityEngine.Events;
 /// teamCheerHazard=false인 순수 연출용으로만 둘 것(둘 다 CheerService에 RegisterRevert하면
 /// "씬당 하나" 계약 위반 경고가 뜬다).
 ///
-/// [머신 (총 6회 반복)]
+/// [머신 (총 totalCycles회 반복 — §7 확정값 5)]
 /// 1. Warning  — 이번 회차에 부술 타일에 마커 표시. 응원 없음, 예고만.
 /// 2. Closing  — 무조건 발동(응원으로 못 막음). 암전.
 /// 3. Breaking — 암전 중(플레이어가 못 보는 구간) 경고된 타일이 파괴음과 함께 사라진다.
@@ -24,18 +24,20 @@ using UnityEngine.Events;
 /// 4. Opening  — 암전 걷힘.
 /// 5. CheerWindow — Open이 끝난 시점부터 열리는 사후 복구 창. 성공하면 바닥 전체 원상복구,
 ///    타임아웃(실패)이면 깨진 채로 다음 회차로.
-/// 6회 완료(성공/실패 무관, 팀이 살아있으면) → OnChallengeComplete
+/// 마지막 회차 완료(성공/실패 무관, 팀이 살아있으면) → OnChallengeComplete
 ///    (→ BossFightObjective.NotifyPhaseCleared() 연결, 기존 챌린지들과 동일 연결 방식).
 /// 꺼진 칸 낙사 = 방 리셋(M4 혀와 동일 규약) — 낙사 판정은 Player.enableFallDeath /
 /// fallDeathY(Owner 신고 → Host 적용)가 담당하므로 여기엔 사망 코드가 없다.
 ///
-/// [파괴 수 누적] 회차 N의 목표 파괴 수 = tilesPerCycleStep × N(§7 확정값 4). 직전 회차가
-/// 복구됐으면 이번에 그 개수를 전부 새로 뽑고, 복구 안 됐으면 이미 깨진 타일 수를 뺀 나머지만
-/// 새로 뽑아 목표를 채운다. 남은 칸이 목표보다 적으면 남은 칸 전부를 깨는 걸로 캡.
+/// [파괴 수 누적] 회차 N의 목표 파괴 수 = firstCycleBreakCount + tilesPerCycleStep × (N-1)
+/// (§7 확정값 20 + 1×(N-1) — 남는 칸 5→4→3→2→1, 2026-09-23). 직전 회차가 복구됐으면 이번에 그
+/// 개수를 전부 새로 뽑고, 복구 안 됐으면 이미 깨진 타일 수를 뺀 나머지만 새로 뽑아 목표를 채운다.
+/// 남은 칸이 목표보다 적으면 남은 칸 전부를 깨는 걸로 캡. 추첨은 순수 랜덤 — 남는 칸이 서로
+/// 붙어 있도록 보정하지 않는다(섬으로 갈라져 응원 없이는 못 버티는 판이 의도).
 ///
 /// [동기화] 새 RPC·NV 없음. ITeamCheerRevert로 CheerService의 기존 되돌림 채널만 쓴다.
 /// · 시각: 회차·구간 경계를 전부 <b>절대 ServerTime</b>으로 계산한다(앵커 = PhaseStartServerTime).
-///   WaitForSeconds를 이어 붙이면 프레임 양자화가 구간마다 쌓여(회차당 5~6회 × 6회차) 저프레임
+///   WaitForSeconds를 이어 붙이면 프레임 양자화가 구간마다 쌓여(회차당 5~6회 × 전 회차) 저프레임
 ///   머신과 Host 사이가 수백 ms 벌어지고, 그 드리프트가 응원 창의 종료 시점과 타일 추첨
 ///   (PickTargets가 "지금 깨진 수"에 의존)을 머신마다 갈라놓는다. 절대 시각이면 남는 오차는
 ///   프레임 한 겹뿐이고 누적되지 않는다.
@@ -122,19 +124,22 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [Header("암전 연동 (선택)")]
     [SerializeField] ScreenFader screenFader = null;
 
-    [Header("회차 (§7 확정값: 6회, 회차당 4개씩 누적)")]
+    [Header("회차 (§7 확정값: 5회, 첫 회차 20개 → 회차당 1개씩 누적)")]
     [Tooltip("총 반복 회차 수.")]
-    [SerializeField] int totalCycles = 6;
+    [SerializeField] int totalCycles = 5;
 
-    [Tooltip("회차 N의 목표 파괴 수 = 이 값 × N.")]
-    [SerializeField] int tilesPerCycleStep = 4;
+    [Tooltip("1회차의 목표 파괴 수.")]
+    [SerializeField] int firstCycleBreakCount = 20;
+
+    [Tooltip("회차 N의 목표 파괴 수 = firstCycleBreakCount + 이 값 × (N-1).")]
+    [SerializeField] int tilesPerCycleStep = 1;
 
     [Header("네트워크 시드")]
     [Tooltip("Mouth 0x4D4F5554 / Saliva 0x53504954 / Tongue 0x544F4E47 와 겹치지 않게.")]
     [SerializeField] int seedSalt = 0x4A415753;
 
     [Header("이벤트")]
-    [Tooltip("6회차 완료 시 호출(성공/실패 무관) → BossFightObjective.NotifyPhaseCleared() 연결")]
+    [Tooltip("마지막 회차 완료 시 호출(성공/실패 무관) → BossFightObjective.NotifyPhaseCleared() 연결")]
     public UnityEvent OnChallengeComplete;
 
     Coroutine _cycleCoroutine;
@@ -291,7 +296,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         // "창 밖이면 다음 창을 건너뛴다(_skipNextWindow)" 관용구를 여기에 쓰면 안 된다 — 저쪽은 응원이
         // 공격을 막는 구조라 Host도 그 창을 같이 건너뛰어 대칭이 맞지만, 여기서 Host는 복구만 하고 다음
         // 회차를 정상 진행한다. 건너뛰는 머신만 바닥이 멀쩡한 채로 남아 낙사 판정이 머신마다 갈린다.
-        // 창 안이든(정상) 밖이든(RTT로 늦게 도착) 하는 일은 "전체 복구" 하나뿐이고, 6회차는 §7대로
+        // 창 안이든(정상) 밖이든(RTT로 늦게 도착) 하는 일은 "전체 복구" 하나뿐이고, 전 회차는 §7대로
         // 성공/실패와 무관하게 전부 돈다.
         if (_phase == HazardPhase.CheerWindow)
         {
@@ -423,7 +428,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     List<int> PickTargets(int cycleIndex)
     {
-        int target = tilesPerCycleStep * cycleIndex;
+        int target = firstCycleBreakCount + tilesPerCycleStep * (cycleIndex - 1);
         int needed = Mathf.Max(0, target - _brokenIndices.Count);
 
         var candidates = new List<int>();
@@ -552,7 +557,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     /// <summary>
     /// 클리어 후 대화 컷신에서 호출 — 남은 마지막 칸까지 전부 부순다
-    /// (§7 엔딩: "마지막 남은 1칸까지 이빨이 부수는 연출 → T로 전환").
+    /// (§7 엔딩: "마지막 남은 1칸까지 파괴음과 함께 부서지는 연출 → T로 전환"). 이미 부서진 칸은 건너뛴다.
     /// 회차 루프·응원 창이 아직 살아있어도 같이 정리한다(오배선 방어 — 컷신 중 입이 또 닫히면 안 된다).
     /// 이 호출 이후에는 StopCycle/OnDisable에서도 바닥을 복구하지 않는다.
     /// Timeline/대화 종료 UnityEvent 등에서 직접 연결.
@@ -564,9 +569,13 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
         // 여긴 암전이 아니라 컷신이라 파편이 실제로 보인다 — 회차 중 BreakTiles와 달리 여기만
         // 유의미한 시각 연출. 회차 인덱스가 없으므로 타일 인덱스만으로 시드(한 번만 도는 이벤트).
+        // 이미 부서진 칸은 건너뛴다 — 파편 프리팹이 타일 모양으로 조립된 채 스폰되므로, 빈 구멍에도
+        // 스폰하면 "바닥이 복구됐다가 동시에 깨지는" 그림이 된다(2026-09-23). 남은 칸만 파괴음+파편.
         for (int i = 0; i < floorTiles.Length; i++)
         {
+            if (floorTiles[i] == null || !floorTiles[i].activeSelf) continue;
             _brokenIndices.Add(i);
+            PlayBreakSfx(i);
             SpawnDebris(i, MixSeed(i, DebrisAxis));
             SetTileActive(i, false);
         }
@@ -605,10 +614,10 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
             Debug.LogWarning($"[MouthBossJawSmash] warnMarkers({warnMarkers.Length})와 floorTiles({floorTiles.Length}) 길이가 다릅니다 — " +
                              $"인덱스가 큰 타일은 예고가 빠집니다. ({name})", this);
 
-        // §7 불변식: 총 타일 = (회차당 증가분 × 총 회차) + 1 → "마지막 1칸"이 남는 결말이 보장된다.
-        int expected = tilesPerCycleStep * totalCycles + 1;
+        // §7 불변식: 총 타일 = 마지막 회차 목표 + 1 → "마지막 1칸"이 남는 결말이 보장된다.
+        int expected = firstCycleBreakCount + tilesPerCycleStep * (totalCycles - 1) + 1;
         if (floorTiles.Length != expected)
-            Debug.LogWarning($"[MouthBossJawSmash] floorTiles가 {floorTiles.Length}개인데 §7 불변식({tilesPerCycleStep}×{totalCycles}+1)은 " +
+            Debug.LogWarning($"[MouthBossJawSmash] floorTiles가 {floorTiles.Length}개인데 §7 불변식({firstCycleBreakCount}+{tilesPerCycleStep}×({totalCycles}-1)+1)은 " +
                              $"{expected}개를 요구합니다 — \"마지막 1칸\" 엔딩이 성립하지 않습니다. ({name})", this);
     }
 
@@ -648,6 +657,6 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [ContextMenu("테스트: 엔딩 연출(남은 칸 전부 파괴)")]
     void TestEndingBreak() => ForceBreakAllTilesForEnding();
 
-    [ContextMenu("테스트: 6회 완료 강제 호출")]
+    [ContextMenu("테스트: 전 회차 완료 강제 호출")]
     void TestForceComplete() => OnChallengeComplete?.Invoke();
 }
