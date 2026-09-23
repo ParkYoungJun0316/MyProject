@@ -88,7 +88,31 @@ Row_InputDevice 실동작화, ToggleSpriteSwap 부착), `SetupSettingUILocalizat
 - 옵션 메뉴는 **타이틀 화면 + 인게임 ESC 메뉴 양쪽에서 열 수 있어야 함**(사용자 확정) — 하나의
   `OptionsMenuController` 컴포넌트를 양쪽에 재사용하는 구조로 설계.
 - 화면 모드는 전체화면/창모드/테두리없는창모드 3종 다 지원, 해상도 선택도 지원(전체화면에서도) — 흔한
-  인디게임 패턴.
+  인디게임 패턴. 3종 유지는 2026-09-23 재확인(창모드가 제대로 동작 안 해 "전체화면만 남길까" 검토했으나,
+  **한 PC에서 빌드 2개 띄우는 멀티 테스트 방식**(`CLAUDE.md`)이 창모드 없이는 불가능해서 유지 확정).
+
+### 0.1 해상도·화면모드 규칙 (2026-09-23 확정)
+
+세 가지가 같이 정해짐 — 셋 다 `GameSettingsManager`가 SSOT이고 `OptionsMenuController`는 읽어서 표시만 함.
+
+1. **해상도 목록은 큐레이션한다.** `Screen.resolutions`를 목록으로 쓰지 않음 — 4K 모니터 실측에서
+   `1176x664` / `1440x1080` / `1600x1024` / `2048x1536` / `1920x2160`(세로 분할) / `720x576`(PAL) 등
+   레거시·TV 모드까지 30종이 나와 옵션으로 쓸 수 없었음. `CatalogResolutions`(16:9·16:10·21:9·4:3)에서
+   **네이티브 이하 + 모니터와 같은 화면비**만 남김 → 4K 16:9 기준 6종. `Screen.resolutions`는
+   네이티브 판정(`QueryNativeResolution`)에만 계속 사용.
+   화면비 필터 결과가 2개 미만이면(21:9처럼 카탈로그 단계가 적은 비율) 필터를 풀어 폴백.
+2. **창모드 목록에서는 네이티브를 뺀다.** 네이티브 크기 창은 타이틀바가 화면 밖으로 밀려 전체화면과
+   구분이 안 되고, 사실상 창모드가 아니게 됨. 예전엔 이걸 "Windows 특성이라 코드로 해결 불가"로 보고
+   사용자가 직접 해상도를 낮추게 뒀으나(실제로 "창모드가 안 된다"는 버그로 체감됨), 목록에서 빼면
+   해결되는 문제라 **방침을 뒤집음**. 모드 전환 시 초과분은 `ClampForMode`가 한 단계 아래로 내림.
+3. **테두리없는 창모드는 네이티브 고정.** 목록도 네이티브 한 줄 + 드롭다운 비활성.
+
+모드 전환이 사용자의 해상도 선택을 덮어쓰지 않게 `PreferredResolution`(직접 고른 값)과
+`CurrentResolution`(실제 적용된 값)을 분리함 — 4K 전체화면 → 창모드(2560x1440로 내려감) → 전체화면 복귀
+시 다시 4K가 되어야 하기 때문. `ApplyDisplay(..., rememberResolution: false)`가 화면모드 전환용 경로.
+
+옵션 UI가 `Screen.fullScreenMode` / `Screen.width`를 직접 읽지 않는 것도 규칙 — `Screen.SetResolution`은
+프레임 끝에 반영되는 지연 호출이라 적용 직후 읽으면 이전 값이 나와서 드롭다운이 어긋남.
 
 ---
 
@@ -128,7 +152,7 @@ Row_InputDevice 실동작화, ToggleSpriteSwap 부착), `SetupSettingUILocalizat
 | `Assets/Scripts/Audio/SFXLibrary.cs` (수정) | `VolumeOverride[]` 배열 추가 — 클립별 0~2배 보정(§4). |
 | `Assets/Scripts/Audio/PlayerAudio.cs` (수정) | 달리기 루프 사운드가 SFX 마스터 볼륨을 매 프레임 반영하도록 수정(기존엔 전혀 반영 안 되던 버그성 gap). |
 | `Assets/Scripts/Localization/GameLocalizationBootstrap.cs` (수정) | 옵션에서 저장한 수동 언어(`ManualLocaleOverrideKey`)가 있으면 Steam/systemLanguage 자동감지보다 최우선 적용. |
-| `Assets/Scripts/UI/OptionsMenuController.cs` (신규 / 수정 2026-08-11) | 슬라이더 3개 + 언어/해상도/화면모드 드롭다운 + 마이크 음소거 토글·입력장치 드롭다운 ↔ `GameSettingsManager` 연결(§9.5). 타이틀·ESC 메뉴 양쪽 재사용 가능. 화면모드 드롭다운 라벨 3개도 `LocalizedString` 필드로 로컬라이즈(§9.1). |
+| `Assets/Scripts/UI/OptionsMenuController.cs` (신규 / 수정 2026-08-11, 2026-09-23) | 슬라이더 3개 + 언어/해상도/화면모드 드롭다운 + 마이크 음소거 토글·입력장치 드롭다운 ↔ `GameSettingsManager` 연결(§9.5). 타이틀·ESC 메뉴 양쪽 재사용 가능. 화면모드 드롭다운 라벨 3개도 `LocalizedString` 필드로 로컬라이즈(§9.1). **2026-09-23**: 해상도 목록 생성 로직을 `GameSettingsManager`로 넘기고 표시 전용이 됨(§0.1) — 자체 `CommonResolutions` 배열과 `Screen.resolutions` 병합 제거, `Screen.*` 직접 읽기도 제거. |
 | `Assets/Scripts/UI/EscMenuController.cs` (수정) | 미구현이던 Setting 버튼에 `OnClickSettings()`/`OnClickCloseSettings()` 추가(`TitleMenuController`와 동일 패턴). |
 | `Assets/Scripts/UI/OptionsPanelTabs.cs` (신규, 2026-08-10 / 수정 2026-08-11) | 옵션 패널 좌측 탭(일반/사운드/팀보이스) 전환 — 탭 버튼 클릭 시 콘텐츠 패널 토글 + 선택/비선택 스프라이트 교체. 마지막으로 본 탭을 `static` 필드로 기억해 재오픈 시 유지(§9.2-⑤ 수정 완료). |
 | `Assets/Scripts/UI/OptionsTeamVoicePanel.cs` (신규, 2026-08-10 / 수정 2026-08-11) | 팀 보이스 탭 — 고정 이름(GUMA/DANHO/SOOK) 대신 `GameSession`(인게임) 또는 `LobbyNetworkManager`(로비)에서 팀원 Steam 표시 이름을 읽어 슬롯에 표시. 수신 볼륨 슬라이더가 `VoiceId`로 `DissonanceComms.FindPlayer()`를 조회해 실제 `VoicePlayerState.Volume`에 연동됨(§9.6). |
@@ -249,6 +273,11 @@ Inspector에서 특정 SFX만 보정 가능:
 - [ ] 타이틀 옵션 패널, 인게임 ESC 옵션 패널 둘 다 정상 동작하는지 (같은 GameSettingsManager 값 공유)
 - [ ] 화면모드 전체화면/창모드/테두리없는창 전환 정상 동작, 테두리없는창일 때 해상도 드롭다운 비활성화되는지
 - [ ] 해상도 변경이 실제 적용되는지
+- [ ] (§0.1) 해상도 목록에 쓰레기 값 없는지 — 4K 16:9면 `3840x2160 / 2560x1440 / 1920x1080 / 1600x900 / 1366x768 / 1280x720` 6종
+- [ ] (§0.1) **창모드로 바꾸면 진짜 창이 뜨는지** — 타이틀바 보이고 데스크톱이 드러나는지 (네이티브가 목록에서 빠짐)
+- [ ] (§0.1) 4K 전체화면 → 창모드 → 전체화면 복귀 시 해상도가 4K로 돌아오는지 (창모드용 2560x1440이 눌러앉지 않는지)
+- [ ] (§0.1) 테두리없는창 갔다 돌아와도 원래 고른 해상도가 유지되는지
+- [ ] (§0.1) 드롭다운 표시값이 항상 실제 화면과 일치하는지 (옛 저장값으로 부팅한 경우 포함)
 - [ ] 언어 드롭다운 선택 시 즉시 텍스트가 바뀌는지(연결된 로컬라이즈 텍스트 한정) + 재실행 후에도 그 언어 유지되는지
 - [ ] BGM이 M구역/T구역 이동 시 자연스럽게 크로스페이드되는지, 같은 구역 내 스테이지 이동 시 안 끊기는지
 - [ ] (해당 시) `M.Stage2` OX퀴즈→화살함정 구간 전환에서 BGM이 바뀌는지

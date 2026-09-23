@@ -20,7 +20,8 @@ using UnityEngine.UI;
 /// - micVolumeSlider     : Slider (0~2 = 0~200%, 미연결이면 Row_MicVolume 자동 탐색)
 /// - languageDropdown    : TMP_Dropdown — LocalizationSettings.AvailableLocales 기반 자동 채움
 /// - displayModeDropdown : TMP_Dropdown — 전체화면 / 창모드 / 테두리없는 창모드 (고정 3항목, 자동 채움)
-/// - resolutionDropdown  : TMP_Dropdown — Screen.resolutions 기반 자동 채움
+/// - resolutionDropdown  : TMP_Dropdown — GameSettingsManager.GetSelectableResolutions 기반 자동 채움
+///   (화면모드에 따라 목록이 달라짐 — 테두리없는 창모드에선 네이티브 한 줄 + 비활성)
 /// - displayModeExclusiveLabel / WindowedLabel / BorderlessLabel : LocalizedString — 화면모드 3항목
 ///   라벨의 String Table 엔트리 연결(OXQuizManager와 동일 패턴). 미연결 시 한국어 기본값 폴백.
 /// - chatFontSizeSlider : Slider — min/max는 GameSettingsManager.Min/MaxChatFontSize와 일치시킬 것
@@ -90,17 +91,19 @@ public class OptionsMenuController : MonoBehaviour
     };
 
     /// <summary>
-    /// 흔히 쓰이는 해상도 목록(내림차순 무관, RefreshResolutionDropdown에서 정렬).
-    /// Screen.resolutions가 모니터가 지원하는 네이티브 모드만 반환해 목록이 너무 적게
-    /// 뜨는 문제(특히 창모드에서 쓸 만한 낮은 해상도가 거의 안 나옴) 보완용 — 현재 모니터
-    /// 네이티브 해상도(GameSettingsManager.NativeResolution)보다 큰 항목은 RefreshResolutionDropdown에서 제외.
+    /// 화면모드/해상도의 실제 상태. `Screen.fullScreenMode`를 직접 읽지 않는 이유는
+    /// GameSettingsManager.CurrentDisplayMode 주석 참고(SetResolution이 프레임 끝 지연 반영이라
+    /// 방금 적용한 값이 아직 Screen에 안 올라와 있음).
     /// </summary>
-    static readonly (int w, int h)[] CommonResolutions =
-    {
-        (3840, 2160), (3440, 1440), (2560, 1600), (2560, 1440), (2560, 1080),
-        (1920, 1200), (1920, 1080), (1680, 1050), (1600, 900),  (1440, 900),
-        (1366, 768),  (1280, 800),  (1280, 720),  (1024, 768),
-    };
+    static FullScreenMode CurrentMode =>
+        GameSettingsManager.Instance != null
+            ? GameSettingsManager.Instance.CurrentDisplayMode
+            : Screen.fullScreenMode;
+
+    static Resolution CurrentRes =>
+        GameSettingsManager.Instance != null
+            ? GameSettingsManager.Instance.CurrentResolution
+            : new Resolution { width = Screen.width, height = Screen.height };
 
     List<Locale> _locales = new List<Locale>();
     List<Resolution> _resolutions = new List<Resolution>();
@@ -246,12 +249,12 @@ public class OptionsMenuController : MonoBehaviour
             LocalizedOrFallback(displayModeBorderlessLabel, "Borderless Window"),
         });
 
-        int index = System.Array.IndexOf(DisplayModeValues, Screen.fullScreenMode);
+        int index = System.Array.IndexOf(DisplayModeValues, CurrentMode);
         displayModeDropdown.value = Mathf.Max(0, index);
         displayModeDropdown.RefreshShownValue();
 
         if (resolutionDropdown != null)
-            resolutionDropdown.interactable = Screen.fullScreenMode != FullScreenMode.FullScreenWindow;
+            resolutionDropdown.interactable = CurrentMode != FullScreenMode.FullScreenWindow;
     }
 
     /// <summary>
@@ -259,42 +262,33 @@ public class OptionsMenuController : MonoBehaviour
     /// 절대 건드리지 않음(Refresh 함수가 부작용을 가지면 패널을 여는 것만으로 화면이
     /// 바뀌는 사고가 남 — 과거 실측 버그 이력).
     ///
-    /// 해상도는 화면모드(전체화면/창모드/테두리없는 창모드)와 완전히 독립적으로 동작함 —
-    /// 창모드에서 네이티브 해상도를 골라도 목록에서 빼거나 다른 값으로 강제로 바꾸지 않음.
-    /// 창모드+네이티브 조합은 타이틀바/테두리 자리가 없어 시각적으로 전체화면과 거의
-    /// 구분이 안 될 수 있는데, 이는 Windows 자체 특성이라 코드로 해결 불가 — 사용자가
-    /// 해상도를 낮추면 되므로 UI가 강제로 값을 바꾸는 쪽보다 이 편이 낫다고 결정함.
+    /// 목록 자체는 GameSettingsManager.GetSelectableResolutions가 SSOT — 화면모드에 따라 내용이
+    /// 달라진다(창모드는 네이티브 제외, 테두리없는 창모드는 네이티브 한 줄). 여기서는 그 결과를
+    /// 라벨로 바꿔 꽂기만 함.
     /// </summary>
     void RefreshResolutionDropdown()
     {
         if (resolutionDropdown == null) return;
 
-        // Screen.currentResolution은 SetResolution(독점 전체화면) 호출 후 그 값 자체가 바뀌어버려서
-        // "네이티브 해상도"로 쓰면 안 됨 — GameSettingsManager가 부팅 시 캡처해둔 고정값을 사용.
-        Resolution native = GameSettingsManager.Instance != null
-            ? GameSettingsManager.Instance.NativeResolution
-            : Screen.currentResolution;
+        Resolution current = CurrentRes;
+        _resolutions = GameSettingsManager.Instance != null
+            ? GameSettingsManager.Instance.GetSelectableResolutions(CurrentMode)
+            : new List<Resolution> { current };
 
-        var seen = new HashSet<(int w, int h)>();
-        var merged = new List<Resolution>();
-
-        void TryAdd(int w, int h)
+        // 실제 적용된 해상도가 목록에 없으면(옛 저장값, 외부 요인으로 바뀐 경우 등) 그 값을 끼워넣는다.
+        // 예전엔 index -1을 Mathf.Max(0, ...)로 0번(목록 최고 해상도)에 붙여서, 드롭다운이 실제 화면과
+        // 다른 값을 가리키는 채로 멀쩡해 보이는 버그가 있었음.
+        int index = _resolutions.FindIndex(r => r.width == current.width && r.height == current.height);
+        if (index < 0)
         {
-            if (w > native.width || h > native.height) return;
-            if (!seen.Add((w, h))) return;
-            merged.Add(new Resolution { width = w, height = h });
+            _resolutions.Add(current);
+            _resolutions.Sort((a, b) => (b.width * b.height).CompareTo(a.width * a.height));
+            index = _resolutions.FindIndex(r => r.width == current.width && r.height == current.height);
         }
-
-        foreach (Resolution r in Screen.resolutions) TryAdd(r.width, r.height);
-        foreach ((int w, int h) in CommonResolutions) TryAdd(w, h);
-
-        _resolutions = merged.OrderByDescending(r => r.width * r.height).ToList();
 
         resolutionDropdown.ClearOptions();
         resolutionDropdown.AddOptions(_resolutions.Select(r => $"{r.width} x {r.height}").ToList());
-
-        int index = _resolutions.FindIndex(r => r.width == Screen.width && r.height == Screen.height);
-        resolutionDropdown.value = Mathf.Max(0, index);
+        resolutionDropdown.value = index;
         resolutionDropdown.RefreshShownValue();
     }
 
@@ -413,28 +407,30 @@ public class OptionsMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 화면모드만 바꾸고 해상도는 그대로 유지(모드-해상도 완전 독립 원칙).
-    /// 창모드+네이티브 조합이 시각적으로 전체화면과 구분이 안 되는 것은 Windows 특성이라
-    /// 여기서 임의로 다른 해상도로 바꿔치기하지 않음 — 필요하면 사용자가 직접 해상도를 낮춤.
+    /// 화면모드 전환. 해상도는 "사용자가 직접 고른 값"(PreferredResolution)을 다시 넘기고,
+    /// 모드가 허용하지 않는 값이면 GameSettingsManager가 알아서 내려준다(창모드 → 네이티브 미만,
+    /// 테두리없는 창모드 → 네이티브 고정). `rememberResolution: false`인 이유는 이 보정값이
+    /// 사용자의 선택으로 기록되면 전체화면 복귀 후에도 낮은 해상도가 눌러앉기 때문.
     /// </summary>
     void OnDisplayModeChanged(int index)
     {
         if (_refreshing) return;
         if (index < 0 || index >= DisplayModeValues.Length) return;
 
+        GameSettingsManager settings = GameSettingsManager.Instance;
+        if (settings == null) return;
+
         FullScreenMode mode = DisplayModeValues[index];
-        bool hasResSelection = resolutionDropdown != null && _resolutions.Count > 0
-            && resolutionDropdown.value < _resolutions.Count;
+        Resolution preferred = settings.PreferredResolution;
+        settings.ApplyDisplay(preferred.width, preferred.height, mode, rememberResolution: false);
 
-        int width  = hasResSelection ? _resolutions[resolutionDropdown.value].width  : Screen.width;
-        int height = hasResSelection ? _resolutions[resolutionDropdown.value].height : Screen.height;
-
-        GameSettingsManager.Instance?.ApplyDisplay(width, height, mode);
-
-        if (resolutionDropdown != null)
-            resolutionDropdown.interactable = mode != FullScreenMode.FullScreenWindow;
-
-        WithRefreshGuard(RefreshResolutionDropdown);
+        // 모드에 따라 목록 내용과 선택값이 통째로 달라지므로 재구성.
+        WithRefreshGuard(() =>
+        {
+            RefreshResolutionDropdown();
+            if (resolutionDropdown != null)
+                resolutionDropdown.interactable = mode != FullScreenMode.FullScreenWindow;
+        });
     }
 
     void OnResolutionChanged(int index)
@@ -443,7 +439,7 @@ public class OptionsMenuController : MonoBehaviour
         if (index < 0 || index >= _resolutions.Count) return;
 
         Resolution res = _resolutions[index];
-        GameSettingsManager.Instance?.ApplyDisplay(res.width, res.height, Screen.fullScreenMode);
+        GameSettingsManager.Instance?.ApplyDisplay(res.width, res.height, CurrentMode);
     }
 
     void OnMicMuteChanged(bool value)

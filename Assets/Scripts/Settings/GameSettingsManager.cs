@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Dissonance;
 using Unity.Netcode;
 using UnityEngine;
@@ -119,6 +120,21 @@ public class GameSettingsManager : MonoBehaviour
     /// </summary>
     public Resolution NativeResolution { get; private set; }
 
+    /// <summary>
+    /// 마지막으로 적용한 화면모드 / 해상도. 옵션 UI는 `Screen.fullScreenMode`·`Screen.width`가 아니라
+    /// 이 값을 읽는다 — `Screen.SetResolution`은 프레임 끝에 반영되는 지연 호출이라 `ApplyDisplay`
+    /// 직후에 Screen을 읽으면 아직 이전 값이 나오고, 드롭다운이 방금 고른 값과 다른 걸 가리키게 됨.
+    /// </summary>
+    public FullScreenMode CurrentDisplayMode { get; private set; }
+    public Resolution CurrentResolution { get; private set; }
+
+    /// <summary>
+    /// 사용자가 해상도 드롭다운에서 "직접 고른" 해상도. 화면모드 전환 때문에 강제로 낮아진 값
+    /// (창모드로 갈 때 네이티브 → 한 단계 아래)이나 테두리없는 창모드의 네이티브 고정값은 여기에
+    /// 기록하지 않는다 — 그래야 창모드를 거쳤다 전체화면으로 돌아왔을 때 낮은 해상도가 눌러앉지 않음.
+    /// </summary>
+    public Resolution PreferredResolution { get; private set; }
+
     static Resolution QueryNativeResolution()
     {
         Resolution[] resolutions = Screen.resolutions;
@@ -154,7 +170,14 @@ public class GameSettingsManager : MonoBehaviour
         TipAlwaysShow = PlayerPrefs.GetInt(KeyTipAlwaysShow, 0) == 1;
         MouseSensitivity = PlayerPrefs.GetFloat(KeyMouseSensitivity, defaultMouseSensitivity);
 
-        NativeResolution = QueryNativeResolution();
+        NativeResolution   = QueryNativeResolution();
+        CurrentDisplayMode = Screen.fullScreenMode;
+        CurrentResolution  = new Resolution { width = Screen.width, height = Screen.height };
+        PreferredResolution = new Resolution
+        {
+            width  = PlayerPrefs.GetInt(KeyResWidth,  Screen.width),
+            height = PlayerPrefs.GetInt(KeyResHeight, Screen.height),
+        };
         ApplySavedDisplay();
         StartCoroutine(ApplySavedMicSettingsWhenReady());
     }
@@ -343,24 +366,139 @@ public class GameSettingsManager : MonoBehaviour
 
     // ── 화면 ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// 해상도 드롭다운 후보 목록의 원본(SSOT). `Screen.resolutions`를 목록으로 쓰지 않는 이유:
+    /// 드라이버가 `1176x664` / `1440x1080` / `1600x1024` / `2048x1536` / `1920x2160`(세로 분할) /
+    /// `720x576`(PAL) 같은 레거시·TV 모드까지 전부 보고해서(4K 모니터 실측 30종) 게임 옵션으로는
+    /// 쓸 수 없는 목록이 나옴 — 2026-09-23 사용자 확정으로 "흔히 쓰이는 해상도"만 큐레이션해서 쓰고,
+    /// `Screen.resolutions`는 <see cref="QueryNativeResolution"/>(네이티브 판정)에만 남겨둔다.
+    /// 화면비별로 묶어둔 건 <see cref="GetSelectableResolutions"/>가 모니터 화면비와 다른 항목을
+    /// 걸러내기 때문(4K 16:9 기준 6종만 남음).
+    /// </summary>
+    static readonly (int w, int h)[] CatalogResolutions =
+    {
+        // 16:9
+        (3840, 2160), (2560, 1440), (1920, 1080), (1600, 900), (1366, 768), (1280, 720),
+        // 16:10
+        (2560, 1600), (1920, 1200), (1680, 1050), (1440, 900), (1280, 800),
+        // 21:9
+        (3440, 1440), (2560, 1080),
+        // 4:3 — 16:9/16:10 모니터에선 화면비 필터에 걸려 안 보이고, 구형 모니터용 폴백으로만 의미 있음.
+        (1600, 1200), (1280, 960), (1024, 768),
+    };
+
+    /// <summary>모니터 화면비와 같은 것으로 취급할 오차. 1366x768(1.77865) vs 16:9(1.77778)를 같게 보려고 둠.</summary>
+    const float AspectTolerance = 0.02f;
+
+    /// <summary>
+    /// 현재 모니터 + 주어진 화면모드에서 고를 수 있는 해상도 목록(픽셀 수 내림차순, 매 호출 새 List).
+    ///
+    /// - 네이티브보다 큰 항목, 모니터 화면비와 다른 항목 제외(2026-09-23 사용자 확정)
+    /// - 네이티브 해상도는 카탈로그에 없는 특이 모니터여도 항상 포함
+    /// - **창모드는 네이티브 이상을 제외**: 네이티브 크기 창은 타이틀바가 화면 밖으로 밀려 전체화면과
+    ///   구분이 안 돼 "창모드로 바꿔도 창모드가 아닌" 상태가 됨(사용자 실측 보고). 예전 코드는 이걸
+    ///   "Windows 특성이라 코드로 해결 불가"로 보고 사용자가 직접 해상도를 낮추게 뒀는데, 목록에서
+    ///   빼버리면 그냥 해결되는 문제라 방침을 뒤집음.
+    /// - 테두리없는 창모드는 정의상 네이티브 고정이라 목록도 한 줄(드롭다운은 비활성 상태로 그 값만 표시)
+    ///
+    /// 화면비 필터 결과가 2개 미만이면(21:9처럼 카탈로그에 단계가 거의 없는 비율) 필터를 풀어
+    /// 카탈로그 전체로 폴백하고 — 고를 게 1개뿐인 드롭다운은 없느니만 못하므로 —
+    /// 그래도 비면(네이티브가 카탈로그 최소보다 작은 초소형 화면) 창모드 제약까지 풀어 네이티브를 허용한다.
+    /// </summary>
+    public List<Resolution> GetSelectableResolutions(FullScreenMode mode)
+    {
+        if (mode == FullScreenMode.FullScreenWindow)
+            return new List<Resolution> { NativeResolution };
+
+        List<Resolution> list = BuildResolutionList(mode, matchAspect: true);
+        if (list.Count < 2) list = BuildResolutionList(mode, matchAspect: false);
+        if (list.Count == 0) list = BuildResolutionList(FullScreenMode.ExclusiveFullScreen, matchAspect: false);
+        return list;
+    }
+
+    List<Resolution> BuildResolutionList(FullScreenMode mode, bool matchAspect)
+    {
+        Resolution native = NativeResolution;
+        float nativeAspect = (float)native.width / Mathf.Max(1, native.height);
+        bool windowed = mode == FullScreenMode.Windowed;
+        var list = new List<Resolution>();
+
+        void TryAdd(int w, int h)
+        {
+            if (w > native.width || h > native.height) return;
+            if (windowed && (w >= native.width || h >= native.height)) return;
+            if (matchAspect && Mathf.Abs((float)w / Mathf.Max(1, h) - nativeAspect) > AspectTolerance) return;
+
+            foreach (Resolution existing in list)
+                if (existing.width == w && existing.height == h) return;
+
+            list.Add(new Resolution { width = w, height = h });
+        }
+
+        TryAdd(native.width, native.height);
+        foreach ((int w, int h) in CatalogResolutions) TryAdd(w, h);
+
+        list.Sort((a, b) => (b.width * b.height).CompareTo(a.width * a.height));
+        return list;
+    }
+
+    /// <summary>
+    /// 화면모드가 강제하는 해상도 보정. 목록에 있는 값이면 그대로, 아니면 그보다 작은 것 중 가장 큰 것으로
+    /// 내린다. "창모드 + 네이티브"(= 사실상 전체화면)나 옛 버전이 저장해둔 값이 여기서 교정됨.
+    /// </summary>
+    public Resolution ClampForMode(Resolution res, FullScreenMode mode)
+    {
+        List<Resolution> options = GetSelectableResolutions(mode);
+        if (options.Count == 0) return NativeResolution;
+
+        foreach (Resolution r in options)
+            if (r.width == res.width && r.height == res.height) return r;
+
+        // options는 내림차순이라 조건을 만족하는 첫 항목이 "요청값 이하 중 가장 큰 것".
+        foreach (Resolution r in options)
+            if (r.width <= res.width && r.height <= res.height) return r;
+
+        return options[options.Count - 1];
+    }
+
     void ApplySavedDisplay()
     {
         // 저장된 적 없으면(최초 실행) Unity/Player Settings 기본값을 그대로 둠 — 불필요한 강제 전환 방지.
         if (!PlayerPrefs.HasKey(KeyResWidth)) return;
 
-        int width  = PlayerPrefs.GetInt(KeyResWidth, Screen.width);
-        int height = PlayerPrefs.GetInt(KeyResHeight, Screen.height);
         FullScreenMode mode = (FullScreenMode)PlayerPrefs.GetInt(KeyDisplayMode, (int)Screen.fullScreenMode);
-
-        Screen.SetResolution(width, height, mode);
+        ApplyInternal(ClampForMode(PreferredResolution, mode), mode);
     }
 
-    /// <summary>옵션 메뉴에서 해상도/화면모드 변경 시 호출. 즉시 적용 + 저장.</summary>
-    public void ApplyDisplay(int width, int height, FullScreenMode mode)
+    /// <summary>
+    /// 옵션 메뉴에서 해상도/화면모드 변경 시 호출. 화면모드 제약(<see cref="ClampForMode"/>)을 적용해
+    /// 즉시 반영 + 저장.
+    /// </summary>
+    /// <param name="rememberResolution">
+    /// 사용자가 해상도를 직접 고른 경우에만 true. 화면모드 드롭다운에서 넘어온 호출은 false여야
+    /// <see cref="PreferredResolution"/>이 유지되어, 창모드용으로 낮아진 해상도가 전체화면 복귀 후에도
+    /// 눌러앉는 일이 없음.
+    /// </param>
+    public void ApplyDisplay(int width, int height, FullScreenMode mode, bool rememberResolution = true)
     {
-        Screen.SetResolution(width, height, mode);
-        PlayerPrefs.SetInt(KeyResWidth, width);
-        PlayerPrefs.SetInt(KeyResHeight, height);
+        var requested = new Resolution { width = width, height = height };
+
+        // 테두리없는 창모드는 해상도 선택지 자체가 없으므로(네이티브 고정) 사용자의 선택으로 치지 않는다.
+        if (rememberResolution && mode != FullScreenMode.FullScreenWindow)
+            PreferredResolution = requested;
+
+        ApplyInternal(ClampForMode(requested, mode), mode);
+    }
+
+    void ApplyInternal(Resolution res, FullScreenMode mode)
+    {
+        CurrentResolution  = res;
+        CurrentDisplayMode = mode;
+        Screen.SetResolution(res.width, res.height, mode);
+
+        // 저장은 보정 전 "사용자가 고른" 값 기준 — 다음 실행에서 모드에 맞게 다시 보정된다.
+        PlayerPrefs.SetInt(KeyResWidth,  PreferredResolution.width);
+        PlayerPrefs.SetInt(KeyResHeight, PreferredResolution.height);
         PlayerPrefs.SetInt(KeyDisplayMode, (int)mode);
     }
 
