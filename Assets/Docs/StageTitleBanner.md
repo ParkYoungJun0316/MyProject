@@ -39,7 +39,7 @@
 | `Title.T.Stage1` | 굴러오는 사탕 | The Rolling Candy |
 | `Title.T.Stage2` | 보이지 않는 길 | The Unseen Path |
 | `Title.T.Stage3` | 역류하는 위액 | Acid Reflux |
-| `Title.T.Stage4` | 무게 초과 | Over Capacity |
+| `Title.T.Stage4` | 정원 초과 | Over Capacity |
 | `Title.T.Stage5` | 문 열어 | Open the Door |
 | `Title.T.Boss` | 사탕이 닿기 전에 | Before the Candy Lands |
 

@@ -9,7 +9,7 @@
 
 > **2026-09-24 전면 재번역:** ko·en 확정 후 **영어 기준**으로 10개 언어 재작성(대사 개정 작업과 함께). `Tip.M.Stage4.1`·`Tip.T.Stage2.1`·`Tip.M.Boss.4`는 영어가 안 바뀌어 기존 번역 유지. String Table에도 반영 완료(`pt`는 `pt-BR`과 동일).
 >
-> **2026-09-24 진짜 최종본:** 위 10개 언어 문장을 다시 교체해 String Table `StageTip_*`에 반영(`pt`는 `pt-BR`과 동일). ko·en은 그대로. 팀 구호 용어는 대사와 같이 ja チームの掛け声 / es·es-419 grito de equipo / fr cri d'équipe / de Teamruf / pt-BR grito da equipe / ru командный клич / pl okrzyk drużyny.
+> **2026-09-24 진짜 최종본:** 위 10개 언어 문장을 다시 교체해 String Table `StageTip_*`에 반영(`pt`는 `pt-BR`과 동일). ko·en도 팀 구호 / team cheer로 맞춤. 팀 구호 용어는 대사와 같이 ja チームの掛け声 / es·es-419 grito de equipo / fr cri d'équipe / de Teamruf / pt-BR grito da equipe / ru командный клич / pl okrzyk drużyny.
 
 ## 번역 규칙
 
@@ -17,7 +17,7 @@
 2. 한국어를 직역하지 말 것. 그 언어권 HUD·코옵에서 실제로 쓰는 말로.
 3. 소리 내어 읽히게. Tip은 합니다체 원문 → 각 언어의 **짧은 지시문**(en 명령형, ja です/ます, de/fr/ru/pl 비격식 2인칭, es 스페인/중남미 어휘 분리, pt-BR).
 
-**용어:** 팁 HUD에서 외치는 말은 대사와 같다 — ja `チームの掛け声`, zh `团队口令`/`團隊口令`, es·es-419 `grito de equipo`, fr `cri d'équipe`, de `Teamruf`, pt-BR `grito da equipe`, ru `командный клич`, pl `okrzyk drużyny`. ko `팀 키워드`, en `team word`는 그대로.
+**용어:** 팁 HUD에서 외치는 말은 대사와 같다 — ja `チームの掛け声`, zh `团队口令`/`團隊口令`, es·es-419 `grito de equipo`, fr `cri d'équipe`, de `Teamruf`, pt-BR `grito da equipe`, ru `командный клич`, pl `okrzyk drużyny`. ko `팀 구호`, en `team cheer`.
 
 **고정:** `Ctrl` / `Space` / `"TEAMCHEER"` 는 모든 언어에서 그대로. 키 강조 태그는 아직 안 씀.
 
@@ -25,7 +25,7 @@
 
 | ko | en | 비고 |
 |---|---|---|
-| 팀 키워드 | team word / チームの合言葉 / 团队关键词 / palabra de equipo / mot d'équipe / Team-Wort / palavra da equipe / командное слово / hasło drużyny | HUD 표기는 `"TEAMCHEER"`. Tutorial 설정 UI와 같은 말 (2026-09-17, 구 `팀 응원 이름`) |
+| 팀 구호 | team cheer / チームの合言葉 / 团队关键词 / palabra de equipo / mot d'équipe / Team-Wort / palavra da equipe / командное слово / hasło drużyny | HUD 표기는 `"TEAMCHEER"`. Tutorial 설정 UI와 같은 말 (2026-09-17, 구 `팀 응원 이름`) |
 | 고유색 | unique color / 固有色 / 专属色 | |
 | 흑백 | black and white | |
 | 조준 | lock-on | |
@@ -38,10 +38,10 @@
 
 ## Tip.M.Stage1
 
-- ko: 한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.\n상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.
+- ko: 한 번에 한 색의 입만 올라옵니다.\n흑백 발판은 누구나 색을 맞춰 밟을 수 있습니다.\n상단에 "TEAMCHEER" 경고가 뜨면 팀 구호를 외치세요.
 - en: Only one color's mouth rises at a time.
 Anyone can use black and white pads by matching their color.
-When "TEAMCHEER" pops up at the top, shout your team word.
+When "TEAMCHEER" pops up at the top, shout the team cheer.
 - ja: 一度に1色の口だけがせり上がります。\n自分の色を合わせれば、誰でも黒と白のパッドを使えます。\n上に「TEAMCHEER」が出たら、チームの掛け声を叫んでください。
 - zh-Hans: 每次只会升起一种颜色的嘴巴。\n只要将自己的颜色与黑色或白色的踏板匹配，任何人都可以使用。\n当顶部出现“TEAMCHEER”时，大声喊出你的团队口令。
 - zh-Hant: 每次只會升起一種顏色的嘴巴。\n只要將自己的顏色與黑色或白色的踏板匹配，任何人都可以使用。\n當頂部出現「TEAMCHEER」時，大聲喊出你的團隊口令。
@@ -57,11 +57,11 @@ When "TEAMCHEER" pops up at the top, shout your team word.
 
 - ko: 간판 아래 꿀떡 수만큼 그 구역에 들어가세요.
 비대칭 정보를 각자 가지고 있습니다. 서로 공유하세요.
-상단에 "TEAMCHEER" 경고가 뜨면 팀 키워드를 외치세요.
+상단에 "TEAMCHEER" 경고가 뜨면 팀 구호를 외치세요.
 방어 버프는 라운드 실패 데미지도 막아 줍니다.
 - en: Each zone needs as many players as there are KKUL-TTEOK under its sign — no more, no less.
 Everyone sees something different. Share what you see!
-When "TEAMCHEER" pops up at the top, shout your team word.
+When "TEAMCHEER" pops up at the top, shout the team cheer.
 Defense buff also blocks round-fail damage.
 - ja: 各ゾーンには、看板の下にあるKKUL-TTEOKの数と同じ人数を入れる必要があります。多すぎても少なすぎてもダメです。\n全員が違うものを見ます。見えたものを共有しましょう！\n上に「TEAMCHEER」が出たら、チームの掛け声を叫んでください。\n防御バフはラウンド失敗時のダメージも防ぎます。
 - zh-Hans: 每个区域的人数必须与标志下方的KKUL-TTEOK数量完全一致，不能多，也不能少。\n每个人看到的东西都不一样。分享你看到的内容！\n当顶部出现“TEAMCHEER”时，大声喊出你的团队口令。\n防御增益还可以抵挡本回合失败时受到的伤害。
@@ -139,9 +139,9 @@ Memorize which tile to press.
 
 ## Tip.M.Stage4.3
 
-- ko: Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.\n"TEAMCHEER" 경고가 뜰 때 팀 키워드를 외치면 바닥이 복구됩니다.\n이미 부서진 뒤에는 다음 경고까지 버티세요.
+- ko: Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.\n"TEAMCHEER" 경고가 뜰 때 팀 구호를 외치면 바닥이 복구됩니다.\n이미 부서진 뒤에는 다음 경고까지 버티세요.
 - en: Press Ctrl to match your color to the floor and avoid being targeted.
-Shout your team word while "TEAMCHEER" is up to repair the floor.
+Shout the team cheer while "TEAMCHEER" is up to repair the floor.
 If it's already broken, hold out until the next warning.
 - ja: Ctrlを押して自分の色を床に合わせ、狙われるのを避けましょう。\n「TEAMCHEER」が出ている間にチームの掛け声を叫ぶと、床が直ります。\nすでに壊れている場合は、次の警告が出るまで耐え抜きましょう。
 - zh-Hans: 按下Ctrl，让自己的颜色与地板匹配，避免成为攻击目标。\n“TEAMCHEER”出现时，喊出你的团队口令来修复地板。\n如果地板已经损坏，就坚持到下一次警告出现。
@@ -230,8 +230,8 @@ Defense buff also blocks round-fail damage.
 
 > M.Boss P4 (`MouthBossJawSmash` — 닫힘 → 바닥 파괴 → 열린 뒤 응원으로 복구).
 
-- ko: 입이 열리면 팀 키워드를 외쳐 부서진 바닥을 복구하세요.
-- en: When the mouth opens, shout your team word to repair the broken floor.
+- ko: 입이 열리면 팀 구호를 외쳐 부서진 바닥을 복구하세요.
+- en: When the mouth opens, shout the team cheer to repair the broken floor.
 - ja: 口が開いたら、チームの掛け声を叫んで壊れた床を直してください。
 - zh-Hans: 嘴巴张开时，大声喊出你的团队口令来修复损坏的地板。
 - zh-Hant: 嘴巴張開時，大聲喊出你的團隊口令來修復損壞的地板。
@@ -311,7 +311,7 @@ Match your character's color to the tiles.
 
 - ko: 간판 시간 안에 구간을 통과하세요. 늦으면 위액이 차오릅니다.
 양옆 벽에 색을 맞춰 부딪히면 벽이 뒤로 물러납니다.
-- en: Clear each section before the sign's timer runs out, or acid will flood it.
+- en: Clear each section before the sign's timer runs out, or stomach acid will flood it.
 Match the side walls' color and ram them to push them back.
 - ja: 看板のタイマーが切れる前に各エリアをクリアしましょう。間に合わないと胃液が流れ込みます。\n両側の壁の色を合わせて突進し、壁を押し戻しましょう。
 - zh-Hans: 在标志上的计时器结束前清除每个区域，否则胃酸会灌满该区域。\n匹配两侧墙壁的颜色并撞击它们，把墙推回去。
