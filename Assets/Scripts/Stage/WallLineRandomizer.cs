@@ -313,6 +313,9 @@ public class WallLineRandomizer : MonoBehaviour
 
             if (pool != null) ApplyColor(pick);
             if (lead > 0f) yield return new WaitForSeconds(lead);
+            // 경고색 대기 중에 색을 맞추면 벽이 서 있어도 멈춤이 걸린다 — 그대로 부르면 RunSurge가
+            // 무시돼 원점이 한 칸 뒤처지고, 마지막 회차면 최종 위치가 이 머신만 모자란다.
+            while (_wall.IsPausedByColor) yield return null;
 
             _wall.RunSurge(surge, target, SurgeDuration(surge), retDur);
             reached = target;

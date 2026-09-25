@@ -29,7 +29,7 @@ public class WallCrushKill : MonoBehaviour
     const float OpposingDot = -0.5f;
 
     // 신고 후 Host 확정이 돌아오기 전 같은 끼임으로 RPC를 연타하지 않게 막는 간격(초).
-    // 자동 부활(사망 +1초)보다 짧으면 안 된다 — 부활 직후 끼임은 다시 판정돼야 한다.
+    // 자동 부활(사망 +1초)보다 길면 안 된다 — 부활 직후 끼임은 다시 판정돼야 한다.
     const float ReportCooldown = 1f;
 
     static readonly List<WallCrushKill> _active = new List<WallCrushKill>();
