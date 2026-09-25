@@ -206,7 +206,9 @@ public class ColorWall : MonoBehaviour
         }
     }
 
-    bool IsColorMatch(Player p)
+    /// <summary>이 플레이어 색과 지금 벽 색이 일치하는지. Default(휴지 회색)는 항상 false.
+    /// WallCrushKill이 "두 벽 모두 내 색 아님" 판정에 쓴다.</summary>
+    public bool IsColorMatch(Player p)
     {
         switch (_wallColor)
         {

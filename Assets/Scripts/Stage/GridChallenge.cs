@@ -128,6 +128,10 @@ public class GridChallenge : MonoBehaviour
     [Tooltip("autoStart=true일 때 Activate()까지 대기(초). 0이면 Start() 직후")]
     [SerializeField] float autoStartDelay = 0f;
 
+    [Tooltip("Activate() 후 첫 라운드(선행 붕괴)까지 대기(초). 시작 경로와 무관하게 적용 — " +
+             "Phase 진입/StageStartGate 직후 숨 고를 시간. Host만 기다리고 Client는 라운드 NV를 따른다")]
+    [SerializeField] float startDelaySeconds = 0f;
+
     [Header("라운드")]
     [Tooltip("안전 칸 공개 ~ 정산(초). 끝에 한 번 판정. roundDurationPhases가 있으면 그쪽이 우선")]
     [SerializeField] float roundDuration = 0f;
@@ -380,6 +384,7 @@ public class GridChallenge : MonoBehaviour
     {
         if (IsClientOnly()) return;
         if (_isRunning) return;
+        if (_judgeCoroutine != null) return; // 시작 대기 중
         if (_netState == null) return;
 
         if (tiles == null || tiles.Length == 0)
@@ -417,6 +422,16 @@ public class GridChallenge : MonoBehaviour
             return;
         }
 
+        if (startDelaySeconds > 0f)
+            _judgeCoroutine = StartCoroutine(StartAfterDelay()); // Cancel·사망 리로드·OnDisable이 같이 끊는다
+        else
+            StartRound(0);
+    }
+
+    IEnumerator StartAfterDelay()
+    {
+        yield return new WaitForSeconds(startDelaySeconds);
+        _judgeCoroutine = null;
         StartRound(0);
     }
 

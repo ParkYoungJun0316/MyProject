@@ -725,6 +725,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     /// <summary>
+    /// Owner: 마주 보는 두 벽 사이에 끼였을 때 1회 호출 (WallCrushKill, T.Boss P4).
+    /// 끼임은 Owner 로컬 물리에서만 정확하므로 낙사와 같이 Owner 실판정 → Host 확정.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    public void ReportCrushDeathServerRpc()
+    {
+        NetworkDamageUtil.ApplyInstantKill(_player);
+    }
+
+    /// <summary>
     /// 서버에서 낙사 확정. HP를 0으로 내리고 Owner에게 일반 Die()를 전달 (doDie 애니로 통일).
     /// doDie 애니는 Owner Update에서 낙하 중에도 이미 1회 재생됐으므로 여기서는 기본 사망 처리만.
     /// </summary>

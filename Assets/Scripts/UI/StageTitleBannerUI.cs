@@ -35,6 +35,8 @@ public class StageTitleBannerUI : MonoBehaviour
     [Header("연결")]
     [Tooltip("제목 TMP. 비우면 자식에서 찾는다.")]
     [SerializeField] TextMeshProUGUI titleText;
+    [Tooltip("titleText 뒤에 비껴 까는 그림자 TMP(선택). 로케일 폰트 교체 때 머티리얼이 바뀌어 Underlay를 못 쓰므로 TMP를 하나 더 둔다.")]
+    [SerializeField] TextMeshProUGUI shadowText;
 
     [Header("타이밍(초, unscaled)")]
     [Tooltip("커튼이 걷히기 시작한 뒤 배너가 나오기까지 대기.")]
@@ -107,7 +109,9 @@ public class StageTitleBannerUI : MonoBehaviour
 
         yield return LocalizationSettings.InitializationOperation;
         ApplyLocaleFont();
-        if (titleText != null) titleText.text = ResolveText(KeyPrefix + _sceneName);
+        string title = ResolveText(KeyPrefix + _sceneName);
+        if (titleText != null) titleText.text = title;
+        if (shadowText != null) shadowText.text = title;
 
         if (startDelay > 0f) yield return new WaitForSecondsRealtime(startDelay);
         yield return Fade(0f, 1f, fadeInDuration);
@@ -144,7 +148,9 @@ public class StageTitleBannerUI : MonoBehaviour
         {
             TMP_FontAsset font = LocalizationSettings.AssetDatabase.GetLocalizedAsset<TMP_FontAsset>(
                 TipUI.FontTableName, TipUI.FontEntryKey);
-            if (font != null) titleText.font = font;
+            if (font == null) return;
+            titleText.font = font;
+            if (shadowText != null) shadowText.font = font;
         }
         catch (Exception)
         {

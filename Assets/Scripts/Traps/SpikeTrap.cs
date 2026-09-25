@@ -49,6 +49,11 @@ public class SpikeTrap : TrapBase
     bool isRaised;
     float nextDamageTime;
 
+    // [버그 수정 2026-09-26] SpikeLane 아래 타일은 SpikeLaneField가 레인 단위로 발동한다. StageManager에
+    // 등록되면 StartStage()가 30개 타일을 딜레이 없이 한꺼번에 한 번 올려서 SpikeLaneField.initialDelay가
+    // 무시됐다(T.Boss P2·T.Stage3).
+    protected override bool ActivatedByStageManager => GetComponentInParent<SpikeLane>() == null;
+
     protected override void Start()
     {
         EnsureInitialized();

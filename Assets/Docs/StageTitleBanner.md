@@ -98,6 +98,7 @@
 ### 에디터 작업 (사용자)
 
 1. ~~UI.prefab 배치~~ **완료(2026-09-24, MCP)** — `UI/StageTitle`(앵커 0.5,0.75 · 1400×120 · 검정 50% 띠 · CanvasGroup · 활성) + 자식 `Txt.StageTitle`(Fredoka-Bold 흰색 Bold, 자동 크기 36~64, 줄바꿈 없음). StageClear 바로 앞 형제. 폰트는 런타임에 로케일 폰트로 교체된다.
+   - **2026-09-26 스타일 변경(MCP):** 앵커 y 0.7 · 1400×200. 배경 = `Figma/Ingame/StageTitleBand.png`(양 끝·위아래가 투명하게 사라지는 띠) 검정 60%. 글자 뒤에 `Txt.StageTitle.Shadow`(같은 TMP 복제, 파랑 `#2080C0` = Stage Clear·Team Cheer 그림자 색, (6,−6) 오프셋)를 깔고, 글자 자동 크기 최대 64→**72**(두 TMP 같이 — 72까지는 가장 긴 제목(es "La Última Oportunidad de Escapar" ≈1279px)도 안 줄어 전 제목이 같은 크기) `shadowText`에 연결 — 로케일 폰트 교체 때 머티리얼이 바뀌어 TMP Underlay를 못 쓰므로 TMP 두 장으로 만든다. 배경 폭은 고정 — 띠 양 끝이 사라져서 언어별 글자 길이 차이가 박스로 드러나지 않는다.
 2. `Tools / Setup StageTitle Localization` 실행.
 3. 플레이 검증: M.Stage1 진입 시 커튼 → 배너 → 대사 순서 / 사망 리로드 시 배너·대사 안 뜸 / 언어 변경 시 폰트.
 

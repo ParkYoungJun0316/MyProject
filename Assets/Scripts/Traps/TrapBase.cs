@@ -54,13 +54,19 @@ public abstract class TrapBase : MonoBehaviour
     public void SetPreFireChargeTime(float t) =>
         preFireChargeTime = Mathf.Max(preFireChargeTime, Mathf.Max(0f, t));
 
+    /// <summary>
+    /// false면 StageManager에 등록하지 않는다 — 다른 컴포넌트가 발동을 직접 제어하는 함정용
+    /// (SpikeLane 아래 SpikeTrap). 등록되면 StartStage()가 딜레이 없이 전부 한 번 발동시켜 버린다.
+    /// </summary>
+    protected virtual bool ActivatedByStageManager => true;
+
     protected virtual void Awake()
     {
         StageManager sm = GetComponentInParent<StageManager>();
         if (sm != null)
         {
             _hasStageManager = true;
-            sm.RegisterTrap(this);
+            if (ActivatedByStageManager) sm.RegisterTrap(this);
         }
     }
 

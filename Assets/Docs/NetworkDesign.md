@@ -937,6 +937,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 | 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
+| 끼임 즉사 (T.Boss P4 벽) | **Owner** `WallCrushKill` — 마주 보는 두 벽에 같은 물리 스텝에 닿고 두 벽 모두 내 색 아님 → `NetworkPlayerSetup.ReportCrushDeathServerRpc` → Host `NetworkDamageUtil.ApplyInstantKill` 확정 (2026-09-26, 사용자 승인). 낙사와 같은 이유 — 끼임은 Owner 로컬 물리에서만 일어나고 Host 프록시는 CNT 위치만 따라가 못 본다. HP write는 Host만 |
 
 **솔로 (NGO Host 1인):**
 
@@ -958,7 +959,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 | `NetworkDamageUtil.ApplyDamageWithOwnerReport` | 삭제. 호출처 → `ApplyDamage` |
 | `NetworkPlayerSetup.ReportHitServerRpc` | 삭제 |
 | `NetworkPlayerSetup.ReportInstantKillServerRpc` | 삭제. `ApplyInstantKill` → 서버 직접만 |
-| `NetworkPlayerSetup.ReportFallDeathServerRpc` | ~~삭제~~ → **낙사 한정 복원 (2026-07-16).** Owner+CNT에서 Host 비오너 프록시가 바닥 콜라이더에 걸려 void 낙하를 못 보는 문제 → Owner 실좌표 Y 신고 → Host `ApplyFallDeathFromServer` 확정. **HP write는 여전히 Host만.** 피격·즉사 신고 RPC 복원은 계속 금지 |
+| `NetworkPlayerSetup.ReportFallDeathServerRpc` | ~~삭제~~ → **낙사 한정 복원 (2026-07-16).** Owner+CNT에서 Host 비오너 프록시가 바닥 콜라이더에 걸려 void 낙하를 못 보는 문제 → Owner 실좌표 Y 신고 → Host `ApplyFallDeathFromServer` 확정. **HP write는 여전히 Host만.** 피격·즉사 신고 RPC 복원은 계속 금지 — 예외는 **끼임 즉사 `ReportCrushDeathServerRpc`**(2026-09-26, §9A.3) 하나뿐이며 범용 즉사 신고로 넓히지 말 것 |
 | `ClientNetworkTransform` | **유지 (확정).** Owner 이동. 제거·Host NT 교체 **금지** |
 | 함정/스크립트의 `Player.TakeDamage` / `TryTakeDamage` (온라인) | `NetworkDamageUtil` 로 교체 |
 | `Breakable`의 `ApplyDamageFromServer` 직접 호출 | util 경유 또는 Host 전용 래퍼로 통일 |
@@ -990,7 +991,7 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 
 #### 9A.5.2 Phase 1 완료 판정
 
-- [ ] `grep ApplyDamageWithOwnerReport` / `ReportHitServerRpc` / `ReportInstantKillServerRpc` — **프로젝트 0건** (`ReportFallDeathServerRpc`는 낙사 한정 허용 — §9A.3)
+- [ ] `grep ApplyDamageWithOwnerReport` / `ReportHitServerRpc` / `ReportInstantKillServerRpc` — **프로젝트 0건** (`ReportFallDeathServerRpc`는 낙사 한정, `ReportCrushDeathServerRpc`는 벽 끼임 한정 허용 — §9A.3)
 - [ ] ParrelSync **2인**: 화살·가시·ContactDamage·문 닫힘 넉백·낙사·Enemy·Chaser 각 **1회 이상** — HP·리로드 정상
 - [ ] Host·Client **동일 HP** (`heart` UI = `_hp`). 이중 데미지 없음
 

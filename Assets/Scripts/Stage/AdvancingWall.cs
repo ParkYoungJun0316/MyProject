@@ -298,6 +298,9 @@ public class AdvancingWall : MonoBehaviour
     /// 외부 스케줄러가 "정지가 끝났는지" 판별하는 데 사용.</summary>
     public bool IsPausedByColor => _isPausedByColor;
 
+    /// <summary>월드 기준 전진 방향(정규화). WallCrushKill이 마주 보는 벽 짝을 찾는 데 쓴다.</summary>
+    public Vector3 WorldMoveDirection => transform.TransformDirection(moveDirection.normalized);
+
     /// <summary>전진 완료 후 후퇴 시작까지 대기(초). 외부 스케줄러가 사이클 길이를 미리 계산할 때 쓴다.</summary>
     public float ReturnDelay => returnDelay;
 
