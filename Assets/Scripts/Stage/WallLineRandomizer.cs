@@ -266,7 +266,8 @@ public class WallLineRandomizer : MonoBehaviour
     // [결정론] 사이클 시각·돌진 거리·한 칸 크기를 전부 "계획 시각"(Phase 앵커 + 시드로 뽑은
     // 첫 대기·간격 + 고정 이동 시간)만으로 계산한다. 실제 시각이나 색 멈춤 여부는 계산에
     // 들어가지 않으므로 Host/Client가 같은 계단을 밟는다. 멈춤 때문에 늦어진 머신은 다음 계획
-    // 시각까지 기다렸다가 같은 값으로 이어간다.
+    // 시각까지 기다렸다가 같은 값으로 이어간다. 계획상 끝난 회차까지 늦었으면 그 회차는 색·돌진 없이
+    // 원점만 스냅하고 넘어간다 — 회차 번호(= 색)는 항상 Host와 같은 시각에 같은 값이다.
 
     // PhaseStartServerTime이 전파될 때까지 기다리는 한도 — SalivaHazard와 같은 값·같은 폴백.
     const float AnchorWaitTimeout = 3f;
@@ -275,9 +276,12 @@ public class WallLineRandomizer : MonoBehaviour
 
     IEnumerator SqueezeRoutine(bool hasColor)
     {
-        ColorWall.WallColorType[] pool = hasColor ? BuildPool() : null;
-
         yield return ResolveSqueezeAnchor();
+
+        // 색 풀은 앵커 뒤에 만든다 — 이 루틴은 OnEnable(씬 로드 중)에서 시작하는데, 활성 색을 채우는
+        // GameSession.OnSceneLoaded는 OnEnable보다 늦다. 여기서 먼저 만들면 Tutorial→T.Boss 직행 시
+        // Client만 타이틀 기본 4색 풀을 잡아 같은 시드로도 Host와 다른 색이 나온다(2026-09-28 로그 확인).
+        ColorWall.WallColorType[] pool = hasColor ? BuildPool() : null;
         double end = _squeezeAnchor + squeezeDuration;
 
         float lead     = pool != null ? Mathf.Max(0f, colorLeadBeforeWall) : 0f;
@@ -297,6 +301,7 @@ public class WallLineRandomizer : MonoBehaviour
         while (true)
         {
             // 간격+색을 한 사이클 시드에서 연달아 뽑는다(SyncedRoutine과 같은 순서 고정 원칙).
+            int cycle = _cycleCount;
             System.Random rng = NewCycleRng();
             float gap = NextWallGap(rng);
             ColorWall.WallColorType pick = pool != null ? pool[rng.Next(0, pool.Length)] : default;
@@ -311,8 +316,29 @@ public class WallLineRandomizer : MonoBehaviour
             while (ServerNow() < t) yield return null;
             while (_wall.IsMoving || _wall.IsPausedByColor) yield return null;
 
+            // 계획상 이미 끝난 회차는 건너뛴다 — 늦게 들어온 머신(0번 Phase로 당겨 테스트하면 Client가
+            // 씬을 늦게 로드해 몇 초 전 앵커를 받는다)이 지난 회차를 간격 없이 연달아 다시 돌면 그동안
+            // Host와 다른 회차의 색을 보여 준다. 시드·계단은 위에서 이미 소모·계산했으니 원점만 맞춘다.
+            double now = ServerNow();
+            if (now >= t + busy)
+            {
+                NetLog.Transition(nameof(WallLineRandomizer), "SqueezeCycleSkipped",
+                    $"wall={name} cycle={cycle} t={t:F2} now={now:F2} reached={target:F2}");
+                _wall.SnapToDistance(target);
+                reached = target;
+                lastEnd = t + busy;
+                t       = lastEnd + gap;
+                continue;
+            }
+
+            NetLog.Transition(nameof(WallLineRandomizer), "SqueezeCycleColor",
+                $"wall={name} idx={_netIndex} cycle={cycle} seed={NetworkSessionData.Seed} " +
+                $"pool={(pool != null ? string.Join(",", pool) : "-")} pick={pick} " +
+                $"anchor={_squeezeAnchor:F2} t={t:F2} now={now:F2}");
+
             if (pool != null) ApplyColor(pick);
-            if (lead > 0f) yield return new WaitForSeconds(lead);
+            // 경고색은 계획 시각 t + lead까지 — 회차 도중에 들어온 머신은 남은 만큼만 보여 준다.
+            while (ServerNow() < t + lead) yield return null;
             // 경고색 대기 중에 색을 맞추면 벽이 서 있어도 멈춤이 걸린다 — 그대로 부르면 RunSurge가
             // 무시돼 원점이 한 칸 뒤처지고, 마지막 회차면 최종 위치가 이 머신만 모자란다.
             while (_wall.IsPausedByColor) yield return null;
@@ -391,6 +417,8 @@ public class WallLineRandomizer : MonoBehaviour
             if (sns != null && sns.PhaseStartServerTime > 0d)
             {
                 _squeezeAnchor = sns.PhaseStartServerTime;
+                NetLog.Transition(nameof(WallLineRandomizer), "SqueezeAnchor",
+                    $"wall={name} src=phase anchor={_squeezeAnchor:F2} now={ServerNow():F2}");
                 yield break;
             }
             waited += Time.deltaTime;
@@ -398,6 +426,8 @@ public class WallLineRandomizer : MonoBehaviour
         }
 
         _squeezeAnchor = ServerNow();
+        NetLog.Transition(nameof(WallLineRandomizer), "SqueezeAnchor",
+            $"wall={name} src=fallback anchor={_squeezeAnchor:F2}");
     }
 
     static double ServerNow()

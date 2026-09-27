@@ -51,7 +51,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 - `MouthController.teamCheerHazard` — true면 위 머신. false면 옛 Close→Hold초→Open.
 - `SalivaHazard` — M2 revert. Warning→Cover→Hold→Recover. `SalivaVolume`이 발판 위일 때만 `Player` 얼음 미끄럼.
 - `TongueController` — M4 revert. 4.1 RiseHold / 4.2 AttackSweep. `SweepBreak` 이벤트 안 씀(클립 끝 `BreakRemaining`).
-- `MouthBossJawSmash` — M.Boss P4 전용. Close는 무조건, 응원은 Open 뒤 사후 복구만. 새 RPC 없음. Mouth/Tongue의 `_skipNextWindow`(창 건너뛰기) **쓰지 않음**.
+- `MouthBossJawSmash` — M.Boss P4 전용. Close는 무조건, 응원은 Open 뒤 사후 복구만. 새 RPC 없음. 회차 동기화는 챌린지 축 공유 슬롯(2026-09-28, §7 "동기화"). Mouth/Tongue의 `_skipNextWindow`(창 건너뛰기) **쓰지 않음**.
 - `TeamCheerWarningUI` — `OnHazardWindowChanged`. `TeamCheerCleared` — `OnTeamBuffActivated`. 팀 쿨 HUD는 **삭제됨**(스크립트·NV·세션 저장까지). 이 UI는 창이 열린 동안 같은 스프라이트를 띄움 — P4에서는 "막아라"가 아니라 "복구하라".
 
 **되돌림 동기화 (2026-09-05 리뷰 반영) — 함정 3종 공통:**
@@ -131,7 +131,7 @@ Idle(응원 무시) → Warning(UI, 응원 켜짐) → 외침이면 Attack 안 �
 | MouthController | **됨.** hazard 씬만 Close→Hold(외침까지)→Open. 자동 재오픈 없음 |
 | 침 | **됨.** `SalivaHazard` / `SalivaVolume` / `Player` 얼음. 수면 비주얼은 슬롯만 비움 |
 | 혀 | **됨(4.1·4.2만).** `TongueController` + M.Stage4 에디터. 4.1=1칸, `SweepBreak` 안 씀. 플레이 확인 (2026-09-04). 보스용 `MixedSweep` 패턴은 **코드는 있지만 보스에서 폐기(2026-09-08)** — M.Boss는 P3에서 `AttackSweep` 복습만 쓰고, P4는 `MouthBossJawSmash`(입 닫힘+파괴음) |
-| M.Boss P4 | **됨(2026-09-09, 연출 재검토 반영).** `MouthBossJawSmash` (`Assets/Scripts/Cheer/MouthBossJawSmash.cs`). 새 RPC·NV 없음. 회차·구간 경계 = 절대 `PhaseStartServerTime`. Revert = 사후 복구만(회차 건너뛰기 없음). `SceneFlowManager.FreezeAllHazardsNow()`가 `StopCycle()` 순회. **연출:** Breaking이 이미 최대 암전이라 시각 연출(이빨 프롭) 대신 파괴음(`SFXId.Breakable_Destroy`, `breakSfxMinDistance`/`Max`/`RolloffMode`)만 재생 — `toothProps` 필드 제거. **에디터 됨:** M.Boss `Boss 270-360`/`StageManager_Boss5`에 GO `MouthBossJawSmash`. `floorTiles` 25(Ground, x→z 정렬) + `warnMarkers` 25(`SpikeLaneWarnMarker`, 혀/SpikeTrap과 동일). `mouthAnimator`=MouthBG, `screenFader`=Fadeout/Image, Close/Open 클립 길이 2.966667. `OnChallengeComplete`→`BossFightObjective.NotifyPhaseCleared`. `Bossdown` `OnAllReady` = `ForceBreakAllTilesForEnding` → `SceneFlowRelay.LoadNextScene`. P4 `onPhaseEnter`에 `StageManager_Boss5.StartStage`. `BossFightObjective.totalPhases`=4(이미). 낙사 = Player `enableFallDeath`(M4와 동일, 방 리셋). **에디터 남음:** 씬에 남은 예전 `Boss_Final` 이빨 프롭 복제 25개(정리 필요) |
+| M.Boss P4 | **됨(2026-09-09, 연출 재검토 반영).** `MouthBossJawSmash` (`Assets/Scripts/Cheer/MouthBossJawSmash.cs`). 새 RPC·NV 없음. **동기화 = 챌린지 축 공유 슬롯(2026-09-28 전환, §7 "동기화")** — Host가 회차마다 시드+깨진 칸 비트마스크+시작 시각을 쓴다. Revert = 사후 복구만(회차 건너뛰기 없음). `SceneFlowManager.FreezeAllHazardsNow()`가 `StopCycle()` 순회. **연출:** Breaking이 이미 최대 암전이라 시각 연출(이빨 프롭) 대신 파괴음(`SFXId.Breakable_Destroy`, `breakSfxMinDistance`/`Max`/`RolloffMode`)만 재생 — `toothProps` 필드 제거. **에디터 됨:** M.Boss `Boss 270-360`/`StageManager_Boss5`에 GO `MouthBossJawSmash`. `floorTiles` 25(Ground, x→z 정렬) + `warnMarkers` 25(`SpikeLaneWarnMarker`, 혀/SpikeTrap과 동일). `mouthAnimator`=MouthBG, `screenFader`=Fadeout/Image, Close/Open 클립 길이 2.966667. `OnChallengeComplete`→`BossFightObjective.NotifyPhaseCleared`. `Bossdown` `OnAllReady` = `ForceBreakAllTilesForEnding` → `SceneFlowRelay.LoadNextScene`. P4 `onPhaseEnter`에 `StageManager_Boss5.StartStage`. `BossFightObjective.totalPhases`=4(이미). 낙사 = Player `enableFallDeath`(M4와 동일, 방 리셋). **에디터 남음:** 씬에 남은 예전 `Boss_Final` 이빨 프롭 복제 25개(정리 필요) |
 | ColorTile | **점수제만.** unique 6 + 인원별 흑/백(4/4, 6/6, 7/7, 8/8). 목표 시간 = `targetTime`(기본 180, 권장 120–300). 타일 `Black`/`White`. M.Stage3 인스펙터 남음 |
 | Barrier | §2.1 색 슬롯 표 **코드 됨(2026-09-05)** — `DirectionalBarrierRound.BuildBarrierSlots`가 균등 분배(`GameSessionColorDistribution.Distribute`) 대신 확정 표(1인=고유2+백+흑 / 2인=A+B+백+흑 / 3인=고유3+백1 / 4인=고유4)로 배정. 타일도 슬롯 중복 없이 색당 1개만 스폰(1인 고유 패드 1개 → 고유 문 2개). 시작 흐름 **Reveal/CloseAndSpawnTiles 2단계로 분리(2026-09-05)** — `Activate()`(단일 호출) 폐기. `Reveal()`은 배치+Open만 하고 자동으로 안 닫힘(다이얼로그 프리뷰용), `CloseAndSpawnTiles()`가 Close+타일 스폰(진짜 라운드 시작). Reveal 없이 CloseAndSpawnTiles만 호출해도 그 자리에서 스폰부터 자동 수행(무프리뷰). Incoming 감독(§2.2) — `ArrowIncomingDirector`·`ArrowTrap.FireOnce()` **코드 됨(2026-09-05)**. **에디터(사용자, 남음):** M.Boss→M.Stage1 이동, `barrierPrefabs`/`tilePrefabs`에 White·Black 문/타일 프리팹 추가, 화살 `Breakable` 부착, M.Stage1 Phase0 onPhaseEnter→`Reveal()` + `StageStartGate.OnCountdownComplete`→`CloseAndSpawnTiles()` 연결 |
 | Sequence | 룰 유지. **코드 됨(2026-09-11 예외)** — `targetStepCount`/`timeLimit`을 `targetStepCountByPlayerCount`/`timeLimitByPlayerCount`(인덱스 0=1인…3=4인, ColorTile `blackQuotaByPlayerCount`와 동일 규약)로 배열화. 레거시 스칼라 값은 `MigrateLegacyDifficulty()`가 1회 4칸에 복제 후 비움. 판정·미리보기·시드 재생성 로직은 무변경. 인원수는 `GetUniqueColorPool().Length`로만 파생(위 "챌린지 인원수·색 SSOT" 행) — 별도 `PartySize()` 체인 없음. 같은 리뷰에서 고친 것: ① 제한 시간을 런당 1회 래칭(`_runTimeLimit`, 매 프레임 재해석 시 Host만 카운트다운하고 클라 타이머가 멈추는 desync) + `SyncChallengeTime` 수신 시 자가교정, ② 색 풀을 PSC `HashSet` 열거 순서로 쓰던 것을 GameSession(ColorIndex 정렬)로 교체 — 순서가 `rng.Next(pool.Length)`에 먹히므로 같은 시드에서도 Host/Client가 다른 색을 뽑을 수 있었음. **에디터 됨(2026-09-11):** 4.1 `40/75/85/95` · `35/55/65/75` (PlusOne, 흑 10%). 4.2 `35/65/70/75` 스텝=초 동일 (NextOnly, 흑 20%). 인덱스 0=1인…3=4인. |
@@ -374,9 +374,11 @@ M.Stage1로 옮긴다. 코드는 아직 안 바꿈. 통과·알코브 **안 씀*
 
 **낙사:** 꺼진 칸 = M4 혀와 동일. `Player.enableFallDeath` / `fallDeathY`(Owner 신고 → Host 적용 → 사망 리로드 = 방 리셋). P4 컴포넌트에 사망 코드 없음.
 
-**리듬 (2026-09-08 리뷰 확정, 수치 2026-09-21):** 경고 **1.5**(3→2.5→1.5, 2026-09-23 — 빠듯하게 뛰게) · 닫힘 2 · 파괴 1 · 열림 2 · 응원 창 **5**(6→5) · 회차 간격 **2**(5→2) = 회차 13.5초. 마지막 회차는 창·간격이 없어 5회 ≈ 63초. 타일은 닫힘 끝에 깨지므로 실제 이동 여유는 경고+닫힘 3.5초(판 대각 최장 ≈28m, 이동 10m/s ≈ 2.8초). 회차 길이는 고정. 응원을 창 초반에 성공해도 다음 회차가 앞당겨지지 않는다 — 복구는 즉시, 남은 창 시간은 숨 돌리기. 로컬 `WaitForSeconds` 누적은 Host/Client 창 종료·타일 추첨을 갈라놓으므로 **쓰지 않음**. 회차 N 시작 = `PhaseStartServerTime + interCycleGap + (N-1)×CycleDuration`(절대 ServerTime).
+**리듬 (2026-09-08 리뷰 확정, 수치 2026-09-21):** 경고 **0.8**(3→2.5→1.5, 2026-09-23 — 빠듯하게 뛰게 → **0.8, 2026-09-27 사용자: 1.5도 너무 쉬움**. 아래 회차 길이 합계는 1.5 기준 옛 계산 — 씬 값으로 재확인 필요) · 닫힘 2 · 파괴 1 · 열림 2 · 응원 창 **5**(6→5) · 회차 간격 **2**(5→2) = 회차 13.5초. 마지막 회차는 창·간격이 없어 5회 ≈ 63초. 타일은 닫힘 끝에 깨지므로 실제 이동 여유는 경고+닫힘 3.5초(판 대각 최장 ≈28m, 이동 10m/s ≈ 2.8초). 회차 길이는 고정. 응원을 창 초반에 성공해도 다음 회차가 앞당겨지지 않는다 — 복구는 즉시, 남은 창 시간은 숨 돌리기. 로컬 `WaitForSeconds` 누적은 Host/Client 창 종료·타일 추첨을 갈라놓으므로 **쓰지 않음**. 회차 N 시작 = `PhaseStartServerTime + interCycleGap + (N-1)×CycleDuration`(절대 ServerTime) — **Host 루프만** 이 식으로 회차를 연다(아래 동기화).
 
-**되돌림:** 새 RPC 없음. `ITeamCheerRevert` 기존 채널. Mouth/Tongue의 `_skipNextWindow` **금지**(위 H.5 예외). `StartCycle()`은 `_brokenIndices`만 비우지 않고 `RestoreAllTiles()`로 집합과 `activeSelf`를 같이 맞춘다.
+**동기화 (2026-09-28 전환 — 챌린지 축 NetworkDesign §11B):** 예전엔 세션 시드 + `PhaseStartServerTime`으로 전 머신이 회차를 각자 계산했다. 추첨 후보가 로컬 깨진 칸 집합에 의존해, 응원 복구 하나만 놓친 머신(늦게 켜진 Client 등)은 같은 시드로도 **다른 칸을 깼고**, 늦게 켜진 머신은 지난 회차를 연달아 재생했다(2026-09-27, P4를 앞 Phase로 당긴 Steam 테스트에서 드러남). 지금은 Host가 회차마다 공유 슬롯 `_challengeStep`(owner `JawSmash`)에 `ChallengeStepBegin(stepIndex, seed)` 한 번만 쓴다 — `stepIndex` = 회차 번호(하위 5비트) | **회차 시작 시점의 깨진 칸 비트마스크**(그 위 26비트), `seed` = Host가 새로 뽑은 회차 시드, `stepStartServerTime` = 회차 시작. 전 머신(Host 포함)이 같은 핸들러에서 ①바닥을 비트마스크로 조용히 교정 → ②회차 시드(`System.Random`)로 추첨 → ③구간 경계를 회차 시작 기준 절대 ServerTime으로 진행. 이전 기록이 필요 없다. 늦게 합류한 Client는 구독 직후 슬롯을 1회 읽어 진행 중인 회차에 끼어들고, 이미 지난 구간은 경고·파괴음·파편·페이드 없이 상태만 맞춘다. 마지막 회차 뒤 `ResetChallengeStep()`. 한계: 타일 26칸·회차 31회(`ValidateWiring`이 에러로 알림). 새 RPC·NV 없음(공유 슬롯 재사용).
+
+**되돌림:** 새 RPC 없음. `ITeamCheerRevert` 기존 채널. Mouth/Tongue의 `_skipNextWindow` **금지**(위 H.5 예외). `StartCycle()`은 `_brokenIndices`만 비우지 않고 `RestoreAllTiles()`로 집합과 `activeSelf`를 같이 맞춘다. 다음 회차가 이미 시작된 뒤 도착한 되돌림(`resumeAt` ≤ 지금 회차 시작)은 버린다 — 그 회차 비트마스크가 Host의 복구 결과를 이미 담고 있다(2026-09-28).
 
 **정지/엔딩:** `SceneFlowManager.FreezeAllHazardsNow()`가 `MouthBossJawSmash.StopCycle()`을 순회한다. `ForceBreakAllTilesForEnding()`은 루프·창을 먼저 끊고 `_endingBroken`을 세워, 이후 `StopCycle`/`OnDisable`이 바닥을 되살리지 않게 한다. Bossdown `OnAllReady` 순서: `ForceBreakAllTilesForEnding` → `SceneFlowRelay.LoadNextScene`.
 
@@ -400,7 +402,7 @@ M.Stage5. 코드 아직. 새 미니게임 아님 — Color 7 + BW 7을 **한 보
 
 ### 보드 · 진행
 
-챌린지 하나, 5×5 하나. Stage5.1 Color / Stage5.2 BW 페이즈 폐기. `totalRounds`는 인스펙터 (커브가 11라운드부터 1칸이면 12 이상이 자연스러움. 값은 에디터).
+챌린지 하나, 5×5 하나. Stage5.1 Color / Stage5.2 BW 페이즈 폐기. `totalRounds` = **8** (2026-09-28, 10 → 8).
 
 실패 = 지금처럼 **개인 데미지**. Objective는 라운드 실패로 Fail하지 않음. HP 0이면 기존 방 리셋.
 
@@ -425,14 +427,17 @@ M.Stage5. 코드 아직. 새 미니게임 아님 — Color 7 + BW 7을 **한 보
 
 풀에서 `tileCount`개를 겹치지 않게 뽑되, 흑/백이 `minBwCount` 미만이면 안 됨. `tileCount`가 풀보다 크면 풀 크기로 클램프.
 
-**4인 기본 커브** (라운드 번호 1-based. 인스펙터 `afterRound`는 0-based):
+**4인 기본 커브 [확정 2026-09-28, 8라운드]** (라운드 번호 1-based. 인스펙터 `afterRound`는 0-based). 옛 10라운드 씬 값(4·4·3·3·2·2·흑백2·2·1·1)에서 중복인 "4칸 두 번째"와 "흑백2 뒤 2칸"만 뺐다. 1칸 모이기(핵심 장면)는 두 번 유지:
 
-| 라운드 | afterRound | tileCount | minBwCount |
-|--------|------------|-----------|------------|
-| 1–6 | 0 | 4 | 0 |
-| 7–8 | 6 | 3 | 1 |
-| 9–10 | 8 | 2 | 1 |
-| 11+ | 10 | 1 | 1 |
+| 라운드 | afterRound | tileCount | minBwCount | 공개(s) |
+|--------|------------|-----------|------------|---------|
+| 1 | 0 | 4 | 0 | 4.5 |
+| 2–3 | 1 | 3 | 1 | 4.5 |
+| 4–5 | 3 | 2 | 1 | 4.5 / 4.0 |
+| 6 | 5 | 2 | 2 (전원 흑백) | 4.0 |
+| 7–8 | 6 | 1 | 1 | 3.5 |
+
+공개 시간 `roundDurationPhases` = afterRound 0: 4.5 / 4: 4.0 / 6: 3.5.
 
 1·2인도 **같은 표·같은 알고리즘**. 풀이 작아서 초반 4칸이면 고유가 항상 나올 수 있다 — 버그 아님. 숫자 조이는 건 인스펙터.
 
@@ -458,14 +463,15 @@ M.Stage5. 코드 아직. 새 미니게임 아님 — Color 7 + BW 7을 **한 보
 
 - `GridTileCollapse`(Random 모드) — **안전 칸이 아닌 칸만** 깬다. 안전 칸은 절대 안 깨짐(공개 전에도 계획된 안전 칸을 피한다).
 - **라운드 사이클 [확정 2026-09-22 — 시간 텀은 2차 플레이에서 "굉장히 좋음" 확인]**:
-  정산 → **멈춤 0.5s**(결과만) → **복구 1.5s**(남은 구멍 일괄 되감기 1.2s + 시차 0.3s, 판정은 복구 시작 순간 즉시 — 혀·턱과 같은 규약) → **휴식 4.0s**(4차 후 3.0 → 4.0, 아무것도 없음, 입 충전만 끝 2초에 겹침 — 사용자 허용) → **붕괴 4.0s**(= 선행: 다음 라운드 시드 배포, 안전 칸은 계산만 하고 숨김. 4차에서 3.0 → 4.0) → **공개**(안전 칸 공개, **0R 4.5s / 5R 4.0s / 7R 3.5s** — 후반 압박) → 정산. **총 10라운드**(12 → 10, 4인·부활 기준 판단: 한 사이클 14.5s × 12 ≈ 3분이라 후반 실패 시 재도전 부담이 크고, 4인은 노출 4배에 팀 목숨 3, 솔로는 목숨 0 — 몸풀기를 줄이고 어려운 구간은 유지). 한 사이클 14.5s, 10라운드 ≈ 2분 25초.
+  정산 → **멈춤 0.5s**(결과만) → **복구 1.5s**(남은 구멍 일괄 되감기 1.2s + 시차 0.3s, 판정은 복구 시작 순간 즉시 — 혀·턱과 같은 규약) → **휴식 4.0s**(4차 후 3.0 → 4.0, 아무것도 없음, 입 충전만 끝 2초에 겹침 — 사용자 허용) → **붕괴 4.0s**(= 선행: 다음 라운드 시드 배포, 안전 칸은 계산만 하고 숨김. 4차에서 3.0 → 4.0) → **공개**(안전 칸 공개, **0R 4.5s / 4R 4.0s / 6R 3.5s** — 후반 압박) → 정산. **총 8라운드**(2026-09-28, 10 → 8: "길다" 피드백 — 중복 라운드만 빼고 1칸 구간 2회 유지, ≈ 1분 50초). 옛 판단 — **총 10라운드**(12 → 10, 4인·부활 기준 판단: 한 사이클 14.5s × 12 ≈ 3분이라 후반 실패 시 재도전 부담이 크고, 4인은 노출 4배에 팀 목숨 3, 솔로는 목숨 0 — 몸풀기를 줄이고 어려운 구간은 유지). 한 사이클 14.5s, 10라운드 ≈ 2분 25초.
 - **계속 파괴 모델 [확정 2026-09-22 3차]** — 2차(라운드당 N칸을 공개 전에 전부 파괴, 정적 구멍)는 "눈만 있으면 깨는 라운드, 압박 0"이라 폐기. 정적 구멍은 연결성 때문에 동시 12칸이 한계였다:
+  **[2026-09-28 개정] 박자 1.0s · 자동 복구 2.5s · 박자당 4칸(0R) → 5칸(4R).** 동시 구멍 ≈ 2~3묶음(평균 2.5N ≈ 10 / 12.5칸) — 0.8·2.4(3묶음, 12/15칸)에서 경고 칸까지 합쳐 25칸 중 ~20칸이 막혀 보이던 "갈 길이 없다/멀다" 억까 대응. 복구 시간은 켜짐·꺼짐 빈도에 영향이 없어(빈도 = 박자) 멀미 부담은 박자 1.0 기준. 아래는 옛 기록.
   붕괴 시작 +0.8s부터 **1.2s 박자마다 N칸**(라운드별 고정, 랜덤 아님 — **0R 3 / 2R 4 / 5R 4 / 7R 5**) 깨고, 깨진 칸은 **3.6s 뒤 자동 복구**(짧은 되감기 0.5s, 파편 거리 0.5~1m, 무음). 4차(멀미 대응): 박자 0.8 → 1.2·복구 2.5 → 3.6으로 켜고 꺼지는 빈도를 낮추고, 파괴 파편 힘 2~5 → 0.5~1.5·수명 2 → 1s, 칸형 경고 펄스 끔(`WarnMarkerTile.mat`). 5차: 칸형 채움 불투명도가 경고 동안 **0.25 → 0.55로 서서히 진해짐**(`WarnMarker.shader` `_FillAlphaStart`) — 조명을 안 받는 밝은 사각형이 번쩍 켜지던 게 멀미 원인. 조명 반응은 아직 안 넣음(필요 시 다음 단계). 재파괴 쿨다운은 사용자 판단으로 안 넣음. 공개 뒤에도 계속, **정산 1s 전부터 새 파괴 없음**(마지막 자리 잡기 공정). 묶음마다 0.8s 전 탠저린→진홍 경고. 최대치 대신 박자당 수를 정한다 — 1.2·3.6이면 묶음 3개가 겹쳐 동시 구멍 ≈ 3N(3칸 9 / 4칸 12 / 5칸 15). 0.8·2.5 시절 밀도(≈3~4N)를 원하면 박자당 4/5/6/7. 5칸은 순간 남는 칸이 5개까지 줄어 공개 전에 "끝까지 안 깨지는 칸 = 안전 칸"이 드러날 수 있음 — 후반 한정.
 - **연결성 = 8방향**(대각선 모서리로 건너갈 수 있음, 사용자 확정): 매 박자 "그 순간 깨진 칸 + 새 묶음"을 빼고 남은 칸이 8방향 한 덩어리 + 안전 칸 전부 포함인지 확인, 실패하면 같은 rng 재추첨 → 한 칸씩 줄임. 후보는 경고가 뜨는 순간 멀쩡한 칸만(구멍 위에 경고가 뜨지 않게).
 - 공개 전에 먼저 깨진 칸은 안전 칸이 아니라는 힌트 — 감수(사용자 확정). 쉬는 시간 낙사도 가능(사용자 확정). 공개 후 안전 칸 주변 노리기는 **기각**(사용자).
 - 떨어지면 **즉사**(공용 `fallDeathY`). 개인 데미지 1 → **2**.
 - 네트워크: 새 RPC/NV 없음. 라운드 전체 파괴·복구 스케줄을 붕괴 시작 때 라운드 시드 + 계획된 안전 칸으로 전 머신이 미리 계산, 붕괴 시작 ServerTime 기준으로 재생. 챌린지 스텝 NV를 라운드당 2개(짝수 = 붕괴 시작 + 새 시드, 홀수 = 공개)로 쓴다.
-- **바람 [확정 2026-09-22 3차]**: 스테이지 시계 스케줄 폐기 → `GridRoundWind`가 라운드에 맞춰 발동. **라운드 인덱스 1, 3, 5, 7, 9**(2번째 라운드부터 격라운드), **붕괴 + 공개 내내** 불고 정산 순간 끝난다(4차 — 붕괴 구간만은 짧아서 약했음). 시작·끝 0.5s 램프(`WindTrap.rampSeconds`, 갑자기 밀리는 멀미 완화). 방향은 **라운드마다 랜덤**(WindTrap Random, 전 머신 동일 시드). 기각: 상시 바람, 3라운드마다 방향 교대, 6라운드부터. 입 충전 2.0s가 휴식 끝에 겹치므로 직전 라운드 정산 시점에 예약. 바닥 경고(`WindWarnSign`, 그리드 경고와 겹침)는 삭제 — 예고는 **파티클 0.5s 선행** + 입 충전. 힘 250 → **300**(4차). 250은 정상 작동 확인(2차 플레이, 사용자) — "부나 마나"는 붕괴가 너무 쉬워서였음. 세게 하기보다 길게 부는 쪽을 택함(순간적으로 확 밀리면 멀미가 더 심함).
+- **바람 [확정 2026-09-22 3차]**: 스테이지 시계 스케줄 폐기 → `GridRoundWind`가 라운드에 맞춰 발동. **라운드 인덱스 1, 3, 5, 7**(2번째 라운드부터 격라운드, 8라운드 기준 — 마지막 라운드도 바람), **붕괴 + 공개 내내** 불고 정산 순간 끝난다(4차 — 붕괴 구간만은 짧아서 약했음). 시작·끝 0.5s 램프(`WindTrap.rampSeconds`, 갑자기 밀리는 멀미 완화). 방향은 **라운드마다 랜덤**(WindTrap Random, 전 머신 동일 시드). 기각: 상시 바람, 3라운드마다 방향 교대, 6라운드부터. 입 충전 2.0s가 휴식 끝에 겹치므로 직전 라운드 정산 시점에 예약. 바닥 경고(`WindWarnSign`, 그리드 경고와 겹침)는 삭제 — 예고는 **파티클 0.5s 선행** + 입 충전. 힘 250 → **300**(4차). 250은 정상 작동 확인(2차 플레이, 사용자) — "부나 마나"는 붕괴가 너무 쉬워서였음. 세게 하기보다 길게 부는 쪽을 택함(순간적으로 확 밀리면 멀미가 더 심함).
 - 씬: 칸마다 자식 `Solid`(5×5 고체) + 통짜 `Ground` 콜라이더 비활성. 같은 컴포넌트를 T.Boss P3가 `AllExceptSafe`(= 이 박자 파괴 + 정산 1초 전 안전 칸 외 전부, 2026-09-23 재정의)와 `GridChallenge.safeRule = SharedSolo`(공용 칸 1명)로 쓴다(`CoopStageAudit.T.md` §6). M5는 `Random` + `PlayerColor` 그대로.
 - 보류: 바람 길이, 상시 침(침 위에선 바람 힘이 누적돼 250이면 게임이 깨짐 — 쓰려면 바람을 한 자릿수로 재설정).
 

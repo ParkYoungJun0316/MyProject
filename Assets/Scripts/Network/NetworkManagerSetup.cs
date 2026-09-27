@@ -98,7 +98,7 @@ public class NetworkManagerSetup : MonoBehaviour
     // [버그 수정 2026-09-05] 재시작 요청 1회 가드. Application.Quit()은 프레임 끝에서야 처리되고
     // 그 사이 버튼·콜백이 계속 살아있다 — "방 만들기"를 빠르게 두 번 누르면 TryRestartForCreateGame이
     // 두 번 통과해 같은 인자로 프로세스가 2개 뜬다(Steam 로비 2개 + 같은 AppID 중복 실행).
-    // Process.Start 성공 이후에만 세우므로, 재실행 실패 시에는 호출부의 인프로세스 폴백이 그대로 산다.
+    // 새 프로세스 실행 성공 이후에만 세우므로, 재실행 실패 시에는 호출부의 인프로세스 폴백이 그대로 산다.
     private static bool s_restartRequested;
 
     /// <summary>이미 프로세스 재시작이 요청됐는지. 호출부가 중복 진입 차단·UI 안내에 사용.</summary>
@@ -114,12 +114,11 @@ public class NetworkManagerSetup : MonoBehaviour
 
         try
         {
-            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-            var startInfo = new System.Diagnostics.ProcessStartInfo(exePath, args)
-            {
-                UseShellExecute = true,
-            };
-            System.Diagnostics.Process.Start(startInfo);
+            string exePath = ResolveExecutablePath();
+            if (string.IsNullOrEmpty(exePath))
+                throw new System.IO.FileNotFoundException("현재 실행 파일 경로를 찾지 못했습니다.");
+
+            LaunchProcess(exePath, args);
         }
         catch (System.Exception e)
         {
@@ -135,6 +134,124 @@ public class NetworkManagerSetup : MonoBehaviour
 #endif
         return true;
     }
+
+    /// <summary>
+    /// 지금 실행 중인 게임 exe의 전체 경로.
+    /// [버그 수정 2026-09-28] 예전엔 Process.GetCurrentProcess().MainModule을 썼는데, 출시 빌드(IL2CPP)에서는
+    /// 이 API가 ArgumentNullException을 던져 재시작이 한 번도 성공하지 못했다 — 두 번째 방부터 항상
+    /// 인프로세스 폴백으로 떨어져 "웜 리커넥트는 항상 재시작" 정책이 사실상 꺼져 있었다(Player.log 7회 전부 실패).
+    /// ① 실행 인자 0번(타이틀이 +connect_lobby를 읽을 때 쓰는 것과 같은 API)
+    /// ② Windows 빌드 폴더 구조 `<이름>.exe` + `<이름>_Data`에서 역산.
+    /// </summary>
+    static string ResolveExecutablePath()
+    {
+        try
+        {
+            string[] cmd = System.Environment.GetCommandLineArgs();
+            if (cmd.Length > 0 && !string.IsNullOrEmpty(cmd[0]))
+            {
+                string full = System.IO.Path.GetFullPath(cmd[0]);
+                if (System.IO.File.Exists(full)) return full;
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[NetworkManagerSetup] 실행 인자에서 exe 경로 읽기 실패 — 폴더 구조로 시도. {e.Message}");
+        }
+
+        string dataDir = Application.dataPath;
+        string dataName = System.IO.Path.GetFileName(dataDir);
+        const string DataSuffix = "_Data";
+        if (!string.IsNullOrEmpty(dataName) && dataName.EndsWith(DataSuffix))
+        {
+            string exe = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(dataDir),
+                dataName.Substring(0, dataName.Length - DataSuffix.Length) + ".exe");
+            if (System.IO.File.Exists(exe)) return exe;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// exe를 새 프로세스로 띄운다. 실패하면 예외(Windows 빌드는 실제 Win32 에러 번호 포함).
+    ///
+    /// [버그 수정 2026-09-28 — 원인 확정] Windows 빌드는 System.Diagnostics.Process를 쓸 수 없다.
+    /// Unity 6000.3.9f1 IL2CPP 런타임 소스(Editor/Data/il2cpp/libil2cpp/icalls/System/System.Diagnostics/Process.cpp)에서
+    /// CreateProcess_internal·ShellExecuteEx_internal·GetModules_icall이 전부 IL2CPP_NOT_IMPLEMENTED_ICALL로
+    /// false/0만 돌려준다 — Win32를 부르지도 않고 실패해서 에러가 "Native error= Success"로 찍혔다.
+    /// 그래서 kernel32 CreateProcessW를 직접 부른다(QuitWatchdog의 TerminateProcess와 같은 이유·같은 방식).
+    /// 환경 변수는 그대로 물려준다 — Steam이 넣어 둔 SteamAppId가 새 프로세스의 SteamClient.Init에 필요하다.
+    /// 에디터(Mono)는 Process가 동작하므로 그대로 쓴다.
+    /// </summary>
+    static void LaunchProcess(string exePath, string args)
+    {
+        string workDir = System.IO.Path.GetDirectoryName(exePath);
+
+        // 분기는 전처리기가 아니라 런타임으로 — 아래 kernel32 선언·호출 코드가 에디터 컴파일에서도 검사되게 한다.
+        if (Application.platform != RuntimePlatform.WindowsPlayer)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exePath, args)
+            {
+                UseShellExecute  = false,
+                WorkingDirectory = workDir,
+            });
+            return;
+        }
+
+        // lpCommandLine은 CreateProcessW가 쓰기도 하는 버퍼라 문자열 상수를 넘기면 안 된다 — 직접 할당해 넘기고 해제한다.
+        string commandLine = $"\"{exePath}\" {args}";
+        System.IntPtr cmdBuffer = System.Runtime.InteropServices.Marshal.StringToHGlobalUni(commandLine);
+        try
+        {
+            var si = new STARTUPINFOW { cb = System.Runtime.InteropServices.Marshal.SizeOf(typeof(STARTUPINFOW)) };
+            if (!CreateProcessW(exePath, cmdBuffer, System.IntPtr.Zero, System.IntPtr.Zero, false, 0,
+                                System.IntPtr.Zero, workDir, ref si, out PROCESS_INFORMATION pi))
+            {
+                int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                throw new System.ComponentModel.Win32Exception(err,
+                    $"CreateProcessW 실패 — Win32 에러 {err}, exe='{exePath}', cmd='{commandLine}', dir='{workDir}'");
+            }
+
+            CloseHandle(pi.hThread);
+            CloseHandle(pi.hProcess);
+            Debug.Log($"[NetworkManagerSetup] 새 프로세스 시작 — pid={pi.dwProcessId}, cmd='{commandLine}'");
+        }
+        finally
+        {
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(cmdBuffer);
+        }
+    }
+
+    // 문자열 필드는 전부 null로 쓰므로 IntPtr로 둔다 — 구조체 안 문자열 마샬링을 피한다.
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    struct STARTUPINFOW
+    {
+        public int cb;
+        public System.IntPtr lpReserved;
+        public System.IntPtr lpDesktop;
+        public System.IntPtr lpTitle;
+        public int dwX, dwY, dwXSize, dwYSize, dwXCountChars, dwYCountChars, dwFillAttribute, dwFlags;
+        public short wShowWindow, cbReserved2;
+        public System.IntPtr lpReserved2, hStdInput, hStdOutput, hStdError;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    struct PROCESS_INFORMATION
+    {
+        public System.IntPtr hProcess;
+        public System.IntPtr hThread;
+        public int dwProcessId;
+        public int dwThreadId;
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+    static extern bool CreateProcessW(string lpApplicationName, System.IntPtr lpCommandLine,
+        System.IntPtr lpProcessAttributes, System.IntPtr lpThreadAttributes, bool bInheritHandles,
+        uint dwCreationFlags, System.IntPtr lpEnvironment, string lpCurrentDirectory,
+        ref STARTUPINFOW lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool CloseHandle(System.IntPtr hObject);
 
     // ── 초기화 ────────────────────────────────────────────────────
 

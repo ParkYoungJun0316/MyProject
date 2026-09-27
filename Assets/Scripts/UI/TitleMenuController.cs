@@ -22,6 +22,8 @@ using UnityEngine.SceneManagement;
 /// - roomCodeInputField     : 6자리 숫자 입력 TMP_InputField
 /// - joinStatusText         : 상태 메시지 TMP_Text (찾는 중... / 방을 찾을 수 없습니다.)
 /// - discoveryTimeoutSeconds: 타임아웃 (기본 5초)
+/// - versionMismatchNotice  : 버전 불일치 안내 오브젝트 (화면 가운데, 실행 시 Awake에서 숨김)
+/// - versionLabel           : 타이틀 구석 버전 표기 TMP_Text
 ///
 /// [버튼 OnClick 연결]
 /// 게임 만들기    → OnClickCreateGame()
@@ -67,6 +69,18 @@ public class TitleMenuController : MonoBehaviour
     [Tooltip("룸코드 Discovery 타임아웃 (초).")]
     [SerializeField] private float discoveryTimeoutSeconds = 5f;
 
+    [Header("버전 불일치 안내")]
+    [Tooltip("초대 참여 시 Host와 게임 버전이 다르면 잠깐 켜 줄 안내 오브젝트(TitleCanvas/VersionMismatchNotice — 반투명 판 + 문구).\n" +
+             "에디터에서는 켜 둬서 문구·크기를 확인할 수 있고, 실행 시작 시 코드가 숨긴다.\n" +
+             "문구는 에디터에 적힌 그대로 나간다 — 코드는 켜고 끄기만 한다(영어 고정, 번역 대상 아님).")]
+    [SerializeField] private GameObject versionMismatchNotice;
+
+    [Tooltip("버전 불일치 안내 표시 시간(초).")]
+    [SerializeField] private float versionMismatchShowSeconds = 5f;
+
+    [Tooltip("타이틀 구석 버전 표기 TMP_Text. 실행 시 \"v{Version} ({Steam 빌드 ID})\"로 덮어쓴다.")]
+    [SerializeField] private TMP_Text versionLabel;
+
     [Header("페이드 (선택)")]
     [Tooltip("씬 전환 전 페이드아웃. 비워두면 즉시 전환.")]
     [SerializeField] private ScreenFader screenFader;
@@ -93,6 +107,12 @@ public class TitleMenuController : MonoBehaviour
 
     // ── Unity 콜백 ────────────────────────────────────────────────
 
+    /// <summary>버전 불일치 안내는 에디터 확인용으로 켜 둔 채 저장되므로, 첫 프레임이 그려지기 전에 숨긴다.</summary>
+    void Awake()
+    {
+        if (versionMismatchNotice != null) versionMismatchNotice.SetActive(false);
+    }
+
     /// <summary>
     /// OnInviteAccepted 구독은 OnEnable이 아니라 여기 Start() 한 곳에서만 한다 — 1방향.
     /// Unity는 서로 다른 오브젝트 간 Awake/OnEnable 순서를 보장하지 않아 OnEnable()에서
@@ -104,6 +124,8 @@ public class TitleMenuController : MonoBehaviour
     /// </summary>
     void Start()
     {
+        RefreshVersionLabel();
+
         if (!UseLocalNetworkPath)
         {
             TryAutoJoinFromLaunchArgs();
@@ -373,6 +395,8 @@ public class TitleMenuController : MonoBehaviour
 
             // 이슈 D 우회용 virtual port를 Lobby 데이터로 공유 — Client가 StartClientSteam에 그대로 전달.
             lobby.Value.SetData("vport", NetworkManagerSetup.Instance.LastHostVirtualPort.ToString());
+            // 참여자가 자기 빌드와 비교해 다르면 접속하지 않는다 — JoinGameSteamAsync 참고.
+            lobby.Value.SetData(LobbyBuildKey, CurrentBuildId);
 
             StartCoroutine(LoadLobbySceneWithCurtain());
         }
@@ -487,6 +511,24 @@ public class TitleMenuController : MonoBehaviour
             }
 
             if (joinPanel != null) joinPanel.SetActive(false);
+
+            // [2026-09-28] 빌드 불일치 차단 — 패치 순간 게임을 켜 두고 있던 쪽은 옛 빌드 그대로라,
+            // 그대로 붙으면 이유 모를 접속 실패나 스테이지 내용 어긋남이 난다. Host가 Lobby에 적은
+            // Steam 빌드 ID와 다르면(값이 없으면 이 검사 이전 빌드) 로비를 나가고 안내만 띄운다.
+            // 비교 기준은 사람이 올리는 Application.version이 아니라 Steam 빌드 ID — Version을 안 올린 채
+            // 다시 업로드한 두 빌드가 "1.0.0 == 1.0.0"으로 통과해 버린 적이 있다(2026-09-28 테스트).
+            string hostBuild = lobby.Value.GetData(LobbyBuildKey);
+            string myBuild = CurrentBuildId;
+            if (hostBuild != myBuild)
+            {
+                Debug.LogWarning($"[TitleMenuController] JoinGameSteamAsync — source={source}, 빌드 불일치 " +
+                                 $"(Host='{hostBuild}', 내 빌드='{myBuild}') — 참여 중단.");
+                SteamLobbyManager.Instance.LeaveCurrentLobby();
+                ShowVersionMismatch();
+                EndSteamConnectAttempt();
+                AbortConnectCover();
+                return;
+            }
 
             LobbyContext.Mode = LobbyMode.OnlineClient;
 
@@ -607,6 +649,49 @@ public class TitleMenuController : MonoBehaviour
     void SetJoinStatus(string message)
     {
         if (joinStatusText != null) joinStatusText.text = message;
+    }
+
+    const string LobbyBuildKey = "build";
+
+    /// <summary>
+    /// 접속 호환 판정용 빌드 식별자 — Steam이 업로드마다 자동으로 붙이는 빌드 ID.
+    /// Steam 경로(초기화 완료 후)에서만 호출한다.
+    /// </summary>
+    static string CurrentBuildId => SteamApps.BuildId.ToString();
+
+    /// <summary>
+    /// 타이틀 구석 표기: "v{Version}" + Steam이면 " ({빌드 ID})". Version은 사람이 올리는 표기용,
+    /// 빌드 ID는 자동 — Version을 안 올려도 제보 받을 때 정확한 빌드를 알 수 있다.
+    /// </summary>
+    void RefreshVersionLabel()
+    {
+        if (versionLabel == null) return;
+
+        string text = $"v{Application.version}";
+        if (!UseLocalNetworkPath && SteamManager.Instance != null && SteamManager.Instance.IsInitialized)
+            text += $" ({SteamApps.BuildId})";
+        versionLabel.text = text;
+    }
+    Coroutine _versionMismatchCoroutine;
+
+    void ShowVersionMismatch()
+    {
+        if (versionMismatchNotice == null)
+        {
+            Debug.LogWarning("[TitleMenuController] versionMismatchNotice가 연결되지 않아 버전 불일치 안내를 띄우지 못했습니다.");
+            return;
+        }
+
+        if (_versionMismatchCoroutine != null) StopCoroutine(_versionMismatchCoroutine);
+        _versionMismatchCoroutine = StartCoroutine(VersionMismatchRoutine());
+    }
+
+    IEnumerator VersionMismatchRoutine()
+    {
+        versionMismatchNotice.SetActive(true);
+        yield return new WaitForSecondsRealtime(versionMismatchShowSeconds);
+        versionMismatchNotice.SetActive(false);
+        _versionMismatchCoroutine = null;
     }
 
     static bool IsDigitsOnly(string s)

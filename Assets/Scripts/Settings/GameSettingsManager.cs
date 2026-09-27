@@ -195,7 +195,7 @@ public class GameSettingsManager : MonoBehaviour
     /// 도는 시점(Title 부팅 중, 아직 세션 전)엔 NetworkManager가 리스닝 전이라 항상 no-op
     /// Log만 찍고 아무 일도 안 했다 — 즉 정상 흐름에서는 원래도 죽은 호출이었다. 문제는
     /// NetworkManager가 이례적으로 이미 리스닝 중인데 로컬 플레이어가 아직 스폰 전인
-    /// 좁은 틈(예: DevStageHostBootstrap처럼 Title을 건너뛰고 즉석으로 Host를 띄우는 경로)에
+    /// 좁은 틈(예: 2026-09-28 삭제된 DevStageHostBootstrap처럼 Title을 건너뛰고 즉석으로 Host를 띄우는 경로)에
     /// 걸리면 no-op이 아니라 LogWarning으로 떨어진다는 것 — 실제로 아무것도 깨지진 않지만
     /// 콘솔에 가짜 경고를 남긴다. MicVolume은 NetworkPlayerSetup.SetupOwner()가 스폰 시점에
     /// 이미 캐시해둔 트리거로 ApplyMicTransmitVolume(trigger)를 확정적으로 호출해 적용하므로

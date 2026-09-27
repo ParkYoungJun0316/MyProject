@@ -35,16 +35,23 @@ using UnityEngine.Events;
 /// 남은 칸이 목표보다 적으면 남은 칸 전부를 깨는 걸로 캡. 추첨은 순수 랜덤 — 남는 칸이 서로
 /// 붙어 있도록 보정하지 않는다(섬으로 갈라져 응원 없이는 못 버티는 판이 의도).
 ///
-/// [동기화] 새 RPC·NV 없음. ITeamCheerRevert로 CheerService의 기존 되돌림 채널만 쓴다.
-/// · 시각: 회차·구간 경계를 전부 <b>절대 ServerTime</b>으로 계산한다(앵커 = PhaseStartServerTime).
-///   WaitForSeconds를 이어 붙이면 프레임 양자화가 구간마다 쌓여(회차당 5~6회 × 전 회차) 저프레임
-///   머신과 Host 사이가 수백 ms 벌어지고, 그 드리프트가 응원 창의 종료 시점과 타일 추첨
-///   (PickTargets가 "지금 깨진 수"에 의존)을 머신마다 갈라놓는다. 절대 시각이면 남는 오차는
-///   프레임 한 겹뿐이고 누적되지 않는다.
+/// [동기화 — 챌린지 축(NetworkDesign.md §11B), 2026-09-28 전환] 새 RPC·NV 없음 — 공유 슬롯
+/// `_challengeStep`(owner = JawSmash)과 CheerService의 기존 되돌림 채널만 쓴다.
+/// · Host가 회차마다 ChallengeStepBegin(stepIndex, seed) 한 번을 쓴다.
+///   stepIndex = 회차 번호(하위 5비트) | <b>회차 시작 시점의 깨진 칸 비트마스크</b>(그 위 26비트),
+///   seed = 이번 회차 추첨 시드. stepStartServerTime = 회차 시작 시각.
+///   Host/Client 전부 같은 핸들러(HandleChallengeStepChanged)에서 이 값 하나로 회차를 재현한다.
+/// · 왜 전환했나: 예전엔 세션 시드 + PhaseStartServerTime으로 전 머신이 회차를 각자 계산했는데,
+///   추첨 후보가 <b>로컬 깨진 칸 집합</b>에 의존해서 응원 복구 하나만 놓친 머신(늦게 들어온 Client 등)은
+///   같은 시드로도 다른 칸을 깼다. 늦게 켜진 머신은 지난 회차를 연달아 재생하기도 했다(2026-09-27,
+///   Phase를 앞으로 당긴 Steam 테스트). 이제 매 회차가 "이전 기록 없이" NV 하나로 결정된다.
+/// · 늦게 합류: 구독 직후 현재 슬롯을 1회 읽어 진행 중인 회차에 끼어든다. 이미 지난 구간은
+///   연출(경고·파괴음·파편·페이드) 없이 상태만 맞춘다 — 지난 회차를 재생하지 않는다.
+/// · 시각: 구간 경계는 전부 회차 시작 시각 기준 <b>절대 ServerTime</b>(누적 드리프트 없음).
+///   Host의 회차 간격은 여전히 PhaseStartServerTime 앵커에서 계산한다.
 /// · 되돌림: 이 컴포넌트의 Revert는 "막기"가 아니라 "사후 복구" 하나뿐이라, 창 안/밖 어디서
-///   받아도 하는 일이 같다(Revert() 주석 참고).
-/// · 추첨: NetworkSessionData.Seed + 회차 번호로 결정 — 클라이언트마다 로컬 Random 없음
-///   (TongueController.PickSeededRegion과 동일 패턴).
+///   받아도 하는 일이 같다. 단 다음 회차가 이미 시작된 뒤 도착한 낡은 되돌림은 버린다 —
+///   그 회차의 비트마스크가 이미 Host의 복구 결과를 담고 있다(Revert() 주석 참고).
 /// </summary>
 public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 {
@@ -142,8 +149,15 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     [Tooltip("마지막 회차 완료 시 호출(성공/실패 무관) → BossFightObjective.NotifyPhaseCleared() 연결")]
     public UnityEvent OnChallengeComplete;
 
-    Coroutine _cycleCoroutine;
+    Coroutine _hostLoop;       // Host 전용 — 회차마다 슬롯을 쓴다
+    Coroutine _roundCoroutine; // 전 머신 — 슬롯 값 하나로 회차 하나를 재현
     Coroutine _bindRoutine;
+
+    StageNetworkState _netState;
+    bool _subscribed;
+
+    // StopCycle/엔딩 이후 늦게 도착한 슬롯 변경으로 회차가 다시 돌지 않게 막는다. StartCycle이 푼다.
+    bool _halted;
 
     HazardPhase _phase = HazardPhase.Idle;
     bool _available;
@@ -154,10 +168,11 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     // 다시 켜져 보이면 안 된다.
     bool _endingBroken;
 
-    // 전 머신 공통 스케줄 기준 절대 시각. 회차·구간 경계를 전부 여기서 계산한다.
+    // Host 전용 회차 스케줄 기준 절대 시각(= PhaseStartServerTime). 회차 시작 시각을 여기서 계산한다.
     double _scheduleAnchor = -1d;
 
-    int _cycleIndex; // 1부터 시작하는 회차 번호(N). RunCycles의 for 변수를 그대로 공유.
+    int    _cycleIndex;           // 1부터 시작하는 회차 번호(N). 슬롯에서 받은 값 — 전 머신 동일.
+    double _cycleStartTime = -1d; // 지금 회차의 시작 ServerTime(슬롯의 stepStartServerTime).
     int _syncGeneration;
 
     readonly HashSet<int> _brokenIndices = new();
@@ -171,8 +186,14 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     TileRestoreRewindGroup _restoreRewind;
 
     const float AnchorWaitTimeout = 3f;
-    const int TileAxis = 2;
     const int DebrisAxis = 3;
+
+    // 슬롯 stepIndex 패킹 — 하위 CycleBits = 회차 번호, 그 위 = 회차 시작 시점의 깨진 칸 비트마스크.
+    // 부호 비트를 쓰지 않아야 한다(stepIndex < 0은 ChallengeStart의 초기화 신호).
+    const int CycleBits = 5;
+    const int CycleMask = (1 << CycleBits) - 1;
+    const int MaxCycles = CycleMask;         // 31
+    const int MaxTiles  = 31 - CycleBits;    // 26
 
     public bool IsAvailable => _available;
 
@@ -215,8 +236,10 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     {
         if (CheerService.Instance != null)
             CheerService.Instance.UnregisterRevert(this);
+        Unsubscribe();
         StopAllCoroutines();
-        _cycleCoroutine = null;
+        _hostLoop = null;
+        _roundCoroutine = null;
         _bindRoutine = null;
         ResetHazardFlags();
         if (!_endingBroken)
@@ -231,7 +254,7 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     IEnumerator BindAndStartHazard()
     {
-        while (CheerService.Instance == null)
+        while (CheerService.Instance == null || StageNetworkState.Instance == null)
             yield return null;
         _bindRoutine = null;
         if (!isActiveAndEnabled) yield break;
@@ -239,17 +262,68 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         StartCycle();
     }
 
+    void Subscribe()
+    {
+        if (_subscribed) return;
+        _netState ??= StageNetworkState.Instance;
+        if (_netState == null) return;
+        _netState.OnChallengeStepChanged += HandleChallengeStepChanged;
+        _subscribed = true;
+    }
+
+    void Unsubscribe()
+    {
+        if (_subscribed && _netState != null)
+            _netState.OnChallengeStepChanged -= HandleChallengeStepChanged;
+        _subscribed = false;
+    }
+
     // ── 외부 호출 ────────────────────────────────────────────────
 
-    /// <summary>회차 진행 시작. OnEnable이 자동으로 호출하므로 보통 직접 부를 필요 없음.</summary>
+    /// <summary>
+    /// 회차 진행 시작. OnEnable이 자동으로 호출하므로 보통 직접 부를 필요 없음.
+    /// Host는 회차 루프를 돌려 슬롯을 쓰고, 전 머신은 슬롯을 구독해 회차를 재현한다.
+    /// </summary>
     public void StartCycle()
     {
-        if (_cycleCoroutine != null) StopCoroutine(_cycleCoroutine);
+        StopRoutines();
+        _halted = false;
         _cycleIndex = 0;
+        _cycleStartTime = -1d;
         _endingBroken = false;
         // 집합만 비우면 실제 SetActive 상태와 갈라진다 — 복구까지 같이 해서 둘을 한 번에 맞춘다.
         RestoreAllTiles();
-        _cycleCoroutine = StartCoroutine(RunCycles());
+
+        Subscribe();
+
+        if (IsClientOnly())
+        {
+            // 늦은 합류 — 이 머신이 Phase를 늦게 켰으면 Host는 이미 회차를 돌리고 있다.
+            // 구독 전에 지나간 변경은 다시 오지 않으므로 지금 슬롯을 한 번 읽는다(재생 아님, 합류).
+            if (_netState != null && _netState.ChallengeOwner == ChallengeOwnerType.JawSmash
+                && _netState.ChallengeStepIndex >= 0)
+            {
+                BeginRound(_netState.ChallengeStepIndex, _netState.ChallengeSeed,
+                           _netState.ChallengeStepStartServerTime, joinedLate: true);
+            }
+            return;
+        }
+
+        _hostLoop = StartCoroutine(HostRunCycles());
+    }
+
+    void StopRoutines()
+    {
+        if (_hostLoop != null)
+        {
+            StopCoroutine(_hostLoop);
+            _hostLoop = null;
+        }
+        if (_roundCoroutine != null)
+        {
+            StopCoroutine(_roundCoroutine);
+            _roundCoroutine = null;
+        }
     }
 
     /// <summary>
@@ -261,11 +335,8 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     void StopCycleInternal(bool restoreTiles)
     {
-        if (_cycleCoroutine != null)
-        {
-            StopCoroutine(_cycleCoroutine);
-            _cycleCoroutine = null;
-        }
+        _halted = true;
+        StopRoutines();
         ResetHazardFlags();
         if (restoreTiles)
             RestoreAllTiles();
@@ -275,10 +346,9 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
     }
 
     /// <summary>
-    /// Host 전용 — 세대 번호 발급. 회차 시각이 앵커에서 완전히 결정되므로 전 머신이 다음 회차
-    /// 시작 시각을 독립적으로 같은 값으로 계산한다. resumeAt은 계약상 그 값을 그대로 채워
-    /// 보내되 Revert()는 스케줄에 쓰지 않는다 — 랜덤 간격이 있는 Mouth/Tongue과 달리 여기엔
-    /// 재동기화할 위상이 없다.
+    /// Host 전용 — 세대 번호 발급. resumeAt = Host가 다음 회차를 시작할 시각. 회차 시각은 Host 루프가
+    /// 정하고 슬롯으로 퍼지므로 스케줄 재동기화에는 쓰지 않는다 — Revert()가 "이 되돌림이 이미 지난
+    /// 회차 것인가"를 가르는 기준으로만 쓴다.
     /// </summary>
     public void BuildRevertOrder(out int generation, out double resumeAtServerTime)
     {
@@ -291,6 +361,15 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         if (generation <= _syncGeneration) return; // 이미 처리한 세대 / 낡은 명령
 
         _syncGeneration = generation;
+
+        // 다음 회차가 이미 시작된 뒤 도착한 되돌림은 버린다 — 그 회차 슬롯의 비트마스크가 Host의
+        // 복구 결과를 이미 담고 있어, 여기서 전체 복구하면 방금 맞춘 바닥을 거꾸로 되돌린다.
+        if (_cycleStartTime > 0d && resumeAtServerTime > 0d && _cycleStartTime >= resumeAtServerTime - 0.001d)
+        {
+            NetLog.Transition(nameof(MouthBossJawSmash), "RevertStale",
+                $"gen={generation} cycle={_cycleIndex} cycleStart={_cycleStartTime:F2} resumeAt={resumeAtServerTime:F2}");
+            return;
+        }
 
         // 이 컴포넌트의 되돌림은 "막기"가 아니라 "사후 복구"다(§7 인과관계 반전). 그래서 Mouth/Tongue의
         // "창 밖이면 다음 창을 건너뛴다(_skipNextWindow)" 관용구를 여기에 쓰면 안 된다 — 저쪽은 응원이
@@ -309,65 +388,189 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     // ── 코루틴 ────────────────────────────────────────────────────
 
-    IEnumerator RunCycles()
+    /// <summary>
+    /// Host 전용 회차 루프 — 회차 시작마다 슬롯 한 번(ChallengeStepBegin)만 쓴다. 회차 자체는
+    /// 슬롯 변경 핸들러가 전 머신(Host 포함 — NV setter가 Host에서 동기 콜백)에서 똑같이 돌린다.
+    /// </summary>
+    IEnumerator HostRunCycles()
     {
         yield return ResolveScheduleAnchor();
 
-        for (_cycleIndex = 1; _cycleIndex <= totalCycles; _cycleIndex++)
+        if (_netState == null)
         {
-            yield return WaitUntilServerTime(CycleStartTime(_cycleIndex));
-            yield return RunSingleCycle(_cycleIndex);
+            Debug.LogWarning($"[MouthBossJawSmash] StageNetworkState 없음 — 회차를 시작할 수 없습니다. ({name})", this);
+            yield break;
         }
 
+        _netState.ChallengeStart(0, ChallengeOwnerType.JawSmash);
+
+        for (int cycle = 1; cycle <= totalCycles; cycle++)
+        {
+            yield return WaitUntilServerTime(CycleStartTime(cycle));
+
+            // 회차 시드는 라운드 전용 — 세션 시드와 별개로 Host가 매번 새로 뽑는다(§11B ②).
+            int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            _netState.ChallengeStepBegin(PackStep(cycle, BrokenMask()), seed);
+        }
+
+        // 마지막 회차는 응원 창 없이 Opening에서 끝난다(RunRound 참고).
+        yield return WaitUntilServerTime(_cycleStartTime + ActiveDuration);
+
         _phase = HazardPhase.Idle;
-        // BossFightObjective.NotifyPhaseCleared()가 자기 안에서도 Host 레인 가드를 하지만,
-        // 기존 챌린지(PhaseSurviveChallenge 등)와 동일하게 호출부에서도 한 번 더 막는다.
-        if (!IsClientOnly())
-            OnChallengeComplete?.Invoke();
+        // 슬롯에 마지막 회차가 남아 있으면 다른 챌린지의 늦은 합류가 오인할 수 있다(ResetChallengeStep 주석).
+        _netState.ResetChallengeStep();
+        // BossFightObjective.NotifyPhaseCleared()가 자기 안에서도 Host 레인 가드를 한다.
+        OnChallengeComplete?.Invoke();
+        _hostLoop = null;
     }
 
-    IEnumerator RunSingleCycle(int cycleIndex)
+    /// <summary>경고~Opening 끝까지의 길이(응원 창·회차 간격 제외).</summary>
+    double ActiveDuration =>
+        Mathf.Max(0f, warnDuration) + Mathf.Max(0f, closeClipLength)
+        + Mathf.Max(0f, toothBreakDuration) + Mathf.Max(0f, openClipLength);
+
+    static int PackStep(int cycle, int brokenMask) => (brokenMask << CycleBits) | (cycle & CycleMask);
+
+    int BrokenMask()
     {
-        // 구간 경계 전부 절대 시각 — 누적 드리프트 없음(클래스 주석 [동기화] 참고).
-        double cycleStart = CycleStartTime(cycleIndex);
-        double warnEnd    = cycleStart + Mathf.Max(0f, warnDuration);
-        double closeEnd   = warnEnd    + Mathf.Max(0f, closeClipLength);
-        double breakEnd   = closeEnd   + Mathf.Max(0f, toothBreakDuration);
-        double openEnd    = breakEnd   + Mathf.Max(0f, openClipLength);
-        double windowEnd  = openEnd    + Mathf.Max(0f, cheerWindowSeconds);
+        int mask = 0;
+        foreach (int i in _brokenIndices)
+            if (i >= 0 && i < MaxTiles) mask |= 1 << i;
+        return mask;
+    }
 
-        List<int> targets = PickTargets(cycleIndex);
+    /// <summary>슬롯 변경 구독 핸들러 — Host/Client 동일 코드.</summary>
+    void HandleChallengeStepChanged(int stepIndex)
+    {
+        // 공유 슬롯 owner 가드 — 내 것(JawSmash)이 아니면 무시(§11B.9).
+        if (_netState == null || _netState.ChallengeOwner != ChallengeOwnerType.JawSmash) return;
+        if (stepIndex < 0) return; // ChallengeStart / ResetChallengeStep의 초기화 신호
+        if (_halted || !isActiveAndEnabled) return;
 
-        // 1. Warning — 응원 없음, 예고만.
+        BeginRound(stepIndex, _netState.ChallengeSeed, _netState.ChallengeStepStartServerTime, joinedLate: false);
+    }
+
+    /// <summary>
+    /// 슬롯 값 하나로 회차 하나를 시작한다. 바닥을 Host의 회차 시작 상태(비트마스크)로 먼저 맞추고,
+    /// 그 위에서 회차 시드로 추첨한다 — 이 머신이 이전에 무엇을 놓쳤든 결과가 Host와 같다.
+    /// </summary>
+    void BeginRound(int stepIndex, int seed, double cycleStart, bool joinedLate)
+    {
+        int cycle = stepIndex & CycleMask;
+        int mask  = stepIndex >> CycleBits;
+        if (cycle == _cycleIndex && cycleStart == _cycleStartTime) return; // 같은 회차 중복 수신
+
+        if (_roundCoroutine != null)
+        {
+            StopCoroutine(_roundCoroutine);
+            _roundCoroutine = null;
+        }
+        // 직전 회차가 응원 창을 연 채로 끊겼으면 닫는다(창 상태가 CheerService에 남지 않게).
+        ResetHazardFlags();
+
+        _cycleIndex     = cycle;
+        _cycleStartTime = cycleStart;
+
+        int corrected = ApplyBrokenMask(mask);
+        List<int> targets = PickTargets(cycle, seed);
+
+        NetLog.Transition(nameof(MouthBossJawSmash), "RoundBegin",
+            $"cycle={cycle} seed={seed} mask=0x{mask:X7} corrected={corrected} targets={targets.Count} " +
+            $"start={cycleStart:F2} now={GetServerTime():F2} late={joinedLate}");
+
+        _roundCoroutine = StartCoroutine(RunRound(cycle, targets, cycleStart));
+    }
+
+    /// <summary>
+    /// 바닥을 Host의 회차 시작 상태로 맞춘다. 정상이면 바뀌는 칸이 없다 — 되돌림을 놓쳤거나 늦게
+    /// 들어온 머신만 여기서 조용히(파괴음·되감기 없이) 교정된다. 교정한 칸 수를 돌려준다(로그용).
+    /// </summary>
+    int ApplyBrokenMask(int mask)
+    {
+        int corrected = 0;
+        for (int i = 0; i < floorTiles.Length && i < MaxTiles; i++)
+        {
+            bool broken = ((mask >> i) & 1) != 0;
+            if (broken == _brokenIndices.Contains(i)) continue;
+
+            corrected++;
+            if (broken)
+            {
+                _brokenIndices.Add(i);
+                SetTileActive(i, false);
+            }
+            else
+            {
+                _brokenIndices.Remove(i);
+                SetTileActive(i, true, playRewind: false);
+            }
+        }
+        return corrected;
+    }
+
+    /// <summary>
+    /// 회차 하나. 구간 경계는 전부 회차 시작 시각 기준 절대 ServerTime.
+    /// 늦게 들어와 이미 지난 구간은 연출 없이 상태만 맞추고 넘어간다(지난 회차·구간을 재생하지 않는다).
+    /// </summary>
+    IEnumerator RunRound(int cycleIndex, List<int> targets, double cycleStart)
+    {
+        double warnEnd   = cycleStart + Mathf.Max(0f, warnDuration);
+        double closeEnd  = warnEnd    + Mathf.Max(0f, closeClipLength);
+        double breakEnd  = closeEnd   + Mathf.Max(0f, toothBreakDuration);
+        double openEnd   = breakEnd   + Mathf.Max(0f, openClipLength);
+        double windowEnd = openEnd    + Mathf.Max(0f, cheerWindowSeconds);
+
+        // 1. Warning — 응원 없음, 예고만. 남은 시간만큼만 보여 준다.
         _phase = HazardPhase.Warning;
-        PlayWarnMarkers(targets, Mathf.Max(0f, warnDuration));
-        yield return WaitUntilServerTime(warnEnd);
-        ResetAllWarnMarkers();
+        double now = GetServerTime();
+        if (now < warnEnd)
+        {
+            PlayWarnMarkers(targets, (float)(warnEnd - now));
+            yield return WaitUntilServerTime(warnEnd);
+            ResetAllWarnMarkers();
+        }
 
-        // 2. Closing — 무조건.
+        // 2. Closing — 무조건. 이미 지났으면(암전 중에 합류) 바로 어둡게.
         _phase = HazardPhase.Closing;
+        now = GetServerTime();
         TriggerSafe(closeTrigger, openTrigger, idleTrigger);
-        screenFader?.FadeOut(Mathf.Max(0f, closeClipLength));
-        yield return WaitUntilServerTime(closeEnd);
+        if (now < closeEnd)
+        {
+            screenFader?.FadeOut((float)(closeEnd - now));
+            yield return WaitUntilServerTime(closeEnd);
+        }
+        else if (now < openEnd)
+        {
+            screenFader?.FadeOut(0f);
+        }
 
-        // 3. Breaking — 암전 중(화면 안 보임) 파괴음만으로 타일 파괴를 전달.
+        // 3. Breaking — 암전 중(화면 안 보임) 파괴음만으로 타일 파괴를 전달. 파괴 순간을 놓쳤으면 조용히.
         _phase = HazardPhase.Breaking;
-        BreakTiles(targets);
+        BreakTiles(targets, playEffects: GetServerTime() < breakEnd);
         yield return WaitUntilServerTime(breakEnd);
 
         // 4. Opening.
         _phase = HazardPhase.Opening;
+        now = GetServerTime();
         TriggerSafe(openTrigger, closeTrigger, idleTrigger);
-        screenFader?.FadeIn(Mathf.Max(0f, openClipLength));
-        yield return WaitUntilServerTime(openEnd);
+        if (now < openEnd)
+        {
+            screenFader?.FadeIn((float)(openEnd - now));
+            yield return WaitUntilServerTime(openEnd);
+        }
+        else
+        {
+            screenFader?.FadeIn(0f);
+        }
         TriggerIdle();
 
         // 마지막 회차는 응원 창을 열지 않는다(2026-09-21 확정) — 창이 열리면 복구된 25칸 위에서
         // 엔딩 대화가 나온다. 마지막 1칸만 남은 채로 곧장 OnChallengeComplete → Bossdown 대화 →
         // ForceBreakAllTilesForEnding으로 이어져야 한다.
-        if (cycleIndex >= totalCycles)
+        if (cycleIndex >= totalCycles || GetServerTime() >= windowEnd)
         {
             _phase = HazardPhase.Idle;
+            _roundCoroutine = null;
             yield break;
         }
 
@@ -387,10 +590,11 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         _recoverQueued = false;
 
         _phase = HazardPhase.Idle;
+        _roundCoroutine = null;
     }
 
     /// <summary>
-    /// 스케줄 기준 절대 시각을 잡는다 — Mouth/Tongue와 같은 앵커(PhaseStartServerTime).
+    /// Host 전용 — 회차 간격의 기준 절대 시각을 잡는다(Mouth/Tongue와 같은 앵커 PhaseStartServerTime).
     /// 앵커가 없는 씬(단독 테스트 등)은 로컬 시각으로 폴백한다(그 경우 머신이 하나뿐이라
     /// 어긋날 대상이 없다).
     /// </summary>
@@ -426,7 +630,11 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     // ── 타일 픽 / 파괴 / 복구 ──────────────────────────────────────
 
-    List<int> PickTargets(int cycleIndex)
+    /// <summary>
+    /// 이번 회차에 새로 깰 칸. 후보 = ApplyBrokenMask로 Host와 맞춘 깨진 칸 집합의 나머지라서,
+    /// 같은 슬롯 값이면 전 머신이 같은 결과를 낸다.
+    /// </summary>
+    List<int> PickTargets(int cycleIndex, int seed)
     {
         int target = firstCycleBreakCount + tilesPerCycleStep * (cycleIndex - 1);
         int needed = Mathf.Max(0, target - _brokenIndices.Count);
@@ -438,22 +646,19 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
         needed = Mathf.Min(needed, candidates.Count);
         if (needed <= 0) return new List<int>();
 
-        ShuffleSeeded(candidates, cycleIndex);
+        ShuffleSeeded(candidates, seed);
         return candidates.GetRange(0, needed);
     }
 
-    void ShuffleSeeded(List<int> list, int cycleIndex)
+    void ShuffleSeeded(List<int> list, int seed)
     {
-        // InitState는 전역 RNG를 갈아엎는다 — 뽑고 나서 되돌려야 같은 씬의 다른 시스템이
-        // 이 시드 스트림을 물려받지 않는다(Mouth/Tongue와 동일 원칙).
-        var prevState = UnityEngine.Random.state;
-        UnityEngine.Random.InitState(MixSeed(cycleIndex, TileAxis));
+        // 로컬 System.Random — 전역 UnityEngine.Random 상태를 건드리지 않는다(§11B ③, OX/Grid와 동일).
+        var rng = new System.Random(seed ^ seedSalt);
         for (int i = list.Count - 1; i > 0; i--)
         {
-            int j = UnityEngine.Random.Range(0, i + 1);
+            int j = rng.Next(0, i + 1);
             (list[i], list[j]) = (list[j], list[i]);
         }
-        UnityEngine.Random.state = prevState;
     }
 
     int MixSeed(int index, int axis)
@@ -461,18 +666,21 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
 
     /// <summary>
     /// 파편 임펄스 시드. 전 머신이 같은 값을 뽑아야 파편이 똑같이 튄다(로컬 Random 금지 원칙).
-    /// _cycleIndex는 절대 ServerTime 스케줄(RunCycles의 for 변수)로만 올라가므로 전 머신 동일 —
-    /// TongueController의 _attackCount와 같은 역할.
+    /// _cycleIndex는 슬롯에서 받은 회차 번호라 전 머신 동일 — TongueController의 _attackCount와 같은 역할.
     /// </summary>
     int DebrisSeed(int tileIndex) => MixSeed(tileIndex + _cycleIndex * 101, DebrisAxis);
 
-    void BreakTiles(List<int> targets)
+    /// <param name="playEffects">false = 파괴 순간을 놓치고 늦게 합류 — 파괴음·파편 없이 상태만.</param>
+    void BreakTiles(List<int> targets, bool playEffects)
     {
         foreach (int i in targets)
         {
             _brokenIndices.Add(i);
-            PlayBreakSfx(i);
-            SpawnDebris(i, DebrisSeed(i));
+            if (playEffects)
+            {
+                PlayBreakSfx(i);
+                SpawnDebris(i, DebrisSeed(i));
+            }
             SetTileActive(i, false);
         }
     }
@@ -609,6 +817,13 @@ public class MouthBossJawSmash : MonoBehaviour, ITeamCheerRevert
             Debug.LogWarning($"[MouthBossJawSmash] floorTiles가 비어 있습니다 — 부술 타일이 없어 회차가 헛돕니다. ({name})", this);
             return;
         }
+
+        // 슬롯 stepIndex 패킹 한계(클래스 주석 [동기화]) — 넘으면 비트마스크가 잘려 머신마다 바닥이 갈린다.
+        if (floorTiles.Length > MaxTiles)
+            Debug.LogError($"[MouthBossJawSmash] floorTiles {floorTiles.Length}개 — 슬롯 비트마스크 한계({MaxTiles})를 넘습니다. " +
+                           $"{MaxTiles}번 이후 칸은 Host/Client 교정이 안 됩니다. ({name})", this);
+        if (totalCycles > MaxCycles)
+            Debug.LogError($"[MouthBossJawSmash] totalCycles {totalCycles} — 슬롯 회차 번호 한계({MaxCycles})를 넘습니다. ({name})", this);
 
         if (warnMarkers != null && warnMarkers.Length != 0 && warnMarkers.Length != floorTiles.Length)
             Debug.LogWarning($"[MouthBossJawSmash] warnMarkers({warnMarkers.Length})와 floorTiles({floorTiles.Length}) 길이가 다릅니다 — " +

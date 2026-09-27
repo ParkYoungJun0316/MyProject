@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -74,19 +75,26 @@ public class WallCrushKill : MonoBehaviour
             if (Vector3.Dot(myDir, pair._wall.WorldMoveDirection) >= OpposingDot) continue;
             if (pair.IsMyColor(p)) continue;
 
-            Report(p);
+            Report(p, pair);
             return;
         }
     }
 
     bool IsMyColor(Player p) => _color != null && _color.IsColorMatch(p);
 
-    void Report(Player p)
+    int ColorWallId => _color != null ? _color.NetId : -1;
+
+    // 두 벽 ID와 끼인 서버 시각을 같이 보낸다 — Host가 그 시각 무렵 둘 중 하나를 이미 멈췄으면(멈춤이
+    // 아직 이 머신에 도착 안 한 사이 벽이 더 밀려온 것) 무효로 한다. ColorWall.IsCrushVoidedByPause.
+    void Report(Player p, WallCrushKill pair)
     {
         var netSetup = p.GetComponent<NetworkPlayerSetup>();
         if (netSetup == null) return;
 
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsListening) return;
+
         _nextReportTime = Time.time + ReportCooldown;
-        netSetup.ReportCrushDeathServerRpc();
+        netSetup.ReportCrushDeathServerRpc(ColorWallId, pair.ColorWallId, nm.ServerTime.Time);
     }
 }

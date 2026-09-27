@@ -727,10 +727,22 @@ public class NetworkPlayerSetup : NetworkBehaviour
     /// <summary>
     /// Owner: 마주 보는 두 벽 사이에 끼였을 때 1회 호출 (WallCrushKill, T.Boss P4).
     /// 끼임은 Owner 로컬 물리에서만 정확하므로 낙사와 같이 Owner 실판정 → Host 확정.
+    /// 색 일치 멈춤은 Host가 확정해 배포하므로(ColorWall) Client에는 편도 지연만큼 늦게 도착한다 — 그 사이
+    /// 더 밀려온 벽에 끼인 신고는, Host가 끼임 시각 무렵 두 벽 중 하나를 이미 멈췄으면 무효로 한다(시각 비교만).
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void ReportCrushDeathServerRpc()
+    public void ReportCrushDeathServerRpc(int wallIdA, int wallIdB, double crushServerTime)
     {
+        if (ColorWall.IsCrushVoidedByPause(wallIdA, crushServerTime) ||
+            ColorWall.IsCrushVoidedByPause(wallIdB, crushServerTime))
+        {
+            NetLog.Transition(nameof(NetworkPlayerSetup), "CrushVoidedByPause",
+                $"owner={OwnerClientId} walls={wallIdA},{wallIdB} crush={crushServerTime:F2} now={NetworkManager.ServerTime.Time:F2}");
+            return;
+        }
+
+        NetLog.Transition(nameof(NetworkPlayerSetup), "CrushKill",
+            $"owner={OwnerClientId} walls={wallIdA},{wallIdB} crush={crushServerTime:F2} now={NetworkManager.ServerTime.Time:F2}");
         NetworkDamageUtil.ApplyInstantKill(_player);
     }
 

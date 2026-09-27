@@ -613,6 +613,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 | 발사체 **비행** | **Client (로컬 시뮬)** | Host 물리 복제 끊김 방지·시각 부드러움 |
 | 발사체 **피격 판정** | **Host** (B안: Client 보고 → Host 확정) | §9.0.1 |
 | 문·패드 등 규칙 오브젝트 | **Host** | 게임 규칙과 연동 |
+| 색 벽(`ColorWall`) 색 일치 멈춤 | **Host** 확정 → 전 머신 배포 (Client는 자기 캐릭터 접촉만 보고) | 머신별 로컬 판정이면 Client에서 Host가 맞춘 멈춤이 안 일어남 — §9A.3 |
 | VFX / 사운드 | **ClientRpc → All** (또는 로컬) | 판정과 무관한 연출 |
 
 **이동 = Owner + CNT 확정.** Host Authority + Client Prediction / Phase 2 이동 Host화는 **채택하지 않음**.
@@ -865,7 +866,7 @@ Phase 전환(P1→P2) 이후에도 끝까지 남아 있었음. 리뷰 중 같은
 | 그룹 | 패턴 | 이번 라운드(M) 대상 | T 전용 — 별도 라운드로 미룸 |
 |------|------|-------------------|---------------------------|
 | **1** | B 함정·피격 | `ArrowTrap`, `DropTrap`, `TrapProjectile`, `WindTrap`, `ContactDamage`(M.Stage3에도 있음), `TrapBase`, `TrapPlayerTracker`, `Breakable`, `Stage5ChaserHitbox` (+ `CeilingTrap`/`TrapSpeedPhase`/`SpikeTrap`은 현재 씬 배치 미확인 — 작업 중 재확인) | `SpikeLane`/`SpikeLaneField` (`T.Stage3`, `T.Boss`만 확인됨) |
-| **2** | E 월드 모션 | `AdvancingWall` (**`M.Stage3` 사용, `T.Boss`에서도 재사용되므로 여기서 검증해두면 T 쪽도 절반 커버됨**) | `WallMover`, `WallMoverSequencer`, `BoulderSpawner`, `BoulderSpawnManager`, `WaypointMover`(Boulder 프리팹에 내장), `WallWaveController`, `WallLineRandomizer`, `MovingCorridor`, `AdvancingWallTelegraph` — 전부 `T.Stage1`/`T.Stage3`/`T.Stage4`/`T.Boss`에서만 확인됨 |
+| **2** | E 월드 모션 | `AdvancingWall` (**`M.Stage3` 사용, `T.Boss`에서도 재사용되므로 여기서 검증해두면 T 쪽도 절반 커버됨**) | `WallMover`, `WallMoverSequencer`, `BoulderSpawner`, `BoulderSpawnManager`, `WaypointMover`(Boulder 프리팹에 내장), ~~`WallWaveController`~~(2026-09-28 삭제), `WallLineRandomizer`, `MovingCorridor`, `AdvancingWallTelegraph` — 전부 `T.Stage1`/`T.Stage3`/`T.Stage4`/`T.Boss`에서만 확인됨 |
 | **3** | A 연출 껍데기 | `MouthTrapAnimator`(+`MouthTrapAnimatorAnim`), `MouthWindAnimator`, `MouthExitTrigger`, `ColoredDoorVisual`, `ColoredPadVisual`, `RingBlendShapePulse`, `SafeZoneWarnSign` (`M.Boss` only — PhaseStartServerTime 로컬 스케줄, RPC 없음) 등 — M 인스턴스 위주로 확인 | (그룹 3은 네트워크 진실이 없다는 것만 확인하는 가벼운 감사라 M/T 구분 없이 봐도 무방) |
 | **UI** | shared | `DeathOverlayUI` — `UI.prefab`, M/T 전 스테이지. 사망 문구 `{0}` = CheerName(`CheerService.GetCheerName`). Steam/OS DisplayName 아님 (2026-08-29: 로컬 경로에서 `u died`로 보이던 원인). | 동일 — T 대표 씬(`T.Stage1`)에서도 `UI.prefab` 인스턴스 |
 | **UI** | shared | `OptionsTeamVoicePanel` / `OptionsMenuController` / `GameSettingsManager` — `Setting_Panel.prefab` (`Title` + `UI.prefab`, 전 M/T). 마이크 송신 볼륨·팀 보이스 수신 볼륨. 사후기록: §6B.7 P3 VoiceId 항목. | 동일 — T 대표 씬(`T.Stage1`) ESC 설정 |
@@ -939,7 +940,8 @@ Punch/PunchHit SFX = 전 클라 3D (월드). 개인 SFX와 분리 — §9.1.3 `P
 | 충돌 감지 (함정 본체·문 등) | `OnTriggerEnter` / `OnCollisionEnter` — **첫 줄 `if (!IsServer) return;`** |
 | 발사체 비행 중 피격 | **Client** `OnTrigger` → **ServerRpc** → Host 검증 → 위 `ApplyDamage` (§9.0.1). Host-only Trigger **필수 아님** |
 | 낙사 (void 추락) | **Owner** `y < fallDeathY` 1회 → `NetworkPlayerSetup.ReportFallDeathServerRpc` → Host `ApplyFallDeathFromServer` 확정. Host `Update` Y 체크는 Host-as-Owner 폴백 (2026-07-16 확정) |
-| 끼임 즉사 (T.Boss P4 벽) | **Owner** `WallCrushKill` — 마주 보는 두 벽에 같은 물리 스텝에 닿고 두 벽 모두 내 색 아님 → `NetworkPlayerSetup.ReportCrushDeathServerRpc` → Host `NetworkDamageUtil.ApplyInstantKill` 확정 (2026-09-26, 사용자 승인). 낙사와 같은 이유 — 끼임은 Owner 로컬 물리에서만 일어나고 Host 프록시는 CNT 위치만 따라가 못 본다. HP write는 Host만 |
+| 끼임 즉사 (T.Boss P4 벽) | **Owner** `WallCrushKill` — 마주 보는 두 벽에 같은 물리 스텝에 닿고 두 벽 모두 내 색 아님 → `NetworkPlayerSetup.ReportCrushDeathServerRpc` → Host `NetworkDamageUtil.ApplyInstantKill` 확정 (2026-09-26, 사용자 승인). 2026-09-28부터 신고에 두 벽 ID·끼인 서버 시각을 실어 Host가 멈춤 확정 시각과 비교해 거른다(아래 "색 벽 색 일치 멈춤"). 낙사와 같은 이유 — 끼임은 Owner 로컬 물리에서만 일어나고 Host 프록시는 CNT 위치만 따라가 못 본다. HP write는 Host만 |
+| 색 벽 색 일치 멈춤 (`ColorWall` — T.Stage1·T.Stage3·T.Boss P4 공용) | **Host 확정 → 전 머신 배포** (2026-09-28, 사용자 승인). Host: 자기 화면의 모든 캐릭터 접촉으로 바로 확정. Client: **자기 캐릭터(Owner) 접촉만** `StageNetworkState.ReportColorWallMatchServerRpc(벽ID, 플레이어 NetworkObjectId)`로 보고(0.25초 쿨다운) → Host가 보고자=Owner·Host 화면 기준 색 일치 재검증 → `_hostPauseUntil`로 겹친 보고·접촉을 1회로 → `PauseColorWallClientRpc(벽ID, 시작 서버 시각)`을 Host 포함 전 머신이 받아 적용(늦게 받은 만큼 멈춤 시간을 줄여 끝나는 시각을 맞춤). 벽ID = `SceneStableRegistry<ColorWall>`(ArrowTrap·DropTrap과 같은 계층 경로 정렬). 사유: 예전엔 머신마다 로컬 접촉으로 멈췄는데, Client에서 Host 캐릭터 사본(kinematic, §7.3)과 벽(kinematic `AdvancingWall`)은 `ContactPairsMode` 기본값이라 충돌 이벤트가 없어 **Host가 맞춘 멈춤이 Client에서만 안 일어났다** → Client 화면에서만 벽이 계속 밀고 와 `WallCrushKill`(Owner 판정)로 사망. **멈춤 지연 중 끼임(2026-09-28 A안, 사용자 승인):** Host가 맞춘 멈춤은 Client에 편도 지연만큼 늦게 도착해 그사이 Client 화면 벽이 더 온다. 끼임 신고(`ReportCrushDeathServerRpc(벽ID A, 벽ID B, 끼인 서버 시각)`)를 Host가 **시각 비교만으로** 거른다 — 두 벽 중 하나라도 마지막 멈춤 확정 시각 ≥ 끼인 시각 − 0.3초면 무효(`ColorWall.IsCrushVoidedByPause`). 콜라이더 재계산 없음. 0.3초 = Client ServerTime 지연 여유이고, 멈춤 직후 0.5초는 벽이 제자리로 빠지는 중이라 진짜 끼임을 잘못 살리지 않는다. 멈춤을 Owner가 즉시 거는 방식(ContactKnockback식)은 3인 이상에서 멈춤보다 끼임 신고가 먼저 도착할 수 있어 이 비교가 깨지므로 **채택 안 함** — Client 자기 색 멈춤은 왕복 지연만큼 늦다(자기 색 벽은 끼임 판정 제외라 사망 없음). 로그: `NetLog` `ColorWallPause` / `CrushVoidedByPause` / `CrushKill` |
 
 **솔로 (NGO Host 1인):**
 
@@ -1532,6 +1534,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | ColorTile | 스케줄(시간 기반, 트리거 아님 — Host `Update()` 자체가 이미 단일 소스여야 함) | 스폰 포인트 셔플 | 타일 완료 체크 | **완료 — ParrelSync 2인 검증 통과(2026-07-22, `M.Stage3`)**. 동일 위치/색, 성공·실패 동시, 실패 시 벽 전진 동기화 확인 |
 | GridBW | `Activate()` 호출 시점 | `PickRandomSafeTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Boss`/`M.Stage5`)**. stepIndex=라운드 번호, 데미지 버그(`ReceiveDamage` 직접 호출) 수정 포함. 동일 라운드 배치·판정·데미지 동기화, 라운드 반복 진행 확인 |
 | GridColor | `Activate()` 호출 시점 | `PickRandomColorTiles()`(라운드마다 새 시드) | `EvaluateRound()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Stage5`)**. 데미지 경로는 이미 `NetworkDamageUtil.ApplyDamage`로 수정 완료(2026-07-19). 동일 라운드 배치·판정·데미지 동기화 확인 |
+| **JawSmash** (`M.Boss` P4, `MouthBossJawSmash`) | Host 회차 루프(`PhaseStartServerTime` 기준 고정 리듬) | `PickTargets()` — 회차 시드 + **stepIndex에 패킹한 회차 시작 깨진 칸 비트마스크**(하위 5비트 회차, 위 26비트 마스크). 이전 기록 없이 슬롯 하나로 회차 재현 | 판정 없음(낙사는 Owner 신고). 회차 수 완료 → `OnChallengeComplete` | **코드 됨(2026-09-28, 세션 시드+앵커 방식에서 전환 — `CoopStageAudit.M.md` §7 "동기화"). 2인 검증 남음.** 늦게 합류한 Client는 구독 직후 슬롯 1회 읽기로 진행 중 회차에 끼어듦(지난 구간은 연출 없이 상태만) |
 | SequenceRing | `StartMinigame()` 호출 시점 | `GenerateSteps()` | `TrySubmit()`/`TrySubmitAnyKey()` | **완료 — ParrelSync 2인 검증 통과(2026-07-25, `M.Stage4`/`M.Boss`)**. §11B.1 `SubmitStepServerRpc`/`SubmitAnyKeyStepServerRpc` 포함 — 어느 플레이어가 눌러도 양쪽에 동일 반영, 남은 시간(오답 페널티 포함) 동기화 확인 |
 
 ### 11B.4 금지 (평행 축 — 발견 즉시 삭제)

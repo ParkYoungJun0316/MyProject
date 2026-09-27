@@ -192,12 +192,49 @@ public class StagePressurePadSetup : MonoBehaviour
                 DoorController door = _doorsByIndex[i];
                 if (door == null) continue;
                 int index = i; // 클로저 캡처
-                door.OnOpened.AddListener(() => _netState.SetDoorOpen(index, true));
-                door.OnClosed.AddListener(() => _netState.SetDoorOpen(index, false));
+                door.OnOpened.AddListener(() => SendDoorState(index, door, true));
+                door.OnClosed.AddListener(() => SendDoorState(index, door, false));
+
+                // 리스너보다 먼저 열린 문 캐치업 — Phase 루트가 켜진 다음 프레임에 물리(OnTriggerEnter)가
+                // 이 Start보다 먼저 돌 수 있다. 시작 위치에 겹친 래치 발판이면 문이 이미 열려 고정됐는데
+                // 슬롯은 방금 전부 닫힘으로 초기화됐으니, 지금 상태를 한 번 기록한다(아래 Client 캐치업과 대칭).
+                if (door.IsOpen)
+                {
+                    _netState.SetDoorOpen(index, true);
+                    NetLog.Transition(nameof(StagePressurePadSetup), "DoorOpenBeforeSync",
+                        $"door={door.name} index={index}");
+                }
             }
         }
 
         _netState.OnDoorStateChanged += HandleDoorStateChanged;
+
+        // 늦은 구독 캐치업 — 문이 Phase 루트(T.Boss P2 등) 밑에 있으면 Client는 Phase NV 도착 후에야
+        // 루트를 켜서 여기 온다. 그 사이 Host에서 이미 열린 문(시작 위치에 겹친 래치 발판 등)은
+        // 이벤트가 지나가 버려 영영 안 열리므로, 구독 직후 현재값을 1회 읽는다(IsDoorOpen 패턴).
+        if (IsClientOnly())
+        {
+            int caughtUp = 0;
+            for (int i = 0; i < _doorsByIndex.Length && i < _netState.DoorCount; i++)
+            {
+                if (!_netState.IsDoorOpen(i)) continue;
+                _doorsByIndex[i]?.Open();
+                caughtUp++;
+            }
+            NetLog.Transition(nameof(StagePressurePadSetup), "DoorSyncSubscribed",
+                $"doors={_doorsByIndex.Length} slots={_netState.DoorCount} caughtUpOpen={caughtUp}");
+        }
+        else
+        {
+            NetLog.Transition(nameof(StagePressurePadSetup), "DoorSlotsInit", $"doors={_doorsByIndex.Length}");
+        }
+    }
+
+    void SendDoorState(int index, DoorController door, bool isOpen)
+    {
+        NetLog.Transition(nameof(StagePressurePadSetup), "DoorStateSent",
+            $"door={door.name} index={index} open={isOpen}");
+        _netState.SetDoorOpen(index, isOpen);
     }
 
     void HandleDoorStateChanged(int index, bool isOpen)
@@ -208,6 +245,9 @@ public class StagePressurePadSetup : MonoBehaviour
 
         DoorController door = _doorsByIndex[index];
         if (door == null) return;
+
+        NetLog.Transition(nameof(StagePressurePadSetup), "DoorStateReceived",
+            $"door={door.name} index={index} open={isOpen}");
 
         if (isOpen) door.Open();
         else        door.Close();

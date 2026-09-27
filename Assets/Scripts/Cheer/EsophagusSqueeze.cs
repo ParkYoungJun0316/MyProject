@@ -424,8 +424,7 @@ public class EsophagusSqueeze : MonoBehaviour, ITeamCheerRevert
 
     /// <summary>
     /// normalized 0 = 원래 반경, 1 = squeezeTargetRadius. 조각마다 자기 반경만 보간해 같은 방향으로
-    /// MovePosition — WallWaveController.FixedUpdate와 동일한 "world 목표 계산 후 rb 있으면 MovePosition,
-    /// 없으면 transform 직접 대입" 패턴.
+    /// MovePosition — "world 목표 계산 후 rb 있으면 MovePosition, 없으면 transform 직접 대입" 패턴.
     /// </summary>
     void ApplySqueeze(float normalized)
     {

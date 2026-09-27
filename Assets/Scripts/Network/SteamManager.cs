@@ -49,7 +49,50 @@ public class SteamManager : MonoBehaviour
         // 씹혔다. 다른 기능(언어 감지 등)과 무관하게 릴리스 경로에서는 여기서 직접 초기화한다 —
         // 로컬 경로(①②)는 §5 "이 메서드를 호출하지 않는 것 자체가 스킵" 원칙 그대로 유지.
         if (!NetworkManagerSetup.UseLocalNetworkPath)
+        {
+            if (RestartThroughSteamIfNeeded()) return;
             EnsureInitialized();
+        }
+    }
+
+    // [2026-09-28] Steam 밖 실행 보정 — 설치 폴더의 exe를 직접 실행하거나 Steam이 꺼진 채 실행하면
+    // Steam 초기화가 실패해 방 만들기/참여가 안내 없이 무반응으로 끝났다. Steam이 이 프로세스를 띄운 게
+    // 아니면 Steam을 통해 다시 실행시키고 스스로 종료한다(Steamworks 권장 부트 절차).
+    // 게임이 스스로 재시작한 프로세스(+connect_lobby / +create_game, NetworkManagerSetup.RestartProcess)는
+    // 건너뛴다 — Steam 경유로 다시 뜨면 인자가 사라져 웜 리커넥트 재시작이 깨진다. Steam이 넘기는
+    // +connect_lobby(냉기동 초대)는 원래 Steam이 띄운 프로세스라 건너뛰어도 결과가 같다.
+    // Quit()은 프레임 끝에서야 처리된다 — 그 사이 다른 호출부(GameLocalizationBootstrap 등)가
+    // EnsureInitialized()로 Steam을 붙잡으면 Steam이 "이미 실행 중"으로 보고 새 실행을 막을 수 있어 차단한다.
+    bool _restartingThroughSteam;
+
+    bool RestartThroughSteamIfNeeded()
+    {
+        if (appId == 0) return false;
+
+        foreach (string arg in System.Environment.GetCommandLineArgs())
+        {
+            if (string.Equals(arg, "+connect_lobby", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "+create_game", System.StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        bool restart;
+        try
+        {
+            restart = SteamClient.RestartAppIfNecessary(appId);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[SteamManager] RestartAppIfNecessary 실패 — 그대로 진행. {e.Message}");
+            return false;
+        }
+
+        if (!restart) return false;
+
+        Debug.Log("[SteamManager] Steam 밖에서 실행됨 — Steam을 통해 다시 실행하고 종료.");
+        _restartingThroughSteam = true;
+        Application.Quit();
+        return true;
     }
 
     void Update()
@@ -75,6 +118,7 @@ public class SteamManager : MonoBehaviour
     public bool EnsureInitialized()
     {
         if (IsInitialized) return true;
+        if (_restartingThroughSteam) return false;
 
         if (appId == 0)
         {

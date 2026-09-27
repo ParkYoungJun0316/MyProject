@@ -280,6 +280,7 @@ public class GridChallenge : MonoBehaviour
     static int PreRevealStep(int round) => round * 2;
     static int RevealStep(int round) => round * 2 + 1;
     int _preRevealedRound = -1; // 이 머신이 선행 처리를 끝낸 라운드 — 짝수 스텝을 못 받고 홀수만 온 경우 보충용
+    double _lastHandledStepTime = double.NaN; // 마지막으로 처리한 스텝의 시작 시각 — 늦은 합류 중복 방지
 
     void Awake()
     {
@@ -332,12 +333,60 @@ public class GridChallenge : MonoBehaviour
         _netState.OnDeathReloadStarted      += HandleDeathReloadStarted;
         _subscribed = true;
 
+        // 한 프레임 미룬다 — 같은 오브젝트의 GridTileCollapse·GridRoundWind 등이 각자 OnEnable에서
+        // OnRoundPreReveal을 구독하는데, 컴포넌트 순서상 이 OnEnable이 먼저 돌면 바로 쏜 합류 이벤트를 놓친다.
+        if (IsClientOnly() && isActiveAndEnabled)
+            StartCoroutine(CatchUpNextFrame());
+
         if (!autoStart || IsClientOnly()) return;
 
         if (autoStartDelay > 0f)
             StartCoroutine(AutoStartRoutine());
         else
             Activate();
+    }
+
+    /// <summary>
+    /// 늦은 구독 캐치업(Client) — 이 머신이 Phase를 늦게 켰으면(Phase를 앞으로 당긴 테스트에서 Client가
+    /// 씬을 몇 초 늦게 로드하는 경우 등) Host는 이미 라운드를 쓰고 있고, 구독 전에 지나간 스텝 변경은
+    /// 다시 오지 않는다. 지금 슬롯을 한 번 읽어 진행 중인 라운드에 끼어든다 — 핸들러가 공개 스텝만
+    /// 받은 경우의 선행 보충까지 이미 하므로 같은 경로를 탄다. 지난 붕괴는 GridTileCollapse가
+    /// 연출 없이 상태만 맞춘다. 이미 정산이 끝난 라운드(다음 선행 전 휴식 중)나 끝난 챌린지에는
+    /// 끼어들지 않는다 — 판정 끝난 안전 칸을 다시 띄우게 된다. 다음 스텝부터 평소대로 따라간다.
+    /// </summary>
+    IEnumerator CatchUpNextFrame()
+    {
+        yield return null;
+        CatchUpCurrentStep();
+    }
+
+    void CatchUpCurrentStep()
+    {
+        if (!IsClientOnly() || _netState == null || !_subscribed) return;
+        if (_netState.ChallengeOwner != ChallengeOwnerType.Grid) return;
+        if (_netState.IsChallengeCleared) return;
+
+        int step = _netState.ChallengeStepIndex;
+        if (step < 0) return;
+
+        int    round    = step / 2;
+        bool   reveal   = (step & 1) == 1;
+        double stepTime = _netState.ChallengeStepStartServerTime;
+        double now      = NetworkManager.Singleton.ServerTime.Time;
+
+        // 미룬 한 프레임 사이에 같은 스텝이 이벤트로 이미 처리됐으면 두 번 적용하지 않는다.
+        if (stepTime == _lastHandledStepTime) return;
+
+        if (reveal && now >= stepTime + RoundDurationFor(round))
+        {
+            NetLog.Transition(nameof(GridChallenge), "LateJoinSkipSettled",
+                $"round={round} step={step} stepTime={stepTime:F2} now={now:F2}");
+            return;
+        }
+
+        NetLog.Transition(nameof(GridChallenge), "LateJoinCatchUp",
+            $"round={round} step={step} reveal={reveal} stepTime={stepTime:F2} now={now:F2}");
+        HandleChallengeStepChanged(step);
     }
 
     void Unsubscribe()
@@ -526,6 +575,8 @@ public class GridChallenge : MonoBehaviour
         if (stepIndex < 0) return; // ChallengeStart()의 초기화 신호 — 무시
         if (!isActiveAndEnabled) return; // OnDisable에서 구독 해제하지만, 해제 타이밍 레이스 방어용 가드
         if (tiles == null || tiles.Length == 0) return;
+
+        _lastHandledStepTime = _netState.ChallengeStepStartServerTime;
 
         if (!_isRunning)
         {

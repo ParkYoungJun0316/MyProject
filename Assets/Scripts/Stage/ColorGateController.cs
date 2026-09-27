@@ -24,6 +24,8 @@ using UnityEngine;
 ///   · **이번 판에 없는 색** — 들고 있는 사람이 아예 없다.
 ///   · **러너 색** — 러너는 1층이라 2층 패드를 밟을 수 없다.
 ///  둘 다 `SessionColorSlotMap.IsSlotAbsent()`가 판정하고, 그 묶음은 **영영 안 열리며 패드도 숨긴다.**
+///  외관은 둘 다 **Common 머티리얼**(문 매핑의 Common 항목 = 바위)로 칠한다(2026-09-28) — 필드에 보이는 색은
+///  흑·백 + 안내자 색뿐. 이름만 Common이지 동작은 벽이다(누구나 여는 문이 아니다).
 ///
 ///  구 규칙(없는 색·러너 색 → Common = 누구나 엶)을 문 180개에 그대로 쓰면 **2인에서 문의 절반이
 ///  패드 하나로 열려** 러너가 거의 걸어서 골인한다(실측 최소 전환 5회). 벽 규칙에서는 인원이 줄수록
@@ -141,9 +143,13 @@ public class ColorGateController : MonoBehaviour
             g.effectiveColor = SessionColorSlotMap.Resolve(g.designColor);
             g.isWall         = SessionColorSlotMap.IsSlotAbsent(g.designColor);
 
+            // 벽(없는 색·러너 색)은 Common 외관(문 매핑의 Common = 바위)으로 칠한다 — 필드에 보이는 색은
+            // 흑·백 + 안내자 색뿐이어야 한다(§1.4-1). 러너 색은 Resolve가 제 색을 돌려주므로 isWall로 판정한다.
+            PlayerColorType look = g.isWall ? PlayerColorType.Common : g.effectiveColor;
+
             if (g.visuals == null) continue;
             foreach (ColoredDoorVisual v in g.visuals)
-                if (v != null) v.Apply(g.effectiveColor);
+                if (v != null) v.Apply(look);
         }
 
         _hasApplied = false;

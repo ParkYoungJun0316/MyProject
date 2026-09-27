@@ -212,7 +212,7 @@ public class MovingCorridor : MonoBehaviour
         return nm != null && nm.IsListening && !nm.IsServer;
     }
 
-    /// <summary>WallMover / WallWaveController와 같은 시간 소스(ServerTime).</summary>
+    /// <summary>WallMover와 같은 시간 소스(ServerTime).</summary>
     static double NetTime()
     {
         var nm = NetworkManager.Singleton;

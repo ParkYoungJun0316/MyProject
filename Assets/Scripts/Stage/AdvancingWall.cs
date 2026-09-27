@@ -232,6 +232,7 @@ public class AdvancingWall : MonoBehaviour
     /// 목적지가 항상 종점(바닥)인 T.Boss Sphere 체크포인트 모델
     /// (BossSpherePhaseDriver, 2026-09-11 재설계) 전용 —
     /// 클리어 시 "그 페이즈가 시작한 체크포인트"로 위로 되돌리는 데 쓴다.
+    /// WallLineRandomizer 계단식 압박도 늦게 들어온 머신이 건너뛴 계단을 따라잡을 때 쓴다.
     /// OnAdvanceCompleted 등 이벤트는 발동하지 않음(스냅 전용, 자연 완료와 구분).
     /// </summary>
     public void SnapToDistance(float distanceFromStart)
@@ -490,7 +491,7 @@ public class AdvancingWall : MonoBehaviour
 
     /// <summary>
     /// 자유런(트리거 없이 씬 시작 즉시 재생) 스케줄용 시간 소스.
-    /// 각 머신이 ServerTime만 폴링하면 결정론적 (WallMover.ScheduleRoutine / WallWaveController와 동일 원칙).
+    /// 각 머신이 ServerTime만 폴링하면 결정론적 (WallMover.ScheduleRoutine과 동일 원칙).
     /// </summary>
     static float NetTime()
     {

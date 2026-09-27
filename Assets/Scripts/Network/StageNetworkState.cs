@@ -31,6 +31,7 @@ public enum ChallengeOwnerType
     DirectionalBarrier,
     SideSplit, // 좌/우 분기 인원+색상 미니게임 — MinigameDesign.md §1, SideSplitChallenge
     Grid,      // M.Stage5 혼합판 — 고유색+흑백 통합 챌린지, GridChallenge (CoopStageAudit.M.md §8)
+    JawSmash,  // M.Boss P4 타일 파괴 회차 — MouthBossJawSmash (CoopStageAudit.M.md §7)
 }
 
 /// <summary>
@@ -1790,6 +1791,35 @@ public class StageNetworkState : NetworkBehaviour
     void CancelCapacityTileClientRpc(int tileIndex, uint warnSeq)
     {
         OnCapacityTileCancelled?.Invoke(tileIndex, warnSeq);
+    }
+
+    // ── ColorWall 색 일치 멈춤 ────────────────────────────────────
+    // 멈춤 여부·시각은 Host 한 곳에서 정한다(ColorWall.HandleContact 주석). Client는 자기 캐릭터가
+    // 색을 맞춰 닿았다는 것만 보고하고, Host가 확정한 멈춤을 전 머신이 같은 서버 시각 기준으로 적용한다.
+
+    /// <summary>Client(Owner): 자기 캐릭터가 이 ColorWall에 색을 맞춰 닿았다고 보고.</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReportColorWallMatchServerRpc(int wallId, ulong playerNetworkObjectId, RpcParams rpcParams = default)
+    {
+        // 자기 캐릭터만 보고할 수 있다 — 남의 캐릭터 id를 실어 보내면 버린다.
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerNetworkObjectId, out NetworkObject netObj)) return;
+        if (netObj.OwnerClientId != rpcParams.Receive.SenderClientId) return;
+
+        ColorWall.OnMatchReportedOnHost(wallId, netObj.GetComponent<Player>());
+    }
+
+    /// <summary>Host: 확정한 멈춤을 전 머신에 배포. ColorWall에서만 호출.</summary>
+    public void BroadcastColorWallPause(int wallId, double startServerTime)
+    {
+        if (!IsServer || IsDespawned) return;
+        PauseColorWallClientRpc(wallId, startServerTime);
+    }
+
+    /// <summary>Host 자신도 클라로서 받는다 — 멈춤 경로를 전 머신 하나로 유지한다.</summary>
+    [ClientRpc]
+    void PauseColorWallClientRpc(int wallId, double startServerTime)
+    {
+        ColorWall.ApplyPauseById(wallId, startServerTime);
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

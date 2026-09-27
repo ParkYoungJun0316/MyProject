@@ -453,6 +453,9 @@ public class GridTileCollapse : MonoBehaviour
                          $"{grid.RestoreSeconds:0.##}s보다 길다 — 휴식 구간까지 파편이 날아다닌다.", this);
     }
 
+    // 이보다 더 지난 이벤트만 "늦은 합류"로 보고 연출을 생략한다 — 평소 네트워크 지연(수십~백 ms)은 연출 그대로.
+    const float LateEventTolerance = 0.25f;
+
     static double NowServerTime()
     {
         var nm = NetworkManager.Singleton;
@@ -477,18 +480,23 @@ public class GridTileCollapse : MonoBehaviour
             float wait = (float)(t0 + e.time - NowServerTime());
             if (wait > 0f) yield return new WaitForSeconds(wait);
 
+            // 라운드 도중에 합류한 머신(GridChallenge.CatchUpCurrentStep)은 지난 이벤트를 한 프레임에 몰아
+            // 받는다 — 파괴음·파편·되감기를 몰아 재생하지 않고 상태만 맞춘다. 네트워크 지연 수준은 평소대로.
+            bool past = wait < -LateEventTolerance;
+
             switch (e.kind)
             {
                 case EventKind.Break:
-                    BreakTile(e.index);
+                    BreakTile(e.index, playEffects: !past);
                     break;
                 case EventKind.Restore:
-                    RestoreTile(e.index, autoRestoreRewind);
+                    RestoreTile(e.index, past ? null : autoRestoreRewind);
                     break;
                 case EventKind.Warn:
                     // 이벤트를 늦게 받은 머신은 이미 지난 경고를 남은 시간만큼 짧게 보여준다(깨지는 순간은 동일).
                     float elapsed = (float)(NowServerTime() - t0);
-                    PlayWarn(e.index, e.breakAt - Mathf.Max(e.time, elapsed));
+                    float remaining = e.breakAt - Mathf.Max(e.time, elapsed);
+                    if (remaining > 0f) PlayWarn(e.index, remaining);
                     break;
             }
         }
@@ -502,7 +510,8 @@ public class GridTileCollapse : MonoBehaviour
         warnMarkers[index].PlayWarning(Mathf.Max(0f, duration));
     }
 
-    void BreakTile(int index)
+    /// <param name="playEffects">false = 늦게 합류해 이미 지난 파괴 — 파괴음·파편 없이 상태만.</param>
+    void BreakTile(int index, bool playEffects = true)
     {
         IReadOnlyList<GridTile> tiles = grid.Tiles;
         if (index < 0 || index >= tiles.Count || tiles[index] == null) return;
@@ -515,12 +524,15 @@ public class GridTileCollapse : MonoBehaviour
             warnMarkers[index].ResetWarning();
 
         _restoreRewind.OnTileBroken(tile);
-        SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, tile.transform.position,
-            breakSfxMinDistance, breakSfxMaxDistance, breakSfxRolloffMode);
+        if (playEffects)
+        {
+            SFXManager.Instance?.PlayAtPoint(SFXId.Breakable_Destroy, tile.transform.position,
+                breakSfxMinDistance, breakSfxMaxDistance, breakSfxRolloffMode);
 
-        GameObject debris = TileDebrisUtil.BreakTile(tile, tileDebrisPrefab, tileDebrisLifetime,
-            tileDebrisImpulseMin, tileDebrisImpulseMax, DebrisSeed(index));
-        if (debris != null) _spawnedDebris.Add(debris);
+            GameObject debris = TileDebrisUtil.BreakTile(tile, tileDebrisPrefab, tileDebrisLifetime,
+                tileDebrisImpulseMin, tileDebrisImpulseMax, DebrisSeed(index));
+            if (debris != null) _spawnedDebris.Add(debris);
+        }
 
         tile.SetActive(false);
         if (!_broken.Contains(index)) _broken.Add(index);

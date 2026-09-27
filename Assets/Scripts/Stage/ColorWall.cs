@@ -9,7 +9,6 @@ using UnityEngine.Events;
 ///
 /// [색상 일치]
 ///  WallMover → ResetToStart() 후 pauseDuration 뒤 Activate() (밀려남 + 잠시 멈춤)
-///  WallWaveController → Stop() 후 pauseDuration 뒤 Play()
 ///  ContactDamage(같은 오브젝트) → Deactivate (일치 중 면역) → 종료 시 Activate
 ///
 /// [색상 불일치]
@@ -29,7 +28,7 @@ using UnityEngine.Events;
 ///  SetColor 시 color == defaultColor 면 defaultMaterial, 아니면 colorMaterials 탐색.
 ///
 /// [연결 컴포넌트]
-///  AdvancingWall / WallMover / WallWaveController 는 같은 오브젝트에서 자동 탐색.
+///  AdvancingWall / WallMover 는 같은 오브젝트(또는 부모)에서 자동 탐색.
 ///  Collider Is Trigger 여부에 따라 OnTrigger / OnCollision 모두 처리.
 /// </summary>
 public class ColorWall : MonoBehaviour
@@ -109,19 +108,38 @@ public class ColorWall : MonoBehaviour
     // (다른 파일의 salt: 0x050AD5E7, 0x43484153, 0x5716D000, 0x4D4F5554, 0x5B1DE000, 0x52554E52)
     const int ColorSeedBaseSalt = unchecked((int)0x434F4C57);
 
+    // Owner 보고 RPC가 멈춤 배포보다 먼저 여러 번 나가지 않게 — 왕복 한 번보다 넉넉하면 된다.
+    const float MatchReportCooldown = 0.25f;
+
     WallColorType _wallColor;
     bool      _isPaused;
     Coroutine _pauseCoroutine;
     Coroutine _scheduleCoroutine;
 
+    // ── 멈춤 네트워크 동기 ────────────────────────────────────────
+    // StageNetworkState 릴레이가 벽을 int ID로 지목한다(ArrowTrap·DropTrap과 같은 레지스트리).
+    static readonly SceneStableRegistry<ColorWall> _registry = new SceneStableRegistry<ColorWall>();
+    int    _netIndex = -1;
+    float  _nextMatchReportTime;
+    double _hostPauseUntil;   // Host 레인: 이 서버 시각 전까지는 멈춤을 다시 배포하지 않는다
+    double _hostLastPauseStart = double.NegativeInfinity;   // Host 레인: 마지막으로 확정한 멈춤의 시작 서버 시각
+
+    // 끼임 신고 시각보다 이만큼 앞서 시작한 멈춤까지는 "Client에 아직 도착 안 한 멈춤"으로 보고 끼임을 무효로 한다.
+    // Client의 ServerTime은 Host보다 뒤처져 있어 멈춤 도착 전 끼임이 멈춤 시각 근처(앞뒤)로 찍힌다 — 그 오차 여유.
+    // 멈춤 직후엔 벽이 제자리로 빠지는 중(AdvancingWall.pauseReturnDuration 0.5초)이라 그 벽으로 진짜 끼일 수 없으므로
+    // 0.5초 안쪽이면 진짜 끼임을 잘못 살리지 않는다.
+    const double CrushPauseWindow = 0.3;
+
     Renderer[]          _renderers;
     AdvancingWall       _advancingWall;
     WallMover           _wallMover;
-    WallWaveController  _waveController;
     ContactDamage       _contactDamage;
 
     // ── 현재 논리 색 외부 읽기용 ──────────────────────────────────
     public WallColorType CurrentColor => _wallColor;
+
+    /// <summary>StageNetworkState 릴레이·끼임 신고가 이 벽을 지목하는 ID. 씬 배치가 아니면 -1.</summary>
+    public int NetId => _netIndex;
 
     // ── 생명주기 ─────────────────────────────────────────────────
 
@@ -130,12 +148,14 @@ public class ColorWall : MonoBehaviour
         _renderers      = GetComponentsInChildren<Renderer>(true);
         _advancingWall  = GetComponent<AdvancingWall>() ?? GetComponentInParent<AdvancingWall>();
         _wallMover      = GetComponent<WallMover>()     ?? GetComponentInParent<WallMover>();
-        _waveController = GetComponent<WallWaveController>() ?? GetComponentInParent<WallWaveController>();
         _contactDamage  = GetComponent<ContactDamage>();
+        _netIndex       = _registry.Register(this);
 
         _wallColor = defaultColor;
         ApplyMaterial(defaultColor);
     }
+
+    void OnDestroy() => _registry.Unregister(this, _netIndex);
 
     void Start()
     {
@@ -190,20 +210,88 @@ public class ColorWall : MonoBehaviour
 
     // ── 내부 ────────────────────────────────────────────────────
 
+    // [멈춤 동기 2026-09-28] 멈춤은 Host가 정해 전 머신에 같은 서버 시각으로 배포한다.
+    // 예전엔 머신마다 로컬 접촉으로 멈췄는데, Client에서는 Host 캐릭터 사본(kinematic)과 벽(kinematic)이
+    // 닿아도 충돌 이벤트가 오지 않아(ContactPairsMode 기본값) Host가 맞춘 멈춤이 Client에서만 안 일어났다
+    // → Client 화면에서만 벽이 계속 밀고 와 WallCrushKill(Owner 판정)로 죽었다.
+    // Host: 자기 화면의 모든 캐릭터 접촉으로 바로 확정(예전 Host 타이밍 그대로).
+    // Client: 자기 캐릭터 접촉만 Host에 보고 — 남의 캐릭터는 그 캐릭터의 Owner가 보고한다.
     void HandleContact(Collider other)
     {
         Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
+        if (!IsColorMatch(p)) return;
 
-        if (IsColorMatch(p))
+        // 멈춤 경로는 Host 배포 하나뿐 — 릴레이가 아직 준비 안 됐으면 이 머신에서만 멈추지 않고 무시한다
+        // (로컬로 멈추면 그 머신만 멈추는 원래 버그가 재현된다).
+        var nm  = NetworkManager.Singleton;
+        var sns = StageNetworkState.Instance;
+        if (nm == null || !nm.IsListening || sns == null || !sns.IsSpawned || _netIndex < 0) return;
+
+        if (nm.IsServer)
         {
-            if (!_isPaused)
-            {
-                if (_pauseCoroutine != null) StopCoroutine(_pauseCoroutine);
-                _pauseCoroutine = StartCoroutine(PauseRoutine());
-                OnColorMatch?.Invoke();
-            }
+            HostTryPause(p);
+            return;
         }
+
+        if (!p.isOwnerControlled) return;
+        if (_isPaused || Time.time < _nextMatchReportTime) return;
+
+        var netObj = p.GetComponent<NetworkObject>();
+        if (netObj == null) return;
+
+        _nextMatchReportTime = Time.time + MatchReportCooldown;
+        sns.ReportColorWallMatchServerRpc(_netIndex, netObj.NetworkObjectId);
+    }
+
+    /// <summary>StageNetworkState 릴레이(Host 레인): Client Owner의 색 일치 보고를 받는다.</summary>
+    public static void OnMatchReportedOnHost(int wallId, Player p)
+    {
+        ColorWall w = _registry.Get(wallId);
+        if (w == null || p == null || p.IsDead) return;
+        // Host 화면 기준 지금 이 벽 색이 그 플레이어 색일 때만 — 색이 바뀐 뒤 늦게 도착한 보고는 버린다.
+        if (!w.IsColorMatch(p)) return;
+        w.HostTryPause(p);
+    }
+
+    void HostTryPause(Player p)
+    {
+        double now = NetTimeDouble();
+        if (now < _hostPauseUntil) return;   // 이미 멈춤을 배포했다(보고·접촉이 겹쳐 들어온 것)
+        _hostPauseUntil      = now + Mathf.Max(pauseDuration, 0f);
+        _hostLastPauseStart  = now;
+
+        NetLog.Transition(nameof(ColorWall), "ColorWallPause",
+            $"wall={name} id={_netIndex} color={_wallColor} player={p.playerColorType} start={now:F2}");
+        StageNetworkState.Instance.BroadcastColorWallPause(_netIndex, now);
+    }
+
+    /// <summary>StageNetworkState.PauseColorWallClientRpc 수신(Host 포함 전 머신). 늦게 받은 만큼 멈춤을 줄여 끝나는 시각을 맞춘다.</summary>
+    public static void ApplyPauseById(int wallId, double startServerTime)
+    {
+        ColorWall w = _registry.Get(wallId);
+        if (w == null) return;
+
+        float late = Mathf.Max(0f, (float)(NetTimeDouble() - startServerTime));
+        w.StartPause(Mathf.Max(0f, w.pauseDuration - late));
+    }
+
+    /// <summary>
+    /// Host 레인(NetworkPlayerSetup.ReportCrushDeathServerRpc): 이 벽이 끼임 시각 무렵 이미 멈춤 확정이었는지.
+    /// true면 그 끼임은 "Host가 멈춘 벽이 Client에서 아직 안 멈춰 보인 사이"에 난 것이라 무효다.
+    /// 콜라이더를 다시 계산하지 않는다 — Host는 자기가 확정한 멈춤 시각과 신고 시각만 비교한다.
+    /// </summary>
+    public static bool IsCrushVoidedByPause(int wallId, double crushServerTime)
+    {
+        ColorWall w = _registry.Get(wallId);
+        return w != null && w._hostLastPauseStart >= crushServerTime - CrushPauseWindow;
+    }
+
+    void StartPause(float duration)
+    {
+        if (_pauseCoroutine != null) StopCoroutine(_pauseCoroutine);
+        _pauseCoroutine = StartCoroutine(PauseRoutine(duration));
+        OnColorMatch?.Invoke();
     }
 
     /// <summary>이 플레이어 색과 지금 벽 색이 일치하는지. Default(휴지 회색)는 항상 false.
@@ -231,19 +319,17 @@ public class ColorWall : MonoBehaviour
         }
     }
 
-    IEnumerator PauseRoutine()
+    IEnumerator PauseRoutine(float duration)
     {
         _isPaused = true;
         _contactDamage?.Deactivate();
 
-        _advancingWall?.PauseTemporarily(pauseDuration);
+        _advancingWall?.PauseTemporarily(duration);
         _wallMover?.ResetToStart();
-        _waveController?.Stop();
 
-        yield return new WaitForSeconds(pauseDuration);
+        yield return new WaitForSeconds(duration);
 
         _wallMover?.Activate();
-        _waveController?.Play();
 
         _contactDamage?.Activate();
         _isPaused = false;
@@ -325,12 +411,18 @@ public class ColorWall : MonoBehaviour
 
     /// <summary>
     /// 자유런(트리거 없이 씬 시작 즉시 재생) 스케줄용 시간 소스.
-    /// 각 머신이 ServerTime만 폴링하면 결정론적 (WallMover.ScheduleRoutine / WallWaveController와 동일 원칙).
+    /// 각 머신이 ServerTime만 폴링하면 결정론적 (WallMover.ScheduleRoutine과 동일 원칙).
     /// </summary>
     static float NetTime()
     {
         var nm = NetworkManager.Singleton;
         return nm != null ? (float)nm.ServerTime.Time : Time.time;
+    }
+
+    static double NetTimeDouble()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsListening ? nm.ServerTime.Time : Time.timeAsDouble;
     }
 
     // ── 에디터 ──────────────────────────────────────────────────
