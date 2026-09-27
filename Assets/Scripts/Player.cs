@@ -75,7 +75,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     /// <summary>
     /// 부활 직후 그레이스 창(ReviveSystemDesign.md §3.1). Revive()가 전 머신에서 같은 길이로 연다.
-    /// 점유 판정(CapacityTile·PressurePad·ColorGatePad·ColorTile)이 이 창 동안 이 플레이어를 세지
+    /// 점유 판정(정원 BreakTile·PressurePad·ColorGatePad·ColorTile)이 이 창 동안 이 플레이어를 세지
     /// 않는다 — 생존자 위치에 겹쳐 나타나는 순간 정원이 초과돼 둘 다 떨어지는 것을 막는다.
     /// 콜라이더는 켜둔 채로(끄면 IsDead 해제와 함께 y 고정도 풀려 바닥을 뚫는다, §3.1 기각안) 숫자만 안 센다.
     /// </summary>

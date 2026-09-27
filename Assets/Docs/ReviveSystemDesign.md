@@ -112,6 +112,8 @@ HP가 0이면 **죽는다**. 1초 뒤 **가장 가까운 생존자 위치에서 
 **채택안:** `Player`에 **부활 무적 중 플래그**를 두고, 지금 `IsDead`를 보는 점유 판정들이 같이 본다.
 콜라이더는 켜져 있어 바닥은 정상적으로 밟고, 1초 동안만 안 세이므로 그 사이에 비켜나면 된다.
 `CapacityTile`은 이미 `IsDead` 필터를 갖고 있다(`CapacityTile.cs:239, 246`) — 거기에 한 조건을 더하는 형태다.
+> 2026-09-27: `CapacityTile`은 `BreakTile` Capacity 모드로 대체됐다(`TStage4TrapRandomization.md` §1.8).
+> 제외 규칙은 그대로 — Host 집계(`BreakTileDirector`)가 `Player.CountsForOccupancy`로 센다.
 
 ---
 

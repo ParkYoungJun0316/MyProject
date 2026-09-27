@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 경고 마커 색 보간 공용 헬퍼 — ArrowWarnSign / SpikeLaneWarnMarker /
-/// Breakable / CapacityTile이 공유. MaterialPropertyBlock으로 Renderer 색을 두 색 사이에서 보간한다.
+/// Breakable이 공유. MaterialPropertyBlock으로 Renderer 색을 두 색 사이에서 보간한다.
 /// 색은 호출부가 WarnPalette에서 넘긴다(인스펙터 색 필드 없음). WarnMarker 셰이더용으로
 /// 바깥 테두리색(_BorderColor)도 WarnPalette.Border로 항상 같이 넣는다 — 해당 프로퍼티가
 /// 없는 셰이더(URP Lit 등)에서는 무시된다. MonoBehaviour가 아닌 순수 C# 클래스라 직렬화 대상이 아니다.

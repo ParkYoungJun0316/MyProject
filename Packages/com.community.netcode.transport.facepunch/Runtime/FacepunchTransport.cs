@@ -242,6 +242,11 @@ namespace Netcode.Transports.Facepunch
 
         void IConnectionManager.OnDisconnected(ConnectionInfo info)
         {
+            // NOTE(project workaround, 2026-09-27): Shutdown() 이후 뒤늦게 도착한 Steam 끊김 콜백은 버린다.
+            // 이미 종료된 NGO로 Disconnect를 올리면 해제된 메시지 큐에 접근해 네이티브 크래시가 난다.
+            if (connectionManager == null)
+                return;
+
             InvokeOnTransportEvent(NetworkEvent.Disconnect, ServerClientId, default, Time.realtimeSinceStartup);
 
             if (LogLevel <= LogLevel.Developer)
@@ -293,6 +298,11 @@ namespace Netcode.Transports.Facepunch
 
         void ISocketManager.OnDisconnected(SocketConnection connection, ConnectionInfo info)
         {
+            // NOTE(project workaround, 2026-09-27): IConnectionManager.OnDisconnected와 같은 이유 —
+            // Shutdown()은 connectedClients를 비우지 않아 아래 Remove가 성공하므로 여기서 먼저 막는다.
+            if (socketManager == null)
+                return;
+
             if (connectedClients.Remove(connection.Id))
 	    {
 	        InvokeOnTransportEvent(NetworkEvent.Disconnect, connection.Id, default, Time.realtimeSinceStartup);

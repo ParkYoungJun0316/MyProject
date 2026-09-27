@@ -255,7 +255,7 @@ public class GridChallenge : MonoBehaviour
 
     /// <summary>
     /// SharedSolo: 이 안전 칸 위 생존자가 2명 이상인가. 정산 판정(Host)과 안전 연출(각 머신 로컬)이 같은 규칙을 쓴다 —
-    /// 점유는 트리거 기반 로컬 값이라 머신 간 차이는 CNT 보간 지연만큼뿐이다(CapacityTile과 같은 판단).
+    /// 점유는 트리거 기반 로컬 값이라 머신 간 차이는 CNT 보간 지연만큼뿐이다.
     /// </summary>
     public bool IsSharedSafeTileOverloaded(int index) => SafeTileOccupantCount(index) >= 2;
 

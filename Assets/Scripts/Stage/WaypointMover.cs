@@ -30,9 +30,6 @@ public class WaypointMover : MonoBehaviour
     [Tooltip("순서대로 이동할 웨이포인트. 비어있으면 transform.forward 방향으로 직진")]
     [SerializeField] Transform[] waypoints;
 
-    [Tooltip("레거시 필드. 더 이상 도착 판정에 사용되지 않음(현재는 스텝 이동거리 기준으로 정확히 스냅). 하위호환을 위해 남겨둠")]
-    [SerializeField] float waypointReachDistance = 0f;
-
     [Tooltip("마지막 웨이포인트 도달 후 동작")]
     [SerializeField] WaypointEndMode endMode = WaypointEndMode.Stop;
 
@@ -125,8 +122,7 @@ public class WaypointMover : MonoBehaviour
     /// <summary>
     /// 이번 FixedUpdate에 적용할 XZ 속도를 계산.
     /// 이번 스텝 이동거리(initialSpeed * fixedDeltaTime) 안에 목표 웨이포인트가 들어오면,
-    /// 오버슈트 없이 좌표에 정확히 도착하도록 그 스텝만 속도를 남은 거리만큼 줄여서 스냅한다
-    /// (예전엔 waypointReachDistance만큼 미리 다음 웨이포인트로 꺾여서 중심이 좌표에 못 미쳤음).
+    /// 오버슈트 없이 좌표에 정확히 도착하도록 그 스텝만 속도를 남은 거리만큼 줄여서 스냅한다.
     /// </summary>
     Vector3 ComputeVelocityXZ()
     {

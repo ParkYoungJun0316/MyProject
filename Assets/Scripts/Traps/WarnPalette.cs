@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// 모든 경고 사인의 공용 색 SSOT (2026-09-22 확정).
 /// ArrowWarnSign / SpikeLaneWarnMarker(가시·BreakTile·Grid 붕괴·혀·턱) /
-/// DropWarnMarker / Breakable / CapacityTile이 전부 여기서 색을 읽는다 — 컴포넌트별 인스펙터
+/// DropWarnMarker / Breakable이 전부 여기서 색을 읽는다 — 컴포넌트별 인스펙터
 /// 색 필드는 두지 않는다(씬마다 값이 어긋나던 문제의 원천 차단).
 ///
 /// 게임플레이 색(파랑 #2384C4 · 노랑 #DCA524 · 보라 #5900BC · 초록 #4C6C48, PlayerColorUtil)과
@@ -23,7 +23,4 @@ public static class WarnPalette
 
     /// <summary>WarnMarker 셰이더 바깥 테두리 — 진홍의 어두운 톤 #8E0F17</summary>
     public static readonly Color Border = new Color32(0x8E, 0x0F, 0x17, 0xFF);
-
-    /// <summary>CapacityTile처럼 "안전→위험" 의미인 곳의 안전 쪽 색</summary>
-    public static readonly Color Safe = Color.white;
 }

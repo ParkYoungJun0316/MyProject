@@ -27,6 +27,8 @@ using TMPro;
 ///
 /// [레이아웃]
 /// 이름(위, "게임 닉네임 (Steam 닉네임)" 형식 — 예: "BERRY (영준)") / HP 하트(아래). 그 외 아이콘 없음.
+/// 이름 줄은 텍스트 두 개(nameText=게임 닉네임 Fredoka 22 / steamNameText=Steam 닉네임 Noto 18)를
+/// HorizontalLayoutGroup으로 이어 붙인 것 — Steam 닉네임이 넘치면 "(영준영…)"처럼 닫는 괄호를 남기고 줄인다.
 /// 게임 닉네임(CheerName)은 캐릭터 머리 위(PlayerNameTagUI)에도 같이 뜬다 — 2026-09-13 한때 삭제됐으나
 /// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제(흑/백 팔레트로 색 바꾸면 구분 불가 문제)로 재도입됨.
 /// 이름은 이제 PlayerColorUtil.DefaultCheerNames 고정값이라 런타임에 안 바뀐다.
@@ -65,7 +67,11 @@ public class TeamStatusUI : MonoBehaviour
 
         [Tooltip("실제 데이터(이름+하트) 표시 그룹.")]
         public GameObject filledGroup;
+        [Tooltip("게임 닉네임(CheerName, 예: BERRY). steamNameText가 비어 있으면 예전처럼 \"BERRY (영준)\" 전체를 여기에 쓴다.")]
         public TextMeshProUGUI nameText;
+        [Tooltip("Steam 닉네임 \"(영준)\". nameText 옆 HorizontalLayoutGroup 안에서 남는 폭을 전부 받는다(LayoutElement preferred 0 / flexible 1). " +
+                 "넘치면 코드가 \"(영준영…)\"처럼 닫는 괄호를 남기고 줄인다.")]
+        public TextMeshProUGUI steamNameText;
         [Tooltip("Player.maxHeart(고정 프리팹 기준) 개수만큼 미리 배치. 실제 maxHeart보다 많으면 나머지는 자동 숨김.")]
         public Image[] heartImages;
 
@@ -153,6 +159,8 @@ public class TeamStatusUI : MonoBehaviour
             }
             if (slot.nameText == null)
                 Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 nameText가 비어 있습니다 — 닉네임이 표시되지 않습니다. ({name})", this);
+            else if (slot.steamNameText == null)
+                Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 steamNameText가 비어 있습니다 — \"BERRY (영준)\"을 nameText 한 줄에 몰아서 표시합니다. ({name})", this);
             if (slot.heartImages == null || slot.heartImages.Length == 0)
                 Debug.LogWarning($"[TeamStatusUI] {slot.colorType} 슬롯의 heartImages가 비어 있습니다 — HP가 표시되지 않습니다. ({name})", this);
             if (showEmptySlots && slot.emptyGroup == null)
@@ -477,6 +485,48 @@ public class TeamStatusUI : MonoBehaviour
             : $"{cheerName.ToUpperInvariant()} ({steamName})";
     }
 
+    /// <summary>
+    /// 이름 줄을 두 텍스트로 나눠 채운다 — 게임 닉네임은 nameText(Fredoka 22), Steam 닉네임은
+    /// steamNameText(Noto 18). Steam 닉네임은 임의 언어라 Fredoka(영문 97자)로는 어차피 Noto 폴백으로
+    /// 섞여 그려지므로 칸째로 Noto에 맡기고, 작게 해서 한글 10자 정도가 들어가게 했다(2026-09-27).
+    /// </summary>
+    void ApplySplitName(ColorSlot slot)
+    {
+        string cheerName = CheerService.GetCheerName(slot.colorIndex);
+        string steamName = GetPlayerDisplayName(slot.colorIndex);
+        bool hasCheer = !string.IsNullOrEmpty(cheerName);
+
+        slot.nameText.text = hasCheer ? cheerName.ToUpperInvariant() : string.Empty;
+
+        // Steam 칸 폭 = 줄 폭 − 게임 닉네임 폭. 슬롯이 방금 켜진 프레임이면 레이아웃이 아직 안 돌아서
+        // 폭이 옛값/0이므로 여기서 한 번 강제로 돌린다.
+        var row = slot.steamNameText.rectTransform.parent as RectTransform;
+        if (row != null) LayoutRebuilder.ForceRebuildLayoutImmediate(row);
+
+        slot.steamNameText.text = hasCheer
+            ? FitWithEllipsis(slot.steamNameText, "(", steamName, ")", slot.steamNameText.rectTransform.rect.width)
+            : FitWithEllipsis(slot.steamNameText, "", steamName, "", slot.steamNameText.rectTransform.rect.width);
+    }
+
+    /// <summary>
+    /// open+body+close가 maxWidth를 넘으면 body 뒤를 줄이고 "…"를 붙이되 close는 남긴다 — 예: "(영준영준영…)".
+    /// TMP Ellipsis 모드는 줄 끝에서 자르므로 닫는 괄호까지 날아가 직접 줄인다. 자르는 단위는 텍스트
+    /// 요소(서로게이트 쌍·결합 문자 안전). 호출은 리빌드/이름 변경 때뿐이라 선형 탐색으로 충분하다.
+    /// </summary>
+    static string FitWithEllipsis(TMP_Text text, string open, string body, string close, float maxWidth)
+    {
+        string full = open + body + close;
+        if (maxWidth <= 0f || text.GetPreferredValues(full).x <= maxWidth) return full;
+
+        var elements = new System.Globalization.StringInfo(body);
+        for (int n = elements.LengthInTextElements - 1; n > 0; n--)
+        {
+            string candidate = open + elements.SubstringByTextElements(0, n) + "…" + close;
+            if (text.GetPreferredValues(candidate).x <= maxWidth) return candidate;
+        }
+        return open + "…" + close;
+    }
+
     // ── 갱신 ─────────────────────────────────────────────────────
 
     Sprite GetFullHeartSprite(PlayerColorType colorType)
@@ -493,7 +543,10 @@ public class TeamStatusUI : MonoBehaviour
         if (slot.root == null) return; // 방어
 
         if (slot.nameText != null)
-            slot.nameText.text = GetSlotNameLabel(slot.colorIndex);
+        {
+            if (slot.steamNameText != null) ApplySplitName(slot);
+            else slot.nameText.text = GetSlotNameLabel(slot.colorIndex);
+        }
 
         if (slot.heartImages == null) return;
         Sprite resolvedFull = GetFullHeartSprite(slot.player.playerColorType);

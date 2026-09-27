@@ -6,10 +6,17 @@ using UnityEngine;
 /// 파괴 타일 지휘자 — T.Stage4 함정 랜덤화 ③ / T.Boss P1 붕괴 트랙.
 /// SSOT: Assets/Docs/TStage4TrapRandomization.md §1.4 / §4.1
 ///
-/// [하는 일은 둘뿐이다 (2026-09-21 — 판 추첨 폐기로 셋에서 줄었다)]
+/// [하는 일 (2026-09-21 — 판 추첨 폐기로 셋에서 줄었다 · 2026-09-27 정원 집계 추가)]
 ///  1. **인덱스 배정** — 판의 BreakTile을 모아 월드 좌표순으로 정렬하고 전 머신 공통 인덱스를 심는다.
 ///  2. **보고 릴레이** — 타일이 밟혔다는 보고를 Host로 올리고, Host가 정한 파괴 서버 시각을
 ///     전 머신의 같은 타일에 꽂아 준다.
+///  3. **정원 집계(Capacity 모드, Host 레인)** — 각 Owner가 보고한 "내 캐릭터가 올라섬/내려옴"을 모아
+///     타일별 인원을 센다(`Player.CountsForOccupancy` — 사망·부활 그레이스 제외).
+///     · 정원 초과 → 경고 시작 + 파괴 시각(지금 + capacityWarnSeconds) 배포.
+///     · 경고 중 정원 이하 → 취소 배포(원상 복구). 다시 초과하면 **처음부터** 다시 경고.
+///     · 파괴 capacityCommitSeconds 전부터는 취소하지 않는다 — 취소 RPC가 닿기 전에 다른 머신에서
+///       이미 부서지면 영구 구멍이 머신마다 달라진다.
+///     매 FixedUpdate 다시 센다 — 부활 그레이스가 끝나는 순간처럼 보고 없이 인원이 바뀌는 경우가 있다.
 ///
 ///  파괴 **개수**는 코드가 정하지 않는다 — 판에 BreakTile을 몇 개 깔았는지가 곧 개수다.
 ///  (인원별 역스케일도, 후보 중 일부만 뽑는 quota도 없다. §1.3 참고 — 인원에서 수치를 파생시키면
@@ -48,6 +55,14 @@ public class BreakTileDirector : MonoBehaviour
              "전 머신이 같은 순간에 부서진다.")]
     [SerializeField] float warnSeconds = 1f;
 
+    [Header("정원 타일 (Capacity 모드)")]
+    [Tooltip("정원을 초과한 뒤 부서지기까지의 시간(초). 이 사이에 정원 이하로 줄면 취소된다.")]
+    [SerializeField] float capacityWarnSeconds = 2f;
+
+    [Tooltip("파괴 이 시간(초) 전부터는 취소를 받지 않고 파괴를 확정한다.\n" +
+             "취소 RPC가 다른 머신에 닿기 전에 그쪽에서 이미 부서지는 것을 막는 여유다.")]
+    [SerializeField] float capacityCommitSeconds = 0.2f;
+
     /// <summary>밟은 뒤 파괴까지의 시간(초). BreakTile이 로컬 경고 연출 길이에 쓴다.</summary>
     public float WarnSeconds => warnSeconds;
 
@@ -58,6 +73,19 @@ public class BreakTileDirector : MonoBehaviour
     // 타일 쪽 상태로는 대신할 수 없다 — Host 본인이 밟으면 보고가 도착하기 전에 이미 경고 중이다.
     readonly HashSet<int> _armedOnHost = new HashSet<int>();
 
+    /// <summary>Host 레인: 정원 타일 하나의 집계 상태.</summary>
+    class CapacityHostState
+    {
+        public readonly HashSet<Player> Occupants = new HashSet<Player>();
+        public bool   Armed;
+        public bool   Gone;
+        public double BreakAt;
+        public uint   WarnSeq; // 경고마다 1씩 증가 — 클라가 중복 수신된 옛 경고/취소를 가려낸다
+    }
+
+    // 보고가 한 번이라도 온 정원 타일만 들어 있다.
+    readonly Dictionary<int, CapacityHostState> _capacityOnHost = new Dictionary<int, CapacityHostState>();
+
     StageNetworkState _netState;
 
     void Start()
@@ -67,8 +95,11 @@ public class BreakTileDirector : MonoBehaviour
         _netState = StageNetworkState.Instance;
         if (_netState != null)
         {
-            _netState.OnBreakTileStepReported += HandleStepReportedOnHost;
-            _netState.OnBreakTileArmed        += HandleArmed;
+            _netState.OnBreakTileStepReported         += HandleStepReportedOnHost;
+            _netState.OnBreakTileArmed                += HandleArmed;
+            _netState.OnCapacityTileOccupancyReported += HandleOccupancyReportedOnHost;
+            _netState.OnCapacityTileArmed             += HandleCapacityArmed;
+            _netState.OnCapacityTileCancelled         += HandleCapacityCancelled;
         }
         else
         {
@@ -80,8 +111,11 @@ public class BreakTileDirector : MonoBehaviour
     {
         if (_netState != null)
         {
-            _netState.OnBreakTileStepReported -= HandleStepReportedOnHost;
-            _netState.OnBreakTileArmed        -= HandleArmed;
+            _netState.OnBreakTileStepReported         -= HandleStepReportedOnHost;
+            _netState.OnBreakTileArmed                -= HandleArmed;
+            _netState.OnCapacityTileOccupancyReported -= HandleOccupancyReportedOnHost;
+            _netState.OnCapacityTileArmed             -= HandleCapacityArmed;
+            _netState.OnCapacityTileCancelled         -= HandleCapacityCancelled;
         }
     }
 
@@ -150,7 +184,7 @@ public class BreakTileDirector : MonoBehaviour
         if (!_armedOnHost.Add(tileIndex)) return; // 같은 타일 중복 보고 — 첫 보고만 인정
 
         BreakTile tile = _tiles[tileIndex];
-        if (tile == null) return;
+        if (tile == null || tile.Mode != BreakTile.TriggerMode.Step) return;
 
         _netState?.BroadcastBreakTileArm(tileIndex, ServerNow() + warnSeconds);
     }
@@ -162,6 +196,93 @@ public class BreakTileDirector : MonoBehaviour
         _tiles[tileIndex]?.ArmFromServer(breakServerTime);
     }
 
+    // ── 정원 집계 (Capacity 모드) ──────────────────────────────
+
+    /// <summary>BreakTile(Capacity)이 호출 — 자기 캐릭터의 Owner 머신에서만 올라온다.</summary>
+    public void ReportOccupancy(int tileIndex, ulong playerNetworkObjectId, bool inside)
+    {
+        if (_netState == null) return;
+        _netState.ReportCapacityTileOccupancy(tileIndex, playerNetworkObjectId, inside);
+    }
+
+    /// <summary>Host 레인: 올라섬/내려옴 보고를 반영한다. 판정은 FixedUpdate에서 한 번에 한다.</summary>
+    void HandleOccupancyReportedOnHost(int tileIndex, Player player, bool inside)
+    {
+        if (tileIndex < 0 || tileIndex >= _tiles.Count) return;
+        BreakTile tile = _tiles[tileIndex];
+        if (tile == null || tile.Mode != BreakTile.TriggerMode.Capacity) return;
+
+        if (!_capacityOnHost.TryGetValue(tileIndex, out CapacityHostState st))
+        {
+            st = new CapacityHostState();
+            _capacityOnHost[tileIndex] = st;
+        }
+        if (st.Gone) return;
+
+        if (inside) st.Occupants.Add(player);
+        else        st.Occupants.Remove(player);
+    }
+
+    void FixedUpdate()
+    {
+        if (_capacityOnHost.Count == 0) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+
+        double now = ServerNow();
+        foreach (var pair in _capacityOnHost)
+            EvaluateCapacityOnHost(pair.Key, pair.Value, now);
+    }
+
+    void EvaluateCapacityOnHost(int tileIndex, CapacityHostState st, double now)
+    {
+        if (st.Gone) return;
+
+        // 파괴 시각이 지났으면 전 머신이 이미(또는 곧) 스스로 부순다 — Host는 집계만 닫는다.
+        if (st.Armed && now >= st.BreakAt)
+        {
+            st.Gone = true;
+            st.Occupants.Clear();
+            return;
+        }
+
+        st.Occupants.RemoveWhere(p => p == null);
+
+        int count = 0;
+        foreach (Player p in st.Occupants)
+            if (p.CountsForOccupancy) count++;
+
+        bool overloaded = count > _tiles[tileIndex].Capacity;
+
+        if (!st.Armed && overloaded)
+        {
+            st.Armed   = true;
+            st.WarnSeq++;
+            st.BreakAt = now + capacityWarnSeconds;
+            _netState?.BroadcastCapacityTileArm(tileIndex, st.BreakAt, st.WarnSeq);
+        }
+        else if (st.Armed && !overloaded && now < st.BreakAt - capacityCommitSeconds)
+        {
+            st.Armed = false;
+            _netState?.BroadcastCapacityTileCancel(tileIndex, st.WarnSeq);
+        }
+    }
+
+    /// <summary>전 머신: 정원 초과 경고 시작.</summary>
+    void HandleCapacityArmed(int tileIndex, double breakServerTime, uint warnSeq)
+    {
+        if (tileIndex < 0 || tileIndex >= _tiles.Count) return;
+        _tiles[tileIndex]?.ArmCapacityFromServer(breakServerTime, warnSeq);
+    }
+
+    /// <summary>전 머신: 정원 이하로 줄어 경고 취소.</summary>
+    void HandleCapacityCancelled(int tileIndex, uint warnSeq)
+    {
+        if (tileIndex < 0 || tileIndex >= _tiles.Count) return;
+        _tiles[tileIndex]?.CancelCapacityFromServer(warnSeq);
+    }
+
     static double ServerNow()
     {
         var nm = NetworkManager.Singleton;
@@ -170,6 +291,8 @@ public class BreakTileDirector : MonoBehaviour
 
     void OnValidate()
     {
-        warnSeconds = Mathf.Max(0.1f, warnSeconds);
+        warnSeconds           = Mathf.Max(0.1f, warnSeconds);
+        capacityWarnSeconds   = Mathf.Max(0.1f, capacityWarnSeconds);
+        capacityCommitSeconds = Mathf.Clamp(capacityCommitSeconds, 0f, capacityWarnSeconds);
     }
 }

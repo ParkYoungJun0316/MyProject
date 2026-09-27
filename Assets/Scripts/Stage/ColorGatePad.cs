@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -14,14 +15,21 @@ using UnityEngine;
 ///
 /// [동작]
 ///  밟으면 ColorGateController가 **그 색 문만 Open, 나머지 전부 Close**로 확정한다.
-///  올라선 채로는 재발동 없음 — 어차피 배타 게이트라 같은 색을 다시 밟아도 결과가 같다.
-///  **`OnTriggerStay` 재발동을 넣지 말 것**: 구간마다 패드가 6개 모여 있어, 두 안내자가 각자
-///  패드에 서 있으면 프레임마다 색이 뒤집혀 문이 떨리고 NV가 초당 수십 회 나간다.
+///  **플레이어마다 "안 됨 → 됨"으로 바뀌는 순간 한 번만** 발동한다 (2026-09-27):
+///   · 들어온 순간 이미 색이 맞으면 → 발동.
+///   · 틀린 색으로 올라서 있다가 **패드 위에서 색을 맞추면** → 그 순간 발동(내렸다 다시 밟을 필요 없음).
+///   · 맞는 색으로 계속 서 있으면 → 재발동 없음. 다시 누르려면 내렸다 밟거나 색을 틀렸다 맞춘다.
+///  **`OnTriggerStay`는 이 전이 감지에만 쓴다 — 매 프레임 재발동으로 바꾸지 말 것**: 구간마다 패드가
+///  6개 모여 있어, 두 안내자가 각자 패드에 서 있으면 프레임마다 색이 뒤집혀 문이 떨리고 NV가 초당
+///  수십 회 나간다.
 ///
 /// [색 권한 — §1.4 / §1.5]
 ///  - 고유색 패드(Blue/Purple/Green/Yellow 설계슬롯) : **런타임 실제 색과 같은 고유색 플레이어만**.
 ///    판정 방식은 PressurePad.IsAllowed와 동일(isUniqueColor + playerColorType 일치).
-///  - 흑·백 패드 : **누구나**. 흑백은 플레이어가 수시로 갈아타는 상태라 소유권을 두지 않는다.
+///  - 흑·백 패드 : **누구나 밟을 수 있지만 지금 그 색 상태여야 한다**(2026-09-27) —
+///    흑 패드는 흑 상태(`!isUniqueColor && isBlack`), 백 패드는 백 상태(`!isUniqueColor && !isBlack`).
+///    고유색 상태로 흑·백 패드를 밟으면 안 눌린다. 판정은 ColorTile·ColorWall의 흑백과 같다.
+///    흑백은 플레이어가 수시로 갈아타는 상태라 **신원(고유색) 소유권은 두지 않는다.**
 ///  - **벽이 된 색의 패드는 아예 숨긴다**(ColorGateController가 끈다) — 이번 판에 없는 색과
 ///    러너 색은 열 대상이 없다. 그래서 **T5에는 Common 패드가 없다**(2026-09-20).
 ///    구간당 보이는 패드: 4인 5개 · 3인 4개 · 2인 3개 · 솔로 0개.
@@ -64,6 +72,9 @@ public class ColorGatePad : MonoBehaviour
     PlayerColorType _effectiveColor;
     int             _appliedMapVersion = -1;
 
+    // 트리거 안에 있는 플레이어 → 직전 판정 결과. "안 됨 → 됨" 전이에서만 발동하기 위한 기록.
+    readonly Dictionary<Player, bool> _inside = new Dictionary<Player, bool>();
+
     void Awake()
     {
         GetComponent<Collider>().isTrigger = true;
@@ -75,6 +86,9 @@ public class ColorGatePad : MonoBehaviour
     }
 
     void OnEnable() => _appliedMapVersion = -1; // 맵이 라운드마다 켜졌다 꺼지므로 다시 당겨온다
+
+    // 꺼질 때는 OnTriggerExit이 오지 않는다 — 기록을 비워 다시 켜졌을 때 Enter부터 새로 판정한다.
+    void OnDisable() => _inside.Clear();
 
     void Update()
     {
@@ -105,16 +119,39 @@ public class ColorGatePad : MonoBehaviour
 
     // ── 판정 ────────────────────────────────────────────────────
 
-    void OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other) => Evaluate(other, entered: true);
+
+    // 패드 위에서 색을 맞춘 순간을 잡는다. 전이일 때만 발동하므로 매 프레임 재발동이 아니다.
+    void OnTriggerStay(Collider other) => Evaluate(other, entered: false);
+
+    void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag("Player")) return;
+        Player p = other.GetComponent<Player>();
+        if (p != null) _inside.Remove(p);
+    }
+
+    void Evaluate(Collider other, bool entered)
     {
         if (!other.CompareTag("Player")) return;
 
+        Player p = other.GetComponent<Player>();
+        if (p == null) return;
+
         // 부활 직후 1초 제외 — 생존자 위에 겹쳐 나타난 것만으로 문이 열리지 않게 한다
         // (ReviveSystemDesign.md §3.1).
-        Player p = other.GetComponent<Player>();
-        if (p == null || !p.CountsForOccupancy) return;
-        if (!IsAllowed(p)) return;
+        bool allowed = p.CountsForOccupancy && IsAllowed(p);
 
+        // Enter는 새 진입이다 — Exit을 놓친 옛 기록(텔레포트 등)이 남아 있어도 무시한다.
+        bool wasAllowed = !entered && _inside.TryGetValue(p, out bool prev) && prev;
+        _inside[p] = allowed;
+
+        if (!allowed || wasAllowed) return;
+        Press();
+    }
+
+    void Press()
+    {
         if (pressSfxId != SFXId.None)
             SFXManager.Instance?.PlayAtPoint(pressSfxId, transform.position, pressMinDistance, pressMaxDistance, pressRolloffMode);
 
@@ -126,15 +163,15 @@ public class ColorGatePad : MonoBehaviour
     }
 
     /// <summary>
-    /// 흑·백 패드는 누구나, 고유색 패드는 그 색 고유색 플레이어만 (§1.5).
-    /// PressurePad.IsAllowed와 같은 판정 — 흑백 상태(Player.isBlack)는 보지 않는다.
+    /// 흑·백 패드는 누구나 — 단 **지금 그 색 상태**여야 한다. 고유색 패드는 그 색 고유색 플레이어만 (§1.5).
+    /// 흑백 판정은 ColorTile·ColorWall과 같다(`!isUniqueColor` + `isBlack` 일치).
     /// Common 가지는 T5에서 쓰이지 않는다(벽이 된 색의 패드는 꺼져 있다) — 공용 판정으로만 남겨 둔다.
     /// </summary>
     bool IsAllowed(Player p)
     {
-        if (_effectiveColor == PlayerColorType.Black ||
-            _effectiveColor == PlayerColorType.White ||
-            _effectiveColor == PlayerColorType.Common) return true;
+        if (_effectiveColor == PlayerColorType.Black) return !p.isUniqueColor &&  p.isBlack;
+        if (_effectiveColor == PlayerColorType.White) return !p.isUniqueColor && !p.isBlack;
+        if (_effectiveColor == PlayerColorType.Common) return true;
 
         return p.isUniqueColor && p.playerColorType == _effectiveColor;
     }

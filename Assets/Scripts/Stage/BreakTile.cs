@@ -17,9 +17,24 @@ using UnityEngine.Events;
 ///     내려가는 판이 없다. 위에 있던 사람은 공허로 낙하하고 Player.fallDeathY(프리팹 −15)를
 ///     지나며 낙사한다. **복귀는 없다.**
 ///
-/// [①(CapacityTile)과의 역할 분담]
-///  용량 타일은 maxSinkDepth까지 물러났다가 스스로 돌아온다 — 영구 구멍을 남기는 것은 ③의 몫이다.
-///  ①은 팀(겹치지 말 것), ③은 각자 생존(내가 밟은 것은 내가 책임)이라는 축도 여기서 갈린다.
+/// [발동 방식 두 가지 (2026-09-27 — 가라앉는 CapacityTile 폐기, 이 클래스로 통합)]
+///  · Step(③ 파괴 타일) — 누가 밟는 순간 경고 → warnSeconds 뒤 파괴. 취소 없음. 각자 생존 축.
+///  · Capacity(① 정원 타일) — 올라선 인원이 capacity를 **초과하는 순간** 경고 → capacityWarnSeconds 뒤 파괴.
+///    **경고 중 인원이 capacity 이하로 줄면 취소**되어 원상 복구되고, 다시 초과하면 경고가 처음부터 다시 시작한다.
+///    이 취소가 Step과의 차별점이다 — 팀 축(겹치지 말 것, 겹쳤으면 비켜서 살린다).
+///  파괴 연출·영구 구멍·전 머신 동시 파괴는 두 방식이 완전히 같다.
+///
+///  구 CapacityTile(가라앉았다 복귀)은 점유·침강을 머신마다 로컬로 계산했다. 머신 간 집계가 잠깐만
+///  어긋나도 "한쪽 머신에서만 바닥이 빠져 한 명만 떨어지는" 일이 생겨서 버렸다. Capacity 모드는
+///  **집계·경고·취소·파괴 시각을 Host 한 곳에서만** 정한다(BreakTileDirector).
+///
+/// [Capacity 모드 — 판정]
+///  · 각 Owner 머신은 **자기 캐릭터가** 이 타일 트리거에 들어왔다/나갔다만 보고한다(Step과 같은 원칙).
+///  · Host가 타일별 인원을 모아 `Player.CountsForOccupancy`(사망·부활 그레이스 제외)로 센다.
+///  · 경고를 로컬에서 미리 켜지 않는다 — 취소 여부가 Host 집계에 달려 있어, 미리 켜면 뜨지도 않을
+///    경고가 한 머신에서만 보일 수 있다. 경고·취소 모두 Host 배포로만 움직인다.
+///  · 파괴 직전 `BreakTileDirector.capacityCommitSeconds`(0.2초)부터는 취소를 받지 않는다 — 취소가
+///    다른 머신에 닿기 전에 그쪽에서 이미 부서지면 영구 구멍이 머신마다 달라진다.
 ///
 /// [권한 — 로컬 즉시 연출 + Host 확정 (2026-09-18 확정)]
 ///  "누가 밟았나"는 시드로도 서버 시각으로도 만들 수 없는 정보라, **낙사와 같은 모델**을 쓴다
@@ -48,10 +63,14 @@ using UnityEngine.Events;
 ///  얇게 깔린 트리거**면 그 계산 자체가 필요 없다 — 모양이 곧 판정이고 씬 뷰에서 보인다.
 ///
 ///  ⚠️ 트리거를 두껍게 잡으면 **점프로 넘어가는 사람까지 발동**한다. 윗면에 얇게(0.2~0.3m) 깔 것.
-///  `CapacityTile`과 달리 이쪽은 트리거가 타일과 함께 움직일 걱정이 없다 — BreakTile은
-///  그 자리에서 부서질 뿐 이동하지 않는다.
+///  BreakTile은 그 자리에서 부서질 뿐 이동하지 않으므로 트리거가 타일과 함께 움직일 걱정이 없다.
 ///
-/// [씬 설정 — BreakTile 프리팹 하나로 배포한다 (2026-09-21)]
+///  Capacity 모드는 트리거 **XZ를 이음새보다 안쪽으로** 좁혀야 한다(T4는 Size.x/z 0.8 = 월드 6.24m).
+///  플레이어 캡슐 반지름이 0.75m라, 넓으면 이음새에 선 한 사람이 양쪽 타일에 동시에 세진다.
+///
+/// [씬 설정 — Step은 BreakTile 프리팹, Capacity는 CapacityTile 프리팹 (2026-09-27)]
+///  두 프리팹 모두 이 컴포넌트다. CapacityTile.prefab은 triggerMode = Capacity · capacity = 1이고
+///  경고 마커·파편·파티클·소리는 BreakTile.prefab과 같은 값을 쓴다.
 ///  타일은 `Assets/Prefab/BreakTile.prefab` 인스턴스다. 파편·파티클·소리 값이 전부 프리팹에 있으므로
 ///  판에 몇 개를 깔든 **프리팹 한 번 수정으로 전부 반영된다.**
 ///  1. 바닥 타일(Renderer + 솔리드 Collider, Is Trigger = false)에 붙인다.
@@ -69,10 +88,27 @@ public class BreakTile : MonoBehaviour
 {
     enum State
     {
-        Idle,    // 대기 — 아직 아무도 안 밟음
+        Idle,    // 대기 — 아직 아무도 안 밟음 (Capacity: 정원 이하)
         Warning, // 경고 중 — 아직 밟을 수 있다
         Gone,    // 부서짐 — 영구 구멍
     }
+
+    public enum TriggerMode
+    {
+        Step,     // ③ 밟으면 경고 → 파괴. 취소 없음
+        Capacity, // ① 정원 초과 시 경고 → 파괴. 경고 중 정원 이하로 줄면 취소
+    }
+
+    [Header("발동 방식")]
+    [Tooltip("Step = 밟는 순간 경고(T.Stage4 ③·T.Boss P1).\n" +
+             "Capacity = 올라선 인원이 capacity를 넘는 순간 경고, 경고 중 capacity 이하로 줄면 취소(T.Stage4 ①).")]
+    [SerializeField] TriggerMode triggerMode = TriggerMode.Step;
+
+    [Tooltip("Capacity 모드 전용 — 이 타일이 버티는 최대 인원. 1 = 1타일 1명(T4 기본값).")]
+    [SerializeField] int capacity = 1;
+
+    public TriggerMode Mode     => triggerMode;
+    public int         Capacity => Mathf.Max(0, capacity);
 
     [Header("경고")]
     [Tooltip("이 타일의 경고 마커. SpikeTrap·혀·M.Boss 턱과 같은 컴포넌트(탠저린→진홍)로 통일한다.\n" +
@@ -125,6 +161,9 @@ public class BreakTile : MonoBehaviour
     [Tooltip("경고가 시작될 때 1회. SFX 등 연출용.")]
     public UnityEvent OnWarnStarted;
 
+    [Tooltip("Capacity 모드 전용 — 경고가 취소될 때 1회(인원이 정원 이하로 줄었다).")]
+    public UnityEvent OnWarnCancelled;
+
     [Tooltip("바닥이 빠지는 순간 1회. 전 머신에서 같은 서버 시각에 발동한다.")]
     public UnityEvent OnCollapsed;
 
@@ -132,9 +171,20 @@ public class BreakTile : MonoBehaviour
     bool   _reported;                  // 이 머신이 이미 Host에 보고했는가(중복 ServerRpc 방지)
     double _breakAt = double.MaxValue;  // Host가 확정한 파괴 서버 시각. 미확정이면 MaxValue
 
+    // Capacity 모드: 이 머신의 내 캐릭터가 이 타일 위에 있다고 Host에 보고해 둔 상태인가.
+    // 참조가 파괴되면 Unity null이 되므로 "보고해 뒀다"는 사실은 별도 플래그로 든다.
+    bool     _hasLocalOccupant;
+    Player   _localOccupant;
+    Collider _localOccupantBody;
+    ulong    _localOccupantNetId;
+    // Capacity 모드: 마지막으로 받아들인 경고 번호. 중복 수신된 옛 경고가 취소 뒤에 늦게 도착해
+    // 이 머신에서만 다시 경고(→ 혼자 파괴)되는 것을 막는다.
+    uint     _lastWarnSeq;
+
     BreakTileDirector _director;
     int               _index = -1;
 
+    Collider   _trigger;
     Collider   _solid;
     Renderer   _renderer;
     GameObject _debris;
@@ -158,7 +208,11 @@ public class BreakTile : MonoBehaviour
         var cols = GetComponents<Collider>();
         for (int i = 0; i < cols.Length; i++)
         {
-            if (cols[i].isTrigger) hasTrigger = true;
+            if (cols[i].isTrigger)
+            {
+                hasTrigger = true;
+                if (_trigger == null) _trigger = cols[i];
+            }
             else if (_solid == null) _solid = cols[i];
         }
 
@@ -187,10 +241,22 @@ public class BreakTile : MonoBehaviour
     // ── 밟힘 감지 (로컬) ────────────────────────────────────────
     // 이 콜백들은 같은 GameObject의 트리거 콜라이더에서만 온다(솔리드는 Collision 쪽이다).
 
-    void OnTriggerEnter(Collider other) => TryStep(other);
+    void OnTriggerEnter(Collider other) => OnPlayerContact(other);
 
     // Enter를 놓친 경우(타일 위에서 스폰·텔레포트 착지 등)의 안전망 — PressurePad의 Stay와 같은 역할.
-    void OnTriggerStay(Collider other) => TryStep(other);
+    void OnTriggerStay(Collider other) => OnPlayerContact(other);
+
+    void OnTriggerExit(Collider other)
+    {
+        if (triggerMode != TriggerMode.Capacity) return;
+        if (_hasLocalOccupant && other == _localOccupantBody) ReleaseLocalOccupant();
+    }
+
+    void OnPlayerContact(Collider other)
+    {
+        if (triggerMode == TriggerMode.Capacity) TryOccupy(other);
+        else                                     TryStep(other);
+    }
 
     void TryStep(Collider other)
     {
@@ -199,7 +265,7 @@ public class BreakTile : MonoBehaviour
 
         // GetComponent (GetComponentInParent 아님) — 플레이어는 몸통 캡슐 말고도 자식 히트박스를
         // 들고 있어서, 부모까지 올라가 찾으면 같은 사람이 콜라이더 수만큼 걸린다
-        // (CapacityTile.TryAddOccupant 주석의 그 버그).
+        // (ColorTile.TryAddOccupant 주석의 그 버그).
         Player p = other.GetComponent<Player>();
         if (p == null || p.IsDead) return;
 
@@ -212,6 +278,59 @@ public class BreakTile : MonoBehaviour
 
         // 보고한 머신만 RPC 왕복을 기다리지 않고 미리 켠다. 파괴 시각은 여전히 Host 확정값이다.
         StartWarnVisual();
+    }
+
+    // ── Capacity 모드 점유 보고 (로컬 → Host) ─────────────────────
+
+    /// <summary>
+    /// 내 캐릭터(이 머신이 Owner)가 트리거에 들어왔으면 Host에 "올라섬"을 보고한다.
+    /// 남의 캐릭터는 보고하지 않는다 — 각자 자기 몸만 보고해야 CNT 보간 차이가 집계에 끼지 않는다.
+    /// </summary>
+    void TryOccupy(Collider other)
+    {
+        if (_state == State.Gone || _hasLocalOccupant) return;
+        if (_director == null || _index < 0) return;
+
+        // GetComponent (GetComponentInParent 아님) — TryStep 주석과 같은 이유(자식 히트박스 중복).
+        Player p = other.GetComponent<Player>();
+        if (p == null || p.IsDead) return;
+
+        NetworkObject netObj = p.GetComponent<NetworkObject>();
+        if (netObj == null || !netObj.IsOwner) return;
+
+        _hasLocalOccupant   = true;
+        _localOccupant      = p;
+        _localOccupantBody  = other;
+        _localOccupantNetId = netObj.NetworkObjectId;
+        _director.ReportOccupancy(_index, _localOccupantNetId, true);
+    }
+
+    /// <summary>Host에 "내려옴"을 보고하고 로컬 점유 표시를 지운다.</summary>
+    void ReleaseLocalOccupant()
+    {
+        if (!_hasLocalOccupant) return;
+        _hasLocalOccupant  = false;
+        _localOccupant     = null;
+        _localOccupantBody = null;
+        _director?.ReportOccupancy(_index, _localOccupantNetId, false);
+    }
+
+    /// <summary>
+    /// Exit이 오지 않는 이탈을 줍는 안전망. 사망하면 Die()가 콜라이더를 꺼서 Exit 없이 트리거에서 빠지고,
+    /// 부활은 텔레포트라 역시 Exit이 오지 않는다 — 그대로 두면 Host가 이 사람을 계속 이 타일 위로 센다.
+    /// </summary>
+    void CheckLocalOccupantStillInside()
+    {
+        if (!_hasLocalOccupant) return;
+
+        bool inside = _localOccupant != null
+                   && !_localOccupant.IsDead
+                   && _localOccupantBody != null
+                   && _localOccupantBody.enabled
+                   && _trigger != null
+                   && _trigger.bounds.Intersects(_localOccupantBody.bounds);
+
+        if (!inside) ReleaseLocalOccupant();
     }
 
     void StartWarnVisual()
@@ -237,10 +356,45 @@ public class BreakTile : MonoBehaviour
         _breakAt = breakServerTime;
     }
 
+    /// <summary>
+    /// Capacity 모드: Host가 정원 초과를 확인하고 경고를 시작시켰다. 경고는 **매번 처음부터**다 —
+    /// 취소 뒤 다시 초과하면 새 번호로 다시 들어온다. 마커는 남은 시간 동안 탠저린→진홍으로 가므로
+    /// RPC가 늦게 도착한 머신도 진홍에 닿는 순간이 곧 파괴 순간이다.
+    /// </summary>
+    public void ArmCapacityFromServer(double breakServerTime, uint warnSeq)
+    {
+        if (triggerMode != TriggerMode.Capacity || _state == State.Gone) return;
+        if (warnSeq <= _lastWarnSeq) return; // 중복 수신된 옛 경고
+        _lastWarnSeq = warnSeq;
+
+        _state   = State.Warning;
+        _breakAt = breakServerTime;
+
+        warnMarker?.PlayWarning((float)System.Math.Max(0.0, breakServerTime - ServerNow()));
+        OnWarnStarted?.Invoke();
+    }
+
+    /// <summary>Capacity 모드: 경고 중 인원이 정원 이하로 줄었다 — 원상 복구.</summary>
+    public void CancelCapacityFromServer(uint warnSeq)
+    {
+        if (triggerMode != TriggerMode.Capacity || _state == State.Gone) return;
+        if (warnSeq < _lastWarnSeq) return; // 이미 지난 경고의 취소
+        _lastWarnSeq = warnSeq;
+
+        if (_state != State.Warning) return;
+        _state   = State.Idle;
+        _breakAt = double.MaxValue;
+
+        warnMarker?.ResetWarning();
+        OnWarnCancelled?.Invoke();
+    }
+
     // ── 진행 ────────────────────────────────────────────────────
 
     void FixedUpdate()
     {
+        if (triggerMode == TriggerMode.Capacity) CheckLocalOccupantStillInside();
+
         // 서버 확정 전에는 _breakAt이 MaxValue라 절대 부서지지 않는다(클래스 주석 ⚠️).
         if (_state == State.Warning && ServerNow() >= _breakAt) Break();
     }
@@ -252,6 +406,11 @@ public class BreakTile : MonoBehaviour
     void Break()
     {
         _state = State.Gone;
+
+        // 부서진 타일의 점유는 Host가 더 보지 않는다 — 보고 없이 로컬 표시만 지운다.
+        _hasLocalOccupant  = false;
+        _localOccupant     = null;
+        _localOccupantBody = null;
 
         // 마커는 먼저 끈다 — 구멍 위에 빨간 판이 떠 있으면 아직 밟을 수 있는 것처럼 보인다
         // (SpikeLane.Trigger()가 ResetWarning을 부르는 것과 같다).
@@ -373,6 +532,7 @@ public class BreakTile : MonoBehaviour
         _state    = State.Idle;
         _reported = false;
         _breakAt  = double.MaxValue;
+        ReleaseLocalOccupant();
 
         warnMarker?.ResetWarning();
         ClearDebris();
@@ -384,6 +544,7 @@ public class BreakTile : MonoBehaviour
 
     void OnValidate()
     {
+        capacity            = Mathf.Max(0, capacity);
         debrisLifetime      = Mathf.Max(0f, debrisLifetime);
         debrisImpulseMin    = Mathf.Max(0f, debrisImpulseMin);
         debrisImpulseMax    = Mathf.Max(debrisImpulseMin, debrisImpulseMax);

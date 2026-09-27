@@ -320,7 +320,13 @@ public class NetworkManagerSetup : MonoBehaviour
 
     /// <summary>
     /// 네트워크 종료 + 세션 전체 정리. 타이틀 복귀 시 호출.
-    /// LanDiscovery 중단 → Steam Lobby 나가기(§8) → NetworkSessionData 초기화 → NGO Shutdown → 트랜스포트 로컬 기본값 복귀.
+    /// LanDiscovery 중단 → Steam Lobby 나가기(§8) → NetworkSessionData 초기화 → NGO Shutdown.
+    ///
+    /// [버그 수정 2026-09-27] 여기서 NetworkConfig.NetworkTransport를 로컬(UnityTransport)로 되돌리면 안 된다.
+    /// NGO Shutdown()은 예약만 하고 실제 정리는 이후 네트워크 업데이트에서 NetworkConfig.NetworkTransport 기준으로 한다 —
+    /// 먼저 바꿔두면 Steam 트랜스포트는 Shutdown도, OnTransportEvent 구독 해제도 되지 않아 소켓이 열린 채 남고,
+    /// 뒤늦게 온 Steam 끊김 콜백이 해제된 NGO 메시지 큐에 닿아 네이티브 크래시가 났다(타이틀 복귀 시 Host/Client 모두).
+    /// 시작 경로 4곳(StartHost/StartClient 로컬·Steam)이 각자 트랜스포트를 직접 지정하므로 되돌릴 필요도 없다.
     /// </summary>
     public void Shutdown()
     {
@@ -336,9 +342,6 @@ public class NetworkManagerSetup : MonoBehaviour
             _net.Shutdown();
             Debug.Log($"[NetworkManagerSetup] Shutdown 완료 — SteamManager.IsInitialized={SteamManager.Instance != null && SteamManager.Instance.IsInitialized}");
         }
-
-        if (_net != null && _transport != null)
-            _net.NetworkConfig.NetworkTransport = _transport; // 다음 세션은 기본적으로 로컬 경로
     }
 
     // ── 씬 이벤트 로그 (Steam 접속 후 씬 전환 추적용 — 트랜스포트 버그 재발 시 최소 단서) ──

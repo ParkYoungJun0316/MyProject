@@ -1728,6 +1728,70 @@ public class StageNetworkState : NetworkBehaviour
         OnBreakTileArmed?.Invoke(tileIndex, collapseServerTime);
     }
 
+    // ── T.Stage4 정원 타일 (BreakTile Capacity 모드) ──────────────────
+    // 점유 집계·경고·취소·파괴 결정은 전부 Host 한 곳에서 한다(`TStage4TrapRandomization.md` §1.1 ①).
+    // 각 Owner는 "내 캐릭터가 이 타일에 올라섰다/내려왔다"만 보고한다 — 남의 캐릭터는 보고하지 않는다.
+
+    /// <summary>Host 레인 전용: (타일 인덱스, 보고한 플레이어, 올라섬 여부). BreakTileDirector가 집계한다.</summary>
+    public event Action<int, Player, bool> OnCapacityTileOccupancyReported;
+
+    /// <summary>전 머신: (타일 인덱스, 파괴 서버 시각, 경고 번호). 경고 시작.</summary>
+    public event Action<int, double, uint> OnCapacityTileArmed;
+
+    /// <summary>전 머신: (타일 인덱스, 경고 번호). 인원이 정원 이하로 줄어 경고 취소.</summary>
+    public event Action<int, uint> OnCapacityTileCancelled;
+
+    // 올라섬/내려옴은 순서가 결과를 바꾼다 — 중복 수신된 옛 보고가 늦게 도착하면 이미 내려온 사람이
+    // 다시 올라선 것으로 집계된다. 발신 측 단조 번호로 옛 보고를 버린다(RpcSubmitDedup 주석 참고).
+    private readonly RpcSubmitDedup _capacityOccupancyDedup = new();
+
+    /// <summary>Owner: 자기 캐릭터의 정원 타일 점유 변화를 보고한다. 번호 발급이 여기 책임이라 RPC를 직접 부르지 않는다.</summary>
+    public void ReportCapacityTileOccupancy(int tileIndex, ulong playerNetworkObjectId, bool inside) =>
+        ReportCapacityTileOccupancyServerRpc(tileIndex, playerNetworkObjectId, inside, _capacityOccupancyDedup.NextSeq());
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void ReportCapacityTileOccupancyServerRpc(int tileIndex, ulong playerNetworkObjectId, bool inside,
+                                              uint submitSeq, RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if (_capacityOccupancyDedup.IsDuplicate(sender, submitSeq)) return;
+
+        // 자기 캐릭터만 보고할 수 있다 — 남의 캐릭터 id를 실어 보내면 버린다.
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerNetworkObjectId, out NetworkObject netObj)) return;
+        if (netObj.OwnerClientId != sender) return;
+
+        Player player = netObj.GetComponent<Player>();
+        if (player == null) return;
+
+        OnCapacityTileOccupancyReported?.Invoke(tileIndex, player, inside);
+    }
+
+    /// <summary>Host: 경고 시작(= 파괴 시각 예약)을 전 머신에 배포. BreakTileDirector에서만 호출.</summary>
+    public void BroadcastCapacityTileArm(int tileIndex, double breakServerTime, uint warnSeq)
+    {
+        if (!IsServer || IsDespawned) return;
+        ArmCapacityTileClientRpc(tileIndex, breakServerTime, warnSeq);
+    }
+
+    /// <summary>Host: 경고 취소를 전 머신에 배포. BreakTileDirector에서만 호출.</summary>
+    public void BroadcastCapacityTileCancel(int tileIndex, uint warnSeq)
+    {
+        if (!IsServer || IsDespawned) return;
+        CancelCapacityTileClientRpc(tileIndex, warnSeq);
+    }
+
+    [ClientRpc]
+    void ArmCapacityTileClientRpc(int tileIndex, double breakServerTime, uint warnSeq)
+    {
+        OnCapacityTileArmed?.Invoke(tileIndex, breakServerTime, warnSeq);
+    }
+
+    [ClientRpc]
+    void CancelCapacityTileClientRpc(int tileIndex, uint warnSeq)
+    {
+        OnCapacityTileCancelled?.Invoke(tileIndex, warnSeq);
+    }
+
     // ── 에디터 테스트 ─────────────────────────────────────────────
 
 #if UNITY_EDITOR
