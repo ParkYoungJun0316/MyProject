@@ -12,7 +12,7 @@ using TMPro;
 ///
 /// [표시 규칙]
 /// - 키는 씬 이름에서 만든다: <c>Title.</c> + 씬 이름 (예: Title.M.Stage1). 씬별 인스펙터 설정 없음.
-///   <see cref="KoreanFallback"/>에 없는 씬(Tutorial, End.Demo …)은 아무것도 안 한다.
+///   <see cref="KoreanFallback"/>에 없는 씬(Tutorial, End …)은 아무것도 안 한다.
 /// - 로딩 커튼이 걷히는 순간 페이드인 → 유지 → 페이드아웃 (CanvasGroup 알파만).
 ///   커튼이 없거나(에디터 직접 Play) 처음부터 안 덮여 있으면 바로 띄운다.
 /// - 사망 리로드·준비 실패 리로드 때는 안 띄운다 — DialogueUI 인트로와 같은 GameSession 본 키를 쓴다.

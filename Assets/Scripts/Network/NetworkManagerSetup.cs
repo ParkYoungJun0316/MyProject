@@ -368,6 +368,7 @@ public class NetworkManagerSetup : MonoBehaviour
     /// Client는 사망 리로드(전용 ClientRpc)를 빼면 전환마다 커튼 없이 컷으로 넘어갔고, 덮여 있지 않으니
     /// 씬 준비 게이트(StageNetworkState)도 건너뛰어 Host에 준비 보고를 안 했다. Host가 LoadScene을 부르면
     /// Client에 오는 Load 이벤트에서 Host와 같은 방식(waitForPlayersReady)으로 덮는다 — 이미 덮여 있으면 무시.
+    /// 플레이어 대기 여부도 Host와 같은 판정(SceneFlowManager.WaitsForPlayersOnEnter)을 쓴다 — End는 안 기다린다.
     /// </summary>
     private void CoverOnClientSceneLoad(SceneEvent sceneEvent)
     {
@@ -375,7 +376,8 @@ public class NetworkManagerSetup : MonoBehaviour
         if (sceneEvent.SceneEventType != SceneEventType.Load) return;
         if (sceneEvent.ClientId != _net.LocalClientId) return;
 
-        LoadingCurtain.Instance?.BeginCover(waitForPlayersReady: true);
+        LoadingCurtain.Instance?.BeginCover(
+            waitForPlayersReady: SceneFlowManager.WaitsForPlayersOnEnter(sceneEvent.SceneName));
     }
 
     private void DiagOnSceneEvent(SceneEvent sceneEvent)

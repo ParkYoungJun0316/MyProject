@@ -4,8 +4,8 @@
 **출시 일정·범위·QA 체크리스트는 [`ReleaseRoadmap.md`](ReleaseRoadmap.md), 텔레메트리 스펙은 [`TelemetryDesign.md`](TelemetryDesign.md) 참고.**  
 **사망/부활 스펙은 [`ReviveSystemDesign.md`](ReviveSystemDesign.md)가 1차 SSOT** — 이 문서는 축 규칙(권위·리로드 문·텔레포트)만 다룬다. ⚠️ 2026-09-19 다운 구조 폐기 → 사망+자동부활.  
 **데모 / Playtest 없음.** 목표 = **2026-09-16 Steam 정식 출시**만.  
-스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`**.  
-(`End` = 클리어 크레딧 씬. 구 `End`에서 리네임됨.)
+스테이지 범위: **`M.Stage1`…`M.Stage5` → `M.Boss` → `Interlude` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`**.  
+(`End` = 클리어 크레딧 씬. 구 `End.Demo`에서 리네임됨.)
 
 ---
 
@@ -31,7 +31,7 @@
 > **⭐ 2026-08-17 확정 — `1.Lobby` 씬 폐지.** 로비가 하던 일(Kick·색 선택·Ready·Start·Steam Invite UI)은 전부 `Tutorial` 씬 앞부분(사전 게이트 구간)으로 흡수됐다. **상세 SSOT는 §6B** — 이 절 표는 씬 시퀀스 개요만. 씬 파일명도 숫자 prefix 없이 `Title`/`Tutorial`로 정리(실제 리네임은 에디터 작업, 사용자 담당).
 
 ```
-Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → End → Title
+Title → Tutorial → M.Stage1…5 → M.Boss → Interlude → T.Stage1…5 → T.Boss → End → Title
 ```
 
 | 씬 | 역할 |
@@ -39,11 +39,13 @@ Title → Tutorial → M.Stage1…5 → M.Boss → T.Stage1…5 → T.Boss → E
 | `Title` | `NetworkManager`, `GameSession`, `SceneFlowManager` (DDoL), Host/Join, Steam Invite 수락(아직 방 안 만든 상태에서만) |
 | `Tutorial` | **Ship Must** — **사전 게이트 구간(구 Lobby 역할 흡수, §6B)** + 조작·CheerName·응원 체험 + `TutorialGatherZone` |
 | `M.Stage1`…`M.Stage5` / `M.Boss` | M 바이옴 + 보스 |
+| `Interlude` | M → T 사이 인터미션(`CheerAndTutorialDesign.md` §1.1) |
 | `T.Stage1`…`T.Stage5` / `T.Boss` | T 바이옴 + 보스 |
-| `End` | 크레딧 → 타이틀 복귀 |
+| `End` | 한 화면 크레딧 → 버튼/Esc로 타이틀 복귀. **플레이어 스폰 없음** — 전환 커튼이 전원 스폰을 기다리지 않는다(§14) |
 
-`SceneFlowManager.sceneSequence` 권장 순서:  
-`Tutorial`, `M.Stage1`…`M.Stage5`, `M.Boss`, `T.Stage1`…`T.Stage5`, `T.Boss`, `End`.
+`SceneFlowManager.sceneSequence` 현재 값(Title 씬):  
+`Title`, `Tutorial`, `M.Stage1`…`M.Stage5`, `M.Boss`, `Interlude`, `T.Stage1`…`T.Stage5`, `T.Boss`, `End`.  
+(`Title`은 `LoadNextScene`으로 가는 일이 없어 순서상 자리만 차지한다.)
 
 ### 2.2 솔로 (1인 Host)
 
@@ -147,7 +149,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 
 | 문 | 경로 | Reason |
 |----|------|--------|
-| 클리어 | `EndCreditsController` → 크레딧 종료/스킵 | `EndDemo` (`FullRunReset`) |
+| 클리어 | `EndCreditsController` → Return to Title 버튼 / Esc | `EndDemo` (`FullRunReset`) |
 | Client 이탈(본인이 끊김을 감지) | `DisconnectManager.OnClientLeft` | `ClientDisconnected` |
 | Host 이탈/Quit | `DisconnectManager.OnClickLeaveRoom` → 타 Client에 `NotifyAllReturnClientRpc` 통지 | `HostQuitRoom` |
 | Tutorial 사전 게이트 구간 Quit | Tutorial 상시 HUD의 나가기 버튼 (구 `LobbyMenuController.OnClickQuit` 역할 이전, 클래스명은 구현 시 확정) | `LobbyQuit` |
@@ -212,7 +214,7 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 2. 전원 `TutorialGatherZone`에 진입 → 카운트다운 → M.Stage1 전환 확인 (③)
 3. 인게임 중 Client 강제 종료(연결 끊기) → Host 포함 전원 타이틀 복귀 확인 (⑤)
 4. 인게임 중 Host 종료 → Client `NotifyAllReturnClientRpc` 수신 후 타이틀 복귀 확인 (⑤)
-5. 클리어(`End`) → 크레딧 종료/스킵 → `GameSession`/`SceneFlowManager` 리셋 확인 (⑤→①)
+5. 클리어(`End`) → Return to Title 버튼 / Esc → `GameSession`/`SceneFlowManager` 리셋 확인 (⑤→①)
 6. `grep`: 게임 코드 내 `NetworkManager.Shutdown()` 직접 호출 — `NetworkManagerSetup` 내부 1곳 제외 **0건**
 
 ---
@@ -585,7 +587,7 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 
 - Host가 `NetworkSceneManager.LoadScene` (Tutorial 게이트 통과→`M.Stage1`, 스테이지 전환, 리로드).
 - `SceneFlowManager.LoadNextScene`: `sceneSequence` 순서  
-  (`Tutorial` → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`).
+  (`Tutorial` → `M.Stage1`…`M.Stage5` → `M.Boss` → `Interlude` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`).
 - `T.Boss` 클리어 → **`End`**.
 - `End`: 클리어 UI → **타이틀 복귀**.
 
@@ -1640,9 +1642,13 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 ## 14. End
 
-- 클리어 UI 씬 **`End`** (구 `End`에서 리네임).
-- `T.Boss` 클리어 후 진입. 멀티/솔로 공통.
-- UI: 검은 화면 크레딧 롤 → 종료/스킵 시 §8 타이틀 복귀 규칙.
+- 클리어 UI 씬 **`End`** (구 `End.Demo`에서 리네임).
+- `T.Boss` 클리어 후 진입(`TBossEndingCollapse.OnImpact` → `SceneFlowRelay.LoadNextScene`). 멀티/솔로 공통.
+- UI (2026-09-27): 검은 화면 **한 장에 크레딧 전체 고정**(스크롤 없음). **문구·배치는 End 씬 `Txt.Credits`가 SSOT** — 에디터에 보이는 화면이 곧 게임 화면이고, 코드는 문구·레이아웃을 건드리지 않는다. **자동 복귀 없음** — Return to Title 버튼 또는 **Esc만**(Space/Enter는 엔딩 직후 습관 입력으로 튕기지 않게 제외) → §8 타이틀 복귀 규칙(`EndDemo`, `FullRunReset`). Discord 버튼 라벨은 **Report a Bug**(Discord 로고 유지, 버그 제보 창구) — 크레딧 문구엔 Discord 주소를 넣지 않는다.
+- **플레이어 없음 · 대기 없음 (2026-09-27):** End에는 플레이어를 스폰하지 않고 `StageNetworkState`·`DisconnectManager`도 없다. 전환 커튼은 `SceneFlowManager.WaitsForPlayersOnEnter`(End면 false)로 `players` 게이트를 걸지 않는다 — Host(`TransitionTo`)·Client(`CoverOnClientSceneLoad`) 같은 판정. 예전엔 걸었다가 신호가 안 와서 5초 타임아웃까지 암전이 남았다.
+- Esc는 커튼이 걷힌 뒤부터 받는다(버튼 클릭은 덮인 동안 커튼이 막음).
+- **테스트:** End만 단독 Play하면 `TitleReturnFlow`(Title에서 생성·DDOL)가 없어 타이틀 복귀가 안 된다(경고 로그만). 실제 경로 확인은 Tutorial 스테이지 바로가기(`TutorialDevStageJumpUI`)의 `End` 버튼으로 한다.
+- 각 머신이 **따로** 크레딧을 보고 따로 복귀한다. 누가 먼저 나가도 End엔 `DisconnectManager`가 없어 다른 사람을 끌고 나가지 않는다(클리어 후라 §1 이탈 정책의 대상이 아님).
 
 ---
 
@@ -1656,7 +1662,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 | 스테이지 씬 내 Player 프리팹 인스턴스 제거 | 구현 시 |
 | Network Player Prefab 생성 + NetworkManager 등록 | 구현 시 |
 | `End` 씬 (Build Settings 등록) | 구현 시 |
-| `sceneSequence`에 `Tutorial`·M1–5·M.Boss·T1–5·T.Boss·`End` | `SceneFlowManager` |
+| `sceneSequence`에 `Title`·`Tutorial`·M1–5·M.Boss·`Interlude`·T1–5·T.Boss·`End` | `SceneFlowManager` |
 
 ---
 

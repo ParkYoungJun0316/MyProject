@@ -17,7 +17,9 @@ using UnityEngine.UI;
 ///
 /// [동작]
 /// - Host 화면에만 표시. Client/미접속 인스턴스에서는 자기 자신을 제거.
-/// - SceneFlowManager.sceneSequence에서 "M."/"T." 접두사 스테이지 + "Interlude"만 필터링해 버튼으로 나열.
+/// - SceneFlowManager.sceneSequence에서 "M."/"T." 접두사 스테이지 + "Interlude" + "End"만 필터링해 버튼으로 나열.
+///   End는 크레딧·타이틀 복귀를 실제 세션 경로 그대로 확인하려고 넣었다(2026-09-27) — End만 단독 Play하면
+///   TitleReturnFlow(Title에서 생성·DDOL)가 없어 복귀가 안 된다.
 /// - 버튼 클릭 → TutorialNetworkManager.SetDevTargetStage(index)만 로컬로 지정.
 ///   실제 씬 전환은 기존 게이트(전원 진입 + 3초 카운트다운)를 그대로 통과한 뒤
 ///   CompleteGate()에서 일어난다 — "게이트 통과하면 어디로 갈지"를 미리 골라두는 역할.
@@ -115,7 +117,8 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         {
             string sceneName = SceneFlowManager.Instance.GetSceneName(i);
             if (sceneName == null) continue;
-            if (!sceneName.StartsWith("M.") && !sceneName.StartsWith("T.") && sceneName != "Interlude") continue;
+            if (!sceneName.StartsWith("M.") && !sceneName.StartsWith("T.") && sceneName != "Interlude" &&
+                sceneName != SceneFlowManager.EndSceneName) continue;
 
             int capturedIndex = i;
             var buttonGo = CreateButton(panelGo.transform, sceneName, buttonWidth, buttonHeight, buttonFontSize, () => OnStageButtonClicked(capturedIndex));

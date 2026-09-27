@@ -61,7 +61,7 @@ BeginCover
 
 | id | 거는 곳 | 조건 |
 |---|---|---|
-| `players` | `LoadingCurtain` | 전원 스폰(`PlayerSpawnCoordinator.OnPlayersReady`) |
+| `players` | `LoadingCurtain` | 전원 스폰(`PlayerSpawnCoordinator.OnPlayersReady`). **`End`로 가는 전환엔 안 건다**(§A.7) |
 | `net.allready` | `StageNetworkState` | 전원이 자기 로컬 게이트를 끝냈다고 보고(§A.4 비트마스크) |
 | `t5.map` | `T5RunnerDirector` | T5 미로 맵 선택 + 러너 발판 끄기 완료. 같은 이유로 디렉터가 대신 건다 |
 
@@ -117,6 +117,7 @@ B가 정석이지만 **우리 세션 모델이 구조적으로 막는다.** C·E
 - 타임아웃 타이머는 **새 진전이 있을 때마다 다시 시작한다**(씬 로드 완료·게이트 등록). 씬 로딩이
   길었다는 이유로 타임아웃되지 않게 하기 위함이다.
 - **타이틀/로비엔 `StageNetworkState`가 없다** → 거기서는 `players` 게이트만 걸리고 전원 취합은 없다.
+- **`End`에는 플레이어도 `StageNetworkState`도 없다** → 아무 게이트도 걸지 않는다. 최소 유지시간(0.8초) 뒤 바로 걷힌다.
 - ⚠️ **튜토리얼 순차 합류(§6B.2)** 는 `EntryCount`가 도중에 늘어난다. 그러면 필요한 비트 수도 같이
   늘어 이미 채워진 마스크가 불완전해진다. 현재는 타임아웃 → 재시도로 흡수하는 수준이고,
   문제가 되면 "게이트 시작 시점의 명단 스냅샷"으로 고칠 것.
@@ -130,6 +131,7 @@ B가 정석이지만 **우리 세션 모델이 구조적으로 막는다.** C·E
 | 방 만들기 (Title → Tutorial) | 버튼 누른 **즉시**(로비 생성 전) | 스폰 완료 / 실패 시 `AbortCover`로 바로 걷음 |
 | 초대 참여 (온기동·냉기동) | 수락 **즉시** / 냉기동은 부팅 커튼을 그대로 이어서 덮음 | 스폰 완료 / 실패 시 바로 걷음(오류 표시 없음 — 방 만들기와 동일) · 타임아웃 30초 |
 | Tutorial·Interlude 게이트 통과 | `LoadNextSceneWithoutClearDelay` — 클리어 배너가 없으니 2.5초 대기 없이 바로 | 게이트 전부 |
+| T.Boss → `End` (Host·Client) | 위 스테이지 전환과 같음. 단 `SceneFlowManager.WaitsForPlayersOnEnter`가 false라 `players` 게이트 없음 | 최소 유지시간만 (2026-09-27) |
 
 - 이전엔 Client 쪽 전환 커튼이 사망 리로드(전용 ClientRpc)뿐이었다. 덮여 있지 않은 Client는 준비 게이트를
   건너뛰어 Host에 보고하지 않았으므로, 코드상 멀티 전환마다 Host가 5초 타임아웃 → 조용한 리로드를 탔어야 했다(플레이 로그 미확인).

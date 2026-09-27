@@ -1,119 +1,57 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using TMPro;
 
 /// <summary>
-/// End 씬 엔딩 크레딧. 검은 화면에서 크레딧 블록이 아래에서 위로 올라간다.
-/// 끝까지 올라가면 잠시 멈춘 뒤 TitleReturnFlow로 타이틀 복귀.
-/// Discord / Return to Title 버튼, 또는 Space / Enter / Esc로 타이틀 복귀.
+/// End 씬 엔딩 크레딧. 검은 화면 한 장에 크레딧 전체가 고정으로 떠 있다(스크롤 없음, 2026-09-27).
+/// 자동 복귀 없음 — Return to Title 버튼 또는 Esc로만 타이틀 복귀. Report a Bug 버튼은 Discord 링크만 연다.
+/// Space/Enter는 받지 않는다 — 엔딩 직후 습관적으로 눌러 화면을 보자마자 튕겨 나가지 않게.
+///
+/// [문구·배치는 씬이 SSOT]
+/// 크레딧 문구와 위치는 End 씬의 Txt.Credits(TMP)에 그대로 들어 있다 — 에디터에서 보이는 화면이 곧 게임 화면.
+/// 이 컴포넌트는 문구나 레이아웃을 건드리지 않는다.
 ///
 /// [배치]
-/// End 씬 Canvas에 부착. viewport·creditsRect를 인스펙터로 연결.
-/// Discord 버튼 OnClick → OnClickDiscord()
+/// End 씬 Canvas에 부착.
+/// Report a Bug 버튼 OnClick → OnClickDiscord()
 /// Return to Title 버튼 OnClick → OnClickReturnToTitle()
+///
+/// [단독 Play 주의]
+/// End만 열고 Play하면 TitleReturnFlow(Title에서 생성·DDOL)가 없어 복귀가 안 된다(경고 로그만).
+/// 확인은 Tutorial 스테이지 바로가기의 End 버튼으로 한다.
 /// </summary>
 public class EndCreditsController : MonoBehaviour
 {
-    const string DefaultCredits =
-        "Kkul-tteok!\n" +
-        "A traditional South Korean rice cake.\n" +
-        "This game was inspired by my favorite ricecake.\n" +
-        "\n" +
-        "Made by\n" +
-        "youngjun0316\n" +
-        "Solo developer\n" +
-        "\n" +
-        "E-mail: youngjunpark0316@gmail.com\n" +
-        "Bug reports: discord.gg/BGNs5F2eg\n" +
-        "\n" +
-        "\n" +
-        "Thank you for playing";
-
-    [Header("스크롤")]
-    [SerializeField] RectTransform viewport;
-    [SerializeField] RectTransform creditsRect;
-    [SerializeField] TextMeshProUGUI creditsText;
-    [SerializeField] [TextArea(12, 24)] string credits = DefaultCredits;
-    [SerializeField] float scrollSpeed = 70f;
-    [SerializeField] float holdAfterEndSeconds = 1.5f;
+    [Tooltip("화면이 보인 뒤 Esc를 받기 시작할 때까지의 시간(초).")]
     [SerializeField] float skipLockSeconds = 0.4f;
 
     [Header("외부 링크")]
     [SerializeField] string discordUrl = "https://discord.gg/BGNs5F2eg";
 
     bool  _returning;
-    bool  _ready;
-    float _endY;
+    float _shownAt = -1f;
 
     void Awake()
     {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;
-
-        if (creditsText != null)
-            creditsText.text = credits;
-    }
-
-    void Start()
-    {
-        if (viewport == null || creditsRect == null)
-        {
-            Debug.LogError("[EndCreditsController] viewport / creditsRect 미연결 — 크레딧 스크롤 비활성", this);
-            enabled = false;
-            return;
-        }
-
-        if (creditsText != null)
-        {
-            creditsText.ForceMeshUpdate();
-            creditsRect.SetSizeWithCurrentAnchors(
-                RectTransform.Axis.Vertical,
-                Mathf.Max(creditsText.preferredHeight, 1f));
-        }
-
-        Canvas.ForceUpdateCanvases();
-
-        float viewH = viewport.rect.height;
-        float textH = creditsRect.rect.height;
-        // 피벗 (0.5, 1): y = 텍스트 상단. 제목이 화면 아래에서 올라오기 시작.
-        creditsRect.anchoredPosition = new Vector2(0f, -viewH * 0.5f - 40f);
-        _endY = viewH * 0.5f + textH;
-        _ready = true;
     }
 
     void Update()
     {
-        if (_returning || !_ready) return;
+        if (_returning) return;
 
-        if (Time.timeSinceLevelLoad >= skipLockSeconds && WantsSkip())
-        {
-            ReturnToTitle(skipped: true);
-            return;
-        }
+        // 전환 커튼이 걷히기 전엔 Esc를 받지 않는다 — 안 보이는 화면에서 나가지 않게.
+        // 잠금 시간도 화면이 보인 순간부터 센다. (버튼 클릭은 덮인 동안 커튼이 막는다.)
+        if (LoadingCurtain.Instance != null && LoadingCurtain.Instance.IsCovered) return;
+        if (_shownAt < 0f) _shownAt = Time.unscaledTime;
 
-        Vector2 pos = creditsRect.anchoredPosition;
-        pos.y += scrollSpeed * Time.deltaTime;
-        creditsRect.anchoredPosition = pos;
-
-        if (pos.y >= _endY)
-            ReturnToTitle(skipped: false);
-    }
-
-    bool WantsSkip()
-    {
         var kb = Keyboard.current;
-        if (kb != null)
-        {
-            if (kb.spaceKey.wasPressedThisFrame) return true;
-            if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame) return true;
-            if (kb.escapeKey.wasPressedThisFrame) return true;
-        }
-
-        return false;
+        if (kb != null && kb.escapeKey.wasPressedThisFrame &&
+            Time.unscaledTime - _shownAt >= skipLockSeconds)
+            ReturnToTitle();
     }
 
-    /// <summary>Discord 버튼 OnClick.</summary>
+    /// <summary>Report a Bug(Discord) 버튼 OnClick.</summary>
     public void OnClickDiscord()
     {
         if (string.IsNullOrEmpty(discordUrl))
@@ -125,26 +63,19 @@ public class EndCreditsController : MonoBehaviour
     }
 
     /// <summary>타이틀 복귀 버튼 OnClick.</summary>
-    public void OnClickReturnToTitle() => ReturnToTitle(skipped: true);
+    public void OnClickReturnToTitle() => ReturnToTitle();
 
-    void ReturnToTitle(bool skipped)
+    void ReturnToTitle()
     {
         if (_returning) return;
-        _returning = true;
-        StartCoroutine(ReturnRoutine(skipped));
-    }
-
-    IEnumerator ReturnRoutine(bool skipped)
-    {
-        if (!skipped && holdAfterEndSeconds > 0f)
-            yield return new WaitForSeconds(holdAfterEndSeconds);
 
         if (TitleReturnFlow.Instance == null)
         {
             Debug.LogWarning("[EndCreditsController] TitleReturnFlow 없음 — 타이틀 복귀 불가 (End 씬 단독 실행?)", this);
-            yield break;
+            return;
         }
 
+        _returning = true;
         TitleReturnFlow.Instance.Request(new TitleReturnOptions
         {
             Reason = TitleReturnReason.EndDemo,
@@ -154,6 +85,6 @@ public class EndCreditsController : MonoBehaviour
 
 #if UNITY_EDITOR
     [ContextMenu("테스트: 타이틀 복귀")]
-    void Debug_Return() => ReturnToTitle(skipped: true);
+    void Debug_Return() => ReturnToTitle();
 #endif
 }

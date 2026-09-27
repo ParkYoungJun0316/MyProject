@@ -72,7 +72,7 @@
 
 ### 2.1 Ship Must (9/16에 들어가야 함)
 
-- **플레이 경로:** Title → Lobby → **Tutorial** → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End`
+- **플레이 경로:** Title → **Tutorial** → `M.Stage1`…`M.Stage5` → `M.Boss` → `Interlude` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End` (`Lobby` 씬은 Tutorial로 흡수·폐지)
 - **솔로:** 동일 경로 (**NGO Host 1인**, `partySize=1`). 오프라인 모드 없음
 - **Steamworks (전부):** Steam Networking transport + Steam Lobby + Depot/알파 빌드 + Invite — §3 ④ · §4 순위 1~3(전부 완료: 코드·Depot 실사용 테스트·빌드 검수 통과). **로컬 NGO만으로 출시 불가**
 - **응원·보이스:** Dissonance + Vosk + 숫자키(1~4) + **응원 확장 2종**
@@ -236,7 +236,7 @@
 
 출시 직전 **“이 빌드로 9/16에 내도 되나?”** E2E 통과 체크. (별도 QA팀 프로세스 아님.)
 
-- [ ] Title → Lobby → Tutorial → M 풀코스+보스 → T 풀코스+보스 → End → Title (1인 Host)
+- [ ] Title → Tutorial → M 풀코스+보스 → Interlude → T 풀코스+보스 → End → Title (1인 Host)
 - [ ] 동일 경로 **Steam 2인** (초대·보이스·응원·사망 리로드)
 - [ ] Steam **4인 1회** (가능 시)
 - [ ] 인게임 이탈 시 전원 타이틀 (`NetworkDesign` §12)

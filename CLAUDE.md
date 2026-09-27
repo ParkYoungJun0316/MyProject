@@ -12,7 +12,7 @@ Solo-dev **4-player co-op survival/action game**, Steam release target **2026-09
 - Voice: Dissonance (voice chat) + Vosk (offline speech-to-text, `Assets/ThirdParty/Vosk`, `Assets/StreamingAssets/vosk-model-*`) power the "Cheer" system
 - `com.community.netcode.transport.facepunch` is present in `Packages/manifest.json` but **Steamworks is not integrated yet** — don't assume it's wired up; ask before proposing Facepunch/Steamworks.NET/Mirror/Photon/FishNet/Relay as the current transport
 
-Play path: Title → Lobby → Tutorial → `M.Stage1`…`M.Stage5` → `M.Boss` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End.Demo`. Solo play is **NGO Host with `partySize=1`**, same path as multiplayer — there is no offline mode.
+Play path: Title → Tutorial → `M.Stage1`…`M.Stage5` → `M.Boss` → `Interlude` → `T.Stage1`…`T.Stage5` → `T.Boss` → `End` → Title (the old `Lobby` scene was folded into Tutorial). `End` is the clear-credits scene: no players are spawned there and the transition curtain does not wait for them. Solo play is **NGO Host with `partySize=1`**, same path as multiplayer — there is no offline mode.
 
 ## Commands
 

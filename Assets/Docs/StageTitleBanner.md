@@ -9,7 +9,7 @@
 |---|---|
 | 내용 | **제목 한 줄만.** 부제·설명 없음 (정신없어서 폐기) |
 | 대상 씬 | `M.Stage1`~`M.Stage5`, `M.Boss`, `T.Stage1`~`T.Stage5`, `T.Boss` (12개) |
-| 제외 | `Tutorial`, `End.Demo` |
+| 제외 | `Tutorial`, `Interlude`, `End` |
 | 하위 스테이지 | M.Stage2(2.1/2.2)·M.Stage4(4.1~4.3)도 **씬 첫 진입 때 1번만**. 하위 스테이지 전환 시 표시 없음 |
 | 타이밍 | 씬 준비 커튼(`SceneReadyAndColorMapping.md`)이 **걷힌 직후**. 스테이지 시작 대사보다 **먼저** |
 | 재도전 | **안 띄움** — DialogueUI 대사와 같은 기준 |

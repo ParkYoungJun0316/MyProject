@@ -7,10 +7,10 @@ using UnityEngine.SceneManagement;
 /// 씬 전환 흐름 관리자. DontDestroyOnLoad 싱글턴.
 ///
 /// [배치 방법]
-/// 1. M.Stage1 씬에 빈 GameObject 생성 → SceneFlowManager 컴포넌트 추가
+/// 1. Title 씬에 빈 GameObject 생성 → SceneFlowManager 컴포넌트 추가
 /// 2. sceneSequence[] 에 순서대로 씬 이름 입력
-///    M.Stage1 / M.Stage2 / M.Stage3 / M.Stage4 / M.Stage5 / M.Boss
-///    T.Stage1 / T.Stage2 / T.Stage3 / T.Stage4 / T.Stage5 / T.Boss
+///    Title / Tutorial / M.Stage1 / M.Stage2 / M.Stage3 / M.Stage4 / M.Stage5 / M.Boss / Interlude
+///    T.Stage1 / T.Stage2 / T.Stage3 / T.Stage4 / T.Stage5 / T.Boss / End
 /// 3. 전환 연출(암전/최소 유지시간)은 LoadingCurtain(DDOL, 0.Title 배치)이 전담한다 —
 ///    LoadingCurtain.Instance가 없으면 연출 없이 즉시 전환.
 ///
@@ -33,6 +33,17 @@ using UnityEngine.SceneManagement;
 public class SceneFlowManager : MonoBehaviour
 {
     public static SceneFlowManager Instance { get; private set; }
+
+    /// <summary>클리어 크레딧 씬. 플레이어가 스폰되지 않는다.</summary>
+    public const string EndSceneName = "End";
+
+    /// <summary>
+    /// 이 씬으로 넘어갈 때 전환 커튼이 전원 스폰(OnPlayersReady)을 기다려야 하는가.
+    /// End는 플레이어를 스폰하지 않아 신호가 오지 않는다 — 기다리면 게이트 타임아웃(5초)까지
+    /// 암전이 남고, 그 뒤에서 크레딧이 먼저 올라가 버렸다(2026-09-27).
+    /// Host(TransitionTo)·Client(NetworkManagerSetup.CoverOnClientSceneLoad) 양쪽이 이 판정 하나를 쓴다.
+    /// </summary>
+    public static bool WaitsForPlayersOnEnter(string sceneName) => sceneName != EndSceneName;
 
     [Header("씬 순서")]
     [Tooltip("순서대로 진행할 씬 이름. Build Settings 등록 이름과 정확히 일치해야 함.")]
@@ -305,7 +316,8 @@ public class SceneFlowManager : MonoBehaviour
             yield return new WaitForSecondsRealtime(preDelay);
 
         if (LoadingCurtain.Instance != null)
-            yield return StartCoroutine(LoadingCurtain.Instance.BeginCoverRoutine(waitForPlayersReady: true));
+            yield return StartCoroutine(LoadingCurtain.Instance.BeginCoverRoutine(
+                waitForPlayersReady: WaitsForPlayersOnEnter(sceneName)));
 
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && nm.IsHost)
