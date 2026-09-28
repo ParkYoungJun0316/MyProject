@@ -40,7 +40,8 @@ using UnityEngine;
 ///       남은 거리를 새로 하강시킨다(2026-09-11 재설계, 아래 [체크포인트 모델] 참고).
 ///  3. 페이즈 시간 초과 = 하강이 바닥까지 자연 완료 → sphereWall.OnAdvanceCompleted
 ///     → HandlePhaseTimeout() → 스테이지 실패 통보.
-///  4. 보스 격파: PhaseManager.onAllPhasesComplete → StopClock() (제자리 정지)
+///  4. 보스 격파: PhaseManager.onAllPhasesComplete(Host) / OnAllPhasesCompleteClientPulse(Client)
+///     → StopClock() (제자리 정지)
 ///
 /// [체크포인트 모델 — 2026-09-11 재설계, "거의 안 움직인다" 체감 문제 대응]
 ///  이전엔 각 페이즈가 checkpointDistances[i]만큼(예: 전체÷4)만 내려가고, 클리어하면 그 작은
@@ -73,8 +74,8 @@ using UnityEngine;
 /// [씬 배선]
 ///  StageStartGate.OnCountdownComplete → AdvanceToCheckpoint(0)
 ///  P2/P3/P4 각 PhaseData.onPhaseEnter → AdvanceToCheckpoint(1 / 2 / 3)
-///  PhaseManager.onAllPhasesComplete   → StopClock()
-///  sphereWall.OnAdvanceCompleted      → HandlePhaseTimeout()
+///  PhaseManager.onAllPhasesComplete   → StopClock()   (Client는 코드 구독 — StopClock() 주석)
+///  sphereWall.OnAdvanceCompleted     → HandlePhaseTimeout()
 ///  ※ onPhaseComplete에는 아무것도 걸지 않는다 (Host 전용 레인 — 위 리뷰 참고)
 /// </summary>
 public class BossSpherePhaseDriver : MonoBehaviour
@@ -160,7 +161,11 @@ public class BossSpherePhaseDriver : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_netState != null) _netState.OnBossSphereDescentChanged -= HandleDescentChanged;
+        if (_netState != null)
+        {
+            _netState.OnBossSphereDescentChanged     -= HandleDescentChanged;
+            _netState.OnAllPhasesCompleteClientPulse -= StopClock;
+        }
     }
 
     void Update()
@@ -173,14 +178,23 @@ public class BossSpherePhaseDriver : MonoBehaviour
     }
 
     /// <summary>StageNetworkState는 씬 NetworkObject라 Awake 순서가 보장되지 않아 늦게 구독한다.
-    /// 사망 리로드로 인스턴스가 바뀌면 새 인스턴스로 다시 붙는다.</summary>
+    /// 사망 리로드로 인스턴스가 바뀌면 새 인스턴스로 다시 붙는다.
+    /// OnAllPhasesCompleteClientPulse는 Client의 StopClock 경로다 — StopClock() 주석 참고.</summary>
     void EnsureNetSubscribed()
     {
         var sns = StageNetworkState.Instance;
         if (sns == _netState) return;
-        if (_netState != null) _netState.OnBossSphereDescentChanged -= HandleDescentChanged;
+        if (_netState != null)
+        {
+            _netState.OnBossSphereDescentChanged     -= HandleDescentChanged;
+            _netState.OnAllPhasesCompleteClientPulse -= StopClock;
+        }
         _netState = sns;
-        if (_netState != null) _netState.OnBossSphereDescentChanged += HandleDescentChanged;
+        if (_netState != null)
+        {
+            _netState.OnBossSphereDescentChanged     += HandleDescentChanged;
+            _netState.OnAllPhasesCompleteClientPulse += StopClock;
+        }
     }
 
     // ── 씬 배선용 (Inspector) ────────────────────────────────────
@@ -256,8 +270,13 @@ public class BossSpherePhaseDriver : MonoBehaviour
     }
 
     /// <summary>
-    /// 시계 정지 (제자리). PhaseManager.onAllPhasesComplete에 연결 —
-    /// 이 이벤트는 StageNetworkState.NotifyAllPhasesComplete 브릿지로 Client에서도 발동한다.
+    /// 시계 정지 (제자리).
+    /// Host: PhaseManager.onAllPhasesComplete 인스펙터 연결.
+    /// Client: StageNetworkState.OnAllPhasesCompleteClientPulse 코드 구독(EnsureNetSubscribed).
+    ///  onAllPhasesComplete는 Host 레인에서만 Invoke되고 EnterPhaseOnClient()가 재생하지 않는다 —
+    ///  예전 주석은 "브릿지로 Client에서도 발동한다"고 했지만 브릿지는 UnityEvent가 아니라 이 펄스라,
+    ///  Client의 Sphere는 P4 클리어 후에도 바닥까지 내려와 Bossdown 대화 중 플레이어를 눌렀다
+    ///  (2026-09-28, ObjectiveUI·TipUI와 같은 구독 패턴). 펄스는 Host에서 발동하지 않아 중복 호출 없음.
     /// 마지막 칸의 목표는 바닥이라 여기서 스냅하면 승리 순간에 Sphere가 바닥에 닿는 것처럼
     /// 보이므로, 스냅이 아니라 현 위치 정지(Deactivate)를 쓴다.
     /// </summary>

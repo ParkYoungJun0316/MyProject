@@ -18,7 +18,8 @@ using UnityEngine.SceneManagement;
 /// - discordUrl             : Discord 초대 링크
 /// - screenFader            : 선택. 씬 전환 전 페이드아웃
 /// - settingsPanel          : 설정/옵션 패널 GameObject
-/// - joinPanel              : 룸코드 입력 패널 GameObject
+/// - joinButton             : Join(Developer) 버튼 (Steam 릴리스 빌드에서 실행 시 숨김)
+/// - joinPanel             : 룸코드 입력 패널 GameObject
 /// - roomCodeInputField     : 6자리 숫자 입력 TMP_InputField
 /// - joinStatusText         : 상태 메시지 TMP_Text (찾는 중... / 방을 찾을 수 없습니다.)
 /// - discoveryTimeoutSeconds: 타임아웃 (기본 5초)
@@ -56,6 +57,9 @@ public class TitleMenuController : MonoBehaviour
     [Header("패널 연결")]
     [Tooltip("설정 버튼 클릭 시 열릴 패널. 비워두면 클릭 무시.")]
     [SerializeField] private GameObject settingsPanel;
+
+    [Tooltip("게임 참여(Join(Developer)) 버튼. 로컬(①②) 경로 전용이라 Steam 릴리스 빌드에서는 실행 시 숨긴다.")]
+    [SerializeField] private GameObject joinButton;
 
     [Tooltip("게임 참여 버튼 클릭 시 열릴 룸코드 입력 패널.")]
     [SerializeField] private GameObject joinPanel;
@@ -107,10 +111,14 @@ public class TitleMenuController : MonoBehaviour
 
     // ── Unity 콜백 ────────────────────────────────────────────────
 
-    /// <summary>버전 불일치 안내는 에디터 확인용으로 켜 둔 채 저장되므로, 첫 프레임이 그려지기 전에 숨긴다.</summary>
+    /// <summary>
+    /// 버전 불일치 안내는 에디터 확인용으로 켜 둔 채 저장되므로, 첫 프레임이 그려지기 전에 숨긴다.
+    /// 룸코드 참여는 로컬 경로 전용이라 Steam 빌드에서는 Join 버튼도 같은 시점에 숨긴다.
+    /// </summary>
     void Awake()
     {
         if (versionMismatchNotice != null) versionMismatchNotice.SetActive(false);
+        if (joinButton != null && !UseLocalNetworkPath) joinButton.SetActive(false);
     }
 
     /// <summary>

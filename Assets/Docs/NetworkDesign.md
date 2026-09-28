@@ -1647,7 +1647,7 @@ Host  : TrySubmit()/TrySubmitAnyKey() 판정 (④ Judge, Host 레인) → 결과
 
 - 클리어 UI 씬 **`End`** (구 `End.Demo`에서 리네임).
 - `T.Boss` 클리어 후 진입(`TBossEndingCollapse.OnImpact` → `SceneFlowRelay.LoadNextScene`). 멀티/솔로 공통.
-- UI (2026-09-27): 검은 화면 **한 장에 크레딧 전체 고정**(스크롤 없음). **문구·배치는 End 씬 `Txt.Credits`가 SSOT** — 에디터에 보이는 화면이 곧 게임 화면이고, 코드는 문구·레이아웃을 건드리지 않는다. **자동 복귀 없음** — Return to Title 버튼 또는 **Esc만**(Space/Enter는 엔딩 직후 습관 입력으로 튕기지 않게 제외) → §8 타이틀 복귀 규칙(`EndDemo`, `FullRunReset`). Discord 버튼 라벨은 **Report a Bug**(Discord 로고 유지, 버그 제보 창구) — 크레딧 문구엔 Discord 주소를 넣지 않는다.
+- UI (2026-09-27, 2026-09-28 개정): 검은 화면에 크레딧 전체. **문구·배치는 End 씬 `Txt.Credits`·버튼이 SSOT** — 에디터에 보이는 화면이 곧 멈춘 뒤의 게임 화면이고, 코드는 문구·레이아웃을 건드리지 않는다. **올라오는 연출 (2026-09-28):** 커튼이 걷히기 시작하면 크레딧과 버튼이 함께 화면 아래에서 올라와 씬 배치 그대로 멈춘다(`riseDuration` 기본 7초, ease-out quad — 4초 cubic은 너무 빨랐음. T.Boss 추락 직후 한 장 화면이 갑자기 뜨던 것을 추락 → 올라와 감속 정지로 잇는다). 화면 밖으로 빠져나가는 스크롤은 하지 않는다. **자동 복귀 없음** — Return to Title 버튼 또는 **Esc만**(올라오는 중에도 Esc = 즉시 타이틀. Space/Enter는 엔딩 직후 습관 입력으로 튕기지 않게 제외) → §8 타이틀 복귀 규칙(`EndDemo`, `FullRunReset`). Discord 버튼 라벨은 **Report a Bug**(Discord 로고 유지, 버그 제보 창구) — 크레딧 문구엔 Discord 주소를 넣지 않는다.
 - **플레이어 없음 · 대기 없음 (2026-09-27):** End에는 플레이어를 스폰하지 않고 `StageNetworkState`·`DisconnectManager`도 없다. 전환 커튼은 `SceneFlowManager.WaitsForPlayersOnEnter`(End면 false)로 `players` 게이트를 걸지 않는다 — Host(`TransitionTo`)·Client(`CoverOnClientSceneLoad`) 같은 판정. 예전엔 걸었다가 신호가 안 와서 5초 타임아웃까지 암전이 남았다.
 - Esc는 커튼이 걷힌 뒤부터 받는다(버튼 클릭은 덮인 동안 커튼이 막음).
 - **테스트:** End만 단독 Play하면 `TitleReturnFlow`(Title에서 생성·DDOL)가 없어 타이틀 복귀가 안 된다(경고 로그만). 실제 경로 확인은 Tutorial 스테이지 바로가기(`TutorialDevStageJumpUI`)의 `End` 버튼으로 한다.
