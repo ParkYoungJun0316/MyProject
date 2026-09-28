@@ -22,6 +22,8 @@ GameObject:
   - component: {fileID: 7271834558150182387}
   - component: {fileID: 8781545210671688849}
   - component: {fileID: 2035016311780280036}
+  - component: {fileID: 2439877772046912626}
+  - component: {fileID: 2387154397369528682}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -269,7 +271,9 @@ MonoBehaviour:
   defaultMasterVolume: 1
   defaultBgmVolume: 1
   defaultSfxVolume: 1
+  defaultMicVolume: 1
   defaultChatFontSize: 14
+  defaultMouseSensitivity: 1
 --- !u!114 &2035016311780280036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -284,3 +288,54 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BGMManager
   zoneClips: []
   fadeDuration: 1.5
+--- !u!114 &2439877772046912626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4024931820611632669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DissonanceVoip::Dissonance.VoiceBroadcastTrigger
+  _tokens:
+    _tokens: []
+  _channelTypeExpanded: 1
+  _metadataExpanded: 1
+  _activationModeExpanded: 1
+  _tokensExpanded: 1
+  _ampExpanded: 1
+  _activationFaderSettings:
+    _volume: 1
+    _fadeInTicks: 0
+    _fadeOutTicks: 1500000
+  _triggerFaderSettings:
+    _volume: 1
+    _fadeInTicks: 7500000
+    _fadeOutTicks: 11500000
+  _broadcastPosition: 0
+  _channelType: 0
+  _inputName: 
+  _mode: 1
+  _muted: 0
+  _playerId: 
+  _useTrigger: 0
+  _roomName: Global
+  _priority: 0
+--- !u!114 &2387154397369528682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4024931820611632669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d67a2c272f425a64996ab73d78cd12b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceDucking
+  duckedVolume: 0.4
+  fadeDownSeconds: 0.15
+  fadeUpSeconds: 0.6

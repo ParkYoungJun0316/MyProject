@@ -253,11 +253,14 @@ public class GridChallenge : MonoBehaviour
     /// <summary>이번 라운드 안전 칸 인덱스. IsSafeTileThisRound와 같은 계약(선행 구간엔 숨겨진 계획값).</summary>
     public IEnumerable<int> SafeTileIndices => _currentSafeTiles.Keys;
 
+    /// <summary>SharedSolo 안전 칸 정원 — 정산 판정·안전 칸 연출·인원 숫자("n/1")가 전부 이 값을 쓴다.</summary>
+    public const int SharedSafeTileCapacity = 1;
+
     /// <summary>
-    /// SharedSolo: 이 안전 칸 위 생존자가 2명 이상인가. 정산 판정(Host)과 안전 연출(각 머신 로컬)이 같은 규칙을 쓴다 —
+    /// SharedSolo: 이 안전 칸 위 생존자가 정원을 넘었는가. 정산 판정(Host)과 안전 연출(각 머신 로컬)이 같은 규칙을 쓴다 —
     /// 점유는 트리거 기반 로컬 값이라 머신 간 차이는 CNT 보간 지연만큼뿐이다.
     /// </summary>
-    public bool IsSharedSafeTileOverloaded(int index) => SafeTileOccupantCount(index) >= 2;
+    public bool IsSharedSafeTileOverloaded(int index) => SafeTileOccupantCount(index) > SharedSafeTileCapacity;
 
     /// <summary>이번 라운드 안전 칸 위 생존자 수. 안전 칸이 아니면 0. 연출(0명/1명/2명 이상)용.</summary>
     public int SafeTileOccupantCount(int index)
@@ -872,7 +875,7 @@ public class GridChallenge : MonoBehaviour
         {
             GridTile t = tiles[index];
             if (t == null || !t.ContainsPlayer(p)) continue;
-            if (CountAliveOccupants(t) >= 2) return false;
+            if (CountAliveOccupants(t) > SharedSafeTileCapacity) return false;
             onSafe = true;
         }
         return onSafe;

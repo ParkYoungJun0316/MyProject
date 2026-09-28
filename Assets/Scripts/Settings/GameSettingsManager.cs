@@ -59,7 +59,7 @@ public class GameSettingsManager : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 1f;
     [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
-    [Range(0f, 2f)] [SerializeField] float defaultMicVolume    = 1f;
+    [Range(0f, 1f)] [SerializeField] float defaultMicVolume    = 1f;
     [Range(MinChatFontSize, MaxChatFontSize)] [SerializeField] float defaultChatFontSize = 14f;
     [Range(MinMouseSensitivity, MaxMouseSensitivity)] [SerializeField] float defaultMouseSensitivity = 1f;
 
@@ -162,7 +162,8 @@ public class GameSettingsManager : MonoBehaviour
         MasterVolume  = PlayerPrefs.GetFloat(KeyMasterVolume, defaultMasterVolume);
         BgmVolume     = PlayerPrefs.GetFloat(KeyBgmVolume, defaultBgmVolume);
         SfxVolume     = PlayerPrefs.GetFloat(KeySfxVolume, defaultSfxVolume);
-        MicVolume     = PlayerPrefs.GetFloat(KeyMicVolume, defaultMicVolume);
+        // 예전 0~2(200%) 범위에서 저장된 값도 있으므로 로드 시 0~1로 자른다.
+        MicVolume     = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMicVolume, defaultMicVolume));
         MicMuted      = PlayerPrefs.GetInt(KeyMicMuted, 0) == 1;
         MicDeviceName = PlayerPrefs.GetString(KeyMicDevice, "");
         ChatFontSize  = PlayerPrefs.GetFloat(KeyChatFontSize, defaultChatFontSize);
@@ -185,22 +186,24 @@ public class GameSettingsManager : MonoBehaviour
     // ── 마이크 ────────────────────────────────────────────────────
 
     /// <summary>
+    /// 로컬 마이크 송신기. 캐릭터가 아니라 이 컴포넌트와 같은 DDOL NetworkManager GameObject에
+    /// 붙어 있다(DissonanceComms·VoiceReceiptTrigger와 같은 자리) — 세션 내내 인스턴스가 하나라
+    /// 슬라이더가 언제 움직여도 같은 대상에 바로 적용된다.
+    ///
+    /// [2026-09-29 이동 — 마이크 볼륨 슬라이더 무효 버그]
+    /// 예전엔 캐릭터 프리팹(Kkultteok)에 붙어 있었고, 슬라이더 경로가 NetworkManager.LocalClient.PlayerObject로
+    /// 트리거를 찾았다. 그런데 플레이어는 SpawnWithOwnership으로 스폰되고 ConnectionApproval이
+    /// CreatePlayerObject=false라 PlayerObject는 "늦게 채워지는" 게 아니라 아예 채워지지 않는다
+    /// (NGO NetworkObject.SpawnWithOwnership → isPlayerObject=false). 결과적으로 슬라이더는 항상 no-op이었고
+    /// 스폰 순간에만 값이 들어갔다(2인 Steam 테스트 Player.log에서 슬라이더 호출 317회 전부 no-op 확인).
+    /// </summary>
+    VoiceBroadcastTrigger _micTrigger;
+    DissonanceComms _voiceComms;
+
+    /// <summary>
     /// DissonanceComms는 0.Title 로드 시점에 이미 Start()가 끝나있을 수도, 아닐 수도 있어
     /// (같은 GameObject라도 컴포넌트 순서 비결정적 위험 회피 — §1 pull 원칙과 동일 이유)
     /// GetSingleton()이 준비될 때까지 폴링 후 적용한다(CheerKeywordEngine과 동일 패턴).
-    ///
-    /// [MicVolume은 여기서 push하지 않음 — 2026-09-10 수정]
-    /// 예전엔 여기서도 ApplyMicTransmitVolume()(no-arg)을 불렀다. 하지만 그 오버로드는
-    /// NetworkManager.LocalClient.PlayerObject로 트리거를 "다시 찾는" 경로라, 이 코루틴이
-    /// 도는 시점(Title 부팅 중, 아직 세션 전)엔 NetworkManager가 리스닝 전이라 항상 no-op
-    /// Log만 찍고 아무 일도 안 했다 — 즉 정상 흐름에서는 원래도 죽은 호출이었다. 문제는
-    /// NetworkManager가 이례적으로 이미 리스닝 중인데 로컬 플레이어가 아직 스폰 전인
-    /// 좁은 틈(예: 2026-09-28 삭제된 DevStageHostBootstrap처럼 Title을 건너뛰고 즉석으로 Host를 띄우는 경로)에
-    /// 걸리면 no-op이 아니라 LogWarning으로 떨어진다는 것 — 실제로 아무것도 깨지진 않지만
-    /// 콘솔에 가짜 경고를 남긴다. MicVolume은 NetworkPlayerSetup.SetupOwner()가 스폰 시점에
-    /// 이미 캐시해둔 트리거로 ApplyMicTransmitVolume(trigger)를 확정적으로 호출해 적용하므로
-    /// (타이밍 레이스 없음), 여기서의 push는 애초에 불필요했다. IsMuted/MicrophoneName은
-    /// 스폰 시점에 재적용되는 경로가 따로 없어서 그대로 둔다.
     /// </summary>
     IEnumerator ApplySavedMicSettingsWhenReady()
     {
@@ -214,58 +217,49 @@ public class GameSettingsManager : MonoBehaviour
         comms.IsMuted = MicMuted;
         if (!string.IsNullOrEmpty(MicDeviceName))
             comms.MicrophoneName = MicDeviceName;
+
+        ApplyMicTransmitVolume();
+
+        _voiceComms = comms;
+        _voiceComms.OnPlayerJoinedSession += OnVoicePlayerJoined;
+    }
+
+    void OnDestroy()
+    {
+        if (_voiceComms != null)
+            _voiceComms.OnPlayerJoinedSession -= OnVoicePlayerJoined;
     }
 
     /// <summary>
-    /// 로컬 Owner의 VoiceBroadcastTrigger 송신 게인에 MicVolume을 반영.
-    /// Dissonance 로컬 VoicePlayerState.Volume setter는 미지원(에러만 남김)이라
-    /// ActivationFader를 쓴다. CheerKeywordEngine 캡처/Vosk 경로에는 영향 없음.
-    ///
-    /// [옵션 슬라이더 조작 경로 전용 — 스폰 직후엔 쓰지 말 것]
-    /// NetworkManager.LocalClient.PlayerObject로 트리거를 다시 찾는다. 이 필드는 NGO
-    /// NetworkSpawnManager가 InvokeBehaviourNetworkSpawn() 이후에야 채우므로, Player의
-    /// OnNetworkSpawn(NetworkPlayerSetup.SetupOwner) 안에서 호출하면 아직 null이라 no-op된다
-    /// (2026-09-01 실측 — Library/PackageCache 소스 대조 확인). 스폰 시점엔 트리거를 이미
-    /// 들고 있는 ApplyMicTransmitVolume(VoiceBroadcastTrigger) 오버로드를 쓴다.
+    /// 팀 보이스 수신 볼륨은 저장 설정이 아니라 세션 한정 값이다. 그런데 Dissonance는 원격 플레이어의
+    /// 재생 GameObject(VoicePlayback)를 풀에서 재사용하므로(PlaybackPool — 나갈 때 Put, 들어올 때 Get),
+    /// 이전 세션에서 조절한 AudioSource.volume이 다음 세션의 새 팀원에게 그대로 넘어간다.
+    /// 합류 순간 100%로 되돌려 매 세션을 깨끗하게 시작한다. 옵션 패널이 닫혀 있어도 받아야 하므로 DDOL인 여기서 구독.
     /// </summary>
-    public void ApplyMicTransmitVolume()
+    void OnVoicePlayerJoined(VoicePlayerState player)
     {
-        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
-        {
-            // 옵션 슬라이더는 세션 중(인게임)에만 노출되므로 이 분기는 정상 흐름에서 거의 안 탄다 — Warning 아님.
-            Debug.Log($"[GameSettingsManager] ApplyMicTransmitVolume(no-arg) no-op — NetworkManager 없음/미리스닝, 아직 세션 전 (MicVolume={MicVolume})");
-            return;
-        }
-        var localClient = NetworkManager.Singleton.LocalClient;
-        if (localClient == null || localClient.PlayerObject == null)
-        {
-            Debug.LogWarning($"[GameSettingsManager] ApplyMicTransmitVolume(no-arg) no-op — LocalClient.PlayerObject 없음 (MicVolume={MicVolume})");
-            return;
-        }
-
-        var trigger = localClient.PlayerObject.GetComponent<VoiceBroadcastTrigger>();
-        if (trigger == null)
-        {
-            Debug.LogWarning("[GameSettingsManager] ApplyMicTransmitVolume(no-arg) no-op — PlayerObject에 VoiceBroadcastTrigger 없음");
-            return;
-        }
-        ApplyMicTransmitVolume(trigger);
+        if (player == null || player.IsLocalPlayer) return;
+        TeamVoiceVolume.Set(player, 1f);
     }
 
     /// <summary>
-    /// 위와 동일한 적용 로직이지만 트리거를 직접 받는다 — NetworkPlayerSetup.SetupOwner()가
-    /// OnNetworkSpawn 시점에 이미 캐시해둔 자기 자신의 VoiceBroadcastTrigger를 넘겨 호출.
-    /// NetworkManager.LocalClient.PlayerObject 타이밍 문제(위 설명)를 완전히 우회한다.
+    /// 로컬 마이크 송신 게인(VoiceBroadcastTrigger.ActivationFader.Volume)에 MicVolume을 반영.
+    /// Dissonance 로컬 VoicePlayerState.Volume setter는 미지원(에러만 남김)이라 ActivationFader를 쓴다.
+    /// CheerKeywordEngine 캡처/Vosk 경로에는 영향 없음. 트리거는 이 GameObject 소속이라 세션 여부와
+    /// 무관하게 항상 적용된다(세션 전이면 값만 들어가 있다가 송신이 시작될 때 쓰인다).
     /// </summary>
-    public void ApplyMicTransmitVolume(VoiceBroadcastTrigger trigger)
+    void ApplyMicTransmitVolume()
     {
-        if (trigger == null)
+        if (_micTrigger == null)
+            _micTrigger = GetComponent<VoiceBroadcastTrigger>();
+        if (_micTrigger == null)
         {
-            Debug.LogWarning($"[GameSettingsManager] ApplyMicTransmitVolume(trigger) no-op — trigger null (MicVolume={MicVolume})");
+            Debug.LogWarning($"[GameSettingsManager] ApplyMicTransmitVolume no-op — NetworkManager GameObject에 VoiceBroadcastTrigger 없음 (MicVolume={MicVolume})");
             return;
         }
-        trigger.ActivationFader.Volume = MicVolume;
-        Debug.Log($"[GameSettingsManager] ApplyMicTransmitVolume 적용 — MicVolume={MicVolume} → trigger={trigger.name} ActivationFader.Volume={trigger.ActivationFader.Volume}");
+
+        _micTrigger.ActivationFader.Volume = MicVolume;
+        Debug.Log($"[GameSettingsManager] ApplyMicTransmitVolume 적용 — MicVolume={MicVolume} → ActivationFader.Volume={_micTrigger.ActivationFader.Volume}");
     }
 
     /// <summary>옵션 메뉴 마이크 음소거 토글에서 호출. 즉시 적용 + 저장.
@@ -329,14 +323,14 @@ public class GameSettingsManager : MonoBehaviour
     }
 
     /// <summary>옵션 메뉴 마이크 볼륨 슬라이더에서 호출. 즉시 적용 + 저장.
-    /// 로컬 송신 게인(VoiceBroadcastTrigger.ActivationFader)만 바꾸고, 응원 키워드 감지에는 영향 없음.
-    /// 범위 0~2(200%) — Dissonance 채널 진폭 배율(`ChannelProperties.AmplitudeMultiplier`,
-    /// `RoomChannel`/`PlayerChannel`)이 원래 0~2를 지원하는 프로토콜이라 클램프만 늘림(플러그인
-    /// 미수정). 0이면 채널 진폭이 정확히 0이 되어 수신측 디코더가 프레임을 하드 클리어하므로
+    /// 로컬 송신 게인(이 GameObject의 VoiceBroadcastTrigger.ActivationFader)만 바꾸고, 응원 키워드 감지에는 영향 없음.
+    /// 범위 0~1(100%) — 2026-09-29 되돌림. 0~2(200%)는 채널 진폭 배율 프로토콜상 가능하지만 수신측
+    /// Opus 소프트 클리퍼·디지털 최대치(1.0)에 막혀 100%와 똑같이 들렸다(작게 들리는 문제는 VoiceDucking 담당).
+    /// 0이면 채널 진폭이 정확히 0이 되어 수신측 디코더가 프레임을 하드 클리어하므로
     /// 이미 완전 무음(별도 IsMuted 결합 불필요, 2026-09-10 확인).</summary>
     public void SetMicVolume(float value)
     {
-        MicVolume = Mathf.Clamp(value, 0f, 2f);
+        MicVolume = Mathf.Clamp01(value);
         PlayerPrefs.SetFloat(KeyMicVolume, MicVolume);
         Debug.Log($"[GameSettingsManager] SetMicVolume 호출 — value={value} → MicVolume={MicVolume}");
         ApplyMicTransmitVolume();

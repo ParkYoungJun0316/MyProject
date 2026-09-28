@@ -19,6 +19,8 @@ using UnityEngine;
 ///  바닥에는 붙이지 말 것 — 넉백(Move()가 x/z를 덮어쓰지 않는 0.25초) 동안 미끄러지는 거리가 늘어난다.
 ///  PhysicsMaterial로 "얼음 바닥"을 만들 수 없는 것(CoopStageAudit.M.md)과는 별개다 — 그건 x/z 문제고
 ///  Move()가 매 프레임 덮어써서 안 먹는 것이다. 여기서 없애는 건 Move()가 건드리지 않는 y축 마찰이다.
+///  (2026-09-29) 공중에서 비비는 경우는 전 스테이지에서 Player.UpdateAirFriction이 몸통 쪽으로 막는다 —
+///  이 컴포넌트는 서 있는 채로 올라가는 문에 비비는 T5 경우까지 막는 용도로 남는다.
 /// </summary>
 [DisallowMultipleComponent]
 public class FrictionlessColliders : MonoBehaviour

@@ -120,6 +120,18 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     PlayerStealth playerStealth;
     PlayerBuffSystem playerBuffSystem;
 
+    // ── 공중 마찰 0 (옆면 비비기 차단, 2026-09-29) ─────────────────
+    // Move()가 매 FixedUpdate마다 x/z를 입력값으로 덮어써서, 공중에서 벽·바닥 옆면에 대고 방향키를 누르면
+    // 캡슐이 그 면을 계속 누른다. 기본 마찰(0.6)이 그 수직항력만큼 y축에 걸려 중력을 상쇄한다 —
+    // 부서진 바닥 옆면에 매달려 안 떨어지고, T.Stage4에선 뒷벽(Ring.B)이 밀면 그대로 올라왔다.
+    // 발밑에 위를 향한 면이 없을 때(= 공중)만 몸통에 마찰 0 재질을 씌운다. 서 있을 땐 재질 없음(지금과 동일) —
+    // 넉백 미끄럼·조임 45° 판자·침 구역이 전부 그대로다. 벽 쪽 마찰 0(FrictionlessColliders, T5)과 같은 원리.
+    const float GroundNormalMinY = 0.6f;   // 약 53°까지 바닥으로 본다 — 조임 판자(45°, 0.71)는 바닥
+    static PhysicsMaterial _airMaterial;
+    CapsuleCollider bodyCol;
+    bool _groundContactThisStep;
+    bool _airFrictionless;
+
 
     public void OnMove(InputValue value)
     {
@@ -138,6 +150,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         deadLayer = LayerMask.NameToLayer("PlayerDead");
 
         cols = GetComponentsInChildren<Collider>(true);
+        bodyCol = GetComponent<CapsuleCollider>();
 
         events = GetComponent<PlayerEvents>();
         if (events == null) events = gameObject.AddComponent<PlayerEvents>();
@@ -224,9 +237,50 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             return;
         }
 
+        UpdateAirFriction();
         Move();
         Turn();
         FreezeRotation();
+    }
+
+    // 충돌 콜백은 물리 스텝 뒤에 온다 → 다음 FixedUpdate가 직전 스텝의 접지 여부를 읽고 초기화한다.
+    void OnCollisionEnter(Collision collision) => CheckGroundContact(collision);
+    void OnCollisionStay(Collision collision)  => CheckGroundContact(collision);
+
+    void CheckGroundContact(Collision collision)
+    {
+        if (!isOwnerControlled || _groundContactThisStep) return;
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            if (collision.GetContact(i).normal.y >= GroundNormalMinY)
+            {
+                _groundContactThisStep = true;
+                return;
+            }
+        }
+    }
+
+    void UpdateAirFriction()
+    {
+        bool air = !_groundContactThisStep;
+        _groundContactThisStep = false;
+        if (air == _airFrictionless || bodyCol == null) return;
+
+        _airFrictionless = air;
+        if (air && _airMaterial == null)
+        {
+            _airMaterial = new PhysicsMaterial("PlayerAirFrictionless (runtime)")
+            {
+                dynamicFriction = 0f,
+                staticFriction  = 0f,
+                // 캡슐 쪽 Minimum이 상대 기본값(Average)보다 우선해 결과가 0이 된다.
+                frictionCombine = PhysicsMaterialCombine.Minimum,
+                // 튕김은 지금(재질 없음 = 0, Average)과 같게 둔다 — 마찰만 바꾼다.
+                bounciness      = 0f,
+                bounceCombine   = PhysicsMaterialCombine.Average,
+            };
+        }
+        bodyCol.sharedMaterial = air ? _airMaterial : null;
     }
 
     void GetInput()

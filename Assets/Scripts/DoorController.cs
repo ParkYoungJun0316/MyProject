@@ -20,6 +20,8 @@ using UnityEngine.Events;
 ///  requiredPads[] 에 PressurePad를 등록하면, 전부 충족될 때 문이 열린다.
 ///  latchOnOpen = false : 발판에서 내려오면 즉시 닫힘
 ///  latchOnOpen = true  : 한 번 열리면 발판을 벗어나도 열린 상태 유지
+///  latchOnFullyOpen = true : 열림 애니메이션이 끝까지 간 순간부터 유지.
+///    그 전에 발판에서 내려오면 다시 닫힌다 — "duration 동안 버텨야 열리는 문".
 ///
 /// [Inspector 필수 설정]
 ///  - Rigidbody: Is Kinematic = true, Use Gravity = false (스크립트가 자동 추가/설정)
@@ -63,6 +65,10 @@ public class DoorController : MonoBehaviour
         "false: 발판에서 내려오면 즉시 문이 닫힘\n" +
         "true : 한 번 열리면 발판을 벗어나도 열린 상태 유지")]
     public bool latchOnOpen = false;
+
+    [Tooltip("true: 열림 애니메이션(duration)이 끝까지 간 순간부터 열린 상태 유지.\n" +
+             "그 전에 발판에서 내려오면 다시 닫힘. latchOnOpen이 켜져 있으면 그쪽이 먼저 걸린다.")]
+    public bool latchOnFullyOpen = false;
 
     [Header("이벤트")]
     [Tooltip("Open() 호출 직후 (열림 애니메이션 시작 시점)")]
@@ -126,7 +132,7 @@ public class DoorController : MonoBehaviour
     void CheckPadState()
     {
         if (requiredPads == null || requiredPads.Length == 0) return;
-        if (latchOnOpen && _isLatched) return;
+        if (_isLatched) return;
 
         bool allFulfilled = true;
         for (int i = 0; i < requiredPads.Length; i++)
@@ -308,6 +314,9 @@ public class DoorController : MonoBehaviour
         _rb.MovePosition(targetWorldPos);
         _rb.MoveRotation(targetWorldRot);
         _isClosing = false;
+
+        if (opening && latchOnFullyOpen)
+            _isLatched = true;
 
         if (!opening)
             OnFullyClosed?.Invoke();

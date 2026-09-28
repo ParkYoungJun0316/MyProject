@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Dissonance;
-using Dissonance.Audio.Playback;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -13,19 +12,14 @@ using UnityEngine.UI;
 /// 수신 볼륨 슬라이더는 GameSession 세션 VoiceId(Dissonance LocalPlayerName self-report,
 /// SoundAndSettingsDesign.md §6-8)로 DissonanceComms.FindPlayer(voiceId)를 조회해 반영한다.
 ///
-/// [범위 0~3(300%) — 2026-09-16, 200%로도 안 들린다는 사용자 피드백으로 상한 재확장]
-/// [범위 0~2(200%) — 2026-09-10]
-/// Dissonance의 공개 API `VoicePlayerState.Volume`은 0~1만 허용하고 벗어나면 throw한다
-/// (내부적으로 `PlaybackInternal`을 거치는데, 이건 `internal`이고 `InternalsVisibleTo`가
-/// Dissonance Editor 어셈블리에만 열려 있어 런타임 코드에서는 접근 불가 — 플러그인 소스를
-/// 고치지 않고는 우회 불가능). 그래서 이 컴포넌트는 `VoicePlayerState.Volume`을 아예 안 쓰고,
-/// `Playback`(공개 `IVoicePlayback`)을 실제 구현체 `Dissonance.Audio.Playback.VoicePlayback`으로
-/// 캐스트해 그 `AudioSource.volume`을 직접 제어한다(Unity 표준 API, 상한 없음). 기본
-/// `PlaybackPrefab`/`SpatializedPlaybackPrefab` 둘 다 이 컴포넌트가 붙어있음을 프리팹에서
-/// 확인했고, `RemoteVoicePlayerState`는 `Net_PlayerJoined`~`Net_PlayerLeft` 사이 하나의
-/// 인스턴스를 계속 쓰므로(발화마다 재할당 안 됨) 참조가 세션 내내 안전하다.
-/// 슬라이더가 0이면 `IsLocallyMuted = true`도 같이 켜서 디코드 파이프라인 레벨까지 확실히
-/// 무음으로 만든다(AudioSource.volume=0만으로도 무음이지만 이중 안전장치, 사용자 확정 요구).
+/// [범위 0~1(100%) — 2026-09-29 되돌림]
+/// 200%(09-10)·300%(09-16)로 넓혔지만 AudioSource.volume 0~1 클램프, 이어 증폭 필터도 Opus 소프트
+/// 클리퍼·디지털 최대치(1.0)에 막혀 100%와 똑같이 들렸다. 작게 들리는 문제는 팀원이 말할 때 게임 소리를
+/// 줄이는 VoiceDucking으로 해결하고 상한은 100%로 되돌림.
+/// 적용은 TeamVoiceVolume(SSOT, 세션 합류 시 100% 초기화와 공유) — Dissonance `VoicePlayerState.Volume`
+/// 대신 `VoicePlayback.AudioSource.volume`을 직접 제어하고, 0이면 `IsLocallyMuted`도 켠다.
+/// `RemoteVoicePlayerState`는 `Net_PlayerJoined`~`Net_PlayerLeft` 사이 하나의 인스턴스를 계속 쓰므로
+/// (발화마다 재할당 안 됨) 참조가 세션 내내 안전하다.
 ///
 /// 구 로비(1.Lobby, LobbyNetworkManager) 슬롯 폴백은 로비 씬 삭제로 제거됨(NetworkDesign.md §6B.7 P8,
 /// 2026-08-20).
@@ -56,7 +50,7 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     [SerializeField] GameObject emptyState;
 
     const float MinReceiveVolume = 0f;
-    const float MaxReceiveVolume = 3f;
+    const float MaxReceiveVolume = 1f;
 
     DissonanceComms _subscribedComms;
     readonly Dictionary<Slider, UnityAction<float>> _volumeCallbacks = new();
@@ -134,7 +128,7 @@ public class OptionsTeamVoicePanel : MonoBehaviour
     {
         if (slider == null) return;
 
-        // 0~2(200%) — Refresh()가 패널 열릴 때마다 호출되므로 프리팹 min/max(0~1)를 매번
+        // 0~1(100%) — Refresh()가 패널 열릴 때마다 호출되므로 프리팹 min/max(0~1)를 매번
         // 이걸로 덮어씀(OptionsMenuController.RefreshMicRow와 동일한 런타임 오버라이드 패턴).
         slider.minValue = MinReceiveVolume;
         slider.maxValue = MaxReceiveVolume;
@@ -150,7 +144,7 @@ public class OptionsTeamVoicePanel : MonoBehaviour
         slider.interactable = canControl;
         // 부작용 없이 현재 상태만 읽는다(RefreshResolutionDropdown과 동일 원칙) — 여기서
         // SetReceiveVolume을 부르면 패널을 여는 것만으로 오디오가 바뀌는 사고가 남.
-        slider.SetValueWithoutNotify(canControl ? GetReceiveVolume(player) : 1f);
+        slider.SetValueWithoutNotify(canControl ? TeamVoiceVolume.Get(player) : 1f);
         slider.GetComponent<SliderValuePercentLabel>()?.RefreshNow();
 
         if (!canControl)
@@ -162,29 +156,10 @@ public class OptionsTeamVoicePanel : MonoBehaviour
         UnityAction<float> callback = value =>
         {
             VoicePlayerState live = DissonanceComms.GetSingleton()?.FindPlayer(voiceId);
-            if (live != null && live.IsConnected) SetReceiveVolume(live, value);
+            if (live != null && live.IsConnected) TeamVoiceVolume.Set(live, value);
         };
         _volumeCallbacks[slider] = callback;
         slider.onValueChanged.AddListener(callback);
-    }
-
-    /// <summary>클래스 상단 요약 참고 — AudioSource.volume 직접 제어, 0이면 IsLocallyMuted도 켬.</summary>
-    static void SetReceiveVolume(VoicePlayerState player, float value)
-    {
-        value = Mathf.Clamp(value, MinReceiveVolume, MaxReceiveVolume);
-        bool mute = value <= 0f;
-
-        player.IsLocallyMuted = mute;
-
-        AudioSource src = (player.Playback as VoicePlayback)?.AudioSource;
-        if (src != null) src.volume = mute ? 0f : value;
-    }
-
-    /// <summary>현재 AudioSource.volume을 그대로 슬라이더 표시값으로 읽음(참조 못 구하면 기본 1).</summary>
-    static float GetReceiveVolume(VoicePlayerState player)
-    {
-        AudioSource src = (player.Playback as VoicePlayback)?.AudioSource;
-        return src != null ? src.volume : 1f;
     }
 
     /// <summary>

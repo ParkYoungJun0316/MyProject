@@ -27,9 +27,13 @@ using UnityEngine;
 ///   0명 = 기본(크림 테두리 + 빛 벽 + 파티클, 가장 밝게 — "비었다, 와라")
 ///   1명 = 초록 테두리, 빛 벽·파티클 끔 (선 사람에겐 "안전", 남에겐 "찼다")
 ///   2명 이상 = 흐린 회색 테두리, 빛 벽·파티클 끔 ("안전 꺼짐" — 위치는 남겨 한 명이 나가면 켜진다는 게 읽히게)
-/// 빨강은 쓰지 않는다(붕괴 경고 탠저린→진홍과 겹침). 인원은 GridChallenge.SafeTileOccupantCount(각 머신 로컬 점유 —
+/// 칸 테두리엔 빨강을 쓰지 않는다(붕괴 경고 탠저린→진홍과 겹침). 인원은 GridChallenge.SafeTileOccupantCount(각 머신 로컬 점유 —
 /// 정산 판정과 같은 규칙). markerVisual에 ZonePadVisual이 없으면 2명 이상일 때 마커를 끄는 것으로 대신한다.
 /// 이 모드에선 warnParticle을 쓰지 않는다.
+///
+/// [인원 숫자 — 2026-09-29] 안전 칸마다 압력 발판과 같은 모양의 "현재/정원" 숫자(WorldCountLabel)를 마커 위에 띄운다.
+/// 정원은 GridChallenge.SharedSafeTileCapacity(1). 0/1·1/1 = 흰색, 정원 초과(2/1~) = overloadedCountColor(기본 진홍 WarnPalette.End).
+/// 숫자는 마커의 자식이라 마커와 함께 켜지고 꺼진다. 새 RPC/NV 없음 — 칸 상태 색과 같은 로컬 점유를 읽는다.
 /// </summary>
 public class SafeZoneWarnSign : MonoBehaviour
 {
@@ -77,13 +81,24 @@ public class SafeZoneWarnSign : MonoBehaviour
     [SerializeField] private Color overloadedBorder = new Color(0.6f, 0.6f, 0.6f, 0.35f);
     [SerializeField] private Color overloadedFill = new Color(0.6f, 0.6f, 0.6f, 0.06f);
 
+    [Header("그리드 모드 — 인원 숫자 (압력 발판 숫자와 같은 모양)")]
+    [Tooltip("안전 칸마다 \"현재/정원\" 숫자를 띄운다")]
+    [SerializeField] private bool showCountLabel = true;
+    [Tooltip("마커(칸 윗면) 기준 숫자 높이, 월드 m — 압력 발판 offset.y와 맞춘다")]
+    [SerializeField] private float countLabelHeight = 1.8f;
+    [Tooltip("숫자 폰트 크기 — 압력 발판 fontSize와 맞춘다")]
+    [SerializeField] private float countFontSize = 10f;
+    [Tooltip("정원 초과(겹침) 때 숫자 색. 기본 = 붕괴 경고 끝색(진홍)")]
+    [SerializeField] private Color overloadedCountColor = WarnPalette.End;
+
     Coroutine _scheduleCoroutine;
 
     // 그리드 모드: 슬롯 n = n번째 안전 칸. 0번은 씬의 원본, 나머지는 복제.
     readonly List<GameObject> _markers = new List<GameObject>();
     readonly List<ZonePadVisual> _pads = new List<ZonePadVisual>();
     readonly List<int> _shownTiles = new List<int>();
-    readonly List<int> _shownState = new List<int>(); // 슬롯별 마지막 상태(0/1/2) — 바뀔 때만 칠한다
+    readonly List<int> _shownCount = new List<int>(); // 슬롯별 마지막 인원(-1 = 아직 안 칠함) — 바뀔 때만 칠한다
+    readonly List<WorldCountLabel> _labels = new List<WorldCountLabel>();
     bool _gridSubscribed;
 
     void Awake()
@@ -151,7 +166,8 @@ public class SafeZoneWarnSign : MonoBehaviour
             if (m == null) break;
             // 비활성 상태에서 옮긴 뒤 켠다 — ZonePadVisual은 OnEnable에서 이 위치로 발판·파티클을 맞춘다.
             m.transform.position = tiles[_shownTiles[slot]].transform.position + Vector3.up * markerHeightOffset;
-            _shownState.Add(-1);
+            _shownCount.Add(-1); // 숫자보다 먼저 — 숫자 쪽이 실패해도 슬롯 목록 길이는 맞게
+            PlaceCountLabel(slot);
         }
         RefreshGridMarkers();
     }
@@ -165,11 +181,21 @@ public class SafeZoneWarnSign : MonoBehaviour
 
     void RefreshGridMarkers()
     {
-        for (int slot = 0; slot < _shownTiles.Count && slot < _markers.Count; slot++)
+        int slots = Mathf.Min(_shownTiles.Count, Mathf.Min(_markers.Count, _shownCount.Count));
+        for (int slot = 0; slot < slots; slot++)
         {
-            int state = Mathf.Min(2, grid.SafeTileOccupantCount(_shownTiles[slot]));
-            if (_shownState[slot] == state) continue;
-            _shownState[slot] = state;
+            int count = grid.SafeTileOccupantCount(_shownTiles[slot]);
+            if (_shownCount[slot] == count) continue;
+            int prevState = OccupancyState(_shownCount[slot]);
+            _shownCount[slot] = count;
+
+            WorldCountLabel label = _labels[slot];
+            if (label != null)
+                label.Set(count, GridChallenge.SharedSafeTileCapacity,
+                          count > GridChallenge.SharedSafeTileCapacity ? overloadedCountColor : Color.white);
+
+            int state = OccupancyState(count);
+            if (prevState == state) continue;
 
             GameObject m = _markers[slot];
             ZonePadVisual pad = _pads[slot];
@@ -186,10 +212,46 @@ public class SafeZoneWarnSign : MonoBehaviour
         }
     }
 
+    /// <summary>-1 = 아직 안 칠함, 0 = 빔, 1 = 정원 이내, 2 = 정원 초과.</summary>
+    static int OccupancyState(int count)
+    {
+        if (count < 0) return -1;
+        if (count == 0) return 0;
+        return count <= GridChallenge.SharedSafeTileCapacity ? 1 : 2;
+    }
+
+    /// <summary>
+    /// 슬롯 n의 인원 숫자를 마커 위에 둔다. 처음 한 번만 만들고 이후엔 위치만 옮긴다(라운드마다 재생성 없음).
+    /// 복제 슬롯은 원본에 이미 붙은 숫자까지 복제되므로 AddSlot에서 그걸 찾아 재사용한다 — 중복 생성 방지.
+    /// </summary>
+    void PlaceCountLabel(int slot)
+    {
+        GameObject m = _markers[slot];
+        Vector3 pos = m.transform.position + Vector3.up * countLabelHeight;
+        WorldCountLabel label = _labels[slot];
+
+        if (!showCountLabel)
+        {
+            if (label != null) label.gameObject.SetActive(false);
+            return;
+        }
+
+        if (label == null)
+        {
+            label = WorldCountLabel.Create(m.transform, pos, countFontSize);
+            _labels[slot] = label;
+        }
+        else
+        {
+            label.transform.position = pos;
+            label.gameObject.SetActive(true);
+        }
+    }
+
     void HideGridMarkers()
     {
         _shownTiles.Clear();
-        _shownState.Clear();
+        _shownCount.Clear();
         for (int i = 0; i < _markers.Count; i++)
         {
             if (_pads[i] != null) _pads[i].ClearOverride();
@@ -215,6 +277,7 @@ public class SafeZoneWarnSign : MonoBehaviour
     {
         _markers.Add(go);
         _pads.Add(go.GetComponent<ZonePadVisual>());
+        _labels.Add(go.GetComponentInChildren<WorldCountLabel>(true));
     }
 
     static void SetActiveIfChanged(GameObject go, bool active)

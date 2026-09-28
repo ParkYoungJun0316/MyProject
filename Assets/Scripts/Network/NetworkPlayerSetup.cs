@@ -1,4 +1,3 @@
-using Dissonance;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,8 +7,9 @@ using UnityEngine.InputSystem;
 ///
 /// [역할]
 /// - OnNetworkSpawn: Owner / 비오너 분기 설정
-///   Owner   : PlayerInput 활성, ThirdPersonCamera 타겟, VoiceBroadcastTrigger 활성, 입력→NV 기록
-///   비오너  : PlayerInput 비활성, Rigidbody kinematic, VoiceBroadcastTrigger 비활성
+///   Owner   : PlayerInput 활성, ThirdPersonCamera 타겟, 입력→NV 기록
+///   비오너  : PlayerInput 비활성, Rigidbody kinematic
+///   (마이크 송신 VoiceBroadcastTrigger는 캐릭터가 아니라 DDOL NetworkManager 소속 — GameSettingsManager 참고)
 ///   Host    : HP·함정·낙사 확정 (Owner ReportFallDeath + Host Y 폴백)
 /// - ColorIndex NetworkVariable로 색 동기화 (Host가 스폰 후 설정)
 /// - 응원 버프 선택(SelectedBuffType) — 개인별 Shield/SpeedUp 선택, RequestToggleBuffType()으로 전환
@@ -70,7 +70,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
     private Rigidbody               _rb;
     private PlayerInput             _playerInput;
     private PlayerEvents            _events;
-    private VoiceBroadcastTrigger   _voiceBroadcast;
     private CheerKeywordEngine      _cheerKeyword;
     private PlayerAudio             _audio;
     private PlayerReviveState       _reviveState;
@@ -89,7 +88,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         _rb              = GetComponent<Rigidbody>();
         _playerInput     = GetComponent<PlayerInput>();
         _events          = GetComponent<PlayerEvents>();
-        _voiceBroadcast  = GetComponent<VoiceBroadcastTrigger>();
         _cheerKeyword    = GetComponent<CheerKeywordEngine>();
         _audio           = GetComponent<PlayerAudio>();
         _reviveState     = GetComponent<PlayerReviveState>();
@@ -212,15 +210,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         // Owner에게도 동일 위치로 복제됨 (NGO 기본 동작). 여기서 재조정하지 않고 검증만 한다.
         VerifySpawnPosition();
 
-        // 로컬 마이크 → Global room 송신은 Owner만 (비오너 인스턴스는 Dissonance가 NGO owner를 모름)
-        if (_voiceBroadcast != null)
-        {
-            _voiceBroadcast.enabled = true;
-            // NetworkManager.LocalClient.PlayerObject로 다시 찾는 오버로드는 이 시점엔 아직 null이라
-            // no-op됨(NGO가 PlayerObject를 채우는 건 OnNetworkSpawn 이후) — 캐시해둔 참조를 직접 넘긴다.
-            GameSettingsManager.Instance?.ApplyMicTransmitVolume(_voiceBroadcast);
-        }
-
         // 키워드 인식도 Owner만 (자기 마이크만 분석)
         if (_cheerKeyword != null) _cheerKeyword.enabled = true;
 
@@ -288,7 +277,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
             _rb.angularVelocity = Vector3.zero;
         }
 
-        if (_voiceBroadcast != null) _voiceBroadcast.enabled = false;
         if (_cheerKeyword  != null) _cheerKeyword.enabled  = false;
     }
 

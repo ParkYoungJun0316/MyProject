@@ -571,7 +571,9 @@ Inspector 필드 연결: `TutorialCheerNameUI`의 `closeButton` 신규 연결 �
 | **원격 플레이어 표시** | Owner 위치 복제 + 보간 |
 | **클라이언트 예측** | 이동은 Owner 로컬 → **별도 예측 불필요** |
 
-**Owner 전용:** 키 입력, 카메라, 애니 연출, 로컬 마이크·Vosk 응원 (`CheerKeywordEngine`, `VoiceBroadcastTrigger`).
+**Owner 전용:** 키 입력, 카메라, 애니 연출, 로컬 Vosk 응원 (`CheerKeywordEngine`).
+
+**로컬 마이크 송신 (`VoiceBroadcastTrigger`):** 캐릭터가 아니라 DDOL `NetworkManager` GameObject 소속(앱당 1개, 2026-09-29 이동 — `SoundAndSettingsDesign.md` 마이크 볼륨 항목). 세션이 살아 있으면 캐릭터 유무와 무관하게 송신(`End`·전환 커튼 포함, 사용자 승인).
 
 **데미지 Owner 신고 RPC (`ReportHitServerRpc` 등) / `ApplyDamageWithOwnerReport`:** Phase 1에서 제거 대상 — **플레이어 본체 “내가 맞았다” 신고**와, 발사체 B안 Client 트리거→ServerRpc(§9.0.1)는 구분한다.
 

@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -31,9 +30,8 @@ public class PressurePadCountUI : MonoBehaviour
     [Tooltip("World Space 텍스트 폰트 크기 (예: 3)")]
     [SerializeField] float fontSize = 0f;
 
-    PressurePad _pad;
-    TextMeshPro _text;
-    Transform   _camTransform;
+    PressurePad     _pad;
+    WorldCountLabel _label;
 
     void Awake()
     {
@@ -52,18 +50,6 @@ public class PressurePadCountUI : MonoBehaviour
             _pad.OnCountChanged.RemoveListener(OnCountChanged);
     }
 
-    void LateUpdate()
-    {
-        if (_text == null) return;
-        // Y 축만 카메라를 따라 수평 회전 — X·Z 고정으로 텍스트 항상 수직 유지
-        if (_camTransform == null) _camTransform = Camera.main?.transform;
-        if (_camTransform != null)
-        {
-            float yaw = _camTransform.eulerAngles.y;
-            _text.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-        }
-    }
-
     // ── 외부 API ────────────────────────────────────────────────
 
     /// <summary>
@@ -72,10 +58,10 @@ public class PressurePadCountUI : MonoBehaviour
     /// </summary>
     public void Refresh()
     {
-        if (_text == null)
-            BuildText();
+        if (_label == null)
+            BuildLabel();
 
-        _text.gameObject.SetActive(true);
+        _label.gameObject.SetActive(true);
         RefreshText();
     }
 
@@ -83,63 +69,33 @@ public class PressurePadCountUI : MonoBehaviour
 
     void OnCountChanged(int current, int required)
     {
-        if (_text == null)
-            BuildText();
+        if (_label == null)
+            BuildLabel();
 
-        _text.gameObject.SetActive(true);
+        _label.gameObject.SetActive(true);
 
         if (door != null && door.latchOnOpen && door.IsOpen)
-            SetText(required, required);
+            _label.Set(required, required);
         else
-            SetText(current, required);
+            _label.Set(current, required);
     }
 
     void RefreshText()
     {
         if (door != null && door.latchOnOpen && door.IsOpen)
-            SetText(_pad.requiredCount, _pad.requiredCount);
+            _label.Set(_pad.requiredCount, _pad.requiredCount);
         else
-            SetText(_pad.CurrentCount, _pad.requiredCount);
+            _label.Set(_pad.CurrentCount, _pad.requiredCount);
     }
 
-    void SetText(int current, int required)
+    void BuildLabel()
     {
-        if (_text == null) return;
-        _text.text = $"{current}/{required}";
-    }
-
-    void BuildText()
-    {
-        // 발판(쿠키 등)은 루트 Scale이 30~80배라 자식이 그 배율을 그대로 물려받으면
-        // 글자가 수십 배 커지고 offset도 수십 배 멀어져 화면 밖으로 사라진다.
-        // 부모는 유지(Phase 루트와 함께 꺼지도록)하되, 배율을 상쇄해 월드 1배로 만들고
-        // offset은 월드 m 단위로 적용한다.
         // 높이 기준은 pivot이 아니라 발판 메시 윗면 — 쿠키는 pivot이 바닥이고 두께가 Scale에
-        // 비례해서, pivot 기준이면 배율마다 글자 높이가 달라진다.
+        // 비례해서, pivot 기준이면 배율마다 글자 높이가 달라진다. 부모 Scale 상쇄는 WorldCountLabel 몫.
         Vector3 basePos = transform.position;
         Renderer body = GetComponentInChildren<Renderer>();
         if (body != null) basePos.y = body.bounds.max.y;
 
-        var go = new GameObject("PadCountText");
-        go.transform.SetParent(transform, false);
-        go.transform.position = basePos + offset;
-        go.transform.rotation = Quaternion.identity;
-
-        Vector3 s = transform.lossyScale;
-        go.transform.localScale = new Vector3(
-            Mathf.Approximately(s.x, 0f) ? 1f : 1f / s.x,
-            Mathf.Approximately(s.y, 0f) ? 1f : 1f / s.y,
-            Mathf.Approximately(s.z, 0f) ? 1f : 1f / s.z);
-
-        _text           = go.AddComponent<TextMeshPro>();
-        _text.alignment = TextAlignmentOptions.Center;
-        _text.color     = Color.white;
-        _text.fontStyle = FontStyles.Bold;
-
-        if (fontSize > 0f)
-            _text.fontSize = fontSize;
-
-        _text.outlineWidth = 0.2f;
-        _text.outlineColor = new Color32(0, 0, 0, 255);
+        _label = WorldCountLabel.Create(transform, basePos + offset, fontSize);
     }
 }
