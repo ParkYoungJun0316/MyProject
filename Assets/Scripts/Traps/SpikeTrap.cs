@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -47,7 +48,11 @@ public class SpikeTrap : TrapBase
     Vector3 loweredLocalPos;
     Vector3 baseColliderCenter;
     bool isRaised;
-    float nextDamageTime;
+
+    // [버그 수정 2026-09-30] 쿨다운은 플레이어별 — 예전엔 칸마다 하나라 한 칸(20m)에 여럿이 서 있으면
+    // 먼저 잡힌 한 명(무적이어도)이 매번 쿨다운을 소모해 나머지는 올라와 있는 0.3초 내내 안 맞았다.
+    // ContactDamage(2026-09-23)와 같은 수정.
+    readonly Dictionary<Player, float> _nextDamageTime = new Dictionary<Player, float>();
 
     // [버그 수정 2026-09-26] SpikeLane 아래 타일은 SpikeLaneField가 레인 단위로 발동한다. StageManager에
     // 등록되면 StartStage()가 30개 타일을 딜레이 없이 한꺼번에 한 번 올려서 SpikeLaneField.initialDelay가
@@ -198,13 +203,35 @@ public class SpikeTrap : TrapBase
         var nm = NetworkManager.Singleton;
         if (nm != null && nm.IsListening && !nm.IsServer) return;
 
-        if (Time.time < nextDamageTime) return;
-
         // 루트 캡슐만 인정 — 같은 Player 태그인 자식 PunchHitBox는 무시.
         Player p = other.GetComponent<Player>();
         if (p == null) return;
 
+        if (_nextDamageTime.TryGetValue(p, out float next) && Time.time < next) return;
+
         NetworkDamageUtil.ApplyDamage(p, damage);
-        nextDamageTime = Time.time + Mathf.Max(damageInterval, 0.1f);
+        _nextDamageTime[p] = Time.time + Mathf.Max(damageInterval, 0.1f);
+    }
+
+    // [버그 수정 2026-09-30] Deactivate()/비활성화의 StopAllCoroutines()가 RaiseCycle()을 중간에 끊으면
+    // isRaised=true·트리거 켜짐이 그대로 남아 그 칸이 계속 데미지를 주고, 다음 발동도 `if (!isRaised)`에
+    // 막혀 다시는 올라오지 않았다. 끊긴 쪽에서 내려간 상태로 되돌린다.
+    protected override void OnDeactivated() => ResetLowered();
+
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        ResetLowered();
+    }
+
+    void ResetLowered()
+    {
+        isRaised = false;
+        _nextDamageTime.Clear();
+
+        if (spikeTrigger == null) return; // 한 번도 초기화 안 됨 = 올라간 적 없음
+        spikeTrigger.enabled = false;
+        if (spikeVisual != null) spikeVisual.localPosition = loweredLocalPos;
+        SyncColliderCenter();
     }
 }
