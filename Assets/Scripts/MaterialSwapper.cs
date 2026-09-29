@@ -39,6 +39,12 @@ public class MaterialSwapper : MonoBehaviour
 
         [Tooltip("이 세트 적용 시 교체할 렌더러/슬롯/머티리얼 목록")]
         public RendererSlotPair[] changes;
+
+        [Tooltip("켜면 이 세트 적용 시 RenderSettings.fogColor도 함께 바꾼다 (하늘 색이 바뀌는 페이즈용)")]
+        public bool setFogColor;
+
+        [Tooltip("setFogColor가 켜져 있을 때 적용할 안개 색 — 보통 이 세트 하늘이 화면에 찍힌 색")]
+        public Color fogColor = Color.gray;
     }
 
     [Header("머티리얼 세트 목록 (인덱스 = Apply 호출 시 사용하는 번호)")]
@@ -69,6 +75,9 @@ public class MaterialSwapper : MonoBehaviour
         }
 
         MaterialSet set = sets[setIndex];
+        if (set.setFogColor)
+            RenderSettings.fogColor = set.fogColor;
+
         if (set.changes == null) return;
 
         foreach (RendererSlotPair pair in set.changes)

@@ -14,8 +14,16 @@
 >
 > **번역 원칙:** ①각 언어 문법에 맞게. ②단순 직역이 아니라 그 언어 화자가 게임 튜토리얼에서 실제로 쓸 법한 자연스러운 말투로 다듬음 — 예를 들어 영어는 캐주얼한 명령형, 일본어는 です/ます체, 독일어/프랑스어/러시아어/폴란드어는 비격식 2인칭(du/tu/ты/ty), 스페인어는 스페인(pulsa)과 중남미(presiona) 어휘 차이, 포르투갈은 포르투갈(carrega em)과 브라질(aperte) 어휘 차이를 반영함.
 > **[2026-09-17] 팀 응원 단어 한국어 용어 = `팀 키워드`로 통일.** 설정 UI(`CheerNamePanel`·`Board_CheerName`·`Prompt.CheerName`)가 이미 쓰던 말. `Board_TeamCheer.Body`의 `팀워드`, StageTip의 `팀 응원 이름`을 이 말로 교체(StageTip 쪽 다른 언어도 설정 UI 용어로 맞춤 — `StageTipTranslations.md` 용어표). 스토리 대사의 `팀 구호`는 캐릭터 말투라 유지.
+> **[2026-09-30] `pt`(포르투갈-유럽)는 미사용 — 관리하지 않음, `pt-BR`만 갱신.** Locale·테이블(`Tutorial`/`StageTip`/`StageTitle`/`DeathUI`의 `_pt`)은 남아 있어 빌드(Addressables)에 포함되지만, 설정 언어 목록에서 숨겨져 있고(`LocaleDisplayName.IsOfferedInSettings`) 시스템 언어 포르투갈어도 `pt-BR`로 연결돼(`GameLocalizationBootstrap`) 플레이어가 고를 방법이 없다. `Dialogue`·`SettingUI`엔 `_pt` 테이블 자체가 없음. 아래 목록의 `pt:` 줄은 이력(09-30 보드 문구 포함 — 넣지 않아도 됐던 값). 정리는 출시 후.
 **용어 통일:** "host"는 한국어 원문도 번역하지 않고 그대로 쓰므로, 각 언어에서 그 지역 게이머들이 실제로 쓰는 표현을 채택함 — en/de/ru/pl `host`(차용어 그대로), fr `l'hôte`, ja `ホスト`, zh `房主`, es `el host`, pt `anfitrião`, pt-BR `host`.
 > **"팀 응원 단어"**는 모든 언어에서 `TeamCheer`/`Test` 섹션에 동일한 표현으로 통일(예: en `your team's cheer word`, ja `チームの合言葉`, de `das Team-Wort`).
+>
+> **[2026-09-30] 씬 재배치에 맞춘 문구 축소 (MCP, String Table 13로케일 + 씬 하드코딩 한국어 동기화).** 보드가 Start 간판 스타일로 바뀌고 글씨가 커지면서(제목 48 / 본문·조작 30) 긴 설명을 뺐다.
+> - `Row_Push` (피해 없음), `Row_Buff` (방어 ↔ 이속), `Row_Tip` (홀드) 괄호 삭제. `Row_Buff`는 괄호를 넣으면 pl 기준 한 줄 칸의 1.6배라 들어갈 수 없고, Q를 누르면 HUD 버프 아이콘이 바로 바뀌어 설명 없이도 보인다. `Row_Emot`의 (1~8)은 유지.
+> - `Row_Speek` 둘째 문장("뒤 안내를 따라주세요") 삭제 — 새 배치에선 정보판이 모두 앞쪽(북쪽)이라 "뒤"가 틀린 말.
+> - `Board_CheerName.Body` / `Board_TeamCheer.Body` 전면 교체(아래 해당 절). 한국어는 `CheerNamePanel.Feedback_NotServer`와 같게 "호스트". 설정 옵션 이름은 `SettingUI` 테이블 `Settings.DigitCheer` 값을 그 언어 그대로 인용하고, 옵션 이름 안에는 줄바꿈 없는 공백(U+00A0)을 넣어 줄 중간에서 끊기지 않게 함. zh-Hant는 `話`가 Noto TC 정적 아틀라스에 없어 `沒有麥克風時`로 씀.
+> - 레이아웃 여유: 조작 라벨 자동 축소 22~30, 체험 보드 제목 34~48·본문 24~30. 최장 대입 실측 — 조작은 ru `Row_Emot`만 26.6으로 축소, `Board_CheerName.Body` fr 3줄, `Board_TeamCheer.Title` fr 41.
+> - 폰트: `Fredoka-Bold SDF`에 Fredoka 원본이 가진 라틴 확장 글자 111자 추가(멀티 아틀라스 3장). fr/es/pt/de 악센트는 이제 Fredoka로 나오고, Fredoka에 없는 pl `ą ć ę ń ś ź ż`(대소문자)·키릴·한중일은 기존대로 Noto Regular 대체.
 
 ## 키 네이밍
 
@@ -88,19 +96,21 @@
 
 ### `Tutorial.Board_Controls.Row_Push`
 
-- ko: 밀치기 (피해 없음)
-- en: Push (No Damage)
-- ja: 突き飛ばし（ダメージなし）
-- zh-Hans: 推开（无伤害）
-- zh-Hant: 推開（無傷害）
-- es: Empujar (sin daño)
-- es-419: Empujar (sin daño)
-- fr: Pousser (sans dégâts)
-- de: Stoßen (kein Schaden)
-- pt: Empurrar (sem dano)
-- pt-BR: Empurrar (sem dano)
-- ru: Толчок (без урона)
-- pl: Odepchnięcie (bez obrażeń)
+> **[2026-09-30]** 괄호 설명 삭제.
+
+- ko: 밀치기
+- en: Push
+- ja: 突き飛ばし
+- zh-Hans: 推开
+- zh-Hant: 推開
+- es: Empujar
+- es-419: Empujar
+- fr: Pousser
+- de: Stoßen
+- pt: Empurrar
+- pt-BR: Empurrar
+- ru: Толчок
+- pl: Odepchnięcie
 
 ### `Tutorial.Board_Controls.Row_Color`
 
@@ -136,19 +146,21 @@
 
 ### `Tutorial.Board_Controls.Row_Buff`
 
-- ko: 버프 교체 (방어 ↔ 이속)
-- en: Swap Buff (Defense ↔ Speed)
-- ja: バフ切り替え（防御↔速度）
-- zh-Hans: 切换增益（防御↔速度）
-- zh-Hant: 切換增益（防禦↔速度）
-- es: Cambiar mejora (Defensa ↔ Velocidad)
-- es-419: Cambiar mejora (Defensa ↔ Velocidad)
-- fr: Changer de bonus (Défense ↔ Vitesse)
-- de: Buff wechseln (Verteidigung ↔ Tempo)
-- pt: Trocar bónus (Defesa ↔ Velocidade)
-- pt-BR: Trocar buff (Defesa ↔ Velocidade)
-- ru: Смена баффа (Защита ↔ Скорость)
-- pl: Zmiana wzmocnienia (Obrona ↔ Prędkość)
+> **[2026-09-30]** 괄호 설명 삭제 (구: `버프 교체 (방어 ↔ 이속)`).
+
+- ko: 버프 교체
+- en: Swap Buff
+- ja: バフ切り替え
+- zh-Hans: 切换增益
+- zh-Hant: 切換增益
+- es: Cambiar mejora
+- es-419: Cambiar mejora
+- fr: Changer de bonus
+- de: Buff wechseln
+- pt: Trocar bónus
+- pt-BR: Trocar buff
+- ru: Смена баффа
+- pl: Zmiana wzmocnienia
 
 ### `Tutorial.Board_Controls.Row_BuffUse`
 
@@ -175,19 +187,21 @@
 > - 실측(13로케일, 폭 540·Auto Size 20~30): 전부 30 유지, 최장 ru 442.
 > - 구 값(참고): ko 팀 부활 / en Team Revive — 다운+E 홀드 설계 시절 문구, 2026-09-17에 괄호 설명 삭제 후 축약됐던 것.
 
-- ko: Tip 보기 (홀드)
-- en: Show Tip (Hold)
-- ja: Tipを表示（長押し）
-- zh-Hans: 显示 Tip（按住）
-- zh-Hant: 顯示 Tip（按住）
-- es: Ver Tip (mantén)
-- es-419: Ver Tip (mantén)
-- fr: Voir le Tip (maintenir)
-- de: Tip anzeigen (halten)
-- pt: Ver Tip (manter)
-- pt-BR: Ver Tip (segurar)
-- ru: Показать Tip (удерживать)
-- pl: Pokaż Tip (przytrzymaj)
+> **[2026-09-30]** `(홀드)` 삭제 — 위 09-24 메모의 홀드 설명은 이력.
+
+- ko: Tip 보기
+- en: Show Tip
+- ja: Tipを表示
+- zh-Hans: 显示 Tip
+- zh-Hant: 顯示 Tip
+- es: Ver Tip
+- es-419: Ver Tip
+- fr: Voir le Tip
+- de: Tip anzeigen
+- pt: Ver Tip
+- pt-BR: Ver Tip
+- ru: Показать Tip
+- pl: Pokaż Tip
 
 ### `Tutorial.Board_Controls.Row_Emot`
 
@@ -207,19 +221,21 @@
 
 ### `Tutorial.Board_Controls.Row_Speek`
 
-- ko: 음성 인식 게임입니다. 뒤 안내를 따라주세요.
-- en: This is a voice-recognition game. Please follow the sign behind you.
-- ja: これは音声認識ゲームです。後ろの案内板の指示に従ってください。
-- zh-Hans: 这是一款语音识别游戏。请按照后方指示牌操作。
-- zh-Hant: 這是一款語音辨識遊戲。請依照後方指示牌操作。
-- es: Este es un juego de reconocimiento de voz. Sigue las indicaciones del cartel de detrás.
-- es-419: Este es un juego de reconocimiento de voz. Sigue las indicaciones del letrero de atrás.
-- fr: Ceci est un jeu de reconnaissance vocale. Suivez les indications du panneau derrière vous.
-- de: Dies ist ein Spracherkennungsspiel. Bitte folge den Hinweisen auf dem Schild hinter dir.
-- pt: Este é um jogo de reconhecimento de voz. Siga as instruções no painel atrás de si.
-- pt-BR: Este é um jogo de reconhecimento de voz. Siga as instruções na placa atrás de você.
-- ru: Это игра с распознаванием голоса. Следуйте указаниям на табличке позади вас.
-- pl: To gra z rozpoznawaniem głosu. Postępuj zgodnie ze wskazówkami na tablicy za tobą.
+> **[2026-09-30]** 둘째 문장("뒤 안내를 따라주세요") 삭제 — 새 배치에선 안내판이 전부 앞쪽. 씬 `Row_Speek`에 HorizontalLayoutGroup을 달아 아이콘+문장이 길이와 무관하게 가운데 정렬됨.
+
+- ko: 음성 인식 게임입니다.
+- en: This is a voice-recognition game.
+- ja: これは音声認識ゲームです。
+- zh-Hans: 这是一款语音识别游戏。
+- zh-Hant: 這是一款語音辨識遊戲。
+- es: Este es un juego de reconocimiento de voz.
+- es-419: Este es un juego de reconocimiento de voz.
+- fr: Ceci est un jeu de reconnaissance vocale.
+- de: Dies ist ein Spracherkennungsspiel.
+- pt: Este é um jogo de reconhecimento de voz.
+- pt-BR: Este é um jogo de reconhecimento de voz.
+- ru: Это игра с распознаванием голоса.
+- pl: To gra z rozpoznawaniem głosu.
 
 ---
 
@@ -251,19 +267,22 @@
 
 > 경고 표시(빨간 느낌표, 1회 통과 규칙)는 텍스트로 설명하지 않는다 — [E]로 바로 연습해보면 직관적으로 보이므로 굳이 규칙을 나열하지 않기로 함(사용자 결정, 2026-09-14).
 
-- ko: 경고 아이콘이 뜨면 팀 키워드를 다같이 외쳐서 위협을 되돌리세요.\n여기서 [E]를 누르면 바로 연습할 수 있어요.
-- en: When the warning icon appears, shout your team's word together to undo the threat.\nPress [E] here to practice right now.
-- ja: 警告アイコンが出たら、チームの合言葉をみんなで叫んで脅威を元に戻しましょう。\nここで[E]を押せば、すぐに練習できます。
-- zh-Hans: 警告图标出现时，全队一起喊出团队关键词，把威胁解除。\n在这里按[E]即可马上练习。
-- zh-Hant: 警告圖示出現時，全隊一起喊出團隊關鍵詞，把威脅解除。\n在這裡按[E]即可馬上練習。
-- es: Cuando aparezca el icono de aviso, gritad todos juntos la palabra de equipo para anular la amenaza.\nPulsa [E] aquí para practicar ahora mismo.
-- es-419: Cuando aparezca el ícono de advertencia, griten todos juntos la palabra de equipo para anular la amenaza.\nPresiona [E] aquí para practicar ahora mismo.
-- fr: Quand l'icône d'alerte apparaît, criez tous ensemble le mot d'équipe pour annuler la menace.\nAppuie sur [E] ici pour t'entraîner tout de suite.
-- de: Wenn das Warnsymbol erscheint, ruft gemeinsam das Team-Wort, um die Bedrohung rückgängig zu machen.\nDrücke hier [E], um sofort zu üben.
-- pt: Quando aparecer o ícone de aviso, gritem todos juntos a palavra de equipa para anular a ameaça.\nCarrega em [E] aqui para praticares já.
-- pt-BR: Quando o ícone de aviso aparecer, gritem juntos a palavra da equipe para desfazer a ameaça.\nAperte [E] aqui para praticar agora mesmo.
-- ru: Когда появится значок предупреждения, прокричите командное слово все вместе, чтобы отменить угрозу.\nНажми [E] здесь, чтобы потренироваться прямо сейчас.
-- pl: Gdy pojawi się ikona ostrzeżenia, krzyknijcie razem drużynowe hasło, żeby cofnąć zagrożenie.\nNaciśnij tu [E], żeby od razu poćwiczyć.
+> **[2026-09-30] 한 문장으로 축소.** [E] 연습 안내는 보드 아래 `Prompt.TeamCheerTest`가 대신한다. 한국어만 씬 디자인대로 `\n` 2줄, 다른 언어는 자동 줄바꿈.
+> 구 값(참고): ko `경고 아이콘이 뜨면 팀 키워드를 다같이 외쳐서 위협을 되돌리세요.\n여기서 [E]를 누르면 바로 연습할 수 있어요.`
+
+- ko: 경고가 뜨면\n다 같이 팀 키워드를 외치세요.
+- en: When the warning appears, shout the team word together.
+- ja: 警告が出たら、みんなでチームの合言葉を叫びましょう。
+- zh-Hans: 警告出现时，全队一起喊出团队关键词。
+- zh-Hant: 警告出現時，全隊一起喊出團隊關鍵詞。
+- es: Cuando aparezca el aviso, gritad todos juntos la palabra de equipo.
+- es-419: Cuando aparezca la advertencia, griten todos juntos la palabra de equipo.
+- fr: Quand l'alerte apparaît, criez tous ensemble le mot d'équipe.
+- de: Wenn die Warnung erscheint, ruft gemeinsam das Team-Wort.
+- pt: Quando aparecer o aviso, gritem todos juntos a palavra de equipa.
+- pt-BR: Quando o aviso aparecer, gritem juntos a palavra da equipe.
+- ru: Когда появится предупреждение, прокричите командное слово все вместе.
+- pl: Gdy pojawi się ostrzeżenie, krzyknijcie razem hasło drużyny.
 
 ---
 
@@ -286,6 +305,26 @@
 - pl: Hasło drużyny
 
 ### `Tutorial.Board_CheerName.Body`
+
+> **[2026-09-30] 2문장으로 교체.** 형식 규칙(2~12자·영문 소문자)은 패널 입력 피드백이 알려주므로 보드에서 뺌. `⍽`는 줄바꿈 없는 공백(U+00A0) — 옵션 이름이 줄 중간에서 끊기지 않게. 한국어만 씬 디자인대로 `\n` 3줄.
+> 구 값(참고, 아래 목록은 이력): ko `TeamCheerWord는 host만 설정할 수 있어요.\n실제로 자주 쓰는 영어 단어일수록…\n마이크가 없거나 인식이 안 되면 ESC → 일반 탭 → "T키로 응원하기"를 켜고…`
+>
+> **현재 값:**
+> - ko: 호스트만 정할 수 있어요.\n마이크가 없으면\n설정에서 T키 응원을 켜세요.
+> - en: Only the host can set it.\nNo mic? Turn on "Cheer⍽with⍽T⍽Key" in Options.
+> - ja: ホストだけが設定できます。\nマイクがない場合は、オプションで「Tキーで応援」をオンにしてください。
+> - zh-Hans: 只有房主可以设置。\n没有麦克风时，请在选项中打开“用T键加油”。
+> - zh-Hant: 只有房主可以設定。\n沒有麥克風時，請在選項中開啟「用T鍵加油」。
+> - es: Solo el host puede definirla.\nSi no tienes micrófono, activa «Cheer⍽con⍽tecla⍽T» en Opciones.
+> - es-419: Solo el host puede definirla.\nSi no tienes micrófono, activa "Cheer⍽con⍽tecla⍽T" en Opciones.
+> - fr: Seul l'hôte peut le définir.\nPas de micro⍽? Active «⍽Cheer⍽(touche⍽T)⍽» dans les Options.
+> - de: Nur der Host kann es festlegen.\nKein Mikro? Aktiviere „Cheer⍽mit⍽T-Taste“ in den Optionen.
+> - pt: Só o anfitrião a pode definir.\nSem microfone? Ativa «Cheer⍽com⍽tecla⍽T» nas Opções.
+> - pt-BR: Só o host pode definir.\nSem microfone? Ative "Cheer⍽com⍽tecla⍽T" nas Opções.
+> - ru: Задать его может только хост.\nНет микрофона? Включи «Поддержка⍽клавишей⍽T» в опциях.
+> - pl: Tylko host może je ustawić.\nNie masz mikrofonu? Włącz „Cheer⍽klawiszem⍽T” w Opcjach.
+
+**구 값 (이력):**
 
 - ko: TeamCheerWord는 host만 설정할 수 있어요.\n실제로 자주 쓰는 영어 단어일수록 인식이 잘 돼요. (2~12자, 영문 소문자만)\n마이크가 없거나 인식이 안 되면 ESC → 일반 탭 → "T키로 응원하기"를 켜고, 경고가 뜨면 T키를 누르세요.
 - en: Only the host can set the TeamCheerWord.\nReal words you'd actually say out loud are recognized best. (2–12 letters, lowercase English only)\nNo mic, or not being recognized? Turn on T-key cheering in Options → General, then press T when the warning appears.
@@ -582,6 +621,7 @@
 ## Prompt (E-키 상호작용 안내, Tutorial·Interlude 공용)
 
 > `CheerNameSignboard`(응원 이름 패널 오픈)와 `TutorialCheerNameTest`(미니 입 — 팀 응원 인식 테스트)의 월드스페이스 `PromptRoot/PromptText`. 두 씬(`Tutorial.unity`, `Interlude.unity`)에 동일 기능이 각각 존재하고 문구도 동일하므로, `CheerNamePanel.*`과 같은 방식으로 **키를 공유**함(씬별로 따로 안 만듦).
+> **[2026-09-30] 상시 표시.** 두 프롬프트는 거리와 무관하게 항상 보인다(패널 열림·연습 창 진행 중에만 숨김, Tutorial·Interlude 공통 — `NetworkDesign.md` §6B 해당 항목). Tutorial 씬에선 `PromptRoot/Bg`(Start 간판 배경 + HorizontalLayoutGroup + ContentSizeFitter)가 글자 길이에 맞춰 늘어나 언어별 길이 차이를 흡수한다. 최장 fr `[E] Test d'encouragement d'équipe` 실측 562.
 > `TutorialCheerNameTest`의 프롬프트는 원래 `[E] Team Cheer Test`로 **영어가 하드코딩**되어 있었음(로컬라이즈 미적용 상태로 방치됨) — 2026-09-08에 발견, 한국어 베이스 텍스트로 교정 후 로컬라이즈함.
 
 | 키 | 연결 대상 | 원문(교정 전) |

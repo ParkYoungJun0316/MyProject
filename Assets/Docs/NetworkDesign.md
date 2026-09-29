@@ -448,7 +448,8 @@ Title → Tutorial (Host 1인, TutorialGatherZone 즉시 통과) → (동일 스
 - `PlayerCheerNameSync.GetAllEffectiveNames()`(기존 public static)로 내 clientId의 "실제 적용중인 이름"(커스텀 없으면 색 기본값)을 그대로 읽어 표시 — 별도 기본값 계산 로직 없음
 - 타이핑 중엔 로컬만(§3.4) — 확정 전까지 ServerRpc 호출 자체가 없어 이 구조로 자동 충족
 - **개폐 방식 (2026-08-19 변경):** `CheerNamePanel`(패널 루트 GameObject) 자체를 `Open()`/`Close()`/`Toggle()`로 활성/비활성 토글. `IsOpen` 정적 플래그(`InGameChatUI.IsChatOpen`과 동일 패턴)로 `Player.cs`가 이동 잠금. 게이트 통과 전까지 몇 번이든 다시 열어 재확정 가능(§3.4)
-- `TutorialCheerNameSignboard`: Tutorial 구역 2의 상호작용 표지판 — 로컬 플레이어가 트리거 범위에 들어오면 프롬프트 표시, E키로 `cheerNameUI.Toggle()` 호출. 순수 로컬(네트워크 판정 없음, 각자 자기 화면 UI만 여닫으므로 충돌 없음)
+- `TutorialCheerNameSignboard`: Tutorial 구역 2의 상호작용 표지판 — 로컬 플레이어가 트리거 범위 안에서 E키로 `cheerNameUI.Toggle()` 호출. 순수 로컬(네트워크 판정 없음, 각자 자기 화면 UI만 여닫으므로 충돌 없음)
+  - **[2026-09-30] 프롬프트 상시 표시** (Tutorial·Interlude 공통, `TutorialTeamCheerTestSignboard`도 동일): 예전엔 트리거에 들어와야 `[E]` 프롬프트가 켜졌으나, 이제 거리와 무관하게 항상 켜고 패널이 열려 있을 때(팀 응원 연습은 창 진행 중·Host 응답 대기 중)만 숨긴다. E 입력은 여전히 트리거 안에서만. 아래 08-19 목록의 "기본 비활성"·"근처에 가면 프롬프트" 항목은 이력.
 
 **씬 배치 (2026-08-19 MCP 반영 완료):** `Assets/Scenes/Tutorial.unity`
 

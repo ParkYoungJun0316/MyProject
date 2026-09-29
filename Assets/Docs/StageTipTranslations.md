@@ -8,6 +8,7 @@
 > 표시 시 비어 있지 않은 줄 앞에 `•` 불릿. 빈 줄에는 점 없음. `Tools/Setup StageTip Localization`이 테이블에 같이 넣는다.
 
 > **2026-09-24 전면 재번역:** ko·en 확정 후 **영어 기준**으로 10개 언어 재작성(대사 개정 작업과 함께). `Tip.M.Stage4.1`·`Tip.T.Stage2.1`·`Tip.M.Boss.4`는 영어가 안 바뀌어 기존 번역 유지. String Table에도 반영 완료(`pt`는 `pt-BR`과 동일).
+> **[2026-09-30] `pt`는 미사용 — 관리하지 않음, `pt-BR`만 갱신.** 설정 언어 목록에서 숨겨져 있고 시스템 언어 포르투갈어도 `pt-BR`로 연결돼 플레이어가 고를 수 없다(`TutorialTranslations.md` 상단 참고). 정리는 출시 후.
 >
 > **2026-09-24 진짜 최종본:** 위 10개 언어 문장을 다시 교체해 String Table `StageTip_*`에 반영(`pt`는 `pt-BR`과 동일). ko·en도 팀 구호 / team cheer로 맞춤. 팀 구호 용어는 대사와 같이 ja チームの掛け声 / es·es-419 grito de equipo / fr cri d'équipe / de Teamruf / pt-BR grito da equipe / ru командный клич / pl okrzyk drużyny.
 

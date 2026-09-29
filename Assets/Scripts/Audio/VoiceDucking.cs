@@ -20,20 +20,25 @@ using UnityEngine;
 /// </summary>
 public class VoiceDucking : MonoBehaviour
 {
-    [Tooltip("팀원이 말하는 동안 게임 소리 배율. 0.4 ≈ -8dB.")]
-    [SerializeField, Range(0f, 1f)] float duckedVolume = 0.4f;
+    [Tooltip("팀원이 말하는 동안 게임 소리 배율. 0.5 ≈ -6dB (Xbox 파티 채팅 기본값과 같음).")]
+    [SerializeField, Range(0f, 1f)] float duckedVolume = 0.5f;
 
     [Tooltip("말 시작 시 줄어드는 데 걸리는 시간(초).")]
     [SerializeField] float fadeDownSeconds = 0.15f;
 
-    [Tooltip("말이 끝난 뒤 원래대로 돌아오는 데 걸리는 시간(초).")]
+    [Tooltip("말이 끊긴 뒤 복구를 시작하기 전 기다리는 시간(초). 문장 사이 짧은 쉼마다 줄었다 커졌다 하는 것을 막는다.")]
+    [SerializeField] float releaseHoldSeconds = 0.4f;
+
+    [Tooltip("대기 후 원래대로 돌아오는 데 걸리는 시간(초).")]
     [SerializeField] float fadeUpSeconds = 0.6f;
 
     float _current = 1f;
+    float _lastSpeakingTime = float.NegativeInfinity;
 
     void Update()
     {
-        bool teammateSpeaking = ScanRemoteVoices();
+        if (ScanRemoteVoices()) _lastSpeakingTime = Time.unscaledTime;
+        bool teammateSpeaking = Time.unscaledTime - _lastSpeakingTime < releaseHoldSeconds;
 
         float target = teammateSpeaking ? duckedVolume : 1f;
         float seconds = teammateSpeaking ? fadeDownSeconds : fadeUpSeconds;
@@ -46,6 +51,7 @@ public class VoiceDucking : MonoBehaviour
     void OnDisable()
     {
         _current = 1f;
+        _lastSpeakingTime = float.NegativeInfinity;
         AudioListener.volume = 1f;
     }
 

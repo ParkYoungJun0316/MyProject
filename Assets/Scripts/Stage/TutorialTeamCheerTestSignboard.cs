@@ -25,8 +25,12 @@ using UnityEngine.InputSystem;
 /// 2. mouthController에 씬의 mouth0(MouthController) 연결
 ///    - mouth0 쪽: teamCheerHazard = true, startOnAwake = false(자동 랜덤 사이클 금지, E로만 시작)
 ///    - screenFader는 비워둘 것(테스트에서 화면 암전 없이 입 애니메이션만 보이게)
-/// 3. promptRoot에 "[E] 팀 응원 연습" 안내 UI 연결 — 기본 비활성 권장
+/// 3. promptRoot에 "[E] 팀 응원 연습" 안내 UI 연결
 /// 4. CheerService가 이미 이 씬(Tutorial)에 배치돼 있어야 동작(Phase D0 완료 전제)
+///
+/// [프롬프트 상시 표시 — 2026-09-30 사용자 결정, Tutorial·Interlude 공통]
+/// 프롬프트는 거리와 무관하게 항상 켜고, 창이 열려 있거나 Host 응답을 기다리는 동안만 숨긴다.
+/// E 입력 자체는 여전히 트리거 안에서만 받는다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(NetworkObject))]
@@ -35,7 +39,7 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     [Tooltip("Tutorial 씬의 mouth0(MouthController). teamCheerHazard=true, startOnAwake=false로 설정.")]
     [SerializeField] MouthController mouthController;
 
-    [Tooltip("근처에 있을 때만 보이는 \"[E] 팀 응원 연습\" 프롬프트. 비워도 동작(프롬프트 없이 상호작용만).")]
+    [Tooltip("항상 보이는 \"[E] 팀 응원 연습\" 프롬프트(창 진행 중·Host 응답 대기 중엔 숨김). 비워도 동작(프롬프트 없이 상호작용만).")]
     [SerializeField] GameObject promptRoot;
 
     [Tooltip("팀 응원 창이 열려 있는 동안만 켤 바닥 경고(원형 패드 등). 비워도 동작.")]
@@ -52,7 +56,6 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     void Awake()
     {
         GetComponent<Collider>().isTrigger = true;
-        SetPromptVisible(false);
         SetWarningVisible(false);
 
         if (mouthController == null)
@@ -73,7 +76,6 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
         if (netObj == null || !netObj.IsOwner) return; // 남의 캐릭터는 내 화면 프롬프트와 무관
 
         _localPlayerInRange = inRange;
-        if (!inRange) SetPromptVisible(false);
     }
 
     void Update()
@@ -82,11 +84,12 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
         if (windowOpen) _requestExpiresAt = -1f;
         SetWarningVisible(windowOpen);
 
-        if (!_localPlayerInRange || mouthController == null) return;
-
-        // 창이 열려 있는 동안(Warning~Open)엔 프롬프트를 숨겨 중복 상호작용을 막는다.
+        // 프롬프트는 거리와 무관하게 상시 표시 — 창이 열려 있는 동안(Warning~Open)과
+        // Host 응답 대기 중에만 숨겨 중복 상호작용을 막는다.
         bool waitingForHost = Time.time < _requestExpiresAt;
         SetPromptVisible(!windowOpen && !waitingForHost);
+
+        if (!_localPlayerInRange || mouthController == null) return;
         if (windowOpen || waitingForHost) return;
 
         // 채팅·치어네임 입력창이 열려 있으면 타이핑한 'e'가 상호작용으로 새지 않게 양보
@@ -120,7 +123,8 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
 
     void SetPromptVisible(bool visible)
     {
-        if (promptRoot != null) promptRoot.SetActive(visible);
+        if (promptRoot != null && promptRoot.activeSelf != visible)
+            promptRoot.SetActive(visible);
     }
 
     void SetWarningVisible(bool visible)

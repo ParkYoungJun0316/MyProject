@@ -165,11 +165,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
         _gameplayTarget = target;
 
-        if (lockCursor)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible   = false;
-        }
+        RelockCursorIfIdle();
     }
 
     void LateUpdate()
@@ -315,6 +311,19 @@ public class ThirdPersonCamera : MonoBehaviour
         _activePitchMin = minPitch;
         _activePitchMax = maxPitch;
         _currentRot     = Quaternion.Euler(_pitch, _yaw, 0f);
+    }
+
+    /// <summary>
+    /// 커서가 필요한 UI가 하나도 없으면 커서를 잠근다. Start는 DontDestroyOnLoad라 첫 씬에서 1회뿐이므로
+    /// LocalPlayerCamera.SetTarget(씬마다 1회 re-bind)에서도 호출한다 — ESC 메뉴를 연 채 Reset/사망
+    /// 리로드되면 메뉴가 Forget으로만 빠져 새 씬에서 커서가 보이는 채 남던 버그(2026-09-30, 빌드 재현) 수정.
+    /// </summary>
+    public void RelockCursorIfIdle()
+    {
+        if (!lockCursor || CursorUnlockRequestUtil.IsRequested) return;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible   = false;
     }
 
     // ── 내부 ──────────────────────────────────────────────────────

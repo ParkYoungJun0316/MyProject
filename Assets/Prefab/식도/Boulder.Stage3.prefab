@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 4651515732452970991}
   - component: {fileID: 8575943539657768455}
   - component: {fileID: 7727390556875575076}
+  - component: {fileID: 8280599425962155681}
   m_Layer: 17
   m_Name: Boulder.Stage3
   m_TagString: EnemyBullet
@@ -202,7 +203,6 @@ MonoBehaviour:
   initialSpeed: 30
   lockYVelocity: 0
   waypoints: []
-  waypointReachDistance: 0
   endMode: 0
   autoStart: 0
 --- !u!114 &7727390556875575076
@@ -219,8 +219,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrapProjectile
   ShowTopMostFoldoutHeaderGroup: 1
   damage: 1
-  lifetime: 0
+  lifetime: 52
   moveDirection: {x: 0, y: 0, z: 1}
   destroyOnPlayer: 1
   hitEffectPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
   hitEffectLifetime: 4
+--- !u!114 &8280599425962155681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5554270180859063079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69b615c85fdb94842ad058a102a32fab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Breakable
+  breakTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 268435456
+  breakDelay: 0
+  destroyMinDistance: 20
+  destroyMaxDistance: 150
+  destroyRolloffMode: 0
+  debrisPrefab: {fileID: 1205794505428952240, guid: ca7f506a1c0ed8240aedd595492ee67f, type: 3}
+  debrisLifetime: 3
+  debrisImpulseMin: 4
+  debrisImpulseMax: 8
+  debrisScale: 9
+  damagePlayerOnBreak: 0
+  breakDamage: 1
+  knockbackForceMin: 5
+  knockbackForceMax: 10
+  damageRadius: 0
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  syncBreakOverNetwork: 0
+  warnColorEnabled: 0
+  warnColorProperty: _BaseColor
+  OnBreak:
+    m_PersistentCalls:
+      m_Calls: []

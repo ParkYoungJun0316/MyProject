@@ -67,6 +67,7 @@ public class LocalPlayerCamera : MonoBehaviour, ISessionResettable
     {
         // 이전 씬의 탑다운 프리뷰 상태가 리로드를 넘어 남아있으면 여기서 끊는다 (막이 걷히기 전).
         _thirdPersonCam.ForceGameplayViewImmediate();
+        _thirdPersonCam.RelockCursorIfIdle();
         _thirdPersonCam.target = playerTransform;
         if (player != null)
             player.followCamera = _camera;
