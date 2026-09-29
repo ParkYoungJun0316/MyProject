@@ -83,4 +83,7 @@ public enum SFXId
     // ── Minigame Timer ───────────────────────────────────────────
     Minigame_TimerTick             = 35, // 라운드 제한시간 동안만 루프
     Minigame_CountdownTick         = 36, // 라운드 공개 전 3·2·1 — 숫자 바뀔 때마다 1회
+
+    // ── Jelly ────────────────────────────────────────────────────
+    Jelly_Pop                      = 37, // 젤리 문이 열리며 터질 때 1회 (JellyPopDoor). 다시 솟아오를 때는 무음
 }

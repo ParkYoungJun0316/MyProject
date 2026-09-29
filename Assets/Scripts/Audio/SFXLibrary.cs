@@ -116,6 +116,11 @@ public class SFXLibrary : ScriptableObject
     [Tooltip("라운드 공개 전 3·2·1 카운트다운 — 숫자가 바뀔 때마다 1회(2D). SideSplitWorldDisplay.")]
     public AudioClip Minigame_CountdownTick;
 
+    // ── Jelly ────────────────────────────────────────────────────
+    [Header("Jelly")]
+    [Tooltip("젤리 문이 열리며 터질 때 1회(2D). JellyPopDoor.Pop(). 다시 솟아오를 때(닫힘)는 무음.")]
+    public AudioClip Jelly_Pop;
+
     // ── 클립별 볼륨 보정 ──────────────────────────────────────────
 
     [Serializable]
@@ -196,6 +201,8 @@ public class SFXLibrary : ScriptableObject
 
             case SFXId.Minigame_TimerTick:                return Minigame_TimerTick;
             case SFXId.Minigame_CountdownTick:            return Minigame_CountdownTick;
+
+            case SFXId.Jelly_Pop:                         return Jelly_Pop;
 
             default: return null;
         }

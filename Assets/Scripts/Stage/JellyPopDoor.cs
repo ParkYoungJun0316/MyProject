@@ -9,6 +9,8 @@ using UnityEngine;
 ///    문은 숨은 채로 DoorController가 바닥 아래로 내린다(openMode = SlideDown).
 ///  - 닫힘: IsOpen이 false가 되는 순간(Close 시작) 렌더러를 다시 켠다 → 바닥에서 솟아오르는 모습.
 ///  - 렌더러 표시는 매 프레임 IsOpen에서 파생한다 — ResetDoorState처럼 이벤트 없이 닫히는 경로도 따라간다.
+///  - 소리: 터질 때 Jelly_Pop 1회(2D, 기존 문 소리와 같은 방식). 솟아오를 때는 무음.
+///    그래서 젤리 문의 OnOpened/OnClosed에는 SFXEventPlayer(Door_Open/Close)를 연결하지 않는다.
 ///  - 막는 콜라이더(트리거 아닌 것)도 열려 있는 동안 끈다. 안 그러면 젤리가 사라진 뒤에도
 ///    DoorController가 duration 동안 내리는 사이 보이지 않는 벽에 막힌다.
 ///
@@ -95,6 +97,9 @@ public class JellyPopDoor : MonoBehaviour
         }
         fx.Play(true);
         Destroy(fx.gameObject, maxLife + 0.5f);
+
+        // 터질 때만 소리 — 다시 솟아오를 때(닫힘)는 무음. 문 소리(Door_Open/Close)는 이 문에 연결하지 않는다.
+        SFXManager.Instance?.Play(SFXId.Jelly_Pop);
 
         jellyRenderer.enabled = false;
     }
