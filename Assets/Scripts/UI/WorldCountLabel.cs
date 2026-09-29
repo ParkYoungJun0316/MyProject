@@ -7,7 +7,7 @@ using UnityEngine;
 /// 무엇을 셀지(패드 인원 / 안전 칸 인원)와 언제 보일지는 쓰는 쪽이 정한다.
 ///
 /// [쓰는 곳]
-///  - PressurePadCountUI : 압력 발판 (T.Stage1 · T.Stage3 · T.Boss P2)
+///  - PressurePadCountUI : 압력 발판 (T.Stage1 · T.Stage3 · T.Boss P2). 버텨야 하는 발판은 아랫줄에 남은 초
 ///  - SafeZoneWarnSign   : T.Boss P3 공용 안전 칸 (겹침이면 진홍)
 ///
 /// [부모 Scale 상쇄] 쿠키 발판처럼 루트 Scale이 30~80배인 부모 밑에 붙어도 글자는 월드 1배로 보인다.
@@ -69,6 +69,16 @@ public class WorldCountLabel : MonoBehaviour
     }
 
     public void Set(int current, int max) => Set(current, max, Color.white);
+
+    /// <summary>"current/max" 아래에 한 줄(subLine)을 subColor로 조금 작게 붙인다. 버텨야 하는 발판의 남은 초 등.</summary>
+    public void Set(int current, int max, Color color, string subLine, Color subColor)
+    {
+        TextMeshPro text = Text;
+        if (text == null) return;
+        string s = $"{current}/{max}\n<size=80%><color=#{ColorUtility.ToHtmlStringRGB(subColor)}>{subLine}</color></size>";
+        if (text.text != s) text.text = s;
+        if (text.color != color) text.color = color;
+    }
 
     void LateUpdate()
     {

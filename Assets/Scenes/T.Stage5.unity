@@ -148,9 +148,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 11891054}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 50.4, z: 100}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 16, y: 50.550003, z: 100}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1235828220}
@@ -169,17 +169,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 11891059}
   materialSlotIndex: 0
 --- !u!114 &11891057
@@ -219,8 +219,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &11891059
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -246,7 +246,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -277,7 +277,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 11891054}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &14379850
 GameObject:
   m_ObjectHideFlags: 0
@@ -363,6 +363,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -646,9 +647,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 33309115}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 24, y: 50.4, z: 60}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24, y: 50.550003, z: 60}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 908142575}
@@ -667,17 +668,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 33309120}
   materialSlotIndex: 0
 --- !u!114 &33309118
@@ -717,8 +718,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &33309120
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -744,7 +745,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -775,7 +776,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 33309115}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &38654728
 GameObject:
   m_ObjectHideFlags: 0
@@ -861,6 +862,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -1004,9 +1006,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 44824150}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 58, y: 50.4, z: 103.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 58, y: 50.550003, z: 103.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 769580394}
@@ -1025,17 +1027,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 44824155}
   materialSlotIndex: 0
 --- !u!114 &44824153
@@ -1075,8 +1077,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &44824155
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1102,7 +1104,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1133,7 +1135,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 44824150}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &47292118
 GameObject:
   m_ObjectHideFlags: 0
@@ -1272,6 +1274,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -1471,6 +1474,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -1670,6 +1674,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -1869,6 +1874,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -2012,9 +2018,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 88153344}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 98, y: 50.4, z: 103.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 98, y: 50.550003, z: 103.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 301830526}
@@ -2033,17 +2039,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 88153349}
   materialSlotIndex: 0
 --- !u!114 &88153347
@@ -2083,8 +2089,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &88153349
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2110,7 +2116,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2141,7 +2147,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 88153344}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &90526803
 GameObject:
   m_ObjectHideFlags: 0
@@ -2171,9 +2177,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 90526803}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 98, y: 50.4, z: 23.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 98, y: 50.550003, z: 23.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 835642096}
@@ -2192,17 +2198,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 90526808}
   materialSlotIndex: 0
 --- !u!114 &90526806
@@ -2242,8 +2248,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &90526808
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2269,7 +2275,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2300,7 +2306,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 90526803}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &102793685
 GameObject:
   m_ObjectHideFlags: 0
@@ -2386,6 +2392,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -2718,9 +2725,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 131505553}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 104, y: 50.4, z: 100}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 104, y: 50.550003, z: 100}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 301830526}
@@ -2739,17 +2746,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 131505558}
   materialSlotIndex: 0
 --- !u!114 &131505556
@@ -2789,8 +2796,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &131505558
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2816,7 +2823,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2847,7 +2854,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 131505553}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &140146985
 GameObject:
   m_ObjectHideFlags: 0
@@ -2933,6 +2940,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -3132,6 +3140,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -3883,6 +3892,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -4082,6 +4092,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -4281,6 +4292,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -4480,6 +4492,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -4679,6 +4692,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -4878,6 +4892,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -5184,6 +5199,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -5523,6 +5539,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -6002,6 +6019,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -6201,6 +6219,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -6400,6 +6419,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -6543,9 +6563,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 300271800}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: 50.4, z: 16.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 50.550003, z: 16.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1495624592}
@@ -6564,17 +6584,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 300271805}
   materialSlotIndex: 0
 --- !u!114 &300271803
@@ -6614,8 +6634,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &300271805
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6641,7 +6661,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6672,7 +6692,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 300271800}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &301830525
 GameObject:
   m_ObjectHideFlags: 0
@@ -6739,9 +6759,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 303034698}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62, y: 50.4, z: 23.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 62, y: 50.550003, z: 23.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 334934179}
@@ -6760,17 +6780,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 303034703}
   materialSlotIndex: 0
 --- !u!114 &303034701
@@ -6810,8 +6830,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &303034703
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6837,7 +6857,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6868,7 +6888,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 303034698}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &316215989
 GameObject:
   m_ObjectHideFlags: 0
@@ -6954,6 +6974,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -7414,9 +7435,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 338302962}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 102, y: 50.4, z: 16.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 102, y: 50.550003, z: 16.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 835642096}
@@ -7435,17 +7456,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 338302967}
   materialSlotIndex: 0
 --- !u!114 &338302965
@@ -7485,8 +7506,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &338302967
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7512,7 +7533,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7543,7 +7564,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 338302962}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &339817289
 GameObject:
   m_ObjectHideFlags: 0
@@ -7629,6 +7650,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -7820,9 +7842,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 353006904}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 50.4, z: 20}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 16, y: 50.550003, z: 20}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1495624592}
@@ -7841,17 +7863,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 353006909}
   materialSlotIndex: 0
 --- !u!114 &353006907
@@ -7891,8 +7913,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &353006909
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7918,7 +7940,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7949,7 +7971,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 353006904}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &357247315
 GameObject:
   m_ObjectHideFlags: 0
@@ -8259,9 +8281,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 369103070}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 64, y: 50.4, z: 60}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 64, y: 50.550003, z: 60}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1550267292}
@@ -8280,17 +8302,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 369103075}
   materialSlotIndex: 0
 --- !u!114 &369103073
@@ -8330,8 +8352,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &369103075
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8357,7 +8379,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8388,7 +8410,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 369103070}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &370105743
 GameObject:
   m_ObjectHideFlags: 0
@@ -8474,6 +8496,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -8673,6 +8696,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -8987,6 +9011,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -9186,6 +9211,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -9385,6 +9411,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -9645,6 +9672,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -9958,6 +9986,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -10157,6 +10186,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -10433,6 +10463,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -10772,6 +10803,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -10971,6 +11003,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -11170,6 +11203,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -11369,6 +11403,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -11512,9 +11547,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 475608927}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62, y: 50.4, z: 96.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 62, y: 50.550003, z: 96.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 769580394}
@@ -11533,17 +11568,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 475608932}
   materialSlotIndex: 0
 --- !u!114 &475608930
@@ -11583,8 +11618,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &475608932
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -11610,7 +11645,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -11641,7 +11676,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 475608927}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &483380045
 GameObject:
   m_ObjectHideFlags: 0
@@ -11727,6 +11762,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -11926,6 +11962,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -12179,6 +12216,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -12462,9 +12500,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 514256713}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62, y: 50.4, z: 16.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 62, y: 50.550003, z: 16.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 334934179}
@@ -12483,17 +12521,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 514256718}
   materialSlotIndex: 0
 --- !u!114 &514256716
@@ -12533,8 +12571,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &514256718
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -12560,7 +12598,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12591,7 +12629,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 514256713}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &524320490
 GameObject:
   m_ObjectHideFlags: 0
@@ -12621,9 +12659,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 524320490}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 24, y: 50.4, z: 20}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24, y: 50.550003, z: 20}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1495624592}
@@ -12642,17 +12680,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 524320495}
   materialSlotIndex: 0
 --- !u!114 &524320493
@@ -12692,8 +12730,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &524320495
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -12719,7 +12757,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12750,7 +12788,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 524320490}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &534624969
 GameObject:
   m_ObjectHideFlags: 0
@@ -12964,9 +13002,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 537744409}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 56, y: 50.4, z: 60}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 56, y: 50.550003, z: 60}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1550267292}
@@ -12985,17 +13023,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 537744414}
   materialSlotIndex: 0
 --- !u!114 &537744412
@@ -13035,8 +13073,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &537744414
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -13062,7 +13100,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13093,7 +13131,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 537744409}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &537901255
 GameObject:
   m_ObjectHideFlags: 0
@@ -13179,6 +13217,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -13378,6 +13417,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -13521,9 +13561,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 551539265}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22, y: 50.4, z: 23.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 50.550003, z: 23.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1495624592}
@@ -13542,17 +13582,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 551539270}
   materialSlotIndex: 0
 --- !u!114 &551539268
@@ -13592,8 +13632,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &551539270
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -13619,7 +13659,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13650,7 +13690,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 551539265}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &560689382
 GameObject:
   m_ObjectHideFlags: 0
@@ -13736,6 +13776,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -13935,6 +13976,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -14190,6 +14232,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -14389,6 +14432,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -14532,9 +14576,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 588264496}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62, y: 50.4, z: 63.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 62, y: 50.550003, z: 63.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1550267292}
@@ -14553,17 +14597,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 588264501}
   materialSlotIndex: 0
 --- !u!114 &588264499
@@ -14603,8 +14647,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &588264501
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -14630,7 +14674,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14661,7 +14705,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 588264496}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &595901745
 GameObject:
   m_ObjectHideFlags: 0
@@ -15027,6 +15071,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -15170,9 +15215,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 601742736}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22, y: 50.4, z: 63.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 50.550003, z: 63.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 908142575}
@@ -15191,17 +15236,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 601742741}
   materialSlotIndex: 0
 --- !u!114 &601742739
@@ -15241,8 +15286,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &601742741
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -15268,7 +15313,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -15299,7 +15344,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 601742736}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &602933699
 GameObject:
   m_ObjectHideFlags: 0
@@ -15385,6 +15430,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -15584,6 +15630,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -15818,6 +15865,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -16017,6 +16065,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -16216,6 +16265,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -16415,6 +16465,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -16754,6 +16805,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -17006,6 +17058,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -17205,6 +17258,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -17473,6 +17527,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -17851,6 +17906,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -18050,6 +18106,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -18249,6 +18306,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -18692,6 +18750,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -19031,6 +19090,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -19342,6 +19402,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -19765,9 +19826,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 734362799}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 104, y: 50.4, z: 20}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 104, y: 50.550003, z: 20}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 835642096}
@@ -19786,17 +19847,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 734362804}
   materialSlotIndex: 0
 --- !u!114 &734362802
@@ -19836,8 +19897,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &734362804
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -19863,7 +19924,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -19894,7 +19955,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 734362799}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &734429173
 GameObject:
   m_ObjectHideFlags: 0
@@ -20153,6 +20214,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -20704,6 +20766,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -21043,6 +21106,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -21275,6 +21339,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -21511,6 +21576,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -21909,9 +21975,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 854890807}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 96, y: 50.4, z: 100}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 96, y: 50.550003, z: 100}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 301830526}
@@ -21930,17 +21996,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 854890812}
   materialSlotIndex: 0
 --- !u!114 &854890810
@@ -21980,8 +22046,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &854890812
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -22007,7 +22073,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -22038,7 +22104,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 854890807}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &857549767
 GameObject:
   m_ObjectHideFlags: 0
@@ -22124,6 +22190,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -22267,9 +22334,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 870298779}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: 50.4, z: 23.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 50.550003, z: 23.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1495624592}
@@ -22288,17 +22355,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 870298784}
   materialSlotIndex: 0
 --- !u!114 &870298782
@@ -22338,8 +22405,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &870298784
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -22365,7 +22432,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -22396,7 +22463,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 870298779}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &871845812
 GameObject:
   m_ObjectHideFlags: 0
@@ -22482,6 +22549,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -23024,6 +23092,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -23223,6 +23292,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -23532,6 +23602,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -23731,6 +23802,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -23983,6 +24055,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -24213,6 +24286,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -24529,9 +24603,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 985930418}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 96, y: 50.4, z: 20}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 96, y: 50.550003, z: 20}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 835642096}
@@ -24550,17 +24624,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 985930423}
   materialSlotIndex: 0
 --- !u!114 &985930421
@@ -24600,8 +24674,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &985930423
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -24627,7 +24701,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -24658,7 +24732,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 985930418}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &988825904
 GameObject:
   m_ObjectHideFlags: 0
@@ -24744,6 +24818,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -24943,6 +25018,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -25086,9 +25162,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 991115095}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: 50.4, z: 63.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 50.550003, z: 63.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 908142575}
@@ -25107,17 +25183,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 991115100}
   materialSlotIndex: 0
 --- !u!114 &991115098
@@ -25157,8 +25233,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &991115100
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -25184,7 +25260,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -25215,7 +25291,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 991115095}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &997405341
 GameObject:
   m_ObjectHideFlags: 0
@@ -25385,9 +25461,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 997891531}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 58, y: 50.4, z: 23.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 58, y: 50.550003, z: 23.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 334934179}
@@ -25406,17 +25482,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 997891536}
   materialSlotIndex: 0
 --- !u!114 &997891534
@@ -25456,8 +25532,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &997891536
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -25483,7 +25559,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -25514,7 +25590,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 997891531}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &998700242
 GameObject:
   m_ObjectHideFlags: 0
@@ -25712,6 +25788,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -25911,6 +25988,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -26110,6 +26188,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -26661,6 +26740,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -27000,6 +27080,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -27236,6 +27317,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -27379,9 +27461,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1086887016}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 64, y: 50.4, z: 20}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 64, y: 50.550003, z: 20}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 334934179}
@@ -27400,17 +27482,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1086887021}
   materialSlotIndex: 0
 --- !u!114 &1086887019
@@ -27450,8 +27532,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1086887021
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -27477,7 +27559,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -27508,7 +27590,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1086887016}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1086897305
 GameObject:
   m_ObjectHideFlags: 0
@@ -27594,6 +27676,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -27933,6 +28016,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -28112,9 +28196,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1102337674}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 102, y: 50.4, z: 23.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 102, y: 50.550003, z: 23.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 835642096}
@@ -28133,17 +28217,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1102337679}
   materialSlotIndex: 0
 --- !u!114 &1102337677
@@ -28183,8 +28267,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1102337679
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -28210,7 +28294,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -28241,7 +28325,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1102337674}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1122156236
 GameObject:
   m_ObjectHideFlags: 0
@@ -28467,6 +28551,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -29263,6 +29348,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -29934,6 +30020,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -30133,6 +30220,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -30472,6 +30560,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -30671,6 +30760,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -30870,6 +30960,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -31122,6 +31213,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -31461,6 +31553,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -31660,6 +31753,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -31803,9 +31897,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1218270171}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: 50.4, z: 56.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 50.550003, z: 56.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 908142575}
@@ -31824,17 +31918,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1218270176}
   materialSlotIndex: 0
 --- !u!114 &1218270174
@@ -31874,8 +31968,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1218270176
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -31901,7 +31995,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -31932,7 +32026,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1218270171}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1219579941
 GameObject:
   m_ObjectHideFlags: 0
@@ -32158,6 +32252,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -32357,6 +32452,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -32556,6 +32652,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -32699,9 +32796,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231716864}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: 50.4, z: 96.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 50.550003, z: 96.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1235828220}
@@ -32720,17 +32817,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1231716869}
   materialSlotIndex: 0
 --- !u!114 &1231716867
@@ -32770,8 +32867,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1231716869
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -32797,7 +32894,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -32828,7 +32925,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231716864}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1235828219
 GameObject:
   m_ObjectHideFlags: 0
@@ -32951,6 +33048,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -33290,6 +33388,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -33433,9 +33532,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1255243613}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62, y: 50.4, z: 56.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 62, y: 50.550003, z: 56.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1550267292}
@@ -33454,17 +33553,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1255243618}
   materialSlotIndex: 0
 --- !u!114 &1255243616
@@ -33504,8 +33603,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1255243618
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -33531,7 +33630,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -33562,7 +33661,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1255243613}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1258834863
 GameObject:
   m_ObjectHideFlags: 0
@@ -33648,6 +33747,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -34423,9 +34523,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1283130027}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 102, y: 50.4, z: 56.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 102, y: 50.550003, z: 56.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1052741965}
@@ -34444,17 +34544,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1283130032}
   materialSlotIndex: 0
 --- !u!114 &1283130030
@@ -34494,8 +34594,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1283130032
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -34521,7 +34621,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -34552,7 +34652,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1283130027}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1286197431
 GameObject:
   m_ObjectHideFlags: 0
@@ -34582,9 +34682,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1286197431}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 58, y: 50.4, z: 96.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 58, y: 50.550003, z: 96.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 769580394}
@@ -34603,17 +34703,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1286197436}
   materialSlotIndex: 0
 --- !u!114 &1286197434
@@ -34653,8 +34753,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1286197436
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -34680,7 +34780,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -34711,7 +34811,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1286197431}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1001 &1291086683
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -34999,6 +35099,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -35478,6 +35579,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -35677,6 +35779,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -35876,6 +35979,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -36075,6 +36179,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -36427,6 +36532,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -36626,6 +36732,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -36825,6 +36932,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -37195,6 +37303,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -37449,6 +37558,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -37890,6 +38000,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -38089,6 +38200,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -38468,6 +38580,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -38667,6 +38780,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -38810,9 +38924,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1437832367}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 64, y: 50.4, z: 100}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 64, y: 50.550003, z: 100}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 769580394}
@@ -38831,17 +38945,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1437832372}
   materialSlotIndex: 0
 --- !u!114 &1437832370
@@ -38881,8 +38995,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1437832372
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -38908,7 +39022,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -38939,7 +39053,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1437832367}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1443061731
 GameObject:
   m_ObjectHideFlags: 0
@@ -39025,6 +39139,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -39224,6 +39339,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -39423,6 +39539,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -39597,9 +39714,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1461570195}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62, y: 50.4, z: 103.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 62, y: 50.550003, z: 103.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 769580394}
@@ -39618,17 +39735,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1461570200}
   materialSlotIndex: 0
 --- !u!114 &1461570198
@@ -39668,8 +39785,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1461570200
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -39695,7 +39812,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -39726,7 +39843,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1461570195}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1462711747
 GameObject:
   m_ObjectHideFlags: 0
@@ -39812,6 +39929,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -40151,6 +40269,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -40471,9 +40590,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1498839482}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 98, y: 50.4, z: 16.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 98, y: 50.550003, z: 16.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 835642096}
@@ -40492,17 +40611,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1498839487}
   materialSlotIndex: 0
 --- !u!114 &1498839485
@@ -40542,8 +40661,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1498839487
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -40569,7 +40688,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -40600,7 +40719,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1498839482}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1503435331
 GameObject:
   m_ObjectHideFlags: 0
@@ -40686,6 +40805,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -40885,6 +41005,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -41084,6 +41205,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -41283,6 +41405,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -41482,6 +41605,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -41681,6 +41805,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -41953,6 +42078,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -42358,9 +42484,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1541128580}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: 50.4, z: 103.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 50.550003, z: 103.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1235828220}
@@ -42379,17 +42505,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1541128585}
   materialSlotIndex: 0
 --- !u!114 &1541128583
@@ -42429,8 +42555,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1541128585
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -42456,7 +42582,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -42487,7 +42613,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1541128580}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1542607563
 GameObject:
   m_ObjectHideFlags: 0
@@ -42890,6 +43016,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -43229,6 +43356,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -43568,6 +43696,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -43711,9 +43840,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1586310390}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 50.4, z: 60}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 16, y: 50.550003, z: 60}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 908142575}
@@ -43732,17 +43861,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1586310395}
   materialSlotIndex: 0
 --- !u!114 &1586310393
@@ -43782,8 +43911,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1586310395
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -43809,7 +43938,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -43840,7 +43969,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1586310390}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1588422046
 GameObject:
   m_ObjectHideFlags: 0
@@ -44010,9 +44139,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1604382187}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 98, y: 50.4, z: 96.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 98, y: 50.550003, z: 96.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 301830526}
@@ -44031,17 +44160,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1604382192}
   materialSlotIndex: 0
 --- !u!114 &1604382190
@@ -44081,8 +44210,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1604382192
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -44108,7 +44237,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -44139,7 +44268,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1604382187}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1606544439
 GameObject:
   m_ObjectHideFlags: 0
@@ -44169,9 +44298,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1606544439}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 102, y: 50.4, z: 103.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 102, y: 50.550003, z: 103.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 301830526}
@@ -44190,17 +44319,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1606544444}
   materialSlotIndex: 0
 --- !u!114 &1606544442
@@ -44240,8 +44369,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1606544444
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -44267,7 +44396,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -44298,7 +44427,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1606544439}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1607252802
 GameObject:
   m_ObjectHideFlags: 0
@@ -44524,6 +44653,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -45283,6 +45413,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -45535,6 +45666,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -45727,9 +45859,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1656491715}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 24, y: 50.4, z: 100}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24, y: 50.550003, z: 100}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1235828220}
@@ -45748,17 +45880,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1656491720}
   materialSlotIndex: 0
 --- !u!114 &1656491718
@@ -45798,8 +45930,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1656491720
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -45825,7 +45957,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -45856,7 +45988,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1656491715}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1660585125
 GameObject:
   m_ObjectHideFlags: 0
@@ -45886,9 +46018,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1660585125}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 58, y: 50.4, z: 63.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 58, y: 50.550003, z: 63.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1550267292}
@@ -45907,17 +46039,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1660585130}
   materialSlotIndex: 0
 --- !u!114 &1660585128
@@ -45957,8 +46089,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1660585130
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -45984,7 +46116,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -46015,7 +46147,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1660585125}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1664087933
 GameObject:
   m_ObjectHideFlags: 0
@@ -46101,6 +46233,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -46300,6 +46433,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -46499,6 +46633,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -47016,6 +47151,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -47215,6 +47351,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -47414,6 +47551,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -47557,9 +47695,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1720159156}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 102, y: 50.4, z: 96.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 102, y: 50.550003, z: 96.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 301830526}
@@ -47578,17 +47716,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1720159161}
   materialSlotIndex: 0
 --- !u!114 &1720159159
@@ -47628,8 +47766,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1720159161
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -47655,7 +47793,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -47686,7 +47824,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1720159156}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1723755617
 GameObject:
   m_ObjectHideFlags: 0
@@ -47912,6 +48050,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -48164,6 +48303,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -48503,6 +48643,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -48702,6 +48843,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -49181,6 +49323,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -49433,6 +49576,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -49576,9 +49720,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1779321630}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22, y: 50.4, z: 56.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 50.550003, z: 56.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 908142575}
@@ -49597,17 +49741,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1779321635}
   materialSlotIndex: 0
 --- !u!114 &1779321633
@@ -49647,8 +49791,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1779321635
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -49674,7 +49818,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -49705,7 +49849,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1779321630}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1791278215
 GameObject:
   m_ObjectHideFlags: 0
@@ -50009,6 +50153,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -50465,6 +50610,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -50804,6 +50950,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -50947,9 +51094,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1825387703}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 98, y: 50.4, z: 56.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 98, y: 50.550003, z: 56.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1052741965}
@@ -50968,17 +51115,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1825387708}
   materialSlotIndex: 0
 --- !u!114 &1825387706
@@ -51018,8 +51165,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1825387708
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -51045,7 +51192,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -51076,7 +51223,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1825387703}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1826386498
 GameObject:
   m_ObjectHideFlags: 0
@@ -51162,6 +51309,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -51361,6 +51509,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -51560,6 +51709,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -51952,6 +52102,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -52321,9 +52472,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1854273019}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 96, y: 50.4, z: 60}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 96, y: 50.550003, z: 60}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1052741965}
@@ -52342,17 +52493,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1854273024}
   materialSlotIndex: 0
 --- !u!114 &1854273022
@@ -52392,8 +52543,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1854273024
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -52419,7 +52570,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -52450,7 +52601,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1854273019}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1854574423
 GameObject:
   m_ObjectHideFlags: 0
@@ -52592,9 +52743,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1858296629}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 98, y: 50.4, z: 63.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 98, y: 50.550003, z: 63.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1052741965}
@@ -52613,17 +52764,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1858296634}
   materialSlotIndex: 0
 --- !u!114 &1858296632
@@ -52663,8 +52814,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1858296634
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -52690,7 +52841,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+  - {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -52721,7 +52872,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1858296629}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1862015481
 GameObject:
   m_ObjectHideFlags: 0
@@ -52807,6 +52958,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -53059,6 +53211,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -53202,9 +53355,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1880790978}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22, y: 50.4, z: 96.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 50.550003, z: 96.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1235828220}
@@ -53223,17 +53376,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 1880790983}
   materialSlotIndex: 0
 --- !u!114 &1880790981
@@ -53273,8 +53426,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &1880790983
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -53300,7 +53453,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -53331,7 +53484,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1880790978}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &1882073694
 GameObject:
   m_ObjectHideFlags: 0
@@ -53417,6 +53570,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -53616,6 +53770,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -53955,6 +54110,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -54264,6 +54420,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -54516,6 +54673,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -55977,6 +56135,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -56176,6 +56335,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -56375,6 +56535,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -56892,6 +57053,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -57091,6 +57253,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -57290,6 +57453,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -57489,6 +57653,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -57738,6 +57903,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -57937,6 +58103,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -58220,9 +58387,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2050581020}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 102, y: 50.4, z: 63.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 102, y: 50.550003, z: 63.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1052741965}
@@ -58241,17 +58408,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2050581025}
   materialSlotIndex: 0
 --- !u!114 &2050581023
@@ -58291,8 +58458,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2050581025
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -58318,7 +58485,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -58349,7 +58516,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2050581020}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &2062565418
 GameObject:
   m_ObjectHideFlags: 0
@@ -58435,6 +58602,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -58858,9 +59026,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2076827033}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 58, y: 50.4, z: 56.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 58, y: 50.550003, z: 56.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1550267292}
@@ -58879,17 +59047,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2076827038}
   materialSlotIndex: 0
 --- !u!114 &2076827036
@@ -58929,8 +59097,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2076827038
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -58956,7 +59124,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -58987,7 +59155,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2076827033}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &2081285074
 GameObject:
   m_ObjectHideFlags: 0
@@ -59017,9 +59185,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2081285074}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22, y: 50.4, z: 16.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 50.550003, z: 16.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1495624592}
@@ -59038,17 +59206,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2081285079}
   materialSlotIndex: 0
 --- !u!114 &2081285077
@@ -59088,8 +59256,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2081285079
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -59115,7 +59283,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+  - {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -59146,7 +59314,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2081285074}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1001 &2083761170
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -59305,6 +59473,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -59504,6 +59673,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -59703,6 +59873,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -59902,6 +60073,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -60101,6 +60273,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -60244,9 +60417,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2110126609}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 58, y: 50.4, z: 16.536}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 58, y: 50.550003, z: 16.536}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 334934179}
@@ -60265,17 +60438,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2110126614}
   materialSlotIndex: 0
 --- !u!114 &2110126612
@@ -60315,8 +60488,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2110126614
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -60342,7 +60515,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+  - {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -60373,7 +60546,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2110126609}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &2112209154
 GameObject:
   m_ObjectHideFlags: 0
@@ -60403,9 +60576,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2112209154}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 56, y: 50.4, z: 20}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 56, y: 50.550003, z: 20}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 334934179}
@@ -60424,17 +60597,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2112209159}
   materialSlotIndex: 0
 --- !u!114 &2112209157
@@ -60474,8 +60647,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2112209159
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -60501,7 +60674,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -60532,7 +60705,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2112209154}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1001 &2122312152
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -60960,6 +61133,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -61159,6 +61333,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []
@@ -61442,9 +61617,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2141251238}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 56, y: 50.4, z: 100}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 56, y: 50.550003, z: 100}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 769580394}
@@ -61463,17 +61638,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2141251243}
   materialSlotIndex: 0
 --- !u!114 &2141251241
@@ -61513,8 +61688,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2141251243
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -61540,7 +61715,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+  - {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -61571,7 +61746,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2141251238}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &2144639328
 GameObject:
   m_ObjectHideFlags: 0
@@ -61601,9 +61776,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2144639328}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 104, y: 50.4, z: 60}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 104, y: 50.550003, z: 60}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1052741965}
@@ -61622,17 +61797,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2144639333}
   materialSlotIndex: 0
 --- !u!114 &2144639331
@@ -61672,8 +61847,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2144639333
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -61699,7 +61874,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+  - {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -61730,7 +61905,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2144639328}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &2145122746
 GameObject:
   m_ObjectHideFlags: 0
@@ -61760,9 +61935,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2145122746}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22, y: 50.4, z: 103.464}
-  m_LocalScale: {x: 15, y: 30, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 50.550003, z: 103.464}
+  m_LocalScale: {x: 0.42817554, y: 0.09298174, z: 0.42850968}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1235828220}
@@ -61781,17 +61956,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColoredPadVisual
   colorMaterials:
   - colorType: 1
-    material: {fileID: 2100000, guid: 8874187d9fa1f684c8ddfaa69a855263, type: 2}
+    material: {fileID: 2100000, guid: ff6ec1260a19f914391a83863ddbaad9, type: 2}
   - colorType: 2
-    material: {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+    material: {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   - colorType: 3
-    material: {fileID: 2100000, guid: 10dc67aad257e1a479acd837770e4bff, type: 2}
+    material: {fileID: 2100000, guid: beae96b9314463d4a8015b742af1f9b1, type: 2}
   - colorType: 4
-    material: {fileID: 2100000, guid: 5b5358c132436dd4197ab29db64ac6cb, type: 2}
+    material: {fileID: 2100000, guid: cb8ecd37f6c5d5d4f8913a8cb214c4a8, type: 2}
   - colorType: 6
-    material: {fileID: 2100000, guid: f14dcefb80195ed43857b314e7dd9949, type: 2}
+    material: {fileID: 2100000, guid: 3b06587610cb5124ca32af7ce965e474, type: 2}
   - colorType: 7
-    material: {fileID: 2100000, guid: 48a9674b37b103d4cabbbad18b396f52, type: 2}
+    material: {fileID: 2100000, guid: aaa2d5a278b54ec49b5b5686b51a724b, type: 2}
   targetRenderer: {fileID: 2145122751}
   materialSlotIndex: 0
 --- !u!114 &2145122749
@@ -61831,8 +62006,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.12279846, y: 0.1, z: 0.12289429}
-  m_Center: {x: 0.0000003054738, y: 0.0045933127, z: 0}
+  m_Size: {x: 4.30192, y: 32.2644, z: 4.30192}
+  m_Center: {x: 0, y: 10.7548, z: 0}
 --- !u!23 &2145122751
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -61858,7 +62033,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5c196583ded20f344b15471a1b5e1e35, type: 2}
+  - {fileID: 2100000, guid: a9255f9775789ab4f9e2da407da7819e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -61889,7 +62064,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2145122746}
-  m_Mesh: {fileID: -2603522112084426767, guid: 0088b9c974a27d846bfea6e977dc1eb3, type: 3}
+  m_Mesh: {fileID: -1642095277163985504, guid: cea4f02e7c55bc94ebfd74abe8e3648a, type: 3}
 --- !u!1 &2146111894
 GameObject:
   m_ObjectHideFlags: 0
@@ -61975,6 +62150,7 @@ MonoBehaviour:
   knockbackInterval: 0.25
   requiredPads: []
   latchOnOpen: 0
+  latchOnFullyOpen: 0
   OnOpened:
     m_PersistentCalls:
       m_Calls: []

@@ -83,9 +83,18 @@ public class DoorController : MonoBehaviour
     public bool IsOpen    => _isOpen;
     public bool IsLatched => _isLatched;
 
+    /// <summary>
+    /// 열림 애니메이션이 끝나기까지 남은 초. 여는 중이 아니면 duration —
+    /// 도중에 끊겼다 다시 밟아도 현재 위치에서 duration 전체가 다시 걸리기 때문.
+    /// latchOnFullyOpen 문의 "버텨야 할 시간" 표시(PressurePadCountUI)용.
+    /// </summary>
+    public float OpenTimeRemaining => _isOpening ? Mathf.Max(0f, duration - _openElapsed) : duration;
+
     bool       _isOpen;
     bool       _isLatched;
     bool       _isClosing;
+    bool       _isOpening;
+    float      _openElapsed;
 
     Vector3    _closedLocalPos;
     Quaternion _closedLocalRot;
@@ -228,6 +237,7 @@ public class DoorController : MonoBehaviour
         _isOpen    = false;
         _isLatched = false;
         _isClosing = false;
+        _isOpening = false;
         _rb.position = LocalToWorld(_closedLocalPos);
         _rb.rotation = LocalToWorldRot(_closedLocalRot);
     }
@@ -267,7 +277,9 @@ public class DoorController : MonoBehaviour
 
     IEnumerator AnimateDoor(bool opening)
     {
-        _isClosing = !opening;
+        _isClosing   = !opening;
+        _isOpening   = opening;
+        _openElapsed = 0f;
 
         Vector3    startWorldPos = _rb.position;
         Quaternion startWorldRot = _rb.rotation;
@@ -305,6 +317,7 @@ public class DoorController : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.fixedDeltaTime;
+            if (opening) _openElapsed = elapsed;
             float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
             _rb.MovePosition(Vector3.Lerp(startWorldPos, targetWorldPos, t));
             _rb.MoveRotation(Quaternion.Lerp(startWorldRot, targetWorldRot, t));
@@ -317,6 +330,7 @@ public class DoorController : MonoBehaviour
 
         if (opening && latchOnFullyOpen)
             _isLatched = true;
+        _isOpening = false;
 
         if (!opening)
             OnFullyClosed?.Invoke();
