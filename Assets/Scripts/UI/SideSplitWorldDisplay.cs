@@ -86,6 +86,7 @@ public class SideSplitWorldDisplay : MonoBehaviour
     AudioSource _timerLoop;
     float _roundTotal;
     int _lastCountdownDigit;
+    readonly List<Sprite> _requiredSprites = new List<Sprite>(4);
 
     // 이 머신의 배정색 — 하트 패널을 누구에게 보일지 정하는 데만 쓴다(§1.9.2).
     bool _hasMyColor;
@@ -161,16 +162,21 @@ public class SideSplitWorldDisplay : MonoBehaviour
 
         foreach (var v in views)
         {
-            bool mine   = IsPanelMine(v);
-            int count   = GetCount(info, v.direction);
-            bool colored = info.hasColorRequirement && info.colorDirection == v.direction;
+            bool mine = IsPanelMine(v);
+            int count = GetCount(info, v.direction);
+
+            _requiredSprites.Clear();
+            if (info.requiredColors != null)
+                for (int c = 0; c < info.requiredColors.Length; c++)
+                    if (info.colorDirections[c] == v.direction)
+                        _requiredSprites.Add(GetHeartSprite(info.requiredColors[c]));
 
             SetCountdownVisible(v, false);
             SetVisible(v.signLabel, true);
             SetVisible(v.heartPanel, mine);
             // 남의 담당 자리는 하트를 0개로 — 인원을 "0명"으로 보여주는 게 아니라 아예 안 보여주는 것이다.
             // 패널까지 꺼지므로 "비었다"와 "모른다"가 화면에서 구분된다.
-            SetHearts(v, mine ? count : 0, colored ? GetHeartSprite(info.requiredColor) : null);
+            SetHearts(v, mine ? count : 0, _requiredSprites);
             SetFills(v, true, 1f, fillColor);
         }
         // 틱 루프는 읽는 시간(revealReadHold)이 끝나 채움이 줄기 시작할 때 HandleTimerTick에서 시작.
@@ -256,7 +262,8 @@ public class SideSplitWorldDisplay : MonoBehaviour
                       && PlayerSpawnCoordinator.TryGetColor(nm.LocalClientId, out _myColor);
     }
 
-    void SetHearts(DirectionView v, int count, Sprite requiredSprite)
+    /// <summary>하트 count개 — 앞에서부터 requiredSprites(그 방향에 강요된 색들)를 채우고 나머지는 빈 하트.</summary>
+    void SetHearts(DirectionView v, int count, List<Sprite> requiredSprites)
     {
         if (v.heartRow == null) return;
 
@@ -277,8 +284,8 @@ public class SideSplitWorldDisplay : MonoBehaviour
             sr.gameObject.SetActive(on);
             if (!on) continue;
 
-            bool isRequired = i == 0 && requiredSprite != null;
-            sr.sprite = isRequired ? requiredSprite : heartAny;
+            bool isRequired = requiredSprites != null && i < requiredSprites.Count;
+            sr.sprite = isRequired ? requiredSprites[i] : heartAny;
             sr.color  = isRequired ? Color.white : anyHeartColor;
 
             Vector2 spriteSize = sr.sprite != null ? (Vector2)sr.sprite.bounds.size : Vector2.one;

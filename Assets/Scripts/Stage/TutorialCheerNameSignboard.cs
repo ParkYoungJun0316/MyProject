@@ -21,7 +21,7 @@ using UnityEngine.InputSystem;
 /// 1. 빈 GameObject에 이 스크립트 + Collider(Is Trigger) 부착, Tutorial 구역 2 / Interlude에 배치
 ///    (같은 씬의 TutorialTeamCheerTestSignboard 트리거와 겹치지 않게 — 겹치면 [E] 한 번에 둘 다 반응)
 /// 2. cheerNameUI에 씬의 TutorialCheerNameUI(CheerNamePanel) 연결
-/// 3. promptRoot에 "[E] 팀 키워드 설정"(Tutorial.Prompt.CheerName) 안내 UI(World Space 또는 화면 고정) 연결
+/// 3. promptRoot에 "[E] 팀 구호 정하기"(Tutorial.Prompt.CheerName) 안내 UI(World Space 또는 화면 고정) 연결
 ///
 /// [프롬프트 상시 표시 — 2026-09-30 사용자 결정, Tutorial·Interlude 공통]
 /// 멀리서도 "여기서 E"가 보이도록 프롬프트는 거리와 무관하게 항상 켠다. 패널이 열려 있는 동안만 숨긴다.
@@ -33,7 +33,7 @@ public class TutorialCheerNameSignboard : MonoBehaviour
     [Tooltip("씬의 CheerNamePanel(TutorialCheerNameUI) — 상호작용 시 이걸 열고 닫는다.")]
     [SerializeField] TutorialCheerNameUI cheerNameUI;
 
-    [Tooltip("항상 보이는 \"[E] 팀 키워드 설정\" 프롬프트(패널이 열려 있는 동안만 숨김). 비워도 동작(프롬프트 없이 상호작용만).")]
+    [Tooltip("항상 보이는 \"[E] 팀 구호 정하기\" 프롬프트(패널이 열려 있는 동안만 숨김). 비워도 동작(프롬프트 없이 상호작용만).")]
     [SerializeField] GameObject promptRoot;
 
     [Tooltip("Host만 보이는 표시(왕관/리본 등). 비-Host 머신에선 숨김. 비워도 동작.")]

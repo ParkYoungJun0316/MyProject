@@ -8,6 +8,7 @@
 > 표시 시 비어 있지 않은 줄 앞에 `•` 불릿. 빈 줄에는 점 없음. `Tools/Setup StageTip Localization`이 테이블에 같이 넣는다.
 
 > **2026-09-24 전면 재번역:** ko·en 확정 후 **영어 기준**으로 10개 언어 재작성(대사 개정 작업과 함께). `Tip.M.Stage4.1`·`Tip.T.Stage2.1`·`Tip.M.Boss.4`는 영어가 안 바뀌어 기존 번역 유지. String Table에도 반영 완료(`pt`는 `pt-BR`과 동일).
+> **[2026-10-01] 색깔 꿀떡 줄 추가** — `Tip.M.Stage2.1` 2번째 줄, `Tip.M.Boss.2` 1번째 줄(SideSplit 색 강요 여러 명, `MinigameDesign.md` §1.10). 11개 언어 번역 + String Table 해당 두 키에만 직접 삽입(`Tools/Setup StageTip Localization` 미실행). `pt`는 규칙대로 건드리지 않음. Tip 패널 자동 축소 후 최소 글자 크기: M.Stage2.1 ja·ru 17.5(최소 16 이상), M.Boss.2는 전 언어 24.5 이상.
 > **[2026-09-30] `pt`는 미사용 — 관리하지 않음, `pt-BR`만 갱신.** 설정 언어 목록에서 숨겨져 있고 시스템 언어 포르투갈어도 `pt-BR`로 연결돼 플레이어가 고를 수 없다(`TutorialTranslations.md` 상단 참고). 정리는 출시 후.
 >
 > **2026-09-24 진짜 최종본:** 위 10개 언어 문장을 다시 교체해 String Table `StageTip_*`에 반영(`pt`는 `pt-BR`과 동일). ko·en도 팀 구호 / team cheer로 맞춤. 팀 구호 용어는 대사와 같이 ja チームの掛け声 / es·es-419 grito de equipo / fr cri d'équipe / de Teamruf / pt-BR grito da equipe / ru командный клич / pl okrzyk drużyny.
@@ -26,14 +27,15 @@
 
 | ko | en | 비고 |
 |---|---|---|
-| 팀 구호 | team cheer / チームの合言葉 / 团队关键词 / palabra de equipo / mot d'équipe / Team-Wort / palavra da equipe / командное слово / hasło drużyny | HUD 표기는 `"TEAMCHEER"`. Tutorial 설정 UI와 같은 말 (2026-09-17, 구 `팀 응원 이름`) |
+| 팀 구호 | team cheer / チームの掛け声 / 团队口令 / 團隊口令 / grito de equipo / cri d'équipe / Teamruf / grito da equipe / командный клич / okrzyk drużyny | HUD 표기는 `"TEAMCHEER"`. 대사(`Dialogue`)와 같은 말. **2026-10-01 사용자 확인 — 팀 구호 / team cheer가 맞음.** 9/26에 StageTip ko·en 4키만 `팀 키워드`/`team word`로 되돌아가 있던 것을 복구. (구 2026-09-17 표기 team word / チームの合言葉 / 团队关键词 … 폐기) |
 | 고유색 | unique color / 固有色 / 专属色 | |
 | 흑백 | black and white | |
 | 조준 | lock-on | |
 | 버프 | buff | 게이머 차용어 유지 (zh만 增益) |
 | 부종 | swellings | 알레르기 붓기. 의학 용어 남발 금지 |
 | 적혈구 | red blood cells | 세계관 단어 유지 |
-| 사탕 | candy / キャンディー / 糖果 / caramelo / bonbon / Bonbon / doce / конфета / cukierek | |
+| 사탕 | candy / キャンディ / 糖果 / caramelo(es·es-419 공통) / bonbon / Bonbon / doce / конфета / cukierek | Dialogue·StageTip·StageTitle 전부 이 단어(2026-10-01 전수 확인). ru `конфета`는 여성 — 대명사 её/она. de는 `Süßigkeit` 아님(9/26 Tip에만 섞였던 것 복구) |
+| 위액 | stomach acid / 胃液 / 胃酸 | en Tip도 대사처럼 `stomach acid`(9/26 `acid`로 줄었던 것 복구). 다른 언어 Tip은 짧게 acid 계열 유지 |
 
 ---
 
@@ -57,23 +59,25 @@ When "TEAMCHEER" pops up at the top, shout the team cheer.
 ## Tip.M.Stage2.1
 
 - ko: 간판 아래 꿀떡 수만큼 그 구역에 들어가세요.
+색깔 꿀떡이 있으면 그 색 플레이어가 꼭 그 구역에 있어야 합니다.
 비대칭 정보를 각자 가지고 있습니다. 서로 공유하세요.
 상단에 "TEAMCHEER" 경고가 뜨면 팀 구호를 외치세요.
 방어 버프는 라운드 실패 데미지도 막아 줍니다.
 - en: Each zone needs as many players as there are KKUL-TTEOK under its sign — no more, no less.
+A colored KKUL-TTEOK means the player of that color must be in that zone.
 Everyone sees something different. Share what you see!
 When "TEAMCHEER" pops up at the top, shout the team cheer.
 Defense buff also blocks round-fail damage.
-- ja: 各ゾーンには、看板の下にあるKKUL-TTEOKの数と同じ人数を入れる必要があります。多すぎても少なすぎてもダメです。\n全員が違うものを見ます。見えたものを共有しましょう！\n上に「TEAMCHEER」が出たら、チームの掛け声を叫んでください。\n防御バフはラウンド失敗時のダメージも防ぎます。
-- zh-Hans: 每个区域的人数必须与标志下方的KKUL-TTEOK数量完全一致，不能多，也不能少。\n每个人看到的东西都不一样。分享你看到的内容！\n当顶部出现“TEAMCHEER”时，大声喊出你的团队口令。\n防御增益还可以抵挡本回合失败时受到的伤害。
-- zh-Hant: 每個區域的人數必須與標誌下方的KKUL-TTEOK數量完全一致，不能多，也不能少。\n每個人看到的東西都不一樣。分享你看到的內容！\n當頂部出現「TEAMCHEER」時，大聲喊出你的團隊口令。\n防禦增益也可以抵擋本回合失敗時受到的傷害。
-- es: Cada zona necesita exactamente tantos jugadores como KKUL-TTEOK haya bajo su señal. Ni más ni menos.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
-- es-419: Cada zona necesita exactamente tantos jugadores como KKUL-TTEOK haya debajo de su señal. Ni uno más ni uno menos.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
-- fr: Chaque zone doit contenir exactement autant de joueurs qu'il y a de KKUL-TTEOK sous son panneau. Ni plus ni moins.\nTout le monde voit quelque chose de différent. Partagez ce que vous voyez !\nLorsque « TEAMCHEER » apparaît en haut de l'écran, criez le cri d'équipe.\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
-- de: In jeder Zone müssen genau so viele Spieler stehen, wie KKUL-TTEOK unter dem Schild angezeigt werden. Nicht mehr und nicht weniger.\nJeder sieht etwas anderes. Teilt, was ihr seht!\nWenn oben „TEAMCHEER“ erscheint, ruft laut euren Teamruf.\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
-- pt-BR: Cada zona precisa de exatamente a mesma quantidade de jogadores que houver de KKUL-TTEOK abaixo da placa. Nem mais, nem menos.\nCada jogador vê algo diferente. Compartilhe o que você vê!\nQuando “TEAMCHEER” aparecer no topo, grite o grito da equipe.\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
-- ru: В каждой зоне должно быть ровно столько игроков, сколько KKUL-TTEOK находится под её табличкой. Ни больше ни меньше.\nКаждый видит что-то своё. Делитесь тем, что видите!\nКогда вверху появится «TEAMCHEER», выкрикните командный клич.\nЗащитный бафф также блокирует урон при провале раунда.
-- pl: W każdej strefie musi być dokładnie tylu graczy, ile KKUL-TTEOK znajduje się pod jej znakiem. Ani więcej, ani mniej.\nKażdy widzi coś innego. Podzielcie się tym, co widzicie!\nGdy u góry pojawi się „TEAMCHEER”, wykrzyczcie okrzyk drużyny.\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
+- ja: 各ゾーンには、看板の下にあるKKUL-TTEOKの数と同じ人数を入れる必要があります。多すぎても少なすぎてもダメです。\n色付きのKKUL-TTEOKがある場合、その色のプレイヤーは必ずそのゾーンに入る必要があります。\n全員が違うものを見ます。見えたものを共有しましょう！\n上に「TEAMCHEER」が出たら、チームの掛け声を叫んでください。\n防御バフはラウンド失敗時のダメージも防ぎます。
+- zh-Hans: 每个区域的人数必须与标志下方的KKUL-TTEOK数量完全一致，不能多，也不能少。\n如果出现带颜色的KKUL-TTEOK，对应颜色的玩家必须待在该区域内。\n每个人看到的东西都不一样。分享你看到的内容！\n当顶部出现“TEAMCHEER”时，大声喊出你的团队口令。\n防御增益还可以抵挡本回合失败时受到的伤害。
+- zh-Hant: 每個區域的人數必須與標誌下方的KKUL-TTEOK數量完全一致，不能多，也不能少。\n如果出現帶顏色的KKUL-TTEOK，對應顏色的玩家必須待在該區域內。\n每個人看到的東西都不一樣。分享你看到的內容！\n當頂部出現「TEAMCHEER」時，大聲喊出你的團隊口令。\n防禦增益也可以抵擋本回合失敗時受到的傷害。
+- es: Cada zona necesita exactamente tantos jugadores como KKUL-TTEOK haya bajo su señal. Ni más ni menos.\nSi hay un KKUL-TTEOK de color, el jugador de ese color tiene que estar en esa zona.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- es-419: Cada zona necesita exactamente tantos jugadores como KKUL-TTEOK haya debajo de su señal. Ni uno más ni uno menos.\nSi hay un KKUL-TTEOK de color, el jugador de ese color debe estar en esa zona.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nCuando aparezca «TEAMCHEER» en la parte superior, grita el grito de equipo.\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- fr: Chaque zone doit contenir exactement autant de joueurs qu'il y a de KKUL-TTEOK sous son panneau. Ni plus ni moins.\nSi un KKUL-TTEOK est coloré, le joueur de cette couleur doit se trouver dans cette zone.\nTout le monde voit quelque chose de différent. Partagez ce que vous voyez !\nLorsque « TEAMCHEER » apparaît en haut de l'écran, criez le cri d'équipe.\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
+- de: In jeder Zone müssen genau so viele Spieler stehen, wie KKUL-TTEOK unter dem Schild angezeigt werden. Nicht mehr und nicht weniger.\nBei einem farbigen KKUL-TTEOK muss der Spieler dieser Farbe in dieser Zone stehen.\nJeder sieht etwas anderes. Teilt, was ihr seht!\nWenn oben „TEAMCHEER“ erscheint, ruft laut euren Teamruf.\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
+- pt-BR: Cada zona precisa de exatamente a mesma quantidade de jogadores que houver de KKUL-TTEOK abaixo da placa. Nem mais, nem menos.\nSe houver um KKUL-TTEOK colorido, o jogador dessa cor precisa estar nessa zona.\nCada jogador vê algo diferente. Compartilhe o que você vê!\nQuando “TEAMCHEER” aparecer no topo, grite o grito da equipe.\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
+- ru: В каждой зоне должно быть ровно столько игроков, сколько KKUL-TTEOK находится под её табличкой. Ни больше ни меньше.\nЕсли KKUL-TTEOK цветной, в этой зоне обязательно должен стоять игрок этого цвета.\nКаждый видит что-то своё. Делитесь тем, что видите!\nКогда вверху появится «TEAMCHEER», выкрикните командный клич.\nЗащитный бафф также блокирует урон при провале раунда.
+- pl: W każdej strefie musi być dokładnie tylu graczy, ile KKUL-TTEOK znajduje się pod jej znakiem. Ani więcej, ani mniej.\nJeśli KKUL-TTEOK jest kolorowy, gracz w tym kolorze musi być w tej strefie.\nKażdy widzi coś innego. Podzielcie się tym, co widzicie!\nGdy u góry pojawi się „TEAMCHEER”, wykrzyczcie okrzyk drużyny.\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
 
 ## Tip.M.Stage2.2
 
@@ -195,20 +199,22 @@ Anyone can use black and white pads by matching their color.
 
 > M.Boss P2 (SideSplit 판정 + 입 닫힘).
 
-- ko: 비대칭 정보를 각자 가지고 있습니다. 서로 공유하세요.
+- ko: 색깔 꿀떡이 있으면 그 색 플레이어가 꼭 그 구역에 있어야 합니다.
+비대칭 정보를 각자 가지고 있습니다. 서로 공유하세요.
 방어 버프는 라운드 실패 데미지도 막아 줍니다.
-- en: Everyone sees something different. Share what you see!
+- en: A colored KKUL-TTEOK means the player of that color must be in that zone.
+Everyone sees something different. Share what you see!
 Defense buff also blocks round-fail damage.
-- ja: 全員が違うものを見ます。見えたものを共有しましょう！\n防御バフはラウンド失敗時のダメージも防ぎます。
-- zh-Hans: 每个人看到的东西都不一样。分享你看到的内容！\n防御增益还可以抵挡本回合失败时受到的伤害。
-- zh-Hant: 每個人看到的東西都不一樣。分享你看到的內容！\n防禦增益也可以抵擋本回合失敗時受到的傷害。
-- es: Cada jugador ve algo diferente. ¡Comparte lo que ves!\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
-- es-419: Cada jugador ve algo diferente. ¡Comparte lo que ves!\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
-- fr: Tout le monde voit quelque chose de différent. Partagez ce que vous voyez !\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
-- de: Jeder sieht etwas anderes. Teilt, was ihr seht!\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
-- pt-BR: Cada jogador vê algo diferente. Compartilhe o que você vê!\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
-- ru: Каждый видит что-то своё. Делитесь тем, что видите!\nЗащитный бафф также блокирует урон при провале раунда.
-- pl: Każdy widzi coś innego. Podzielcie się tym, co widzicie!\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
+- ja: 色付きのKKUL-TTEOKがある場合、その色のプレイヤーは必ずそのゾーンに入る必要があります。\n全員が違うものを見ます。見えたものを共有しましょう！\n防御バフはラウンド失敗時のダメージも防ぎます。
+- zh-Hans: 如果出现带颜色的KKUL-TTEOK，对应颜色的玩家必须待在该区域内。\n每个人看到的东西都不一样。分享你看到的内容！\n防御增益还可以抵挡本回合失败时受到的伤害。
+- zh-Hant: 如果出現帶顏色的KKUL-TTEOK，對應顏色的玩家必須待在該區域內。\n每個人看到的東西都不一樣。分享你看到的內容！\n防禦增益也可以抵擋本回合失敗時受到的傷害。
+- es: Si hay un KKUL-TTEOK de color, el jugador de ese color tiene que estar en esa zona.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- es-419: Si hay un KKUL-TTEOK de color, el jugador de ese color debe estar en esa zona.\nCada jugador ve algo diferente. ¡Comparte lo que ves!\nEl potenciador de defensa también bloquea el daño por fallar la ronda.
+- fr: Si un KKUL-TTEOK est coloré, le joueur de cette couleur doit se trouver dans cette zone.\nTout le monde voit quelque chose de différent. Partagez ce que vous voyez !\nLe bonus de défense bloque également les dégâts causés par l'échec de la manche.
+- de: Bei einem farbigen KKUL-TTEOK muss der Spieler dieser Farbe in dieser Zone stehen.\nJeder sieht etwas anderes. Teilt, was ihr seht!\nDer Verteidigungs-Buff schützt auch vor Schaden beim Scheitern der Runde.
+- pt-BR: Se houver um KKUL-TTEOK colorido, o jogador dessa cor precisa estar nessa zona.\nCada jogador vê algo diferente. Compartilhe o que você vê!\nO bônus de defesa também bloqueia o dano causado por falhar na rodada.
+- ru: Если KKUL-TTEOK цветной, в этой зоне обязательно должен стоять игрок этого цвета.\nКаждый видит что-то своё. Делитесь тем, что видите!\nЗащитный бафф также блокирует урон при провале раунда.
+- pl: Jeśli KKUL-TTEOK jest kolorowy, gracz w tym kolorze musi być w tej strefie.\nKażdy widzi coś innego. Podzielcie się tym, co widzicie!\nWzmocnienie obrony chroni również przed obrażeniami za nieudane ukończenie rundy.
 
 ## Tip.M.Boss.3
 
@@ -380,7 +386,7 @@ Finish this section before the candy hits the ground.
 - zh-Hans: 到达终点。\n\n在糖果落地前完成这一部分。
 - zh-Hant: 到達終點。\n\n在糖果落地前完成這一部分。
 - es: Llega a la meta.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
-- es-419: Llega a la meta.\n\nCompleta esta sección antes de que el dulce toque el suelo.
+- es-419: Llega a la meta.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
 - fr: Atteignez l'arrivée.\n\nTerminez cette section avant que le bonbon ne touche le sol.
 - de: Erreiche das Ziel.\n\nSchließe diesen Abschnitt ab, bevor das Bonbon den Boden berührt.
 - pt-BR: Chegue ao objetivo.\n\nConclua esta seção antes que o doce toque o chão.
@@ -399,7 +405,7 @@ Finish this section before the candy hits the ground.
 - zh-Hans: 踩下踏板制造道路，然后到达终点。\n\n在糖果落地前完成这一部分。
 - zh-Hant: 踩下踏板製造道路，然後到達終點。\n\n在糖果落地前完成這一部分。
 - es: Pisa las plataformas para crear un camino y después llega a la meta.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
-- es-419: Pisa las plataformas para crear un camino y después llega a la meta.\n\nCompleta esta sección antes de que el dulce toque el suelo.
+- es-419: Pisa las plataformas para crear un camino y después llega a la meta.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
 - fr: Marchez sur les plateformes pour créer un chemin, puis atteignez l'arrivée.\n\nTerminez cette section avant que le bonbon ne touche le sol.
 - de: Betritt die Flächen, um einen Weg zu bilden, und erreiche dann das Ziel.\n\nSchließe diesen Abschnitt ab, bevor das Bonbon den Boden berührt.
 - pt-BR: Pise nas placas para criar um caminho e depois chegue ao objetivo.\n\nConclua esta seção antes que o doce toque o chão.
@@ -418,7 +424,7 @@ Finish this section before the candy hits the ground.
 - zh-Hans: 每个安全方块只能站一名玩家。两人同时站上去会受到伤害。\n\n在糖果落地前完成这一部分。
 - zh-Hant: 每個安全方塊只能站一名玩家。兩人同時站上去會受到傷害。\n\n在糖果落地前完成這一部分。
 - es: Solo puede haber un jugador por baldosa segura. Si se juntan dos, recibirán daño.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
-- es-419: Solo puede haber un jugador por casilla segura. Si dos se juntan, recibirán daño.\n\nCompleta esta sección antes de que el dulce toque el suelo.
+- es-419: Solo puede haber un jugador por casilla segura. Si dos se juntan, recibirán daño.\n\nCompleta esta sección antes de que el caramelo toque el suelo.
 - fr: Un seul joueur par dalle sûre. Si deux joueurs se retrouvent dessus, ils subissent des dégâts.\n\nTerminez cette section avant que le bonbon ne touche le sol.
 - de: Pro sicherem Feld darf nur ein Spieler stehen. Wenn zwei darauf stehen, erleiden sie Schaden.\n\nSchließe diesen Abschnitt ab, bevor das Bonbon den Boden berührt.
 - pt-BR: Apenas um jogador por plataforma segura. Se dois ficarem juntos, eles sofrerão dano.\n\nConclua esta seção antes que o doce toque o chão.

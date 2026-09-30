@@ -16,9 +16,10 @@ public struct SideSplitRound
     public int rightCount;
     public int frontCount;
     public int backCount;
-    public bool hasColorRequirement;
-    public SideSplitDirection colorDirection; // hasColorRequirement가 true일 때만 의미 있음
-    public PlayerColorType requiredColor; // hasColorRequirement가 true일 때만 의미 있음
+    // 색 강요 — 같은 인덱스끼리 한 쌍("이 색 플레이어가 이 방향에"). 색은 서로 다르다(플레이어 1명 = 색 1개).
+    // 연습 라운드는 길이 0. 한 방향에 여러 색이 몰릴 수 있지만 그 방향 인원수를 넘지 않는다.
+    public SideSplitDirection[] colorDirections;
+    public PlayerColorType[] requiredColors;
     public int rotationSteps; // 0~3, ×90도. RegenerateRoundPlan()에서 결정 — SplitZoneRig 스냅 각도(rotationStartRound 이전 라운드는 항상 0)
 }
 
@@ -29,9 +30,15 @@ public class SideSplitRoundInfo
     public int rightCount;
     public int frontCount;
     public int backCount;
-    public bool hasColorRequirement;
-    public SideSplitDirection colorDirection;
-    public PlayerColorType requiredColor;
+    public SideSplitDirection[] colorDirections; // SideSplitRound와 같은 뜻 — 연습 라운드는 길이 0
+    public PlayerColorType[] requiredColors;
+}
+
+/// <summary>한 인원수의 라운드 표. 칸 하나 = 라운드 하나, 값 = 색 강요 인원(0 = 연습).</summary>
+[System.Serializable]
+public class SideSplitSchedule
+{
+    public int[] forcedColorsPerRound = new int[0];
 }
 
 /// <summary>UnityEvent&lt;SideSplitRoundInfo&gt; 직렬화 래퍼.</summary>
@@ -59,7 +66,8 @@ public class SideSplitFloatEvent : UnityEvent<float> { }
 ///  - 방향: 좌/우 2분기(frontZone/backZone 미연결 — M.Stage2) 또는 좌/우/앞/뒤 4분기
 ///    (frontZone/backZone 둘 다 연결 — T.Stage4). 어느 방향이 켜졌는지는 Inspector에
 ///    연결된 zone 필드로만 결정 — 코드 분기 없음(IsFourDirection 참고)
-///  - 색상 조건: 라운드마다 선택적. 초반 라운드는 색 조건 없음, 뒷 라운드일수록 색 조건 등장
+///  - 색상 조건: 인원수별 라운드 표(schedulesByPlayerCount)가 라운드마다 강요 인원(0=연습)을 정한다.
+///    라운드 수 = 그 인원의 표 길이 — 인원이 적으면 같은 단계 반복을 잘라 판이 짧아진다 (§1.10)
 ///  - 판정 시점: 타이머 종료 시점 스냅샷 (OXQuizManager.JudgeByPosition과 동일 원칙)
 ///  - 페널티: 라운드 실패 시 전원 데미지 후 다음 라운드로 계속 진행 (재시도 루프 아님)
 ///
@@ -70,7 +78,7 @@ public class SideSplitFloatEvent : UnityEvent<float> { }
 ///     라운드 안내(OnRoundReady) → revealReadHold초 뒤 타이머가 줄기 시작. 전부 ChallengeStepStartServerTime
 ///     기준이라 전 머신 동일 시점
 ///  4. 타이머 종료 시(ServerTime 기준) Host만 활성 zone 전체를 물리 오버랩으로 판정(Judge)
-///     - 각 방향 인원이 지정값과 정확히 일치 + (색 조건 있으면) 지정 색 플레이어가 지정 방향에 존재 → 성공
+///     - 각 방향 인원이 지정값과 정확히 일치 + 강요된 색 플레이어가 전부 각자 지정 방향에 존재 → 성공
 ///     - 그 외 전부 실패 → 전원 wrongDamage 피해 (NetworkDamageUtil, Host만)
 ///  5. 결과 연출(OnRoundSuccess/OnRoundFailed)은 Host가 직접 재생 + NotifyChallengeOutcomeClientRpc로 Client 동기화
 ///  6. resolveDelay 후 다음 라운드로 Host가 진행 확정(StageNetworkState.ChallengeStepBegin)
@@ -94,14 +102,11 @@ public class SideSplitChallenge : MonoBehaviour
     public SideSplitZone backZone;
 
     [Header("라운드 설정")]
-    [Tooltip("한 판에 진행할 라운드 수")]
-    [SerializeField] int totalRounds = 5;
-
-    [Tooltip("색 조건이 포함되는 라운드 수 최소값 (뒤쪽 라운드부터 배정 — 초반은 항상 색 조건 없음)")]
-    [SerializeField] int minColorRounds = 3;
-
-    [Tooltip("색 조건이 포함되는 라운드 수 최대값. totalRounds보다 작게 설정해 최소 1라운드는 항상 색 조건 없이 시작하는 것을 권장.")]
-    [SerializeField] int maxColorRounds = 4;
+    [Tooltip("인원수별 라운드 표. [0]=1인, [1]=2인, [2]=3인, [3]=4인.\n" +
+             "칸 하나 = 라운드 하나, 값 = 색 강요 인원(0 = 연습). 라운드 수 = 표 길이.\n" +
+             "강요 인원은 판 인원을 넘으면 인원으로 잘린다. 해당 인원 표가 없으면 가장 가까운 아래 인원 표를 쓴다.\n" +
+             "같은 단계를 2번 넘게 반복하지 않게 인원이 적을수록 표를 짧게 둔다(MinigameDesign.md §1.10).")]
+    [SerializeField] SideSplitSchedule[] schedulesByPlayerCount = new SideSplitSchedule[0];
 
     [Tooltip("라운드당 제한시간(초). 0보다 커야 판정이 작동함.\n" +
              "roundTimeLimitByPlayerCount가 비어 있거나 해당 인원 칸이 0 이하면 이 값을 쓴다.")]
@@ -172,8 +177,27 @@ public class SideSplitChallenge : MonoBehaviour
     /// <summary>현재 진행 중인 라운드 인덱스(0-based). SideSplitObjective에서 참조.</summary>
     public int CurrentRoundIndex => _roundIndex;
 
-    /// <summary>이번 판 총 라운드 수. SideSplitObjective에서 참조.</summary>
-    public int TotalRounds => totalRounds;
+    /// <summary>이번 판 총 라운드 수(= 이번 인원의 라운드 표 길이). SideSplitObjective에서 참조.</summary>
+    public int TotalRounds => CurrentSchedule().Length;
+
+    /// <summary>이번 판 인원수. GameSession.ActivePlayerCount(전 머신 동일) — 라운드 표·계획·제한시간이 전부 이 값을 본다.</summary>
+    static int PlayerCount =>
+        GameSession.Instance != null ? GameSession.Instance.ActivePlayerCount : CountAlivePlayers();
+
+    /// <summary>이번 인원의 라운드 표. 그 인원 칸이 비었으면 가장 가까운 아래 인원 칸, 그것도 없으면 위 칸.</summary>
+    int[] CurrentSchedule()
+    {
+        if (schedulesByPlayerCount == null || schedulesByPlayerCount.Length == 0) return System.Array.Empty<int>();
+
+        int want = Mathf.Clamp(PlayerCount - 1, 0, schedulesByPlayerCount.Length - 1);
+        for (int i = want; i >= 0; i--)
+            if (HasRounds(schedulesByPlayerCount[i])) return schedulesByPlayerCount[i].forcedColorsPerRound;
+        for (int i = want + 1; i < schedulesByPlayerCount.Length; i++)
+            if (HasRounds(schedulesByPlayerCount[i])) return schedulesByPlayerCount[i].forcedColorsPerRound;
+        return System.Array.Empty<int>();
+    }
+
+    static bool HasRounds(SideSplitSchedule s) => s != null && s.forcedColorsPerRound != null && s.forcedColorsPerRound.Length > 0;
 
     /// <summary>StartChallenge() 이후 true. SideSplitObjective.Begin()에서 이미 진행 중인지 판별에 사용.</summary>
     public bool IsStarted => _challengeStarted;
@@ -373,8 +397,7 @@ public class SideSplitChallenge : MonoBehaviour
     {
         get
         {
-            int players = GameSession.Instance != null ? GameSession.Instance.ActivePlayerCount : CountAlivePlayers();
-            int i = players - 1;
+            int i = PlayerCount - 1;
             if (roundTimeLimitByPlayerCount != null && i >= 0 && i < roundTimeLimitByPlayerCount.Length
                 && roundTimeLimitByPlayerCount[i] > 0f)
                 return roundTimeLimitByPlayerCount[i];
@@ -410,9 +433,8 @@ public class SideSplitChallenge : MonoBehaviour
             rightCount          = round.rightCount,
             frontCount          = round.frontCount,
             backCount           = round.backCount,
-            hasColorRequirement = round.hasColorRequirement,
-            colorDirection      = round.colorDirection,
-            requiredColor       = round.requiredColor,
+            colorDirections     = round.colorDirections,
+            requiredColors      = round.requiredColors,
         });
 
         if (RoundTimeLimit <= 0f) yield break; // 제한시간 미설정 — 판정 없음(기존 동작 유지)
@@ -475,9 +497,12 @@ public class SideSplitChallenge : MonoBehaviour
         for (int i = 0; i < n; i++)
             occupantSets[i] = new HashSet<Player>(zones[i].zone.GetPlayersInVolume(playerOverlapLayers));
 
-        var actualCounts    = new int[n];
-        bool misplaced      = false; // 2곳 이상 동시 점유 또는 어느 zone에도 없는 생존자 존재
-        bool colorSatisfied = !round.hasColorRequirement;
+        var actualCounts = new int[n];
+        bool misplaced   = false; // 2곳 이상 동시 점유 또는 어느 zone에도 없는 생존자 존재
+
+        // 강요 색마다 "그 색 플레이어가 지정 방향에 있다"를 따로 확인 — 색이 서로 달라 한 사람이 둘을 채울 수 없다.
+        int forced = round.requiredColors != null ? round.requiredColors.Length : 0;
+        var colorSatisfied = new bool[forced];
 
         Player[] allPlayers = FindObjectsByType<Player>(FindObjectsSortMode.None);
         foreach (Player p in allPlayers)
@@ -499,13 +524,18 @@ public class SideSplitChallenge : MonoBehaviour
 
             actualCounts[occupiedIndex]++;
 
-            if (round.hasColorRequirement && !colorSatisfied &&
-                zones[occupiedIndex].direction == round.colorDirection &&
-                p.isUniqueColor && p.playerColorType == round.requiredColor)
+            if (!p.isUniqueColor) continue;
+            for (int c = 0; c < forced; c++)
             {
-                colorSatisfied = true;
+                if (p.playerColorType == round.requiredColors[c] &&
+                    zones[occupiedIndex].direction == round.colorDirections[c])
+                    colorSatisfied[c] = true;
             }
         }
+
+        bool allColorsSatisfied = true;
+        for (int c = 0; c < forced; c++)
+            if (!colorSatisfied[c]) { allColorsSatisfied = false; break; }
 
         bool countMatch = !misplaced;
         for (int i = 0; i < n; i++)
@@ -517,7 +547,7 @@ public class SideSplitChallenge : MonoBehaviour
             }
         }
 
-        bool success = countMatch && colorSatisfied;
+        bool success = countMatch && allColorsSatisfied;
 
         SetAllZonesState(success ? SideSplitZone.VisualState.Success : SideSplitZone.VisualState.Fail);
 
@@ -557,7 +587,7 @@ public class SideSplitChallenge : MonoBehaviour
         if (!anyAlive) return;
 
         _roundIndex++;
-        if (_roundIndex >= totalRounds)
+        if (_roundIndex >= _rounds.Length)
         {
             StartCoroutine(ClearAfterDelay());
             return;
@@ -626,10 +656,10 @@ public class SideSplitChallenge : MonoBehaviour
     /// UnityEngine.Random(전역 상태)을 건드리지 않도록 로컬 System.Random만 사용.
     ///
     /// [생성 순서 — 전 머신 동일해야 함]
-    ///  1. 색 조건 포함 라운드 수 결정 (min~maxColorRounds)
-    ///  2. 뒤쪽 라운드부터 그 개수만큼 색 조건 배정 (초반 라운드는 항상 색 조건 없음 — MinigameDesign.md §1.2)
-    ///  3. 라운드 0..totalRounds-1 순서대로: 활성 방향 전원 분배(고정 순서 Left→Right→Front→Back으로 순차 소진)
-    ///     → (색 조건 라운드면) 색 배정 방향·색상 결정 → (rotationStartRound 이후 라운드면) 회전 각도 결정
+    ///  1. 이번 인원의 라운드 표(CurrentSchedule) — 라운드 수와 라운드별 색 강요 인원(0=연습)
+    ///  2. 라운드 0..N-1 순서대로: 활성 방향 전원 분배(고정 순서 Left→Right→Front→Back으로 순차 소진)
+    ///     → (강요 인원 k>0이면) 사람 자리 k개를 뽑아 서로 다른 활성 색 k개를 배정
+    ///     → (rotationStartRound 이후 라운드면) 회전 각도 결정
     ///
     /// [4방향 확장 — MinigameDesign.md §1.7] 활성 zone 수(2 또는 4)만 다를 뿐 알고리즘은 동일하게 일반화됨.
     /// 2방향 모드에서는 항상 zones=[Left,Right] 2개뿐이라 기존 leftCount=rng.Next(0,total+1) /
@@ -643,20 +673,17 @@ public class SideSplitChallenge : MonoBehaviour
         int seed = _netState != null ? _netState.ChallengeSeed : 0;
         var rng  = new System.Random(seed);
 
-        int totalPlayers = GameSession.Instance != null
-            ? GameSession.Instance.ActivePlayerCount
-            : CountAlivePlayers();
+        int totalPlayers = PlayerCount;
 
         List<ZoneSlot> zones = ActiveZones();
         int zoneCount = zones.Count;
 
-        int colorRoundCount = totalRounds > 0
-            ? Mathf.Clamp(rng.Next(minColorRounds, maxColorRounds + 1), 0, Mathf.Max(0, totalRounds - 1))
-            : 0;
-        int firstColorRoundIndex = totalRounds - colorRoundCount;
+        int[] schedule = CurrentSchedule();
+        // 강요 색은 서로 달라야 한다 — 활성 색보다 많이 강요하면 같은 색이 두 번 뽑혀 풀 수 없는 라운드가 된다.
+        int activeColorCount = GameSessionColorDistribution.GetActiveColorsOrFallback().Count;
 
-        _rounds = new SideSplitRound[totalRounds];
-        for (int i = 0; i < totalRounds; i++)
+        _rounds = new SideSplitRound[schedule.Length];
+        for (int i = 0; i < schedule.Length; i++)
         {
             var round = new SideSplitRound();
 
@@ -674,25 +701,31 @@ public class SideSplitChallenge : MonoBehaviour
                 SetCount(ref round, zones[z].direction, count);
             }
 
-            if (i >= firstColorRoundIndex && totalPlayers > 0)
+            int forced = Mathf.Clamp(schedule[i], 0, Mathf.Min(totalPlayers, activeColorCount));
+            round.colorDirections = new SideSplitDirection[forced];
+            round.requiredColors  = new PlayerColorType[forced];
+
+            if (forced > 0)
             {
-                // 인원이 0이 아닌 활성 방향들 중에서만 색 조건을 배정 (2방향 로직의 직접 확장 —
-                // "0명인 쪽엔 색 조건을 걸 수 없다"는 원래 규칙 그대로).
-                var nonZero = new List<int>(zoneCount);
+                // 사람 자리 목록(방향을 그 인원수만큼 반복) 중 forced개를 부분 셔플로 뽑는다 —
+                // 0명 방향엔 자리가 없어 색이 걸리지 않고, 한 방향엔 그 인원수를 넘는 색이 걸리지 않는다.
+                var seats = new List<SideSplitDirection>(totalPlayers);
                 for (int z = 0; z < zoneCount; z++)
-                    if (counts[z] > 0) nonZero.Add(z);
+                    for (int k = 0; k < counts[z]; k++)
+                        seats.Add(zones[z].direction);
 
-                if (nonZero.Count > 0)
+                for (int k = 0; k < forced; k++)
                 {
-                    round.hasColorRequirement = true;
-                    int pick = nonZero.Count == 1 ? nonZero[0] : nonZero[rng.Next(0, nonZero.Count)];
-                    round.colorDirection = zones[pick].direction;
-
-                    // 활성 색 목록에서 시드 기반으로 1개 선택 — PlayerSpawnCoordinator→GameSession→기본4색
-                    // 폴백 우선순위를 그대로 재사용 (GameSessionColorDistribution.Distribute와 동일 원칙,
-                    // totalSlots=1로 호출하면 활성 색 중 시드 기반 1개만 count=1로 뽑혀 반환됨).
-                    round.requiredColor = GameSessionColorDistribution.Distribute(1, rng)[0];
+                    int j = rng.Next(k, seats.Count);
+                    (seats[k], seats[j]) = (seats[j], seats[k]);
+                    round.colorDirections[k] = seats[k];
                 }
+
+                // 활성 색 중 서로 다른 forced개 — PlayerSpawnCoordinator→GameSession→기본4색 폴백 우선순위 재사용.
+                // totalSlots ≤ 활성 색 수면 Distribute는 셔플된 순서로 색마다 1개씩 돌려준다.
+                PlayerColorType[] colors = GameSessionColorDistribution.Distribute(forced, rng);
+                for (int k = 0; k < forced; k++)
+                    round.requiredColors[k] = colors[k];
             }
 
             // rotationStartRound 이전 라운드는 항상 0(회전 없음). 이후는 90/180/270 중 하나(0 제외 —

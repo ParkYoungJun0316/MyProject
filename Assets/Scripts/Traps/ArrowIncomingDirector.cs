@@ -12,6 +12,10 @@ using UnityEngine;
 /// - 직전에 쐈던 레인은 다음 추첨에서 제외(나머지 중 랜덤). 가방 셔플 아님 — 매번 재추첨.
 /// - 텀(발사 간격) = 유일한 난이도 축. stepAtSeconds[i] 경과 시점부터 termSteps[i] 적용
 ///   (계단식, 오름차순 입력). speedPhases는 안 씀.
+/// - 인원별 텀 (2026-10-01): termStepsByPlayerCount[인원-1]에 값이 있으면 그 줄을 쓰고, 비어 있으면
+///   termSteps(공용)로 폴백. stepAtSeconds는 인원과 무관하게 공용. 인원수는 DirectionalBarrierRound와
+///   같은 출처(GameSessionColorDistribution.GetActiveColorsOrFallback().Count) — 문 슬롯 표와 텀 줄이
+///   서로 다른 인원으로 갈라지지 않게. 4인에서 화살이 겹쳐 날아오게 해 "한 색만" 문의 순서 협동을 만든다.
 /// - Barrier/입 닫힘 창 등 다른 상태로 이 루프를 멈추지 않음 — 연동 안 함.
 ///
 /// [권한] Host 전용 루프(nm.IsServer 가드). lanes[i].FireOnce()만 부른다 — 시드/NV 불필요.
@@ -39,12 +43,25 @@ public class ArrowIncomingDirector : MonoBehaviour
     [Header("텀 계단 (난이도 축 — 유일)")]
     [Tooltip("경과 시각(초, PhaseStartServerTime 기준) 오름차순. 예: [0, 25, 45]")]
     [SerializeField] private float[] stepAtSeconds = new float[0];
-    [Tooltip("위 stepAtSeconds와 같은 순서로 대응하는 텀(발사 간격, 초). 예: [7, 5, 3]")]
+    [Tooltip("위 stepAtSeconds와 같은 순서로 대응하는 텀(발사 간격, 초). 예: [7, 5, 3]\n" +
+             "인원별 줄(termStepsByPlayerCount)이 비어 있을 때 쓰는 공용 값.")]
     [SerializeField] private float[] termSteps = new float[0];
     [Tooltip("stepAtSeconds/termSteps가 비었을 때 쓰는 고정 텀(초)")]
     [SerializeField] private float fallbackTerm = 5f;
 
+    [System.Serializable]
+    public class TermRow
+    {
+        [Tooltip("stepAtSeconds와 같은 순서의 텀(초). 비우면 공용 termSteps 사용.")]
+        public float[] terms = new float[0];
+    }
+
+    [Header("인원별 텀 (2026-10-01)")]
+    [Tooltip("인덱스 0=1인 … 3=4인. 해당 칸이 없으면 마지막 칸. 줄이 비어 있으면 공용 termSteps.")]
+    [SerializeField] private TermRow[] termStepsByPlayerCount = new TermRow[4];
+
     int _lastLaneIndex = -1;
+    float[] _runTerms; // 루프 시작 시 인원수로 1회 확정
     Coroutine _loop;
     StageManager _stageManager;
 
@@ -103,6 +120,9 @@ public class ArrowIncomingDirector : MonoBehaviour
             ? (float)StageNetworkState.Instance.PhaseStartServerTime
             : (nm != null ? (float)nm.ServerTime.Time : Time.time);
 
+        // StartStage() 이후라 활성색이 확정된 시점 — 런 동안 인원수 텀 줄을 고정한다.
+        _runTerms = ResolveTermsForParty(GameSessionColorDistribution.GetActiveColorsOrFallback().Count);
+
         while (true)
         {
             float now     = nm != null ? (float)nm.ServerTime.Time : Time.time;
@@ -115,17 +135,29 @@ public class ArrowIncomingDirector : MonoBehaviour
         }
     }
 
+    float[] ResolveTermsForParty(int partySize)
+    {
+        if (termStepsByPlayerCount != null && termStepsByPlayerCount.Length > 0)
+        {
+            int i = Mathf.Clamp(partySize - 1, 0, termStepsByPlayerCount.Length - 1);
+            float[] row = termStepsByPlayerCount[i]?.terms;
+            if (row != null && row.Length > 0) return row;
+        }
+        return termSteps;
+    }
+
     float GetCurrentTerm(float elapsed)
     {
-        if (termSteps == null || termSteps.Length == 0) return fallbackTerm;
+        float[] terms = _runTerms ?? termSteps;
+        if (terms == null || terms.Length == 0) return fallbackTerm;
 
-        float term = termSteps[0];
-        int   n    = Mathf.Min(stepAtSeconds.Length, termSteps.Length);
+        float term = terms[0];
+        int   n    = Mathf.Min(stepAtSeconds.Length, terms.Length);
         for (int i = 0; i < n; i++)
         {
-            if (elapsed >= stepAtSeconds[i]) term = termSteps[i];
+            if (elapsed >= stepAtSeconds[i]) term = terms[i];
         }
-        return term;
+        return Mathf.Max(0.1f, term);
     }
 
     void FireRandomLane()

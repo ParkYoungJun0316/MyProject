@@ -8922,7 +8922,10 @@ MonoBehaviour:
       m_Calls: []
   runnerGoal: {fileID: 383686472}
   guideGoal: {fileID: 499472636}
-  timeLimit: 110
+  timeLimitSolo: 60
+  timeLimitTwo: 110
+  timeLimitThree: 90
+  timeLimitFour: 70
   OnTimeChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -37453,6 +37456,7 @@ MonoBehaviour:
   - {fileID: 1358769276}
   - {fileID: 1400183181}
   - {fileID: 884095766}
+  - {fileID: 1791564886}
   spawnSampleRadius: 3
 --- !u!4 &1361524487
 Transform:
@@ -37471,6 +37475,7 @@ Transform:
   - {fileID: 1358769276}
   - {fileID: 1400183181}
   - {fileID: 884095766}
+  - {fileID: 1791564886}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1388667310
@@ -49962,6 +49967,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1791278215}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1791564885
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1791564886}
+  m_Layer: 0
+  m_Name: Spawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1791564886
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791564885}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 54, y: 1, z: 54}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1361524487}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1796257330
 GameObject:
   m_ObjectHideFlags: 0

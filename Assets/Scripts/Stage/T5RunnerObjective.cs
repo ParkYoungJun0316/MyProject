@@ -41,12 +41,14 @@ using UnityEngine.Events;
 ///  0. 이 씬의 `StageNetworkState`에서 **Disable Revive를 체크**(§7.1).
 ///  1. `StageManager.objectives`에 이 컴포넌트를 등록(T5는 이것 하나뿐).
 ///  2. runnerGoal / guideGoal에 각각 1층·2층 Goal 존 콜라이더를 연결. 두 존은 XZ가 같고 높이만 다르다.
-///  3. timeLimit = **110** (§1.8).
+///  3. 제한 시간은 **인원별**이다 — 솔로 60 · 2인 110 · 3인 90 · 4인 70 (§1.8). 씬에 직렬화된 값이
+///     우선하므로 **바꿀 때는 씬 값도 같이** 고친다(코드 기본값만 바꾸면 반영되지 않는다).
 ///
-/// [왜 110초인가 — 전환 12회 구조의 시간 산수]
-///  경로 27칸 · 피치 12 기준 주행만 32초. 여기에 전환 대기가 붙는다 —
-///  최적 12회 × 반응 2초면 56초, 실전값(16회 × 3초)이면 80초다. 90초면 최적 플레이 말고는 거의
-///  다 실패한다. 시간이 늘어도 2층은 계속 할 일이 있어 지루해지지 않는다는 판단으로 110을 잡았다.
+/// [왜 인원별인가 — 2026-10-01 4인 실측]
+///  단일 110초일 때 4인이 소통만 되면 **50초에 클리어**했다(60초 남음). 4인은 벽이 러너 색 하나뿐이라
+///  (§1.4-1) 러너 눈앞 문을 거의 항상 열 수 있어 솔로 다음으로 쉽다. 인원이 줄수록 벽 색이 늘어
+///  진짜 미로가 되므로 4인만 가장 조이고, 2인은 실측 전이라 110을 유지한다.
+///  인원은 `GameSession.GetActiveColors()`에서 읽는다 — 씬 로드 시점에 전 머신이 같은 값을 갖는다.
 /// </summary>
 public class T5RunnerObjective : StageObjective
 {
@@ -60,16 +62,38 @@ public class T5RunnerObjective : StageObjective
     /// <summary>1층 Goal 존(읽기 전용). 지도 UI가 goal 점 위치로 쓴다 — 좌표를 따로 적어두지 않기 위해서다.</summary>
     public Collider RunnerGoalZone => runnerGoal;
 
-    [Header("제한 시간")]
-    [Tooltip("이 시간(초)을 넘기면 실패. §1.8 = 110초 (실측 밴드 100~120).")]
-    public float timeLimit = 110f;
+    [Header("제한 시간 (인원별, §1.8)")]
+    [Tooltip("솔로 제한 시간(초). 넘기면 실패.")]
+    [SerializeField] float timeLimitSolo    = 60f;
+    [Tooltip("2인 제한 시간(초). 넘기면 실패.")]
+    [SerializeField] float timeLimitTwo     = 110f;
+    [Tooltip("3인 제한 시간(초). 넘기면 실패.")]
+    [SerializeField] float timeLimitThree   = 90f;
+    [Tooltip("4인 제한 시간(초). 넘기면 실패.")]
+    [SerializeField] float timeLimitFour    = 70f;
 
     [Header("이벤트 (UI 연결용)")]
     [Tooltip("남은 시간이 갱신될 때 호출(올림 초가 바뀔 때만). ObjectiveUI가 자동 구독.")]
     public UnityEvent<float> OnTimeChanged;
 
+    /// <summary>이번 판 인원의 제한 시간(초).</summary>
+    public float TimeLimit
+    {
+        get
+        {
+            int count = GameSession.Instance != null ? GameSession.Instance.GetActiveColors().Count : 1;
+            switch (count)
+            {
+                case <= 1: return timeLimitSolo;
+                case 2:    return timeLimitTwo;
+                case 3:    return timeLimitThree;
+                default:   return timeLimitFour;
+            }
+        }
+    }
+
     /// <summary>남은 시간(초).</summary>
-    public float Remaining => Mathf.Max(0f, timeLimit - _elapsed);
+    public float Remaining => Mathf.Max(0f, TimeLimit - _elapsed);
 
     float _elapsed;
     int   _shownSeconds = -1;
@@ -129,13 +153,13 @@ public class T5RunnerObjective : StageObjective
             return;
         }
 
-        if (_elapsed >= timeLimit) Fail();
+        if (_elapsed >= TimeLimit) Fail();
     }
 
     /// <summary>Client 전용 진입점 — Host가 보낸 남은 시간으로 UI만 갱신한다.</summary>
     public void NotifyRemainingTime(float remaining)
     {
-        _elapsed = Mathf.Max(0f, timeLimit - remaining);
+        _elapsed = Mathf.Max(0f, TimeLimit - remaining);
         OnTimeChanged?.Invoke(remaining);
     }
 

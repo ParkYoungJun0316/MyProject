@@ -25,7 +25,7 @@ using UnityEngine.InputSystem;
 /// 2. mouthController에 씬의 mouth0(MouthController) 연결
 ///    - mouth0 쪽: teamCheerHazard = true, startOnAwake = false(자동 랜덤 사이클 금지, E로만 시작)
 ///    - screenFader는 비워둘 것(테스트에서 화면 암전 없이 입 애니메이션만 보이게)
-/// 3. promptRoot에 "[E] 팀 응원 연습" 안내 UI 연결
+/// 3. promptRoot에 "[E] 팀 구호 테스트" 안내 UI 연결
 /// 4. CheerService가 이미 이 씬(Tutorial)에 배치돼 있어야 동작(Phase D0 완료 전제)
 ///
 /// [프롬프트 상시 표시 — 2026-09-30 사용자 결정, Tutorial·Interlude 공통]
@@ -39,7 +39,7 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     [Tooltip("Tutorial 씬의 mouth0(MouthController). teamCheerHazard=true, startOnAwake=false로 설정.")]
     [SerializeField] MouthController mouthController;
 
-    [Tooltip("항상 보이는 \"[E] 팀 응원 연습\" 프롬프트(창 진행 중·Host 응답 대기 중엔 숨김). 비워도 동작(프롬프트 없이 상호작용만).")]
+    [Tooltip("항상 보이는 \"[E] 팀 구호 테스트\" 프롬프트(창 진행 중·Host 응답 대기 중엔 숨김). 비워도 동작(프롬프트 없이 상호작용만).")]
     [SerializeField] GameObject promptRoot;
 
     [Tooltip("팀 응원 창이 열려 있는 동안만 켤 바닥 경고(원형 패드 등). 비워도 동작.")]

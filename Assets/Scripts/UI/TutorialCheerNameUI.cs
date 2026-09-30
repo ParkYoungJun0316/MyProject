@@ -86,7 +86,7 @@ public class TutorialCheerNameUI : MonoBehaviour
     [SerializeField] LocalizedString feedbackUnknownWord;
 
     [Header("Localization — 표시")]
-    [Tooltip("{0} 포맷 — GetLocalizedString(팀 키워드 대문자)로 호출.")]
+    [Tooltip("{0} 포맷 — GetLocalizedString(팀 구호 대문자)로 호출.")]
     [SerializeField] LocalizedString teamKeywordPrefix;
 
     /// <summary>패널이 열려있는 동안 true — Player.cs가 이동 입력을 잠그는 데 사용
@@ -259,8 +259,8 @@ public class TutorialCheerNameUI : MonoBehaviour
         "reserved"   => LocalizedOrFallback(feedbackReservedTeam, "시스템 예약어라 사용할 수 없는 단어예요."),
         "blocked"    => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
         "unknown"    => LocalizedOrFallback(feedbackUnknownWord, "음성 인식이 모르는 단어예요. 다른 영어 단어를 써주세요."),
-        "not_server" => LocalizedOrFallback(feedbackNotServer, "호스트만 팀 키워드를 정할 수 있어요."),
-        _            => LocalizedOrFallback(feedbackGenericTeam, "팀 키워드를 확정할 수 없어요."),
+        "not_server" => LocalizedOrFallback(feedbackNotServer, "호스트만 팀 구호를 정할 수 있어요."),
+        _            => LocalizedOrFallback(feedbackGenericTeam, "팀 구호를 확정할 수 없어요."),
     };
 
     /// <summary>String Table 엔트리가 아직 연결 안 됐거나(IsEmpty) 로드 레이스로 빈 문자열이면
@@ -285,7 +285,7 @@ public class TutorialCheerNameUI : MonoBehaviour
             // teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식이라
             // 부모 SetActive 1번으로 같이 꺼짐/켜짐 — 개별 SetActive 중복 호출 없음.
             // 비-Host는 이 섹션이 통째로 꺼지고, currentTeamWordText(패널 직계, 항상 표시)로만
-            // 현재 팀 키워드를 읽기 전용으로 본다.
+            // 현재 팀 구호를 읽기 전용으로 본다.
             if (hostTeamWordSection != null)
                 hostTeamWordSection.SetActive(isServer);
         }
@@ -308,9 +308,9 @@ public class TutorialCheerNameUI : MonoBehaviour
         currentTeamWordText.text = FormatTeamKeywordPrefix(word.ToUpperInvariant());
     }
 
-    const string FallbackTeamKeywordPrefix = "팀 키워드: {0}";
+    const string FallbackTeamKeywordPrefix = "팀 구호: {0}";
 
-    /// <summary>Tutorial/CheerNamePanel.TeamKeywordPrefix — "{0}" 포맷 문자열, 팀 키워드(대문자)를 인자로 채운다.</summary>
+    /// <summary>Tutorial/CheerNamePanel.TeamKeywordPrefix — "{0}" 포맷 문자열, 팀 구호(대문자)를 인자로 채운다.</summary>
     string FormatTeamKeywordPrefix(string upperWord)
     {
         if (teamKeywordPrefix != null && !teamKeywordPrefix.IsEmpty)

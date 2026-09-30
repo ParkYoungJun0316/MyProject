@@ -9,11 +9,12 @@
 > **CheerNamePanel 관련 결정 (2026-09-07):**
 > - CheerName/TeamCheerWord 형식: 영문 **소문자만**(a-z) 허용 — 숫자·밑줄(_) 제외. Vosk 음성 인식이 숫자/기호를 발음으로 인식 못 해 실제 응원 매칭이 안 되는 문제 실측 확인.
 > - 금칙어에 `sex` 추가(기존 목록에 성적 단어 카테고리는 있었으나 이 단어 자체가 누락돼 있었음).
-> - 화면 표시(개인 이름, 팀 키워드)는 항상 **대문자** — 저장/매칭용 내부 값은 그대로 소문자 유지, 표시 시점에만 변환(PlayerHPUI.selfNameLabel과 동일 패턴).
+> - 화면 표시(개인 이름, 팀 구호)는 항상 **대문자** — 저장/매칭용 내부 값은 그대로 소문자 유지, 표시 시점에만 변환(PlayerHPUI.selfNameLabel과 동일 패턴).
 > - 실패 피드백 문구는 카테고리별로 세분화하지 않고 지금처럼 4종(형식/예약어/금칙어/중복) + 팀워드용 `not_server`로 뭉뚱그림 유지 — 어뷰징 유저에게 어떤 금칙어 카테고리에 걸렸는지 정확히 알려주면 우회가 쉬워지므로 의도적으로 모호하게 둠.
 >
 > **번역 원칙:** ①각 언어 문법에 맞게. ②단순 직역이 아니라 그 언어 화자가 게임 튜토리얼에서 실제로 쓸 법한 자연스러운 말투로 다듬음 — 예를 들어 영어는 캐주얼한 명령형, 일본어는 です/ます체, 독일어/프랑스어/러시아어/폴란드어는 비격식 2인칭(du/tu/ты/ty), 스페인어는 스페인(pulsa)과 중남미(presiona) 어휘 차이, 포르투갈은 포르투갈(carrega em)과 브라질(aperte) 어휘 차이를 반영함.
-> **[2026-09-17] 팀 응원 단어 한국어 용어 = `팀 키워드`로 통일.** 설정 UI(`CheerNamePanel`·`Board_CheerName`·`Prompt.CheerName`)가 이미 쓰던 말. `Board_TeamCheer.Body`의 `팀워드`, StageTip의 `팀 응원 이름`을 이 말로 교체(StageTip 쪽 다른 언어도 설정 UI 용어로 맞춤 — `StageTipTranslations.md` 용어표). 스토리 대사의 `팀 구호`는 캐릭터 말투라 유지.
+> **[2026-10-01] 팀 응원 단어 용어 = `팀 구호` / `team cheer`로 전면 통일 (사용자 확인).** 대사·Tip과 같은 말 — ja `チームの掛け声` / zh `团队口令`·`團隊口令` / es·es-419 `grito de equipo` / fr `cri d'équipe` / de `Teamruf` / pt-BR `grito da equipe` / ru `командный клич` / pl `okrzyk drużyny`. 바뀐 키: `Board_TeamCheer.Title`(팀 응원→팀 구호)·`.Body`, `Board_CheerName.Title`(팀 키워드→**팀 구호 정하기** — 연습 보드 제목과 겹치지 않게), `CheerNamePanel.Title`·`.TeamKeywordPrefix`·`.Feedback_Generic_Team`·`.Feedback_NotServer`·`.HostHint`(ja·zh만)·`.Feedback_Reserved_Team`(zh만), `Interlude.Board_NameChange.Title`·`.Body`, `Prompt.CheerName`(→[E] 팀 구호 정하기)·`Prompt.TeamCheerTest`(→[E] 팀 구호 테스트). String Table 12로케일(pt 제외) + 씬 하드코딩 한국어(Tutorial·Interlude) + `TutorialCheerNameUI.cs` 한국어 폴백 동기화. 실측: 보드 제목 최소 ru 39(하한 34)·Interlude 제목 ru 39(하한 30)·본문 전부 최대 크기·폰트 누락 글자 없음. 아래 09-17 결정은 폐기.
+> ~~**[2026-09-17] 팀 응원 단어 한국어 용어 = `팀 키워드`로 통일.**~~ 설정 UI(`CheerNamePanel`·`Board_CheerName`·`Prompt.CheerName`)가 이미 쓰던 말. `Board_TeamCheer.Body`의 `팀워드`, StageTip의 `팀 응원 이름`을 이 말로 교체(StageTip 쪽 다른 언어도 설정 UI 용어로 맞춤 — `StageTipTranslations.md` 용어표). 스토리 대사의 `팀 구호`는 캐릭터 말투라 유지.
 > **[2026-09-30] `pt`(포르투갈-유럽)는 미사용 — 관리하지 않음, `pt-BR`만 갱신.** Locale·테이블(`Tutorial`/`StageTip`/`StageTitle`/`DeathUI`의 `_pt`)은 남아 있어 빌드(Addressables)에 포함되지만, 설정 언어 목록에서 숨겨져 있고(`LocaleDisplayName.IsOfferedInSettings`) 시스템 언어 포르투갈어도 `pt-BR`로 연결돼(`GameLocalizationBootstrap`) 플레이어가 고를 방법이 없다. `Dialogue`·`SettingUI`엔 `_pt` 테이블 자체가 없음. 아래 목록의 `pt:` 줄은 이력(09-30 보드 문구 포함 — 넣지 않아도 됐던 값). 정리는 출시 후.
 **용어 통일:** "host"는 한국어 원문도 번역하지 않고 그대로 쓰므로, 각 언어에서 그 지역 게이머들이 실제로 쓰는 표현을 채택함 — en/de/ru/pl `host`(차용어 그대로), fr `l'hôte`, ja `ホスト`, zh `房主`, es `el host`, pt `anfitrião`, pt-BR `host`.
 > **"팀 응원 단어"**는 모든 언어에서 `TeamCheer`/`Test` 섹션에 동일한 표현으로 통일(예: en `your team's cheer word`, ja `チームの合言葉`, de `das Team-Wort`).
@@ -245,23 +246,23 @@
 
 ---
 
-## Board_TeamCheer (팀 응원)
+## Board_TeamCheer (팀 구호)
 
 ### `Tutorial.Board_TeamCheer.Title`
 
-- ko: 팀 응원
+- ko: 팀 구호
 - en: Team Cheer
-- ja: チーム応援
-- zh-Hans: 团队应援
-- zh-Hant: 團隊應援
-- es: Ánimo de equipo
-- es-419: Ánimo de equipo
-- fr: Encouragement d'équipe
-- de: Team-Anfeuerung
+- ja: チームの掛け声
+- zh-Hans: 团队口令
+- zh-Hant: 團隊口令
+- es: Grito de equipo
+- es-419: Grito de equipo
+- fr: Cri d'équipe
+- de: Teamruf
 - pt: Incentivo de equipa
-- pt-BR: Torcida em equipe
-- ru: Командная поддержка
-- pl: Doping drużynowy
+- pt-BR: Grito da equipe
+- ru: Командный клич
+- pl: Okrzyk drużyny
 
 ### `Tutorial.Board_TeamCheer.Body` **[2026-09-14 개편 — 구 `Board_Test` 내용 흡수]**
 
@@ -270,39 +271,39 @@
 > **[2026-09-30] 한 문장으로 축소.** [E] 연습 안내는 보드 아래 `Prompt.TeamCheerTest`가 대신한다. 한국어만 씬 디자인대로 `\n` 2줄, 다른 언어는 자동 줄바꿈.
 > 구 값(참고): ko `경고 아이콘이 뜨면 팀 키워드를 다같이 외쳐서 위협을 되돌리세요.\n여기서 [E]를 누르면 바로 연습할 수 있어요.`
 
-- ko: 경고가 뜨면\n다 같이 팀 키워드를 외치세요.
-- en: When the warning appears, shout the team word together.
-- ja: 警告が出たら、みんなでチームの合言葉を叫びましょう。
-- zh-Hans: 警告出现时，全队一起喊出团队关键词。
-- zh-Hant: 警告出現時，全隊一起喊出團隊關鍵詞。
-- es: Cuando aparezca el aviso, gritad todos juntos la palabra de equipo.
-- es-419: Cuando aparezca la advertencia, griten todos juntos la palabra de equipo.
-- fr: Quand l'alerte apparaît, criez tous ensemble le mot d'équipe.
-- de: Wenn die Warnung erscheint, ruft gemeinsam das Team-Wort.
+- ko: 경고가 뜨면\n다 같이 팀 구호를 외치세요.
+- en: When the warning appears, shout the team cheer together.
+- ja: 警告が出たら、みんなでチームの掛け声を叫びましょう。
+- zh-Hans: 警告出现时，全队一起喊出团队口令。
+- zh-Hant: 警告出現時，全隊一起喊出團隊口令。
+- es: Cuando aparezca el aviso, lanzad todos juntos el grito de equipo.
+- es-419: Cuando aparezca la advertencia, lancen todos juntos el grito de equipo.
+- fr: Quand l'alerte apparaît, poussez tous ensemble le cri d'équipe.
+- de: Wenn die Warnung erscheint, ruft gemeinsam euren Teamruf.
 - pt: Quando aparecer o aviso, gritem todos juntos a palavra de equipa.
-- pt-BR: Quando o aviso aparecer, gritem juntos a palavra da equipe.
-- ru: Когда появится предупреждение, прокричите командное слово все вместе.
-- pl: Gdy pojawi się ostrzeżenie, krzyknijcie razem hasło drużyny.
+- pt-BR: Quando o aviso aparecer, soltem juntos o grito da equipe.
+- ru: Когда появится предупреждение, прокричите командный клич все вместе.
+- pl: Gdy pojawi się ostrzeżenie, wykrzyczcie razem okrzyk drużyny.
 
 ---
 
-## Board_CheerName (팀 키워드 설정) **[2026-09-14 개편 — 개인 응원 이름 삭제, TeamCheerWord 전용으로 축소]**
+## Board_CheerName (팀 구호 정하기) **[2026-09-14 개편 — 개인 응원 이름 삭제, TeamCheerWord 전용으로 축소]**
 
 ### `Tutorial.Board_CheerName.Title`
 
-- ko: 팀 키워드
-- en: Team Word
-- ja: チームの合言葉
-- zh-Hans: 团队关键词
-- zh-Hant: 團隊關鍵詞
-- es: Palabra de equipo
-- es-419: Palabra de equipo
-- fr: Mot d'équipe
-- de: Team-Wort
+- ko: 팀 구호 정하기
+- en: Set Team Cheer
+- ja: チームの掛け声を決める
+- zh-Hans: 设置团队口令
+- zh-Hant: 設定團隊口令
+- es: Elegir el grito de equipo
+- es-419: Elegir el grito de equipo
+- fr: Choisir le cri d'équipe
+- de: Teamruf festlegen
 - pt: Palavra de equipa
-- pt-BR: Palavra da equipe
-- ru: Командное слово
-- pl: Hasło drużyny
+- pt-BR: Definir o grito da equipe
+- ru: Задать командный клич
+- pl: Ustal okrzyk drużyny
 
 ### `Tutorial.Board_CheerName.Body`
 
@@ -354,25 +355,25 @@
 
 ---
 
-## CheerNamePanel (팀 키워드 입력 패널)
+## CheerNamePanel (팀 구호 입력 패널)
 
 ### `Tutorial.CheerNamePanel.Title`
 
 > **[2026-09-14]** 개인 CheerName 제목 → TeamCheerWord 전용으로 교체.
 
-- ko: 팀 키워드를 정해주세요
-- en: Choose your team word
-- ja: チームの合言葉を決めてください
-- zh-Hans: 请设置团队关键词
-- zh-Hant: 請設定團隊關鍵詞
-- es: Elige la palabra de equipo
-- es-419: Elige la palabra de equipo
-- fr: Choisis le mot d'équipe
-- de: Leg das Team-Wort fest
+- ko: 팀 구호를 정해주세요
+- en: Choose your team cheer
+- ja: チームの掛け声を決めてください
+- zh-Hans: 请设置团队口令
+- zh-Hant: 請設定團隊口令
+- es: Elige el grito de equipo
+- es-419: Elige el grito de equipo
+- fr: Choisis le cri d'équipe
+- de: Leg den Teamruf fest
 - pt: Escolhe a palavra de equipa
-- pt-BR: Escolha a palavra da equipe
-- ru: Выбери командное слово
-- pl: Wybierz hasło drużyny
+- pt-BR: Escolha o grito da equipe
+- ru: Выбери командный клич
+- pl: Wybierz okrzyk drużyny
 
 > **[2026-09-14 삭제]** `Examples`/`NameInputPlaceholder`는 개인 CheerName 입력 필드와 함께 사라짐(아래 §키 네이밍 참고).
 
@@ -428,9 +429,9 @@
 
 - ko: 팀 전체가 함께 외칠 단어를 정해주세요 (기본값: FIGHTING)
 - en: Set the word your whole team will shout together (default: FIGHTING)
-- ja: チーム全員で叫ぶ合言葉を決めてください（初期値：FIGHTING）
-- zh-Hans: 请设置全队一起喊的应援词（默认：FIGHTING）
-- zh-Hant: 請設定全隊一起喊的應援詞（預設：FIGHTING）
+- ja: チーム全員で叫ぶ掛け声を決めてください（初期値：FIGHTING）
+- zh-Hans: 请设置全队一起喊的团队口令（默认：FIGHTING）
+- zh-Hant: 請設定全隊一起喊的團隊口令（預設：FIGHTING）
 - es: Elige la palabra que gritará todo el equipo junto (por defecto: FIGHTING)
 - es-419: Elige la palabra que va a gritar todo el equipo junto (por defecto: FIGHTING)
 - fr: Choisis le mot que toute l'équipe criera ensemble (par défaut : FIGHTING)
@@ -440,21 +441,21 @@
 - ru: Задайте слово, которое вся команда будет кричать вместе (по умолчанию: FIGHTING)
 - pl: Ustal słowo, które cała drużyna będzie razem krzyczeć (domyślnie: FIGHTING)
 
-### `Tutorial.CheerNamePanel.TeamKeywordPrefix` (`{0}` 포맷 — 팀 키워드 대문자가 채워짐)
+### `Tutorial.CheerNamePanel.TeamKeywordPrefix` (`{0}` 포맷 — 팀 구호 대문자가 채워짐)
 
-- ko: 팀 키워드: {0}
-- en: Team word: {0}
-- ja: チームの合言葉：{0}
-- zh-Hans: 团队关键词：{0}
-- zh-Hant: 團隊關鍵詞：{0}
-- es: Palabra de equipo: {0}
-- es-419: Palabra de equipo: {0}
-- fr: Mot d'équipe : {0}
-- de: Team-Wort: {0}
+- ko: 팀 구호: {0}
+- en: Team cheer: {0}
+- ja: チームの掛け声：{0}
+- zh-Hans: 团队口令：{0}
+- zh-Hant: 團隊口令：{0}
+- es: Grito de equipo: {0}
+- es-419: Grito de equipo: {0}
+- fr: Cri d'équipe : {0}
+- de: Teamruf: {0}
 - pt: Palavra de equipa: {0}
-- pt-BR: Palavra da equipe: {0}
-- ru: Командное слово: {0}
-- pl: Hasło drużyny: {0}
+- pt-BR: Grito da equipe: {0}
+- ru: Командный клич: {0}
+- pl: Okrzyk drużyny: {0}
 
 ### `Tutorial.CheerNamePanel.Feedback_Format`
 
@@ -477,8 +478,8 @@
 - ko: 시스템 예약어라 사용할 수 없는 단어예요.
 - en: That word is a reserved system word, so you can't use it.
 - ja: システムの予約語なので、その単語は使用できません。
-- zh-Hans: 这是系统保留字，无法用作关键词。
-- zh-Hant: 這是系統保留字，無法用作關鍵詞。
+- zh-Hans: 这是系统保留字，无法用作团队口令。
+- zh-Hant: 這是系統保留字，無法用作團隊口令。
 - es: Esa palabra es una palabra reservada del sistema, así que no puedes usarla.
 - es-419: Esa palabra es una palabra reservada del sistema, así que no la puedes usar.
 - fr: Ce mot est réservé par le système, tu ne peux pas l'utiliser.
@@ -506,35 +507,35 @@
 
 ### `Tutorial.CheerNamePanel.Feedback_Generic_Team`
 
-- ko: 팀 키워드를 확정할 수 없어요.
-- en: Couldn't confirm the team keyword.
-- ja: チームの合言葉を確定できません。
-- zh-Hans: 无法确定团队关键词。
-- zh-Hant: 無法確定團隊關鍵詞。
-- es: No se ha podido confirmar la palabra de equipo.
-- es-419: No se pudo confirmar la palabra de equipo.
-- fr: Impossible de confirmer le mot d'équipe.
-- de: Das Team-Wort konnte nicht bestätigt werden.
+- ko: 팀 구호를 확정할 수 없어요.
+- en: Couldn't confirm the team cheer.
+- ja: チームの掛け声を確定できません。
+- zh-Hans: 无法确定团队口令。
+- zh-Hant: 無法確定團隊口令。
+- es: No se ha podido confirmar el grito de equipo.
+- es-419: No se pudo confirmar el grito de equipo.
+- fr: Impossible de confirmer le cri d'équipe.
+- de: Der Teamruf konnte nicht bestätigt werden.
 - pt: Não foi possível confirmar a palavra de equipa.
-- pt-BR: Não foi possível confirmar a palavra da equipe.
-- ru: Не удалось подтвердить командное слово.
-- pl: Nie udało się zatwierdzić hasła drużyny.
+- pt-BR: Não foi possível confirmar o grito da equipe.
+- ru: Не удалось подтвердить командный клич.
+- pl: Nie udało się zatwierdzić okrzyku drużyny.
 
 ### `Tutorial.CheerNamePanel.Feedback_NotServer`
 
-- ko: 호스트만 팀 키워드를 정할 수 있어요.
-- en: Only the host can set the team keyword.
-- ja: チームの合言葉を決められるのはホストだけです。
-- zh-Hans: 只有房主才能设置团队关键词。
-- zh-Hant: 只有房主才能設定團隊關鍵詞。
-- es: Solo el host puede fijar la palabra de equipo.
-- es-419: Solo el host puede definir la palabra de equipo.
-- fr: Seul l'hôte peut définir le mot d'équipe.
-- de: Nur der Host kann das Team-Wort festlegen.
+- ko: 호스트만 팀 구호를 정할 수 있어요.
+- en: Only the host can set the team cheer.
+- ja: チームの掛け声を決められるのはホストだけです。
+- zh-Hans: 只有房主才能设置团队口令。
+- zh-Hant: 只有房主才能設定團隊口令。
+- es: Solo el host puede fijar el grito de equipo.
+- es-419: Solo el host puede definir el grito de equipo.
+- fr: Seul l'hôte peut définir le cri d'équipe.
+- de: Nur der Host kann den Teamruf festlegen.
 - pt: Só o anfitrião pode definir a palavra de equipa.
-- pt-BR: Só o host pode definir a palavra da equipe.
-- ru: Только хост может задать командное слово.
-- pl: Tylko host może ustalić hasło drużyny.
+- pt-BR: Só o host pode definir o grito da equipe.
+- ru: Только хост может задать командный клич.
+- pl: Tylko host może ustalić okrzyk drużyny.
 
 > **[2026-09-14 삭제]** `Feedback_Reserved_Name`/`Feedback_Taken_Name`/`Feedback_Taken_Team`/`Feedback_Generic_Name`/`Feedback_Submitting`/`Feedback_Timeout` — 개인 이름 입력 자체가 없어졌고, 팀워드 설정은 RPC 왕복 없는 동기 호출이라 제출 대기 상태도 없다(§키 네이밍 삭제 목록 참고).
 
@@ -577,37 +578,37 @@
 
 ### `Interlude.Board_NameChange.Title`
 
-- ko: 팀 키워드 바꾸기
-- en: Change Team Word
-- ja: チームの合言葉を変える
-- zh-Hans: 更改团队关键词
-- zh-Hant: 更改團隊關鍵詞
-- es: Cambiar la palabra de equipo
-- es-419: Cambiar la palabra de equipo
-- fr: Changer le mot d'équipe
-- de: Team-Wort ändern
+- ko: 팀 구호 바꾸기
+- en: Change Team Cheer
+- ja: チームの掛け声を変える
+- zh-Hans: 更改团队口令
+- zh-Hant: 更改團隊口令
+- es: Cambiar el grito de equipo
+- es-419: Cambiar el grito de equipo
+- fr: Changer le cri d'équipe
+- de: Teamruf ändern
 - pt: Mudar a palavra de equipa
-- pt-BR: Mudar a palavra da equipe
-- ru: Изменить командное слово
-- pl: Zmień hasło drużyny
+- pt-BR: Mudar o grito da equipe
+- ru: Изменить командный клич
+- pl: Zmień okrzyk drużyny
 
 ### `Interlude.Board_NameChange.Body`
 
 > **[2026-09-17]** 한 줄로 축약 (장소 안내·경고 문구 삭제). 바꾸는 방법은 같은 씬의 `CheerNameSignboard` 프롬프트(`[E] 팀 키워드 설정`)가 안내.
 
-- ko: 팀 키워드를 마지막으로 한 번 더 바꿀 수 있어요.
-- en: You can change your team word one last time.
-- ja: チームの合言葉は、最後にもう一度だけ変えられます。
-- zh-Hans: 团队关键词还能最后再改一次。
-- zh-Hant: 團隊關鍵詞還能最後再改一次。
-- es: Puedes cambiar la palabra de equipo una última vez.
-- es-419: Puedes cambiar la palabra de equipo una última vez.
-- fr: Tu peux changer le mot d'équipe une dernière fois.
-- de: Du kannst das Team-Wort ein letztes Mal ändern.
+- ko: 팀 구호를 마지막으로 한 번 더 바꿀 수 있어요.
+- en: You can change your team cheer one last time.
+- ja: チームの掛け声は、最後にもう一度だけ変えられます。
+- zh-Hans: 团队口令还能最后再改一次。
+- zh-Hant: 團隊口令還能最後再改一次。
+- es: Puedes cambiar el grito de equipo una última vez.
+- es-419: Puedes cambiar el grito de equipo una última vez.
+- fr: Tu peux changer le cri d'équipe une dernière fois.
+- de: Du kannst den Teamruf ein letztes Mal ändern.
 - pt: Podes mudar a palavra de equipa uma última vez.
-- pt-BR: Você pode mudar a palavra da equipe uma última vez.
-- ru: Командное слово можно изменить в последний раз.
-- pl: Możesz zmienić hasło drużyny ostatni raz.
+- pt-BR: Você pode mudar o grito da equipe uma última vez.
+- ru: Командный клич можно изменить в последний раз.
+- pl: Możesz zmienić okrzyk drużyny ostatni raz.
 
 **적용 상태 (2026-09-08, MCP):**
 
@@ -626,42 +627,42 @@
 
 | 키 | 연결 대상 | 원문(교정 전) |
 |---|---|---|
-| `Tutorial.Prompt.CheerName` | `CheerNameSignboard/PromptRoot/PromptText` (Tutorial·Interlude 공용) | `[E] 이름 설정` → `[E] 팀 키워드 설정`로 재교정(2026-09-14) |
+| `Tutorial.Prompt.CheerName` | `CheerNameSignboard/PromptRoot/PromptText` (Tutorial·Interlude 공용) | `[E] 이름 설정` → `[E] 팀 키워드 설정`(2026-09-14) → `[E] 팀 구호 정하기`(2026-10-01) |
 | `Tutorial.Prompt.TeamCheerTest` | `TutorialCheerNameTest/PromptRoot/PromptText` (Tutorial·Interlude 공용) | `[E] Team Cheer Test` → `[E] 팀 응원 테스트`로 교정 |
 
 **명칭 결정 (2026-09-08, 2026-09-14 갱신):** 원래 "이름 설정"은 패널 제목("응원 이름을 정해주세요")과 결을 맞춘 것이었으나, 개인 CheerName 커스텀화가 완전히 삭제되면서 이 표지판이 여는 패널이 TeamCheerWord 전용이 됐다 — 문구도 "팀 키워드 설정"으로 갱신. "Team Cheer Test"는 프로젝트 전체가 한국어 베이스 + 로컬라이즈 오버레이 구조인데 이 프롬프트만 영어였던 것이라 한국어 "팀 응원 테스트"로 교정.
 
 ### `Tutorial.Prompt.CheerName`
 
-- ko: [E] 팀 키워드 설정
-- en: [E] Set team word
-- ja: [E] チームの合言葉を設定
-- zh-Hans: [E] 设置团队关键词
-- zh-Hant: [E] 設定團隊關鍵詞
-- es: [E] Definir palabra de equipo
-- es-419: [E] Definir palabra de equipo
-- fr: [E] Définir le mot d'équipe
-- de: [E] Team-Wort festlegen
+- ko: [E] 팀 구호 정하기
+- en: [E] Set team cheer
+- ja: [E] チームの掛け声を決める
+- zh-Hans: [E] 设置团队口令
+- zh-Hant: [E] 設定團隊口令
+- es: [E] Elegir grito de equipo
+- es-419: [E] Elegir grito de equipo
+- fr: [E] Choisir le cri d'équipe
+- de: [E] Teamruf festlegen
 - pt: [E] Definir palavra de equipa
-- pt-BR: [E] Definir palavra da equipe
-- ru: [E] Задать командное слово
-- pl: [E] Ustaw hasło drużyny
+- pt-BR: [E] Definir grito da equipe
+- ru: [E] Задать командный клич
+- pl: [E] Ustal okrzyk drużyny
 
 ### `Tutorial.Prompt.TeamCheerTest`
 
-- ko: [E] 팀 응원 테스트
+- ko: [E] 팀 구호 테스트
 - en: [E] Team Cheer Test
-- ja: [E] チーム応援テスト
-- zh-Hans: [E] 团队应援测试
-- zh-Hant: [E] 團隊應援測試
-- es: [E] Prueba de ánimo de equipo
-- es-419: [E] Prueba de ánimo de equipo
-- fr: [E] Test d'encouragement d'équipe
-- de: [E] Team-Anfeuerung testen
+- ja: [E] チームの掛け声テスト
+- zh-Hans: [E] 团队口令测试
+- zh-Hant: [E] 團隊口令測試
+- es: [E] Probar el grito de equipo
+- es-419: [E] Probar el grito de equipo
+- fr: [E] Tester le cri d'équipe
+- de: [E] Teamruf testen
 - pt: [E] Teste de incentivo de equipa
-- pt-BR: [E] Teste de torcida em equipe
-- ru: [E] Тест командной поддержки
-- pl: [E] Test dopingu drużynowego
+- pt-BR: [E] Testar o grito da equipe
+- ru: [E] Проверить командный клич
+- pl: [E] Przetestuj okrzyk drużyny
 
 **적용 상태 (2026-09-08, MCP):**
 

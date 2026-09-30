@@ -12,7 +12,7 @@ using System.Collections;
 /// - 러너가 은신(PlayerStealth 레이어)이거나 사망 상태면 대체 타겟 없이 정지한다.
 /// - 일정 속도로 추격. 데미지는 자식 Stage5ChaserHitbox에서 항상 판정.
 /// - **피격을 주면 데미지를 주고 스스로 소멸**(Host Despawn). 데미지 값은 자식 Hitbox의
-///   인스펙터 값이다(§1.5 = 2). **리스폰은 없다** — 4마리가 곧 '때릴 기회 4번'이다.
+///   인스펙터 값이다(§1.5 = 2). **리스폰은 없다** — 5마리(스폰 점 수)가 곧 '때릴 기회 5번'이다.
 ///
 /// [네트워크 — Host 전권 시뮬 + NetworkTransform 복제 (TStageNetworkBoard.md §3.2 확정)]
 /// - Update()의 NavMeshAgent 추적 판단은 Host 전용. Client는 프리팹의 서버 권한
