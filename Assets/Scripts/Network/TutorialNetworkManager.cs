@@ -71,8 +71,8 @@ public class TutorialNetworkManager : NetworkBehaviour
         -1.0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // ── 스테이지 바로가기 (구 LobbyMenuController 스테이지 드롭다운 대체) ──
-    // 2026-08-22 확정: Dev Build 여부와 무관하게 모든 빌드(Release 포함)에서 항상 사용 가능
-    // — Steam 베타 테스트 중 스테이지 스킵이 필요해서 완전 노출로 결정. TutorialDevStageJumpUI가 호출.
+    // 2026-10-02: NetworkManagerSetup.DevToolsAllowed(에디터·Dev Build·Steam 베타 브랜치)일 때만 동작.
+    // 출시(default 브랜치)에서는 지정 자체를 무시한다. TutorialDevStageJumpUI가 호출.
     int _devTargetStageIndex = -1;
 
     /// <summary>
@@ -84,6 +84,11 @@ public class TutorialNetworkManager : NetworkBehaviour
         if (!IsHost)
         {
             Debug.LogWarning("[TutorialNetworkManager] SetDevTargetStage — Host가 아니라 무시됨");
+            return;
+        }
+        if (!NetworkManagerSetup.DevToolsAllowed)
+        {
+            Debug.LogWarning("[TutorialNetworkManager] SetDevTargetStage — 출시 빌드라 무시됨");
             return;
         }
         _devTargetStageIndex = index;

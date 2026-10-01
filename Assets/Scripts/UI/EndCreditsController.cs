@@ -46,7 +46,7 @@ public class EndCreditsController : MonoBehaviour
     [SerializeField] float riseStartMargin = 20f;
 
     [Header("외부 링크")]
-    [SerializeField] string discordUrl = "https://discord.gg/BGNs5F2eg";
+    [SerializeField] string discordUrl = "https://discord.gg/j2vqzcugtM";
 
     bool  _returning;
     float _shownAt = -1f;

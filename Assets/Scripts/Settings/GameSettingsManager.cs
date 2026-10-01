@@ -56,16 +56,16 @@ public class GameSettingsManager : MonoBehaviour
 
     [Header("기본값(Reset) 값")]
     [Tooltip("옵션 메뉴 '기본값' 버튼을 누르면 이 값들로 되돌아감. 최초 실행 기본값이기도 함.")]
-    [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 1f;
-    [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 1f;
-    [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 1f;
+    [Range(0f, 1f)] [SerializeField] float defaultMasterVolume = 0.5f;
+    [Range(0f, 1f)] [SerializeField] float defaultBgmVolume    = 0.5f;
+    [Range(0f, 1f)] [SerializeField] float defaultSfxVolume    = 0.5f;
     [Range(0f, 1f)] [SerializeField] float defaultMicVolume    = 1f;
     [Range(MinChatFontSize, MaxChatFontSize)] [SerializeField] float defaultChatFontSize = 14f;
     [Range(MinMouseSensitivity, MaxMouseSensitivity)] [SerializeField] float defaultMouseSensitivity = 1f;
 
-    public float  MasterVolume  { get; private set; } = 1f;
-    public float  BgmVolume     { get; private set; } = 1f;
-    public float  SfxVolume     { get; private set; } = 1f;
+    public float  MasterVolume  { get; private set; } = 0.5f;
+    public float  BgmVolume     { get; private set; } = 0.5f;
+    public float  SfxVolume     { get; private set; } = 0.5f;
     public float  MicVolume     { get; private set; } = 1f;
     public bool   MicMuted      { get; private set; }
     /// <summary>빈 문자열 = 시스템 기본 마이크(Dissonance/Microphone API의 null과 동일 취급).</summary>

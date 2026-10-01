@@ -6,8 +6,9 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 스테이지 바로가기 UI — 구 LobbyMenuController 스테이지 드롭다운을 Tutorial 게이트로 이전.
-/// 2026-08-22 확정: Dev Build 여부와 무관하게 모든 빌드(Release 포함)에서 항상 사용 가능
-/// — Steam 베타 테스트 중 스테이지 스킵이 필요해서 완전 노출로 결정(TutorialNetworkManager도 동일).
+/// 2026-10-02 변경: 출시 빌드에서는 숨김 — <see cref="NetworkManagerSetup.DevToolsAllowed"/>
+/// (에디터·Dev Build·Steam 베타 브랜치)일 때만 표시(TutorialNetworkManager도 동일).
+/// (구 2026-08-22 결정 "모든 빌드에서 항상 노출"은 Steam 베타 테스트용이었음.)
 ///
 /// [배치 방법]
 /// Tutorial 씬에 빈 GameObject 하나 만들고 이 컴포넌트만 부착하면 끝.
@@ -54,7 +55,7 @@ public class TutorialDevStageJumpUI : MonoBehaviour
         while (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             yield return null;
 
-        if (!NetworkManager.Singleton.IsHost)
+        if (!NetworkManager.Singleton.IsHost || !NetworkManagerSetup.DevToolsAllowed)
         {
             Destroy(gameObject);
             yield break;

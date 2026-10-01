@@ -268,9 +268,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b62dd9f41c7de3942bf29ff681d440d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameSettingsManager
-  defaultMasterVolume: 1
-  defaultBgmVolume: 1
-  defaultSfxVolume: 1
+  defaultMasterVolume: 0.5
+  defaultBgmVolume: 0.5
+  defaultSfxVolume: 0.5
   defaultMicVolume: 1
   defaultChatFontSize: 14
   defaultMouseSensitivity: 1
@@ -338,4 +338,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoiceDucking
   duckedVolume: 0.5
   fadeDownSeconds: 0.15
+  releaseHoldSeconds: 0.4
   fadeUpSeconds: 0.6

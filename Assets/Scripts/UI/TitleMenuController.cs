@@ -52,7 +52,7 @@ public class TitleMenuController : MonoBehaviour
 
     [Header("Discord")]
     [Tooltip("Discord 초대 링크 (예: https://discord.gg/abc123)")]
-    [SerializeField] private string discordUrl = "https://discord.gg/";
+    [SerializeField] private string discordUrl = "https://discord.gg/j2vqzcugtM";
 
     [Header("패널 연결")]
     [Tooltip("설정 버튼 클릭 시 열릴 패널. 비워두면 클릭 무시.")]

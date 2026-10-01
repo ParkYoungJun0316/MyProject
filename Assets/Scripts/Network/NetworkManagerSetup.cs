@@ -78,6 +78,27 @@ public class NetworkManagerSetup : MonoBehaviour
     public static bool UseLocalNetworkPath => Application.isEditor || Debug.isDebugBuild;
 
     /// <summary>
+    /// 개발자 전용 도구(Tutorial 스테이지 바로가기 등) 노출 판정 — 2026-10-02 확정.
+    /// 에디터·Dev Build, 또는 Steam 베타 브랜치(default 아님)로 실행 중일 때만 true.
+    /// 일반 플레이어는 default 브랜치라 false. 베타 브랜치는 반드시 비밀번호를 걸 것.
+    /// </summary>
+    public static bool DevToolsAllowed => UseLocalNetworkPath || IsOnSteamBetaBranch();
+
+    static bool IsOnSteamBetaBranch()
+    {
+        if (!SteamClient.IsValid) return false;
+        try
+        {
+            return !string.IsNullOrEmpty(SteamApps.CurrentBetaName);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[NetworkManagerSetup] Steam 베타 브랜치 조회 실패 — 개발자 도구 숨김. {e.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// 현재 실행 파일을 <c>+connect_lobby &lt;lobbyId&gt;</c> 인자로 다시 실행하고 이 프로세스를 종료한다.
     /// 새 프로세스는 검증된 "냉기동" 경로(TitleMenuController.TryAutoJoinFromLaunchArgs)를 그대로 타므로
     /// 인프로세스 재접속의 Server Scene Handle 충돌을 구조적으로 회피한다(SteamworksIntegrationDesign.md 트랙6).
