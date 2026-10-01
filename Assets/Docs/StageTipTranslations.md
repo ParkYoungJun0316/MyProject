@@ -235,22 +235,7 @@ Defense buff also blocks round-fail damage.
 
 ## Tip.M.Boss.4
 
-> M.Boss P4 (`MouthBossJawSmash` — 닫힘 → 바닥 파괴 → 열린 뒤 응원으로 복구).
-
-- ko: 입이 열리면 팀 구호를 외쳐 부서진 바닥을 복구하세요.
-- en: When the mouth opens, shout the team cheer to repair the broken floor.
-- ja: 口が開いたら、チームの掛け声を叫んで壊れた床を直してください。
-- zh-Hans: 嘴巴张开时，大声喊出你的团队口令来修复损坏的地板。
-- zh-Hant: 嘴巴張開時，大聲喊出你的團隊口令來修復損壞的地板。
-- es: Cuando la boca se abra, grita el grito de equipo para reparar el suelo roto.
-- es-419: Cuando la boca se abra, grita el grito de equipo para reparar el piso roto.
-- fr: Lorsque la bouche s'ouvre, criez le cri d'équipe pour réparer le sol cassé.
-- de: Wenn sich der Mund öffnet, rufe deinen Teamruf, um den kaputten Boden zu reparieren.
-- pt-BR: Quando a boca abrir, grite o grito da equipe para reparar o piso quebrado.
-- ru: Когда рот открывается, выкрикните командный клич, чтобы восстановить сломанный пол.
-- pl: Gdy usta się otworzą, wykrzycz okrzyk drużyny, aby naprawić zniszczoną podłogę.
-
----
+*(2026-10-02 삭제 — P4 응원 복구 폐기. String Table에서도 제거.)*
 
 ## Tip.T.Stage1
 

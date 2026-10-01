@@ -89,12 +89,12 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 
 인게임·Tutorial 구역 3이 같은 규칙이다. "실패로 창이 닫힌다"는 없다 — **단, 아래 두 함정은 예외**(사용자 결정 2026-09-14).
 
-> **예외 — 발동 후 창이 닫히는 함정 2종:** 팀 응원은 **팀 응원 배너(`TeamCheerWarningUI`, = 창)가 떠 있을 때만** 인식된다. 아래 두 함정은 함정이 발동하고 나면 배너가 사라지므로, 그 뒤에 외쳐도 **원상복구되지 않는다**(표도 그 창과 함께 리셋, 다음 창에서 전원 미통과로 다시 시작).
+> **예외 — 발동 후 창이 닫히는 함정 (2026-10-02부터 혀 1종 — 보스 턱 내려찍기는 응원 창 삭제):** 팀 응원은 **팀 응원 배너(`TeamCheerWarningUI`, = 창)가 떠 있을 때만** 인식된다. 아래 두 함정은 함정이 발동하고 나면 배너가 사라지므로, 그 뒤에 외쳐도 **원상복구되지 않는다**(표도 그 창과 함께 리셋, 다음 창에서 전원 미통과로 다시 시작).
 >
 > | 함정 | 창이 닫히는 시점 | 코드 |
 > |---|---|---|
 > | 혀 휩쓸기 (`TongueController`, `RiseHold`를 제외한 패턴) | 공격(휩쓸기)이 끝나면 | `TongueController.cs` 공격 루틴 뒤 `EndWindow()` |
-> | 보스 턱 내려찍기 (`MouthBossJawSmash`) | 응원 창 제한 시각(`windowEnd`)이 지나면 — 타일 깨진 채 다음 회차 | `MouthBossJawSmash.cs` `CheerWindow` 루프 뒤 `EndWindow()` |
+> | ~~보스 턱 내려찍기 (`MouthBossJawSmash`)~~ | **2026-10-02 삭제** — 응원 창 없음, 바닥은 매 회차 자동 복구. M.Boss P4의 응원 대상은 침(`SalivaHazard`, 1회)으로 교체 — `CoopStageAudit.M.md` §7 | — |
 >
 > 나머지(입 `MouthController`, 침 `SalivaHazard`, 식도 `EsophagusFog`/`EsophagusSqueeze`, 혀 `RiseHold`)는 외칠 때까지 Hold로 창을 유지한다.
 

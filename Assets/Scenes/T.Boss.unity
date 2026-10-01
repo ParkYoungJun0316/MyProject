@@ -81629,7 +81629,7 @@ MonoBehaviour:
   phaseTimeLimits:
   - 80
   - 200
-  - 100
+  - 110
   - 100
 --- !u!4 &868003335
 Transform:
@@ -138388,18 +138388,18 @@ MonoBehaviour:
   autoStart: 0
   autoStartDelay: 0
   startDelaySeconds: 5
-  roundDuration: 4.5
+  roundDuration: 5.5
   roundDurationPhases:
   - afterRound: 0
-    duration: 4.5
+    duration: 5.5
   - afterRound: 3
-    duration: 4
+    duration: 5
   - afterRound: 5
-    duration: 3.5
+    duration: 4.5
   totalRounds: 6
   settleHoldSeconds: 1.5
   restoreSeconds: 1.5
-  restSeconds: 2.5
+  restSeconds: 4
   preRevealSeconds: 4
   safeTilePhases: []
   safeRule: 1
@@ -138409,9 +138409,9 @@ MonoBehaviour:
   - afterRound: 1
     extraTiles: 1
   - afterRound: 3
-    extraTiles: 0
+    extraTiles: 1
   requiredAliveCount: 0
-  individualDamageOnFail: 2
+  individualDamageOnFail: 1
   OnChallengeStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -138484,7 +138484,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GridTileCollapse
   grid: {fileID: 1418931728}
   mode: 1
-  finalSweepLead: 1
+  finalSweepLead: 0.5
   breakCountPhases:
   - afterRound: 0
     breakCount: 4
@@ -138516,7 +138516,7 @@ MonoBehaviour:
   - {fileID: 531694035}
   warnLead: 0.8
   beatInterval: 1.2
-  brokenLifetime: 3.6
+  brokenLifetime: 2.5
   stopBeforeSettle: 1
   breakSfxMinDistance: 5
   breakSfxMaxDistance: 50

@@ -56,6 +56,8 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
     [Tooltip("Idle 간격은 randomIntervalMin/Max. 이 값은 첫 창 앞 추가 대기만.")]
     [SerializeField] float initialDelay = 0f;
     [SerializeField] bool startOnAwake = true;
+    [Tooltip("이 페이즈에서 창(Warning)을 여는 최대 횟수. 0 = 무제한. M.Boss P4 = 1(2026-10-02).")]
+    [SerializeField] int maxWindows = 0;
 
     [Header("팀 응원 함정")]
     [Tooltip("Cover 전 Warning 유지 시간(초). 팀 응원 함정 = 3.")]
@@ -82,6 +84,7 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
     // 그 안에 안 오면 앵커가 없는 씬으로 보고 예전처럼 로컬 시각으로 폴백한다.
     const float AnchorWaitTimeout = 3f;
     int _cycleCount;
+    int _windowsUsed; // maxWindows 판정용 — 예약된 창 슬롯 수(건너뛴 창 포함)
     int _syncGeneration;
     float _coverVisualAlpha;
 
@@ -194,6 +197,7 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
 
     IEnumerator HazardCycle()
     {
+        _windowsUsed = 0;
         yield return ResolveFirstWindow();
 
         while (true)
@@ -207,6 +211,15 @@ public class SalivaHazard : MonoBehaviour, ITeamCheerRevert
                 yield return new WaitForSeconds(PickSeededInterval(_cycleCount, ScheduleAxis));
                 _cycleCount++;
             }
+
+            // 횟수 제한 — 건너뛴 창도 한 번으로 센다("한 번만 나온다" = 예약 슬롯 하나).
+            if (maxWindows > 0 && _windowsUsed >= maxWindows)
+            {
+                _phase = HazardPhase.Idle;
+                _cycleCoroutine = null;
+                yield break;
+            }
+            _windowsUsed++;
 
             if (_skipNextWindow)
             {

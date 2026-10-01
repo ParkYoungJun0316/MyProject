@@ -55,7 +55,7 @@ public class ObjectiveUI : MonoBehaviour
     [SerializeField] Sprite markerSprite;
     [Tooltip("마커 색")]
     [SerializeField] Color markerColor  = new Color(1f, 1f, 1f, 1f);
-    [Tooltip("마커 한 변 크기(px). 0이면 슬롯 높이의 60% 자동 적용.")]
+    [Tooltip("마커 세로 크기(px). 가로는 스프라이트 비율로 자동. 0이면 슬롯 높이의 60% 자동 적용.")]
     [SerializeField] float markerSize   = 0f;
     [Tooltip("마커 Y 오프셋(px). 양수면 위로.")]
     [SerializeField] float markerYOffset = 0f;
@@ -237,7 +237,11 @@ public class ObjectiveUI : MonoBehaviour
         slot.markerRect.anchorMin    = new Vector2(0f, 0.5f);
         slot.markerRect.anchorMax    = new Vector2(0f, 0.5f);
         slot.markerRect.pivot        = new Vector2(0.5f, 0.5f);
-        slot.markerRect.sizeDelta    = new Vector2(mS, mS);
+        // 스프라이트 비율 유지 — 높이 = mS, 가로는 원본 비율(핀 320×460이 정사각형에 눌리지 않게).
+        float mW = (markerSprite != null && markerSprite.rect.height > 0f)
+            ? mS * markerSprite.rect.width / markerSprite.rect.height
+            : mS;
+        slot.markerRect.sizeDelta    = new Vector2(mW, mS);
         slot.markerRect.anchoredPosition = new Vector2(0f, markerYOffset);
         Image markerImg              = markerObj.AddComponent<Image>();
         markerImg.color              = markerColor;

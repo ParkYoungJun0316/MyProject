@@ -92,6 +92,10 @@ public class ColorGateController : MonoBehaviour
     bool _appliedSolo;
     int  _appliedMapVersion = -1;
 
+    // 솔로 흑·백 개방은 카운트다운 완료 후부터(§1.6, 2026-10-02) — 그 전엔 다인승처럼 전부 닫힘.
+    // 안 막으면 시작 방 출구(Door_Black/Door_White)로 미리 나가 시간·체이서 없이 미로를 정찰한다.
+    bool _stageStarted;
+
     void Awake()
     {
         foreach (DoorGroup g in doorGroups)
@@ -203,6 +207,14 @@ public class ColorGateController : MonoBehaviour
         _appliedSolo      = false;
     }
 
+    /// <summary>`T5RunnerDirector.BeginStage`(카운트다운 완료)에서 호출. 솔로 흑·백 문이 이때 열린다.</summary>
+    public void MarkStageStarted()
+    {
+        if (_stageStarted) return;
+        _stageStarted = true;
+        _hasApplied   = false; // 다음 Update에서 개폐 재적용
+    }
+
     // ── 내부 ────────────────────────────────────────────────────
 
     DoorGroup FindGroup(PlayerColorType designColor)
@@ -239,7 +251,7 @@ public class ColorGateController : MonoBehaviour
 
             bool open;
             if (g.isWall)   open = false;                    // 없는 색·러너 색 = 벽. 무엇을 밟아도 안 열린다 (§1.4)
-            else if (solo)  open = IsBlackOrWhite(g.effectiveColor); // 솔로는 흑·백만 동시 열림 (§1.6)
+            else if (solo)  open = _stageStarted && IsBlackOrWhite(g.effectiveColor); // 솔로는 시작 후 흑·백만 동시 열림 (§1.6)
             else            open = openColor >= 0 && (int)g.effectiveColor == openColor;
 
             SetDoors(g.doors, open);

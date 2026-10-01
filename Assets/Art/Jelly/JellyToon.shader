@@ -1,16 +1,16 @@
 // 점액 젤리(색 문·고정 장애물).
-// 뒤 풍경을 굴절시켜 비추고(_CameraOpaqueTexture), 두꺼운 가운데일수록 _Color 쪽으로 진하게 흡수,
+// 뒤 풍경을 휘지 않고 그대로 비추고(_CameraOpaqueTexture), 두꺼운 가운데일수록 _Color 쪽으로 진하게 흡수,
 // 가장자리는 환경 반사(프레넬). 메인 라이트로 명암·광택, 거리 안개(Render Fog) 적용, 그림자 드리움.
-// 굴절은 URP 에셋의 Opaque Texture가 켜져 있어야 한다(PC_RPAsset은 켜져 있음). 꺼져 있으면 뒤가 검게 나온다.
+// 비침은 URP 에셋의 Opaque Texture가 켜져 있어야 한다(PC_RPAsset은 켜져 있음). 꺼져 있으면 뒤가 검게 나온다.
+// 굴절(화면 이미지를 밀어서 가져오기)은 2026-10-02 제거 — 젤리 위·앞의 플레이어가 표면에 찍혀 출렁여 멀미 유발. 되살리지 말 것.
 // 알파 블렌딩 대신 뒤 풍경을 직접 섞어 그리므로 결과는 불투명 — 젤리끼리 겹치면 뒤쪽 젤리는 안 비친다.
-// 조명·광택·반사·얇은 곳 색 농도는 2026-09-29 T.Stage1에서 맞춘 값으로 고정(아래 static const). 인스펙터엔 색·농도·굴절·출렁임만.
+// 조명·광택·반사·얇은 곳 색 농도는 2026-09-29 T.Stage1에서 맞춘 값으로 고정(아래 static const). 인스펙터엔 색·농도·출렁임만.
 Shader "Stage/JellyToon"
 {
     Properties
     {
         _Color ("Color (플레이어 고유색)", Color) = (0.137, 0.518, 0.769, 1)
         _Density ("Density (클수록 덜 비침)", Range(0, 1)) = 0.85
-        _Refraction ("Refraction (뒤가 휘는 정도, 화면 비율)", Range(0, 0.15)) = 0.04
         _WobbleAmp ("Wobble Amp (출렁임 크기, 오브젝트 공간, 0이면 정지)", Range(0, 0.2)) = 0.03
         _WobbleSpeed ("Wobble Speed (출렁임 속도)", Range(0, 10)) = 2
     }
@@ -25,7 +25,6 @@ Shader "Stage/JellyToon"
         CBUFFER_START(UnityPerMaterial)
             float4 _Color;
             float _Density;
-            float _Refraction;
             float _WobbleAmp;
             float _WobbleSpeed;
         CBUFFER_END
@@ -99,10 +98,9 @@ Shader "Stage/JellyToon"
                 // 두께: 정면(가운데)일수록 두껍다고 본다.
                 float thick = pow(nv, kThicknessPower);
 
-                // 굴절된 뒤 풍경 → 얇은 곳은 색만 입히고, 두꺼운 곳은 젤리 색으로 흡수.
+                // 뒤 풍경 → 얇은 곳은 색만 입히고, 두꺼운 곳은 젤리 색으로 흡수.
                 float2 suv = GetNormalizedScreenSpaceUV(i.positionCS);
-                float3 nVS = mul((float3x3)UNITY_MATRIX_V, n);
-                float3 behind = SampleSceneColor(suv - nVS.xy * _Refraction);
+                float3 behind = SampleSceneColor(suv);
                 float3 thin = behind * lerp(float3(1, 1, 1), _Color.rgb * 1.6, kTint);
 
                 Light mainLight = GetMainLight();

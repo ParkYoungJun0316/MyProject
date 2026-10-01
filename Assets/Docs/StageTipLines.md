@@ -118,9 +118,9 @@ String Table은 나중에 별도 Collection (`StageTip` 가칭). 키는 페이�
 
 1. Ctrl로 바닥 색과 캐릭터 색을 맞춰 조준을 피하세요.
 
-### P4 (입 닫힘 → 바닥 파괴)
+### P4 (입 닫힘 → 바닥 파괴 + 침)
 
-1. 입이 열리면 팀 구호를 외쳐 부서진 바닥을 복구하세요.
+*(2026-10-02 Tip 삭제 — P4 응원 복구 폐기. 키 `Tip.M.Boss.4`는 String Table 13개 테이블에서 제거, P4 진입 이벤트는 `TipUI.HideTip`.)*
 
 ## T.Stage1
 

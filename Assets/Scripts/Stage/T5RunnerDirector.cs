@@ -281,6 +281,9 @@ public class T5RunnerDirector : MonoBehaviour
         SetPadsActive(true);
         SetRunnerPadActive(false);
 
+        // 솔로 흑·백 문은 여기서부터 열린다 — 시작 전 정찰 차단(§1.6).
+        FindFirstObjectByType<ColorGateController>(FindObjectsInactive.Include)?.MarkStageStarted();
+
         NetLog.Transition("T5RunnerDirector", "LaunchPadsOn", $"runner={RunnerClientId}");
 
         // 솔로는 올라갈 안내자가 없어 도착 감지가 영영 오지 않는다 — 바로 푼다.

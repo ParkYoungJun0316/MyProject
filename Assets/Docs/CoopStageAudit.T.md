@@ -338,6 +338,10 @@ Memory 미리보기 정답을 다시 켜지 않음(안개가 걷혀도 정답 �
 >   파괴 4칸 고정. 사이클 = 선행 4 → 공개 → 정산 멈춤 **1.5** → 복구 1.5 → 휴식 **2.5**(마지막 라운드는 휴식 없음).
 >   다 깨진 판을 보는 시간 = 정산 전 1(`finalSweepLead`) + 멈춤 1.5 = **2.5초**. 합계 79.5초 + 시작 대기 5 = 84.5초,
 >   `phaseTimeLimits[2]` = **96**(여유 약 11초 — 넘기면 즉시 실패라 여유를 둔다). 7R→6R은 쉬운 +2 라운드 하나만 뺀 것(+0 3라운드는 그대로).
+> - **완화(2026-10-02, 사용자 확정·씬 값):** M5·M.Boss P4보다 훨씬 어렵다는 플레이 피드백. 원인 = 마지막 3라운드 "딱 N칸 1명씩" + 못 들어가면 낙사 + 짧은 휴식.
+>   여유 칸 **+2 / +1 / +1**(4~6R도 +1 — 한 명 겹쳐도 빈 칸으로 옮길 수 있게) · 공개 **5.5 / 5 / 4.5**(+1초) · 휴식 **4**(M5와 같음) ·
+>   자동 복구 `brokenLifetime` **2.5**(M5와 같음, 동시 구멍 약 12→8칸) · `finalSweepLead` **0.5** · 겹침 데미지(`individualDamageOnFail`) **2 → 1**(위 "데미지 2" 서술을 대체). 6라운드·파괴 4칸·멈춤 1.5는 그대로.
+>   합계 93초 + 시작 대기 5 = 98초 → `phaseTimeLimits[2]` 100 → **110**. 위 2026-09-26 수치를 대체한다.
 > - **코드(2026-09-23):** `GridChallenge.safeRule = SharedSolo` + `sharedSafePhases[]`(afterRound/extraTiles) ·
 >   `GridTileCollapse.mode = AllExceptSafe` **재정의**(= Random 박자 파괴 + 정산 `finalSweepLead`초 전 전부, 구 "처음부터 전부·복구 없음" 폐기) ·
 >   `SafeZoneWarnSign.grid` + 상태 색 · `ZonePadVisual.SetOverride`/`ClearOverride`. 새 RPC/NV 없음 — 안전 칸은 라운드 시드로 전 머신 동일, 겹침 연출은 각 머신 로컬 점유, 정산은 Host.
