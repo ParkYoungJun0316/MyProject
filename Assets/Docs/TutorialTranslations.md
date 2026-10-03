@@ -26,6 +26,14 @@
 > - 레이아웃 여유: 조작 라벨 자동 축소 22~30, 체험 보드 제목 34~48·본문 24~30. 최장 대입 실측 — 조작은 ru `Row_Emot`만 26.6으로 축소, `Board_CheerName.Body` fr 3줄, `Board_TeamCheer.Title` fr 41.
 > - 폰트: `Fredoka-Bold SDF`에 Fredoka 원본이 가진 라틴 확장 글자 111자 추가(멀티 아틀라스 3장). fr/es/pt/de 악센트는 이제 Fredoka로 나오고, Fredoka에 없는 pl `ą ć ę ń ś ź ż`(대소문자)·키릴·한중일은 기존대로 Noto Regular 대체.
 
+> **[2026-10-04] 팀 구호 규칙 2가지(영어 단어만·실제 있는 단어만) 안내 추가 (MCP, 12로케일 — pt 제외).** 9/30에 "형식 규칙은 패널 피드백이 알려준다"며 보드에서 뺐지만, 패널에 `feedbackText`가 연결돼 있지 않아 거절 문구가 화면에 전혀 안 나오고 있었다.
+> - `CheerNamePanel.HostHint` 2줄로 교체(아래 해당 절). `HostHintText` 높이 36→60·줄바꿈 켬.
+> - `CheerNamePanel.Feedback_Unknown` 키 신규(사전에 없는 단어 거절 문구) + `TutorialCheerNameUI.feedbackUnknownWord` 연결.
+> - 패널에 `FeedbackText` 신규(y -314, 높이 52, Auto Size 14~20, 색 #FF8C80) + `feedbackText` 연결. 자리 확보: `HostTeamWordSection` y -150→-125·높이 155→183, 입력창 y -44→-72, 확정 버튼 y -104.5→-132.5, `CurrentTeamWordText` y -350→-372. **Tutorial·Interlude 두 씬 동일 적용.**
+> - `Board_CheerName.Body` 둘째 줄에 "영어 단어로 정해요." 추가(Tutorial만 — Interlude 보드는 `Board_NameChange`).
+> - `Board_CheerName.Body` 첫 줄 대명사 교정 — 10/1 용어 변경(→팀 구호) 전 단어의 성(性)이 남아 있었음: es·es-419 `definirla`→`definirlo`(grito), de `es`→`ihn`(Teamruf), pl `je`→`go`(okrzyk).
+> - 실측(12로케일): 힌트 전부 20·2줄, 피드백 최대 2줄(ru만 19.1), 보드 본문 전부 30(ru 5줄 204/220). 정적 아틀라스에 없는 글자 회피 — ja `知`(→`音声認識できない`), zh `实/實·存`(→`真正的`).
+
 ## 키 네이밍
 
 새 String Table Collection **`Tutorial`**. 키는 씬 하이어라키 경로를 그대로 반영:
@@ -59,6 +67,7 @@
 | `Tutorial.CheerNamePanel.Feedback_Blocked` | `TutorialCheerNameUI.feedbackBlocked` | `LocalizedString` 필드 |
 | `Tutorial.CheerNamePanel.Feedback_Generic_Team` | `TutorialCheerNameUI.feedbackGenericTeam` | `LocalizedString` 필드 |
 | `Tutorial.CheerNamePanel.Feedback_NotServer` | `TutorialCheerNameUI.feedbackNotServer` | `LocalizedString` 필드 |
+| `Tutorial.CheerNamePanel.Feedback_Unknown` | `TutorialCheerNameUI.feedbackUnknownWord` (2026-10-04) | `LocalizedString` 필드 |
 
 **[2026-09-14 삭제]** 개인 CheerName 커스텀화 삭제로 아래 8개 키는 더 이상 쓰이지 않음(입력 UI 자체가 없어짐): `Examples`, `NameInputPlaceholder`, `Feedback_Reserved_Name`, `Feedback_Taken_Name`, `Feedback_Taken_Team`(팀워드가 겹칠 대상 자체가 없어져 도달 불가), `Feedback_Generic_Name`, `Feedback_Submitting`, `Feedback_Timeout`(팀워드 설정은 RPC 왕복 없는 동기 호출이라 대기 상태가 없음).
 
@@ -310,20 +319,20 @@
 > **[2026-09-30] 2문장으로 교체.** 형식 규칙(2~12자·영문 소문자)은 패널 입력 피드백이 알려주므로 보드에서 뺌. `⍽`는 줄바꿈 없는 공백(U+00A0) — 옵션 이름이 줄 중간에서 끊기지 않게. 한국어만 씬 디자인대로 `\n` 3줄.
 > 구 값(참고, 아래 목록은 이력): ko `TeamCheerWord는 host만 설정할 수 있어요.\n실제로 자주 쓰는 영어 단어일수록…\n마이크가 없거나 인식이 안 되면 ESC → 일반 탭 → "T키로 응원하기"를 켜고…`
 >
-> **현재 값:**
-> - ko: 호스트만 정할 수 있어요.\n마이크가 없으면\n설정에서 T키 응원을 켜세요.
-> - en: Only the host can set it.\nNo mic? Turn on "Cheer⍽with⍽T⍽Key" in Options.
-> - ja: ホストだけが設定できます。\nマイクがない場合は、オプションで「Tキーで応援」をオンにしてください。
-> - zh-Hans: 只有房主可以设置。\n没有麦克风时，请在选项中打开“用T键加油”。
-> - zh-Hant: 只有房主可以設定。\n沒有麥克風時，請在選項中開啟「用T鍵加油」。
-> - es: Solo el host puede definirla.\nSi no tienes micrófono, activa «Cheer⍽con⍽tecla⍽T» en Opciones.
-> - es-419: Solo el host puede definirla.\nSi no tienes micrófono, activa "Cheer⍽con⍽tecla⍽T" en Opciones.
-> - fr: Seul l'hôte peut le définir.\nPas de micro⍽? Active «⍽Cheer⍽(touche⍽T)⍽» dans les Options.
-> - de: Nur der Host kann es festlegen.\nKein Mikro? Aktiviere „Cheer⍽mit⍽T-Taste“ in den Optionen.
+> **현재 값 ([2026-10-04] 둘째 줄 "영어 단어로 정해요." 추가 — pt는 미관리라 9/30 값 그대로):**
+> - ko: 호스트만 정할 수 있어요.\n영어 단어로 정해요.\n마이크가 없으면\n설정에서 T키 응원을 켜세요.
+> - en: Only the host can set it.\nUse an English word.\nNo mic? Turn on "Cheer⍽with⍽T⍽Key" in Options.
+> - ja: ホストだけが設定できます。\n英単語で決めます。\nマイクがない場合は、オプションで「Tキーで応援」をオンにしてください。
+> - zh-Hans: 只有房主可以设置。\n请用英文单词。\n没有麦克风时，请在选项中打开“用T键加油”。
+> - zh-Hant: 只有房主可以設定。\n請用英文單字。\n沒有麥克風時，請在選項中開啟「用T鍵加油」。
+> - es: Solo el host puede definirlo.\nUsa una palabra en inglés.\nSi no tienes micrófono, activa «Cheer⍽con⍽tecla⍽T» en Opciones.
+> - es-419: Solo el host puede definirlo.\nUsa una palabra en inglés.\nSi no tienes micrófono, activa "Cheer⍽con⍽tecla⍽T" en Opciones.
+> - fr: Seul l'hôte peut le définir.\nUtilise un mot anglais.\nPas de micro⍽? Active «⍽Cheer⍽(touche⍽T)⍽» dans les Options.
+> - de: Nur der Host kann ihn festlegen.\nNimm ein englisches Wort.\nKein Mikro? Aktiviere „Cheer⍽mit⍽T-Taste“ in den Optionen.
 > - pt: Só o anfitrião a pode definir.\nSem microfone? Ativa «Cheer⍽com⍽tecla⍽T» nas Opções.
-> - pt-BR: Só o host pode definir.\nSem microfone? Ative "Cheer⍽com⍽tecla⍽T" nas Opções.
-> - ru: Задать его может только хост.\nНет микрофона? Включи «Поддержка⍽клавишей⍽T» в опциях.
-> - pl: Tylko host może je ustawić.\nNie masz mikrofonu? Włącz „Cheer⍽klawiszem⍽T” w Opcjach.
+> - pt-BR: Só o host pode definir.\nUse uma palavra em inglês.\nSem microfone? Ative "Cheer⍽com⍽tecla⍽T" nas Opções.
+> - ru: Задать его может только хост.\nИспользуй английское слово.\nНет микрофона? Включи «Поддержка⍽клавишей⍽T» в опциях.
+> - pl: Tylko host może go ustawić.\nUżyj angielskiego słowa.\nNie masz mikrofonu? Włącz „Cheer⍽klawiszem⍽T” w Opcjach.
 
 **구 값 (이력):**
 
@@ -427,19 +436,20 @@
 
 ### `Tutorial.CheerNamePanel.HostHint`
 
-- ko: 팀 전체가 함께 외칠 단어를 정해주세요 (기본값: FIGHTING)
-- en: Set the word your whole team will shout together (default: FIGHTING)
-- ja: チーム全員で叫ぶ掛け声を決めてください（初期値：FIGHTING）
-- zh-Hans: 请设置全队一起喊的团队口令（默认：FIGHTING）
-- zh-Hant: 請設定全隊一起喊的團隊口令（預設：FIGHTING）
-- es: Elige la palabra que gritará todo el equipo junto (por defecto: FIGHTING)
-- es-419: Elige la palabra que va a gritar todo el equipo junto (por defecto: FIGHTING)
-- fr: Choisis le mot que toute l'équipe criera ensemble (par défaut : FIGHTING)
-- de: Legt das Wort fest, das das ganze Team gemeinsam ruft (Standard: FIGHTING)
-- pt: Define a palavra que toda a equipa vai gritar em conjunto (predefinição: FIGHTING)
-- pt-BR: Defina a palavra que todo o time vai gritar junto (padrão: FIGHTING)
-- ru: Задайте слово, которое вся команда будет кричать вместе (по умолчанию: FIGHTING)
-- pl: Ustal słowo, które cała drużyna będzie razem krzyczeć (domyślnie: FIGHTING)
+> **[2026-10-04] 규칙 2줄로 교체.** 구 값(ko): `팀 전체가 함께 외칠 단어를 정해주세요 (기본값: FIGHTING)`. pt는 미관리라 구 값 그대로.
+
+- ko: 영어 단어만 쓸 수 있어요.\n실제로 있는 단어여야 인식돼요. (기본값: FIGHTING)
+- en: Only English words can be used.\nOnly real words are recognized. (default: FIGHTING)
+- ja: 英単語だけ使えます。\n実在する単語でないと認識されません。（初期値：FIGHTING）
+- zh-Hans: 只能使用英文单词。\n必须是真正的单词才能识别。（默认：FIGHTING）
+- zh-Hant: 只能使用英文單字。\n必須是真正的單字才能辨識。（預設：FIGHTING）
+- es: Solo se pueden usar palabras en inglés.\nSolo se reconocen palabras reales. (por defecto: FIGHTING)
+- es-419: Solo se pueden usar palabras en inglés.\nSolo se reconocen palabras reales. (por defecto: FIGHTING)
+- fr: Seuls les mots anglais sont acceptés.\nSeuls les vrais mots sont reconnus. (par défaut : FIGHTING)
+- de: Nur englische Wörter sind erlaubt.\nNur echte Wörter werden erkannt. (Standard: FIGHTING)
+- pt-BR: Só dá para usar palavras em inglês.\nSó palavras reais são reconhecidas. (padrão: FIGHTING)
+- ru: Можно использовать только английские слова.\nРаспознаются только настоящие слова. (по умолчанию: FIGHTING)
+- pl: Można używać tylko angielskich słów.\nRozpoznawane są tylko prawdziwe słowa. (domyślnie: FIGHTING)
 
 ### `Tutorial.CheerNamePanel.TeamKeywordPrefix` (`{0}` 포맷 — 팀 구호 대문자가 채워짐)
 
@@ -536,6 +546,23 @@
 - pt-BR: Só o host pode definir o grito da equipe.
 - ru: Только хост может задать командный клич.
 - pl: Tylko host może ustalić okrzyk drużyny.
+
+### `Tutorial.CheerNamePanel.Feedback_Unknown` **[2026-10-04 신규]**
+
+> 음성 인식 사전(Vosk `words.txt`)에 없는 단어를 확정하려 할 때(`CheerService.TrySetTeamCheerWord` reason `"unknown"`).
+
+- ko: 음성 인식이 모르는 단어예요. 다른 영어 단어를 써주세요.
+- en: The voice recognition doesn't know this word. Use a different English word.
+- ja: 音声認識できない単語です。別の英単語を使ってください。
+- zh-Hans: 语音识别不认识这个单词。请换一个英文单词。
+- zh-Hant: 語音辨識不認識這個單字。請換一個英文單字。
+- es: El reconocimiento de voz no conoce esta palabra. Usa otra palabra en inglés.
+- es-419: El reconocimiento de voz no conoce esta palabra. Usa otra palabra en inglés.
+- fr: La reconnaissance vocale ne connaît pas ce mot. Utilise un autre mot anglais.
+- de: Die Spracherkennung kennt dieses Wort nicht. Nimm ein anderes englisches Wort.
+- pt-BR: O reconhecimento de voz não conhece essa palavra. Use outra palavra em inglês.
+- ru: Распознавание голоса не знает этого слова. Используй другое английское слово.
+- pl: Rozpoznawanie głosu nie zna tego słowa. Użyj innego angielskiego słowa.
 
 > **[2026-09-14 삭제]** `Feedback_Reserved_Name`/`Feedback_Taken_Name`/`Feedback_Taken_Team`/`Feedback_Generic_Name`/`Feedback_Submitting`/`Feedback_Timeout` — 개인 이름 입력 자체가 없어졌고, 팀워드 설정은 RPC 왕복 없는 동기 호출이라 제출 대기 상태도 없다(§키 네이밍 삭제 목록 참고).
 
