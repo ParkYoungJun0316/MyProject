@@ -150,6 +150,7 @@ public class EscMenuController : MonoBehaviour
         // [2026-09-14] 이모트 휠 UI 폐지로 PlayerEmoteMenuUI.IsOpen/ConsumedEscThisFrame 체크 삭제
         // — 숫자키 직접 트리거는 Esc와 겹칠 상태(열림/닫힘)가 없다.
         if (TutorialCheerNameUI.IsOpen || TutorialCheerNameUI.ConsumedEscThisFrame) return;
+        if (CostumePanelUI.IsOpen || CostumePanelUI.ConsumedEscThisFrame) return;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {

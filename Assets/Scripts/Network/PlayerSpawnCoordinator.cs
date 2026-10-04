@@ -81,6 +81,33 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
     // NetworkList는 Awake 전에 초기화해야 함 (필드 초기화 or Awake)
     readonly NetworkList<ClientColorEntry> _clientColors = new();
 
+    /// <summary>clientId → 머리 소품(머리 칸, 선글라스 칸) NetworkList element. 0 = 없음. CostumeDesign.md.</summary>
+    struct ClientCostumeEntry : INetworkSerializable, IEquatable<ClientCostumeEntry>
+    {
+        public ulong ClientId;
+        public byte Head;
+        public byte Glasses;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref ClientId);
+            serializer.SerializeValue(ref Head);
+            serializer.SerializeValue(ref Glasses);
+        }
+
+        public bool Equals(ClientCostumeEntry other) =>
+            ClientId == other.ClientId && Head == other.Head && Glasses == other.Glasses;
+    }
+
+    // 플레이어는 씬마다 새로 스폰되므로 고른 소품은 DDOL인 여기서 세션 동안 기억한다(저장 없음).
+    readonly NetworkList<ClientCostumeEntry> _clientCostumes = new();
+
+    /// <summary>
+    /// 소품 목록이 바뀌었거나(전 머신) 이 머신에 Coordinator가 막 스폰됐을 때.
+    /// PlayerCostume가 구독해 자기 소품을 다시 켠다. static event — 구독자는 반드시 -= 할 것.
+    /// </summary>
+    public static event System.Action OnCostumeChanged;
+
     // Spawn() 전에 PrepareColors()로 설정 → OnNetworkSpawn에서 NetworkList에 기록
     System.Collections.Generic.Dictionary<ulong, PlayerColorType> _initColors;
 
@@ -107,6 +134,44 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
                 _clientColors.Add(new ClientColorEntry { ClientId = kv.Key, Color = kv.Value });
             _initColors = null;
         }
+
+        // 초기 목록은 스폰 메시지로 오고 OnListChanged는 그 뒤 변경분만 알린다 — 먼저 스폰된
+        // 플레이어가 초기값을 반영하도록 1회 직접 발행.
+        _clientCostumes.OnListChanged += HandleCostumeListChanged;
+        OnCostumeChanged?.Invoke();
+    }
+
+    void HandleCostumeListChanged(NetworkListEvent<ClientCostumeEntry> _) => OnCostumeChanged?.Invoke();
+
+    /// <summary>Host: 접속자 1명의 소품을 확정. 범위 검증은 호출자(PlayerCostume ServerRpc) 책임.</summary>
+    public void SetCostume(ulong clientId, byte head, byte glasses)
+    {
+        if (!IsServer) return;
+        var entry = new ClientCostumeEntry { ClientId = clientId, Head = head, Glasses = glasses };
+        for (int i = 0; i < _clientCostumes.Count; i++)
+        {
+            if (_clientCostumes[i].ClientId != clientId) continue;
+            if (!_clientCostumes[i].Equals(entry)) _clientCostumes[i] = entry;
+            return;
+        }
+        _clientCostumes.Add(entry);
+    }
+
+    /// <summary>clientId의 소품 조회. 목록에 없으면 false + 둘 다 0(없음).</summary>
+    public static bool TryGetCostume(ulong clientId, out int head, out int glasses)
+    {
+        head = 0;
+        glasses = 0;
+        if (Instance == null) return false;
+
+        foreach (var entry in Instance._clientCostumes)
+        {
+            if (entry.ClientId != clientId) continue;
+            head = entry.Head;
+            glasses = entry.Glasses;
+            return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -138,10 +203,16 @@ public class PlayerSpawnCoordinator : NetworkBehaviour
             if (_clientColors[i].ClientId != clientId) continue;
             _clientColors.RemoveAt(i);
         }
+        for (int i = _clientCostumes.Count - 1; i >= 0; i--)
+        {
+            if (_clientCostumes[i].ClientId != clientId) continue;
+            _clientCostumes.RemoveAt(i);
+        }
     }
 
     public override void OnNetworkDespawn()
     {
+        _clientCostumes.OnListChanged -= HandleCostumeListChanged;
         IsReady = false;
         if (Instance == this) Instance = null;
     }

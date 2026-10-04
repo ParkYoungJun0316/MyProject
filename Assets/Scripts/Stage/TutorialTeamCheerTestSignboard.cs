@@ -94,7 +94,7 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
 
         // 채팅·치어네임 입력창이 열려 있으면 타이핑한 'e'가 상호작용으로 새지 않게 양보
         // (CheerDigitInput·MicMuteHotkeyUI·PlayerEmoteMenuUI와 동일 게이팅).
-        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) return;
 
         // 씬 언로드·미스폰 중엔 Rpc 호출 자체가 예외가 된다(TutorialNetworkManager와 동일 가드).
         if (!IsSpawned) return;

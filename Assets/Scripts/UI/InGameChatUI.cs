@@ -221,7 +221,8 @@ public class InGameChatUI : NetworkBehaviour
         // ConsumedEnterThisFrame도 같이 확인 — Host 자체 테스트처럼 확정 ServerRpc 왕복이 같은
         // 프레임에 끝나 IsOpen이 false로 바뀌어도, 같은 물리 Enter로 채팅이 열려버리는 걸 막는다
         // (ConsumedEscThisFrame·EscMenuController와 동일 이유의 명시적 플래그, 2026-08-22 수정).
-        if (TutorialCheerNameUI.IsOpen || TutorialCheerNameUI.ConsumedEnterThisFrame)
+        // 꾸미기 창(CostumePanelUI)도 같은 규칙 — 열려 있는 동안 채팅 불가, 채팅하려면 창을 닫아야 한다.
+        if (TutorialCheerNameUI.IsOpen || TutorialCheerNameUI.ConsumedEnterThisFrame || CostumePanelUI.IsOpen)
         {
             if (_inputOpen) CloseInput();
             return;

@@ -698,6 +698,26 @@
 - [x] `Interlude.unity` — 동일 구조 2곳에 `LocalizeStringEvent` 부착 + 연결, `TutorialCheerNameTest` 쪽 영어 잔존 텍스트를 한국어로 교정
 - [ ] Play 모드에서 Locale 바꿔가며 두 프롬프트가 바뀌는지 스모크 테스트 (사용자)
 
+### `Tutorial.Prompt.Costume`
+
+`CostumeSignboard/PromptRoot/PromptText` (Tutorial·Interlude 공용, 2026-10-04 신설 — [`CostumeDesign.md`](CostumeDesign.md)). 선택 창은 아이콘만 써서 다른 번역 키가 없다(닫기 버튼은 `CheerNamePanel`의 것을 복제).
+
+- ko: [E] 꾸미기
+- en: [E] Dress up
+- ja: [E] きせかえ
+- zh-Hans: [E] 装扮
+- zh-Hant: [E] 裝扮
+- es: [E] Personalizar
+- es-419: [E] Personalizar
+- fr: [E] Personnaliser
+- de: [E] Outfit wählen
+- pt-BR: [E] Personalizar
+- ru: [E] Нарядиться
+- pl: [E] Przebierz się
+
+- [x] **[2026-10-04, MCP]** `Tutorial` 테이블 12로케일 입력(`pt` 제외 — 미사용), Tutorial·Interlude 씬 `CostumeSignboard` 프롬프트에 연결
+- [ ] 원어민 검수 · Play 모드에서 Locale 바꿔 확인 (사용자)
+
 ## 참고
 
 - 이 문서는 기존 `Assets/Docs/OXQuizTranslations.md`(OX퀴즈 번역, 별도 작업 완료되어 삭제됨)와 별개의 String Table Collection(`Tutorial` vs `OXQuiz`)을 사용함.

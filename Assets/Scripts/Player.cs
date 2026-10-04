@@ -137,7 +137,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     {
         if (IsDead || !isOwnerControlled) return;
         if (fallAnimTriggered) { moveInput = Vector2.zero; return; }
-        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { moveInput = Vector2.zero; return; }
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) { moveInput = Vector2.zero; return; }
         moveInput = value.Get<Vector2>();
     }
 
@@ -285,7 +285,9 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
 
     void GetInput()
     {
-        if (!isOwnerControlled || InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) { bwDown = altDown = spaceDown = false; return; }
+        // OnMove는 입력이 바뀔 때만 불려서, 이동 키를 누른 채 창을 열면 moveInput이 남아 계속 걸어간다 —
+        // 매 프레임 도는 여기서도 0으로 만든다(창을 닫은 뒤엔 키를 다시 눌러야 움직임).
+        if (!isOwnerControlled || InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) { bwDown = altDown = spaceDown = false; moveInput = Vector2.zero; return; }
         bwDown  = Keyboard.current.leftCtrlKey.wasPressedThisFrame;
         altDown = Keyboard.current.leftAltKey.wasPressedThisFrame;
 

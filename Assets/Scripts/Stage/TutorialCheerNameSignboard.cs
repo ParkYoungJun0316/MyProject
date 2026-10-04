@@ -87,7 +87,7 @@ public class TutorialCheerNameSignboard : MonoBehaviour
 
         // 채팅 입력창도 같은 이유로 양보한다 — 채팅에 'e'가 든 단어를 치면 이 표지판이 그 입력을
         // 상호작용으로 오인해 이름 패널을 열어버린다(CheerDigitInput·MicMuteHotkeyUI와 동일 게이팅).
-        if (InGameChatUI.IsChatOpen) return;
+        if (InGameChatUI.IsChatOpen || CostumePanelUI.IsOpen) return;
 
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             cheerNameUI.Toggle();

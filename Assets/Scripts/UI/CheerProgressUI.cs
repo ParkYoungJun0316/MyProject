@@ -384,7 +384,7 @@ public class CheerProgressUI : MonoBehaviour
         var kb = Keyboard.current;
         if (kb == null) return;
 
-        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) return;
         if (!kb.qKey.wasPressedThisFrame) return;
         if (_localSetup == null) return;
 

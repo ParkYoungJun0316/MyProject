@@ -28,7 +28,7 @@ public class CheerDigitInput : MonoBehaviour
         var kb = Keyboard.current;
         if (kb == null) return;
 
-        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) return;
 
         var svc = CheerService.Instance;
         if (svc == null) return;

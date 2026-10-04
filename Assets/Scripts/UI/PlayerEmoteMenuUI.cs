@@ -74,7 +74,7 @@ public class PlayerEmoteMenuUI : MonoBehaviour
         if (_activeLoopParam != null && _player.moveInput.sqrMagnitude > 0.0001f)
             CancelActiveLoop();
 
-        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen) return;
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) return;
         // ESC 메뉴 등 커서를 쓰는 UI가 떠 있으면 숫자키가 이모트로 새지 않게 양보(구 휠과 동일 기준).
         if (CursorUnlockRequestUtil.IsRequested) return;
 
