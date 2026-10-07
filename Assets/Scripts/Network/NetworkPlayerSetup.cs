@@ -211,7 +211,11 @@ public class NetworkPlayerSetup : NetworkBehaviour
         VerifySpawnPosition();
 
         // 키워드 인식도 Owner만 (자기 마이크만 분석)
-        if (_cheerKeyword != null) _cheerKeyword.enabled = true;
+        if (_cheerKeyword != null)
+        {
+            _cheerKeyword.enabled = true;
+            _cheerKeyword.MarkLocal();
+        }
 
         Debug.Log($"[NetworkPlayerSetup] Owner 설정 완료 — clientId={OwnerClientId}");
     }

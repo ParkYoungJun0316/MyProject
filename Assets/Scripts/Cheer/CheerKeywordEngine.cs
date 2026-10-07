@@ -124,9 +124,15 @@ public class CheerKeywordEngine : BaseMicrophoneSubscriber
         _player = GetComponent<Player>();
     }
 
+    /// <summary>
+    /// Owner 캐릭터만 Local이 된다 — NetworkPlayerSetup.SetupOwner에서 호출.
+    /// 프리팹 기본 enabled라 남의 캐릭터도 생성 순간 OnEnable이 한 번 돈다(곧 SetupNonOwner가 끔).
+    /// OnEnable에서 Local을 잡으면 그때 내 엔진을 덮어쓰고 OnDisable에서 비워 버린다(10/7 2인 녹음 버튼 비활성 버그).
+    /// </summary>
+    public void MarkLocal() => Local = this;
+
     void OnEnable()
     {
-        Local = this;
         CheerSoundLocalState.EnrollmentChanged += HandleEnrollmentChanged;
         StartWorker();
         StartCoroutine(InitCoroutine());

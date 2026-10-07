@@ -17,6 +17,10 @@ using UnityEngine;
 /// AudioListener.volume은 이 컴포넌트 외에 아무도 쓰지 않는다(마스터 볼륨은 BGMManager/SFXManager의 EffectiveVolume 담당).
 ///
 /// 팀원(원격)이 말할 때만 줄인다 — 내 목소리·솔로 플레이는 해당 없음. 팀 보이스 0%로 끈 팀원은 제외.
+///
+/// [2026-10-08] 응원 소리 재생(CheerSoundPlayback — 패널 듣기·R키) 중에도 같은 비율로 줄인다(그 소리는
+/// ignoreListenerVolume으로 빠짐). 원격 목소리 재생 오브젝트엔 VoiceLoudnessBoost(받는 쪽 자동 음량)를 붙인다.
+/// 줄이는 비율 0.5는 사용자 고정값 — 0.3·0.4는 이질감으로 기각됨.
 /// </summary>
 public class VoiceDucking : MonoBehaviour
 {
@@ -37,7 +41,7 @@ public class VoiceDucking : MonoBehaviour
 
     void Update()
     {
-        if (ScanRemoteVoices()) _lastSpeakingTime = Time.unscaledTime;
+        if (ScanRemoteVoices() | CheerSoundPlayback.IsPlaying) _lastSpeakingTime = Time.unscaledTime;
         bool teammateSpeaking = Time.unscaledTime - _lastSpeakingTime < releaseHoldSeconds;
 
         float target = teammateSpeaking ? duckedVolume : 1f;
@@ -68,9 +72,11 @@ public class VoiceDucking : MonoBehaviour
             VoicePlayerState player = players[i];
             if (player == null || player.IsLocalPlayer) continue;
 
-            // 재생 GameObject는 풀에서 재사용되므로 새 팀원이 붙을 때마다 확인해 둔다(이미 true면 건드리지 않음).
-            AudioSource src = (player.Playback as VoicePlayback)?.AudioSource;
+            // 재생 GameObject는 풀에서 재사용되므로 새 팀원이 붙을 때마다 확인해 둔다(이미 있으면 건드리지 않음).
+            var playback = player.Playback as VoicePlayback;
+            AudioSource src = playback != null ? playback.AudioSource : null;
             if (src != null && !src.ignoreListenerVolume) src.ignoreListenerVolume = true;
+            VoiceLoudnessBoost.Ensure(playback);
 
             if (player.IsSpeaking && !player.IsLocallyMuted) speaking = true;
         }

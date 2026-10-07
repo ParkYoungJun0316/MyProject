@@ -55,13 +55,13 @@ public static class CheerSoundLocalState
         HostSoundChanged?.Invoke();
     }
 
-    /// <summary>재생용 AudioClip(8kHz μ-law 복원). 버전이 같으면 캐시.</summary>
+    /// <summary>재생용 AudioClip(8kHz μ-law 복원 + 재생용 크기 키우기). 버전이 같으면 캐시.</summary>
     public static AudioClip GetHostAudioClip()
     {
         if (!HasHostSound) return null;
         if (s_hostAudioClip != null && s_hostAudioClipVersion == HostVersion) return s_hostAudioClip;
 
-        float[] pcm = CheerSoundCodec.Decode(HostClipMuLaw);
+        float[] pcm = CheerSoundPlayback.NormalizeForPlayback(CheerSoundCodec.Decode(HostClipMuLaw));
         s_hostAudioClip = AudioClip.Create($"TeamCheerSound_v{HostVersion}", pcm.Length, 1, CheerSoundCodec.EncodedRate, false);
         s_hostAudioClip.SetData(pcm, 0);
         s_hostAudioClipVersion = HostVersion;
@@ -84,8 +84,9 @@ public static class CheerSoundLocalState
         {
             if (s_myAudioClip == null)
             {
-                s_myAudioClip = AudioClip.Create("TeamCheerSound_Mine", s_myClip1Pcm.Length, 1, CheerSoundParams.SampleRate, false);
-                s_myAudioClip.SetData(s_myClip1Pcm, 0);
+                var data = CheerSoundPlayback.NormalizeForPlayback(s_myClip1Pcm);
+                s_myAudioClip = AudioClip.Create("TeamCheerSound_Mine", data.Length, 1, CheerSoundParams.SampleRate, false);
+                s_myAudioClip.SetData(data, 0);
             }
             return s_myAudioClip;
         }
