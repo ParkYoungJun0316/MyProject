@@ -55,12 +55,6 @@ public class GameSession : MonoBehaviour
     // 씬 리로드를 넘어 살아남아야 해서 여기 있다(StageNetworkState는 씬과 함께 사라진다).
     private readonly HashSet<ulong> _t5RunnerHistory = new HashSet<ulong>();
 
-    /// <summary>Host가 안 건드리면 이 값. CheerService._teamCheerWord 기본값과 동일.</summary>
-    public const string DefaultTeamCheerWord = "fighting";
-
-    // 이번 판 확정 TeamCheerWord. null = 미확정(게이트 전) → Get은 DefaultTeamCheerWord 폴백.
-    private string _sessionTeamCheerWord;
-
     // 이번 판 확정 Steam 표시 이름(DisplayName). 인덱스 = colorIndex.
     // 로비 LobbyPlayerState.DisplayName을 게임 시작 시 1회 그대로 옮겨온 것 — 별도 네트워크 갱신 없음.
     private string[] _sessionDisplayNames;
@@ -161,30 +155,9 @@ public class GameSession : MonoBehaviour
     public bool IsColorActive(PlayerColorType color) => _activeColors.Contains(color);
 
     // ── 세션 TeamCheerWord ─────────────────────────────────────────
-    // [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 세션 CheerName 스냅샷(SetSessionCheerNames 등)은
-    // 더 이상 필요 없다. 이름은 이제 PlayerColorUtil.DefaultCheerNames(berry/guma/sook/dan) 고정값이라
-    // CheerService.GetCheerName/GetColorIndex가 직접 참조한다(§3, CheerSystemDesign.md).
-
-    /// <summary>
-    /// true = SetSessionTeamCheerWord가 이미 호출됨(Tutorial 게이트 통과 후).
-    /// CheerService 스폰 시 세션값을 NV에 넣을지, Inspector/기본값("fighting")을 쓸지 구분용.
-    /// </summary>
-    public bool HasSessionTeamCheerWord => _sessionTeamCheerWord != null;
-
-    /// <summary>
-    /// 이번 판 확정 TeamCheerWord 저장. StartGame 직전 Host 로컬·Client 양쪽에서 CheerName과 동일하게 호출.
-    /// </summary>
-    public void SetSessionTeamCheerWord(string word)
-    {
-        _sessionTeamCheerWord = string.IsNullOrEmpty(word)
-            ? DefaultTeamCheerWord
-            : word.Trim().ToLowerInvariant();
-        Debug.Log($"[GameSession] 세션 TeamCheerWord 적용: {_sessionTeamCheerWord}");
-    }
-
-    /// <summary>이번 판 TeamCheerWord. 세션 미설정 시 DefaultTeamCheerWord.</summary>
-    public string GetSessionTeamCheerWord()
-        => string.IsNullOrEmpty(_sessionTeamCheerWord) ? DefaultTeamCheerWord : _sessionTeamCheerWord;
+    // [2026-10-07] TeamCheerWord(영어 단어) 폐기 → TeamCheerSound(Host 녹음). 소리는 네트워크 밖
+    // CheerSoundLocalState(static)가 씬을 넘어 들고 있고, 다음 씬 CheerService.OnNetworkSpawn이 거기서
+    // 버전을 되살리므로 세션 스냅샷이 필요 없다(CheerSystemDesign.md §14.5). ResetSession에서 같이 비운다.
 
     // ── 세션 Steam 표시 이름 ───────────────────────────────────────
 
@@ -294,7 +267,7 @@ public class GameSession : MonoBehaviour
         _activePlayers.Clear();
         _activeColors.Clear();
         _seenIntroKeys.Clear();
-        _sessionTeamCheerWord = null;
+        CheerSoundLocalState.ResetSession();
         _sessionDisplayNames = null;
         _sessionVoiceIds = null;
         _t5RunnerHistory.Clear();

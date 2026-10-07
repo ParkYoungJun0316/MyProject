@@ -44,7 +44,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1091153924
     m_Localized: "Gdy pojawi si\u0119 ostrze\u017Cenie, wykrzyczcie razem okrzyk
-      dru\u017Cyny."
+      dru\u017Cyny.\nKrzycz tak, jak nagra\u0142e\u015B."
     m_Metadata:
       m_Items: []
   - m_Id: 1091153925
@@ -52,12 +52,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153926
-    m_Localized: "Tylko host mo\u017Ce go ustawi\u0107.\nU\u017Cyj angielskiego s\u0142owa.\nNie
-      masz mikrofonu? W\u0142\u0105cz \u201ECheer\_klawiszem\_T\u201D w Opcjach."
+    m_Localized: "Host nagrywa d\u017Awi\u0119k,\na wszyscy nagrywaj\u0105 go dwa
+      razy.\nNie masz mikrofonu? W\u0142\u0105cz \u201ECheer klawiszem T\u201D w
+      Opcjach."
     m_Metadata:
       m_Items: []
   - m_Id: 24992255946752
-    m_Localized: "Wybierz okrzyk dru\u017Cyny"
+    m_Localized: "Okrzyk dru\u017Cyny"
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889793
@@ -73,8 +74,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889796
-    m_Localized: "Mo\u017Cna u\u017Cywa\u0107 tylko angielskich s\u0142\xF3w.\nRozpoznawane
-      s\u0105 tylko prawdziwe s\u0142owa. (domy\u015Blnie: FIGHTING)"
+    m_Localized: "Host: nagraj d\u017Awi\u0119k, kt\xF3ry dru\u017Cyna b\u0119dzie
+      krzycze\u0107.\nDowolne s\u0142owo lub d\u017Awi\u0119k (d\u017Awi\u0119k min.
+      0,5 s, maks. 3 s)"
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889797
@@ -110,11 +112,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 56930631004160
-    m_Localized: "[E] Ustal okrzyk dru\u017Cyny"
+    m_Localized: "[E] Nagraj okrzyk dru\u017Cyny"
     m_Metadata:
       m_Items: []
   - m_Id: 56930635198464
-    m_Localized: "[E] Przetestuj okrzyk dru\u017Cyny"
+    m_Localized: "[E] Trening okrzyku dru\u017Cyny"
     m_Metadata:
       m_Items: []
   - m_Id: 1395064700000001
@@ -140,6 +142,168 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9787340243972096
     m_Localized: "[E] Przebierz si\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884459483136
+    m_Localized: Nagraj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426176
+    m_Localized: Stop ({0:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426177
+    m_Localized: Nagranie 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426178
+    m_Localized: Nagranie 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426179
+    m_Localized: "Ods\u0142uchaj"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426180
+    m_Localized: "Pos\u0142uchaj hosta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426181
+    m_Localized: "Host jeszcze nie nagra\u0142 okrzyku dru\u017Cyny"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426182
+    m_Localized: Okrzyk gotowy ({1:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426183
+    m_Localized: "Nagrano. Ods\u0142uchaj i naci\u015Bnij [Potwierd\u017A]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426184
+    m_Localized: "Pos\u0142uchaj hosta i zr\xF3b [Nagranie 1] tak samo (min. 0,5
+      s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426185
+    m_Localized: 'Jeszcze raz tak samo: [Nagranie 2]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426186
+    m_Localized: "Zapisano! Teraz spr\xF3buj przy tablicy treningu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426187
+    m_Localized: "Host nagra\u0142 od nowa. Nagraj si\u0119 ponownie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426188
+    m_Localized: "Brak d\u017Awi\u0119ku z mikrofonu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426189
+    m_Localized: "Za cicho. Krzycz g\u0142o\u015Bniej"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426190
+    m_Localized: "Za g\u0142o\u015Bno, d\u017Awi\u0119k si\u0119 przesterowuje"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426191
+    m_Localized: "Za kr\xF3tko. Wydawaj d\u017Awi\u0119k co najmniej 0,5 s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426192
+    m_Localized: "Za d\u0142ugo (maks. 3 s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426193
+    m_Localized: Inna liczba przerw (host {0}, ty {1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426194
+    m_Localized: Inna intonacja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426195
+    m_Localized: "Brzmi inaczej. Pos\u0142uchaj hosta jeszcze raz i na\u015Bladuj"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426196
+    m_Localized: Nie pasuje do nagrania 1. Krzycz jak w nagraniu 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426197
+    m_Localized: "\u015Awietnie!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426198
+    m_Localized: "Okrzyk ustawiony! Wys\u0142ano do dru\u017Cyny"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426199
+    m_Localized: "Host musi nagra\u0107 okrzyk, aby zacz\u0105\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426200
+    m_Localized: "Wszyscy musz\u0105 zaliczy\u0107 trening okrzyku ({0}/{1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426201
+    m_Localized: "[R] Pos\u0142uchaj"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426202
+    m_Localized: "W\u0142\u0105cz \u201ECheer klawiszem T\u201D w Opcjach, aby kibicowa\u0107
+      klawiszem T"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490503282688
+    m_Localized: Nie mam mikrofonu (kibicuj klawiszem T)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031424
+    m_Localized: "Brak mikrofonu (ca\u0142a dru\u017Cyna kibicuje klawiszem T)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031425
+    m_Localized: "W tej grze wszyscy kibicuj\u0105 klawiszem T (bez mikrofonu)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031426
+    m_Localized: "Kibicujesz klawiszem T. Na treningu naci\u015Bnij T"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031427
+    m_Localized: "Kto\u015B jeszcze nie jest gotowy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031428
+    m_Localized: Gotowy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031429
+    m_Localized: Potrzebne nagrania 1 i 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031430
+    m_Localized: Potrzebne nagranie 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031431
+    m_Localized: Potrzebne nagranie 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031432
+    m_Localized: Potrzebny trening
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031433
+    m_Localized: Klawisz T
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031434
+    m_Localized: "Kto\u015B nie jest gotowy. Sprawd\u017A tablic\u0119 Start"
     m_Metadata:
       m_Items: []
   references:

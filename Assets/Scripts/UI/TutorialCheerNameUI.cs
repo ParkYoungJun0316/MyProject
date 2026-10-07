@@ -2,151 +2,156 @@ using System.Collections;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.Localization;
 using UnityEngine.UI;
 
 /// <summary>
-/// Tutorial TeamCheerWord 입력·확정 UI — NetworkDesign.md §6B.7 P6 / CheerAndTutorialDesign.md §3.4·§8.3.
+/// 팀 구호 **소리** 패널 — CheerSystemDesign.md §14.2 (2026-10-07, 구 TeamCheerWord 텍스트 입력 패널 교체).
+/// 클래스 이름(TutorialCheerNameUI)은 씬·프리팹 연결 호환용으로 유지.
 ///
-/// [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 이름은 이제 PlayerColorUtil.DefaultCheerNames
-/// (berry/guma/sook/dan) 고정값이다. 이 패널이 다루는 건 TeamCheerWord 하나뿐: Host는 입력해서
-/// 정하고, 비-Host는 현재 값만 읽기 전용으로 본다. 클래스 이름(TutorialCheerNameUI)은 하위 호환을
-/// 위해 유지 — 실질 역할은 "TeamCheerWord 패널"이다.
+/// [한 패널에서 전부 — 사용자 결정 2026-10-07]
+///   Host:  [녹음/정지] → 자동 재생 → [확정]   (= 기준 소리. 확정하면 Host 자신의 나 1이 된다)
+///   전원:  [호스트 소리 듣기] → [1번 녹음/정지] → Host 틀 검사 → [2번 녹음/정지] → Host 틀 검사
+///   (10/7 사용자 결정: 기준은 Host 하나 — 1·2번은 서로 비교하지 않는다. 게임 중 판정은 1·2번 중 가까운 쪽, R키는 내 1번 녹음)
+///   게임에서 쓰는 등록본은 전부 Host 틀 검사를 통과한 것뿐(등록본 규칙). 거절되면 이유를 보여 주고 될 때까지 다시.
+///   구역 3 연습 표지판은 이 등록본으로 **실시간 판정**만 한다(여기서 나 2를 만들지 않는다).
 ///
-/// [배치] Tutorial 상시 HUD의 Canvas 자식(씬에 1개, TutorialRoomCodeDisplay와 형제)에 부착.
-/// Player 프리팹에 붙이지 않는다 — 각 클라이언트는 자기 화면의 UI 하나만 보면 되므로 인원수만큼
-/// 중복 생성할 필요가 없다(§6B.2 동적 합류와도 무관하게 항상 씬에 1개만 존재).
+/// [녹음]
+///   마이크를 직접 열지 않고 CheerKeywordEngine.Local(내 캐릭터의 엔진)의 BeginCapture/EndCapture로 같은 16kHz
+///   스트림을 받는다(§4.3 이중 오픈 금지). 버튼 한 개 토글: 누르면 바로 녹음, 다시 누르면 정지.
+///   1~3초 강제(10/7): RecordMinSec(1초) 전엔 정지 버튼이 잠기고, RecordMaxSec(3초)에 자동 정지.
 ///
-/// [TeamCheerWord, CheerSystemDesign.md D1]
-/// Host는 TrySetTeamCheerWord를 직접 호출(RPC 없음, 동기 처리라 "제출 중" 대기 상태 없음).
-/// 비-Host는 현재 값만 읽기 전용. teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의
-/// 자식으로 배치 — 부모 SetActive 1번으로 같이 꺼짐/켜짐(개별 SetActive 중복 방지).
-///
-/// [상시 표시 → 상호작용 표지판 개폐로 변경, 2026-08-19]
-/// 이전엔 항상 화면에 떠 있었으나, 화면을 계속 가리고 "그 순간 지나면 다시 못 여는" DialogueUI식
-/// 1회성 노출의 단점을 피하고자 Tutorial 씬의 상호작용 표지판(TutorialCheerNameSignboard)이
-/// Open()/Close()를 호출해 여닫는 방식으로 변경. 이 GameObject 자체(패널 루트)가 활성/비활성으로
-/// 토글된다 — 씬에는 기본 비활성 상태로 배치할 것(사용자 에디터 작업).
-///
-/// [입력 우선권, 2026-08-22]
-/// 열려있는 동안 키보드 입력의 최우선권을 가진다 — Enter는 확정 제출(InGameChatUI는 무시/자동 닫힘),
-/// Esc는 이 패널을 닫음(EscMenuController는 무시). 같은 프레임에 Esc가 눌렸을 때 "패널이 닫히자마자
-/// Esc 메뉴가 같이 뜨는" 이중 소비를 막기 위해, 실행 순서에 의존하지 않고 <see cref="ConsumedEscThisFrame"/>
-/// 명시적 플래그로 "이번 프레임에 Esc를 이미 이 패널이 소비했음"을 알린다.
-///
-/// [커서 공유, 2026-08-22]
-/// 커서 lock/visible을 직접 건드리지 않고 <see cref="CursorUnlockRequestUtil"/>에 요청만 한다 —
-/// EscMenu·이모트 메뉴가 동시에 열려 있을 때 "마지막에 닫은 UI가 무조건 잠금"으로 서로 덮어쓰지
-/// 않도록. 요청/해제는 Open()/Close()가 아니라 OnEnable/OnDisable에 걸어, 씬 리로드로 패널이 열린
-/// 채 파괴돼도(Close() 호출 없이) Unity가 파괴 직전 자동 호출하는 OnDisable에서 요청이 반드시
-/// 정리된다. 다만 그 파괴가 씬 통째 언로드(TitleReturnFlow 등)로 인한 것이면 실제 Cursor는 건드리지
-/// 않고 목록에서만 빠진다(<see cref="CursorUnlockRequestUtil.Forget"/>).
+/// [배치] Tutorial·Interlude 상시 HUD Canvas 자식(씬에 1개). 표지판(TutorialCheerNameSignboard)이 Open()/Close().
+///   씬에는 기본 비활성으로 배치(사용자 에디터 작업). 입력 우선권·커서 공유 규칙은 이전과 동일(아래 Update/OnEnable).
 /// </summary>
 public class TutorialCheerNameUI : MonoBehaviour
 {
+    enum Target { None, Host, Mine1, Mine2 }
+
     [Header("닫기")]
     [Tooltip("비워도 됨 — 상호작용 표지판에서 다시 상호작용해도 닫힘(토글).")]
     [SerializeField] Button closeButton;
 
     [Header("표시")]
     [SerializeField] TMP_Text feedbackText;
-    [SerializeField] float feedbackDisplaySeconds = 2.5f;
+    [SerializeField] float feedbackDisplaySeconds = 3f;
 
-    [Header("TeamCheerWord")]
-    [Tooltip("입력 문자 제한(2~12자 형식 검증과는 별개, TMP_InputField.characterLimit).")]
-    [SerializeField] int maxLength = 12;
-    [Tooltip("Host 전용 입력 섹션 루트 — teamWordInputField/teamWordConfirmButton을 이 GameObject의 " +
-             "자식으로 배치할 것(SetActive 1회로 같이 꺼짐/켜짐). 비-Host에선 숨김. " +
-             "currentTeamWordText는 이 섹션 밖(패널 직계)에 있어 Host/Client 공통으로 항상 보인다.")]
-    [SerializeField] GameObject hostTeamWordSection;
-    [Tooltip("hostTeamWordSection의 자식으로 배치.")]
-    [SerializeField] TMP_InputField teamWordInputField;
-    [Tooltip("hostTeamWordSection의 자식으로 배치.")]
-    [SerializeField] Button teamWordConfirmButton;
-    [SerializeField] TMP_Text currentTeamWordText;
+    [Header("Host 전용 섹션 (비-Host에선 통째로 숨김)")]
+    [SerializeField] GameObject hostSection;
+    [Tooltip("누르면 녹음 시작, 다시 누르면 정지(라벨이 바뀜).")]
+    [SerializeField] Button hostRecordButton;
+    [SerializeField] TMP_Text hostRecordButtonLabel;
+    [Tooltip("방금 녹음한 소리 다시 듣기(확정 전).")]
+    [SerializeField] Button hostPreviewButton;
+    [SerializeField] Button hostConfirmButton;
+    [SerializeField] TMP_Text hostStatusText;
+    [Tooltip("Host 전용 \"마이크 없음 — 팀 전체 T키로 응원\" 토글(10/7). 켜면 이번 판은 음성 응원 없이 전원 T키.")]
+    [SerializeField] Toggle teamNoMicToggle;
+
+    [Header("전원 섹션")]
+    [Tooltip("Host가 확정한 기준 소리 재생.")]
+    [SerializeField] Button listenHostButton;
+    [SerializeField] TMP_Text hostSoundStatusText;
+    [SerializeField] Button record1Button;
+    [SerializeField] TMP_Text record1ButtonLabel;
+    [SerializeField] Button record2Button;
+    [SerializeField] TMP_Text record2ButtonLabel;
+    [SerializeField] TMP_Text enrollStatusText;
+    [Tooltip("비-Host \"마이크가 없어요 — T키로 응원\" 토글(10/7). Host에겐 숨긴다(Host는 팀 전체 토글).")]
+    [SerializeField] Toggle personalNoMicToggle;
+    [Tooltip("personalNoMicToggle과 라벨을 묶은 줄 — Host면 숨김.")]
+    [SerializeField] GameObject personalNoMicRow;
 
     [Header("커서")]
-    [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요 " +
-             "(EscMenuController와 동일 패턴).")]
+    [Tooltip("패널 닫을 때 커서를 다시 잠글지 여부. ThirdPersonCamera.lockCursor 설정과 일치시키세요.")]
     [SerializeField] bool lockCursorOnClose = true;
 
-    // ── Localization (Tutorial 테이블, TutorialTranslations.md §CheerNamePanel) ──────────
-    // 비어 있거나(IsEmpty) 테이블 로드가 아직 안 끝났으면 한국어 폴백 — OptionsMenuController/
-    // 로컬라이즈 폴백 패턴(LocalizedOrFallback 참고).
+    // ── Localization (Tutorial 테이블 — 키는 TutorialTranslations.md §CheerNamePanel에 추가 예정) ──
+    // 비어 있거나 로드 전이면 한국어 폴백(OptionsMenuController.LocalizedOrFallback 패턴).
 
-    [Header("Localization — 피드백")]
-    [SerializeField] LocalizedString feedbackFormat;
-    [SerializeField] LocalizedString feedbackBlocked;
-    [SerializeField] LocalizedString feedbackReservedTeam;
-    [SerializeField] LocalizedString feedbackGenericTeam;
-    [SerializeField] LocalizedString feedbackNotServer;
-    [Tooltip("Vosk 모델 사전에 없는 단어(CheerService reason \"unknown\"). 비워 두면 한국어 폴백.")]
-    [SerializeField] LocalizedString feedbackUnknownWord;
+    [Header("Localization — 버튼 라벨")]
+    [SerializeField] LocalizedString labelRecord;        // "● 녹음"
+    [SerializeField] LocalizedString labelStop;          // "■ 정지 ({0:0.0}초)"
+    [SerializeField] LocalizedString labelRecord1;       // "● 나 1 녹음"
+    [SerializeField] LocalizedString labelRecord2;       // "● 나 2 녹음"
 
-    [Header("Localization — 표시")]
-    [Tooltip("{0} 포맷 — GetLocalizedString(팀 구호 대문자)로 호출.")]
-    [SerializeField] LocalizedString teamKeywordPrefix;
+    [Header("Localization — 상태")]
+    [SerializeField] LocalizedString statusHostNone;     // "호스트가 아직 팀 구호를 녹음하지 않았어요"
+    [SerializeField] LocalizedString statusHostReady;    // "팀 구호 v{0} · {1:0.0}초"
+    [SerializeField] LocalizedString statusHostPending;  // "녹음됨 — 들어보고 [확정]"
+    [SerializeField] LocalizedString statusEnrollNeed1;  // "① 호스트 소리를 듣고 똑같이 '나 1'을 녹음하세요"
+    [SerializeField] LocalizedString statusEnrollNeed2;  // "② 한 번 더 똑같이 '나 2'를 녹음하세요"
+    [SerializeField] LocalizedString statusEnrolled;     // "등록 완료 ✓ — 이제 연습 표지판에서 외쳐 보세요"
+    [SerializeField] LocalizedString statusInvalidated;  // "호스트가 다시 녹음했어요 — 다시 등록하세요"
+    [SerializeField] LocalizedString statusTeamNoMic;    // "이번 판은 마이크 없이 T키로 응원해요"
+    [SerializeField] LocalizedString statusPersonalNoMic; // "T키로 응원해요. 연습 때 T키를 누르세요"
 
-    /// <summary>패널이 열려있는 동안 true — Player.cs가 이동 입력을 잠그는 데 사용
-    /// (InGameChatUI.IsChatOpen과 동일 패턴, §7.3 타이핑 중 WASD 새는 문제 방지).</summary>
+    [Header("Localization — 거절 이유")]
+    [SerializeField] LocalizedString feedbackNoMic;      // "마이크 소리가 들어오지 않아요"
+    [SerializeField] LocalizedString feedbackTooQuiet;   // "너무 작아요 — 크게 외쳐 주세요"
+    [SerializeField] LocalizedString feedbackTooLoud;    // "너무 커요(소리가 찢어져요)"
+    [SerializeField] LocalizedString feedbackTooShort;   // "너무 짧아요"
+    [SerializeField] LocalizedString feedbackTooLong;    // "너무 길어요 (최대 3초)"
+    [SerializeField] LocalizedString feedbackBursts;     // "끊는 횟수가 달라요 (호스트 {0}번, 나 {1}번)"
+    [SerializeField] LocalizedString feedbackPitch;      // "높낮이가 달라요"
+    [SerializeField] LocalizedString feedbackTimbre;     // "소리가 달라요 — 호스트 소리를 다시 듣고 따라 하세요"
+    [SerializeField] LocalizedString feedbackLiveFail;   // "나 1과 다르게 들려요 — 나 1을 녹음했을 때처럼 외쳐 주세요"
+    [SerializeField] LocalizedString feedbackAccepted;   // "좋아요!"
+    [SerializeField] LocalizedString feedbackHostSet;    // "팀 구호 확정! 팀원들에게 전달했어요"
+    [SerializeField] LocalizedString feedbackNotServer;  // "호스트만 팀 구호를 정할 수 있어요"
+
+    /// <summary>패널이 열려있는 동안 true — Player.cs가 이동 입력을 잠그는 데 사용.</summary>
     public static bool IsOpen { get; private set; }
 
-    /// <summary>이번 프레임에 Esc로 이 패널이 막 닫혔는지 — EscMenuController가 같은 프레임에
-    /// 자기 메뉴를 열지 않도록 확인하는 명시적 플래그(실행 순서 비의존).</summary>
+    /// <summary>이번 프레임에 Esc로 이 패널이 막 닫혔는지 — EscMenuController 확인용.</summary>
     public static bool ConsumedEscThisFrame => s_escClosedFrame == Time.frameCount;
     static int s_escClosedFrame = -1;
 
-    /// <summary>이번 프레임에 Enter로 TeamCheerWord 확정을 시도했는지 — InGameChatUI가 같은 프레임에
-    /// 채팅을 열지 않도록 확인하는 명시적 플래그.</summary>
-    public static bool ConsumedEnterThisFrame => s_enterConfirmFrame == Time.frameCount;
-    static int s_enterConfirmFrame = -1;
+    /// <summary>텍스트 입력이 사라져 더 이상 Enter를 쓰지 않는다 — InGameChatUI 호환용으로 항상 false.</summary>
+    public static bool ConsumedEnterThisFrame => false;
 
-    string _lastShownTeamWord;
-    bool? _teamWordHostVisible;
+    readonly CheerSoundDsp _dsp = new();
+    readonly CheerSoundDsp.DtwWork _work = new();
+
+    Target _recording = Target.None;
+    float[] _hostPendingPcm;
+    CheerSoundTemplate _hostPendingTemplate;
     float _feedbackHideAt = -1f;
+    bool? _hostSectionVisible;
 
     void Awake()
     {
-        if (closeButton != null)
-            closeButton.onClick.AddListener(Close);
-
-        if (teamWordInputField != null)
-        {
-            teamWordInputField.characterLimit = maxLength;
-            teamWordInputField.onValidateInput = ValidateCharacter;
-            teamWordInputField.onSubmit.AddListener(_ => OnTeamWordConfirmClicked());
-        }
-        if (teamWordConfirmButton != null)
-            teamWordConfirmButton.onClick.AddListener(OnTeamWordConfirmClicked);
-
+        if (closeButton != null) closeButton.onClick.AddListener(Close);
+        if (hostRecordButton != null) hostRecordButton.onClick.AddListener(() => ToggleRecord(Target.Host));
+        if (hostPreviewButton != null) hostPreviewButton.onClick.AddListener(PreviewHostPending);
+        if (hostConfirmButton != null) hostConfirmButton.onClick.AddListener(ConfirmHost);
+        if (listenHostButton != null) listenHostButton.onClick.AddListener(CheerSoundPlayback.PlayHostClip);
+        if (record1Button != null) record1Button.onClick.AddListener(() => ToggleRecord(Target.Mine1));
+        if (record2Button != null) record2Button.onClick.AddListener(() => ToggleRecord(Target.Mine2));
+        if (personalNoMicToggle != null) personalNoMicToggle.onValueChanged.AddListener(CheerSoundLocalState.SetPersonalNoMic);
+        if (teamNoMicToggle != null) teamNoMicToggle.onValueChanged.AddListener(OnTeamNoMicToggled);
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
 
     void OnEnable()
     {
         IsOpen = true;
-        // Esc를 눌러야만 커서가 풀리던 문제 — 패널이 열리면 즉시 커서를 풀어 마우스로 바로
-        // 입력창/확정 버튼을 클릭할 수 있게 한다. OnEnable/OnDisable 짝으로 걸어 씬 파괴 시에도
-        // Release가 보장된다(클래스 doc [커서 공유] 참고).
         CursorUnlockRequestUtil.Request(this);
-        _teamWordHostVisible = null;
-        _lastShownTeamWord = null;
-
+        _hostSectionVisible = null;
+        CheerSoundLocalState.HostSoundChanged += RefreshAll;
+        CheerSoundLocalState.EnrollmentChanged += RefreshAll;
         HideFeedback();
-        ApplyTeamWordRole();
+        RefreshAll();
     }
 
     void OnDisable()
     {
         IsOpen = false;
+        CheerSoundLocalState.HostSoundChanged -= RefreshAll;
+        CheerSoundLocalState.EnrollmentChanged -= RefreshAll;
+        CancelRecording();
 
-        // 씬이 통째로 언로드되는 중(예: TitleReturnFlow의 SceneManager.LoadScene)이면 자동으로
-        // OnDisable이 불려도 목록 제거만 하고 실제 Cursor는 건드리지 않는다 — 그 시점엔 이미
-        // TitleReturnFlow 등이 최종 커서 상태를 정해뒀으므로 여기서 다시 잠그면 그걸 덮어써버려
-        // "타이틀 씬에서 마우스가 사라지는" 회귀가 생긴다. 사용자가 직접 닫은 경우(씬은 그대로
-        // 로드된 채 SetActive(false)만 됨)만 실제로 Release해서 잠근다.
         if (!gameObject.scene.isLoaded)
         {
             CursorUnlockRequestUtil.Forget(this);
@@ -155,35 +160,20 @@ public class TutorialCheerNameUI : MonoBehaviour
         CursorUnlockRequestUtil.Release(this, lockCursorOnClose);
     }
 
-    // ── 상호작용 표지판에서 호출 (TutorialCheerNameSignboard) ────────
+    // ── 표지판에서 호출 ──────────────────────────────────────────
 
-    /// <summary>패널 열기. 이미 열려있으면 아무 것도 안 함(중복 호출 안전).</summary>
     public void Open()
     {
         if (gameObject.activeSelf) return;
         gameObject.SetActive(true);
-        StartCoroutine(FocusTeamWordNextFrame());
     }
 
-    /// <summary>InGameChatUI.ActivateInputNextFrame과 동일 패턴 — SetActive 직후 바로 활성화하면
-    /// hostTeamWordSection이 아직 안 켜진 상태(비-Host)일 수 있어 1프레임 대기 후 포커스한다.
-    /// 비-Host는 애초에 포커스할 입력창이 없으므로 건너뛴다.</summary>
-    IEnumerator FocusTeamWordNextFrame()
-    {
-        yield return null;
-        if (teamWordInputField == null || !gameObject.activeSelf || !IsLocalServer()) yield break;
-        teamWordInputField.ActivateInputField();
-        EventSystem.current?.SetSelectedGameObject(teamWordInputField.gameObject);
-    }
-
-    /// <summary>패널 닫기 — 확정 여부와 무관, 타이핑 중이던 미확정 글자는 버려짐.</summary>
     public void Close()
     {
         if (!gameObject.activeSelf) return;
-        gameObject.SetActive(false); // 커서 Release는 OnDisable에서 처리
+        gameObject.SetActive(false);
     }
 
-    /// <summary>열려있으면 닫고, 닫혀있으면 연다 — 표지판 상호작용 1개 입력으로 개폐 겸용.</summary>
     public void Toggle()
     {
         if (gameObject.activeSelf) Close();
@@ -192,8 +182,6 @@ public class TutorialCheerNameUI : MonoBehaviour
 
     void Update()
     {
-        // Esc는 닫기 버튼 대신 이 패널을 최우선으로 닫는다 — EscMenuController는
-        // ConsumedEscThisFrame 플래그를 확인해 같은 프레임엔 자기 메뉴를 열지 않는다(실행 순서 비의존).
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             s_escClosedFrame = Time.frameCount;
@@ -201,8 +189,8 @@ public class TutorialCheerNameUI : MonoBehaviour
             return;
         }
 
-        ApplyTeamWordRole();
-        RefreshCurrentTeamWordDisplay();
+        ApplyRole();
+        UpdateRecording();
 
         if (_feedbackHideAt >= 0f && Time.time >= _feedbackHideAt && feedbackText != null)
         {
@@ -211,114 +199,280 @@ public class TutorialCheerNameUI : MonoBehaviour
         }
     }
 
-    // ── 입력 확정 ────────────────────────────────────────────────
+    // ── 녹음 ────────────────────────────────────────────────────
 
-    /// <summary>서버 규칙(CheerNameValidator)과 동일한 문자만 입력창에 타이핑 가능(편의용, 최종 검증은 Host).
-    /// 숫자/밑줄(_) 제외 — Vosk 음성 인식이 발음 불가능한 문자라 실제 응원 매칭이 안 됨.</summary>
-    static char ValidateCharacter(string text, int charIndex, char addedChar)
+    void ToggleRecord(Target target)
     {
-        char c = char.ToLowerInvariant(addedChar);
-        bool allowed = c >= 'a' && c <= 'z';
-        return allowed ? c : '\0';
-    }
+        var engine = CheerKeywordEngine.Local;
+        if (engine == null) { ShowFeedback(L(feedbackNoMic, "마이크 소리가 들어오지 않아요")); return; }
 
-    void OnTeamWordConfirmClicked()
-    {
-        s_enterConfirmFrame = Time.frameCount;
-
-        if (!IsLocalServer())
+        if (_recording == target)
         {
-            ShowFeedback(ResolveTeamWordError("not_server"));
+            if (engine.CaptureSeconds < CheerSoundParams.RecordMinSec) return; // 1초 전엔 정지 불가
+            FinishRecording(engine.EndCapture());
             return;
         }
+        if (_recording != Target.None) return; // 다른 녹음 진행 중
 
-        if (teamWordInputField == null) return;
+        if (CheerSoundLocalState.TeamNoMic) return; // 이번 판은 T키 응원 — 녹음 없음
+        if (target == Target.Host && !IsLocalServer()) { ShowFeedback(L(feedbackNotServer, "호스트만 팀 구호를 정할 수 있어요")); return; }
+        if (target == Target.Mine1 && !CheerSoundLocalState.HasHostSound) { ShowFeedback(L(statusHostNone, "호스트가 아직 팀 구호를 녹음하지 않았어요")); return; }
+        if (target == Target.Mine2 && !CheerSoundLocalState.HasHostSound) { ShowFeedback(L(statusHostNone, "호스트가 아직 팀 구호를 녹음하지 않았어요")); return; }
 
+        CheerSoundPlayback.Stop();
+        if (!engine.BeginCapture()) { ShowFeedback(L(feedbackNoMic, "마이크 소리가 들어오지 않아요")); return; }
+        _recording = target;
+        HideFeedback();
+        RefreshButtons();
+    }
+
+    void UpdateRecording()
+    {
+        if (_recording == Target.None) return;
+        var engine = CheerKeywordEngine.Local;
+        if (engine == null) { CancelRecording(); return; }
+
+        if (engine.CaptureHitLimit) { FinishRecording(engine.EndCapture()); return; }
+        RefreshButtons(); // 경과 초 라벨
+    }
+
+    void CancelRecording()
+    {
+        if (_recording == Target.None) return;
+        CheerKeywordEngine.Local?.EndCapture();
+        _recording = Target.None;
+    }
+
+    void FinishRecording(float[] pcm)
+    {
+        var target = _recording;
+        _recording = Target.None;
+        if (pcm == null || pcm.Length == 0) { ShowFeedback(L(feedbackTooShort, "너무 짧아요")); RefreshAll(); return; }
+
+        var tmpl = CheerSoundTemplate.Build(pcm, pcm.Length, _dsp);
+        switch (target)
+        {
+            case Target.Host:  ProcessHost(pcm, tmpl); break;
+            case Target.Mine1: ProcessMine(pcm, tmpl, first: true); break;
+            case Target.Mine2: ProcessMine(pcm, tmpl, first: false); break;
+        }
+        RefreshAll();
+    }
+
+    void ProcessHost(float[] pcm, CheerSoundTemplate tmpl)
+    {
+        if (tmpl.Issue != CheerClipIssue.None)
+        {
+            ShowFeedback(IssueText(tmpl.Issue));
+            return;
+        }
+        _hostPendingPcm = pcm;
+        _hostPendingTemplate = tmpl;
+        CheerSoundPlayback.PlayPcm(Slice(pcm, tmpl.TrimStartSample, tmpl.TrimEndSample), CheerSoundParams.SampleRate);
+    }
+
+    void PreviewHostPending()
+    {
+        if (_hostPendingPcm == null || _hostPendingTemplate == null) return;
+        CheerSoundPlayback.PlayPcm(Slice(_hostPendingPcm, _hostPendingTemplate.TrimStartSample, _hostPendingTemplate.TrimEndSample),
+                                   CheerSoundParams.SampleRate);
+    }
+
+    void ConfirmHost()
+    {
+        if (_hostPendingPcm == null || _hostPendingTemplate == null) return;
         var svc = CheerService.Instance;
-        if (svc == null || !svc.IsSpawned)
+        if (svc == null || !svc.IsSpawned || !IsLocalServer())
         {
-            ShowFeedback(ResolveTeamWordError(""));
+            ShowFeedback(L(feedbackNotServer, "호스트만 팀 구호를 정할 수 있어요"));
             return;
         }
-
-        if (!svc.TrySetTeamCheerWord(teamWordInputField.text, out string reason))
+        if (!svc.TrySetTeamCheerSound(_hostPendingPcm, _hostPendingPcm.Length, _hostPendingTemplate, out var issue))
         {
-            ShowFeedback(ResolveTeamWordError(reason));
-            StartCoroutine(FocusTeamWordNextFrame());
+            ShowFeedback(IssueText(issue));
             return;
         }
-
-        teamWordInputField.text = "";
-        _lastShownTeamWord = null;
-        RefreshCurrentTeamWordDisplay();
+        _hostPendingPcm = null;
+        _hostPendingTemplate = null;
+        ShowFeedback(L(feedbackHostSet, "팀 구호 확정! 팀원들에게 전달했어요"));
     }
 
-    string ResolveTeamWordError(string key) => key switch
+    /// <summary>1번·2번 모두 Host 틀 검사만(10/7 — 기준은 Host 하나). 1번은 R키로 들려줄 소리도 보관.</summary>
+    void ProcessMine(float[] pcm, CheerSoundTemplate tmpl, bool first)
     {
-        "format"     => LocalizedOrFallback(feedbackFormat, "2~12자, 영문 소문자만 사용할 수 있어요."),
-        "reserved"   => LocalizedOrFallback(feedbackReservedTeam, "시스템 예약어라 사용할 수 없는 단어예요."),
-        "blocked"    => LocalizedOrFallback(feedbackBlocked, "사용할 수 없는 단어가 포함되어 있어요."),
-        "unknown"    => LocalizedOrFallback(feedbackUnknownWord, "음성 인식이 모르는 단어예요. 다른 영어 단어를 써주세요."),
-        "not_server" => LocalizedOrFallback(feedbackNotServer, "호스트만 팀 구호를 정할 수 있어요."),
-        _            => LocalizedOrFallback(feedbackGenericTeam, "팀 구호를 확정할 수 없어요."),
+        var host = CheerSoundLocalState.HostTemplate;
+        if (host == null) { ShowFeedback(L(statusHostNone, "호스트가 아직 팀 구호를 녹음하지 않았어요")); return; }
+
+        var r = CheerSoundShapeCheck.Compare(tmpl, host, _work);
+        NetLog.Transition("TutorialCheerNameUI", first ? "Enroll1Shape" : "Enroll2Shape",
+            $"verdict={r.Verdict} dur={r.DurationRatio:0.00} bursts={r.MyBursts}/{r.HostBursts} pitch={r.PitchCorr:0.00}/{r.PitchMeanAbsSemi:0.0} timbre={r.TimbreDistance:0.00} soft={r.SoftCount}");
+        if (r.Verdict != CheerShapeVerdict.Ok)
+        {
+            ShowFeedback(VerdictText(r));
+            return;
+        }
+
+        if (first) CheerSoundLocalState.SetTemplate1(tmpl, Slice(pcm, tmpl.TrimStartSample, tmpl.TrimEndSample));
+        else       CheerSoundLocalState.SetTemplate2(tmpl);
+        ShowFeedback(L(feedbackAccepted, "좋아요!"));
+    }
+
+    // ── 표시 ────────────────────────────────────────────────────
+
+    void ApplyRole()
+    {
+        bool isServer = IsLocalServer();
+        if (_hostSectionVisible == isServer) return;
+        _hostSectionVisible = isServer;
+        if (hostSection != null) hostSection.SetActive(isServer);
+        if (personalNoMicRow != null) personalNoMicRow.SetActive(!isServer);
+    }
+
+    void OnTeamNoMicToggled(bool on)
+    {
+        var svc = CheerService.Instance;
+        if (svc == null || !svc.IsSpawned || !IsLocalServer()) { RefreshAll(); return; }
+        CancelRecording();
+        svc.SetTeamNoMic(on);
+        RefreshAll();
+    }
+
+    void RefreshAll()
+    {
+        if (personalNoMicToggle != null)
+        {
+            personalNoMicToggle.SetIsOnWithoutNotify(CheerSoundLocalState.PersonalNoMic);
+            personalNoMicToggle.interactable = !CheerSoundLocalState.TeamNoMic;
+        }
+        if (teamNoMicToggle != null) teamNoMicToggle.SetIsOnWithoutNotify(CheerSoundLocalState.TeamNoMic);
+        RefreshButtons();
+        RefreshStatus();
+    }
+
+    void RefreshButtons()
+    {
+        var engine = CheerKeywordEngine.Local;
+        bool micOk = engine != null && engine.HasAudioInput && !CheerSoundLocalState.TeamNoMic;
+        bool idle = _recording == Target.None;
+        float sec = engine != null ? engine.CaptureSeconds : 0f;
+        bool canStop = sec >= CheerSoundParams.RecordMinSec;
+
+        SetButton(hostRecordButton, hostRecordButtonLabel,
+            micOk && (idle || (_recording == Target.Host && canStop)),
+            _recording == Target.Host ? Stop(sec) : L(labelRecord, "● 녹음"));
+        bool voiceOn = !CheerSoundLocalState.TeamNoMic;
+        if (hostPreviewButton != null) hostPreviewButton.interactable = voiceOn && idle && _hostPendingPcm != null;
+        if (hostConfirmButton != null) hostConfirmButton.interactable = voiceOn && idle && _hostPendingPcm != null && CheerServiceReady();
+
+        if (listenHostButton != null) listenHostButton.interactable = voiceOn && idle && CheerSoundLocalState.HasHostSound;
+        SetButton(record1Button, record1ButtonLabel,
+            micOk && CheerSoundLocalState.HasHostSound && (idle || (_recording == Target.Mine1 && canStop)),
+            _recording == Target.Mine1 ? Stop(sec) : L(labelRecord1, "1번 녹음"));
+        SetButton(record2Button, record2ButtonLabel,
+            micOk && CheerSoundLocalState.HasHostSound && (idle || (_recording == Target.Mine2 && canStop)),
+            _recording == Target.Mine2 ? Stop(sec) : L(labelRecord2, "2번 녹음"));
+    }
+
+    string Stop(float sec)
+    {
+        if (labelStop != null && !labelStop.IsEmpty)
+        {
+            string s = labelStop.GetLocalizedString(sec);
+            if (!string.IsNullOrEmpty(s)) return s;
+        }
+        return $"■ 정지 ({sec:0.0}초)";
+    }
+
+    static void SetButton(Button b, TMP_Text label, bool interactable, string text)
+    {
+        if (b != null) b.interactable = interactable;
+        if (label != null && label.text != text) label.text = text;
+    }
+
+    void RefreshStatus()
+    {
+        string teamNoMic = L(statusTeamNoMic, "이번 판은 마이크 없이 T키로 응원해요");
+        if (hostStatusText != null)
+        {
+            hostStatusText.text = CheerSoundLocalState.TeamNoMic ? teamNoMic
+                : _hostPendingPcm != null
+                ? L(statusHostPending, "녹음됨 — 들어보고 [확정]")
+                : HostSoundText();
+        }
+        if (hostSoundStatusText != null) hostSoundStatusText.text = CheerSoundLocalState.TeamNoMic ? teamNoMic : HostSoundText();
+
+        if (enrollStatusText != null)
+        {
+            string s;
+            if (CheerSoundLocalState.TeamNoMic) s = teamNoMic;
+            else if (CheerSoundLocalState.PersonalNoMic && !CheerSoundLocalState.IsEnrolled)
+                s = L(statusPersonalNoMic, "T키로 응원해요. 연습 때 T키를 누르세요");
+            else if (!CheerSoundLocalState.HasHostSound) s = L(statusHostNone, "호스트가 아직 팀 구호를 녹음하지 않았어요");
+            else if (CheerSoundLocalState.IsEnrolled) s = L(statusEnrolled, "등록 완료 ✓ — 이제 연습 표지판에서 외쳐 보세요");
+            else if (CheerSoundLocalState.HasTemplate1) s = L(statusEnrollNeed2, "한 번 더 똑같이 [2번 녹음]을 하세요");
+            else if (CheerSoundLocalState.HasTemplate2) s = L(statusEnrollNeed1, "호스트 소리를 듣고, 똑같이 [1번 녹음]을 하세요");
+            else if (CheerSoundLocalState.MyTemplate1 != null || CheerSoundLocalState.MyTemplate2 != null)
+                s = L(statusInvalidated, "호스트가 다시 녹음했어요. 다시 등록하세요");
+            else s = L(statusEnrollNeed1, "호스트 소리를 듣고, 똑같이 [1번 녹음]을 하세요");
+            enrollStatusText.text = s;
+        }
+    }
+
+    string HostSoundText()
+    {
+        if (!CheerSoundLocalState.HasHostSound) return L(statusHostNone, "호스트가 아직 팀 구호를 녹음하지 않았어요");
+        int v = CheerSoundLocalState.HostVersion;
+        float sec = CheerSoundLocalState.HostTemplate.DurationMs / 1000f;
+        if (statusHostReady != null && !statusHostReady.IsEmpty)
+        {
+            string s = statusHostReady.GetLocalizedString(v, sec);
+            if (!string.IsNullOrEmpty(s)) return s;
+        }
+        return $"팀 구호 v{v} · {sec:0.0}초";
+    }
+
+    string IssueText(CheerClipIssue issue) => issue switch
+    {
+        CheerClipIssue.TooQuiet => L(feedbackTooQuiet, "너무 작아요 — 크게 외쳐 주세요"),
+        CheerClipIssue.TooLoud  => L(feedbackTooLoud, "너무 커요(소리가 찢어져요)"),
+        CheerClipIssue.TooLong  => L(feedbackTooLong, "너무 길어요 (최대 3초)"),
+        _                       => L(feedbackTooShort, "너무 짧아요. 최소 0.5초 이상 소리를 내 주세요"),
     };
 
-    /// <summary>String Table 엔트리가 아직 연결 안 됐거나(IsEmpty) 로드 레이스로 빈 문자열이면
-    /// 한국어 기본값으로 폴백 (OptionsMenuController.LocalizedOrFallback과 동일 패턴).</summary>
-    static string LocalizedOrFallback(LocalizedString localized, string fallback)
+    string VerdictText(CheerSoundShapeCheck.Result r)
+    {
+        switch (r.Verdict)
+        {
+            case CheerShapeVerdict.TooQuiet: return L(feedbackTooQuiet, "너무 작아요 — 크게 외쳐 주세요");
+            case CheerShapeVerdict.TooLoud:  return L(feedbackTooLoud, "너무 커요(소리가 찢어져요)");
+            case CheerShapeVerdict.TooShort: return L(feedbackTooShort, "너무 짧아요. 최소 0.5초 이상 소리를 내 주세요");
+            case CheerShapeVerdict.TooLong:  return L(feedbackTooLong, "너무 길어요 (최대 3초)");
+            case CheerShapeVerdict.BurstMismatch:
+                if (feedbackBursts != null && !feedbackBursts.IsEmpty)
+                {
+                    string s = feedbackBursts.GetLocalizedString(r.HostBursts, r.MyBursts);
+                    if (!string.IsNullOrEmpty(s)) return s;
+                }
+                return $"끊는 횟수가 달라요 (호스트 {r.HostBursts}번, 나 {r.MyBursts}번)";
+            case CheerShapeVerdict.PitchMismatch:  return L(feedbackPitch, "높낮이가 달라요");
+            case CheerShapeVerdict.TimbreMismatch: return L(feedbackTimbre, "소리가 달라요 — 호스트 소리를 다시 듣고 따라 하세요");
+            default: return L(feedbackAccepted, "좋아요!");
+        }
+    }
+
+    static string L(LocalizedString localized, string fallback)
     {
         if (localized == null || localized.IsEmpty) return fallback;
         string value = localized.GetLocalizedString();
         return string.IsNullOrEmpty(value) ? fallback : value;
     }
 
-    // ── 표시 ────────────────────────────────────────────────────
-
-    void ApplyTeamWordRole()
+    static float[] Slice(float[] a, int from, int to)
     {
-        bool isServer = IsLocalServer();
-        bool canEdit = isServer && CheerServiceReady();
-
-        if (_teamWordHostVisible != isServer)
-        {
-            _teamWordHostVisible = isServer;
-            // teamWordInputField/teamWordConfirmButton은 hostTeamWordSection의 자식이라
-            // 부모 SetActive 1번으로 같이 꺼짐/켜짐 — 개별 SetActive 중복 호출 없음.
-            // 비-Host는 이 섹션이 통째로 꺼지고, currentTeamWordText(패널 직계, 항상 표시)로만
-            // 현재 팀 구호를 읽기 전용으로 본다.
-            if (hostTeamWordSection != null)
-                hostTeamWordSection.SetActive(isServer);
-        }
-
-        if (teamWordInputField != null)
-            teamWordInputField.interactable = canEdit;
-        if (teamWordConfirmButton != null)
-            teamWordConfirmButton.interactable = canEdit;
-    }
-
-    /// <summary>표시 전용 — 저장/매칭용 값은 그대로 소문자 유지, 화면에 보일 때만 대문자로 바꾼다.</summary>
-    void RefreshCurrentTeamWordDisplay()
-    {
-        if (currentTeamWordText == null) return;
-
-        string word = CheerService.ResolveTeamCheerWord();
-        if (word == _lastShownTeamWord) return;
-        _lastShownTeamWord = word;
-
-        currentTeamWordText.text = FormatTeamKeywordPrefix(word.ToUpperInvariant());
-    }
-
-    const string FallbackTeamKeywordPrefix = "팀 구호: {0}";
-
-    /// <summary>Tutorial/CheerNamePanel.TeamKeywordPrefix — "{0}" 포맷 문자열, 팀 구호(대문자)를 인자로 채운다.</summary>
-    string FormatTeamKeywordPrefix(string upperWord)
-    {
-        if (teamKeywordPrefix != null && !teamKeywordPrefix.IsEmpty)
-        {
-            string localized = teamKeywordPrefix.GetLocalizedString(upperWord);
-            if (!string.IsNullOrEmpty(localized)) return localized;
-        }
-        return string.Format(FallbackTeamKeywordPrefix, upperWord);
+        if (to <= from) return a;
+        var r = new float[to - from];
+        System.Array.Copy(a, from, r, 0, r.Length);
+        return r;
     }
 
     static bool IsLocalServer()

@@ -43,7 +43,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153924
-    m_Localized: Quando o aviso aparecer, soltem juntos o grito da equipe.
+    m_Localized: "Quando o aviso aparecer, soltem juntos o grito da equipe.\nGrite
+      do jeito que voc\xEA gravou."
     m_Metadata:
       m_Items: []
   - m_Id: 1091153925
@@ -51,12 +52,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153926
-    m_Localized: "S\xF3 o host pode definir.\nUse uma palavra em ingl\xEAs.\nSem
-      microfone? Ative \"Cheer\_com\_tecla\_T\" nas Op\xE7\xF5es."
+    m_Localized: "O host grava um som\ne todos gravam igual duas vezes.\nSem microfone?
+      Ative \"Cheer com tecla T\" nas Op\xE7\xF5es."
     m_Metadata:
       m_Items: []
   - m_Id: 24992255946752
-    m_Localized: Escolha o grito da equipe
+    m_Localized: Grito da equipe
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889793
@@ -72,8 +73,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889796
-    m_Localized: "S\xF3 d\xE1 para usar palavras em ingl\xEAs.\nS\xF3 palavras reais
-      s\xE3o reconhecidas. (padr\xE3o: FIGHTING)"
+    m_Localized: "Host: grave o som que a equipe vai gritar.\nQualquer palavra ou
+      som vale (som de pelo menos 0,5 s, m\xE1x. 3 s)"
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889797
@@ -110,11 +111,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 56930631004160
-    m_Localized: '[E] Definir grito da equipe'
+    m_Localized: '[E] Registrar grito da equipe'
     m_Metadata:
       m_Items: []
   - m_Id: 56930635198464
-    m_Localized: '[E] Testar o grito da equipe'
+    m_Localized: '[E] Treinar o grito da equipe'
     m_Metadata:
       m_Items: []
   - m_Id: 1395064700000001
@@ -140,6 +141,166 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9787340243972096
     m_Localized: '[E] Personalizar'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884459483136
+    m_Localized: Gravar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426176
+    m_Localized: Parar ({0:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426177
+    m_Localized: "Gravar n\xBA 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426178
+    m_Localized: "Gravar n\xBA 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426179
+    m_Localized: Ouvir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426180
+    m_Localized: Ouvir o host
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426181
+    m_Localized: "O host ainda n\xE3o gravou o grito da equipe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426182
+    m_Localized: Grito pronto ({1:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426183
+    m_Localized: "Gravado. Ou\xE7a e aperte [Confirmar]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426184
+    m_Localized: "Ou\xE7a o host e fa\xE7a [Gravar n\xBA 1] igual (0,5 s ou mais)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426185
+    m_Localized: "Mais uma vez igual: [Gravar n\xBA 2]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426186
+    m_Localized: Registrado! Agora teste na placa de treino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426187
+    m_Localized: O host gravou de novo. Registre-se outra vez
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426188
+    m_Localized: Sem som do microfone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426189
+    m_Localized: Baixo demais. Grite mais alto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426190
+    m_Localized: Alto demais, o som distorce
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426191
+    m_Localized: "Curto demais. Fa\xE7a som por pelo menos 0,5 s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426192
+    m_Localized: "Longo demais (m\xE1x. 3 s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426193
+    m_Localized: "N\xFAmero de pausas diferente (host {0}, voc\xEA {1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426194
+    m_Localized: "A entona\xE7\xE3o \xE9 diferente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426195
+    m_Localized: "Soa diferente. Ou\xE7a o host de novo e imite"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426196
+    m_Localized: "N\xE3o bate com o n\xBA 1. Grite como no n\xBA 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426197
+    m_Localized: Boa!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426198
+    m_Localized: Grito definido! Enviado para a equipe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426199
+    m_Localized: "O host precisa gravar o grito para come\xE7ar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426200
+    m_Localized: Todos precisam passar no treino do grito ({0}/{1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426201
+    m_Localized: '[R] Ouvir grito'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426202
+    m_Localized: "Ative \"Cheer com tecla T\" nas Op\xE7\xF5es para torcer com T"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490503282688
+    m_Localized: "N\xE3o tenho microfone (torcer com T)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031424
+    m_Localized: Sem microfone (a equipe toda torce com T)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031425
+    m_Localized: Nesta partida todos torcem com a tecla T (sem microfone)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031426
+    m_Localized: "Voc\xEA vai torcer com a tecla T. Aperte T no treino"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031427
+    m_Localized: "Algu\xE9m ainda n\xE3o est\xE1 pronto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031428
+    m_Localized: Pronto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031429
+    m_Localized: "Faltam as grava\xE7\xF5es n\xBA 1 e 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031430
+    m_Localized: "Falta a grava\xE7\xE3o n\xBA 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031431
+    m_Localized: "Falta a grava\xE7\xE3o n\xBA 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031432
+    m_Localized: Falta o treino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031433
+    m_Localized: Tecla T
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031434
+    m_Localized: "Algu\xE9m ainda n\xE3o est\xE1 pronto. Veja a placa Start"
     m_Metadata:
       m_Items: []
   references:

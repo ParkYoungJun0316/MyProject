@@ -722,3 +722,39 @@
 
 - 이 문서는 기존 `Assets/Docs/OXQuizTranslations.md`(OX퀴즈 번역, 별도 작업 완료되어 삭제됨)와 별개의 String Table Collection(`Tutorial` vs `OXQuiz`)을 사용함.
 - **[2026-09-14, 최종]** 개인 CheerName 커스텀화 완전 삭제 요약: `Board_SelfCheer` 삭제, `Board_Test`→`Board_TeamCheer` 흡수, `Board_CheerName`/`CheerNamePanel` TeamCheerWord 전용 축소, `Board_Controls.Row_Voice` 삭제(→`Row_Buff`에 병합)+`Row_Revive` 신규, `Interlude.Board_NameChange`/`Tutorial.Prompt.CheerName` 팀 키워드 전용 문구로 교체. 코드 쪽은 `PlayerCheerNameSync.cs` 삭제, `CheerService`/`GameSession`/`TutorialNetworkManager`/`InterludeNetworkManager`/`TutorialCheerNameUI` 단순화, 머리 위 이름표(`PlayerNameTagUI`, 고정값 표시)는 흑/백 팔레트 구분 문제로 재도입(`CheerSystemDesign.md` §10.3).
+
+## CheerNamePanel — TeamCheerSound 개편 키 (2026-10-07, **13로케일 테이블 입력 완료 · 원어민 검수 남음**)
+
+> **실제 키 이름은 `Tutorial.` 접두사**(예: `Tutorial.CheerNamePanel.Label_Record`, `Tutorial.Gather.Block_Practice`, `Tutorial.HUD.TeamCheerListen`). 아래 표의 ko·en 문구는 초안이고, 테이블에 들어간 최종 문구는 다르다(예: "나 1" → "1번"). 추가로 `Label_Preview`·`Label_ListenHost` 키가 있고, 기존 `CheerNamePanel.Title`·`HostHint`·`Board_CheerName.Body`·`Board_TeamCheer.Body`·`Prompt.CheerName`·`Prompt.TeamCheerTest`도 13로케일 갱신. 원본 TSV: 세션 스크래치(필요하면 테이블에서 다시 뽑기).
+>
+> `CheerSystemDesign.md` §14.2. 구 `TeamWordInputPlaceholder`·`Feedback_Format`·`Feedback_Reserved_Team`·`Feedback_Blocked`·`Feedback_Unknown`·`TeamKeywordPrefix`·`HostHint`는 코드에서 더 이상 읽지 않는다(테이블에 남아 있어도 무해). 아래 키는 `TutorialCheerNameUI` `LocalizedString` 필드에 연결 — 비워 두면 한국어 폴백. ko·en만 적음, 나머지 11개 언어는 별건.
+
+| 키 | 필드 | ko | en |
+|---|---|---|---|
+| `CheerNamePanel.Label_Record` | labelRecord | ● 녹음 | ● Record |
+| `CheerNamePanel.Label_Stop` | labelStop (`{0:0.0}`) | ■ 정지 ({0:0.0}초) | ■ Stop ({0:0.0}s) |
+| `CheerNamePanel.Label_Record1` | labelRecord1 | ● 나 1 녹음 | ● Record Me 1 |
+| `CheerNamePanel.Label_Record2` | labelRecord2 | ● 나 2 녹음 | ● Record Me 2 |
+| `CheerNamePanel.Status_HostNone` | statusHostNone | 호스트가 아직 팀 구호를 녹음하지 않았어요 | The host hasn't recorded the team cheer yet |
+| `CheerNamePanel.Status_HostReady` | statusHostReady (`{0}` 버전, `{1:0.0}` 초) | 팀 구호 v{0} · {1:0.0}초 | Team cheer v{0} · {1:0.0}s |
+| `CheerNamePanel.Status_HostPending` | statusHostPending | 녹음됨 — 들어보고 [확정] | Recorded — listen, then [Confirm] |
+| `CheerNamePanel.Status_EnrollNeed1` | statusEnrollNeed1 | ① 호스트 소리를 듣고 똑같이 '나 1'을 녹음하세요 | ① Listen to the host, then record "Me 1" the same way |
+| `CheerNamePanel.Status_EnrollNeed2` | statusEnrollNeed2 | ② 한 번 더 똑같이 '나 2'를 녹음하세요 | ② Record "Me 2" the same way once more |
+| `CheerNamePanel.Status_Enrolled` | statusEnrolled | 등록 완료 ✓ — 이제 연습 표지판에서 외쳐 보세요 | Registered ✓ — now try it at the practice sign |
+| `CheerNamePanel.Status_Invalidated` | statusInvalidated | 호스트가 다시 녹음했어요 — 다시 등록하세요 | The host re-recorded — please register again |
+| `CheerNamePanel.Feedback_NoMic` | feedbackNoMic | 마이크 소리가 들어오지 않아요 | No microphone input |
+| `CheerNamePanel.Feedback_TooQuiet` | feedbackTooQuiet | 너무 작아요 — 크게 외쳐 주세요 | Too quiet — shout louder |
+| `CheerNamePanel.Feedback_TooLoud` | feedbackTooLoud | 너무 커요(소리가 찢어져요) | Too loud (clipping) |
+| `CheerNamePanel.Feedback_TooShort` | feedbackTooShort | 너무 짧아요 | Too short |
+| `CheerNamePanel.Feedback_TooLong` | feedbackTooLong | 너무 길어요 (최대 3초) | Too long (max 3 s) |
+| `CheerNamePanel.Feedback_Bursts` | feedbackBursts (`{0}` 호스트, `{1}` 나) | 끊는 횟수가 달라요 (호스트 {0}번, 나 {1}번) | Different number of breaks (host {0}, you {1}) |
+| `CheerNamePanel.Feedback_Pitch` | feedbackPitch | 높낮이가 달라요 | The pitch pattern is different |
+| `CheerNamePanel.Feedback_Timbre` | feedbackTimbre | 소리가 달라요 — 호스트 소리를 다시 듣고 따라 하세요 | Sounds different — listen to the host again and copy it |
+| `CheerNamePanel.Feedback_LiveFail` | feedbackLiveFail | 나 1과 다르게 들려요 — 나 1을 녹음했을 때처럼 외쳐 주세요 | Doesn't match Me 1 — shout it the way you recorded Me 1 |
+| `CheerNamePanel.Feedback_Accepted` | feedbackAccepted | 좋아요! | Nice! |
+| `CheerNamePanel.Feedback_HostSet` | feedbackHostSet | 팀 구호 확정! 팀원들에게 전달했어요 | Team cheer set! Sent to your team |
+| `CheerNamePanel.Feedback_NotServer` | feedbackNotServer (기존 키 재사용 가능) | 호스트만 팀 구호를 정할 수 있어요 | Only the host can set the team cheer |
+| `Gather.Block_HostSound` | TutorialGatherDisplay.blockHostSound | 호스트가 팀 구호를 녹음해야 시작할 수 있어요 | The host must record the team cheer to start |
+| `Gather.Block_Practice` | TutorialGatherDisplay.blockPractice (`{0}/{1}`) | 전원이 팀 구호 연습을 통과해야 시작할 수 있어요 ({0}/{1}) | Everyone must pass the cheer practice to start ({0}/{1}) |
+| `HUD.TeamCheerListen` | UI.prefab TeamCheerWordUI 정적 라벨 | [R] 팀 구호 듣기 | [R] Hear team cheer |
+| `HUD.TeamCheerTKeyHint` | TeamCheerWarningUI tKeyHintRoot 정적 텍스트 | 설정 → 'T키로 응원하기'를 켜면 T키로도 응원할 수 있어요 | Turn on "Cheer with T key" in Settings to cheer with T |

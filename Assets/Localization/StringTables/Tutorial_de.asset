@@ -43,7 +43,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153924
-    m_Localized: Wenn die Warnung erscheint, ruft gemeinsam euren Teamruf.
+    m_Localized: 'Wenn die Warnung erscheint, ruft gemeinsam euren Teamruf.
+
+      Ruf
+      ihn genau so, wie du ihn aufgenommen hast.'
     m_Metadata:
       m_Items: []
   - m_Id: 1091153925
@@ -51,12 +54,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153926
-    m_Localized: "Nur der Host kann ihn festlegen.\nNimm ein englisches Wort.\nKein
-      Mikro? Aktiviere \u201ECheer\_mit\_T-Taste\u201C in den Optionen."
+    m_Localized: "Der Host nimmt einen Laut auf,\ndann nehmen ihn alle zweimal auf.\nKein
+      Mikro? Aktiviere \u201ECheer mit T-Taste\u201C in den Optionen."
     m_Metadata:
       m_Items: []
   - m_Id: 24992255946752
-    m_Localized: Leg den Teamruf fest
+    m_Localized: Teamruf
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889793
@@ -72,8 +75,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889796
-    m_Localized: "Nur englische W\xF6rter sind erlaubt.\nNur echte W\xF6rter werden
-      erkannt. (Standard: FIGHTING)"
+    m_Localized: 'Host: Nimm den Laut auf, den das Team rufen soll.
+
+      Jedes
+      Wort, jeder Laut geht (mind. 0,5 s Ton, max. 3 s)'
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889797
@@ -109,11 +114,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 56930631004160
-    m_Localized: '[E] Teamruf festlegen'
+    m_Localized: '[E] Teamruf aufnehmen'
     m_Metadata:
       m_Items: []
   - m_Id: 56930635198464
-    m_Localized: '[E] Teamruf testen'
+    m_Localized: "[E] Teamruf \xFCben"
     m_Metadata:
       m_Items: []
   - m_Id: 1395064700000001
@@ -139,6 +144,167 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9787340243972096
     m_Localized: "[E] Outfit w\xE4hlen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884459483136
+    m_Localized: Aufnehmen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426176
+    m_Localized: Stopp ({0:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426177
+    m_Localized: Aufnahme 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426178
+    m_Localized: Aufnahme 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426179
+    m_Localized: "Anh\xF6ren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426180
+    m_Localized: "Host anh\xF6ren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426181
+    m_Localized: Der Host hat den Teamruf noch nicht aufgenommen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426182
+    m_Localized: Teamruf bereit ({1:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426183
+    m_Localized: "Aufgenommen. Anh\xF6ren, dann [Best\xE4tigen]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426184
+    m_Localized: "H\xF6r den Host an und mach [Aufnahme 1] genauso (mind. 0,5 s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426185
+    m_Localized: 'Noch einmal genauso: [Aufnahme 2]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426186
+    m_Localized: "Registriert! Probier es jetzt am \xDCbungsschild"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426187
+    m_Localized: Der Host hat neu aufgenommen. Bitte erneut registrieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426188
+    m_Localized: Kein Mikrofonsignal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426189
+    m_Localized: Zu leise. Ruf lauter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426190
+    m_Localized: "Zu laut, der Ton \xFCbersteuert"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426191
+    m_Localized: Zu kurz. Mach mindestens 0,5 s lang einen Laut
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426192
+    m_Localized: Zu lang (max. 3 s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426193
+    m_Localized: Andere Anzahl an Pausen (Host {0}, du {1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426194
+    m_Localized: "Die Tonh\xF6he verl\xE4uft anders"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426195
+    m_Localized: "Klingt anders. H\xF6r den Host noch mal an und mach es nach"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426196
+    m_Localized: Passt nicht zu Aufnahme 1. Ruf es wie bei Aufnahme 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426197
+    m_Localized: Super!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426198
+    m_Localized: Teamruf festgelegt! An dein Team gesendet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426199
+    m_Localized: Der Host muss den Teamruf aufnehmen, damit es losgeht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426200
+    m_Localized: "Alle m\xFCssen die Ruf\xFCbung schaffen ({0}/{1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426201
+    m_Localized: "[R] Anh\xF6ren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426202
+    m_Localized: "Aktiviere \u201ECheer mit T-Taste\u201C in den Optionen, um mit
+      T anzufeuern"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490503282688
+    m_Localized: Ich habe kein Mikro (mit T anfeuern)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031424
+    m_Localized: Kein Mikro (ganzes Team feuert mit T an)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031425
+    m_Localized: In dieser Runde feuern alle mit der T-Taste an (ohne Mikro)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031426
+    m_Localized: "Du feuerst mit der T-Taste an. Dr\xFCck bei der \xDCbung T"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031427
+    m_Localized: Jemand ist noch nicht bereit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031428
+    m_Localized: Bereit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031429
+    m_Localized: "Aufnahme 1 und 2 n\xF6tig"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031430
+    m_Localized: "Aufnahme 1 n\xF6tig"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031431
+    m_Localized: "Aufnahme 2 n\xF6tig"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031432
+    m_Localized: "\xDCbung n\xF6tig"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031433
+    m_Localized: T-Taste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031434
+    m_Localized: Jemand ist noch nicht bereit. Schau aufs Start-Schild
     m_Metadata:
       m_Items: []
   references:

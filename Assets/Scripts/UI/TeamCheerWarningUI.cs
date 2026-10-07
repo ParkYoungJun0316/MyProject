@@ -9,6 +9,10 @@ using UnityEngine.UI;
 /// </summary>
 public class TeamCheerWarningUI : MonoBehaviour
 {
+    [Header("T키 힌트 (§14.8)")]
+    [Tooltip("창 동안 외침이 3회 연속 기준 미달이면 켜는 안내 — \"설정 → 'T키로 응원하기'를 켜면 T키로도 응원할 수 있어요\". 비워도 동작.")]
+    [SerializeField] GameObject tKeyHintRoot;
+
     CanvasGroup _canvasGroup;
     Image _image;
     Coroutine _waitSubscribe;
@@ -25,8 +29,31 @@ public class TeamCheerWarningUI : MonoBehaviour
         if (_image == null) _image = GetComponentInChildren<Image>(true);
     }
 
-    void OnEnable() => TrySubscribe();
-    void OnDisable() => Unsubscribe();
+    void OnEnable()
+    {
+        CheerKeywordEngine.OnVoiceAttemptFailed += HandleAttemptFailed;
+        SetHint(false);
+        TrySubscribe();
+    }
+
+    void OnDisable()
+    {
+        CheerKeywordEngine.OnVoiceAttemptFailed -= HandleAttemptFailed;
+        Unsubscribe();
+    }
+
+    /// <summary>외쳤는데 기준 미달이 창 안에서 3회 연속 — T키가 아직 안 켜진 사람에게만 설정 위치 안내(§14.8).</summary>
+    void HandleAttemptFailed(int windowStreak, bool practice)
+    {
+        if (windowStreak < CheerSoundLocalState.InGameFailHint) return;
+        if (CheerDigitInput.IsTKeyEnabled) return;
+        SetHint(true);
+    }
+
+    void SetHint(bool on)
+    {
+        if (tKeyHintRoot != null && tKeyHintRoot.activeSelf != on) tKeyHintRoot.SetActive(on);
+    }
 
     void TrySubscribe()
     {
@@ -73,5 +100,6 @@ public class TeamCheerWarningUI : MonoBehaviour
         if (_canvasGroup == null) return;
         bool show = active && _image != null && _image.sprite != null;
         _canvasGroup.alpha = show ? 1f : 0f;
+        if (!active) SetHint(false);
     }
 }

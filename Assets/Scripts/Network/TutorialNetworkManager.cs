@@ -70,6 +70,43 @@ public class TutorialNetworkManager : NetworkBehaviour
     readonly NetworkVariable<double> _countdownStartServerTime = new(
         -1.0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    // ── 팀 구호 소리 게이트 조건 (CheerSystemDesign.md §14.2, 2026-10-07) ─────
+    // Host가 판정해 NV로 알린다: 0 = 막힘 없음 / 1 = Host 기준 소리 없음 / 2 = 연습 미통과자 있음.
+    // TutorialGatherDisplay가 읽어 "호스트가 팀 구호를 녹음해야…" / "전원이 연습을 통과해야… (N/M)"를 띄운다.
+    public enum GateBlock : byte { None = 0, HostSoundMissing = 1, PracticeIncomplete = 2 }
+
+    readonly NetworkVariable<byte> _gateBlock = new(
+        0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public GateBlock CurrentGateBlock => (GateBlock)_gateBlock.Value;
+    /// <summary>게이트 막힘 사유 변경(전 머신). 간판 UI 구독.</summary>
+    public event System.Action<GateBlock> OnGateBlockChanged;
+
+    /// <summary>
+    /// Host 전용 — 소리 게이트 조건(§14.2).
+    /// ① Host 기준 소리(팀 전체 "마이크 없음"이면 면제) ② 이 씬이 연습을 요구하면 접속자 전원 연습 통과.
+    /// Interlude는 Host가 녹음·마이크 없음을 안 바꿨으면 연습 면제(CheerService.PracticeRequired, 10/7).
+    /// </summary>
+    GateBlock EvaluateSoundGate()
+    {
+        var svc = CheerService.Instance;
+        if (svc == null || !svc.IsSpawned) return GateBlock.HostSoundMissing;
+        if (!svc.TeamNoMic && !svc.HasTeamCheerSound) return GateBlock.HostSoundMissing;
+        if (!svc.PracticeRequired) return GateBlock.None;
+
+        var ids = new List<ulong>();
+        foreach (var (id, _) in PlayerSpawnCoordinator.GetAllEntries()) ids.Add(id);
+        return svc.AllPracticePassed(ids) ? GateBlock.None : GateBlock.PracticeIncomplete;
+    }
+
+    void SetGateBlock(GateBlock block)
+    {
+        if ((GateBlock)_gateBlock.Value == block) return;
+        _gateBlock.Value = (byte)block;
+    }
+
+    void HandleGateBlockNv(byte previous, byte current) => OnGateBlockChanged?.Invoke((GateBlock)current);
+
     // ── 스테이지 바로가기 (구 LobbyMenuController 스테이지 드롭다운 대체) ──
     // 2026-10-02: NetworkManagerSetup.DevToolsAllowed(에디터·Dev Build·Steam 베타 브랜치)일 때만 동작.
     // 출시(default 브랜치)에서는 지정 자체를 무시한다. TutorialDevStageJumpUI가 호출.
@@ -105,6 +142,9 @@ public class TutorialNetworkManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        _gateBlock.OnValueChanged += HandleGateBlockNv;
+        OnGateBlockChanged?.Invoke((GateBlock)_gateBlock.Value);
+
         if (IsHost)
         {
             NetworkManager.OnClientConnectedCallback  += OnClientJoined;
@@ -123,6 +163,7 @@ public class TutorialNetworkManager : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        _gateBlock.OnValueChanged -= HandleGateBlockNv;
         if (IsHost)
         {
             NetworkManager.OnClientConnectedCallback  -= OnClientJoined;
@@ -187,6 +228,7 @@ public class TutorialNetworkManager : NetworkBehaviour
         }
 
         PlayerSpawnCoordinator.Instance?.RemoveColorEntry(clientId);
+        CheerService.Instance?.ForgetClient(clientId);
 
         // 물리 OnTriggerExit이 Despawn 시 항상 발동하는 건 아니므로 헤드카운트 stale 방지용 강제 정리.
         TutorialGatherZone.Instance?.RemoveOccupant(clientId);
@@ -221,7 +263,11 @@ public class TutorialNetworkManager : NetworkBehaviour
         int connected = PlayerSpawnCoordinator.EntryCount;
         bool allIn = connected > 0 && zone.OccupantCount == connected;
 
-        if (!allIn)
+        // 소리 게이트(§14.2): Host 기준 소리 + 전원 연습 통과. 존 인원과 별개로 매 프레임 판정 — NV는 값이 바뀔 때만 쓴다.
+        var block = EvaluateSoundGate();
+        SetGateBlock(block);
+
+        if (!allIn || block != GateBlock.None)
         {
             if (_isCounting) ResetGateCountdown();
             return;
@@ -326,16 +372,10 @@ public class TutorialNetworkManager : NetworkBehaviour
         // Client는 OnPlayersReady 이후 PlayerSpawnCoordinator에서 확정값을 읽음.
         GameSession.Instance?.SetActiveColors(colorList.ToArray());
 
-        // CheerSystemDesign.md §3.2 / D2 — 게이트 통과 시점 TeamCheerWord를 GameSession에 고정.
-        // Tutorial CheerService는 씬 언로드로 사라지므로, 다음 스테이지 OnNetworkSpawn이
-        // HasSessionTeamCheerWord로 NV를 복원한다. Host 로컬 Set + ClientRpc.
-        // [2026-09-14] 개인 CheerName 커스텀화 완전 삭제 — 세션 CheerName 확정 단계(구 §6B.7 P6)는
-        // 더 이상 없다. 이름은 PlayerColorUtil.DefaultCheerNames 고정값이라 배포할 게 없다.
-        string teamWord = CheerService.Instance != null
-            ? CheerService.Instance.TeamCheerWord
-            : GameSession.DefaultTeamCheerWord;
-        GameSession.Instance?.SetSessionTeamCheerWord(teamWord);
-        BroadcastSessionTeamCheerWordClientRpc(new FixedString32Bytes(teamWord));
+        // [2026-10-07] 팀 구호 소리(TeamCheerSound)는 세션 스냅샷이 필요 없다 — Host·Client 모두
+        // CheerSoundLocalState(static)에 이미 들고 있고, 다음 씬 CheerService.OnNetworkSpawn이 거기서
+        // NV 버전을 되살린다(CheerSystemDesign.md §14.5). 구 TeamCheerWord 세션 확정·배포는 삭제.
+        // 등록본 없이 여기까지 온 사람은 첫 인게임 창에서 T키 자동 ON(§14.8, CheerKeywordEngine).
 
         // §6B.7 P3 두 번째 항목 — 세션 DisplayName 확정. 게이트 통과 시점의 각자 최신 보고값이
         // 그대로 최종값. PlayerDisplayNameSync NV도 이미 Everyone-read지만, 정확히 같은 시점에
@@ -395,14 +435,6 @@ public class TutorialNetworkManager : NetworkBehaviour
     void BroadcastSessionStartClientRpc(double serverTime)
     {
         NetworkSessionData.SessionStartServerTime = serverTime;
-    }
-
-    /// <summary>세션 확정 TeamCheerWord를 모든 클라이언트의 GameSession에 배포(CheerSystemDesign.md D2).</summary>
-    [ClientRpc]
-    void BroadcastSessionTeamCheerWordClientRpc(FixedString32Bytes word)
-    {
-        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
-        GameSession.Instance?.SetSessionTeamCheerWord(word.ToString());
     }
 
     /// <summary>

@@ -30,8 +30,32 @@ public class TutorialGatherDisplay : MonoBehaviour
     [Tooltip("3·2·1 숫자가 바뀔 때마다 1회.")]
     [SerializeField] SFXId countdownSfx = SFXId.Minigame_CountdownTick;
 
+    [Header("팀 구호 게이트 안내 (CheerSystemDesign.md §14.2)")]
+    [Tooltip("Start 간판 위 안내판(TextMeshPro 3D) — 막힘 사유 한 줄 + 사람별 상태 목록. 막힘 없으면 숨김. 비워도 동작.")]
+    [SerializeField] TMP_Text gateBlockText;
+    [SerializeField] UnityEngine.Localization.LocalizedString blockHostSound;   // "호스트가 팀 구호를 녹음해야 시작할 수 있어요"
+    [SerializeField] UnityEngine.Localization.LocalizedString blockPractice;    // "모두 팀 구호 연습을 통과해야 시작해요 ({0}/{1})"
+    [SerializeField] UnityEngine.Localization.LocalizedString headerRejected;   // "아직 준비 안 된 사람이 있어요"
+    [SerializeField] UnityEngine.Localization.LocalizedString rowReady;         // "준비 완료"
+    [SerializeField] UnityEngine.Localization.LocalizedString rowNeedRec12;     // "1·2번 녹음 필요"
+    [SerializeField] UnityEngine.Localization.LocalizedString rowNeedRec1;      // "1번 녹음 필요"
+    [SerializeField] UnityEngine.Localization.LocalizedString rowNeedRec2;      // "2번 녹음 필요"
+    [SerializeField] UnityEngine.Localization.LocalizedString rowNeedPractice;  // "연습 필요"
+    [SerializeField] UnityEngine.Localization.LocalizedString rowTKey;          // "T키"
+    [Tooltip("연습 거절 때 준비 안 된 줄을 깜빡이는 시간(초).")]
+    [SerializeField] float rejectFlashSeconds = 3f;
+
+    // 간판 판(SignBG)이 각도·조명에 따라 어둡게 보여 밝은 글자색을 쓴다(10/7 렌더 확인)
+    const string ColReady = "#7CF29A", ColPractice = "#FFFFFF", ColNotReady = "#FF6B6B";
+
     float _maxTick;
     int _digit;
+    TutorialNetworkManager _boundTutorial;
+    InterludeNetworkManager _boundInterlude;
+    CheerService _boundSvc;
+    float _rejectUntil = -1f;
+    bool _flashOn;
+    float _nextFlash;
 
     void Awake()
     {
@@ -63,9 +87,168 @@ public class TutorialGatherDisplay : MonoBehaviour
             interludeGate.OnGateCountdownReset.RemoveListener(HandleReset);
             interludeGate.OnGateCountdownComplete.RemoveListener(HandleReset);
         }
+        Unbind();
     }
 
-    void Start() => HandleReset();
+    void Start()
+    {
+        HandleReset();
+        RefreshBlockText();
+    }
+
+    void Update()
+    {
+        // 게이트 매니저·CheerService는 스폰 시점이 늦을 수 있어 Update에서 붙는다(같은 객체면 아무 일 없음).
+        Bind();
+
+        // 거절 깜빡임 — 0.25초마다 준비 안 된 줄만 켰다 껐다
+        if (_rejectUntil > 0f)
+        {
+            if (Time.time >= _rejectUntil) { _rejectUntil = -1f; _flashOn = false; RefreshBlockText(); }
+            else if (Time.time >= _nextFlash) { _nextFlash = Time.time + 0.25f; _flashOn = !_flashOn; RefreshBlockText(); }
+        }
+    }
+
+    void Bind()
+    {
+        if (tutorialGate != null && tutorialGate.IsSpawned && !ReferenceEquals(_boundTutorial, tutorialGate))
+        {
+            _boundTutorial = tutorialGate;
+            tutorialGate.OnGateBlockChanged += HandleBlockChanged;
+            RefreshBlockText();
+        }
+        if (interludeGate != null && interludeGate.IsSpawned && !ReferenceEquals(_boundInterlude, interludeGate))
+        {
+            _boundInterlude = interludeGate;
+            interludeGate.OnGateBlockChanged += HandleBlockChanged;
+            RefreshBlockText();
+        }
+        var svc = CheerService.Instance;
+        if (!ReferenceEquals(svc, _boundSvc))
+        {
+            if (!ReferenceEquals(_boundSvc, null))
+            {
+                _boundSvc.OnReadyListChanged -= RefreshBlockText;
+                _boundSvc.OnPracticeRejected -= HandleRejected;
+                _boundSvc.OnPracticePassedCountChanged -= HandlePassedCount;
+            }
+            _boundSvc = svc;
+            if (svc != null)
+            {
+                svc.OnReadyListChanged += RefreshBlockText;
+                svc.OnPracticeRejected += HandleRejected;
+                svc.OnPracticePassedCountChanged += HandlePassedCount;
+            }
+            RefreshBlockText();
+        }
+    }
+
+    void Unbind()
+    {
+        if (!ReferenceEquals(_boundTutorial, null)) _boundTutorial.OnGateBlockChanged -= HandleBlockChanged;
+        if (!ReferenceEquals(_boundInterlude, null)) _boundInterlude.OnGateBlockChanged -= HandleBlockChanged;
+        if (!ReferenceEquals(_boundSvc, null))
+        {
+            _boundSvc.OnReadyListChanged -= RefreshBlockText;
+            _boundSvc.OnPracticeRejected -= HandleRejected;
+            _boundSvc.OnPracticePassedCountChanged -= HandlePassedCount;
+        }
+    }
+
+    void HandleBlockChanged(TutorialNetworkManager.GateBlock _) => RefreshBlockText();
+    void HandleBlockChanged(InterludeNetworkManager.GateBlock _) => RefreshBlockText();
+    void HandlePassedCount(int _) => RefreshBlockText();
+
+    void HandleRejected()
+    {
+        _rejectUntil = Time.time + rejectFlashSeconds;
+        _flashOn = true;
+        _nextFlash = Time.time + 0.25f;
+        RefreshBlockText();
+    }
+
+    /// <summary>
+    /// 간판 위 안내판 — 맨 위 한 줄(막힘 사유 또는 "아직 준비 안 된 사람이 있어요") + 사람별 줄.
+    /// 줄 색: 준비 완료 초록 / 연습만 남음 진한 자주 / 준비 안 됨(녹음 필요) 빨강. 거절 직후엔 빨간 줄이 깜빡인다.
+    /// </summary>
+    void RefreshBlockText()
+    {
+        if (gateBlockText == null) return;
+
+        int block = tutorialGate != null ? (int)tutorialGate.CurrentGateBlock
+                  : interludeGate != null ? (int)interludeGate.CurrentGateBlock : 0;
+        bool rejecting = _rejectUntil > 0f;
+        if (block == 0 && !rejecting)
+        {
+            if (gateBlockText.gameObject.activeSelf) gateBlockText.gameObject.SetActive(false);
+            return;
+        }
+
+        var svc = CheerService.Instance;
+        var sb = new System.Text.StringBuilder();
+        if (rejecting)
+            sb.Append("<color=").Append(ColNotReady).Append('>')
+              .Append(Localized(headerRejected, null, "아직 준비 안 된 사람이 있어요")).Append("</color>");
+        else if (block == 1)
+            sb.Append(Localized(blockHostSound, null, "호스트가 팀 구호를 녹음해야 시작할 수 있어요"));
+        else
+        {
+            int passed = svc != null ? svc.PracticePassedCount : 0;
+            int total = PlayerSpawnCoordinator.EntryCount;
+            sb.Append(Localized(blockPractice, new object[] { passed, total },
+                                $"모두 팀 구호 연습을 통과해야 시작해요 ({passed}/{total})"));
+        }
+
+        if (svc != null)
+        {
+            bool teamNoMic = svc.TeamNoMic;
+            string tKey = Localized(rowTKey, null, "T키");
+            for (int i = 0; i < svc.ReadyCount; i++)
+            {
+                var e = svc.GetReadyEntry(i);
+                bool ready = CheerSoundLocalState.IsReadyFlags(e.Flags, teamNoMic);
+                bool noMic = teamNoMic || (e.Flags & 4) != 0;
+                string status;
+                string color;
+                if (!ready)
+                {
+                    bool has1 = (e.Flags & 1) != 0, has2 = (e.Flags & 2) != 0;
+                    status = has1 ? Localized(rowNeedRec2, null, "2번 녹음 필요")
+                           : has2 ? Localized(rowNeedRec1, null, "1번 녹음 필요")
+                           : Localized(rowNeedRec12, null, "1·2번 녹음 필요");
+                    color = ColNotReady;
+                }
+                else if (e.Passed == 0)
+                {
+                    status = Localized(rowNeedPractice, null, "연습 필요");
+                    color = ColPractice;
+                }
+                else
+                {
+                    status = Localized(rowReady, null, "준비 완료");
+                    color = ColReady;
+                }
+                if (noMic) status = tKey + " · " + status;
+
+                sb.Append('\n');
+                bool dim = rejecting && !ready && !_flashOn;
+                sb.Append("<color=").Append(color).Append('>');
+                if (dim) sb.Append("<alpha=#30>");
+                sb.Append(CheerService.GetCheerName(e.ColorIndex)).Append("  ").Append(status);
+                sb.Append("</color>");
+            }
+        }
+
+        if (!gateBlockText.gameObject.activeSelf) gateBlockText.gameObject.SetActive(true);
+        gateBlockText.text = sb.ToString();
+    }
+
+    static string Localized(UnityEngine.Localization.LocalizedString ls, object[] args, string fallback)
+    {
+        if (ls == null || ls.IsEmpty) return fallback;
+        string s = args == null ? ls.GetLocalizedString() : ls.GetLocalizedString(args);
+        return string.IsNullOrEmpty(s) ? fallback : s;
+    }
 
     // ── 카운트다운 ───────────────────────────────────────────────
 

@@ -43,7 +43,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153924
-    m_Localized: "Quand l'alerte appara\xEEt, poussez tous ensemble le cri d'\xE9quipe."
+    m_Localized: "Quand l'alerte appara\xEEt, poussez tous ensemble le cri d'\xE9quipe.\nCrie-le
+      comme tu l'as enregistr\xE9."
     m_Metadata:
       m_Items: []
   - m_Id: 1091153925
@@ -51,12 +52,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153926
-    m_Localized: "Seul l'h\xF4te peut le d\xE9finir.\nUtilise un mot anglais.\nPas
-      de micro\_? Active \xAB\_Cheer\_(touche\_T)\_\xBB dans les Options."
+    m_Localized: "L'h\xF4te enregistre un son,\npuis chacun l'enregistre deux fois.\nPas
+      de micro ? Active \xAB Cheer (touche T) \xBB dans les Options."
     m_Metadata:
       m_Items: []
   - m_Id: 24992255946752
-    m_Localized: "Choisis le cri d'\xE9quipe"
+    m_Localized: "Cri d'\xE9quipe"
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889793
@@ -72,8 +73,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889796
-    m_Localized: "Seuls les mots anglais sont accept\xE9s.\nSeuls les vrais mots
-      sont reconnus. (par d\xE9faut : FIGHTING)"
+    m_Localized: "H\xF4te : enregistre le son que l'\xE9quipe criera.\nN'importe
+      quel mot ou son (au moins 0,5 s de son, 3 s max)"
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889797
@@ -109,11 +110,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 56930631004160
-    m_Localized: "[E] Choisir le cri d'\xE9quipe"
+    m_Localized: "[E] Enregistrer le cri d'\xE9quipe"
     m_Metadata:
       m_Items: []
   - m_Id: 56930635198464
-    m_Localized: "[E] Tester le cri d'\xE9quipe"
+    m_Localized: "[E] S'entra\xEEner au cri d'\xE9quipe"
     m_Metadata:
       m_Items: []
   - m_Id: 1395064700000001
@@ -139,6 +140,168 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9787340243972096
     m_Localized: '[E] Personnaliser'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884459483136
+    m_Localized: Enregistrer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426176
+    m_Localized: "Arr\xEAter ({0:0.0} s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426177
+    m_Localized: "Enregistrer n\xB01"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426178
+    m_Localized: "Enregistrer n\xB02"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426179
+    m_Localized: "R\xE9\xE9couter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426180
+    m_Localized: "\xC9couter l'h\xF4te"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426181
+    m_Localized: "L'h\xF4te n'a pas encore enregistr\xE9 le cri d'\xE9quipe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426182
+    m_Localized: "Cri pr\xEAt ({1:0.0} s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426183
+    m_Localized: "Enregistr\xE9. \xC9coute, puis appuie sur [Confirmer]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426184
+    m_Localized: "\xC9coute l'h\xF4te, puis fais [Enregistrer n\xB01] pareil (0,5
+      s min.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426185
+    m_Localized: "Encore une fois pareil : [Enregistrer n\xB02]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426186
+    m_Localized: "Enregistr\xE9 ! Essaie-le au panneau d'entra\xEEnement"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426187
+    m_Localized: "L'h\xF4te a r\xE9enregistr\xE9. Recommence l'enregistrement"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426188
+    m_Localized: Aucun son du micro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426189
+    m_Localized: Trop faible. Crie plus fort
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426190
+    m_Localized: Trop fort, le son sature
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426191
+    m_Localized: Trop court. Fais du son pendant au moins 0,5 s
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426192
+    m_Localized: Trop long (3 s max)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426193
+    m_Localized: "Nombre de coupures diff\xE9rent (h\xF4te {0}, toi {1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426194
+    m_Localized: "L'intonation est diff\xE9rente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426195
+    m_Localized: "Le son est diff\xE9rent. R\xE9\xE9coute l'h\xF4te et imite-le"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426196
+    m_Localized: "Diff\xE9rent du n\xB01. Crie comme pour le n\xB01"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426197
+    m_Localized: Super !
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426198
+    m_Localized: "Cri valid\xE9 ! Envoy\xE9 \xE0 l'\xE9quipe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426199
+    m_Localized: "L'h\xF4te doit enregistrer le cri pour commencer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426200
+    m_Localized: "Tout le monde doit r\xE9ussir l'entra\xEEnement ({0}/{1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426201
+    m_Localized: "[R] \xC9couter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426202
+    m_Localized: "Active \xAB Cheer (touche T) \xBB dans les Options pour encourager
+      avec T"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490503282688
+    m_Localized: Je n'ai pas de micro (encourager avec T)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031424
+    m_Localized: "Pas de micro (toute l'\xE9quipe encourage avec T)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031425
+    m_Localized: Cette partie, tout le monde encourage avec la touche T (sans micro)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031426
+    m_Localized: "Tu encourages avec la touche T. Appuie sur T \xE0 l'entra\xEEnement"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031427
+    m_Localized: "Quelqu'un n'est pas encore pr\xEAt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031428
+    m_Localized: "Pr\xEAt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031429
+    m_Localized: "Enregistrements n\xB01 et n\xB02 requis"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031430
+    m_Localized: "Enregistrement n\xB01 requis"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031431
+    m_Localized: "Enregistrement n\xB02 requis"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031432
+    m_Localized: "Entra\xEEnement requis"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031433
+    m_Localized: Touche T
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031434
+    m_Localized: "Quelqu'un n'est pas pr\xEAt. Regarde le panneau Start"
     m_Metadata:
       m_Items: []
   references:

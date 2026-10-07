@@ -70,8 +70,8 @@ Tutorial은 **자유 이동 구간**이다 — 아래 구역을 순서 상관없
 |---|------|------|------|--------|
 | (사전) | 접속/스폰 | 접속 즉시 스폰 + 색 자동배정(중복없음) + Invite HUD(구 로비 흡수, `NetworkDesign.md` §6B) | 필수 | 필수 (생략 불가) |
 | 1 | 스텔스 체험 | 은신 플레이 감 잡기 | 있음 | **생략 가능** |
-| 2 | TeamCheerWord 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → **Host 전용 TeamCheerWord 입력 필드**, 비-Host는 읽기 전용 확인 | 표지판 상호작용으로 개폐 — `PlayerPrefs` 스킵 없음 | **생략 불가** (매 판 재입력) |
-| 3 | 응원 1회 체험 | **[2026-09-14 개편]** 개인 버프는 `Q`(전환)/`Space`(발동) 키 입력 감 잡기 + (인원 2+ 시) TeamCheerWord를 **각자 1회** 외쳐 팀 버프 체험(음성, §2.1) | 있음 — 구 cross-target 체험 → self(키)+team(음성) 체험으로 교체 | **생략 가능** |
+| 2 | TeamCheerWord 설정 | 상호작용 표지판(`TutorialCheerNameSignboard`) → **Host 전용 TeamCheerWord 입력 필드**, 비-Host는 읽기 전용 확인. **[2026-10-07 TeamCheerSound, 코드 완료·배선 남음]** Host 녹음 + 팀원 각자 같은 소리 2회 녹음(나 1·나 2, Host 틀 검사)으로 교체, Host 녹음은 게이트 필수 — `CheerSystemDesign.md` §14 | 표지판 상호작용으로 개폐 — `PlayerPrefs` 스킵 없음 | **생략 불가** (매 판 재입력) |
+| 3 | 응원 1회 체험 | **[2026-09-14 개편]** 개인 버프는 `Q`(전환)/`Space`(발동) 키 입력 감 잡기 + TeamCheerWord를 **각자 1회** 외쳐 팀 버프 체험(음성, §2.1). **[2026-10-07 TeamCheerSound, 코드 완료·배선 남음]** 패널에서 나 1·나 2 등록을 마친 뒤 이 연습 창을 **실시간 판정으로 통과**하는 것이 게이트 조건(등록본은 여기서 안 만듦) — `CheerSystemDesign.md` §14.2 | 있음 — 구 cross-target 체험 → self(키)+team(음성) 체험으로 교체 | ~~생략 가능~~ → **[2026-10-07] 생략 불가**(전원 통과해야 구역 4 카운트다운 시작) |
 | 4 | `TutorialGatherZone` | 전원이 존에 모이면 카운트다운 → `M.Stage1` (§5) | **필수** | **필수** |
 
 > **[2026-09-14 확정, 최종] 개인 CheerName 커스텀화 완전 삭제.** 이름 입력 UI 자체가 없어짐 — 이름은 이제 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) 고정값. 구역 2는 TeamCheerWord 설정 전용으로 축소됐다. 상세 SSOT는 `CheerSystemDesign.md` §3.

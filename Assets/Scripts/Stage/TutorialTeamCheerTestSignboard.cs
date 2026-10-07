@@ -45,6 +45,13 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     [Tooltip("팀 응원 창이 열려 있는 동안만 켤 바닥 경고(원형 패드 등). 비워도 동작.")]
     [SerializeField] GameObject warningVisual;
 
+    [Tooltip("연습이 거절됐을 때(준비 안 된 사람이 있음) 프롬프트 대신 잠깐 보여 줄 안내. 비워도 동작(간판 깜빡임만).")]
+    [SerializeField] GameObject rejectRoot;
+    [SerializeField] float rejectShowSeconds = 3f;
+
+    float _rejectUntil = -1f;
+    CheerService _boundSvc;
+
     // E를 누른 뒤 Host 왕복(RTT)이 끝나기 전까진 로컬 입이 아직 Idle이라 연타가 그대로 중복
     // 요청이 된다. Host도 창 상태로 거르지만(권한 판정) 불필요한 트래픽은 여기서 끊는다.
     // 요청이 거절·유실됐을 때 프롬프트가 영구히 잠기지 않도록 짧은 만료를 둔다.
@@ -80,6 +87,10 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
 
     void Update()
     {
+        BindService();
+        bool rejecting = Time.time < _rejectUntil;
+        if (rejectRoot != null && rejectRoot.activeSelf != rejecting) rejectRoot.SetActive(rejecting);
+
         bool windowOpen = mouthController != null && mouthController.IsHazardWindowOpen;
         if (windowOpen) _requestExpiresAt = -1f;
         SetWarningVisible(windowOpen);
@@ -87,7 +98,7 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
         // 프롬프트는 거리와 무관하게 상시 표시 — 창이 열려 있는 동안(Warning~Open)과
         // Host 응답 대기 중에만 숨겨 중복 상호작용을 막는다.
         bool waitingForHost = Time.time < _requestExpiresAt;
-        SetPromptVisible(!windowOpen && !waitingForHost);
+        SetPromptVisible(!windowOpen && !waitingForHost && !rejecting);
 
         if (!_localPlayerInRange || mouthController == null) return;
         if (windowOpen || waitingForHost) return;
@@ -111,6 +122,16 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     void RequestStartRpc()
     {
         if (mouthController == null || mouthController.IsHazardWindowOpen) return;
+        // 연습 창은 전원 공용이고 전원이 통과할 때까지 열려 있다 — 한 명이라도 준비(1·2번 등록/마이크 없음)가 안 됐으면
+        // 창이 끝나지 않으므로 아예 열지 않는다(10/7 사용자 결정). 누가 안 됐는지는 Start 간판 목록이 빨갛게 보여 준다.
+        var svc = CheerService.Instance;
+        if (svc != null && !svc.AllReadyForPractice())
+        {
+            svc.BroadcastPracticeRejected();
+            return;
+        }
+        // 이 창은 연습 창 — Host가 통과자를 게이트 조건으로 기록한다(CheerSystemDesign.md §14.2 ②).
+        svc?.MarkNextWindowAsPractice();
         BroadcastStartClientRpc();
     }
 
@@ -119,6 +140,27 @@ public class TutorialTeamCheerTestSignboard : NetworkBehaviour
     {
         if (mouthController != null)
             mouthController.StartSingleHazardWindow();
+    }
+
+    void BindService()
+    {
+        var svc = CheerService.Instance;
+        if (ReferenceEquals(svc, _boundSvc)) return;
+        if (!ReferenceEquals(_boundSvc, null)) _boundSvc.OnPracticeRejected -= HandleRejected;
+        _boundSvc = svc;
+        if (svc != null) svc.OnPracticeRejected += HandleRejected;
+    }
+
+    void HandleRejected()
+    {
+        _rejectUntil = Time.time + rejectShowSeconds;
+        _requestExpiresAt = -1f;
+    }
+
+    public override void OnDestroy()
+    {
+        if (!ReferenceEquals(_boundSvc, null)) _boundSvc.OnPracticeRejected -= HandleRejected;
+        base.OnDestroy();
     }
 
     void SetPromptVisible(bool visible)

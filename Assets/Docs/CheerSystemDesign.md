@@ -26,6 +26,8 @@
 >
 > **2026-09-14 (같은 날 4차 변경, 최종) — 개인 CheerName 커스텀화 완전 삭제 [코드 완료].** 이름은 `PlayerColorUtil.DefaultCheerNames`(berry/guma/sook/dan) **고정값**이다. 입력 UI·`PlayerCheerNameSync`·세션 CheerName 스냅샷(`GameSession.SetSessionCheerNames` 등)·우선순위 역전·CheerName↔TeamCheerWord 충돌 검사·`CheerLexiconBuilder.VariantMap`/`ResolveVariant`는 **전부 삭제**. `CheerService.GetCheerName`/`GetColorIndex`는 고정 배열을 직접 읽는다. grammar 재빌드 헬퍼는 `CheerKeywordEngine.RebuildOwnerLocalGrammar()`로 이전. 머리 위 이름표 `PlayerNameTagUI`는 흑/백 팔레트 구분 문제로 **재도입**(팀 응원 느낌표가 떠 있는 동안은 숨김, §10.3). Tutorial/Interlude 패널은 TeamCheerWord 전용. **아래 본문(§3·§5.2·§10.1~§10.4 인수인계·§11 체크리스트)에서 `PlayerCheerNameSync`·커스텀 CheerName·세션 이름 스냅샷을 다루는 서술은 전부 이 항목이 우선한다(이력으로만 보존).**
 >
+> **2026-10-07 — 팀 응원 소리 매칭(TeamCheerSound) 설계 초안 [코드 미착수].** TeamCheerWord(영어 단어, Vosk)를 **Host 녹음 소리 1개 + 각자 자기 목소리 등록(틀 검사)** 방식으로 교체한다. Vosk·모델·사전 검사 전부 삭제 예정. 상세 **§14**. 아래 본문의 Vosk·grammar·단어 전제 서술은 §14가 확정되면 전부 이력이 된다.
+>
 > **2026-09-15 — 음성 인식 반응속도·인식률 개편 [코드 완료].** ①**창 게이팅:** `CheerKeywordEngine`은 팀 응원 창(`CheerService.IsHazardWindowActive`)이 열려 있고 이번 창에서 내가 아직 통과하지 않았을 때만 Vosk에 음성을 넣는다. ②**partial 부활(2연속 확인):** 2026-09-10 "partial 금지"를 **해제** — 매 100ms partial에서 TeamCheerWord가 **연속 2번** 들리면 즉시 제출, final은 보험으로 유지(사용자 결정). ③**리샘플러 교체:** 필터 없는 선형 보간 → 저역통과 FIR + 청크 간 위상 유지. ④**모델 선로드:** 호출부가 사라졌던 `LoadSync`를 부팅 시 백그라운드 로드(`BeginLoad`)로 교체. ⑤**사전 미등재 팀워드 거절:** `TrySetTeamCheerWord` 실패 사유에 `"unknown"` 추가(구 "경고만, 강제 아님" 대체). 상세 §4.7·§5.2. 아래 본문의 "final만 사용", "partial 부활 금지", "사전 미등재는 경고만"은 이 항목이 우선한다.
 >
 
@@ -934,3 +936,299 @@ A. **아니오 (2026-09-14).** 창이 열린 동안 한 번 인식되면 그 사
 
 **Q. 이모트는 왜 휠 UI가 없어졌나?**
 A. 마우스로 8조각 중 하나를 겨냥하다 놓치는 경우가 있어, 숫자키 `1`~`8` 직접 트리거로 단순화했다(2026-09-14, §6.4). 매핑 순서는 기존 휠 순서(Yes→No→Thanks→Hide→Point→Shame→Fly→Surprise) 그대로.
+
+---
+
+## 14. 팀 응원 소리 매칭 — TeamCheerSound **[2026-10-07 설계 초안 · 코드 미착수]**
+
+> **한 줄:** TeamCheerWord(영어 단어, Vosk)를 **Host가 직접 녹음한 소리 1개**로 바꾼다. 언어·단어 제한 없음("우와와와아아아", "헬로우~", 중국어·일본어 전부 가능). 규칙(§2.2 전원 각자 1회, 창 게이팅 §4.7, T키 대체 §6.3)은 **그대로** — 바뀌는 건 "무엇을 어떻게 알아듣느냐"뿐.
+>
+> **배경:** 출시 첫 달 구매자가 대부분 중국 플레이어였고 영어 단어 외치기가 장벽으로 판단됨(실구매 ~7 중 환불 5, 접근성 사유 1건). Vosk 영어 모델(205MB)은 영어 단어를 받아 적는 도구라 이 방향에 맞지 않아 **삭제**한다.
+>
+> **핵심 결정 (2026-10-07 사용자):** ① 목록에서 고르는 방식 아님 — Host가 자유 녹음. ② **각 플레이어가 자기 목소리로 1회 등록**하고, 인게임 판정은 자기 등록본 기준(같은 사람·같은 마이크 → 정확도 확보). ③ 단, 등록본은 **Host 소리와 같은 틀**이어야 한다 — Host가 "우와와와아아아"면 "우가우가"로 등록하면 거절. ④ 오인식(특히 외쳤는데 못 알아듣는 쪽) 최소화가 조건.
+
+### 14.1 용어
+
+| 용어 | 뜻 |
+|---|---|
+| **기준 소리** (Host clip) | Host가 녹음한 원본 PCM. 전원에게 배포돼 "뭘 외칠지" 들려주는 용도 + 등록 틀 검사의 기준 |
+| **등록본** (my template) | 각 플레이어가 자기 PC에서 자기 목소리로 녹음한 것의 특징 묶음. **로컬에만 있음, 네트워크로 안 보냄** |
+| **틀 검사** (shape check) | 등록본이 기준 소리와 같은 소리인지 — 길이·끊김 횟수·높낮이 곡선·음색을 **사람이 달라도 통과하도록 느슨하게** 비교 |
+| **판정** (detect) | 인게임 창 동안 내 마이크가 내 등록본과 맞는지 — **같은 사람 기준이라 빡빡하게** 비교 |
+
+### 14.2 흐름 — Tutorial / Interlude **[2026-10-07 3차 개정 — 패널에서 전부, 코드 완료]**
+
+> **등록본 규칙 (2026-10-07 확정, 사용자):** **게임에서 쓰는 등록본은 전부 Host 틀 검사(§14.4)를 통과한 것뿐이다.** 플레이어에게는 한 줄 — "Host 소리를 듣고 똑같이 두 번 녹음(나 1·나 2) → 연습 표지판에서 외쳐 통과 → 게임에서도 그 소리". 실시간 판정(§14.6)은 Host를 직접 보지 않지만, Host 기준을 통과한 등록본 안에서만 돈다.
+>
+> **[3차 개정 — 사용자 결정]** 나 2는 연습 창에서 뽑지 않고 **같은 패널에서 두 번째 녹음**으로 받는다(= "두 번 인식해 달라"). 구역 3 연습 표지판은 등록본으로 **실시간 판정만** 한다.
+>
+> **[4차 개정 2026-10-07 — 기준은 Host 하나, 사용자 결정]** ① 1번·2번 **모두 Host 틀 검사만**(1↔2 비교 삭제 — 같은 사람이 똑같이 해도 거리 7~9라 2번이 거의 안 넘어갔다). ② 게임 중 판정은 1·2번 중 가까운 쪽(2번이 있는 이유 = 인식률). ③ **R키 = 내 1번 녹음**(판정 기준과 같은 소리), 등록 못 한 사람은 Host 소리. ④ 녹음 **1~3초 강제**(1초 전 정지 불가, 3초 자동 정지), **소리 0.5초 이상**(안내 문구에 명시). ⑤ 끊김 횟수는 최대 △. ⑥ 마이크는 Dissonance **가공 전 원본**(`DissonanceComms.MicrophoneCapture.Subscribe`)으로 받는다. ⑦ 마이크 없이 T키로 시작해 도중에 마이크를 꽂은 사람은 다음 등록 기회(Interlude)까지 T키만 — Host 소리 직접 비교로 따로 판정하지 않는다(기준 하나 유지).
+>
+> | 단계 | 어디서 | 하는 일 | 통과 조건 | 거절되면 |
+> |---|---|---|---|---|
+> | ⓪ Host 녹음 | 구역 2 패널 (Host만) | [녹음/정지] → 자동 재생 → [확정] | 녹음 자체 검사(§14.4 #0) | 이유 표시, 다시 녹음 |
+> | ① 나 1 | 구역 2 패널 (전원) | [호스트 소리 듣기] → [나 1 녹음/정지] | Host 틀 검사 통과 | 이유 표시, **될 때까지 다시** |
+> | ② 나 2 | 구역 2 패널 (전원) | [2번 녹음/정지] | **Host 틀 검사만**(4차 개정 — 1번과 비교 삭제) | 이유 표시("나 1과 다르게 들려요" / 틀 검사 이유), 다시 |
+> | ③ 연습 (필수 관문) | 구역 3 표지판 | 진짜 함정 창에서 외침 | 나 1·나 2 중 하나라도 실시간 기준(전원 공통 고정 §14.6) 통과 | 창 유지, 다시 외침. **7회 연속 실패 → 그 세션 T키 자동 ON** |
+> | ④ 게임 중 | 함정 창 | 외침 | ③과 같음 | 계속 들음, 창 안 3회 연속 실패 시 T키 힌트(설정 위치 명시) |
+>
+> - Host 자신의 나 1 = 확정한 기준 소리(별도 녹음 없음). Host도 나 2는 녹음한다.
+> - 나 1을 다시 녹음하면 나 2는 무효(옛 나 1 기준). Host가 다시 녹음하면(버전 +1) 전원 나 1·나 2 무효 + 연습 기록 초기화.
+> - Lab(`Tools/Cheer Sound Lab`)도 같은 규칙으로 돈다 — 거절된 녹음은 실시간 판정에 쓰지 않는다.
+
+```
+[구역 2 — 패널 (TutorialCheerNameUI, 한 패널에서 전부)]
+  Host:   [녹음] 누름 → 바로 녹음 → 같은 버튼([정지]) → 정지(4초 상한) → 발화 구간 자동 재생 → [확정]
+          확정 → CheerService.TrySetTeamCheerSound → 버전 +1 → 전원 배포(§14.5) + Host 나 1 = 이 녹음
+  전원:   [호스트 소리 듣기] → [나 1 녹음] → 틀 검사(§14.4) → 저장 / 거절 힌트
+          [나 2 녹음] → 나 1 기준 실시간 판정(CheerSoundMatcher.OfflineCheck) + 틀 검사 → 저장 / 거절 힌트
+          상태 줄: "① 호스트 소리를 듣고 똑같이 '나 1'을 녹음하세요" → "② 한 번 더 똑같이 '나 2'를…" → "등록 완료 ✓"
+          녹음은 CheerKeywordEngine.Local.BeginCapture/EndCapture — 마이크를 따로 열지 않음(§4.3)
+
+[구역 3 — 연습 표지판 (TutorialTeamCheerTestSignboard) — 필수 관문, 경험자도 생략 불가]
+  E → Host RequestStartRpc → CheerService.MarkNextWindowAsPractice() → 전원 mouth0 창 열림(_practiceWindow NV = true)
+  각자 외침 → 실시간 판정(§14.6) → SubmitTeamCheerServerRpc(isVoice:true) → Host가 _practicePassed에 기록 → _practicePassedCount NV
+  등록본이 없어 T키 자동 ON인 사람은 T키로 통과해도 연습 통과로 친다
+  등록본은 있는데 7회 연속 실패(CheerSoundLocalState.PracticeFailStreak) → 그 세션 T키 자동 ON + 힌트
+
+[게이트 (TutorialNetworkManager.UpdateGate — 매 프레임 EvaluateSoundGate)]
+  Host 기준 소리 없음(HasTeamCheerSound=false)   → _gateBlock = HostSoundMissing   → 간판: "호스트가 팀 구호를 녹음해야 시작할 수 있어요"
+  접속자 중 연습 미통과자 있음(AllPracticePassed) → _gateBlock = PracticeIncomplete → 간판: "전원이 팀 구호 연습을 통과해야… (N/M)"
+  둘 다 아님 + 전원 존 안 → 카운트다운. 세션 스냅샷 없음 — 소리는 CheerSoundLocalState(static)가 씬을 넘어 유지
+  등록본 없는 팀원은 게이트를 막지 않음 → 첫 인게임 창에서 T키 자동 ON(§14.8)
+
+[Interlude — 2차 변경]
+  패널·표지판 그대로. Host가 다시 녹음하면 버전 +1 → 전원 등록본 무효(재등록) + 연습 기록 초기화.
+  연습 기록은 씬 단위(CheerService 인스턴스) — Interlude 표지판 1회 통과는 재녹음 여부와 무관하게 항상 필요(사용자 확인 — Tutorial과 같은 규칙).
+```
+
+### 14.3 특징 추출 — 등록본·판정 공통
+
+입력은 기존 경로 그대로: Dissonance 탭(멀티)/솔로 마이크 → 저역통과 → **16kHz mono float** (§4.4·§4.7의 리샘플러 재사용. **마이크 이중 오픈 금지 §4.3 유지** — 녹음도 `CheerKeywordEngine`의 같은 PCM 스트림에서 "캡처 모드"로 받는다).
+
+| 단계 | 내용 |
+|---|---|
+| 전처리 | DC 제거 → 앞뒤 침묵 자르기(프레임 RMS가 소음 바닥 +6dB 미만, 30ms 미만 튐 무시) → 프레임마다 프리엠퍼시스 0.97. 소음 바닥 = min(하위 10% 프레임, 피크 −25dB) |
+| 프레임 | 25ms 창 / 10ms 간격, Hamming, FFT 512 |
+| **음색** MFCC | 멜 필터 26개(0~8kHz) → log → DCT → 13계수(c0 제외 — 음량 무관) + Δ 13 = **26차원/프레임**. **정규화 없음** — 아래 [정규화 결정] |
+| **리듬** | 프레임 에너지(dB) 곡선 → 봉우리 수 = **끊김 횟수(burstCount)**(봉우리 간격 최소 120ms, 골이 봉우리보다 8dB 이상 낮아야 별개) + **길이(durationMs)** |
+| **높낮이** | 정규화 자기상관(YIN 간이형) 60~800Hz(여성·아이 고음 "미야옹"), 유성 프레임만 → 반음 단위 → 중앙값 빼기 → 시간축 50점으로 리샘플 = **pitchContour[50]** + 유성 비율 |
+| 등록본 | `{ mfcc[frames][26], burstCount, durationMs, pitchContour[50], voicedRatio, hostClipVersion }` |
+
+MFCC/DTW/자기상관은 전부 C#으로 직접 구현(외부 패키지 없음, FFT 포함 300~500줄). 전부 **워커 스레드**(기존 VoskWorker 자리). 이 산출물은 결정론적 신호처리라 Steam AI 표기 대상이 아니다.
+
+> **[정규화 결정 — 2026-10-07 합성 시험]** 초안의 발화 단위 CMVN은 **길게 끄는 모음의 음색을 지운다** — 정적인 소리는 평균을 빼면 거의 0이 되고, 분산 나누기는 작은 흔들림을 키운다. 합성 시험에서 "오오오" 등록본 기준 내 소리 d 5.2 vs 소음 5.9로 구분이 안 됐다. 평균만 빼도(CMN) "오오오"↔"에에에"가 1.4~2.0으로 붙었다. 판정은 **같은 사람·같은 마이크** 비교라 채널 보정이 필요 없어 정규화를 뺐다 → 소음 거리 12~15로 벌어짐. 다른 사람끼리 비교하는 틀 검사 음색은 원래 느슨한 상한이라 영향 적음.
+
+### 14.4 틀 검사 — 등록본 vs 기준 소리 (사람이 달라도 통과)
+
+목적은 "같은 소리인가"지 "같은 목소리인가"가 아니다. 그래서 **사람 차이에 무딘 특징(길이·끊김·상대 높낮이)**을 주로 보고 음색은 느슨하게 본다.
+
+**[2026-10-07 Lab 실측 후 개정] 3단계 판정.** 초안(한 항목이라도 넘으면 거절)은 실제 목소리에서 같은 소리를 살짝 다르게 따라 해도 자주 거절됐다. 항목마다 **통과 ✓ / 애매 △ / 확실히 다름 ✗**으로 나누고 **✗ 1개 또는 △ 3개 이상이면 거절**한다(△ 2개까지 통과 — 2026-10-07 Lab 3차 후 사용자 결정; 애매 2개로 거절된 건 전부 같은 소리였고 다른 소리는 전부 음색 ✗로 걸렸다). 살짝 다른 따라하기는 보통 한 항목만 경계에 걸리고, 다른 소리는 여러 항목이 같이 틀리거나 한 항목이 크게 틀린다. 거절 이유는 ✗ 항목(없으면 첫 △ 항목).
+
+| 순서 | 항목 | ✓ 통과 | △ 애매 | ✗ 확실히 다름 | 거절 힌트 |
+|---|---|---|---|---|---|
+| 0 | 녹음 자체 | 피크 ≥ −45dBFS, SNR ≥ 12dB, 0.3~3초, 찢어짐 ≤1% | — | 하나라도 아니면 바로 거절 | 너무 작아요 / 짧아요 / 길어요 / 커요 |
+| 1 | 길이(기준 대비) | 0.6~1.7배 | 0.5~0.6 / 1.7~2.0배 | 그 밖 | 너무 짧아요 / 길어요 |
+| 2 | 끊김 횟수 | 기준 1~5번: 같음 · 기준 6번+: ±1 | 그보다 1 더 | 그 이상 | 끊는 횟수가 달라요 (기준 N번, 나 M번) |
+| 3 | 높낮이 곡선 | 상관 ≥0.4 또는 평균 차 ≤2.0반음 | 상관 ≥0.1 또는 ≤3.0반음 | 그 밖 | 높낮이가 달라요 |
+| 4 | 음색 (MFCC **앞 8계수**+Δ, 전체 DTW) | ≤ 8.0 | ≤ 9.0 | > 9.0 | 소리가 달라요 |
+
+> **[2026-10-07 Lab 2차 후 개정 — 사용자 결정]** 높낮이 0.5/1.5·0.2/2.5 → 0.4/2.0·0.1/3.0(살짝 완화), 음색 6/8 → **8/9**. 근거(8계수 음색): 같은 목소리 같은 소리 5.61·6.33 / 목소리 바꿔 같은 소리 7.73·8.12 / 다른 소리 9.09·10.25. 길이·끊김은 빡빡하게 유지(사용자 결정) — 끊김 ±1이 자주 △가 되므로 음색 통과선을 8까지 올려야 따라하기가 통과한다. **다른 소리 실측이 2개뿐이고 9.09가 선에 가까움.** 합성 시험에서는 다른 소리 잘못 통과가 2/30 → 9/30으로 늘었다(대부분 길게 이어지는 소리끼리 — 우와아아·헬로우·오오오·에에에).
+
+- 높낮이는 두 쪽 다 **유성 비율 ≥ 40%**일 때만 본다(아니면 – 생략). 유성 비율 = **발화 프레임 중** 유성 프레임 — 초안은 끊김 사이 틈까지 분모에 넣어 "우가 우가"류가 14~27%로 나와 높낮이 검사가 항상 생략됐다(Lab 10/7).
+- **높낮이 측정 오류 수정(10/7):** Lab에서 한 번 외침의 "반음 폭"이 25~30(2옥타브+)으로 나왔다. 원인 ① 고음 "아"처럼 3배음이 센 소리에서 YIN이 2/3 주기의 얕은 골을 먼저 잡아 **5도 높게** 읽음(합성 330→470Hz). → 유성 판단(가장 깊은 골 < 0.35)과 주기 고르기(max(0.1, 가장 깊은 골 + 0.05)보다 낮은 첫 골)를 분리. ② 남은 옥타브 튐은 중앙값에서 9반음 넘게 벗어나면 12반음씩 접고, 유성 프레임 5개 중앙값 필터. 합성 확인: 음높이 ×1.0/1.8/2.4 모두 실제 폭과 일치(우가 4.4·우와 6.8·미야옹 8.2·평평 0).
+- 끊김: 빠른 음절(6번+)은 사람마다 한 번쯤 붙거나 갈라진다(Lab 같은 소리 9 vs 8).
+- 음색을 **앞 8계수만** 보는 이유: 뒤쪽 계수는 음높이 배음이 섞여 남녀·고음에서 크게 갈린다(합성: 13계수면 여성 고음 "미야옹"이 같은 소리인데 11.1로 거절, 8계수면 7.5). 같은 사람 판정(§14.6)은 13계수 그대로.
+- 수치는 Lab 실측(같은 사람) + 합성 시험 1차값. **다른 사람 실측 후 다시 맞춘다.**
+
+> 남녀·마이크 차이: 높낮이는 중앙값을 빼서 **상대 곡선**만 보고, 음색은 CMVN으로 평균을 빼므로 절대 음높이·음색 차이는 통과한다. "우와와와아아아"(1~2번 끊김, 길게, 끝이 내려감) vs "우가우가우가"(3번 끊김, 짧게) 는 3번에서 갈린다. "헬로우" vs "할로"는 2·3·4가 같아서 5(음색)만 남는데, 이 둘은 **허용해도 게임상 문제 없다**(어차피 판정은 각자 자기 등록본 기준). 틀 검사의 목표는 "전혀 다른 소리를 등록하는 것"을 막는 수준이다.
+
+### 14.5 기준 소리 배포·보관
+
+| 항목 | 규칙 |
+|---|---|
+| 형식 | 16kHz mono, 앞뒤 침묵 제거, **최대 3초**. 전송은 8kHz μ-law 8bit로 압축(3초 = 24KB) — 들려주기 용도라 충분. 틀 검사의 기준 특징은 Host가 원본 16kHz로 뽑아 **특징(§14.3 등록본 형식, 0.8초 8.5KB ~ 3초 약 31KB)을 같이 보낸다** → 팀원은 압축본을 재생만 하고, 틀 검사는 Host가 뽑은 특징과 비교(압축 열화가 검사에 안 섞임) |
+| 전송 | `CheerService` Host → ClientRpc **4KB 청크 + 버전 번호**. 접속 중 Tutorial에 들어온 클라이언트(Tutorial = 로비, 접속 후 녹음이 먼저일 수 있음)에게는 접속 시 Host가 현재 기준 소리를 그 클라이언트에만 재전송. 버전이 다른 청크는 버림 |
+| NV | `_teamCheerWord`(FixedString32) → `_teamCheerSoundVersion`(int, Server write). 0 = 아직 없음(기본 소리, 아래). 팀원은 버전 변경을 보고 "다시 들어야/다시 등록해야 함" 표시 |
+| 세션 | `GameSession.SetSessionTeamCheerWord` → `SetSessionTeamCheerSound(bytes, features, version)`. M/T 씬 진입 시 `CheerService.OnNetworkSpawn`이 세션값으로 재시드(기존 패턴 그대로). 재전송 필요 없음 — 전원이 Tutorial/Interlude에서 이미 받았고 late-join 없음 |
+| 기본 소리 | **없음 (2026-10-07 확정).** `DefaultTeamCheerWord("fighting")` 폴백 삭제. Host 녹음(버전 ≥1)이 Tutorial 게이트 필수 조건 — `TutorialNetworkManager`의 전원 입장 판정에 `CheerService.HasTeamCheerSound` 조건 추가. Interlude는 Tutorial 것이 세션에 있으므로 재녹음 선택 |
+| 검증 | 0.3초 미만·3초 초과·피크 부족·클리핑 과다 → Host에게 거절 힌트. 금칙어·형식·사전 검사(`CheerNameValidator`·`CheerLexiconBuilder`)는 **삭제** |
+
+### 14.6 인게임 판정 — 내 마이크 vs 내 등록본 (같은 사람 기준)
+
+§4.7 청취 조건(창 열림 + 내가 미통과)·세대 번호·제출 후 재제출 방지는 그대로. Vosk 워커 자리에 **매처 워커**가 들어간다.
+
+| 항목 | 규칙 |
+|---|---|
+| 버퍼 | 최근 **4초** 특징 프레임 링버퍼(400프레임). 창 열림 순간 비움(기존과 동일) |
+| 사전 게이트 (싸게) | ① 최근 발화 에너지가 소음 바닥 +12dB 이상 ② 발화 길이가 등록본의 0.5배 이상 ③ 발화가 끝났다면 길이 ≤ 2.0배 & 끊김 횟수 ±1. 하나라도 틀리면 DTW 안 돌림 → 잡담·숨소리·게임 소리로는 안 뚫림 |
+| 본 판정 | **서브시퀀스 DTW**(시작·끝 자유) 등록본 ↔ 버퍼, MFCC 26차원 유클리드, 길이로 정규화한 거리 `d`. 등록본이 여러 개면 **하나라도 통과하면 통과**. **[10/7 기울기 제한]** 세로·가로 이동을 두 번 연달아 못 하게(Itakura식) → 맞춰지는 구간이 등록본의 0.5~2배로 묶인다. 없을 때 "오오오"처럼 처음부터 끝까지 같은 소리는 등록본 전체가 0.5초 구간에 몰려(Lab 길이비 0.28) 리듬 검사에서 떨어졌다. 합성: 내 다른 소리 잘못 통과 2/30 → 0/30 |
+| partial | 100ms마다 평가. `d ≤ T_self`가 **연속 2회**면 제출(§4.7 `PartialConfirmHits` 유지 — "한 번 튄 값"을 거름). 말 끝나기 전에 통과 가능 |
+| final 보험 | 발화 종료(침묵 300ms) 시점에 `d ≤ T_self × 1.15`면 제출 |
+| 비용 | 400 × 300 프레임 × 26차원 ≈ 3M 연산/100ms → 무시 수준 |
+| **T_self** | **전 플레이어 공통 고정 6.0**(말 끝난 뒤 보험 ×1.15 = 6.9). **[10/7 사용자 결정]** 사람마다 바뀌는 보정(두 등록본 거리 × 2.5)은 삭제 — 실제 목소리에선 두 등록본 거리가 3.5~7.1이라 항상 상한 6.0에 붙어 작동하지 않았고, "기준이 없다"는 혼란만 만들었다. Lab 실측 통과 d 4.7~5.8, 다른 소리 6.4+. 등록본은 나 1 + 나 2 최대 2개, 인게임 통과분은 **추가하지 않음**(오염 방지) |
+| 로그 | 창마다 `d` 최솟값·통과 여부·사전 게이트 탈락 사유를 구조화 로그(`NetworkDesign.md` 로깅 규약)로 남겨 임계값 튜닝 근거로 씀 |
+
+**오인식 2종과 설계 방향:** 못 알아들음(false reject)이 게임을 막으므로 `T_self`는 **넉넉한 쪽**으로 잡고, 잘못 통과(false accept)는 사전 게이트(크기·길이·끊김)로 막는다. 잘못 통과의 피해는 "함정이 조금 쉬워짐"뿐.
+
+**정확도 기대치(추정, 실측 아님):** 같은 사람·같은 마이크 기준 90%+ 첫 외침 통과. 떨어뜨리는 요인: 등록 땐 차분히 말하고 게임에선 소리 지름(→ 녹음 안내 문구 "게임에서 외치듯이"), 스피커 게임 소리 유입, 주변 소음. 구역 3 연습 성공률을 실측 지표로 쓴다.
+
+### 14.7 UI 변경
+
+| 컴포넌트 | 변경 |
+|---|---|
+| `TutorialCheerNameUI` | **코드 완료.** Host 섹션 [녹음/정지][다시 듣기][확정] + 상태 / 전원 섹션 [호스트 소리 듣기][나 1 녹음/정지][나 2 녹음/정지] + 상태 줄 + 거절 힌트. 텍스트 입력 필드 삭제(인스펙터 재배선 필요 — §14.11 ② 체크리스트) |
+| `TeamCheerWordUI` (HUD) | **코드 완료.** 라벨은 프리팹 정적 텍스트 "[R] 팀 구호 듣기"로 바꿀 것(코드가 단어를 안 씀). R키/버튼 → `CheerSoundPlayback.PlayHostClip`. 기준 소리 없으면 라벨 숨김 |
+| `TeamCheerWarningUI` | **코드 완료.** 자동 재생 없음. `tKeyHintRoot`(창 안 3회 연속 실패 시 켜는 안내 오브젝트) 필드 추가 — 문구 "설정 → 'T키로 응원하기'를 켜면 T키로도 응원할 수 있어요" |
+| `TutorialTeamCheerTestSignboard` | **코드 완료.** `RequestStartRpc`에서 `CheerService.MarkNextWindowAsPractice()` 한 줄 추가 |
+| `TutorialGatherDisplay` | **코드 완료.** `gateBlockText`(Start 간판 아래 TMP 3D 한 줄) + 로컬라이즈 2키 — 막힘 사유 "(N/M)" 표시 |
+| 구역 2 보드·힌트 문구 | "영어 소문자 2~12자" → "아무 소리나 녹음(최대 3초)" + "팀원은 똑같은 소리로 등록" (13개 언어 재번역) |
+| Options | "T키로 응원하기" 토글 유지. 세션 자동 ON(§14.8)은 토글 값을 건드리지 않음 |
+
+### 14.8 폴백 — 마이크 없음·등록 실패
+
+| 상황 | 동작 |
+|---|---|
+| 마이크 없음 / Dissonance 오디오 5초 미수신 / 등록본 없이 게이트 통과 | **이번 세션만** 그 플레이어 T키 응원 자동 ON(`PlayerPrefs` 안 건드림) + HUD에 "T키로 응원" 안내 |
+| 등록본 버전 ≠ 기준 소리 버전 (Interlude 재녹음 뒤 미재등록) | 위와 동일 |
+| 창 동안 판정 3회 연속 실패(사전 게이트 통과했는데 `d` 초과) | 그 창 한정 힌트 **"설정(Options) → 'T키로 응원하기'를 켜면 T키로도 응원할 수 있어요"** — 설정 위치까지 명시(2026-10-07 확정). 자동 ON은 하지 않음(이미 등록본이 있는 사람이므로) |
+| 마이크 음소거(M키/옵션) 상태 | Dissonance가 구독자에게 PCM을 계속 주는지 **코드 확인 필요**. 안 주면 녹음·판정 모두 불가 → 패널에 "마이크가 꺼져 있어요" 표시 |
+
+### 14.9 삭제·추가 파일
+
+| 삭제 | 추가/변경 |
+|---|---|
+| `Assets/ThirdParty/Vosk/*`, `StreamingAssets/vosk-model-en-us-0.22-lgraph` (205MB), `VoskModelLoader`, `CheerLexiconBuilder`, `CheerNameValidator`, `TrySetTeamCheerWord` 사유 `format/reserved/blocked/unknown` | `CheerSoundFeatures`(MFCC·피치·끊김·DTW, 순수 함수) · `CheerSoundTemplate`(데이터+직렬화) · `CheerSoundMatcher`(워커, §14.6) · `CheerSoundRecorder`(캡처 모드, §14.2) · `CheerService`: `TrySetTeamCheerSound` + 청크 RPC + 버전 NV · `GameSession`: 세션 기준 소리 + 로컬 등록본 · UI 3종(§14.7) · `TutorialNetworkManager`/`InterludeNetworkManager` 게이트 스냅샷 교체 |
+
+§3.2·§3.4·§4.2·§4.5·§5·§6.2·§8.3 중 Vosk·단어·사전을 전제한 서술은 이 절이 우선한다(이력으로 보존).
+
+**[2026-10-07 ② 적용 결과]** 삭제: `ThirdParty/Vosk/*`(libvosk + C# 바인딩), `StreamingAssets/vosk-model-en-us-0.22-lgraph`(205MB), `VoskModelLoader`·`CheerLexiconBuilder`·`CheerNameValidator`, `GameSession` TeamCheerWord 세션 API(`DefaultTeamCheerWord`·`Set/GetSessionTeamCheerWord`·`HasSessionTeamCheerWord`), 두 NetworkManager의 `BroadcastSessionTeamCheerWordClientRpc`. 추가: `CheerSoundLocalState`(static, 씬 넘어 유지), `CheerSoundPlayback`(2D 재생 DDOL). `CheerKeywordEngine`·`TutorialCheerNameUI`·`TeamCheerWordUI`는 이름 유지한 채 내용 교체(프리팹·씬 연결 보존).
+
+### 14.10 미정 — 사용자 확인 필요
+
+1. ~~기본 소리~~ → **확정: 기본 소리 없음, Host 녹음이 게이트 필수**(§14.2·§14.5).
+2. ~~재생~~ → **확정: 자동 재생 없음, 키로만 재생**(§14.7). 키 `R`은 초안 — 다른 키 원하면 변경.
+3. ~~녹음 UX~~ → **확정: 버튼 누르면 바로 녹음, 다시 누르면 정지(한 버튼 토글, 3초 상한은 안전장치)**(§14.2).
+4. ~~2번째 등록본~~ → **확정: 연습 통과분을 2번째 등록본으로 사용**(§14.6). 추가 확정: **구역 3 연습은 필수 관문**(경험자 포함, §14.2).
+5. ~~T키 힌트~~ → **확정: 넣는다, 설정 위치까지 안내**(§14.8).
+6. 초깃값 — Lab 1~3차(같은 사람) 실측으로 1차 확정: 음색 8/9, 높낮이 0.4/2.0·0.1/3.0, △ 2개까지, T_self 6.0. **다른 사람 목소리 표본은 아직 없음** — 받으면 재확인.
+7. ~~빈틈~~ → **확정(2026-10-07 사용자): 등록본은 있는데 구역 3 연습 창에서 7회 연속 실패하면 그 세션 T키 자동 ON**(§14.8 미등록자와 같은 처리) + 힌트. 실패 1회 = 사전 게이트를 통과한 외침이 기준 초과로 거절된 것(§14.8 "3회 연속 실패 시 힌트"와 같은 셈법, 힌트는 3회·자동 ON은 7회).
+8. **[신규 — 빈틈]** 게임 소리가 스피커로 마이크에 들어가면 소음 바닥이 올라가 d가 커진다(Lab은 조용한 환경). 고정 6.0이 게임 중에도 맞는지는 ②에서 실제 함정 창으로 확인. 창마다 d 로그(§14.6)로 추적.
+
+### 14.11 구현 진행
+
+#### ① 신호처리 클래스 — **코드 완료 (2026-10-07)**, 게임 미연결
+
+| 파일 | 역할 |
+|---|---|
+| `Cheer/CheerSoundParams.cs` | 수치 SSOT (전부 초안 — Lab 실측으로 확정) |
+| `Cheer/CheerSoundDsp.cs` | 프레임 dB · MFCC · YIN 피치 · 끊김 횟수 · DTW(전체/부분 구간). Unity API 없음 → 워커 스레드 가능 |
+| `Cheer/CheerSoundTemplate.cs` | 녹음 → 앞뒤 자르기 → 특징(등록본). 녹음 문제(`CheerClipIssue`) 판정. 직렬화 |
+| `Cheer/CheerSoundShapeCheck.cs` | 틀 검사(§14.4). 첫 실패 항목 + 전 항목 수치 |
+| `Cheer/CheerSoundMatcher.cs` | 인게임 판정(§14.6). 4초 링버퍼, 100ms 평가, partial 2연속 / final ×1.15 |
+| `Cheer/CheerSoundRecorder.cs` | 버튼 토글 녹음 버퍼. 앞뒤 0.1초(클릭 소리) 버림, 4초 자동 정지. **마이크 직접 안 엶** |
+| `Cheer/CheerSoundCodec.cs` | Host 클립 8kHz μ-law 압축/복원 |
+| `Editor/CheerSoundLab.cs` | **Tools/Cheer Sound Lab** — Host/나1/나2 녹음·WAV 저장/열기·틀 검사 수치·T_self·실시간 판정·흘려보기. 임계값 실측 도구 |
+
+**검증:** Unity 밖에서 런타임 7개 파일 + Lab을 Unity 6.3 DLL로 컴파일 — 오류·경고 0. 사용자 Lab 실측(10/7): 판정은 잘 됨, 틀 검사가 같은 소리도 자주 거절 → §14.4 3단계 판정으로 개정. 합성 소리(모음 포먼트+음높이 곡선, 남/여 f0 ×1.8·포먼트 ×1.15·속도 ±15%·소음) 6종(우가우가우가/우와아아/헬로우/미야옹/오오오/에에에)으로:
+
+| 시험 | 결과 |
+|---|---|
+| 틀 검사 — 다른 사람(여)이 같은 소리 등록 | 초판 **5/6**(고음 "미야옹" 음색 11.1로 거절 — 처음 보고에서 6/6으로 잘못 적었음, 10/7 정정) → 3단계 판정 + 음색 8계수 개정 후 **6/6 통과** |
+| 틀 검사 — 다른 사람이 다른 소리 등록 | 개정 후 30개 중 28개 거절, 2개 통과(우와아아 기준에 헬로우·오오오 — 길게 이어지고 끊김 1번으로 같음) |
+| 판정 — 내 등록본 vs 내 실시간(높이 +5%·속도 0.9·소음 3배) | **6/6 통과** |
+| 판정 — 내 등록본 vs 내 다른 소리 | 30개 중 2개 잘못 통과(우와아아←우가우가, 오오오←헬로우) |
+| 판정 — 소음만 | **0/6** (d 12~15, 기준 4~6) |
+| 계산량 | 평가 1회 약 3ms(1.3초 등록본 2개) — 워커 스레드 충분 |
+
+> 합성 소리는 실제 목소리 대용일 뿐이다. **임계값은 Lab으로 실제 목소리(여러 사람·마이크) 측정 후 확정**(§14.10 #6).
+
+**Lab 실측 1~3차 (2026-10-07, 사용자 본인 목소리):** 판정은 매번 잘 됨. 틀 검사는 ① 한 항목 초과 거절 → 3단계(△ 2개 거절) → △ 3개 거절로 두 번 완화, ② 유성 비율 분모 버그(높낮이 항상 생략), ③ 높낮이 5도·옥타브 오류(반음 폭 25~30), ④ 일정한 소리의 실시간 몰림(길이비 0.28), ⑤ Lab이 거절된 녹음도 판정에 쓰던 문제(기준 없음) — 전부 수정. T_self 보정은 삭제하고 고정 6.0. 세부는 §14.4·§14.6·§14.2 등록본 규칙.
+
+**②로 넘기는 주의점:**
+- `CheerKeywordEngine`의 자동 게인(`NormalizeBuffer`·`_smoothedGain`)은 청크마다 음량을 바꿔 **끊김 곡선을 뭉갠다** → 녹음기·판정기에는 **게인 적용 전** 16kHz 신호를 넣을 것(리샘플러는 재사용).
+- 판정기는 워커 스레드에서 돌리고(Vosk 워커 자리), 결과(통과/Eval)만 메인으로 넘긴다.
+- 스피커로 나오는 팀원 목소리가 내 마이크로 들어가 내 판정을 통과시킬 수 있음(헤드셋 미사용 시). Vosk 때도 같은 구조 — 피해는 "함정이 조금 쉬워짐"뿐이라 별도 대응 안 함.
+
+#### ② 게임 연결 + Vosk 삭제 — **코드·에디터 완료 (2026-10-07)**, 플레이 검증 남음
+
+| 파일 | 변경 |
+|---|---|
+| `Cheer/CheerSoundLocalState.cs` (신규) | 내 PC 전용 상태: Host 기준 소리(버전·압축 클립·특징)·나 1/나 2·세션 T키 자동 ON·실패 횟수. `GameSession.ResetSession`에서 비움 |
+| `Cheer/CheerSoundPlayback.cs` (신규) | Host 소리/내 녹음 2D 재생(SFX 볼륨 따름) |
+| `Cheer/CheerService.cs` | `_teamCheerWord` → `_teamCheerSoundVersion`(int)·`_practicePassedCount`·`_practiceWindow` NV. `TrySetTeamCheerSound` + 4KB 청크 ClientRpc 배포 + `RequestTeamCheerSoundServerRpc`(pull). 연습 창 통과 집합·`AllPracticePassed`·`ForgetClient`. 다음 씬 스폰 시 `CheerSoundLocalState`에서 버전 되살림 |
+| `Cheer/CheerKeywordEngine.cs` | Vosk 워커 → `CheerSoundMatcher` 워커. 자동 게인 삭제. `BeginCapture/EndCapture`(패널 녹음). `Local` 접근자. 통과/실패 이벤트 → `CheerSoundLocalState` 집계·`OnVoiceAttemptFailed`. 등록본 없이 인게임 창 → 세션 T키 자동 ON(연습 씬 제외) |
+| `Cheer/CheerSoundMatcher.cs` | `OfflineCheck`(녹음 하나를 실시간처럼 판정 — 나 2 등록·Lab 공용) |
+| `Cheer/CheerDigitInput.cs` | `IsTKeyEnabled` = 옵션 OR 세션 자동 ON |
+| `UI/TutorialCheerNameUI.cs` | §14.2 패널 전면 교체(텍스트 입력 삭제) |
+| `UI/TeamCheerWordUI.cs` | R키/버튼 재생, 단어 표시 삭제 |
+| `UI/TeamCheerWarningUI.cs` | T키 힌트 오브젝트(창 안 3회 연속 실패) |
+| `UI/TutorialGatherDisplay.cs` | 게이트 막힘 사유 한 줄 |
+| `Stage/TutorialTeamCheerTestSignboard.cs` | 연습 창 표시 1줄 |
+| `Network/TutorialNetworkManager.cs`·`InterludeNetworkManager.cs` | `GateBlock` NV + `EvaluateSoundGate`(Host 소리 + 전원 연습 통과) 카운트다운 조건. 세션 TeamCheerWord 확정·배포 삭제. Tutorial 이탈 시 `CheerService.ForgetClient` |
+| `GameSession.cs` | TeamCheerWord 세션 API 삭제, `ResetSession` → `CheerSoundLocalState.ResetSession()` |
+
+**검증:** Unity 밖에서 `Assets/**/*.cs`(Assembly-CSharp 전체 + Lab)를 Unity 6.3 DLL·`Library/ScriptAssemblies`(NGO·Dissonance·TMP·Localization·Facepunch)로 컴파일 — **오류 0**. Unity 에디터 컴파일·플레이는 아직.
+
+**인스펙터·씬 재배선 체크리스트 — 2026-10-07 MCP로 전부 적용(아래 '에디터 적용 결과'):**
+1. **Tutorial·Interlude `CheerNamePanel`(TutorialCheerNameUI):** 구 `hostTeamWordSection/teamWordInputField/teamWordConfirmButton/currentTeamWordText` 연결이 사라짐 → 새 필드: `hostSection`(Host 전용 루트) 안에 `hostRecordButton`+`hostRecordButtonLabel`·`hostPreviewButton`·`hostConfirmButton`·`hostStatusText`; 전원용 `listenHostButton`·`hostSoundStatusText`·`record1Button`+`record1ButtonLabel`·`record2Button`+`record2ButtonLabel`·`enrollStatusText`; `feedbackText`·`closeButton`은 그대로. 로컬라이즈 필드 28개는 비워 두면 한국어 폴백(키 목록은 `TutorialTranslations.md`에 추가 예정).
+2. **`UI.prefab` → `TeamCheerWordUI`:** `wordLabel` 정적 텍스트를 "[R] 팀 구호 듣기"로. 선택: `playButton`, `visualRoot`.
+3. **`UI.prefab` → `TeamCheerWarningUI`:** `tKeyHintRoot`에 안내 텍스트 오브젝트(기본 비활성) 연결. 문구 "설정 → 'T키로 응원하기'를 켜면 T키로도 응원할 수 있어요".
+4. **Tutorial·Interlude `TutorialGatherDisplay`:** `gateBlockText`에 Start 간판 아래 TMP 3D 텍스트(기본 비활성) 연결.
+5. **Tutorial 보드 문구:** `Board_CheerName.Body` "영어 단어로 정해요" → "호스트가 아무 소리나 녹음해요(최대 3초). 팀원은 똑같은 소리로 두 번 녹음해요 — 녹음한 그대로 외치세요". `Board_TeamCheer.Body`에 "연습을 통과해야 시작" 한 줄. 13개 언어 재번역은 별건.
+6. **Options:** "T키로 응원하기" 토글 그대로.
+7. Player 프리팹 `CheerKeywordEngine`: 옛 `soloMicGain/autoNormalizeMic/normalizeTargetPeak` 필드가 사라져 인스펙터에 "missing" 없이 조용히 제거됨 — 할 일 없음.
+
+**플레이 검증 순서(2인 권장):** ⓪ Host 녹음·확정 → 팀원 패널에 "팀 구호 v1" 뜨고 [듣기] 재생 ① 나 1 거절 사유 표시·통과 ② 나 2 둘 다 검사 ③ 연습 표지판: 간판 "(0/2)"→"(2/2)"→카운트다운 ④ M1 입 함정에서 음성 통과·HUD R키 ⑤ 등록 안 한 팀원이 게이트 넘으면 첫 창에서 T키 자동 ON ⑥ Interlude 재녹음 → 재등록·재연습 ⑦ 타이틀 복귀 후 새 방에서 전부 초기화.
+
+**아직 확인 못 한 것:** 게임 소리 유입 시 고정 6.0(§14.10 #8) — ④에서 창마다 `VoiceDetected/VoiceAttemptFailed` 로그의 d로 본다. NGO `byte[]` RPC 인자·4KB 청크 전송은 NGO 2.x 표준 지원 범위지만 실제 2인 전송은 미확인.
+
+**에디터 적용 결과 (2026-10-07, MCP):**
+- 에디터 컴파일 오류 0(새 타입 로드 확인).
+- **Tutorial·Interlude `CheerNamePanel`** 재구성: `HostSection`(HostHintText · [녹음][다시 듣기][확정] · HostStatusText) / `HostSoundStatusText` / [호스트 소리 듣기][1번 녹음][2번 녹음] / `EnrollStatusText` / `FeedbackText` / [닫기]. 텍스트 입력 필드 삭제. 스크립트 필드 15개 + `LocalizedString` 23개 연결(누락 0). 화면: `Assets/Screenshots/CheerSound_Panel_Tutorial.png`.
+- 비-Host는 `HostSection`이 숨겨져 제목 아래가 비어 보인다(위치 고정 레이아웃) — 보기 싫으면 레이아웃 그룹으로 바꿀 것.
+- **Tutorial·Interlude `GatherSign`**: 자식 `GateBlockText`(TMP 3D, 진한 자주색 굵게) + 뒤판 `Plate`(간판 배경 복제) — 기본 꺼짐, 막힘 사유 있을 때만 켜짐. 화면: `CheerSound_GateBlockText_Tutorial.png`.
+- **`UI.prefab`**: `TeamCheerWord/Caption` "TEAM CHEAR"(오타) → "TEAM CHEER", `Word` → "[R] 팀 구호 듣기"(LocalizeStringEvent `Tutorial.HUD.TeamCheerListen`, 자동 크기). `TeamCheerWarning/TKeyHint`(기본 꺼짐, `Tutorial.HUD.TeamCheerTKeyHint`) + `tKeyHintRoot` 연결. 다른 씬에 이 라벨을 덮어쓴 오버라이드 없음 확인.
+- **번역:** `Tutorial` 테이블 신규 28키·수정 6키(제목·HostHint·보드 2종·Prompt 2종) × 13로케일(pt 포함). 보드의 "영어 단어로 정해요" 문구 삭제. **원어민 검수 남음.**
+- **폰트:** 한·일·중 정적 아틀라스에 새 글자가 없어 `Tools/Font/Noto Static 베이킹 - 실행` 재실행 → 13로케일 새 문구 누락 글자 0.
+- **씬 저장 잡음:** Tutorial 저장 시 프리팹 인스턴스 RectTransform 레이아웃 값 149개가 섞임 → 오버라이드 항목 단위로 HEAD 값 복원(스크립트, 줄 번호 기반 되돌리기는 엉뚱한 값을 바꿔서 폐기). 두 씬 모두 오버라이드 항목 집합이 HEAD와 동일(Tutorial 669·Interlude 378). Interlude diff가 큰 건 PrefabInstance 블록 순서가 바뀐 것뿐.
+
+#### ③ 실플레이 2차 반영 — **코드·에디터 완료 (2026-10-07)**, 재실측 남음
+
+**실플레이 로그(사용자, 1인 Host = 팀원 역할 겸함):** 같은 사람·같은 마이크·같은 말("what's going on")인데 1번 녹음이 Host와 끊김 3 vs 5, 음색 8~12로 거절 연속. 연습 실패 거리 7.4~8.5(Lab 같은 사람 4.7~5.8). 실패 로그에 같은 d가 3~4번 연달아 찍힘.
+
+**원인(소스 확인):** 판정기가 받던 `SubscribeToRecordedAudio`는 `BasePreprocessingPipeline.SendSamplesToSubscribers` — rnnoise + WebRTC(잡음 억제·에코 제거) **처리 후** 소리. 처리가 음절 사이 틈·스펙트럼을 매번 다르게 바꿔 끊김·음색이 흔들렸다. Lab은 마이크 직접이라 처리가 없었다.
+
+| 변경 | 파일 |
+|---|---|
+| 원본 마이크 탭 `comms.MicrophoneCapture.Subscribe(this)` (없으면 처리된 스트림, 로그 `MicTap source=raw/processed`) | `CheerKeywordEngine` |
+| 2번 녹음 1번 비교 삭제, 1번 소리(발화 구간) 보관 | `TutorialCheerNameUI`, `CheerSoundLocalState.SetTemplate1(t, pcm)`, `CheerService` |
+| R키 = 내 1번 녹음(미등록 = Host) | `CheerSoundLocalState.GetListenClip`, `CheerSoundPlayback.PlayListenClip`, `TeamCheerWordUI` |
+| 녹음 1~3초(`RecordMinSec`·`RecordMaxSec`), 소리 0.5초(`MinDurationSec`) | `CheerSoundParams`, `CheerSoundRecorder`, 패널 버튼 잠금 |
+| 끊김 최대 △ | `CheerSoundShapeCheck.BandBursts` |
+| final(말 끝남) 평가는 큰 소리가 새로 난 뒤 한 번만 — 실패 중복 집계 버그 | `CheerSoundMatcher` |
+| 등록 전용 기준 9.0(`EnrollPairThreshold`) 삭제 — 1↔2 비교가 없어짐 | `CheerSoundParams`, `CheerSoundMatcher.UseFixedThreshold`는 Lab 흘려보기용으로 남김 |
+| Lab: 나 2도 Host 틀 검사만 | `CheerSoundLab` |
+| 번역 3키×13로케일(HostHint·Feedback_TooShort·Status_EnrollNeed1 — 0.5초 안내), 폰트 재베이킹(누락 0) | `Tutorial` 테이블, Noto Static |
+| 패널 20% 확대(`localScale 1.2`, 820×590 → 화면상 984×708) | Tutorial·Interlude 씬 |
+
+**재실측 필요:** 원본 마이크로 바뀌어 거리 분포가 Lab 쪽(같은 사람 4.7~5.8)으로 내려올 것으로 예상하지만 미확인. 게임 중 기준 6.0·틀 검사 8/9를 실측으로 다시 확인. 스피커로 게임 소리를 크게 틀 때(에코 제거 없음) 영향도 같이 확인. 도중에 마이크를 꽂았을 때 Dissonance가 새 장치를 잡는지 미확인.
+
+#### ④ 준비 상태·마이크 없음·연습 거절 — **코드·에디터 완료 (2026-10-07)**, 2인 Steam 검증 남음
+
+**사용자 결정(10/7):**
+| 주제 | 규칙 |
+|---|---|
+| 준비 완료 | 1·2번 등록 완료, 또는 개인 "마이크가 없어요" 토글, 또는 Host "마이크 없음 — 팀 전체 T키" 토글 |
+| 연습 요청 | 접속자 중 한 명이라도 준비 안 됐으면 **연습 자체를 거절**(연습 창은 전원이 통과할 때까지 열려 있어 끝나지 않으므로). 표지판엔 "아직 준비 안 된 사람이 있어요. Start 간판을 확인하세요", Start 간판은 준비 안 된 줄이 빨갛게 깜빡임 |
+| Host 마이크 없음 | Host 패널 토글 → 이번 판 음성 응원 끔, 전원 T키, 게이트는 녹음 조건 면제(연습은 T키로) |
+| Client 마이크 없음 | 패널 토글 → 그 사람만 T키, 준비 완료로 침, 간판에 "T키" 표시 |
+| Start 간판 | 막힘 사유 한 줄 + **사람별 줄**(초록 준비 완료 / 흰 연습 필요 / 빨강 녹음 필요, 앞에 "T키 ·") — 간판 **위**로 옮김(시작 존 파티클에 가려지던 문제) |
+| Interlude | Tutorial과 같은 시스템. 단 Host가 이 씬에서 녹음(또는 팀 전체 마이크 없음)을 **안 바꿨으면 연습 면제**(개인 재녹음·연습은 자유). 바꿨으면 전원 재등록·연습 |
+| 게임 중 미등록자 T키 자동 | 유지(각자 PC의 bool 하나, 네트워크 없음 — 가벼움) |
+
+**구현:** `CheerService` — `_teamNoMic` NV, `NetworkList<CheerReadyEntry>`(색·상태 비트·연습 통과), `ReportStatusServerRpc`(각자 상태 비트 1바이트, 바뀔 때만), Host가 0.25초마다 비교 후 바뀐 경우에만 목록 갱신, `AllReadyForPractice`, `PracticeRequired`(Tutorial 항상 / Interlude 변경 시), `BroadcastPracticeRejected`. `CheerSoundLocalState` — `PersonalNoMic`·`TeamNoMic`·`LocalStatusFlags`·`IsReadyFlags`. `CheerDigitInput.IsTKeyEnabled`에 두 토글 추가. `TutorialTeamCheerTestSignboard` — Host가 준비 확인 후 거절, `rejectRoot`. `TutorialGatherDisplay` — 사람별 목록·거절 깜빡임. `TutorialCheerNameUI` — 두 토글(Host엔 개인 토글 숨김), 팀 전체 T키면 녹음 버튼 잠금. 두 게이트 매니저 `EvaluateSoundGate` 갱신.
+
+**에디터(MCP):** Tutorial·Interlude 패널에 `HostSection/TeamNoMicRow`·`PersonalNoMicRow`(설정 창 토글 복제, 리스너 제거) + 레이아웃 820×660(×1.2), Start 간판 상태판 위로(20×8.4, 판 22×9.4, 밝은 글자색), 연습 표지판 `RejectRoot`(프롬프트 복제, 빨간 배경). 번역 12키×13로케일 + 폰트 재베이킹(누락 0). 씬 오버라이드 항목 HEAD와 동일 확인. 화면: `Assets/Screenshots/CheerSound_Panel_Tutorial.png`, `CheerSound_StartSignStatus_Tutorial.png`.
+
+**2인 Steam에서 볼 것:** ① 팀원 미등록 상태에서 연습 E → 거절·간판 빨간 줄 ② 팀원 "마이크가 없어요" → 간판 "T키 · 연습 필요" → 연습 T키 통과 ③ Host 팀 전체 토글 → 녹음 버튼 잠김·게이트가 연습만 봄 ④ 늦게 들어온 팀원에게 목록이 보이는지 ⑤ Interlude 무변경 → 바로 진행 / Host 재녹음 → 전원 재등록·연습.

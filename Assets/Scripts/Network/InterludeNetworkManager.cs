@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -62,12 +63,55 @@ public class InterludeNetworkManager : NetworkBehaviour
     readonly NetworkVariable<double> _countdownStartServerTime = new(
         -1.0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    // ── 팀 구호 소리 게이트 조건 (CheerSystemDesign.md §14.2, 2026-10-07) ─────
+    // Host가 판정해 NV로 알린다: 0 = 막힘 없음 / 1 = Host 기준 소리 없음 / 2 = 연습 미통과자 있음.
+    // TutorialGatherDisplay가 읽어 "호스트가 팀 구호를 녹음해야…" / "전원이 연습을 통과해야… (N/M)"를 띄운다.
+    public enum GateBlock : byte { None = 0, HostSoundMissing = 1, PracticeIncomplete = 2 }
+
+    readonly NetworkVariable<byte> _gateBlock = new(
+        0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public GateBlock CurrentGateBlock => (GateBlock)_gateBlock.Value;
+    /// <summary>게이트 막힘 사유 변경(전 머신). 간판 UI 구독.</summary>
+    public event System.Action<GateBlock> OnGateBlockChanged;
+
+    /// <summary>
+    /// Host 전용 — 소리 게이트 조건(§14.2).
+    /// ① Host 기준 소리(팀 전체 "마이크 없음"이면 면제) ② 이 씬이 연습을 요구하면 접속자 전원 연습 통과.
+    /// Interlude는 Host가 녹음·마이크 없음을 안 바꿨으면 연습 면제(CheerService.PracticeRequired, 10/7).
+    /// </summary>
+    GateBlock EvaluateSoundGate()
+    {
+        var svc = CheerService.Instance;
+        if (svc == null || !svc.IsSpawned) return GateBlock.HostSoundMissing;
+        if (!svc.TeamNoMic && !svc.HasTeamCheerSound) return GateBlock.HostSoundMissing;
+        if (!svc.PracticeRequired) return GateBlock.None;
+
+        var ids = new List<ulong>();
+        foreach (var (id, _) in PlayerSpawnCoordinator.GetAllEntries()) ids.Add(id);
+        return svc.AllPracticePassed(ids) ? GateBlock.None : GateBlock.PracticeIncomplete;
+    }
+
+    void SetGateBlock(GateBlock block)
+    {
+        if ((GateBlock)_gateBlock.Value == block) return;
+        _gateBlock.Value = (byte)block;
+    }
+
+    void HandleGateBlockNv(byte previous, byte current) => OnGateBlockChanged?.Invoke((GateBlock)current);
+
     // ── 초기화 ────────────────────────────────────────────────────
 
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        _gateBlock.OnValueChanged += HandleGateBlockNv;
+        OnGateBlockChanged?.Invoke((GateBlock)_gateBlock.Value);
     }
 
     void Start()
@@ -86,6 +130,7 @@ public class InterludeNetworkManager : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        _gateBlock.OnValueChanged -= HandleGateBlockNv;
         if (Instance == this) Instance = null;
     }
 
@@ -118,7 +163,12 @@ public class InterludeNetworkManager : NetworkBehaviour
         int connected = PlayerSpawnCoordinator.EntryCount;
         bool allIn = connected > 0 && zone.OccupantCount == connected;
 
-        if (!allIn)
+        // 소리 게이트(§14.2 Interlude, 10/7 사용자 결정): Host가 이 씬에서 녹음(또는 팀 전체 마이크 없음)을 바꿨을 때만
+        // Tutorial처럼 전원 재등록·연습. 안 바꿨으면 바로 진행 — 개인 재녹음·연습은 자유(필수 아님).
+        var block = EvaluateSoundGate();
+        SetGateBlock(block);
+
+        if (!allIn || block != GateBlock.None)
         {
             if (_isCounting) ResetGateCountdown();
             return;
@@ -206,14 +256,8 @@ public class InterludeNetworkManager : NetworkBehaviour
         BroadcastGateCountdownCompleteClientRpc();
         Debug.Log("[InterludeNetworkManager] 게이트 통과 — T.Stage1 진입 처리 시작");
 
-        // TeamCheerWord 2차 확정 — CheerService NV는 이미 이 씬 OnNetworkSpawn에서 세션값으로
-        // seed돼 있으므로(CheerService 기존 패턴), 여기서 그 값을 다시 GameSession에 되돌려
-        // Host가 안 바꿨으면 그대로, 바꿨으면 새 값이 반영된다. Tutorial CompleteGate와 동일 패턴.
-        string teamWord = CheerService.Instance != null
-            ? CheerService.Instance.TeamCheerWord
-            : GameSession.DefaultTeamCheerWord;
-        GameSession.Instance?.SetSessionTeamCheerWord(teamWord);
-        BroadcastSessionTeamCheerWordClientRpc(new FixedString32Bytes(teamWord));
+        // [2026-10-07] 팀 구호 소리 2차 변경분은 CheerSoundLocalState(static)에 이미 전원 반영돼 있어
+        // 세션 재확정이 필요 없다(CheerSystemDesign.md §14.5). 구 TeamCheerWord 재확정·배포는 삭제.
 
         if (SceneFlowManager.Instance == null)
         {
@@ -233,14 +277,6 @@ public class InterludeNetworkManager : NetworkBehaviour
         if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
         _gateCompleted = true;
         OnGateCountdownComplete?.Invoke();
-    }
-
-    /// <summary>세션 확정 TeamCheerWord를 모든 클라이언트의 GameSession에 배포(TutorialNetworkManager와 동일 패턴).</summary>
-    [ClientRpc]
-    void BroadcastSessionTeamCheerWordClientRpc(FixedString32Bytes word)
-    {
-        if (IsHost) return; // Host 자신은 CompleteGate()에서 이미 로컬 적용
-        GameSession.Instance?.SetSessionTeamCheerWord(word.ToString());
     }
 
     // ── 에디터 테스트 ─────────────────────────────────────────────

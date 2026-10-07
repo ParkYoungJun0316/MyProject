@@ -245,7 +245,7 @@ public class GameSettingsManager : MonoBehaviour
     /// <summary>
     /// 로컬 마이크 송신 게인(VoiceBroadcastTrigger.ActivationFader.Volume)에 MicVolume을 반영.
     /// Dissonance 로컬 VoicePlayerState.Volume setter는 미지원(에러만 남김)이라 ActivationFader를 쓴다.
-    /// CheerKeywordEngine 캡처/Vosk 경로에는 영향 없음. 트리거는 이 GameObject 소속이라 세션 여부와
+    /// CheerKeywordEngine 캡처/응원 판정 경로에는 영향 없음. 트리거는 이 GameObject 소속이라 세션 여부와
     /// 무관하게 항상 적용된다(세션 전이면 값만 들어가 있다가 송신이 시작될 때 쓰인다).
     /// </summary>
     void ApplyMicTransmitVolume()

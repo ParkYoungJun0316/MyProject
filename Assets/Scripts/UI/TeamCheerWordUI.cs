@@ -1,83 +1,63 @@
-using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
-/// 인게임 HUD에 이번 판 TeamCheerWord를 상시 표시한다.
-/// 개인 CheerName(<c>Txt.Nickname</c>) 오른쪽에 캡션/단어를 위아래로 붙인다 —
-/// 캡션은 작게, 실제 외칠 단어만 크게. TeamStatus 슬롯에는 넣지 않는다(세션 공용 1회).
+/// 인게임 HUD의 팀 구호 표시 — CheerSystemDesign.md §14.7 (2026-10-07, 구 "대문자 단어" 표시 교체).
+/// 구호가 소리라 보여줄 글자가 없다 → "[R] 팀 구호 듣기" 라벨 + R키로 로컬 재생(창 안팎 언제든).
+/// 10/7: 등록했으면 **내 1번 녹음**(판정이 내 녹음 기준이므로), 등록 못 한 사람(T키 응원)은 Host 소리.
+/// 자동 재생은 없다(사용자 결정). 클래스 이름은 UI.prefab 연결 호환용으로 유지.
 ///
-/// [배치] UI.prefab 루트(HP_Panel · Txt.Nickname 형제). 위치·폰트는 에디터.
-/// 미연결이면 이 HUD만 없음 — 응원 판정은 그대로다.
+/// [배치] UI.prefab 루트(HP_Panel · Txt.Nickname 형제). 라벨 문구는 프리팹 정적 텍스트(로컬라이즈 키 추가 예정),
+/// 이 스크립트는 R키·버튼 재생과 "기준 소리 없음" 숨김만 한다. 미연결이면 이 HUD만 없음 — 판정은 그대로.
 /// </summary>
 public class TeamCheerWordUI : MonoBehaviour
 {
     [Header("표시")]
-    [Tooltip("위 줄. 비우면 캡션은 프리팹에 적어 둔 텍스트를 유지.")]
+    [Tooltip("위 줄 캡션(선택). raycast만 끈다.")]
     [SerializeField] TextMeshProUGUI captionLabel;
-    [Tooltip("아래 줄 — 실제 TeamCheerWord (대문자). TextMeshPro / TextMeshProUGUI 둘 다 가능.")]
+    [Tooltip("\"[R] 팀 구호 듣기\" 라벨. 문구는 프리팹/로컬라이즈에서.")]
     [SerializeField] TMP_Text wordLabel;
-
-    Coroutine _waitSubscribe;
+    [Tooltip("마우스로도 재생(선택).")]
+    [SerializeField] Button playButton;
+    [Tooltip("기준 소리가 없을 때 통째로 숨길 루트(비우면 이 GameObject).")]
+    [SerializeField] GameObject visualRoot;
 
     void Awake()
     {
         if (captionLabel != null) captionLabel.raycastTarget = false;
-        if (wordLabel is TextMeshProUGUI wordUgui)
-            wordUgui.raycastTarget = false;
+        if (wordLabel is TextMeshProUGUI wordUgui) wordUgui.raycastTarget = false;
+        if (playButton != null) playButton.onClick.AddListener(CheerSoundPlayback.PlayListenClip);
     }
 
     void OnEnable()
     {
-        RefreshWord();
-        TrySubscribe();
+        CheerSoundLocalState.HostSoundChanged += Refresh;
+        Refresh();
     }
 
-    void OnDisable() => Unsubscribe();
+    void OnDisable() => CheerSoundLocalState.HostSoundChanged -= Refresh;
 
-    void TrySubscribe()
+    void Update()
     {
-        if (CheerService.Instance != null)
+        var kb = Keyboard.current;
+        if (kb == null || !kb.rKey.wasPressedThisFrame) return;
+        if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) return;
+        CheerSoundPlayback.PlayListenClip();
+    }
+
+    void Refresh()
+    {
+        var root = visualRoot != null ? visualRoot : gameObject;
+        bool has = CheerSoundLocalState.HasHostSound;
+        if (root == gameObject)
         {
-            Subscribe();
-            return;
+            // 자기 자신을 끄면 Update(R키)도 멈추므로 라벨만 숨긴다
+            if (wordLabel != null) wordLabel.enabled = has;
+            if (captionLabel != null) captionLabel.enabled = has;
+            if (playButton != null) playButton.gameObject.SetActive(has);
         }
-        if (_waitSubscribe != null) return;
-        _waitSubscribe = StartCoroutine(WaitAndSubscribe());
-    }
-
-    IEnumerator WaitAndSubscribe()
-    {
-        while (CheerService.Instance == null)
-            yield return null;
-        _waitSubscribe = null;
-        if (isActiveAndEnabled)
-            Subscribe();
-    }
-
-    void Subscribe()
-    {
-        var svc = CheerService.Instance;
-        if (svc == null) return;
-        svc.OnTeamCheerWordChanged -= RefreshWord;
-        svc.OnTeamCheerWordChanged += RefreshWord;
-        RefreshWord();
-    }
-
-    void Unsubscribe()
-    {
-        if (_waitSubscribe != null)
-        {
-            StopCoroutine(_waitSubscribe);
-            _waitSubscribe = null;
-        }
-        if (CheerService.Instance != null)
-            CheerService.Instance.OnTeamCheerWordChanged -= RefreshWord;
-    }
-
-    void RefreshWord()
-    {
-        if (wordLabel == null) return;
-        wordLabel.text = CheerService.ResolveTeamCheerWord().ToUpperInvariant();
+        else if (root.activeSelf != has) root.SetActive(has);
     }
 }

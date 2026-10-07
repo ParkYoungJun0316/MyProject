@@ -43,8 +43,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153924
-    m_Localized: Cuando aparezca la advertencia, lancen todos juntos el grito de
-      equipo.
+    m_Localized: "Cuando aparezca la advertencia, lancen todos juntos el grito de
+      equipo.\nGr\xEDtalo igual que lo grabaste."
     m_Metadata:
       m_Items: []
   - m_Id: 1091153925
@@ -52,12 +52,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1091153926
-    m_Localized: "Solo el host puede definirlo.\nUsa una palabra en ingl\xE9s.\nSi
-      no tienes micr\xF3fono, activa \"Cheer\_con\_tecla\_T\" en Opciones."
+    m_Localized: "El host graba un sonido\ny todos lo graban igual dos veces.\nSi
+      no tienes micr\xF3fono, activa \"Cheer con tecla T\" en Opciones."
     m_Metadata:
       m_Items: []
   - m_Id: 24992255946752
-    m_Localized: Elige el grito de equipo
+    m_Localized: Grito de equipo
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889793
@@ -73,8 +73,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889796
-    m_Localized: "Solo se pueden usar palabras en ingl\xE9s.\nSolo se reconocen palabras
-      reales. (por defecto: FIGHTING)"
+    m_Localized: "Host: graba el sonido que va a gritar el equipo.\nCualquier palabra
+      o sonido sirve (sonido de 0.5 s o m\xE1s, m\xE1x. 3 s)"
     m_Metadata:
       m_Items: []
   - m_Id: 24992297889797
@@ -111,11 +111,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 56930631004160
-    m_Localized: '[E] Elegir grito de equipo'
+    m_Localized: '[E] Registrar grito de equipo'
     m_Metadata:
       m_Items: []
   - m_Id: 56930635198464
-    m_Localized: '[E] Probar el grito de equipo'
+    m_Localized: '[E] Practicar el grito de equipo'
     m_Metadata:
       m_Items: []
   - m_Id: 1395064700000001
@@ -141,6 +141,166 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9787340243972096
     m_Localized: '[E] Personalizar'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884459483136
+    m_Localized: Grabar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426176
+    m_Localized: Detener ({0:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426177
+    m_Localized: "Grabar n.\xBA 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426178
+    m_Localized: "Grabar n.\xBA 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426179
+    m_Localized: Escuchar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426180
+    m_Localized: Escuchar al host
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426181
+    m_Localized: "El host a\xFAn no grab\xF3 el grito de equipo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426182
+    m_Localized: Grito listo ({1:0.0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426183
+    m_Localized: 'Grabado. Escucha y presiona [Confirmar]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426184
+    m_Localized: "Escucha al host y haz [Grabar n.\xBA 1] igual (0.5 s o m\xE1s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426185
+    m_Localized: "Otra vez igual: [Grabar n.\xBA 2]"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426186
+    m_Localized: "\xA1Registrado! Ahora pru\xE9balo en el cartel de pr\xE1ctica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426187
+    m_Localized: "El host volvi\xF3 a grabar. Reg\xEDstrate de nuevo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426188
+    m_Localized: "No llega sonido del micr\xF3fono"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426189
+    m_Localized: "Muy bajo. Grita m\xE1s fuerte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426190
+    m_Localized: Demasiado fuerte, el sonido se distorsiona
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426191
+    m_Localized: Muy corto. Haz sonido durante al menos 0.5 s
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426192
+    m_Localized: "Muy largo (m\xE1x. 3 s)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426193
+    m_Localized: "Distinto n\xFAmero de cortes (host {0}, t\xFA {1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426194
+    m_Localized: "La entonaci\xF3n es distinta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426195
+    m_Localized: "Suena distinto. Escucha al host otra vez e im\xEDtalo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426196
+    m_Localized: "No coincide con el n.\xBA 1. Gr\xEDtalo como en el n.\xBA 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426197
+    m_Localized: "\xA1Bien!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426198
+    m_Localized: "\xA1Grito listo! Enviado al equipo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426199
+    m_Localized: El host debe grabar el grito para empezar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426200
+    m_Localized: "Todos deben superar la pr\xE1ctica del grito ({0}/{1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426201
+    m_Localized: "[R] O\xEDr grito"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10576884501426202
+    m_Localized: Activa "Cheer con tecla T" en Opciones para animar con T
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490503282688
+    m_Localized: "No tengo micr\xF3fono (animar con T)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031424
+    m_Localized: "Sin micr\xF3fono (todo el equipo anima con T)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031425
+    m_Localized: "En esta partida todos animan con la tecla T (sin micr\xF3fono)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031426
+    m_Localized: "Vas a animar con la tecla T. Presiona T en la pr\xE1ctica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031427
+    m_Localized: "Alguien todav\xEDa no est\xE1 listo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031428
+    m_Localized: Listo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031429
+    m_Localized: "Faltan las grabaciones n.\xBA 1 y 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031430
+    m_Localized: "Falta la grabaci\xF3n n.\xBA 1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031431
+    m_Localized: "Falta la grabaci\xF3n n.\xBA 2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031432
+    m_Localized: "Falta la pr\xE1ctica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031433
+    m_Localized: Tecla T
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10601490541031434
+    m_Localized: "Alguien todav\xEDa no est\xE1 listo. Revisa el cartel de Start"
     m_Metadata:
       m_Items: []
   references:
