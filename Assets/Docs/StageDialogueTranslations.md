@@ -6,7 +6,7 @@
 > 이 문서는 그 원문을 `en/ja/zh-Hans/zh-Hant/es/es-419/fr/de/pt-BR/ru/pl` 11개 언어로 번역한 결과다
 > (`SteamworksIntegrationDesign.md` 트랙4 §10 코어 12개 언어 중 ko 제외).
 >
-> **에이전트는 `Assets/Localization/StringTables/*.asset`(String Table)이나 씬(.unity)을 직접 쓰지 않는다** (`unity-mcp-readonly.mdc` — 에셋/씬 파일은 워크스페이스 파일 도구로도 쓰지 않음).
+> **에이전트는 `Assets/Localization/StringTables/*.asset`(String Table)이나 씬(.unity)을 허락 없이 쓰지 않는다** (`unity-mcp-approval.mdc` — 바꿀 목록을 보여 주고 사용자 허락을 받은 뒤 MCP 우선으로 수정).
 > 아래 내용을 사람이 String Table Editor(또는 CSV Import)로 직접 입력해야 한다. 적용 방법은 맨 아래 "적용 체크리스트" 참고.
 
 ## ⚠️ 먼저 확인할 것 — 기존 파일럿 키와 충돌

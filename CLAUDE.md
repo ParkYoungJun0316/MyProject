@@ -19,7 +19,7 @@ Play path: Title → Tutorial → `M.Stage1`…`M.Stage5` → `M.Boss` → `Inte
 This is a pure Unity Editor project — there is no CLI build/lint/test pipeline, no `package.json`/`Makefile`, and no project-owned test assembly (all `*Tests*.asmdef` under `Assets/` belong to third-party packages, e.g. Dissonance/AureDevGames water shader). Build, Play Mode, and any Test Runner usage happen from inside the Unity Editor.
 
 - Multiplayer testing is **ParrelSync (editor clone) and/or two local builds on one PC** — real LAN discovery does not currently work, so never assume LAN-based testing.
-- Unity MCP tools exist in this project but are **read-only for the agent** by convention (see Editor/MCP rules below) — use them to inspect Hierarchy/console/assets when code context alone is insufficient, not to mutate scenes/prefabs/inspector state.
+- Unity MCP tools exist in this project but are **read-freely, write-after-approval** for the agent (see Editor/MCP rules below) — read Hierarchy/console/assets when code context alone is insufficient; mutate scenes/prefabs/inspector state only after the user approves the change list.
 
 ## Architecture
 
@@ -72,7 +72,7 @@ These carry the weight of hard constraints in this repo (mirrored in `.cursor/ru
 - **Offline mode does not exist.** Solo play is `OnlineHost` with `partySize=1`. Delete (don't dormant-guard) any "offline"/`isOnline == false` branch you find; `LobbyContext.IsOnline` is always `true`.
 - **Scope is full release, not demo.** Don't scope-limit fixes to demo-only paths; demo and release share one codebase.
 - **Don't revive rejected designs**: Host-only movement, projectile "A안" (Host-driven flight), reconnect/late-join/host-migration, spectator mode, cutscenes.
-- **Scene/prefab/inspector edits are the user's**, not the agent's. Edit `.cs` files and Docs; for anything requiring Inspector wiring, scene placement, or prefab changes, describe the checklist and let the user apply it in-editor — don't patch `.unity`/`.prefab` YAML directly.
+- **Scene/prefab/inspector edits need approval.** For Inspector wiring, scene placement, or prefab changes, first give the "object → component → value" checklist; after approval, either the user applies it or the agent does (prefer MCP via `mcp-edit`; patch `.unity`/`.prefab` YAML only when MCP can't, and verify with diff).
 - **Don't promote Docs content into new binding rules on your own judgment** — if something in `Assets/Docs/` seems like it should become a hard rule, flag it and let the user confirm, mirroring how `.cursor/rules` are gated.
 
 ### Absolute rules (imported from FortDefense, 2026-10-08)
@@ -83,16 +83,20 @@ These carry the weight of hard constraints in this repo (mirrored in `.cursor/ru
 4. **No duplicate calls.** Never "call it once more in case it didn't run" — trace the call path to find the break. Guards (safe if called twice) are fine.
 5. **No bug confirmed by inference.** Hypotheses OK. If code can't confirm it, add `[DBG]` logs, confirm via console, explain, get approval, then fix. → `bug-fix` skill
 
+### Approval-gated edits (rules, not hooks)
+
+- Scenes/prefabs/assets/ProjectSettings/Packages: not blocked, but **never edit on your own** — show the "object → component → value (before → after)" list, get approval, then edit (Edit/Write, shell, or MCP via `mcp-edit` skill). Approval in one conversation does not carry over.
+- Git undo (hard reset, restore, `checkout --`, stash pop/drop, rebase, amend, rm/mv, branch -D): allowed after approval — first show exactly what will be lost. Commit only when the user says "커밋해"; after each fix, recommend a commit (one fix = one commit).
+- Scene-save noise (UI.prefab RectTransform overrides): before recommending a commit with `.unity` changes, follow the `scene-noise` skill — Claude checks, reports, and runs `--apply` after approval.
+
 ### Enforced by hooks (`.claude/hooks`)
 
-- Editing scenes/prefabs/assets/ProjectSettings/Packages (Edit/Write or shell writes) is blocked — give an "object → component → value" checklist instead. MCP edits only when the user says so in that conversation (`mcp-edit` skill).
-- Hard-to-undo git (push, hard reset, restore, `checkout --`, clean, rebase, amend, rm/mv) is blocked — the user runs those. Commit only when the user says "커밋해"; after each fix, recommend a commit (one fix = one commit).
-- Scene-save noise (UI.prefab RectTransform overrides) is checked by Claude and removed by the user: before recommending a commit with `.unity` changes, follow the `scene-noise` skill (`Tools/SceneNoise/strip-scene-noise.js`).
+- `git push` and `git clean` are blocked — the user runs those.
 
 ### Conversation
 
 - Korean. **Plain 4 lines first** (what / how serious / what changes / how to verify), details after. Explain as flow (who → whom → order), not code detail.
 - Side issues found along the way: one line, record only. Don't widen scope.
 - Tuning questions: rough multiplier estimate first; simulations only after approval. → `rough-estimate` skill
-- Unity MCP is **read-only** by default; report editor state as works/doesn't. → `editor-verify` skill
+- Unity MCP: read freely, report editor state as works/doesn't (→ `editor-verify` skill); writes only after approval (→ `mcp-edit` skill).
 - No compiling edits while the user is in Play Mode. "Works in editor" ≠ "works" — recommend ParrelSync/two-build and Steam build checks early.

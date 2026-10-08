@@ -1,8 +1,9 @@
 // 씬 저장 잡음 제거 — UI.prefab 인스턴스의 RectTransform 오버라이드 잡음을 HEAD 기준으로 되돌린다.
 //
-// 사용자가 직접 실행한다 (Claude 는 .unity 를 고치지 않는다 — .claude/hooks 가 막음):
-//   ! node Tools/SceneNoise/strip-scene-noise.js            → 바뀐 씬 전부 검사만 (파일 안 바꿈)
-//   ! node Tools/SceneNoise/strip-scene-noise.js --apply    → 검사 + 잡음 제거
+// 검사는 Claude 가 언제든, --apply 는 목록을 보여 주고 사용자 허락을 받은 뒤 Claude 가 실행한다
+// (.unity 를 손으로 고치지 않고 이 스크립트로만 지운다 — .claude/skills/scene-noise):
+//   node Tools/SceneNoise/strip-scene-noise.js            → 바뀐 씬 전부 검사만 (파일 안 바꿈)
+//   node Tools/SceneNoise/strip-scene-noise.js --apply    → 검사 + 잡음 제거
 //   씬 경로를 주면 그 씬만:  ... --apply Assets/Scenes/M.Boss.unity
 // 옵션: --any-prefab  UI.prefab 말고 모든 프리팹 인스턴스의 같은 속성도 대상
 //       --against <파일>  HEAD 대신 이 파일을 기준으로 비교 (테스트용)

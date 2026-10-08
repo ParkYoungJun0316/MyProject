@@ -1,4 +1,6 @@
-// PreToolUse(Bash|PowerShell): 되돌리기 어려운 git 명령과 셸을 통한 보호 파일 쓰기 차단.
+// PreToolUse(Bash|PowerShell): git push / git clean 차단 (사용자가 직접 한다).
+// 나머지 되돌리기(restore·reset --hard·checkout -- 등)와 에셋 쓰기는 hook 이 아니라 규칙으로:
+// 바뀔/날아갈 것을 보여 주고 허락받은 뒤 실행 (CLAUDE.md "Approval-gated edits").
 // git commit 은 막지 않는다 — 사용자가 "커밋해"라고 했을 때만 한다 (CLAUDE.md).
 // heredoc 본문과 작은따옴표 문자열은 "실행되는 명령"이 아니므로 검사에서 뺀다.
 const fs = require("fs");
@@ -16,42 +18,19 @@ cmd = cmd.replace(/\s+/g, " ");
 
 // 명령 시작 위치에서만 매치: 줄 처음, ;, &&, ||, |, (, $(
 const AT = String.raw`(?:^|[;&|(]\s*)`;
+// push = 외부로 나감, clean = 추적 안 된 파일 영구 삭제(휴지통 없음).
 const gitBlock = [
   "git\\s+push\\b",
-  "git\\s+reset\\s+--hard\\b",
-  "git\\s+checkout\\s+(?:--|\\.)",
-  "git\\s+restore\\b",
   "git\\s+clean\\b",
-  "git\\s+stash\\s+(?:drop|clear|pop)\\b",
-  "git\\s+branch\\s+-D\\b",
-  "git\\s+rebase\\b",
-  "git\\s+commit\\b[^;&|]*--amend\\b",
-  "git\\s+(?:rm|mv)\\b",
 ].map((s) => new RegExp(AT + s));
 
 for (const re of gitBlock) {
   if (re.test(cmd)) {
     process.stderr.write(
       `[hook:guard-shell] 차단: ${cmd.slice(0, 200)}\n` +
-      `되돌리기 어려운 git 명령은 사용자가 직접 한다. 필요하면 명령을 보여 주고 부탁한다.\n`
+      `git push / git clean 은 사용자가 직접 한다. 필요하면 명령을 보여 주고 부탁한다.\n`
     );
     process.exit(2);
   }
-}
-
-// 셸로 보호 파일에 쓰기 (sed -i, >, tee, rm, mv, cp, Set-Content, Out-File ...)
-const protectedPath = /\.(?:unity|prefab|asset|meta|mat|controller|anim|asmdef|inputactions)\b|ProjectSettings\/|Packages\//i;
-const writeOp = new RegExp(
-  AT + "(?:sed\\s+-i\\b|tee\\b|rm\\b|mv\\b|cp\\b|Set-Content|Out-File|Remove-Item|Move-Item|Copy-Item|New-Item)|>\\s*\"?(?!/dev/null|&|\\$null)[^|&\\s>]"
-);
-// 쓰기 연산자 검사는 큰따옴표 문자열을 비운 뒤 한다 ("Gamepad>/leftStick" 같은 검색어 오인 방지).
-// 경로 검사는 원문으로 한다 (> "Assets/x.prefab" 처럼 따옴표 친 경로도 잡히게).
-const cmdNoDq = cmd.replace(/"[^"]*"/g, '""');
-if (protectedPath.test(cmd) && writeOp.test(cmdNoDq)) {
-  process.stderr.write(
-    `[hook:guard-shell] 차단: 셸로 씬·프리팹·에셋·설정 파일을 바꾸려 함.\n${cmd.slice(0, 200)}\n` +
-    `읽기(cat/grep)는 되지만 쓰기는 사용자가 에디터에서 한다.\n`
-  );
-  process.exit(2);
 }
 process.exit(0);

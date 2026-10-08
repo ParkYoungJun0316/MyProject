@@ -2,10 +2,6 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
-        "hooks": [{ "type": "command", "command": "node .claude/hooks/protect-assets.js" }]
-      },
-      {
         "matcher": "Bash|PowerShell",
         "hooks": [{ "type": "command", "command": "node .claude/hooks/guard-shell.js" }]
       }
