@@ -71,6 +71,8 @@ public class TutorialGatherDisplay : MonoBehaviour
             interludeGate.OnGateCountdownReset.AddListener(HandleReset);
             interludeGate.OnGateCountdownComplete.AddListener(HandleReset);
         }
+        // 안내판은 코드가 글자를 직접 만들어서 다른 보드(LocalizeStringEvent)처럼 언어 변경을 스스로 못 따라간다(10/8)
+        UnityEngine.Localization.Settings.LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
     }
 
     void OnDestroy()
@@ -87,8 +89,11 @@ public class TutorialGatherDisplay : MonoBehaviour
             interludeGate.OnGateCountdownReset.RemoveListener(HandleReset);
             interludeGate.OnGateCountdownComplete.RemoveListener(HandleReset);
         }
+        UnityEngine.Localization.Settings.LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
         Unbind();
     }
+
+    void HandleLocaleChanged(UnityEngine.Localization.Locale _) => RefreshBlockText();
 
     void Start()
     {
@@ -232,9 +237,14 @@ public class TutorialGatherDisplay : MonoBehaviour
 
                 sb.Append('\n');
                 bool dim = rejecting && !ready && !_flashOn;
+                string alphaHex = dim ? "30" : "FF";
+                // 이름은 다른 HUD(TeamStatus·이름표·채팅)와 같이 대문자(ToUpperInvariant — 터키어 i→İ 방지),
+                // 색은 자기 캐릭터 계열의 밝은 톤(PlayerColorUtil.GetNameColorOnDark — 간판이 어두워서). 상태 문구만 준비 상태 색.
+                sb.Append("<color=#").Append(NameColorHex(e.ColorIndex)).Append(alphaHex).Append('>')
+                  .Append(CheerService.GetCheerName(e.ColorIndex).ToUpperInvariant()).Append("</color>  ");
                 sb.Append("<color=").Append(color).Append('>');
                 if (dim) sb.Append("<alpha=#30>");
-                sb.Append(CheerService.GetCheerName(e.ColorIndex)).Append("  ").Append(status);
+                sb.Append(status);
                 sb.Append("</color>");
             }
         }
@@ -242,6 +252,9 @@ public class TutorialGatherDisplay : MonoBehaviour
         if (!gateBlockText.gameObject.activeSelf) gateBlockText.gameObject.SetActive(true);
         gateBlockText.text = sb.ToString();
     }
+
+    static string NameColorHex(int colorIndex) =>
+        ColorUtility.ToHtmlStringRGB(PlayerColorUtil.GetNameColorOnDark(colorIndex));
 
     static string Localized(UnityEngine.Localization.LocalizedString ls, object[] args, string fallback)
     {

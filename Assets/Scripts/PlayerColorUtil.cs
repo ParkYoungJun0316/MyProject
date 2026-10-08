@@ -28,6 +28,20 @@ public static class PlayerColorUtil
     // ColorIndex 순 CheerName(고정, 2026-09-14부로 커스텀화 불가) — CheerService.GetCheerName의 단일 소스.
     public static readonly string[] DefaultCheerNames = { "berry", "guma", "sook", "dan" };
 
+    // ColorIndex 순 이름 글자색 — 어두운 바탕용 밝은 톤(2026-10-08). 몸 색(보라·초록)은 어두운 간판 위에서 안 읽혀서 따로 둔다.
+    // 밝은 바탕(채팅창)은 진한 톤을 InGameChatUI Inspector(colorBerry 등)에서 쓴다.
+    static readonly Color[] NameColorsOnDark =
+    {
+        new(0x4D / 255f, 0xB8 / 255f, 0xFF / 255f), // BERRY #4DB8FF
+        new(0xB9 / 255f, 0x8C / 255f, 0xFF / 255f), // GUMA  #B98CFF
+        new(0x5C / 255f, 0xE6 / 255f, 0x5C / 255f), // SOOK  #5CE65C
+        new(0xFF / 255f, 0xC2 / 255f, 0x33 / 255f), // DAN   #FFC233
+    };
+
+    /// <summary>어두운 바탕 위 이름 글자색(밝은 톤). 범위 밖이면 흰색.</summary>
+    public static Color GetNameColorOnDark(int colorIndex) =>
+        colorIndex >= 0 && colorIndex < NameColorsOnDark.Length ? NameColorsOnDark[colorIndex] : Color.white;
+
     /// <summary>PlayerColorType → ColorOrder 인덱스 변환. 미매칭 시 -1 반환.</summary>
     public static int ColorTypeToIndex(PlayerColorType colorType)
     {

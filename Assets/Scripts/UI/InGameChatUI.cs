@@ -77,10 +77,11 @@ public class InGameChatUI : NetworkBehaviour
     [SerializeField] Color messageTextColor = Color.black;
 
     [Header("플레이어 이름 색상")]
-    [SerializeField] Color colorBerry = new Color(0.35f, 0.64f, 0.82f);  // Blue
-    [SerializeField] Color colorGuma  = new Color(0x59 / 255f, 0x00 / 255f, 0xBC / 255f);  // Purple #5900BC
-    [SerializeField] Color colorSsuk  = new Color(0.18f, 0.80f, 0.44f);  // Green
-    [SerializeField] Color colorDanho = new Color(0.95f, 0.61f, 0.07f);  // Yellow
+    // 채팅창 바탕이 밝은 반투명 회색이라 진한 톤(2026-10-08) — 어두운 바탕용 밝은 톤은 PlayerColorUtil.GetNameColorOnDark
+    [SerializeField] Color colorBerry = new Color(0x0A / 255f, 0x58 / 255f, 0xB0 / 255f);  // Blue   #0A58B0
+    [SerializeField] Color colorGuma  = new Color(0x5A / 255f, 0x14 / 255f, 0xC8 / 255f);  // Purple #5A14C8
+    [SerializeField] Color colorSsuk  = new Color(0x0B / 255f, 0x7A / 255f, 0x32 / 255f);  // Green  #0B7A32
+    [SerializeField] Color colorDanho = new Color(0xA6 / 255f, 0x55 / 255f, 0x00 / 255f);  // Yellow #A65500
 
     // ── 정적 히스토리 (씬 재로드·전환에도 유지됨) ───────────────
 
