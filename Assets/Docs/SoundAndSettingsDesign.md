@@ -69,6 +69,7 @@ SFX 정규화 방침 확정, SFX 1차 22개 피크 정규화 완료(`SFX2`→`SF
 4. ~~§6-10 `Btn_Reset` onClick~~ — Prefab에서 `OptionsMenuController.OnClickReset` 연결 완료.
    §6-9 `Default*Volume` 확정(2026-10-02): 전체·BGM·SFX **0.5**, 마이크 1.0(`NetworkManager.prefab` + 코드 기본값 동일).
    T키 응원·Tip 항상 표시는 기본 OFF 유지.
+   **BGM 기준 크기 ×0.2 (2026-10-08):** 전체가 너무 크다는 판단 → 슬라이더 기본값은 0.5 그대로 두고 `BGMManager.baseGain`(Inspector, 기본 0.2)을 마스터×BGM 뒤에 곱함. 저장값이 있는 기존 플레이어에게도 적용된다(기본값만 바꾸면 슬라이더를 만진 사람은 그대로라서 이 방식). SFX는 귀로 듣고 결정 — 낮추게 되면 응원 녹음 재생(`CheerSoundPlayback`, SFX 볼륨을 따름)은 그 배율에서 빼야 10/8 "응원 소리 작음"이 재발하지 않는다.
 5. 그 외 §6 잔여 항목(7. SFX 볼륨 보정 실사용 튜닝, 6. Phase별 BGM 선택사항).
 
 **이번 세션에 변경된 파일 전체 목록**(§2/§9.5/§9.6에 상세, 전부 린트 통과):

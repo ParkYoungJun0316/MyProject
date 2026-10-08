@@ -18,7 +18,7 @@ using UnityEngine.SceneManagement;
 ///   한 곡이 끝나면 다음 곡으로 크로스페이드 전환. 클립이 1개면 그냥 그 곡을 계속 loop.
 ///
 /// [볼륨]
-///   GameSettingsManager.Instance.MasterVolume × BgmVolume 를 매 프레임 읽어서 반영(pull 방식).
+///   GameSettingsManager.Instance.MasterVolume × BgmVolume × baseGain 을 매 프레임 읽어서 반영(pull 방식).
 ///   GameSettingsManager가 없는 씬(예: 격리 테스트)에서는 1(최대)로 폴백.
 ///
 /// [같은 씬 안에서 구간(Phase)별 BGM 전환]
@@ -46,6 +46,11 @@ public class BGMManager : MonoBehaviour
     [Tooltip("트랙 전환 시 페이드 소요 시간(초)")]
     [SerializeField] float fadeDuration = 1.5f;
 
+    [Header("기준 크기")]
+    [Tooltip("슬라이더(마스터 × BGM) 뒤에 곱하는 공통 배율. 2026-10-08 전체가 너무 커서 0.2로 낮춤 — " +
+             "슬라이더 숫자는 그대로 두고 기존 플레이어 저장값에도 같이 적용되게 하려고 여기서 곱한다.")]
+    [SerializeField] [Range(0f, 1f)] float baseGain = 0.2f;
+
     AudioSource _sourceA;
     AudioSource _sourceB;
     AudioSource _active;
@@ -61,7 +66,7 @@ public class BGMManager : MonoBehaviour
         get
         {
             GameSettingsManager settings = GameSettingsManager.Instance;
-            return settings != null ? settings.MasterVolume * settings.BgmVolume : 1f;
+            return (settings != null ? settings.MasterVolume * settings.BgmVolume : 1f) * baseGain;
         }
     }
 
