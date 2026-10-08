@@ -18,7 +18,7 @@ SFX 정규화 방침 확정, SFX 1차 22개 피크 정규화 완료(`SFX2`→`SF
 > 아래 §1 참고).
 >
 > **Unity MCP 쓰기 권한:** 워크스페이스 `.cs` 파일 수정은 항상 허용. 씬/프리팹 배치 등 에디터 MCP
-> **쓰기**는 사용자가 "MCP로 해줘"라고 명시할 때만 — `.cursor/rules/unity-mcp-readonly.mdc` 참고.
+> **쓰기**는 바꿀 목록을 보여 주고 사용자 허락(승인어)을 받은 뒤에만 — `.cursor/rules/unity-mcp-approval.mdc` 참고.
 > **Audacity MCP**(`user-audacity` 네임스페이스, `~/.cursor/mcp.json`에 `audacity` 항목으로 이미 등록됨)는
 > 이 규칙의 적용 대상이 아님(Unity 에디터가 아니라 Audacity 제어용) — 오디오 정규화 작업엔 자유롭게 사용.
 > 단, Audacity를 미리 켜두고 `mod-script-pipe`가 연결돼 있어야 하며, `project_new`/`project_close`를
