@@ -119,6 +119,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
     PlayerEvents events;
     PlayerStealth playerStealth;
     PlayerBuffSystem playerBuffSystem;
+    PlayerAudio playerAudio;
 
     // ── 공중 마찰 0 (옆면 비비기 차단, 2026-09-29) ─────────────────
     // Move()가 매 FixedUpdate마다 x/z를 입력값으로 덮어써서, 공중에서 벽·바닥 옆면에 대고 방향키를 누르면
@@ -156,6 +157,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
         if (events == null) events = gameObject.AddComponent<PlayerEvents>();
 
         playerStealth = GetComponent<PlayerStealth>();
+        playerAudio = GetComponent<PlayerAudio>();
 
         playerBuffSystem = GetComponent<PlayerBuffSystem>();
         if (playerBuffSystem == null) playerBuffSystem = gameObject.AddComponent<PlayerBuffSystem>();
@@ -211,6 +213,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             isBlack = !isBlack;
             events?.RaiseBlackWhiteChanged(isBlack);
             anim?.SetTrigger("doChangeColor");
+            playerAudio?.PlayColorChange(); // 이벤트가 두 개 나가도 소리는 입력 1회당 1번
         }
 
         if (altDown && !isUniqueColor)
@@ -218,6 +221,7 @@ public class Player : MonoBehaviour, IDamageReceiver, IPlayerContext
             isUniqueColor = true;
             events?.RaiseUniqueColorChanged(0);
             anim?.SetTrigger("doChangeColor");
+            playerAudio?.PlayColorChange();
         }
 
         if (spaceDown)

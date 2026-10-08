@@ -55,8 +55,6 @@ public class PlayerAudio : MonoBehaviour
         {
             _events.OnDamaged            += OnHit;
             _events.OnDied               += OnDeath;
-            _events.OnBlackWhiteChanged  += OnBWChanged;
-            _events.OnUniqueColorChanged += OnUniqueChanged;
         }
 
         if (_buffSystem != null)
@@ -69,8 +67,6 @@ public class PlayerAudio : MonoBehaviour
         {
             _events.OnDamaged            -= OnHit;
             _events.OnDied               -= OnDeath;
-            _events.OnBlackWhiteChanged  -= OnBWChanged;
-            _events.OnUniqueColorChanged -= OnUniqueChanged;
         }
 
         if (_buffSystem != null)
@@ -141,13 +137,12 @@ public class PlayerAudio : MonoBehaviour
         SFXManager.Instance?.Play(SFXId.Player_Death);
     }
 
-    void OnBWChanged(bool _)
-    {
-        if (!IsLocalOwner()) return;
-        SFXManager.Instance?.Play(SFXId.Player_ColorChange);
-    }
-
-    void OnUniqueChanged(int _)
+    /// <summary>
+    /// 색 바꾸기 소리 — Player의 Ctrl/Alt 입력 처리에서 바꿀 때마다 한 번 부른다.
+    /// 색 이벤트(OnBlackWhiteChanged/OnUniqueColorChanged)에 걸지 않는 이유(2026-10-08): 스폰 때 초기 색 맞추기
+    /// (NetworkPlayerSetup.SetupOwner)도 같은 이벤트를 내서 씬 진입마다 "뽁"이 났고, Ctrl은 이벤트 두 개라 두 번 겹쳤다.
+    /// </summary>
+    public void PlayColorChange()
     {
         if (!IsLocalOwner()) return;
         SFXManager.Instance?.Play(SFXId.Player_ColorChange);
