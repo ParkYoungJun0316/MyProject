@@ -695,7 +695,7 @@ Phase B에서 하지 말 것은 유지: CheerService RPC 재작성, Heal 파이�
 
 ### 에이전트 제약
 
-- `.cs` / Docs만 수정. MCP·에디터로 씬/프리팹/인스펙터 쓰지 말 것 (사용자가 "MCP로 수정해줘"라고 하기 전).
+- 씬/프리팹/인스펙터는 바꿀 목록을 보여 주고 사용자 허락(승인어)을 받은 뒤에만 MCP·에디터로 수정.
 - NGO: NV는 Host만 write. Client는 ServerRpc. Heal은 `NetworkDamageUtil`만.
 - 오프라인 모드 / 구 `SubmitCheerServerRpc` / cross-targeting 부활 금지.
 
@@ -1189,6 +1189,7 @@ MFCC/DTW/자기상관은 전부 C#으로 직접 구현(외부 패키지 없음, 
 - 비-Host는 `HostSection`이 숨겨져 제목 아래가 비어 보인다(위치 고정 레이아웃) — 보기 싫으면 레이아웃 그룹으로 바꿀 것.
 - **Tutorial·Interlude `GatherSign`**: 자식 `GateBlockText`(TMP 3D, 진한 자주색 굵게) + 뒤판 `Plate`(간판 배경 복제) — 기본 꺼짐, 막힘 사유 있을 때만 켜짐. 화면: `CheerSound_GateBlockText_Tutorial.png`.
 - **`UI.prefab`**: `TeamCheerWord/Caption` "TEAM CHEAR"(오타) → "TEAM CHEER", `Word` → "[R] 팀 구호 듣기"(LocalizeStringEvent `Tutorial.HUD.TeamCheerListen`, 자동 크기). `TeamCheerWarning/TKeyHint`(기본 꺼짐, `Tutorial.HUD.TeamCheerTKeyHint`) + `tKeyHintRoot` 연결. 다른 씬에 이 라벨을 덮어쓴 오버라이드 없음 확인.
+  - **2026-10-08 이동:** 우측 상단 → **좌측 하단**, 위에서부터 [M] 마이크 → [R] 팀 구호 듣기 → [Ctrl][Alt][Q](사용자 배치). `TeamCheerWord/Visual`(= `visualRoot`, 소리 없으면 통째로 숨김) 아래 `Img.RKeyIcon`(`keyboard-outlined/r.png`, M 키와 같은 70×70) + `Word`(왼쪽 정렬). `Caption` 삭제. 문구는 "[R] " 빼고 "팀 구호 듣기"(13로케일). ESC 등 커서 창이 열린 동안 R키 무시. 화면: `Assets/Screenshots/HUD_BottomLeft_UserLayout.png`. 씬별 `Word` 글자 크기 오버라이드(T.Boss·T.Stage1·T.Stage4)는 같은 날 UI 오버라이드 정리로 제거 — 이제 프리팹 그대로.
 - **번역:** `Tutorial` 테이블 신규 28키·수정 6키(제목·HostHint·보드 2종·Prompt 2종) × 13로케일(pt 포함). 보드의 "영어 단어로 정해요" 문구 삭제. **원어민 검수 남음.**
 - **폰트:** 한·일·중 정적 아틀라스에 새 글자가 없어 `Tools/Font/Noto Static 베이킹 - 실행` 재실행 → 13로케일 새 문구 누락 글자 0.
 - **씬 저장 잡음:** Tutorial 저장 시 프리팹 인스턴스 RectTransform 레이아웃 값 149개가 섞임 → 오버라이드 항목 단위로 HEAD 값 복원(스크립트, 줄 번호 기반 되돌리기는 엉뚱한 값을 바꿔서 폐기). 두 씬 모두 오버라이드 항목 집합이 HEAD와 동일(Tutorial 669·Interlude 378). Interlude diff가 큰 건 PrefabInstance 블록 순서가 바뀐 것뿐.

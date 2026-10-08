@@ -80,6 +80,8 @@ public class PlayerPunch : NetworkBehaviour
         if (!IsOwner || _player == null || _player.IsDead) return;
         // 대화창이 떠 있는 동안 좌클릭은 대사 넘기기 전용 (DialogueUI).
         if (DialogueUI.BlocksPrimaryClick) return;
+        // ESC·코스튬·채팅·팀 구호 패널 등 커서를 쓰는 창이 떠 있는 동안 좌클릭은 UI 전용.
+        if (CursorUnlockRequestUtil.IsRequested) return;
         if (Time.time < _nextLocalPunchTime) return;
 
         // Host의 _nextPunchTime보다 항상 늦게 풀리도록 여유 버퍼를 더한다 (localCooldownBuffer 참고).

@@ -9,7 +9,9 @@ using UnityEngine.UI;
 /// 10/7: 등록했으면 **내 1번 녹음**(판정이 내 녹음 기준이므로), 등록 못 한 사람(T키 응원)은 Host 소리.
 /// 자동 재생은 없다(사용자 결정). 클래스 이름은 UI.prefab 연결 호환용으로 유지.
 ///
-/// [배치] UI.prefab 루트(HP_Panel · Txt.Nickname 형제). 라벨 문구는 프리팹 정적 텍스트(로컬라이즈 키 추가 예정),
+/// [배치] UI.prefab 루트(HP_Panel · Txt.Nickname 형제), 좌측 하단 마이크 아이콘 바로 위(2026-10-08 이동).
+/// R키 아이콘(Img.RKeyIcon) + "팀 구호 듣기" 라벨을 Visual 묶음에 넣고 visualRoot로 연결 — 소리 없으면 통째로 숨김.
+/// 라벨 문구는 LocalizeStringEvent(Tutorial.HUD.TeamCheerListen),
 /// 이 스크립트는 R키·버튼 재생과 "기준 소리 없음" 숨김만 한다. 미연결이면 이 HUD만 없음 — 판정은 그대로.
 /// </summary>
 public class TeamCheerWordUI : MonoBehaviour
@@ -44,6 +46,7 @@ public class TeamCheerWordUI : MonoBehaviour
         var kb = Keyboard.current;
         if (kb == null || !kb.rKey.wasPressedThisFrame) return;
         if (InGameChatUI.IsChatOpen || TutorialCheerNameUI.IsOpen || CostumePanelUI.IsOpen) return;
+        if (CursorUnlockRequestUtil.IsRequested) return; // ESC 메뉴 등 커서를 쓰는 창이 떠 있는 동안
         CheerSoundPlayback.PlayListenClip();
     }
 
